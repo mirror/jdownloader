@@ -174,11 +174,18 @@ public class ArchiveOrg extends PluginForDecrypt {
                     }
                     fina.setFinalFileName(filename);
                     final String subfolderPathInName = new Regex(name, "(.+)/[^/]+$").getMatch(0);
+                    final String thisPath;
                     if (subfolderPathInName != null) {
-                        fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
+                        thisPath = subfolderPath + "/" + subfolderPathInName;
+                        // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
                     } else {
-                        fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                        thisPath = subfolderPath;
+                        // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
                     }
+                    fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(thisPath);
+                    fina._setFilePackage(fp);
                     if (sha1hash != null) {
                         fina.setSha1Hash(sha1hash);
                     }

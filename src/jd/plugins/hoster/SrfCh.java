@@ -21,6 +21,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,12 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+.*$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
 public class SrfCh extends PluginForHost {
@@ -75,11 +75,12 @@ public class SrfCh extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final String geoblock_reason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
-        final String domainpart = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
-        final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        /* 2020-07-29: E.g. "blockReason" : "ENDDATE" or "blockReason" : "GEOBLOCK" */
+        String blockReason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
+        final String domainpart = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
+        final String videoid = new Regex(link.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
         final boolean useV2 = true;
@@ -93,133 +94,145 @@ public class SrfCh extends PluginForHost {
         String url_rtmp = null;
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         ArrayList<Object> ressourcelist;
-        if (useV2) {
-            final Map<String, String> hlsMap = new HashMap<String, String>();
-            final Map<String, String> mp4Map = new HashMap<String, String>();
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
-            // final String id = (String) entries.get("id");
-            ressourcelist = (ArrayList<Object>) entries.get("resourceList");
-            for (final Object ressourceO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) ressourceO;
-                final String protocol = (String) entries.get("protocol");
-                if (protocol.equals("HTTP")) {
-                    final String url = (String) entries.get("url");
-                    final String quality = (String) entries.get("quality");
-                    if (StringUtils.isNotEmpty(url)) {
-                        mp4Map.put(quality, url);
-                    }
-                } else if (protocol.equals("HLS")) {
-                    final String url = (String) entries.get("url");
-                    final String quality = (String) entries.get("quality");
-                    if (StringUtils.isNotEmpty(url)) {
-                        hlsMap.put(quality, url);
-                    }
-                } else {
-                    /* Skip unsupported protocol */
-                    logger.info("Skipping protocol: " + entries);
-                    continue;
+        try {
+            if (useV2) {
+                final Map<String, String> hlsMap = new HashMap<String, String>();
+                final Map<String, String> mp4Map = new HashMap<String, String>();
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "chapterList/{0}");
+                if (StringUtils.isEmpty(blockReason)) {
+                    /* 2020-07-29: New */
+                    blockReason = (String) entries.get("blockReason");
                 }
-            }
-            if (hlsMap.size() > 0) {
-                if (hlsMap.containsKey("HD")) {
-                    url_hls_master = hlsMap.get("HD");
-                } else if (hlsMap.containsKey("SD")) {
-                    url_hls_master = hlsMap.get("SD");
-                } else {
-                    logger.info("unknown qualities(hls):" + hlsMap);
-                    url_hls_master = hlsMap.entrySet().iterator().next().getValue();
-                }
-            }
-            if (mp4Map.size() > 0) {
-                if (mp4Map.containsKey("HD")) {
-                    url_http_download = mp4Map.get("HD");
-                } else if (hlsMap.containsKey("SD")) {
-                    url_http_download = mp4Map.get("SD");
-                } else {
-                    logger.info("unknown qualities(mp4):" + mp4Map);
-                    url_http_download = mp4Map.entrySet().iterator().next().getValue();
-                }
-            }
-            if (!StringUtils.isEmpty(url_hls_master)) {
-                /* Sign URL */
-                String acl = new Regex(url_hls_master, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
-                if (acl == null) {
-                    logger.warning("Failed to find acl");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                acl += "/*";
-                br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("token");
-                /* 2019-08-09: TODO: Cleanup this encoding mess ... */
-                String authparams = (String) entries.get("authparams");
-                if (StringUtils.isEmpty(authparams)) {
-                    logger.warning("Failed to find authparams");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
-                authparams = URLEncode.encodeURIComponent(authparams);
-                authparams = authparams.replace("*", "%2A");
-                url_hls_master += "&hdnts=" + authparams;
-                final String param_caption = new Regex(url_hls_master, "caption=([^\\&]+)").getMatch(0);
-                if (param_caption != null) {
-                    String param_caption_new = param_caption;
-                    param_caption_new = Encoding.htmlDecode(param_caption_new);
-                    param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
-                    param_caption_new = param_caption_new.replace("%3D", "=");
-                    url_hls_master = url_hls_master.replace(param_caption, param_caption_new);
-                }
-            }
-        } else {
-            entries = (LinkedHashMap<String, Object>) entries.get("Video");
-            LinkedHashMap<String, Object> temp = null;
-            /* Try to find http downloadurl (not always available) */
-            try {
-                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
-                for (final Object streamtypeo : ressourcelist) {
-                    temp = (LinkedHashMap<String, Object>) streamtypeo;
-                    final String protocol = (String) temp.get("@protocol");
-                    if (protocol == null) {
-                        continue;
-                    }
+                // final String id = (String) entries.get("id");
+                ressourcelist = (ArrayList<Object>) entries.get("resourceList");
+                for (final Object ressourceO : ressourcelist) {
+                    entries = (LinkedHashMap<String, Object>) ressourceO;
+                    final String protocol = (String) entries.get("protocol");
                     if (protocol.equals("HTTP")) {
-                        url_http_download = this.findBestQualityForStreamtype(temp);
-                        break;
-                    }
-                }
-            } catch (final Throwable e) {
-            }
-            /* Try to find hls master (usually available) */
-            try {
-                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-                for (final Object streamtypeo : ressourcelist) {
-                    temp = (LinkedHashMap<String, Object>) streamtypeo;
-                    final String protocol = (String) temp.get("@protocol");
-                    if (protocol == null) {
+                        final String url = (String) entries.get("url");
+                        final String quality = (String) entries.get("quality");
+                        if (StringUtils.isNotEmpty(url)) {
+                            mp4Map.put(quality, url);
+                        }
+                    } else if (protocol.equals("HLS")) {
+                        final String url = (String) entries.get("url");
+                        final String quality = (String) entries.get("quality");
+                        if (StringUtils.isNotEmpty(url)) {
+                            hlsMap.put(quality, url);
+                        }
+                    } else {
+                        /* Skip unsupported protocol */
+                        logger.info("Skipping protocol: " + entries);
                         continue;
                     }
-                    if (protocol.equals("HTTP-HLS")) {
-                        url_hls_master = this.findBestQualityForStreamtype(temp);
-                        break;
+                }
+                if (hlsMap.size() > 0) {
+                    if (hlsMap.containsKey("HD")) {
+                        url_hls_master = hlsMap.get("HD");
+                    } else if (hlsMap.containsKey("SD")) {
+                        url_hls_master = hlsMap.get("SD");
+                    } else {
+                        logger.info("unknown qualities(hls):" + hlsMap);
+                        url_hls_master = hlsMap.entrySet().iterator().next().getValue();
                     }
                 }
-            } catch (final Throwable e) {
+                if (mp4Map.size() > 0) {
+                    if (mp4Map.containsKey("HD")) {
+                        url_http_download = mp4Map.get("HD");
+                    } else if (hlsMap.containsKey("SD")) {
+                        url_http_download = mp4Map.get("SD");
+                    } else {
+                        logger.info("unknown qualities(mp4):" + mp4Map);
+                        url_http_download = mp4Map.entrySet().iterator().next().getValue();
+                    }
+                }
+                if (!StringUtils.isEmpty(url_hls_master)) {
+                    /* Sign URL */
+                    String acl = new Regex(url_hls_master, "https?://[^/]+(/.+\\.csmil)").getMatch(0);
+                    if (acl == null) {
+                        logger.warning("Failed to find acl");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    acl += "/*";
+                    br.getPage("https://player.rts.ch/akahd/token?acl=" + acl);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    entries = (LinkedHashMap<String, Object>) entries.get("token");
+                    /* 2019-08-09: TODO: Cleanup this encoding mess ... */
+                    String authparams = (String) entries.get("authparams");
+                    if (StringUtils.isEmpty(authparams)) {
+                        logger.warning("Failed to find authparams");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    authparams = new Regex(authparams, "hdnts=(.+)").getMatch(0);
+                    authparams = URLEncode.encodeURIComponent(authparams);
+                    authparams = authparams.replace("*", "%2A");
+                    url_hls_master += "&hdnts=" + authparams;
+                    final String param_caption = new Regex(url_hls_master, "caption=([^\\&]+)").getMatch(0);
+                    if (param_caption != null) {
+                        String param_caption_new = param_caption;
+                        param_caption_new = Encoding.htmlDecode(param_caption_new);
+                        param_caption_new = URLEncode.encodeURIComponent(param_caption_new);
+                        param_caption_new = param_caption_new.replace("%3D", "=");
+                        url_hls_master = url_hls_master.replace(param_caption, param_caption_new);
+                    }
+                }
+            } else {
+                entries = (LinkedHashMap<String, Object>) entries.get("Video");
+                LinkedHashMap<String, Object> temp = null;
+                /* Try to find http downloadurl (not always available) */
+                try {
+                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Downloads/Download");
+                    for (final Object streamtypeo : ressourcelist) {
+                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        final String protocol = (String) temp.get("@protocol");
+                        if (protocol == null) {
+                            continue;
+                        }
+                        if (protocol.equals("HTTP")) {
+                            url_http_download = this.findBestQualityForStreamtype(temp);
+                            break;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
+                /* Try to find hls master (usually available) */
+                try {
+                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                    for (final Object streamtypeo : ressourcelist) {
+                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        final String protocol = (String) temp.get("@protocol");
+                        if (protocol == null) {
+                            continue;
+                        }
+                        if (protocol.equals("HTTP-HLS")) {
+                            url_hls_master = this.findBestQualityForStreamtype(temp);
+                            break;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
+                /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
+                try {
+                    ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
+                    for (final Object streamtypeo : ressourcelist) {
+                        temp = (LinkedHashMap<String, Object>) streamtypeo;
+                        final String protocol = (String) temp.get("@protocol");
+                        if (protocol == null) {
+                            continue;
+                        }
+                        if (protocol.equals("RTMP")) {
+                            url_rtmp = findBestQualityForStreamtype(temp);
+                            break;
+                        }
+                    }
+                } catch (final Throwable e) {
+                }
             }
-            /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
-            try {
-                ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "Playlists/Playlist");
-                for (final Object streamtypeo : ressourcelist) {
-                    temp = (LinkedHashMap<String, Object>) streamtypeo;
-                    final String protocol = (String) temp.get("@protocol");
-                    if (protocol == null) {
-                        continue;
-                    }
-                    if (protocol.equals("RTMP")) {
-                        url_rtmp = findBestQualityForStreamtype(temp);
-                        break;
-                    }
-                }
-            } catch (final Throwable e) {
+        } catch (final Throwable e) {
+            if (!StringUtils.isEmpty(blockReason)) {
+                contentBlocked(blockReason);
+            } else {
+                throw e;
             }
         }
         if (url_http_download == null && url_hls_master == null && url_rtmp == null) {
@@ -227,7 +240,7 @@ public class SrfCh extends PluginForHost {
         }
         if (url_http_download != null) {
             /* Prefer http download */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http_download, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url_http_download, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (br.getHttpConnection().getResponseCode() == 403) {
@@ -248,11 +261,7 @@ public class SrfCh extends PluginForHost {
             this.br.getPage(url_hls_master);
             /* 2019-08-09: This will also return error 403 for wrongly signed URLs! */
             if (this.br.getHttpConnection().getResponseCode() == 403) {
-                if (geoblock_reason != null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked: " + geoblock_reason);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
-                }
+                contentBlocked(blockReason);
             }
             // try {
             // this.br.cloneBrowser().getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid +
@@ -264,21 +273,21 @@ public class SrfCh extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
         } else {
             logger.info("Downloading rtmp");
             final String app = "ondemand";
             final String playpath = new Regex(url_rtmp, app + "/" + "(.+)\\.flv$").getMatch(0);
             try {
-                dl = new RTMPDownload(this, downloadLink, url_rtmp);
+                dl = new RTMPDownload(this, link, url_rtmp);
             } catch (final NoClassDefFoundError e) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
             }
             /* Setup rtmp connection */
             jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setPageUrl(link.getDownloadURL());
             rtmp.setUrl(url_rtmp);
             rtmp.setPlayPath(playpath);
             rtmp.setApp("ondemand");
@@ -288,6 +297,20 @@ public class SrfCh extends PluginForHost {
             rtmp.setResume(true);
             ((RTMPDownload) dl).startDownload();
         }
+    }
+
+    private void contentBlocked(final String blockReason) throws PluginException {
+        final String userReadableBlockedReason;
+        if (StringUtils.isEmpty(blockReason)) {
+            userReadableBlockedReason = "Unknown";
+        } else if (blockReason.equalsIgnoreCase("ENDDATE")) {
+            userReadableBlockedReason = "Content is not available anymore (expired)";
+        } else if (blockReason.equalsIgnoreCase("GEOBLOCK")) {
+            userReadableBlockedReason = "GEO-blocked";
+        } else {
+            userReadableBlockedReason = "Unknown reason:" + blockReason;
+        }
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content not downloadable because " + userReadableBlockedReason);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
