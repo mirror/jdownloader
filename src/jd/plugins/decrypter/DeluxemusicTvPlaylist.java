@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -35,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeluxemusicTv;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxemusic\\.tv/.*?\\.html|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxemusic\\.tv/.*|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
 public class DeluxemusicTvPlaylist extends PluginForDecrypt {
     public DeluxemusicTvPlaylist(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,6 +50,10 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
         this.br.setFollowRedirects(true);
         if (parameter.matches(".+deluxemusic\\.tv/.+")) {
             /* Crawl playlist */
+            String url_name = UrlQuery.parse(parameter).get("v");
+            if (url_name == null) {
+                url_name = new Regex(parameter, "/([^/]+)/?$").getMatch(0);
+            }
             this.br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -56,10 +61,24 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
             }
             final DeluxemusicTvConfigInterface cfg = PluginJsonConfig.get(org.jdownloader.plugins.components.config.DeluxemusicTvConfigInterface.class);
             final boolean bestONLY = cfg.isOnlyGrabBestQuality();
-            final String website_title = "deluxemusic_" + new Regex(parameter, "([^/]+)\\.html$").getMatch(0);
+            final String website_title = "deluxemusic_" + url_name;
             /* New 2020-02-13 */
-            final String app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
-            final String content_id = br.getRegex("contentId\\s*:\\s*(\\d+)").getMatch(0);
+            String app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
+            String content_id = br.getRegex("contentId\\s*:\\s*(\\d+)").getMatch(0);
+            final String teaserHTML = br.getRegex("<a [^>]*class=\"catchup-teaser-item selected(.*?)</a>").getMatch(0);
+            if (teaserHTML != null && app_id == null && content_id == null) {
+                /* 2020-07-29: Required for some items */
+                final String teaserID = new Regex(teaserHTML, "data-id=\"(\\d+)\"").getMatch(0);
+                final String postID = new Regex(teaserHTML, "data-post-id=\"(\\d+)\"").getMatch(0);
+                if (teaserID == null || postID == null) {
+                    logger.info("Failed to find any downloadable content");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                br.getPage("https://www.deluxemusic.tv/wp-admin/admin-ajax.php?action=get_teaser_video&teaser_id=" + teaserID + "&post_id=" + postID);
+                app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
+                content_id = br.getRegex("playlistId\\s*:\\s*(\\d+)").getMatch(0);
+            }
             if (app_id != null && content_id != null) {
                 // br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playerData?htmlPreset=just-music&noflash=true&content=%s&theov=2.64.0&hls=true",
                 // app_id, content_id));
@@ -129,7 +148,7 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                 logger.info("Seems like this page does not contain any playlist");
                 return decryptedLinks;
             }
-            String playlistName = new Regex(parameter, "/([^/]+)\\.html$").getMatch(0);
+            String playlistName = url_name;
             if (playlistName == null) {
                 playlistName = playlist_embed_id;
             }
