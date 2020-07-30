@@ -204,7 +204,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         fp.setName(formattedpackagename);
         fp.addLinks(decryptedLinks);
         if (decryptedLinks.size() == 0) {
-            logger.warning("WTF");
+            logger.info("Failed to find any downloadable content: Empty album?");
         }
         return decryptedLinks;
     }
