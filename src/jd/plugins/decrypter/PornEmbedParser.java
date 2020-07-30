@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -13,8 +15,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.DecrypterArrayList;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
@@ -702,19 +702,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?4tube.com/(?:videos|embed)/\\d+)\\1").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("('|\")((?:https?:)?//(?:www\\.)?pornsharing.com/.+)\\1").getMatch(1);
-        if (externID != null) {
-            if (externID.contains("playlist")) {
-                // get the id and reformat?
-                final String uid = new Regex(externID, "id=(\\d+)").getMatch(0);
-                // any random crap is needed before _vUID to make it a 'valid' link.
-                externID = new Regex(externID, "(?:https?:)?//").getMatch(-1) + "pornsharing.com/" + (!inValidate(title) ? title.replaceAll("\\s", "-") : "abc") + "_v" + uid;
-            }
             decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;

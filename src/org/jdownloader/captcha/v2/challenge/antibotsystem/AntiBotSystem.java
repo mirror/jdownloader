@@ -24,11 +24,12 @@ import jd.plugins.components.UserAgents;
  *
  * TODO: refresh image.
  *
+ * TODO: 2020-07-30: antibotsystem.com does not exist anymore?!
+ *
  * @author raztoki
  *
  */
 public class AntiBotSystem {
-
     // preserve original browser
     private final Browser br;
     // for antibotsystem related requests
@@ -110,7 +111,6 @@ public class AntiBotSystem {
             final String r = "[\"" + this.siteKey + "\",[[\"setPlay\",{\"key\":\"" + this.form.getInputField("videocaptcha_skey").getValue() + "\",\"token\":\"" + this.form.getInputField("videocaptcha_token").getValue() + "\"}]]]";
             fb.getPage("//antibotsystem.com/stat?callback=" + callback + "&r=" + Encoding.urlEncode(r) + "&_" + System.currentTimeMillis());
         }
-
     }
 
     public void load() throws Exception {
@@ -187,5 +187,4 @@ public class AntiBotSystem {
         // you seem to need to also set cookie at least with relink.to.
         this.br.setCookie(this.br.getHost(), "vcaptcha_skey", this.form.getInputField("videocaptcha_skey").getValue());
     }
-
 }
