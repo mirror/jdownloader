@@ -611,14 +611,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                 getPage(br, "https://e-hentai.org/bounce_login.php");
                 /* 2020-03-04: --> Will redirect to forums.* */
                 // br.getPage("https://forums.e-hentai.org/index.php?act=Login");
-                for (int i = 0; i <= 3; i++) {
+                for (int i = 0; i <= 1; i++) {
                     final Form loginform = br.getFormbyKey("CookieDate");
                     if (loginform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     loginform.put("UserName", account.getUser());
                     loginform.put("PassWord", account.getPass());
-                    if (i > 0 && br.containsHTML("g-recaptcha-response")) {
+                    if (i > 0 && this.containsRecaptchaV2Class(br)) {
                         /*
                          * First login attempt failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata -
                          * captchas may happen!
@@ -633,6 +633,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                     this.submitForm(br, loginform);
                     failed = !isLoggedIn(br);
                     if (!failed) {
+                        logger.info("Stepping out of login loop");
                         break;
                     }
                 }
