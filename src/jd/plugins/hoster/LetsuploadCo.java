@@ -65,13 +65,13 @@ public class LetsuploadCo extends YetiShareCore {
     }
 
     @Override
-    protected String getFUIDFromURL(final DownloadLink link) {
+    protected String getFUID(final DownloadLink link) {
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/plugins/mediaplayer/site/_embed\\.php\\?u=([A-Za-z0-9]+)");
         final String fid = urlinfo.getMatch(0);
         if (fid != null) {
             return fid;
         } else {
-            return super.getFUIDFromURL(link);
+            return super.getFUID(link);
         }
     }
 

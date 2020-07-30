@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MediafileCloud extends YetiShareCore {
-    public MediafileCloud(PluginWrapper wrapper) {
+public class MediafilesCc extends YetiShareCore {
+    public MediafilesCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -44,8 +44,14 @@ public class MediafileCloud extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mediafile.cloud" });
+        ret.add(new String[] { "mediafiles.cc", "mediafile.cloud" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2020-07-30: Domain has changed from mediafile.cloud to mediafiles.cc */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -100,10 +106,5 @@ public class MediafileCloud extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public boolean supports_https() {
-        return false;
     }
 }

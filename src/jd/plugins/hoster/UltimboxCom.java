@@ -141,7 +141,7 @@ public class UltimboxCom extends YetiShareCore {
     public void correctDownloadLink(final DownloadLink link) {
         /* 2020-03-05: Special */
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final String fid = getFUIDFromURL(link);
+        final String fid = getFUID(link);
         final String protocol;
         if (supports_https()) {
             protocol = "https";

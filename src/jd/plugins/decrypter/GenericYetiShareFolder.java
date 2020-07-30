@@ -17,7 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
@@ -41,43 +40,34 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private static final String[] domains = { "letsupload.co", "sundryfiles.com" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "letsupload.to", "letsupload.co" });
+        ret.add(new String[] { "fireload.com" });
+        return ret;
+    }
 
     public static String[] getAnnotationNames() {
-        return domains;
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
     public String[] siteSupportedNames() {
-        return domains;
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        /*
-         * 2019-06-12: Special: The owner of this host mograded from another script to XFS which is why we accept other URLs than only
-         * default XFS.
-         */
-        final List<String> ret = new ArrayList<String>();
-        for (int i = 0; i < domains.length; i++) {
-            if (i == 0) {
-                /* Match all URLs on first (=current) domain */
-                ret.add("https?://(?:www\\.)?" + getHostsPatternPart() + "/folder/\\d+(?:/[^<>\"]+)?(?:\\?sharekey=[A-Za-z0-9\\-_]+)?");
-            } else {
-                ret.add("");
-            }
-        }
-        return ret.toArray(new String[0]);
+        return buildAnnotationUrls(getPluginDomains());
     }
 
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        pattern.append("(?:");
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            // final String annotationName = domains[0];
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/\\d+(?:/[^<>\"]+)?(?:\\?sharekey=[A-Za-z0-9\\-_]+)?");
         }
-        pattern.append(")");
-        return pattern.toString();
+        return ret.toArray(new String[0]);
     }
 
     /**
@@ -120,7 +110,11 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        final String fpNameFallback = new Regex(parameter, "/folder/(.+)\\?").getMatch(0);
+        String fpNameFallback = new Regex(parameter, "/folder/\\d+/([^/\\?]+)").getMatch(0);
+        if (fpNameFallback != null) {
+            /* Nicer fallback packagename */
+            fpNameFallback = fpNameFallback.replace("_", " ");
+        }
         String fpName = br.getRegex("<h2>Files Within Folder \\'([^<>\"\\']+)\\'</h2>").getMatch(0);
         if (fpName == null) {
             fpName = fpNameFallback;
@@ -157,16 +151,10 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 filename = Encoding.htmlDecode(filename);
                 dl.setName(filename);
             } else {
-                /* No filename information given? Use either fuid or name from inside URL. */
                 final String url_name = YetiShareCore.getFilenameFromURL(url);
+                /* No filename information given? Use either fuid or name from inside URL. */
                 if (url_name != null) {
                     dl.setName(url_name);
-                } else {
-                    /* Final fallback to fuid */
-                    final String fuid = new Regex(url, "https?://[^/]+/([^/]+)").getMatch(0);
-                    if (fuid != null) {
-                        dl.setName(fuid);
-                    }
                 }
             }
             if (filesize != null) {
