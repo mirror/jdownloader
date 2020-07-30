@@ -65,6 +65,7 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
             /* New 2020-02-13 */
             String app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
             String content_id = br.getRegex("contentId\\s*:\\s*(\\d+)").getMatch(0);
+            String playlist_id = null;
             final String teaserHTML = br.getRegex("<a [^>]*class=\"catchup-teaser-item selected(.*?)</a>").getMatch(0);
             if (teaserHTML != null && app_id == null && content_id == null) {
                 /* 2020-07-29: Required for some items */
@@ -77,13 +78,17 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                 }
                 br.getPage("https://www.deluxemusic.tv/wp-admin/admin-ajax.php?action=get_teaser_video&teaser_id=" + teaserID + "&post_id=" + postID);
                 app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
-                content_id = br.getRegex("playlistId\\s*:\\s*(\\d+)").getMatch(0);
+                playlist_id = br.getRegex("playlistId\\s*:\\s*(\\d+)").getMatch(0);
             }
-            if (app_id != null && content_id != null) {
+            if (app_id != null && (content_id != null || playlist_id != null)) {
                 // br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playerData?htmlPreset=just-music&noflash=true&content=%s&theov=2.64.0&hls=true",
                 // app_id, content_id));
                 br.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
-                br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playlist", app_id));
+                if (playlist_id != null) {
+                    br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playlist?pl=%s", app_id, playlist_id));
+                } else {
+                    br.getPage(String.format("https://player.cdn.tv1.eu/pservices/player/_x_s-%s/playlist", app_id));
+                }
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;

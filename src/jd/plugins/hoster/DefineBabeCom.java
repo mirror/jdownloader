@@ -52,7 +52,7 @@ public class DefineBabeCom extends PluginForHost {
     }
 
     /* Tags: TubeContext@Player */
-    /* Sites using the same player: pornsharing.com, [definebabes.com, definebabe.com, definefetish.com] */
+    /* Sites using the same player: definebabes.com, definebabe.com, definefetish.com */
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
