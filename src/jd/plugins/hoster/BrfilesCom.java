@@ -95,7 +95,7 @@ public class BrfilesCom extends YetiShareCore {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* 2020-03-10: Special */
-        final String fid = getFUIDFromURL(link);
+        final String fid = getFUID(link);
         final String protocol;
         if (supports_https()) {
             protocol = "https";
@@ -198,7 +198,7 @@ public class BrfilesCom extends YetiShareCore {
             br.getPage(link.getPluginPatternMatcher());
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                final String fid = this.getFUIDFromURL(link);
+                final String fid = this.getFUID(link);
                 if (!redirect.contains(fid)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

@@ -134,14 +134,15 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final String fid = getFUIDFromURL(link);
+        final String fid = getFUID(link);
         final String protocol;
         if (supports_https()) {
-            protocol = "https";
+            protocol = "https://";
         } else {
-            protocol = "http";
+            protocol = "http://";
         }
-        link.setPluginPatternMatcher(String.format("%s://%s/%s", protocol, this.getHost(), fid));
+        final String url_path = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        link.setPluginPatternMatcher(protocol + this.getHost() + "/" + url_path);
         link.setLinkID(this.getHost() + "://" + fid);
     }
 
@@ -757,7 +758,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
-    protected String getFUIDFromURL(final DownloadLink link) {
+    protected String getFUID(final DownloadLink link) {
         return getFUIDFromURL(link.getPluginPatternMatcher());
     }
 
@@ -800,7 +801,8 @@ public class YetiShareCore extends antiDDoSForHost {
     public String getFallbackFilename(final DownloadLink dl) {
         String fallback_filename = this.getFilenameFromURL(dl);
         if (fallback_filename == null) {
-            fallback_filename = this.getFUIDFromURL(dl);
+            /* Final fallback */
+            fallback_filename = this.getFUID(dl);
         }
         return fallback_filename;
     }
@@ -827,7 +829,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 dl.setDownloadPassword(passCode);
             }
-            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFUIDFromURL(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFUID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setDownloadPassword(null);

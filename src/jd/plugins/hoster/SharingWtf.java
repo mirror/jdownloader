@@ -202,7 +202,7 @@ public class SharingWtf extends YetiShareCore {
         final boolean attemptEmbedWorkaround = false;
         if (attemptEmbedWorkaround && (link.getName().contains(".mp3") || link.getName().contains(".m4a") || link.getName().contains(".mp4") | link.getName().contains(".mkv"))) {
             logger.info("Attempting embed workaround");
-            final String fuid = getFUIDFromURL(link);
+            final String fuid = getFUID(link);
             final Browser brc = br.cloneBrowser();
             String dllink = null;
             try {

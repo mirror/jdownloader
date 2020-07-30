@@ -83,7 +83,7 @@ public class KikuploadXyz extends YetiShareCore {
             /* Host with subdomain --> Use this */
             target_host = host_with_subdomain;
         }
-        final String fid = getFUIDFromURL(link);
+        final String fid = getFUID(link);
         final String protocol;
         if (supports_https()) {
             protocol = "https";

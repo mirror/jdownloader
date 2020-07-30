@@ -48,6 +48,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-07-30: Too many requests in a short time --> 503 server response */
+        return 1;
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -197,6 +203,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         fp.setName(formattedpackagename);
         fp.addLinks(decryptedLinks);
+        if (decryptedLinks.size() == 0) {
+            logger.warning("WTF");
+        }
         return decryptedLinks;
     }
 

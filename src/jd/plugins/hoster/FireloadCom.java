@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
@@ -100,6 +101,15 @@ public class FireloadCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
+        super.scanInfo(link, fileInfo);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = br.getRegex("lass=\"fileName fileNameDl\">([^<>\"]+)<").getMatch(0);
+        }
+        return fileInfo;
     }
 
     @Override
