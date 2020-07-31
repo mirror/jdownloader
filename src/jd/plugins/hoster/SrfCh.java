@@ -21,12 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,6 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+.*$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
 public class SrfCh extends PluginForHost {
@@ -75,7 +75,7 @@ public class SrfCh extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         /* 2020-07-29: E.g. "blockReason" : "ENDDATE" or "blockReason" : "GEOBLOCK" */
         String blockReason = br.getRegex("geoblock\\s*?:\\s*?\\{\\s*?(?:audio|video)\\:\\s*?\"([^\"]+)\"").getMatch(0);
@@ -193,7 +193,8 @@ public class SrfCh extends PluginForHost {
                             break;
                         }
                     }
-                } catch (final Throwable e) {
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
                 /* Try to find hls master (usually available) */
                 try {
@@ -209,7 +210,8 @@ public class SrfCh extends PluginForHost {
                             break;
                         }
                     }
-                } catch (final Throwable e) {
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
                 /* Try to find rtmp url (sometimes available, sometimes the only streamtype available) */
                 try {
@@ -225,10 +227,11 @@ public class SrfCh extends PluginForHost {
                             break;
                         }
                     }
-                } catch (final Throwable e) {
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
             }
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             if (!StringUtils.isEmpty(blockReason)) {
                 contentBlocked(blockReason);
             } else {
