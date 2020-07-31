@@ -642,7 +642,7 @@ public class Ardmediathek extends PluginForDecrypt {
             if ("player_live".equalsIgnoreCase(type)) {
                 logger.info("Cannot download livestreams");
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            } else if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname) || StringUtils.isEmpty(type)) {
+            } else if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
