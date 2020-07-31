@@ -58,7 +58,7 @@ public class FuxCom extends PluginForHost {
             /* E.g. 4tube.com, Change mobile-website-URL --> Desktop URL */
             link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll(protocol_of_mobile_URL + "m.", protocol_of_mobile_URL));
         }
-        final String linkid = this.getLinkID(link);
+        final String linkid = this.getFID(link);
         if (link.getPluginPatternMatcher().matches(".+4tube\\.com/embed/\\d+")) {
             /* Special case! */
             link.setPluginPatternMatcher(String.format("https://www.4tube.com/videos/%s/dummytext", linkid));
@@ -73,20 +73,25 @@ public class FuxCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        String linkid = new Regex(link.getPluginPatternMatcher(), "/(?:videos?|embed)/(\\d+)").getMatch(0);
-        if (linkid == null) {
-            /* E.g. porntube.com & pornerbros.com OLD embed linkformat */
-            linkid = new Regex(link.getPluginPatternMatcher(), "https?://embed\\.[^/]+/(\\d+)").getMatch(0);
-        }
-        if (linkid == null) {
-            /* E.g. pornerbros.com */
-            linkid = new Regex(link.getPluginPatternMatcher(), "_(\\d+)$").getMatch(0);
-        }
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), "/(?:videos?|embed)/(\\d+)").getMatch(0);
+        if (fid == null) {
+            /* E.g. porntube.com & pornerbros.com OLD embed linkformat */
+            fid = new Regex(link.getPluginPatternMatcher(), "https?://embed\\.[^/]+/(\\d+)").getMatch(0);
+        }
+        if (fid == null) {
+            /* E.g. pornerbros.com */
+            fid = new Regex(link.getPluginPatternMatcher(), "_(\\d+)$").getMatch(0);
+        }
+        return fid;
     }
 
     private String  dllink        = null;
@@ -103,8 +108,12 @@ public class FuxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-AU,en;q=0.8");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+") || !br.getURL().contains(this.getLinkID(link))) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches(".+/videos?\\?error=\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!br.getURL().contains(this.getFID(link))) {
+            /* 2020-07-31: On offline (?) they sometimes do random redirects to other content (?) */
+            logger.info("Content might have changed");
         }
         /*
          * 2019-04-29: Always use 'Fallback filename' as it works for all supported websites and will usually give us a 'good looking'
@@ -194,7 +203,7 @@ public class FuxCom extends PluginForHost {
     }
 
     private String getFallbackFilename(final DownloadLink dl) {
-        final String linkid = this.getLinkID(dl);
+        final String fid = this.getFID(dl);
         String filename_url = getFilenameURL(dl.getPluginPatternMatcher());
         /*
          * Sites will usually redirect to URL which contains title so if the user adds a short URL, there is still a chance to get a
@@ -202,22 +211,23 @@ public class FuxCom extends PluginForHost {
          */
         // final String filename_url_browser = getFilenameURL(br.getURL());
         /* URL-filename may also be present in HTML */
-        String filename_url_browser_html = br.getRegex("/videos?/" + linkid + "/([A-Za-z0-9\\-_]+)").getMatch(0);
+        String filename_url_browser_html = br.getRegex("/videos?/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (filename_url_browser_html == null) {
             /* E.g. porntube.com & pornerbros.com */
-            filename_url_browser_html = br.getRegex("/videos?/([A-Za-z0-9\\-_]+)_" + linkid).getMatch(0);
+            filename_url_browser_html = new Regex(br.getURL(), "/videos?/([A-Za-z0-9\\-_]+)_\\d+$").getMatch(0);
         }
         if (filename_url == null) {
             filename_url = getFilenameURL(br.getURL());
         }
         final String fallback_filename;
-        if (filename_url != null && filename_url_browser_html != null && filename_url_browser_html.length() > filename_url.length()) {
-            /* Title in current browser URL is longer than in the user-added URL --> Use that */
-            fallback_filename = linkid + "_" + filename_url_browser_html;
+        if (filename_url_browser_html != null) {
+            /* 2020-07-31: Prefer filename of current browser URL */
+            fallback_filename = filename_url_browser_html;
         } else if (filename_url != null) {
-            fallback_filename = linkid + "_" + filename_url;
+            /* Title in current browser URL is longer than in the user-added URL --> Use that */
+            fallback_filename = fid + "_" + filename_url_browser_html;
         } else {
-            fallback_filename = linkid;
+            fallback_filename = fid;
         }
         return fallback_filename;
     }
