@@ -813,8 +813,8 @@ public class XHamsterCom extends PluginForHost {
                         boolean isInvisibleCaptcha = false;
                         String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
                         if (StringUtils.isEmpty(siteKey)) {
-                            /* 2020-03-17 */
-                            siteKey = "recaptchaKeyV3";
+                            /* 2020-07-31: TODO: Check if hardcoded reCaptcha key is needed */
+                            // siteKey = recaptchaKeyV3;
                             isInvisibleCaptcha = true;
                         }
                         final String id = createID();
