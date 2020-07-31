@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,10 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viet69.net" }, urls = { "https?://(www\\.)?viet69\\.net/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viet69.net" }, urls = { "https?://(www\\.)?viet69\\.(?:net|co)/[^/]+" })
 public class Viet69Net extends antiDDoSForDecrypt {
     public Viet69Net(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class Viet69Net extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("viet69.net/", "viet69.co/");
         br.setFollowRedirects(true);
         getPage(parameter);
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+Phim\\s+sex\\s+-\\s+Clip\\s+sex").getMatch(0);

@@ -81,7 +81,7 @@ public class BdsmstreakCom extends PluginForHost {
         if (filename == null) {
             filename = url_filename;
         }
-        dllink = br.getRegex("<source src=\"([^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        dllink = br.getRegex("\"(https?://[^\"]+\\.mp4[^\"]+)\"").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -101,7 +101,9 @@ public class BdsmstreakCom extends PluginForHost {
             filename += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlDecode(dllink);
+            }
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
