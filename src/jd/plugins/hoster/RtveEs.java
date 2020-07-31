@@ -16,15 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,7 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDHexUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "https?://(?:www\\.)?rtve\\.es/(?:alacarta/(?!audios/)videos/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" })
@@ -47,12 +52,12 @@ public class RtveEs extends PluginForHost {
      * (direct URLs) e.g.:
      * https://www.rtve.es/alacarta/audios/documentos-rne/documentos-rne-antoine-saint-exupery-conquista-del-cielo-20-03-20/4822098/
      */
-    private static final String TYPE_NORMAL = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
-    private static final String TYPE_SERIES = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
-    private String              dllink      = null;
-    private String              BLOWFISHKEY = "eWVMJmRhRDM=";
-    private String              dl_now_now  = null;
-    private boolean             geo_blocked = false;
+    private static final String TYPE_NORMAL         = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_SERIES         = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+    private String              dllink              = null;
+    private String              BLOWFISHKEY         = "eWVMJmRhRDM=";
+    private String              dl_not_possible_now = null;
+    private boolean             geo_blocked         = false;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,6 +100,20 @@ public class RtveEs extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(\\d+)/?.*?$").getMatch(0);
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
@@ -106,17 +125,35 @@ public class RtveEs extends PluginForHost {
         br.setFollowRedirects(true);
         String filename = null;
         if (use_api_for_availablecheck) {
-            final String fid = new Regex(link.getPluginPatternMatcher(), "/(\\d+)/?.*?$").getMatch(0);
+            final String fid = getFID(link);
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setLinkID(this.getHost() + "://" + fid);
             br.getPage(String.format("https://www.rtve.es/api/videos/%s.json", fid));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = PluginJSonUtils.getJson(br, "longTitle");
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/items/{0}");
+            final long publicationDateTimestamp = JavaScriptEngineFactory.toLong(entries.get("publicationDateTimestamp"), 0);
+            // final String publicationDate = (String) entries.get("publicationDate");
+            filename = (String) entries.get("longTitle");
             if (StringUtils.isEmpty(filename)) {
+                /* Fallback */
                 filename = fid;
+            }
+            if (publicationDateTimestamp > 0) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                final String formattedDate = formatter.format(new Date(publicationDateTimestamp));
+                filename = formattedDate + "_" + filename;
+            }
+            String description = (String) entries.get("description");
+            if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+                if (Encoding.isHtmlEntityCoded(description)) {
+                    description = Encoding.htmlDecode(description);
+                }
+                link.setComment(description);
             }
         } else {
             br.getPage(link.getPluginPatternMatcher());
@@ -143,9 +180,9 @@ public class RtveEs extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = Encoding.htmlDecode(filename.trim());
-            dl_now_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
-            if (dl_now_now != null) {
-                link.getLinkStatus().setStatusText("Server error: " + dl_now_now);
+            dl_not_possible_now = br.getRegex(">(Lunes a jueves a las \\d{2}\\.\\d{2} y \\d{2}\\.\\d{2} horas)<").getMatch(0);
+            if (dl_not_possible_now != null) {
+                link.getLinkStatus().setStatusText("Server error: " + dl_not_possible_now);
                 link.setName(filename + ".mp4");
                 return AvailableStatus.TRUE;
             }
@@ -182,10 +219,15 @@ public class RtveEs extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dllink != null && dllink.matches("https?://rtve-hlsvod\\.secure\\.footprint\\.net/resources/TE_NGVA/mp4/.*\\.mp4/playlist\\.m3u8")) {
+            /* 2020-07-31: Some content can be downloaded via http instead of via HLS --> Prefer to do that */
+            logger.info("Modify HLS downloadurl --> HTTP downloadurl");
+            dllink = dllink.replace("/playlist.m3u8", "");
+        }
         if (geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-        } else if (dl_now_now != null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_now_now);
+        } else if (dl_not_possible_now != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_not_possible_now);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
