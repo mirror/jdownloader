@@ -1196,6 +1196,7 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int currentOffset = 0;
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
+            /* TODO: Update this handling in case API handling ever gets fixed (see how it is done in website handling) */
             final UrlQuery query = UrlQuery.parse(this.CRYPTEDLINK_FUNCTIONAL);
             total_numberof_entries = Long.parseLong(query.get("maxoffset"));
             currentOffset = Integer.parseInt(query.get("currentoffset"));
@@ -1517,10 +1518,13 @@ public class VKontakteRu extends PluginForDecrypt {
         final int offset_increase = 10;
         String json_source = null;
         String postvalue_fixed = "";
-        if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
-            final UrlQuery query = UrlQuery.parse(this.CRYPTEDLINK_ORIGINAL);
-            total_numberof_entries = Long.parseLong(query.get("maxoffset"));
-            currentOffset = Integer.parseInt(query.get("currentoffset"));
+        final UrlQuery queryOriginalURL = UrlQuery.parse(this.CRYPTEDLINK_ORIGINAL);
+        final String urlMaxoffsetStr = queryOriginalURL.get("maxoffset");
+        final String urlCurrentOffsetStr = queryOriginalURL.get("currentoffset");
+        if (urlMaxoffsetStr != null && urlMaxoffsetStr.matches("\\d+") && urlCurrentOffsetStr != null && urlCurrentOffsetStr.matches("\\d+")) {
+            /* URL matches pattern: PATTERN_WALL_LOOPBACK_LINK */
+            total_numberof_entries = Long.parseLong(urlMaxoffsetStr);
+            currentOffset = Integer.parseInt(urlCurrentOffsetStr);
             logger.info("PATTERN_WALL_LOOPBACK_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         } else {
             if (ownerID == null) {
