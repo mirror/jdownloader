@@ -179,7 +179,7 @@ public class Ardmediathek extends PluginForDecrypt {
         final boolean addHLS576 = cfg.isGrabHLS576pVideoEnabled();
         final boolean addHLS720 = cfg.isGrabHLS720pVideoEnabled();
         final boolean addHLS1080 = cfg.isGrabHTTP1080pVideoEnabled();
-        grabHLS = addHLS180 || addHLS270lower || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS576 || addHLS720;
+        grabHLS = addHLS180 || addHLS270lower || addHLS270 || addHLS280 || addHLS360 || addHLS540 || addHLS576 || addHLS720 || addHLS1080;
         if (addHLS180) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("180") + "_180");
         }
@@ -203,6 +203,9 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (addHLS720) {
             selectedQualities.add("hls_" + heigth_to_bitrate.get("720") + "_720");
+        }
+        if (addHLS1080) {
+            selectedQualities.add("hls_" + heigth_to_bitrate.get("1080") + "_1080");
         }
         if (cfg.isGrabHTTP180pVideoEnabled()) {
             selectedQualities.add("http_" + heigth_to_bitrate.get("180") + "_180");
@@ -635,7 +638,11 @@ public class Ardmediathek extends PluginForDecrypt {
             final String broadcastedOn = (String) entries.get("broadcastedOn");
             final String ardtitle = (String) entries.get("title");
             final String showname = (String) JavaScriptEngineFactory.walkJson(entries, "show/title");
-            if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname)) {
+            final String type = (String) entries.get("type");
+            if ("player_live".equalsIgnoreCase(type)) {
+                logger.info("Cannot download livestreams");
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            } else if (StringUtils.isEmpty(broadcastedOn) || StringUtils.isEmpty(ardtitle) || StringUtils.isEmpty(showname) || StringUtils.isEmpty(type)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String date_formatted = new Regex(broadcastedOn, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
