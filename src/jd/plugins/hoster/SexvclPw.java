@@ -34,9 +34,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexvcl.com" }, urls = { "https?://(?:www\\.)?sexvcl\\.com/video/\\d+/[a-z0-9\\-]+" })
-public class SexvclCom extends PluginForHost {
-    public SexvclCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexvcl.pw" }, urls = { "https?://(?:www\\.)?sexvcl\\.pw/video/(\\d+)/[a-z0-9\\-]+" })
+public class SexvclPw extends PluginForHost {
+    public SexvclPw(PluginWrapper wrapper) {
         super(wrapper);
     }
     /* DEV NOTES */
@@ -60,7 +60,16 @@ public class SexvclCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "video/(\\d+)").getMatch(0);
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
