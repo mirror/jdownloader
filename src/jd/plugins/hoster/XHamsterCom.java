@@ -27,15 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,6 +52,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -866,11 +866,10 @@ public class XHamsterCom extends PluginForHost {
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
                         this.setDownloadLink(dummyLink);
                     }
-                    final String sitekey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
                     final String recaptchaV2Response;
-                    if (!StringUtils.isEmpty(sitekey)) {
+                    if (true) {
                         /* 2020-07-29: Invisible reCaptcha is used from now on. */
-                        recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, this.br, sitekey).getToken();
+                        recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, this.br, null).getToken();
                     } else {
                         recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     }
