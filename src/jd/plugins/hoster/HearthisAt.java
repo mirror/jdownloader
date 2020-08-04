@@ -90,7 +90,12 @@ public class HearthisAt extends PluginForHost {
         }
         if (isDownload) {
             /* Doing this during linkcheck would take a lot of time! */
-            final String externalDownloadURL = br.getRegex("<a class=\"btn btn-external no-ajaxloader\"\\s*href=\"(https://[^\"]+)\"[^>]+ title=\"DOWNLOAD\"").getMatch(0);
+            String externalDownloadURL = br.getRegex("<a class=\"btn btn-external no-ajaxloader\"\\s*href=\"(https://[^\"]+)\"[^>]+ title=\"(?:FREE )?DOWNLOAD\"").getMatch(0);
+            externalDownloadURL = null;
+            if (externalDownloadURL == null) {
+                /* 2020-08-04: More wide open attempt e.g. doesn't matter what's the "name of their download button". */
+                externalDownloadURL = br.getRegex("<a class=\"btn btn-external no-ajaxloader\"\\s*href=\"(https://[^\"]+)\"[^>]+ title=\"").getMatch(0);
+            }
             if (externalDownloadURL != null) {
                 logger.info("Seems like official download is available");
                 br.getPage(externalDownloadURL);

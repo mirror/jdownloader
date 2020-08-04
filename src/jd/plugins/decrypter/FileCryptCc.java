@@ -24,6 +24,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,17 +60,6 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -330,7 +330,7 @@ public class FileCryptCc extends PluginForDecrypt {
         logger.info("Trying single link handling");
         final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
-            if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert.")) {
+            if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -339,9 +339,6 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.setCookie(this.getHost(), "BetterJsPopCount", "1");
         for (final String singleLink : links) {
-            if (isAbort()) {
-                break;
-            }
             final Browser br2 = br.cloneBrowser();
             br2.getPage("/Link/" + singleLink + ".html");
             if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.(cc|co)/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
@@ -403,6 +400,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 fp.add(link);
             }
             distribute(link);
+            if (isAbort()) {
+                break;
+            }
         }
         return decryptedLinks;
     }
