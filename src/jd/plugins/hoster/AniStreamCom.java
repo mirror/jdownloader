@@ -23,6 +23,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -123,5 +124,26 @@ public class AniStreamCom extends XFileSharingProBasic {
             super.scanInfo(fileInfo);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            /* 2020-08-04 */
+            offline = new Regex(correctedBR, ">\\s*File deleted|>\\s*This file is not available anymore").matches();
+        }
+        return offline;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        String dllink = super.getDllink(link, account, br, src);
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2020-08-04 */
+            dllink = "/manifest-" + this.fuid + ".m3u8";
+            logger.info("Fallback to static downloadurl: " + dllink);
+        }
+        return dllink;
     }
 }

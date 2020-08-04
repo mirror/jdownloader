@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porntrex.com" }, urls = { "https?://(?:www\\.)?porntrex\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porntrex.com" }, urls = { "https?://(?:www\\.)?porntrex\\.com/video/(\\d+)/([a-z0-9\\-]+)/?" })
 public class PorntrexCom extends PluginForHost {
     public PorntrexCom(PluginWrapper wrapper) {
         super(wrapper);

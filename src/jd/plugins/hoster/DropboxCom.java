@@ -147,7 +147,20 @@ public class DropboxCom extends PluginForHost {
                     if (con.getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (con.getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        /*
+                         * Check if the content is offline or just is not downloadable (e.g. owner has disabled download button - can only
+                         * be downloaded by himself or other users with appropriate rights.)
+                         */
+                        br.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
+                        if (br.getHttpConnection().getResponseCode() == 403) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else {
+                            /*
+                             * 2020-08-04: Rare case: Content is available not not (officially) downloadable. For images, in theory a
+                             * thumbnail might sometimes be downloadable.
+                             */
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
+                        }
                     } else if (con.getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (con.getResponseCode() == 460) {

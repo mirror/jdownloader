@@ -68,7 +68,8 @@ public class MagentaMusik360 extends PluginForDecrypt {
                     }
                     final Browser br2 = br.cloneBrowser();
                     br2.getPage(href);
-                    final String src = Encoding.htmlOnlyDecode(br2.getRegex("src\\s*=\\s*\"(https?://.*?m3u8(\\?yospace=true)?)\"").getMatch(0));
+                    /* 2020-08-04: Their HLS master URLs can e.g. contain parameters like commonly "?yospace=true" */
+                    final String src = Encoding.htmlOnlyDecode(br2.getRegex("src\\s*=\\s*\"(https?://.*?m3u8[^\"]*)\"").getMatch(0));
                     if (src == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -108,7 +109,7 @@ public class MagentaMusik360 extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(streamingXMLUrl);
-            final String hls_master = br.getRegex("\"(https?://[^<>\"]+\\.m3u8)\"").getMatch(0);
+            final String hls_master = br.getRegex("\"(https?://[^<>\"]+\\.m3u8[^\"]*)\"").getMatch(0);
             if (hls_master == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

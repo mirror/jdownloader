@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -257,7 +260,12 @@ public class CloudMailRu extends PluginForHost {
                     /* Usually this should not be needed! */
                     logger.info("Trying to find dataserver");
                     br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
-                    dataserver = br.getRegex("\"url\":\"(https?://[a-z0-9]+\\.[^/]+/weblink/)view/\"").getMatch(0);
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "body/weblink_get/{0}/url");
+                    /*
+                     * 2020-08-04: Use of static host is also possible: e.g.
+                     * https://github.com/Friday14/mailru-cloud-php/blob/master/src/Cloud.php
+                     */
                 }
                 if (dataserver != null) {
                     /* TODO: Check for encoding problems here! */
@@ -269,7 +277,7 @@ public class CloudMailRu extends PluginForHost {
                     /* 2020-06-18: Don't touch this - it magically works! */
                     encoded_unique_id = encoded_unique_id.replace("%2F", "/");
                     encoded_unique_id = encoded_unique_id.replace("+", "%20");
-                    dllink = dataserver + "get/" + encoded_unique_id;
+                    dllink = dataserver + "/" + encoded_unique_id;
                     if (!StringUtils.isEmpty(token)) {
                         dllink += "?key=" + token;
                     }
