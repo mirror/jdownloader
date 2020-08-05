@@ -419,9 +419,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
          * # BY DEFAULT (website): pl=mon,flash,native,silverlight<br />
          * # A stream will be returned depending on the UA (and pl parameter?)<br />
          */
-        String string = "http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=56";
-        logger.info("calling relinkServletUrl: " + string);
-        br.getPage(string);
+        final String url = "http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=56";
+        logger.info("calling relinkServletUrl: " + url);
+        br.getPage(url);
     }
 
     private void decryptRelinker(final String relinker_url, String title, String extension, final FilePackage fp, final String description) throws Exception {
