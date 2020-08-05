@@ -54,7 +54,7 @@ public class RaiTv extends PluginForHost {
     private String              dllink                               = null;
     private boolean             possibleNotDownloadableMSSilverlight = false;
 
-    private Browser prepBR(final Browser br) {
+    private Browser prepBrowser(final Browser br) {
         br.setFollowRedirects(true);
         return br;
     }
@@ -70,7 +70,7 @@ public class RaiTv extends PluginForHost {
         dllink = null;
         possibleNotDownloadableMSSilverlight = false;
         this.setBrowserExclusive();
-        prepBR(this.br);
+        prepBrowser(this.br);
         this.br.getPage(link.getDownloadURL());
         /* Do NOT use value of "videoURL_MP4" here! */
         /* E.g. http://www.rai.tv/dl/RaiTV/programmi/media/ContentItem-70996227-7fec-4be9-bc49-ba0a8104305a.html */
@@ -218,27 +218,15 @@ public class RaiTv extends PluginForHost {
          */
         /* Rai.tv android app User-Agent - not necessarily needed! */
         // br.getHeaders().put("User-Agent", "Apache-HttpClient/UNAVAILABLE (java 1.4)");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0");
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:67.0) Gecko/20100101 Firefox/67.0");
+        // User-Agent MUST NOT never change across the requests
         return br;
     }
 
-    public static void accessCont(final Browser br, final String cont) throws IOException {
-        /**
-         * # output=20 url in body<br />
-         * # output=23 HTTP 302 redirect<br />
-         * # output=25 url and other parameters in body, space separated<br />
-         * # output=44 XML (not well formatted) in body<br />
-         * # output=45 XML (website standard) in body<br />
-         * # output=47 json in body<br />
-         * # pl=native,flash,silverlight<br />
-         * # BY DEFAULT (website): pl=mon,flash,native,silverlight<br />
-         * # A stream will be returned depending on the UA (and pl parameter?)<br />
-         */
-        br.getPage("http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=45&pl=native,flash,silverlight&_=" + System.currentTimeMillis());
-    }
+
 
     public static String getDllink(final Browser br) {
-        String dllink = br.getRegex("<url type=\"content\">([^<>\"]+)<").getMatch(0);
+        String dllink = br.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\=~\\*]+)]]>").getMatch(0);
         if (dllink != null && dllink.startsWith("mms://")) {
             /* Convert mms to http */
             dllink = dllink.replace("mms://", "http://");

@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,6 +26,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,12 +46,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rai.tv" }, urls = { "https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|raiyoyo\\.rai\\.it)/.+day=\\d{4}\\-\\d{2}\\-\\d{2}.*|https?://[A-Za-z0-9\\.]*?(?:rai\\.tv|rai\\.it|raiplay\\.it)/.+\\.html|https?://(?:www\\.)?raiplay\\.it/programmi/[^/]+/[^/]+" })
 public class RaiItDecrypter extends PluginForDecrypt {
@@ -241,14 +242,15 @@ public class RaiItDecrypter extends PluginForDecrypt {
         if (this.parameter.matches(TYPE_CONTENTITEM)) {
             content_id_from_url = new Regex(this.parameter, "(\\-[a-f0-9\\-]+)\\.html$").getMatch(0);
         }
-        if (dllink == null) {
-            dllink = findRelinkerUrl();
-        }
         title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+) \\- video \\- RaiPlay\"").getMatch(0);
         if (title == null) {
             title = this.br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         }
         date = this.br.getRegex("content=\"(\\d{4}\\-\\d{2}\\-\\d{2}) \\d{2}:\\d{2}:\\d{2}\" property=\"gen\\-date\"").getMatch(0);
+        if (date == null) {
+            /* 2020-02-18: New */
+            date = this.br.getRegex("<meta property=\"data\" content=\"(\\d{2}-\\d{2}-\\d{4})\"").getMatch(0);
+        }
         /* 2017-05-02: Avoid the same string multiple times in filenames. */
         final String name_show = this.br.getRegex("<meta property=\"nomeProgramma\" content=\"([^<>\"]+)\"/>").getMatch(0);
         final String name_episode = this.br.getRegex("<meta property=\"programma\" content=\"([^<>\"]+)\"/>").getMatch(0);
@@ -259,6 +261,9 @@ public class RaiItDecrypter extends PluginForDecrypt {
         seasonnumber = br.getRegex("class=\"subtitle\\-spacing\">St (\\d+)</span>").getMatch(0);
         final String contentset_id = this.br.getRegex("var[\t\n\r ]*?urlTop[\t\n\r ]*?=[\t\n\r ]*?\"[^<>\"]+/ContentSet([A-Za-z0-9\\-]+)\\.html").getMatch(0);
         final String content_id_from_html = this.br.getRegex("id=\"ContentItem(\\-[a-f0-9\\-]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = findRelinkerUrl();
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || (contentset_id == null && content_id_from_html == null && dllink == null)) {
             /* Probably not a video/offline */
             decryptedLinks.add(this.createOfflinelink(this.parameter));
@@ -401,6 +406,24 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return count;
     }
 
+    public void accessCont(final Browser br, final String cont) throws IOException {
+        /**
+         * # output=20 url in body<br />
+         * # output=23 HTTP 302 redirect<br />
+         * # output=25 url and other parameters in body, space separated<br />
+         * # output=44 XML (not well formatted) in body<br />
+         * # output=45 XML (website standard) in body<br />
+         * # output=47 json in body<br />
+         * # output=56 XML (with CDATA) in body<br />
+         * # pl=native,flash,silverlight<br />
+         * # BY DEFAULT (website): pl=mon,flash,native,silverlight<br />
+         * # A stream will be returned depending on the UA (and pl parameter?)<br />
+         */
+        String string = "http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=" + cont + "&output=56";
+        logger.info("calling relinkServletUrl: " + string);
+        br.getPage(string);
+    }
+
     private void decryptRelinker(final String relinker_url, String title, String extension, final FilePackage fp, final String description) throws Exception {
         String dllink = relinker_url;
         if (extension != null && extension.equalsIgnoreCase("wmv")) {
@@ -413,7 +436,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
             }
             /* Drop previous Headers & Cookies */
             this.br = jd.plugins.hoster.RaiTv.prepVideoBrowser(new Browser());
-            jd.plugins.hoster.RaiTv.accessCont(this.br, cont);
+            accessCont(this.br, cont);
             if (this.br.containsHTML("video_no_available\\.mp4")) {
                 /* Offline/Geo-Blocked */
                 /* XML response with e.g. this (and some more): <url>http://download.rai.it/video_no_available.mp4</url> */
@@ -427,6 +450,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                 return;
             }
             dllink = jd.plugins.hoster.RaiTv.getDllink(this.br);
+            logger.info("found m3u8: " + dllink);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -448,9 +472,11 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Convert hds --> hls */
             dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
         }
-        final String[][] bitrates = { { "1800", "_1800.mp4" }, { "800", "_800.mp4" } };
+        final String[][] bitrates = { { "2400", "_2400.mp4" }, { "1800", "_1800.mp4" }, { "1200", "_1200.mp4" }, { "700", "_700.mp4" } };
         String bitrate = null;
         if (dllink.contains(".m3u8")) {
+            // maybe something like this?
+            // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
             final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
             if (http_url_part != null) {
                 /*
@@ -467,18 +493,23 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     }
                     decryptedLinks.add(dl);
                 }
-            }
-            this.br.getPage(dllink);
-            final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
-            for (final HlsContainer singleHlsQuality : allqualities) {
-                final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getDownloadurl());
-                final String filename = title + "_" + singleHlsQuality.getStandardFilename();
-                dl.setFinalFileName(filename);
-                dl._setFilePackage(fp);
-                if (description != null) {
-                    dl.setComment(description);
+            } else {
+                this.br.getPage(dllink);
+                if (br.getRegex("Access Denied").matches()) {
+                    logger.severe("Access denied! The hmac is corrupt, maybe. Try to set a coherent User-Agent.");
                 }
-                decryptedLinks.add(dl);
+                final List<HlsContainer> allqualities = HlsContainer.getHlsQualities(this.br);
+                for (final HlsContainer singleHlsQuality : allqualities) {
+                    logger.info("found quality: " + singleHlsQuality.getStreamURL());
+                    final DownloadLink dl = this.createDownloadlink(singleHlsQuality.getStreamURL());
+                    final String filename = title + "_" + singleHlsQuality.getStandardFilename();
+                    dl.setFinalFileName(filename);
+                    dl._setFilePackage(fp);
+                    if (description != null) {
+                        dl.setComment(description);
+                    }
+                    decryptedLinks.add(dl);
+                }
             }
         } else {
             /* Single http url --> We can sometimes grab multiple qualities */
@@ -532,7 +563,13 @@ public class RaiItDecrypter extends PluginForDecrypt {
         return formattedDate;
     }
 
-    private String findRelinkerUrl() {
-        return this.br.getRegex("(//mediapolisvod\\.rai\\.it/relinker/relinkerServlet\\.htm\\?cont=[A-Za-z0-9]+)").getMatch(0);
+    private String findRelinkerUrl() throws Exception {
+        String jsonUrl = this.br.getRegex("data-video-json=\"(\\/video\\/[-\\/A-Za-z0-9]+.json)\"").getMatch(0);
+        logger.info("found jsonUrl: " + jsonUrl);
+        this.br.getPage("https://www.raiplay.it" + jsonUrl);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        String relinkServletUrl = (String) ((LinkedHashMap<String, Object>) entries.get("video")).get("content_url");
+        logger.info("found relinkServletUrl: " + relinkServletUrl);
+        return relinkServletUrl;
     }
 }
