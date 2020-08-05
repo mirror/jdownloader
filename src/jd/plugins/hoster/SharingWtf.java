@@ -190,6 +190,9 @@ public class SharingWtf extends YetiShareCore {
         if (errorMsg != null) {
             if (errorMsg.matches("You must be a registered member account to download files more than.+")) {
                 throw new AccountRequiredException(errorMsg);
+            } else if (errorMsg.matches("You need to be a member to download.*")) {
+                /* 2020-08-05: Different premiumonly error */
+                throw new AccountRequiredException(errorMsg);
             }
         }
         super.checkErrors(link, account);

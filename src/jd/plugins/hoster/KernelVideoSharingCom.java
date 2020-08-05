@@ -82,7 +82,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
                 "https?://(?:www\\.)?kvs\\-demo\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?hotmovs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cartoontube\\.xxx/(?:video\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?updatetube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?thenewporn\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pinkrod\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hotshame\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?myxvids\\.com/(videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?wetplace\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+",
-                "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?anon\\-v\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?javwhores\\.com/video/\\d+/[a-z0-9\\-]+/?",
+                "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?anon\\-v\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?",
                 "https?://(?:www\\.)?analdin\\.com/(?:[a-z]{2}/)?(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?xozilla\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/|https?://vr\\.pornhat\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?porndr\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/", "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/",
                 "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?momvids\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?everydayporn\\.co/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cutscenes\\.net/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?boundhub\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)",
                 "https?://(?:www\\.)?yourporngod\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngo\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+", "https?://(?:www\\.)?dato\\.porn/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?rule34video\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camwhoreshd\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?videowebcam\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html",
@@ -420,17 +420,34 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dllink = br.getRegex("flashvars\\.video_html5_url\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (inValidate(dllink, plugin)) {
-            // xxxymovies.com
+            /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
+            /*
+             * This will NOT e.g. work for: video_url_text: 'High Definition' --> E.g. xxxymovies.com --> But this one only has one quality
+             * available
+             */
+            /* Example website wi */
+            int maxQuality = 0;
+            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+)p'").getMatches();
+            for (final String[] vidInfo : videoInfos) {
+                final String varNameText = vidInfo[0];
+                final String videoQualityStr = vidInfo[1];
+                final int videoQuality = Integer.parseInt(videoQualityStr);
+                if (videoQuality > maxQuality) {
+                    final String varNameVideoURL = varNameText.replace("_text", "");
+                    maxQuality = videoQuality;
+                    dllink = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
+                }
+            }
+        }
+        if (inValidate(dllink, plugin)) {
+            // E.g. xxxymovies.com, javbangers.com
             dllink = br.getRegex("video_url\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
-            // HD javwhores
-            dllink = br.getRegex("video_alt_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
-        }
-        if (inValidate(dllink, plugin)) {
-            /* RegEx for "older" KVS versions, example for website with relative URL: sex3.com */
-            dllink = br.getRegex("video_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
-        }
+        /* 2020-08-05: TODO: The following 4 lines should not be needed anymore. Remove them on next cleanup. */
+        // if (inValidate(dllink, plugin)) {
+        // // HD javbangers.com
+        // dllink = br.getRegex("video_alt_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
+        // }
         if (inValidate(dllink, plugin)) {
             // function/0/http camwheres, pornyeah - find best quality
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
