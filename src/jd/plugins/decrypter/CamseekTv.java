@@ -13,45 +13,47 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otr\\.de/\\?file=[^<>\"/]*?\\.otrkey" }) 
-public class MegaOtrDe extends PluginForDecrypt {
-
-    public MegaOtrDe(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "camseek.tv" }, urls = { "https?://(?:www\\.)?camseek\\.tv/videos/(\\d+)/([a-z0-9\\-]+)/?" })
+public class CamseekTv extends PornEmbedParser {
+    public CamseekTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** E.g. more domains: xvirgo.com */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
+        final String filename = new Regex(parameter, this.getSupportedLinks()).getMatch(1).replace("-", " ");
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.size() == 0) {
+            /* Probably selfhosted content */
+            final DownloadLink dl = this.createDownloadlink(parameter);
+            if (jd.plugins.hoster.KamababaCom.isOffline(this.br)) {
+                dl.setAvailable(false);
+            } else {
+                dl.setAvailable(true);
             }
-            return decryptedLinks;
+            dl.setName(filename + ".mp4");
+            decryptedLinks.add(dl);
         }
-        final String externURL = br.getRegex("<p>1-Klick Hoster: </p>[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (externURL != null) {
-            decryptedLinks.add(createDownloadlink(externURL));
-            return decryptedLinks;
-        }
-        decryptedLinks.add(createDownloadlink(parameter.replace("mega-otr.de/", "mega-otrdecrypted.de/")));
-
         return decryptedLinks;
     }
 
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
+    }
 }
