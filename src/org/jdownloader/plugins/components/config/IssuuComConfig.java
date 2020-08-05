@@ -11,7 +11,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "issuu.com", type = Type.HOSTER)
 public interface IssuuComConfig extends PluginConfigInterface {
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry("Prefer to download images even if PDF download is available?")
     @Order(30)
     boolean isPreferImagesOverPDF();

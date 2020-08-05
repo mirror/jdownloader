@@ -131,15 +131,24 @@ public class SourceForgeNet extends PluginForHost {
                             return null;
                         }
                         con = brc.openHeadConnection(finallink);
-                        if (con.getContentType().contains("html")) {
+                        if (con.getContentType().contains("text")) {
                             logger.info("finallink is no file, continuing...");
-                            brc.followConnection();
+                            try {
+                                brc.followConnection(true);
+                            } catch (IOException e) {
+                                logger.log(e);
+                            }
                             continue;
                         } else if (con.getResponseCode() == 200) {
                             dllink = finallink;
                             link.setDownloadSize(con.getCompleteContentLength());
                             break;
                         } else {
+                            try {
+                                brc.followConnection(true);
+                            } catch (IOException e) {
+                                logger.log(e);
+                            }
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }
@@ -181,36 +190,39 @@ public class SourceForgeNet extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+        if (!dl.getConnection().isOK() || dl.getConnection().getContentType().contains("text")) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (con.getResponseCode() != 200 || con.getContentType().contains("text") || con.getCompleteContentLength() == -1) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 link.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
                 try {
                     con.disconnect();
@@ -218,7 +230,7 @@ public class SourceForgeNet extends PluginForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
