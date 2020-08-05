@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.plugins.components.config.IssuuComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" })
 public class IssuuCom extends PluginForHost {
@@ -121,7 +121,9 @@ public class IssuuCom extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -135,11 +137,7 @@ public class IssuuCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
@@ -173,7 +171,7 @@ public class IssuuCom extends PluginForHost {
             /* TODO: Find errorcode for this */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
         }
-        String dllink = br.getRegex("\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"url\":\"(https?://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -184,7 +182,11 @@ public class IssuuCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

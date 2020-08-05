@@ -18,10 +18,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "https?://(?:www\\.)?issuu\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_\\.]+|https?://e\\.issuu\\.com/embed\\.html#\\d+/\\d+" })
 public class IssuuCom extends PluginForDecrypt {
@@ -67,7 +68,7 @@ public class IssuuCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("http://s3.amazonaws.com/document.issuu.com/" + documentID + "/document.xml");
+        br.getPage("https://s3.amazonaws.com/document.issuu.com/" + documentID + "/document.xml");
         final String username = br.getRegex("username=\"([^<>\"]*?)\"").getMatch(0);
         final String rareTitle = br.getRegex("title=\"([^<>\"]*?)\"").getMatch(0);
         String originalDocName = br.getRegex("orgDocName=\"([^<>\"]*?)\"").getMatch(0);
@@ -84,7 +85,7 @@ public class IssuuCom extends PluginForDecrypt {
         }
         final String general_naming = Encoding.htmlDecode(rareTitle.trim()) + " by " + Encoding.htmlDecode(username.trim()) + " [" + originalDocName + "] (" + pageInfos.length + " pages)";
         final boolean preferImagesOverPDF = cfg.isPreferImagesOverPDF();
-        if (br.containsHTML("downloadable=\"true\"") && !preferImagesOverPDF) {
+        if (AccountController.getInstance().hasAccount(getHost(), Boolean.TRUE, Boolean.TRUE, null, null) && br.containsHTML("downloadable=\"true\"") && !preferImagesOverPDF) {
             final DownloadLink mainDownloadlink = createDownloadlink(parameter.replace("issuu.com/", "issuudecrypted.com/"));
             mainDownloadlink.setAvailable(true);
             final String pdfName = general_naming + ".pdf";
@@ -93,7 +94,7 @@ public class IssuuCom extends PluginForDecrypt {
             decryptedLinks.add(mainDownloadlink);
         } else {
             for (int i = 1; i <= pageInfos.length; i++) {
-                final DownloadLink dl = createDownloadlink("http://image.issuu.com/" + documentID + "/jpg/page_" + i + ".jpg");
+                final DownloadLink dl = createDownloadlink("https://image.issuu.com/" + documentID + "/jpg/page_" + i + ".jpg");
                 dl.setFinalFileName("page_" + df.format(i) + ".jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
