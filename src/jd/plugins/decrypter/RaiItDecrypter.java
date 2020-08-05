@@ -475,6 +475,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
         final String[][] bitrates = { { "2400", "_2400.mp4" }, { "1800", "_1800.mp4" }, { "1200", "_1200.mp4" }, { "700", "_700.mp4" } };
         String bitrate = null;
         if (dllink.contains(".m3u8")) {
+            /* 2020-08-05: psp: HLS --> HTTP URL conversion doesn't work anymore with "newer content" URLs ... */
             // maybe something like this?
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
             final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
