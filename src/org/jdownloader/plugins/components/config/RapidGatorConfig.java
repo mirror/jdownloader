@@ -31,6 +31,18 @@ public interface RapidGatorConfig extends PluginConfigInterface {
 
     void setEnableAPIPremium(boolean b);
 
+    /**
+     * 2020-08-05: Resume in free mode is sometimes working, sometimes not. This setting allows users to disable resuming so they e.g.
+     * always get the "non resumable downloads active" warning when stopping their downloads.
+     */
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Attempt to resume stopped downloads in free (& free-account) mode? Rapidgator sometimes allows resume in free mode for some files and sometimes doesn't.")
+    @Order(21)
+    boolean isEnableResumeFree();
+
+    void setEnableResumeFree(boolean b);
+
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("EXPERIMENTAL_ENFORCE_SSL")

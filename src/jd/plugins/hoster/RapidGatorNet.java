@@ -547,12 +547,25 @@ public class RapidGatorNet extends antiDDoSForHost {
             // 2020-05-27, rapidgator now advertises that it doesn't support resume for free accounts
             // 2020-07-14: Resume works in free mode for most of all files. For some, server may return an "X-Error" header with the content
             // "Unexpected range request" - see code below.
-            final boolean resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+            final boolean resume;
+            if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableResumeFree()) {
+                logger.info("Resume enabled by user");
+                resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+            } else {
+                logger.info("Resume disabled by user");
+                resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false);
+            }
+            /*
+             * More loggers - e.g. if resume has been attempted but was disabled via property PROPERTY_RESUMEABLE --> Resumability can
+             * differ no matter which setting the user has chosen!
+             */
+            if (resume) {
+                logger.info("Resume enabled for this download");
+            } else {
+                logger.info("Resume disabled for this download");
+            }
             /* E.g. when directurl was re-used successfully, download is already ready to be started! */
             if (dl == null) {
-                if (!resume) {
-                    logger.info("Resume disabled for this download");
-                }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
             }
             /* 2020-03-17: Content-Disposition should always be given */
