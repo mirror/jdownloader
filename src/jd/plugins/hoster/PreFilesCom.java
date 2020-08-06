@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -27,9 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PreFilesCom extends XFileSharingProBasic {
@@ -133,9 +133,9 @@ public class PreFilesCom extends XFileSharingProBasic {
     protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-07-03: Special */
         super.checkErrors(link, account, checkAll);
-        if (new Regex(correctedBR, ">Your subsequent download will be started in").matches()) {
+        final String wait = new Regex(correctedBR, ">\\s*Your subsequent download will be started in([^<>]+)").getMatch(0);
+        if (wait != null) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String wait = new Regex(correctedBR, ">Your subsequent download will be started in([^<>]+)").getMatch(0);
             String tmphrs = new Regex(wait, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
