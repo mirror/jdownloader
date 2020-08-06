@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/video/[^<>\"]+(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "https?://(?:www\\.)?stileproject\\.com/video/([a-z0-9\\-]+)-(\\d+)\\.html" })
 public class StileProjectCom extends PluginForHost {
     private String  dllink        = null;
     private boolean server_issues = false;
@@ -58,11 +59,16 @@ public class StileProjectCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
+
+    private String getURLTitle(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", "http://www.stileproject.com/");
@@ -74,7 +80,7 @@ public class StileProjectCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
         if (filename == null) {
             /* Fallback */
-            filename = this.getFID(link);
+            filename = getURLTitle(link).replace("-", " ");
         }
         // String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+).html$").getMatch(0);
         // String embedURL = "https://www.stileproject.com/embed/" + fid;
@@ -92,7 +98,7 @@ public class StileProjectCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -125,6 +131,9 @@ public class StileProjectCom extends PluginForHost {
     // Same code as for CelebrityCuntNet
     private void getdllink() throws Exception {
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)[^<>]+type='video/mp4'").getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = br.getRegex("var desktopFile\\s*=\\s*'(https?://[^<>\"\\']+)").getMatch(0);
+        }
         if (dllink == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
             final String type = videoMETA.getMatch(0);

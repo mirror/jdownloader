@@ -2,6 +2,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
@@ -11,9 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "limitsizamca.org" }, urls = { "https?://(?:www\\.)?limitsizamca.org/koruma\\.php\\?id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "limitsizamca.org" }, urls = { "https?://(?:www\\.)?(?:limitsizamca\\.org|filmoyunindir\\.com)/koruma\\.php\\?id=(\\d+)" })
 public class LimitsizamcaOrg extends antiDDoSForDecrypt {
     public LimitsizamcaOrg(PluginWrapper wrapper) {
         super(wrapper);

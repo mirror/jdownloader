@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me|net)/manga/[\\w\\-\\.\\%]+/i\\d+/v\\d+/c\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me|net)/manga/[\\w\\-\\.\\%]+/i\\d+/c\\d+" })
 public class MangaparkCom extends PluginForDecrypt {
     /**
      * @author raztoki & pspzockerscene

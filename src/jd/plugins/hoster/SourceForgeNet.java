@@ -159,7 +159,7 @@ public class SourceForgeNet extends PluginForHost {
                     }
                 }
                 if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any usable mirror", 1 * 60 * 1000l);
                 }
                 link.setProperty("finallink", dllink);
             }
