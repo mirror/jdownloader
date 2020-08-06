@@ -20,7 +20,6 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -30,8 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "vid2c.com", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "bestporntube.me", "sweetkiss.me", "freepornvideo.me" }, urls = { "https?://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?vid2c\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+",
-        "https?://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?bestporntube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvideo\\.me/video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "sweetkiss.me" }, urls = { "https?://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+",
+        "https?://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+" })
 public class UnknownPornScript3 extends antiDDoSForHost {
     public UnknownPornScript3(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,13 +50,10 @@ public class UnknownPornScript3 extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().contains("bestporntube")) {
-            maxchunks = 1;
-        }
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getURL().contains("?m=e") || !br.getURL().contains("/video") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -68,7 +64,7 @@ public class UnknownPornScript3 extends antiDDoSForHost {
         if (filename == null) {
             filename = br.getRegex("class=\"heading\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
-        dllink = checkDirectLink(downloadLink, "directlink");
+        dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             dllink = br.getRegex("\\'file\\': \\'(http[^<>\"]*?)\\'").getMatch(0);
         }
@@ -89,27 +85,23 @@ public class UnknownPornScript3 extends antiDDoSForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final long fsize = con.getLongContentLength();
+            con = br2.openHeadConnection(dllink);
+            final long fsize = con.getCompleteContentLength();
             if (fsize == 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(fsize);
+                link.setDownloadSize(fsize);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
+            link.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -120,9 +112,9 @@ public class UnknownPornScript3 extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -135,19 +127,19 @@ public class UnknownPornScript3 extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {

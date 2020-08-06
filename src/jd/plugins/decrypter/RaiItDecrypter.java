@@ -565,7 +565,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
     }
 
     private String findRelinkerUrl() throws Exception {
-        String jsonUrl = this.br.getRegex("data-video-json=\"(\\/video\\/[-\\/A-Za-z0-9]+.json)\"").getMatch(0);
+        String jsonUrl = this.br.getRegex("data-video-json=\"(/video/[-\\/A-Za-z0-9]+\\.json)\"").getMatch(0);
         logger.info("found jsonUrl: " + jsonUrl);
         this.br.getPage("https://www.raiplay.it" + jsonUrl);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
