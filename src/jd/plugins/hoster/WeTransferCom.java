@@ -108,6 +108,7 @@ public class WeTransferCom extends PluginForHost {
             final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
             final Map<String, Object> map = new HashMap<String, Object>();
             map.put("security_hash", security_hash);
+            map.put("intent", "single_file");
             map.put("file_ids", Arrays.asList(new String[] { id_single }));
             if (recipient_id.length == 4) {
                 map.put("recipient_id", recipient_id[2]);
