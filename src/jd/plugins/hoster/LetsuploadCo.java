@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LetsuploadCo extends YetiShareCore {
@@ -45,7 +45,7 @@ public class LetsuploadCo extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "letsupload.to", "letsupload.co" });
+        ret.add(new String[] { "letsupload.io", "letsupload.to", "letsupload.co" });
         return ret;
     }
 
