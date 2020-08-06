@@ -13,15 +13,20 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,14 +38,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rai.tv" }, urls = { "https?://rai_host_plugin_notneeded_at_the_moment" })
 public class RaiTv extends PluginForHost {
-
     public RaiTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -115,7 +114,6 @@ public class RaiTv extends PluginForHost {
                     entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                     ressourcelist = (ArrayList<Object>) entries.get("list");
                 }
-
                 if (content_id_from_url == null) {
                     /* Hm probably not a video */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -223,10 +221,8 @@ public class RaiTv extends PluginForHost {
         return br;
     }
 
-
-
     public static String getDllink(final Browser br) {
-        String dllink = br.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\=~\\*]+)]]>").getMatch(0);
+        String dllink = br.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
         if (dllink != null && dllink.startsWith("mms://")) {
             /* Convert mms to http */
             dllink = dllink.replace("mms://", "http://");
@@ -234,8 +230,8 @@ public class RaiTv extends PluginForHost {
         return dllink;
     }
 
-    public static String getContFromRelinkerUrl(final String relinker) {
-        return new Regex(relinker, "cont=([^<>\"=\\&]+)").getMatch(0);
+    public static String getContFromRelinkerUrl(final String relinker) throws MalformedURLException {
+        return UrlQuery.parse(relinker).get("cont");
     }
 
     public static boolean dllinkIsDownloadable(final String dllink) {
@@ -286,5 +282,4 @@ public class RaiTv extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }
