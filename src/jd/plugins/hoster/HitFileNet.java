@@ -21,13 +21,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.plugins.HostPlugin;
+
 import org.jdownloader.plugins.components.TurbobitCore;
 import org.jdownloader.plugins.components.config.TurbobitCoreConfigHitfileNet;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-
-import jd.PluginWrapper;
-import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class HitFileNet extends TurbobitCore {
@@ -36,7 +36,7 @@ public class HitFileNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[] domains = new String[] { "hitfile.net", "hil.to", "hitf.to" };
+    public static String[] domains = new String[] { "hitfile.net" };
 
     public static String[] getAnnotationNames() {
         return new String[] { domains[0] };
