@@ -37,6 +37,7 @@ public class PorntrexComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> dupes = new ArrayList<String>();
         final String parameter = param.toString();
         final String url_playlist_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         String fpName = url_playlist_name.replace("-", " ");
@@ -47,6 +48,7 @@ public class PorntrexComCrawler extends PluginForDecrypt {
         int addedItems = 0;
         final int minItemsPerPage = 4;
         final String url_base = parameter;
+        boolean hasNextPage = false;
         do {
             final UrlQuery thisQuery = query;
             thisQuery.add("from1", page + "");
@@ -62,6 +64,10 @@ public class PorntrexComCrawler extends PluginForDecrypt {
             }
             final String[] urls = br.getRegex("data-playlist-item=\"(https?://[^\"]*/video/\\d+/[a-z0-9\\-]+)\"").getColumn(0);
             for (final String url : urls) {
+                if (dupes.contains(url)) {
+                    continue;
+                }
+                dupes.add(url);
                 final DownloadLink dl = this.createDownloadlink(url);
                 final String url_name = new Regex(url, "([a-z0-9\\-]+)$").getMatch(0);
                 dl.setAvailable(true);
@@ -74,7 +80,8 @@ public class PorntrexComCrawler extends PluginForDecrypt {
                 addedItems++;
             }
             page++;
-        } while (addedItems >= minItemsPerPage && !this.isAbort());
+            hasNextPage = br.containsHTML("from1:0*" + page);
+        } while (addedItems >= minItemsPerPage && hasNextPage && !this.isAbort());
         return decryptedLinks;
     }
 }

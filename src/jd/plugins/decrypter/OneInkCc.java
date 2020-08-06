@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
@@ -40,6 +41,16 @@ public class OneInkCc extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        final Form captchaForm = br.getForm(0);
+        if (captchaForm != null && captchaForm.containsHTML("/captcha\\.php")) {
+            /* 2020-08-06: Added captcha support */
+            logger.info("Captcha required");
+            final String code = this.getCaptchaCode("/captcha.php", param);
+            captchaForm.put("captcha", Encoding.urlEncode(code));
+            br.submitForm(captchaForm);
+        } else {
+            logger.info("Captcha NOT required");
         }
         final String redirect = br.getRegex("function SkipAd\\(\\) \\{\\s*?window\\.location\\.href = \"(https?://1ink\\.info/[^\"]+)\"").getMatch(0);
         if (redirect != null) {
@@ -74,6 +85,11 @@ public class OneInkCc extends PluginForDecrypt {
         if (finallink == null || !finallink.startsWith("http")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        if (finallink.contains("_Link-Not-Found_")) {
+            /* 2020-08-06: E.g. https://1ink.cc/#_Link-Not-Found_# */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;

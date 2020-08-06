@@ -100,6 +100,7 @@ public class PornonodCom extends antiDDoSForHost {
                     server_issues = true;
                 } else {
                     link.setDownloadSize(con.getCompleteContentLength());
+                    this.dllink = con.getURL().toString();
                 }
             } finally {
                 try {
