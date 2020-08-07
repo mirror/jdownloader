@@ -31,7 +31,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -73,21 +72,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firefile.cc" }, urls = { "https?://firefile\\.cc/drive/s/[a-zA-Z0-9]+![a-zA-Z0-9]+" })
 public class FirefileCc extends PluginForHost {
-    private static Object DECRYPTLOCK = new Object();
-
-    private FirefileLink getLinkData(DownloadLink link) throws PluginException {
-        final Regex matches = new Regex(link.getDownloadURL(), "https?://firefile\\.cc/drive/s/([a-zA-Z0-9]+)!([a-zA-Z0-9]+)");
-        if (matches.getMatch(0) == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (matches.getMatch(1) == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final FirefileLink linkData = new FirefileLink();
-        linkData.setHash(matches.getMatch(0));
-        linkData.setKey(matches.getMatch(1));
-        return linkData;
-    }
-
+    private static Object         DECRYPTLOCK                = new Object();
     /** Settings stuff */
     private final String          USED_PLUGIN                = "usedPlugin";
     private final String          USE_TMP                    = "USE_TMP_V2";
@@ -130,11 +115,19 @@ public class FirefileCc extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(DownloadLink link) {
+        final String linkHash = link.getStringProperty("hash");
+        if (linkHash != null) {
+            return "firefile.cc://".concat(linkHash);
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final FirefileLink linkData = getLinkData(link);
-        link.setLinkID("firefilecc_" + linkData.getHash());
+        final FirefileLink linkData = FirefileLink.get(link);
         link.setProperty("hash", linkData.getHash());
-        link.setProperty("keyStr", linkData.getKey());
     }
 
     private byte[] decrypt(byte[] data, byte[] key, byte[] iv) throws Exception {
@@ -149,7 +142,7 @@ public class FirefileCc extends PluginForHost {
         return decrypted;
     }
 
-    private void decryptFile(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, final DownloadLink link, String keyString) throws Exception {
+    private void decryptFile(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, final DownloadLink link, String plainKey) throws Exception {
         final ShutdownVetoListener vetoListener = new ShutdownVetoListener() {
             @Override
             public long getShutdownVetoPriority() {
@@ -247,7 +240,6 @@ public class FirefileCc extends PluginForHost {
                         message.set("Decrypting");
                         fis = new FileInputStream(src);
                         try {
-                            String plainKey = (String) link.getProperty("keyStr");
                             FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
                             fos = new FileOutputStream(outputFile);
                             final BufferedOutputStream bos = new BufferedOutputStream(fos, 1024 * 1024);
@@ -324,14 +316,7 @@ public class FirefileCc extends PluginForHost {
         if (link.getDownloadCurrent() > 0 && !StringUtils.equalsIgnoreCase(getHost(), link.getStringProperty(USED_PLUGIN, null))) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot resume paritial loaded file!");
         }
-        final AvailableStatus available = requestFileInformation(link);
-        if (AvailableStatus.FALSE == available) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (AvailableStatus.TRUE != available) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
-        }
-        final String linkHash = (String) link.getProperty("hash");
-        final String linkKey = (String) link.getProperty("keyStr");
+        final FirefileLink linkData = FirefileLink.get(link);
         // check finished encrypted file. if the decryption interrupted - for whatever reason
         final String path = link.getFileOutput();
         final File src = new File(path);
@@ -354,7 +339,7 @@ public class FirefileCc extends PluginForHost {
                 // ready for decryption
                 decryptingDownloadLink = link;
                 try {
-                    decryptFile(path, encryptionDone, successfulFlag, link, linkKey);
+                    decryptFile(path, encryptionDone, successfulFlag, link, linkData.getKey());
                 } finally {
                     decryptingDownloadLink = null;
                 }
@@ -363,9 +348,6 @@ public class FirefileCc extends PluginForHost {
             }
             successfulFlag.set(false);
             try {
-                if (link.getProperty("hash") == null || linkKey == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
                 final String downloadURL = getDownloadLink(link);
                 if (downloadURL == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled error");
@@ -397,7 +379,7 @@ public class FirefileCc extends PluginForHost {
                 }
                 if (dl.startDownload()) {
                     if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
-                        decryptFile(path, encryptionDone, successfulFlag, link, linkKey);
+                        decryptFile(path, encryptionDone, successfulFlag, link, linkData.getKey());
                     }
                 }
             } catch (IOException e) {
@@ -450,7 +432,6 @@ public class FirefileCc extends PluginForHost {
         final Browser api = br.cloneBrowser();
         api.getHeaders().put("Accept", "*/*");
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        api.getHeaders().put("Range", "bytes=0-1");
         api.getPage("https://firefile.cc/secure/uploads/downloadChunk?hashes=" + entryInfo.get("hash") + "&shareable_link=" + linkInfo.get("id"));
         try {
             final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
@@ -461,15 +442,12 @@ public class FirefileCc extends PluginForHost {
     }
 
     private Map<String, Object> getFileInfo(DownloadLink link) throws IOException, PluginException {
-        final String linkHash = link.getStringProperty("hash");
-        if (linkHash == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final FirefileLink linkData = FirefileLink.get(link);
         final Browser api = br.cloneBrowser();
         api.setAllowedResponseCodes(200, 500);
         api.getHeaders().put("Accept", "*/*");
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        api.getPage("https://firefile.cc/secure/drive/shareable-links/" + linkHash + "?&withEntries=true");
+        api.getPage("https://firefile.cc/secure/drive/shareable-links/" + linkData.getHash() + "?&withEntries=true");
         try {
             final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
             return apiResponse;
@@ -497,10 +475,7 @@ public class FirefileCc extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
-        final String plainKey = link.getStringProperty("keyStr");
-        if (plainKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final FirefileLink linkData = FirefileLink.get(link);
         final Map<String, Object> apiResponse = this.getFileInfo(link);
         final Map<String, Object> file_info = (Map<String, Object>) JavaScriptEngineFactory.walkJson(apiResponse, "link/entry");
         if (file_info == null) {
@@ -511,7 +486,7 @@ public class FirefileCc extends PluginForHost {
         if (StringUtils.isEmpty(nameEnc) || size.longValue() == -1) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String nameDec = this.decryptString(nameEnc, plainKey);
+        final String nameDec = this.decryptString(nameEnc, linkData.getKey());
         final String hash = (String) file_info.get("hash");
         final String key = (String) file_info.get("key");
         link.setFinalFileName(nameDec);
