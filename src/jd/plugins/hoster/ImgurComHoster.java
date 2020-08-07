@@ -375,128 +375,408 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            loginOauthTest(brlogin, account, force);
+        } else {
+            synchronized (account) {
+                brlogin.setFollowRedirects(true);
+                brlogin.setCookiesExclusive(true);
+                prepBRAPI(brlogin);
+                /* Correct input so it is parsable via UrlQuery. */
+                if (!account.getPass().contains("?")) {
+                    account.setPass(account.getPass().replace("/#", "/?"));
+                }
+                if (!isAuthorizationURL(account.getPass())) {
+                    /* Reset this property to e.g. try again right away with new token once set by user e.g. if user changes 'password'. */
+                    account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
+                    if (account.getPass().contains("error=")) {
+                        /* User has tried authorization but for some reason it failed. */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    /*
+                     * User entered normal username & password but we need something else as password --> Show message on what to do and let
+                     * the user try again!
+                     */
+                    showLoginInformation();
+                    /* Display error to tell user to try again and this time, enter URL into PW field. */
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final UrlQuery query = UrlQuery.parse(account.getPass());
+                /*
+                 * Access tokens expire (after ~30 days) according to API docs. Only use the one the user has entered on first attempt e.g.
+                 * user has just added this account for the first time! Save it as a property on the account and then use that because once
+                 * token gets refreshed it will differ from the token the user initially entered!
+                 */
+                final String auth_access_token = query.get("access_token");
+                final String auth_refresh_token = query.get("refresh_token");
+                /* Ignore 'expires_in' and just use existing token as long as possible. This is only used for debugging. */
+                final String auth_valid_until = query.get("expires_in");
+                final String auth_username = query.get("account_username");
+                if (!StringUtils.equals(account.getUser(), auth_username)) {
+                    /* Important as we will use Account.getUser() for later requests so it has to be correct! */
+                    logger.info("Correcting Account username to API username");
+                    account.setUser(auth_username);
+                }
+                /*
+                 * Now set active values - prefer stored values over user-entered as they will change! User-Entered will be used on first
+                 * login OR if user changes account password!
+                 */
+                String active_refresh_token;
+                String active_access_token;
+                String active_valid_until;
+                long token_first_use_timestamp;
+                if (this.isSamePW(account)) {
+                    /* Login with same password as before. */
+                    active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+                    active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+                    active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
+                    token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
+                } else {
+                    /* First login with new logindata */
+                    active_refresh_token = auth_refresh_token;
+                    active_access_token = auth_access_token;
+                    active_valid_until = auth_valid_until;
+                    token_first_use_timestamp = System.currentTimeMillis();
+                }
+                boolean loggedIN = false;
+                brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
+                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                    logger.info("Trust token without check");
+                    return;
+                }
+                /* Check existing access_token */
+                /* Request account information and, at the same time, check if authorization is still valid. */
+                brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
+                checkErrors(brlogin, null, account);
+                /* TODO: Check which error API will return on expired token. */
+                Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                loggedIN = entries != null && entries.containsKey("id");
+                /*
+                 * E.g. 403 with
+                 * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/<username>","method":"GET"},"success":
+                 * false,"status":403}
+                 */
+                if (!loggedIN) {
+                    /* Build new query containing only what we need. */
+                    logger.info("Trying to generate new authorization token");
+                    final UrlQuery queryLogin = new UrlQuery();
+                    /* Refresh token never expires and can be used to generate new authorization token. */
+                    queryLogin.add("refresh_token", auth_refresh_token);
+                    queryLogin.add("client_id", getClientID());
+                    queryLogin.add("client_secret", getClientSecret());
+                    queryLogin.add("grant_type", "refresh_token");
+                    brlogin.postPage(getAPIBase() + "/oauth2/token", queryLogin);
+                    active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
+                    active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
+                    active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
+                    if (StringUtils.isEmpty(active_access_token) || StringUtils.isEmpty(active_refresh_token)) {
+                        /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
+                        /*
+                         * E.g.
+                         * {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
+                         * 400}
+                         */
+                        checkErrors(this.br, null, account);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    /* Update authorization header */
+                    brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
+                    /* Update token first use timestamp */
+                    token_first_use_timestamp = System.currentTimeMillis();
+                }
+                account.setProperty(PROPERTY_ACCOUNT_access_token, active_access_token);
+                account.setProperty(PROPERTY_ACCOUNT_refresh_token, active_refresh_token);
+                if (active_valid_until != null && active_valid_until.matches("\\d+")) {
+                    account.setProperty(PROPERTY_ACCOUNT_valid_until, Long.parseLong(active_valid_until));
+                }
+                account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, token_first_use_timestamp);
+                account.setProperty(PROPERTY_ACCOUNT_initial_password, account.getPass());
+                /* Every account-check will use up one API request and we have limited requests --> Do not check account that frequently. */
+                account.setRefreshTimeout(5 * 60 * 1000l);
+                /* Save cookies - but only to have the cookie-timestamp */
+                account.saveCookies(brlogin.getCookies(this.getHost()), "");
+            }
+        }
+    }
+
+    public static final String getClientID2() {
+        return "85b2dae0c74bb4d";
+    }
+
+    public static final String getClientSecret2() {
+        return "b03ad3c3efe39644aaea039a4ea3b1e677800558";
+    }
+
+    private String getAuthURLTest(final String state, final RESPONSE_TYPE responseType) {
+        final String responseTypeStr;
+        switch (responseType) {
+        case CODE:
+            responseTypeStr = "code";
+            break;
+        case PIN:
+            responseTypeStr = "pin";
+            break;
+        default:
+            responseTypeStr = "token";
+            break;
+        }
+        final UrlQuery query = new UrlQuery();
+        query.add("client_id", Encoding.urlEncode(getClientID2()));
+        query.add("response_type", responseTypeStr);
+        query.add("state", Encoding.urlEncode(state));
+        return getAPIBase() + "/oauth2/authorize?" + query.toString();
+    }
+
+    private Thread showLoginInformationTest(final String autURL) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Imgur.com - Login";
+                        message += "Hallo liebe(r) Imgur NutzerIn\r\n";
+                        message += "Um deinen Imgur Account in JD verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + autURL + "'\t\r\n";
+                        message += "2. Autorisiere JD auf der Imgur Webseite.\r\n";
+                        message += "3. Du wirst auf die jdownloader.org Webseite weitergeleitet und dein Account sollte nach einigen Sekunden von JD akzeptiert werden.\r\n";
+                    } else {
+                        title = "Imgur.com - Login";
+                        message += "Hello dear Imgur user\r\n";
+                        message += "In order to use imgur with JD, you need to follow these steps:\r\n";
+                        message += "1. Open the following URL in your browser if it is not opened automatically:\r\n\t'" + autURL + "'\t\r\n";
+                        message += "2. Authorize JD on the Imgur website.\r\n";
+                        message += "3. You will be forwarded to the jdownloader.org website and your account should be accepted in JDownloader after a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(autURL);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    public void loginOauthTest(final Browser brlogin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             brlogin.setFollowRedirects(true);
             brlogin.setCookiesExclusive(true);
             prepBRAPI(brlogin);
-            /* Correct input so it is parsable via UrlQuery. */
-            if (!account.getPass().contains("?")) {
-                account.setPass(account.getPass().replace("/#", "/?"));
+            String auth_access_token = null;
+            String auth_refresh_token = null;
+            String auth_valid_until = null;
+            String auth_username = null;
+            if (this.isSamePW(account)) {
+                /* Login with same password as before. */
+                auth_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+                auth_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+                auth_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
             }
-            if (!isAuthorizationURL(account.getPass())) {
-                /* Reset this property to e.g. try again right away with new token once set by user e.g. if user changes 'password'. */
-                account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
-                if (account.getPass().contains("error=")) {
-                    /* User has tried authorization but for some reason it failed. */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            boolean loggedIN = false;
+            if (auth_access_token != null) {
+                brlogin.getHeaders().put("Authorization", "Bearer " + auth_access_token);
+                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
+                    logger.info("Trust auth_token without check");
+                    return;
                 }
-                /*
-                 * User entered normal username & password but we need something else as password --> Show message on what to do and let the
-                 * user try again!
-                 */
-                showLoginInformation();
-                /* Display error to tell user to try again and this time, enter URL into PW field. */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* Check existing access_token */
+                /* Request account information and, at the same time, check if authorization is still valid. */
+                logger.info("Checking existing auth_token");
+                brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
+                checkErrors(brlogin, null, account);
+                /* TODO: Check which error API will return on expired token. */
+                Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                loggedIN = entries != null && entries.containsKey("id");
+                if (!loggedIN) {
+                    /* Build new query containing only what we need. */
+                    logger.info("Old token expired? Trying to generate new authorization token");
+                    final UrlQuery queryLogin = new UrlQuery();
+                    /* Refresh token never expires and can be used to generate new authorization token. */
+                    queryLogin.add("refresh_token", auth_refresh_token);
+                    queryLogin.add("client_id", getClientID2());
+                    queryLogin.add("client_secret", getClientSecret2());
+                    queryLogin.add("grant_type", "refresh_token");
+                    brlogin.postPage(getAPIBase() + "/oauth2/token", queryLogin);
+                    auth_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
+                    auth_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
+                    auth_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
+                    if (StringUtils.isEmpty(auth_access_token) || StringUtils.isEmpty(auth_refresh_token)) {
+                        /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
+                        /*
+                         * E.g.
+                         * {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
+                         * 400}
+                         */
+                        checkErrors(this.br, null, account);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    /* Ignore 'expires_in' and just use existing token as long as possible. This is only used for debugging. */
+                    account.setProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+                    account.setProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+                    if (auth_valid_until != null && auth_valid_until.matches("\\d+")) {
+                        account.setProperty(PROPERTY_ACCOUNT_valid_until, Long.parseLong(auth_valid_until));
+                    }
+                    /* Update token first use timestamp */
+                    account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
+                    /* Update authorization header */
+                    brlogin.getHeaders().put("Authorization", "Bearer " + auth_access_token);
                 }
             }
-            final UrlQuery query = new UrlQuery().parse(account.getPass());
+            if (!loggedIN) {
+                logger.info("Performing full login");
+                genericOauthLogin(account, brlogin);
+                final UrlQuery query = UrlQuery.parse(br.toString());
+                auth_access_token = query.get("access_token");
+                auth_refresh_token = query.get("refresh_token");
+                auth_username = query.get("account_username");
+                if (StringUtils.isEmpty(auth_username)) {
+                    /* E.g.required for response_type=token */
+                    auth_username = PluginJSonUtils.getJson(brlogin, "account_username");
+                }
+                if (!StringUtils.isEmpty(auth_username) && !StringUtils.equals(account.getUser(), auth_username)) {
+                    /* Important as we will use Account.getUser() for later requests so it has to be correct! */
+                    logger.info("Correcting Account username to API username");
+                    account.setUser(auth_username);
+                }
+            }
             /*
              * Access tokens expire (after ~30 days) according to API docs. Only use the one the user has entered on first attempt e.g. user
              * has just added this account for the first time! Save it as a property on the account and then use that because once token
              * gets refreshed it will differ from the token the user initially entered!
              */
-            final String auth_access_token = query.get("access_token");
-            final String auth_refresh_token = query.get("refresh_token");
-            /* Ignore 'expires_in' and just use existing token as long as possible. This is only used for debugging. */
-            final String auth_valid_until = query.get("expires_in");
-            final String auth_username = query.get("account_username");
-            if (!StringUtils.equals(account.getUser(), auth_username)) {
-                /* Important as we will use Account.getUser() for later requests so it has to be correct! */
-                logger.info("Correcting Account username to API username");
-                account.setUser(auth_username);
-            }
-            /*
-             * Now set active values - prefer stored values over user-entered as they will change! User-Entered will be used on first login
-             * OR if user changes account password!
-             */
-            String active_refresh_token;
-            String active_access_token;
-            String active_valid_until;
-            long token_first_use_timestamp;
-            if (this.isSamePW(account)) {
-                /* Login with same password as before. */
-                active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
-                active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
-                active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
-                token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
-            } else {
-                /* First login with new logindata */
-                active_refresh_token = auth_refresh_token;
-                active_access_token = auth_access_token;
-                active_valid_until = auth_valid_until;
-                token_first_use_timestamp = System.currentTimeMillis();
-            }
-            boolean loggedIN = false;
-            brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
-            if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                logger.info("Trust token without check");
-                return;
-            }
-            /* Check existing access_token */
-            /* Request account information and, at the same time, check if authorization is still valid. */
-            brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
-            checkErrors(brlogin, null, account);
-            /* TODO: Check which error API will return on expired token. */
-            Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("data");
-            loggedIN = entries != null && entries.containsKey("id");
-            /*
-             * E.g. 403 with
-             * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/<username>","method":"GET"},"success":
-             * false,"status":403}
-             */
-            if (!loggedIN) {
-                /* Build new query containing only what we need. */
-                logger.info("Trying to generate new authorization token");
-                final UrlQuery queryLogin = new UrlQuery();
-                /* Refresh token never expires and can be used to generate new authorization token. */
-                queryLogin.add("refresh_token", auth_refresh_token);
-                queryLogin.add("client_id", getClientID());
-                queryLogin.add("client_secret", getClientSecret());
-                queryLogin.add("grant_type", "refresh_token");
-                brlogin.postPage(getAPIBase() + "/oauth2/token", queryLogin);
-                active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
-                active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
-                active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
-                if (StringUtils.isEmpty(active_access_token) || StringUtils.isEmpty(active_refresh_token)) {
-                    /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
-                    /*
-                     * E.g. {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
-                     * 400}
-                     */
-                    checkErrors(this.br, null, account);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /* Update authorization header */
-                brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
-                /* Update token first use timestamp */
-                token_first_use_timestamp = System.currentTimeMillis();
-            }
-            account.setProperty(PROPERTY_ACCOUNT_access_token, active_access_token);
-            account.setProperty(PROPERTY_ACCOUNT_refresh_token, active_refresh_token);
-            if (active_valid_until != null && active_valid_until.matches("\\d+")) {
-                account.setProperty(PROPERTY_ACCOUNT_valid_until, Long.parseLong(active_valid_until));
-            }
-            account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, token_first_use_timestamp);
             account.setProperty(PROPERTY_ACCOUNT_initial_password, account.getPass());
             /* Every account-check will use up one API request and we have limited requests --> Do not check account that frequently. */
             account.setRefreshTimeout(5 * 60 * 1000l);
             /* Save cookies - but only to have the cookie-timestamp */
             account.saveCookies(brlogin.getCookies(this.getHost()), "");
         }
+    }
+
+    private enum RESPONSE_TYPE {
+        TOKEN,
+        CODE,
+        PIN
+    }
+
+    /**
+     * 2020-08-07: Cheap oauth login test
+     *
+     * @throws PluginException
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private void genericOauthLogin(final Account account, final Browser brlogin) throws PluginException, IOException, InterruptedException {
+        final String state = generateUniqueID();
+        final RESPONSE_TYPE responseType = RESPONSE_TYPE.CODE;
+        /* Reset this property to e.g. try again right away with new token once set by user e.g. if user changes 'password'. */
+        account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
+        if (account.getPass().contains("error=")) {
+            /* User has tried authorization but for some reason it failed. */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /* Wait for user to complete oauth process in browser. */
+        boolean success = false;
+        final Thread dialog = showLoginInformationTest(getAuthURLTest(state, responseType));
+        String auth_access_token = null;
+        String auth_refresh_token = null;
+        String auth_valid_until = null;
+        final Browser jdpull = brlogin.cloneBrowser();
+        try {
+            for (int i = 0; i <= 23; i++) {
+                logger.info("Waiting for user to authorize application: " + i);
+                Thread.sleep(5000);
+                jdpull.getPage("http://jdserv.jdownloader.org/oauth2?state=" + state);
+                final UrlQuery query = UrlQuery.parse(jdpull.toString());
+                final String error = query.get("error");
+                if (error != null) {
+                    /* Something went wrong */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Error: " + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (responseType == RESPONSE_TYPE.CODE) {
+                    /* --> Generate required tokens */
+                    final String auth_code = query.get("code");
+                    if (!StringUtils.isEmpty(auth_code)) {
+                        logger.info("Found auth_code --> Trying to get access_token");
+                        final UrlQuery codeAuthQuery = new UrlQuery();
+                        codeAuthQuery.add("client_id", Encoding.urlEncode(getClientID2()));
+                        codeAuthQuery.add("client_secret", Encoding.urlEncode(getClientSecret2()));
+                        codeAuthQuery.add("response_type", "code");
+                        codeAuthQuery.add("state", Encoding.urlEncode(state));
+                        codeAuthQuery.add("grant_type", "authorization_code");
+                        codeAuthQuery.add("code", Encoding.urlEncode(auth_code));
+                        /*
+                         * This parameter is only needed if it's included in the first request too (= the URL which the user has to open in
+                         * his browser)
+                         */
+                        codeAuthQuery.add("redirect_uri", Encoding.urlEncode("http://jdserv.jdownloader.org/oauth"));
+                        brlogin.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                        brlogin.postPage(getAPIBase() + "/oauth2/token", codeAuthQuery);
+                        final Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                        auth_access_token = (String) entries.get("access_token");
+                        auth_refresh_token = (String) entries.get("refresh_token");
+                        success = true;
+                        break;
+                    }
+                } else if (responseType == RESPONSE_TYPE.TOKEN) {
+                    auth_access_token = query.get("access_token");
+                    auth_refresh_token = query.get("refresh_token");
+                    /* Check for success */
+                    if (auth_access_token != null && auth_refresh_token != null) {
+                        logger.info("Authorization successful");
+                        success = true;
+                        break;
+                    }
+                } else {
+                    /* E.g. PIN auth */
+                    /* TODO */
+                }
+                /* Check for user abort */
+                if (!dialog.isAlive()) {
+                    logger.info("Dialog closed!");
+                    break;
+                } else {
+                    logger.info("Authorization not done so far ...");
+                    /* Continue */
+                }
+            }
+        } finally {
+            dialog.interrupt();
+        }
+        if (!success) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Timeout! Versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Timeout! Try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if (StringUtils.isEmpty(auth_access_token)) {
+            /* This should never happen. E.g. token was retrieved successfully but access_token generation failed afterwards */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        account.setProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
+        account.setProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
+        if (auth_valid_until != null && auth_valid_until.matches("\\d+")) {
+            account.setProperty(PROPERTY_ACCOUNT_valid_until, Long.parseLong(auth_valid_until));
+        }
+        account.setProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
+        brlogin.getHeaders().put("Authorization", "Bearer " + auth_access_token);
+    }
+
+    private String generateUniqueID() {
+        return "1337";
     }
 
     @Override
@@ -544,6 +824,20 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final boolean success = ((Boolean) entries.get("success")).booleanValue();
+        if (!success) {
+            /*
+             * E.g.
+             * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/xnull","method":"GET"},"success":false,
+             * "status":403}
+             */
+            entries = (Map<String, Object>) entries.get("data");
+            final String errorStr = (String) entries.get("error");
+            if (!StringUtils.isEmpty(errorStr)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorStr, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 429) {
             rateLimitReached(br, account);
         }

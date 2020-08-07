@@ -1322,7 +1322,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else {
-                    /* Old login method - rare case! Example: udrop.net */
+                    /* Old login method - rare case! Example: udrop.net --> 2020-08-07: Website is dead */
                     logger.info("Using old login method");
                     loginform = br.getFormbyProperty("id", "form_login");
                     if (loginform == null) {
