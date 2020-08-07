@@ -84,8 +84,8 @@ public class UdemyCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM_WEBSITE)) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM_WEBSITE)) {
             /* Some errorhandling for old urls. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -95,11 +95,11 @@ public class UdemyCom extends PluginForHost {
         is_officially_downloadable = true;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = downloadLink.getStringProperty("filename_decrypter", null);
+        String filename = link.getStringProperty("filename_decrypter", null);
         String url_embed = null;
         boolean loggedin = false;
         String description = null;
-        final String asset_id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String asset_id = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
@@ -109,19 +109,19 @@ public class UdemyCom extends PluginForHost {
             }
         }
         String ext = null;
-        String asset_type = downloadLink.getStringProperty("asset_type", "Video");
-        final String lecture_id = downloadLink.getStringProperty("lecture_id", null);
+        String asset_type = link.getStringProperty("asset_type", "Video");
+        final String lecture_id = link.getStringProperty("lecture_id", null);
         LinkedHashMap<String, Object> entries = null;
-        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
-            downloadLink.setName(asset_id);
-            downloadLink.getLinkStatus().setStatusText("Cannot check this url without account");
+        if (!loggedin && link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+            link.setName(asset_id);
+            link.getLinkStatus().setStatusText("Cannot check this url without account");
             return AvailableStatus.TRUE;
-        } else if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+        } else if (link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             /* Prepare the API-Headers to get the videourl */
-            if (!downloadLink.isNameSet()) {
-                downloadLink.setName(asset_id);
+            if (!link.isNameSet()) {
+                link.setName(asset_id);
             }
-            final String courseid = downloadLink.getStringProperty("course_id", null);
+            final String courseid = link.getStringProperty("course_id", null);
             if (courseid == null) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,12 +131,22 @@ public class UdemyCom extends PluginForHost {
                 /* Download File (usually .jpg pictures). */
                 this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "/supplementary-assets/" + asset_id + "?fields%5Basset%5D=download_urls,stream_urls");
                 dllink = PluginJSonUtils.getJsonValue(this.br, "file");
+            } else if (asset_type.equalsIgnoreCase("Article")) {
+                this.br.getPage("https://www.udemy.com/api-2.0/assets/" + asset_id + "/?fields[asset]=@min,status,delayed_asset_message,processing_errors,body");
+                textAssetType = true;
+                ext = ".html";
             } else {
                 /* Download Video/Article/PDF. */
                 /*
                  * 2016-04-08: Changed parameters - parameters before:
                  * ?video_only=&auto_play=&fields%5Blecture%5D=asset%2Cembed_url&fields%5Basset
                  * %5D=asset_type%2Cdownload_urls%2Ctitle&instructorPreviewMode=False
+                 */
+                /*
+                 * 2020-08-07: Changed parameters - request before: "https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid
+                 * + "/lectures/" + lecture_id +
+                 * "?fields%5Basset%5D=@min,download_urls,stream_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4&tracking_tag=ctp_lecture"
+                 *
                  */
                 this.br.getPage("https://www.udemy.com/api-2.0/users/me/subscribed-courses/" + courseid + "/lectures/" + lecture_id + "?fields%5Basset%5D=@min,download_urls,stream_urls,external_url,slide_urls&fields%5Bcourse%5D=id,is_paid,url&fields%5Blecture%5D=@default,view_html,course&page_config=ct_v4&tracking_tag=ctp_lecture");
                 if (this.br.getHttpConnection().getResponseCode() == 403) {
@@ -289,14 +299,14 @@ public class UdemyCom extends PluginForHost {
                 }
             }
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Normal (FREE) url */
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
-                filename = new Regex(downloadLink.getDownloadURL(), "udemy\\.com/(.+)\\?dtcode=").getMatch(0);
+                filename = new Regex(link.getDownloadURL(), "udemy\\.com/(.+)\\?dtcode=").getMatch(0);
             }
             url_embed = this.br.getRegex("(https?://(?:www\\.)?udemy\\.com/embed/video/[^<>\"]*?)\"").getMatch(0);
             if (url_embed == null || filename == null) {
@@ -320,9 +330,9 @@ public class UdemyCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
-        if (description != null && downloadLink.getComment() == null) {
-            downloadLink.setComment(description);
+        link.setFinalFileName(filename);
+        if (description != null && link.getComment() == null) {
+            link.setComment(description);
         }
         if (dllink != null && dllink.startsWith("http") && !dllink.contains(".m3u8")) {
             final Browser br2 = new Browser();
@@ -332,7 +342,7 @@ public class UdemyCom extends PluginForHost {
             try {
                 con = br2.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -348,25 +358,29 @@ public class UdemyCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        handleDownload(downloadLink);
+        handleDownload(link);
     }
 
-    public void handleDownload(final DownloadLink downloadLink) throws Exception {
+    public void handleDownload(final DownloadLink link) throws Exception {
         if (textAssetType) {
             /* Download text/"Article" */
-            final String html = PluginJSonUtils.getJsonValue(this.br, "view_html");
-            if (html == null) {
+            /* Old json/field name */
+            String html = PluginJSonUtils.getJsonValue(this.br, "view_html");
+            if (StringUtils.isEmpty(html)) {
+                html = PluginJSonUtils.getJsonValue(this.br, "body");
+            }
+            if (StringUtils.isEmpty(html)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* TODO: Maybe download nothing at all but write the found html directly into the file --> done. */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.br.getURL(), FREE_RESUME, FREE_MAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.br.getURL(), FREE_RESUME, FREE_MAXCHUNKS);
             if (this.dl.startDownload()) {
-                final File file_dest = new File(downloadLink.getFileOutput());
+                final File file_dest = new File(link.getFileOutput());
                 BufferedWriter out = null;
                 try {
                     out = new BufferedWriter(new FileWriter(file_dest));
@@ -399,11 +413,11 @@ public class UdemyCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String url_hls = hlsbest.getDownloadurl();
-                checkFFmpeg(downloadLink, "Download a HLS Stream");
-                dl = new HLSDownloader(downloadLink, br, url_hls);
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, url_hls);
                 dl.startDownload();
             } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
                 if (dl.getConnection().getContentType().contains("html")) {
                     if (dl.getConnection().getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -417,7 +431,7 @@ public class UdemyCom extends PluginForHost {
                         dl.getConnection().disconnect();
                     } catch (final Throwable e) {
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
                 }
                 dl.startDownload();
             }

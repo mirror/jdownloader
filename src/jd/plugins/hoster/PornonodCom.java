@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornonod.com" }, urls = { "https?://(?:www\\.)?pornonod\\.com/([a-z0-9\\-_]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornonod.com" }, urls = { "https?://(?:www\\.)?pornonod\\.com/([a-z0-9\\-_]+-\\d{8}-\\d+_[a-f0-9]+)\\.html" })
 public class PornonodCom extends antiDDoSForHost {
     public PornonodCom(PluginWrapper wrapper) {
         super(wrapper);
