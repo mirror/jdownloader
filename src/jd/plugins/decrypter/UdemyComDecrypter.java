@@ -156,7 +156,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         } else {
             filename_temp = course_id + "_" + position_formatted + "_" + lecture_id + "_" + asset_id;
             if ("Article".equalsIgnoreCase(asset_type)) {
-                filename_temp += ".txt";
+                filename_temp += ".html";
             }
         }
         final DownloadLink dl;
@@ -178,11 +178,14 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             dl.setProperty("lecture_id", lecture_id);
             dl.setProperty("course_id", course_id);
             dl.setProperty("position", position);
-            /* Set relative download path - ignore "/" inside these strings otherwise we'll get wrong paths ;) */
+            /* Set relative download path */
+            /* Remove potential "/" from inside titles to prevent wrong paths! */
+            final String courseTitleSanitized = courseTitle.replace("/", "_");
+            final String chapterTitleSanitized = chapterTitle.replace("/", "_");
             if (asset_type.equalsIgnoreCase("video")) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitle.replace("/", "_") + "/" + chapterTitle.replace("/", "_"));
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitleSanitized + "/" + chapterTitleSanitized);
             } else {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitle.replace("/", "_") + "/" + chapterTitle.replace("/", "_") + "/ressources");
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, courseTitleSanitized + "/" + chapterTitleSanitized + "/ressources");
             }
         }
         dl._setFilePackage(fp);
