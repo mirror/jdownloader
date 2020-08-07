@@ -372,6 +372,7 @@ public class UdemyCom extends PluginForHost {
             /* Old json/field name */
             String html = PluginJSonUtils.getJsonValue(this.br, "view_html");
             if (StringUtils.isEmpty(html)) {
+                /* 2020-08-07: New */
                 html = PluginJSonUtils.getJsonValue(this.br, "body");
             }
             if (StringUtils.isEmpty(html)) {
