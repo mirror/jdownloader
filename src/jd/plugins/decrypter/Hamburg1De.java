@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -21,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,11 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamburg1.de" }, urls = { "http://(www\\.)?hamburg1\\.de/[^<>\"]+/\\d+/[^<>\"]+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamburg1.de" }, urls = { "https?://(?:www\\.)?hamburg1\\.de/[^<>\"]+/\\d+/[^<>\"]+\\.html" })
 public class Hamburg1De extends PluginForDecrypt {
-
     public Hamburg1De(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,13 +41,10 @@ public class Hamburg1De extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         int counter = 1;
@@ -65,7 +60,7 @@ public class Hamburg1De extends PluginForDecrypt {
             date_formatted = formatDate(Encoding.htmlDecode(date).trim());
         }
         title = date_formatted + "_hamburg1_" + encodeUnicode(title);
-        final String[] regexes = { "video\\.show\\(\"player\"[^\\)]+\"([^<>\"]*?)\"\\)", "(https?://embed\\.telvi\\.de/\\d+/clip/\\d+)" };
+        final String[] regexes = { "video\\.show\\(\"player\"[^\\)]+\"([^<>\"]*?)\"\\)", "(https?://embed\\.telvi\\.de/\\d+/clip/\\d+)", "videoURL\\s*=\\s*'(https?://video\\.telvi\\.de/[^<>\"\\']+)';" };
         for (final String regex : regexes) {
             final String[] matches = br.getRegex(regex).getColumn(0);
             if (matches != null && matches.length > 0) {
@@ -80,26 +75,20 @@ public class Hamburg1De extends PluginForDecrypt {
                     final DownloadLink dl = this.createDownloadlink(hostplugin_url);
                     dl.setContentUrl(parameter);
                     dl.setProperty("decryptedfilename", filetitle);
+                    dl.setForcedFileName(filetitle + ".mp4");
                     decryptedLinks.add(dl);
                     counter++;
                 }
             }
         }
-
         if (decryptedLinks.size() == 0) {
             /* Chances are high that we just don't have a video. */
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -117,5 +106,4 @@ public class Hamburg1De extends PluginForDecrypt {
         }
         return formattedDate;
     }
-
 }
