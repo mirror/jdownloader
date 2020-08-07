@@ -4,6 +4,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.appwork.utils.Exceptions;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.StreamCipher;
@@ -18,10 +19,10 @@ import org.bouncycastle.crypto.modes.AEADBlockCipher;
  *
  */
 public class FirefileCipherOutputStream extends FilterOutputStream {
-    private BufferedBlockCipher bufferedBlockCipher;
-    private StreamCipher        streamCipher;
-    private AEADBlockCipher     aeadBlockCipher;
-    private final byte[]        oneByte = new byte[1];
+    private BufferedBlockCipher bufferedBlockCipher = null;
+    private StreamCipher        streamCipher        = null;
+    private AEADBlockCipher     aeadBlockCipher     = null;
+    private final byte[]        oneByte             = new byte[1];
     private byte[]              buf;
 
     /**
@@ -32,7 +33,6 @@ public class FirefileCipherOutputStream extends FilterOutputStream {
      */
     public FirefileCipherOutputStream(OutputStream os) {
         super(os);
-        this.bufferedBlockCipher = null;
     }
 
     /**
@@ -68,10 +68,10 @@ public class FirefileCipherOutputStream extends FilterOutputStream {
      *             if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        oneByte[0] = (byte) b;
         if (streamCipher != null) {
             out.write(streamCipher.returnByte((byte) b));
         } else {
+            oneByte[0] = (byte) b;
             write(oneByte, 0, 1);
         }
     }
@@ -106,20 +106,26 @@ public class FirefileCipherOutputStream extends FilterOutputStream {
      *             if an I/O error occurs.
      */
     public void write(byte[] b, int off, int len) throws IOException {
-        ensureCapacity(len, false);
         if (bufferedBlockCipher != null) {
-            int outLen = bufferedBlockCipher.processBytes(b, off, len, buf, 0);
+            ensureCapacity(len, false);
+            final int outLen = bufferedBlockCipher.processBytes(b, off, len, buf, 0);
             if (outLen != 0) {
                 out.write(buf, 0, outLen);
             }
         } else if (aeadBlockCipher != null) {
-            int outLen = aeadBlockCipher.processBytes(b, off, len, buf, 0);
+            ensureCapacity(len, false);
+            final int outLen = aeadBlockCipher.processBytes(b, off, len, buf, 0);
+            if (outLen != 0) {
+                out.write(buf, 0, outLen);
+            }
+        } else if (streamCipher != null) {
+            ensureCapacity(len, false);
+            final int outLen = streamCipher.processBytes(b, off, len, buf, 0);
             if (outLen != 0) {
                 out.write(buf, 0, outLen);
             }
         } else {
-            streamCipher.processBytes(b, off, len, buf, 0);
-            out.write(buf, 0, len);
+            out.write(b, off, len);
         }
     }
 
@@ -187,16 +193,17 @@ public class FirefileCipherOutputStream extends FilterOutputStream {
      *             fails).
      */
     public void close() throws IOException {
-        ensureCapacity(0, true);
         IOException error = null;
         try {
             if (bufferedBlockCipher != null) {
-                int outLen = bufferedBlockCipher.doFinal(buf, 0);
+                ensureCapacity(0, true);
+                final int outLen = bufferedBlockCipher.doFinal(buf, 0);
                 if (outLen != 0) {
                     out.write(buf, 0, outLen);
                 }
             } else if (aeadBlockCipher != null) {
-                int outLen = aeadBlockCipher.doFinal(buf, 0);
+                ensureCapacity(0, true);
+                final int outLen = aeadBlockCipher.doFinal(buf, 0);
                 if (outLen != 0) {
                     out.write(buf, 0, outLen);
                 }
@@ -204,17 +211,22 @@ public class FirefileCipherOutputStream extends FilterOutputStream {
                 streamCipher.reset();
             }
         } catch (final InvalidCipherTextException e) {
-            error = new InvalidCipherTextIOException("Error finalising cipher data", e);
+            error = new InvalidCipherTextIOException("Error finalising cipher data: ", e);
         } catch (Exception e) {
             error = new CipherIOException("Error closing stream: ", e);
         }
         try {
-            flush();
-            out.close();
+            try {
+                flush();
+            } finally {
+                out.close();
+            }
         } catch (IOException e) {
             // Invalid ciphertext takes precedence over close error
             if (error == null) {
                 error = e;
+            } else {
+                error = Exceptions.addSuppressed(error, e);
             }
         }
         if (error != null) {
