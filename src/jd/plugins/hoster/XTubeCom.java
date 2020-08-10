@@ -21,8 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -40,13 +38,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(?:www\\.)?xtube\\.com/(?:video-watch/(?:embedded/)?|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" })
 public class XTubeCom extends PluginForHost {
     public XTubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.enablePremium("https://www.xtube.com/vip/join");
     }
 
@@ -72,6 +68,10 @@ public class XTubeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         /* Offline links should also have nice filenames */
         link.setName(new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9_\\-]+)$").getMatch(0));
         // this.setBrowserExclusive();
@@ -151,7 +151,7 @@ public class XTubeCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setFinalFileName(filename + ".mp4");
-        if (!StringUtils.isEmpty(dllink) && this.dllink.startsWith("http")) {
+        if (!StringUtils.isEmpty(dllink) && this.dllink.startsWith("http") && !isDownload) {
             dllink = Encoding.htmlDecode(dllink);
             if (dllink.contains("/notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -180,7 +180,7 @@ public class XTubeCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (this.privateVideo) {
             /*
              * Free account, paid account or account with money ('coins') required to buy/view content. This may still happen if the user
@@ -308,7 +308,7 @@ public class XTubeCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         this.handleFree(link);
     }
 
@@ -320,25 +320,6 @@ public class XTubeCom extends PluginForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    private void setConfigElements() {
-        String user_text;
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            user_text = "Erlaube den Download von Links dieses Anbieters über Multihoster (nicht empfohlen)?\r\n<html><b>Kann die Anonymität erhöhen, aber auch die Fehleranfälligkeit!</b>\r\nAktualisiere deine(n) Multihoster Account(s) nach dem Aktivieren dieser Einstellung um diesen Hoster in der Liste der unterstützten Hoster deines/r Multihoster Accounts zu sehen (sofern diese/r ihn unterstützen).</html>";
-        } else {
-            user_text = "Allow links of this host to be downloaded via multihosters (not recommended)?\r\n<html><b>This might improve anonymity but perhaps also increase error susceptibility!</b>\r\nRefresh your multihoster account(s) after activating this setting to see this host in the list of the supported hosts of your multihost account(s) (in case this host is supported by your used multihost(s)).</html>";
-        }
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, JDL.L("plugins.hoster." + this.getClass().getName() + ".ALLOW_MULTIHOST_USAGE", user_text)).setDefaultValue(default_allow_multihoster_usage));
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        if (this.getPluginConfig().getBooleanProperty(ALLOW_MULTIHOST_USAGE, default_allow_multihoster_usage)) {
-            return true;
-        } else {
-            return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
-        }
     }
 
     @Override
