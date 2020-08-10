@@ -62,7 +62,7 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://high\\-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://[a-z0-9\\-\\.]+\\.high\\-way\\.me/dlu/[a-z0-9]+/[^/]+" })
 public class HighWayMe extends UseNet {
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
-    /* 2019-09-20: Switched from http to https */
+    /* API docs: https://high-way.me/threads/highway-api.201/ */
     private static final String                   API_BASE                            = "https://high-way.me/api.php";
     // private static final String API_BASE = "http://http.high-way.me/api.php";
     private static MultiHosterManagement          mhm                                 = new MultiHosterManagement("high-way.me");
@@ -109,15 +109,15 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
+    public void update(final DownloadLink link, final Account account, long bytesTransfered) throws PluginException {
         synchronized (UPDATELOCK) {
-            final String currentHost = this.correctHost(downloadLink.getHost());
+            final String currentHost = this.correctHost(link.getHost());
             final Integer rabatt = hostRabattMap.get(currentHost);
             if (rabatt != null) {
                 bytesTransfered = (bytesTransfered * (100 - rabatt)) / 100;
             }
         }
-        super.update(downloadLink, account, bytesTransfered);
+        super.update(link, account, bytesTransfered);
     }
 
     @Override
@@ -739,10 +739,11 @@ public class HighWayMe extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 6:
-                /* Invalid link --> Disable host */
+                /* Invalid link --> Disable host --> This should never happen */
                 statusMessage = "Invalid link";
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalid_link", 5, 5 * 60 * 1000l);
             case 7:
+                /* This should never happen */
                 statusMessage = "Undefined errorstate";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Undefined errorstate");
             case 8:
@@ -750,24 +751,24 @@ public class HighWayMe extends UseNet {
                 statusMessage = "Temporary error";
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "temporary_error", 5, 5 * 60 * 1000l);
             case 9:
-                /* No account found -> Host temp. unavailable -> Skip to next download candidate */
-                statusMessage = "No account found";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                /* File not found --> Do not trust this errormessage */
+                statusMessage = "File not found (?)";
+                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 10:
                 /* Host offline or invalid url -> Skip to next download candidate */
                 statusMessage = "Invalid URL or unsupported host";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
                 statusMessage = "Host itself is currently unavailable";
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "individual_host_unavailable", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), statusMessage, 5, 5 * 60 * 1000l);
             case 12:
-                /* MOCH itself is under maintenance */
+                /* MOCH itself is under maintenance --> Temp. disable account */
                 if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nAnbieter führt momentan Wartungsarbeiten durch!";
+                    statusMessage = "\r\nHigh-way führt momentan Wartungsarbeiten durch!";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
-                    statusMessage = "\r\nService is doing maintenance work!";
+                    statusMessage = "\r\nHigh-way is doing maintenance work!";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             case 13:
@@ -779,7 +780,7 @@ public class HighWayMe extends UseNet {
                  * hosts.
                  */
                 statusMessage = "Host specified traffic limit has been reached";
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "individual_host_trafficlimit_reached", 5, 5 * 60 * 1000l);
+                mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 100:
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
