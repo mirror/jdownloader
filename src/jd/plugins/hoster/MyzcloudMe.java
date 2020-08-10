@@ -35,7 +35,7 @@ public class MyzcloudMe extends antiDDoSForHost {
     public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-03-04: Try to avoid IP block: https://board.jdownloader.org/showthread.php?t=80894 */
-        // this.setStartIntervall(10 * 1000l);
+        this.setStartIntervall(10 * 1000l);
     }
 
     @Override
