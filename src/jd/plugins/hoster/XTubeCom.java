@@ -231,8 +231,8 @@ public class XTubeCom extends PluginForHost {
                             logger.warning("Failed to find loginform");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        loginform.put("user_id", account.getUser());
-                        loginform.put("password", account.getPass());
+                        loginform.put("user_id", Encoding.urlEncode(account.getUser()));
+                        loginform.put("password", Encoding.urlEncode(account.getPass()));
                         loginform.put("rememberMe", "1");
                         // loginform.put("", "");
                         if (loginform.containsHTML("g-recaptcha")) {
@@ -269,7 +269,7 @@ public class XTubeCom extends PluginForHost {
     }
 
     private boolean isLoggedin() {
-        return br.getCookie(this.getHost(), "xtube_auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "xtube_cookies", Cookies.NOTDELETEDPATTERN) != null;
+        return br.containsHTML("class=\"icon_logout\"") || br.getCookie(this.getHost(), "xtube_cookies", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
@@ -295,10 +295,10 @@ public class XTubeCom extends PluginForHost {
          * https://www.xtube.com/vip/join It seems like VIP accounts can get higher quality videos.
          */
         if (money > 0) {
-            ai.setStatus("Account with money: $ " + moneyStr);
+            ai.setStatus("Account with balance: $ " + moneyStr);
             account.setType(AccountType.PREMIUM);
         } else {
-            ai.setStatus("Account without money");
+            ai.setStatus("Account without balance");
             account.setType(AccountType.FREE);
         }
         account.setConcurrentUsePossible(true);
