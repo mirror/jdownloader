@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -34,7 +35,7 @@ public class MyzcloudMe extends antiDDoSForHost {
     public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-03-04: Try to avoid IP block: https://board.jdownloader.org/showthread.php?t=80894 */
-        this.setStartIntervall(10 * 1000l);
+        // this.setStartIntervall(10 * 1000l);
     }
 
     @Override
@@ -75,16 +76,23 @@ public class MyzcloudMe extends antiDDoSForHost {
     /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* 2020-08-10: This service is only hosting audio content. */
+        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* Abused */
-        if (br.containsHTML("Трек удален по просьбе правообладателя")) {
+        } else if (br.containsHTML("Трек удален по просьбе правообладателя")) {
+            /* Abused */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            /* Downloadlimit reached */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 403 (limit reached?)", 2 * 60 * 60 * 1000l);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("(\\d{1,2},\\d{1,2}) Мб").getMatch(0);
@@ -100,18 +108,15 @@ public class MyzcloudMe extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 403 (limit reached?)", 30 * 60 * 1000l);
-        }
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink = br.getRegex("\"(/Song/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(/Song/Play/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.info("Could not find downloadurl, trying to get streamurl");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
+                br.getPage("/Song/GetPlayFileUrl/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0));
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
                 }
@@ -136,7 +141,7 @@ public class MyzcloudMe extends antiDDoSForHost {
         /* 2020-02-27: Not required anymore */
         // dllink = dllink + "?t=" + System.currentTimeMillis();
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("gif")) {
             try {
                 br.followConnection();
@@ -154,7 +159,7 @@ public class MyzcloudMe extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
