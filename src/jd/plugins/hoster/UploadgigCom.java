@@ -212,10 +212,12 @@ public class UploadgigCom extends antiDDoSForHost {
             final String url = PluginJSonUtils.getJson(br2, "sp");
             final String params = PluginJSonUtils.getJson(br2, "q");
             if (StringUtils.isEmpty(url) || StringUtils.isEmpty(params) || StringUtils.isEmpty(idStr) || !idStr.matches("\\d+") || StringUtils.isEmpty(waittime_str) || !waittime_str.matches("\\d+")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured");
             }
             /* 2020-07-10: Possible cat & mouse game */
-            final long id = Long.parseLong(idStr) - 1;
+            /* 2020-08-10: 7 */
+            final long substraction_value = 7;
+            final long id = Long.parseLong(idStr) - substraction_value;
             final String directurl = url + "id=" + id + "&" + params;
             // directurl = directurl.replace("/start/", "/s/");
             this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
