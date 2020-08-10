@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(?:www\\.)?xtube\\.com/(?:video-watch/(?:embedded/)?|(watch|play_re)\\.php\\?v=)[A-Za-z0-9_\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(?:www\\.)?xtube\\.com/(?:video-watch/(?:embedded/)?|(?:watch|play_re)\\.php\\?v=)([A-Za-z0-9_\\-]+)" })
 public class XTubeCom extends PluginForHost {
     public XTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,6 +67,20 @@ public class XTubeCom extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
     }
@@ -75,8 +89,11 @@ public class XTubeCom extends PluginForHost {
         /* Offline links should also have nice filenames */
         link.setName(new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9_\\-]+)$").getMatch(0));
         // this.setBrowserExclusive();
-        br.setCookie(this.getHost(), "cookie_warning", "deleted");
-        br.setCookie(this.getHost(), "cookie_warning", "S");
+        /*
+         * 2020-08-10: Not always needed. They're showing an "Adult warning" based on GEO location. E.g. French users will always see this
+         * warning!
+         */
+        br.setCookie(this.getHost(), "AGEGATEPASSED", "1");
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().contains("msg=Invalid+Video+ID") || br.containsHTML(">Video not available<|img/removed_video|>This video has been removed from XTube") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -118,7 +135,7 @@ public class XTubeCom extends PluginForHost {
                 break;
             }
         }
-        String fileID = new Regex(link.getPluginPatternMatcher(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
+        String fileID = getFID(link);
         if (fileID == null) {
             fileID = br.getRegex("contentId\" value=\"([^\"]+)\"").getMatch(0);
         }
