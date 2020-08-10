@@ -864,19 +864,20 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* 2019-07-12: Example: Katfile.com */
             fileInfo[1] = new Regex(correctedBR, "class\\s*=\\s*\"statd\"\\s*>\\s*size\\s*</span>\\s*<span>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
         }
+        if (StringUtils.isEmpty(fileInfo[1])) {
+            /* 2020-08-10: E.g. myqloud.org */
+            try {
+                fileInfo[1] = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), null, null, true);
+            } catch (final Throwable e) {
+                /* This should never happen */
+                e.printStackTrace();
+            }
+        }
         if (this.supports_availablecheck_filesize_html() && StringUtils.isEmpty(fileInfo[1])) {
             /** TODO: Clean this up */
             /* Starting from here - more unsafe attempts */
             if (StringUtils.isEmpty(fileInfo[1])) {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-                if (StringUtils.isEmpty(fileInfo[1])) {
-                    try {
-                        fileInfo[1] = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), null, null, true);
-                    } catch (final Throwable e) {
-                        /* This should never happen */
-                        e.printStackTrace();
-                    }
-                }
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 }
