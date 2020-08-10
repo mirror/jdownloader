@@ -299,4 +299,10 @@ public class MyqloudOrg extends XFileSharingProBasic {
         }
         return dllink;
     }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-08-10: Special: Prevents this plugin from picking up random trash as filesize */
+        return false;
+    }
 }

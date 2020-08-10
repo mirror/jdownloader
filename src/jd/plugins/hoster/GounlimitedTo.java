@@ -17,14 +17,20 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GounlimitedTo extends XFileSharingProBasic {
@@ -172,5 +178,70 @@ public class GounlimitedTo extends XFileSharingProBasic {
             offline = new Regex(correctedBR, "class=\"the_title mb-2\"[^>]*?>SampleVideo 720x480 2mb<").matches();
         }
         return offline;
+    }
+
+    /**
+     * 2020-08-10: Special: Some offline files are not displayed as offline. Instead, final downloadurl leads to error 404 and browser shows
+     * "404 this video was removed" animation on play button click.
+     */
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, downloadsStarted);
+        logger.info("File appears to be online --> Let's deep-check");
+        final String dllink = this.getDllink(link, account);
+        if (!StringUtils.isEmpty(dllink)) {
+            /* Get- and set filesize from directurl */
+            boolean dllink_is_valid = false;
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
+                /* For video streams we often don't get a Content-Disposition header. */
+                if (con.getResponseCode() == 404) {
+                    /* 2020-08-10: Special */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getResponseCode() == 503) {
+                    /* Ok */
+                    /*
+                     * Too many connections but that does not mean that our directlink is invalid. Accept it and if it still returns 503 on
+                     * download-attempt this error will get displayed to the user - such directlinks should work again once there are less
+                     * active connections to the host!
+                     */
+                    logger.info("directurl lead to 503 | too many connections");
+                    dllink_is_valid = true;
+                } else if (con.getCompleteContentLength() > 0 && isDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() == 1301046l) {
+                        /* 2020-08-10: "This video is offline" video ... */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (/* StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream") && */con.getCompleteContentLength() < 100) {
+                        throw new Exception("very likely no file but an error message!length=" + con.getCompleteContentLength());
+                    } else {
+                        dllink_is_valid = true;
+                    }
+                } else {
+                    /* Failure */
+                    // throw new Exception("no downloadable content?" + con.getResponseCode() + "|" + con.getContentType() + "|" +
+                    // con.isContentDisposition());
+                }
+            } catch (final Exception e) {
+                /* Failure */
+                logger.log(e);
+                throw e;
+            } finally {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+            /* Store directurl if it is valid */
+            if (dllink_is_valid) {
+                storeDirecturl(link, account, dllink);
+            }
+        }
+        return status;
     }
 }

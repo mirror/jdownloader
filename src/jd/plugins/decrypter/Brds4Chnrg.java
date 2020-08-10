@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/([0-9a-z]{1,3}|trash)/(thread/[0-9]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/[0-9a-z]{1,}/(thread/[0-9]+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
     public Brds4Chnrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,16 +46,15 @@ public class Brds4Chnrg extends PluginForDecrypt {
             logger.info("Link offline (404): " + parameter);
             return decryptedLinks;
         }
-        if (parameter.matches("https?://[\\w\\.]*?boards\\.[^/]+/([0-9a-z]{1,4}|trash)/[0-9]*")) {
+        if (parameter.matches("https?://[\\w\\.]*?boards\\.[^/]+/[0-9a-z]{1,}/[0-9]*")) {
             String[] threads = br.getRegex("\\[<a href=\"thread/(\\d+)").getColumn(0);
             for (String thread : threads) {
                 decryptedLinks.add(createDownloadlink(parameter + "thread/" + thread));
             }
-        }
-        if (decryptedLinks.size() == 0) {
+        } else {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|is\\d*?\\.4chan\\.org|images\\.4chan\\.org)";
-            String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/(?:[0-9a-z]{1,4}|trash)/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
-            if (br.containsHTML("404 - Not Found")) {
+            String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
                 br.getPage(prot + "://sys.4chan.org/error/404/rid.php");
                 String image404 = br.getRegex("(https?://.+)").getMatch(0);
