@@ -297,11 +297,13 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             public Dimension getPreferredSize() {
                 Dimension ret = super.getPreferredSize();
-                Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
-                int scrollbarWidth = getVerticalScrollBar().getPreferredSize().width;
-                if (!(MainTabbedPane.getInstance().getSelectedView() instanceof LinkGrabberView)) {
-                    int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
-                    ret.width = widthWithout;
+                if (getBorder() != null) {
+                    Insets borderInsets = getBorder().getBorderInsets(sidebarScrollPane);
+                    int scrollbarWidth = getVerticalScrollBar().getPreferredSize().width;
+                    if (!(MainTabbedPane.getInstance().getSelectedView() instanceof LinkGrabberView)) {
+                        int widthWithout = sidebar.getPreferredSize().width + scrollbarWidth + borderInsets.left + borderInsets.right;
+                        ret.width = widthWithout;
+                    }
                 }
                 return ret;
             }
