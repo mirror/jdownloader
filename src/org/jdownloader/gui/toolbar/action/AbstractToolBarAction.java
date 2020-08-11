@@ -35,16 +35,15 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
         if (isVisibleInAllTabs()) {
             setVisible(true);
             return;
-        }
-        if (isVisibleInDownloadTab() && newView instanceof DownloadsView) {
+        } else if (isVisibleInDownloadTab() && newView instanceof DownloadsView) {
             setVisible(true);
             return;
-        }
-        if (isVisibleInLinkgrabberTab() && newView instanceof LinkGrabberView) {
+        } else if (isVisibleInLinkgrabberTab() && newView instanceof LinkGrabberView) {
             setVisible(true);
             return;
+        } else {
+            setVisible(false);
         }
-        setVisible(false);
     }
 
     public static final String ITEM_VISIBLE_FOR_SELECTIONS = "itemVisibleForSelections";
@@ -110,12 +109,10 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
     public Object getValue(String key) {
         if (LARGE_ICON_KEY == (key)) {
             return getLargeIconForToolbar();
-        }
-        if (SMALL_ICON == (key)) {
+        } else if (SMALL_ICON == (key)) {
             return getSmallIconForToolbar();
-        }
-        if (MNEMONIC_KEY == key || DISPLAYED_MNEMONIC_INDEX_KEY == key) {
-            Object ret = super.getValue(key);
+        } else if (MNEMONIC_KEY == key || DISPLAYED_MNEMONIC_INDEX_KEY == key) {
+            final Object ret = super.getValue(key);
             if (ret == null) {
                 if (getName() == null) {
                     setName(createTooltip());
@@ -123,11 +120,11 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
                 setMnemonic(createMnemonic());
             }
             return super.getValue(key);
-        }
-        if (SHORT_DESCRIPTION == key) {
+        } else if (SHORT_DESCRIPTION == key) {
             return createTooltip();
+        } else {
+            return super.getValue(key);
         }
-        return super.getValue(key);
     }
 
     /**
