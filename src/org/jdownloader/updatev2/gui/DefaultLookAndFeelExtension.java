@@ -20,7 +20,6 @@ import org.jdownloader.gui.translate._GUI;
 public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     public static final String ALICE_BLUE_APPROX                                 = "ffF5FCFF";
     public static final String ALPHA_CC_TROPICAL_BLUE_APPROX                     = "ccCAE8FA";
-
     public static final String BLACK                                             = "FF000000";
     public static final String DE_JAVASOFT_PLAF_SYNTHETICA_SIMPLE2D_MENU_PAINTER = "de.javasoft.plaf.synthetica.simple2D.MenuPainter";
     public static final String GRAY                                              = "ffC0C0C0";
@@ -33,7 +32,6 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     public static final String TROPICAL_BLUE_APPROX                              = "ffCAE8FA";
 
     public DefaultLookAndFeelExtension() {
-
     }
 
     @Override
@@ -53,13 +51,11 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
 
     @Override
     public JComponent customizeLayoutWrapTitledPanels(JComponent c) {
-
         return c;
     }
 
     @Override
     public void customizeLinkgrabberSidebarHeader(JLabel lbl, JComponent linkGrabberSideBarHeader) {
-
     }
 
     @Override
@@ -90,7 +86,7 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
         final JScrollPane scrollPane = (JScrollPane) c;
         final Color headerColor = (LAFOptions.getInstance().getColorForPanelHeaderBackground());
         final Color headerlineColor = (LAFOptions.getInstance().getColorForPanelBorders());
-        if (scrollPane.getColumnHeader() != null) {
+        if (scrollPane.getColumnHeader() != null && scrollPane.getBorder() != null) {
             // here it is safe because java compiler cannot pre-optimize the if branch, because HeaderScrollPane is only required within
             // this statement
             g.setColor(headerColor);
@@ -424,5 +420,4 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     @Override
     public void customizeLinkPropertiesPanel(JPanel downloadPropertiesBasePanel) {
     }
-
 }
