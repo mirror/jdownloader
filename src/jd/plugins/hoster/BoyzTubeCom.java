@@ -20,12 +20,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -36,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boyztube.com" }, urls = { "https?://(www\\.)?boyztube\\.com/[a-z0-9\\-]+/watch/[a-z0-9\\-_]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boyztube.com" }, urls = { "https?://(?:www\\.)?boyztube\\.com/[a-z0-9\\-]+/watch/([a-z0-9\\-_]+)\\.html" })
 public class BoyzTubeCom extends PluginForHost {
     public BoyzTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,10 +51,9 @@ public class BoyzTubeCom extends PluginForHost {
         return "http://www.boyztube.com/page/view/toc.html";
     }
 
-    private static final String  app                          = "vod/";
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
@@ -67,56 +69,64 @@ public class BoyzTubeCom extends PluginForHost {
         return br;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         this.br = prepBR(this.br);
         br.getPage(link.getDownloadURL());
-        if (!br.getURL().contains("/watch/")) {
+        if (!br.getURL().contains("/watch/") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"last\">([^<>\"]*?)</li>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String filename = getFID(link).replace("-", " ");
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String appStreamUrl = br.getRegex("var appStreamUrl = \\'(rtmp[^<>\"]*?)\\'").getMatch(0);
-        final String appPlayerUrl = br.getRegex("var appPlayerUrl = \\'(https?[^<>\"]*?/)\\'").getMatch(0);
-        String playpath = br.getRegex("\"(mp4:[^<>\"]*?)\"").getMatch(0);
-        if (playpath == null || appStreamUrl == null || appPlayerUrl == null) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<source[^>]*type=(?:\"|\\')(?:video/)?(?:mp4|flv)[^>]*src=(?:\"|\\')(https?://[^<>\"\\']*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String rtmpurl = appStreamUrl + ":1936/" + app;
-        final String swfurl = appPlayerUrl + "flowplayer.swf?nocache=123";
-        try {
-            dl = new RTMPDownload(this, downloadLink, rtmpurl);
-        } catch (final NoClassDefFoundError e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
-        /* Setup rtmp connection */
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPageUrl(br.getURL());
-        rtmp.setUrl(rtmpurl);
-        rtmp.setTcUrl(rtmpurl);
-        rtmp.setPlayPath(playpath);
-        rtmp.setApp(app);
-        rtmp.setFlashVer("WIN 16,0,0,296");
-        rtmp.setSwfUrl(swfurl);
-        rtmp.setLive(true);
-        /* Resume not possible anyways because of live stream. */
-        rtmp.setResume(FREE_RESUME);
-        ((RTMPDownload) dl).startDownload();
+        dl.startDownload();
     }
 
     @Override
