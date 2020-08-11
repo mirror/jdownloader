@@ -155,11 +155,12 @@ public class JDUtilities {
      *
      * @return RevisionID
      */
+    @Deprecated
     public static String getRevision() {
         return (REVISION != null) ? REVISION : (REVISION = getRevisionNumber() + "");
     }
 
-    /* DO NOT USE in old 09581 stable */
+    @Deprecated
     public static long getRevisionNumber() {
         if (REVISIONINT != -1) {
             return REVISIONINT;

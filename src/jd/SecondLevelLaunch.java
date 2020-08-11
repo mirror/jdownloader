@@ -21,16 +21,15 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
@@ -56,7 +55,6 @@ import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.zip.SharedMemoryState;
 import jd.plugins.DownloadLink;
-import jd.utils.JDUtilities;
 
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
@@ -75,6 +73,7 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -267,19 +266,6 @@ public class SecondLevelLaunch {
     }
 
     /**
-     * Checks if the user uses a correct java version
-     */
-    private static void javaCheck() {
-        if (Application.getResource("disableJavaCheck").exists()) {
-            return;
-        }
-        if (Application.getJavaVersion() < Application.JAVA15) {
-            LoggerFactory.getDefaultLogger().warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
-            System.exit(0);
-        }
-    }
-
-    /**
      * LÃ¤dt ein Dynamicplugin.
      *
      *
@@ -326,15 +312,17 @@ public class SecondLevelLaunch {
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         try {
-            System.setProperty("org.jdownloader.revision", "JDownloader2(Beta)");
-            // log source revision infos
-            HashMap<String, Object> versionMap = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-            if (versionMap != null) {
-                Iterator<Entry<String, Object>> it = versionMap.entrySet().iterator();
-                while (it.hasNext()) {
-                    Entry<String, Object> next = it.next();
-                    if (next.getKey().endsWith("Revision")) {
-                        System.setProperty("jd.revision." + next.getKey().toLowerCase(Locale.ENGLISH), next.getValue().toString());
+            System.setProperty("org.jdownloader.revision", "JDownloader2");
+            final File buildJSon = Application.getResource("build.json");
+            if (buildJSon.isFile()) {
+                final Map<String, Object> versionMap = JSonStorage.restoreFromString(IO.readFileToString(buildJSon), TypeRef.HASHMAP);
+                if (versionMap != null) {
+                    final Iterator<Entry<String, Object>> it = versionMap.entrySet().iterator();
+                    while (it.hasNext()) {
+                        final Entry<String, Object> next = it.next();
+                        if (next.getKey().endsWith("Revision")) {
+                            System.setProperty("jd.revision." + next.getKey().toLowerCase(Locale.ENGLISH), next.getValue().toString());
+                        }
                     }
                 }
             }
@@ -347,8 +335,9 @@ public class SecondLevelLaunch {
             final String key = it.toString();
             LoggerFactory.getDefaultLogger().finer(key + "=" + pr.get(key));
         }
-        LoggerFactory.getDefaultLogger().info("JavaVersion=" + Application.getJavaVersion());
-        long maxHeap = -1;
+        LoggerFactory.getDefaultLogger().info("OS:" + CrossSystem.getOSFamily() + "|" + CrossSystem.getOS() + "|64bit:" + CrossSystem.is64BitOperatingSystem());
+        LoggerFactory.getDefaultLogger().info("CPU:" + CrossSystem.getARCHFamily() + "|64bit:" + CrossSystem.is64BitArch());
+        LoggerFactory.getDefaultLogger().info("JavaVersion:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
@@ -356,25 +345,12 @@ public class SecondLevelLaunch {
                 LoggerFactory.getDefaultLogger().finer("VMArgs: " + arguments.toString());
             }
             java.lang.management.MemoryUsage memory = java.lang.management.ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
-            maxHeap = memory.getMax();
+            final long maxHeap = memory.getMax();
+            LoggerFactory.getDefaultLogger().info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
-        LoggerFactory.getDefaultLogger().info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
-        if (!Application.isHeadless()) {
-            vmOptionsWorkaround(maxHeap);
-        }
         LoggerFactory.getDefaultLogger().info("JDownloader2");
-        // checkSessionInstallLog();
-        final boolean jared = Application.isJared(SecondLevelLaunch.class);
-        String revision = JDUtilities.getRevision();
-        if (!jared) {
-            /* always enable debug and cache refresh in developer version */
-            LoggerFactory.getDefaultLogger().info("Non Jared Version(" + revision + "): RefreshCache=true");
-        } else {
-            LoggerFactory.getDefaultLogger().info("Jared Version(" + revision + ")");
-        }
-        SecondLevelLaunch.preInitChecks();
         SecondLevelLaunch.start(args);
     }
 
@@ -406,159 +382,6 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-    }
-
-    private static void vmOptionsWorkaround(long maxHeap) {
-        try {
-            if (maxHeap > 0 && maxHeap <= 256 * 1024 * 1024) {
-                LoggerFactory.getDefaultLogger().warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
-                if (CrossSystem.isWindows() || CrossSystem.isUnix()) {
-                    final java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
-                    final List<String> arguments = runtimeMxBean.getInputArguments();
-                    boolean xmxArgFound = false;
-                    for (final String arg : arguments) {
-                        if (arg != null && arg.startsWith("-Xmx")) {
-                            xmxArgFound = true;
-                            break;
-                        }
-                    }
-                    final File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
-                        @Override
-                        public boolean accept(File arg0) {
-                            return arg0.getName().endsWith(".vmoptions");
-                        }
-                    });
-                    if (vmOptions != null) {
-                        for (File vmOption : vmOptions) {
-                            final byte[] bytes = IO.readFile(vmOption, 1024 * 50);
-                            if (new String(bytes, "UTF-8").contains("-Xmx")) {
-                                LoggerFactory.getDefaultLogger().info("Rename " + vmOption + " because it contains too low Xmx VM arg!");
-                                int i = 1;
-                                File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                while (backup.exists() || i == 10) {
-                                    i++;
-                                    backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                }
-                                if (backup.exists()) {
-                                    backup.delete();
-                                }
-                                vmOption.renameTo(backup);
-                            } else {
-                                LoggerFactory.getDefaultLogger().info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
-                                int i = 1;
-                                File backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                while (backup.exists() || i == 10) {
-                                    i++;
-                                    backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
-                                }
-                                if (backup.exists()) {
-                                    backup.delete();
-                                }
-                                if (vmOption.renameTo(backup)) {
-                                    final StringBuilder sb = new StringBuilder();
-                                    if (CrossSystem.isWindows()) {
-                                        sb.append("-Xmx512m\r\n");
-                                        sb.append("-Dsun.java2d.d3d=false\r\n");
-                                    } else if (CrossSystem.isLinux()) {
-                                        sb.append("-Xmx512m\n\n");
-                                    }
-                                    if (vmOption.exists() == false || vmOption.delete()) {
-                                        IO.writeStringToFile(vmOption, sb.toString());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (xmxArgFound) {
-                        String launcher = System.getProperty("exe4j.launchName");
-                        if (StringUtils.isEmpty(launcher)) {
-                            launcher = System.getProperty("exe4j.moduleName");
-                        }
-                        if (StringUtils.isNotEmpty(launcher)) {
-                            LoggerFactory.getDefaultLogger().info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
-                            if (CrossSystem.isWindows()) {
-                                launcher = launcher.replaceFirst("\\.exe$", ".vmoptions");
-                            } else {
-                                launcher = launcher + ".vmoptions";
-                            }
-                            final File vmOption = new File(launcher);
-                            final StringBuilder sb = new StringBuilder();
-                            if (CrossSystem.isWindows()) {
-                                sb.append("-Xmx512m\r\n");
-                                sb.append("-Dsun.java2d.d3d=false\r\n");
-                            } else if (CrossSystem.isLinux()) {
-                                sb.append("-Xmx512m\n\n");
-                            }
-                            if (vmOption.exists() == false || vmOption.delete()) {
-                                IO.writeStringToFile(vmOption, sb.toString());
-                            }
-                        }
-                    }
-                } else if (CrossSystem.isMac()) {
-                    final File file = getInfoPlistPath();
-                    if (file != null && file.exists() && file.isFile()) {
-                        String str = IO.readFileToTrimmedString(file);
-                        boolean writeChanges = false;
-                        if (Application.getJavaVersion() >= 17005000l && Application.getJavaVersion() <= 17006000l) {
-                            /* in 1.7 update 5, Xms does not work, we need to specify Xmx */
-                            if (str.contains("<string>-Xmx64m</string>")) {
-                                str = str.replace("<string>-Xmx64m</string>", "<string>-Xmx256m</string>");
-                                writeChanges = true;
-                            } else if (str.contains("<string>-Xms64m</string>")) {
-                                str = str.replace("<string>-Xms64m</string>", "<string>-Xmx256m</string>");
-                                writeChanges = true;
-                            }
-                            if (writeChanges) {
-                                LoggerFactory.getDefaultLogger().info("Workaround for buggy Java 1.7 update 5");
-                            }
-                        } else if (str.contains("<string>-Xmx64m</string>")) {
-                            str = str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
-                            writeChanges = true;
-                        }
-                        if (writeChanges) {
-                            LoggerFactory.getDefaultLogger().info("Modify " + file + " because it contains too low Xmx VM arg!");
-                            if (!isMacLauncherSigned()) {
-                                int i = 1;
-                                File backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                                while (backup.exists() || i == 10) {
-                                    i++;
-                                    backup = new File(file.getCanonicalPath() + ".backup_" + i);
-                                }
-                                if (backup.exists()) {
-                                    backup.delete();
-                                }
-                                IO.copyFile(file, backup);
-                                if (file.exists() == false || file.delete()) {
-                                    IO.writeStringToFile(file, str);
-                                }
-                            } else {
-                                LoggerFactory.getDefaultLogger().info("Cannot modify, because the Laucher is signed. User has to reinstall.");
-                            }
-                        } else {
-                            LoggerFactory.getDefaultLogger().info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
-                        }
-                    }
-                }
-            }
-        } catch (final Throwable e) {
-            LoggerFactory.getDefaultLogger().log(e);
-        }
-    }
-
-    private static boolean isMacLauncherSigned() {
-        String ownBundlePath = System.getProperty("i4j.ownBundlePath");
-        if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
-            // folder installer
-            File file = new File(new File(ownBundlePath), "Contents/﻿_CodeSignature");
-            if (file.exists()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void preInitChecks() {
-        SecondLevelLaunch.javaCheck();
     }
 
     private static void start(final String args[]) {
@@ -1020,7 +843,7 @@ public class SecondLevelLaunch {
         }
         if (!Application.isHeadless()) {
             while (true) {
-                Thread initThread = JDGui.getInstance().getInitThread();
+                final Thread initThread = JDGui.getInstance().getInitThread();
                 if (initThread == null || initThread.isAlive() == false) {
                     break;
                 }
