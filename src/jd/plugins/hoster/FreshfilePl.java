@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,8 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freshfile.pl" }, urls = { "https?://freshfile\\.pl/dl/(.*)" })
 public class FreshfilePl extends PluginForHost {
@@ -111,10 +111,13 @@ public class FreshfilePl extends PluginForHost {
                 // emptyData: No input data
                 String response = br.toString();
                 int fileNumber = 0;
-                for (final DownloadLink dllink : links) {
+                for (final DownloadLink link : links) {
                     final String source = new Regex(response, "\"" + fileNumber + "\":\\{(.+?)\\}").getMatch(0);
                     if (source == null) {
-                        throw new Exception("Availablecheck broken for freshfile.pl");
+                        // throw new Exception("Availablecheck broken for freshfile.pl");
+                        /* 2020-08-11: E.g. API response for offline file: {"message":{"error":"emptyData"}} */
+                        link.setAvailable(false);
+                        continue;
                     }
                     String fileStatus = getJson("status", source);
                     String fileName = getJson("name", source);
@@ -124,18 +127,18 @@ public class FreshfilePl extends PluginForHost {
                         fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
                     }
                     if (fileName == null) {
-                        fileName = dllink.getName();
+                        fileName = link.getName();
                     }
                     String fileSize = getJson("size", source);
                     if (fileStatus.equals("0")) {
-                        dllink.setAvailable(false);
-                        logger.warning("Linkchecker returns not available for: " + getHost() + " and link: " + dllink.getPluginPatternMatcher());
+                        link.setAvailable(false);
+                        logger.warning("Linkchecker returns not available for: " + getHost() + " and link: " + link.getPluginPatternMatcher());
                     } else {
                         fileName = Encoding.htmlDecode(fileName.trim());
                         fileName = Encoding.unicodeDecode(fileName);
-                        dllink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
-                        dllink.setDownloadSize(SizeFormatter.getSize(fileSize));
-                        dllink.setAvailable(true);
+                        link.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
+                        link.setDownloadSize(SizeFormatter.getSize(fileSize));
+                        link.setAvailable(true);
                     }
                     fileNumber++;
                 }
