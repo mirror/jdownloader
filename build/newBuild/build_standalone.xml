@@ -6,7 +6,7 @@
 	<property name="debug" value="true" />
 
 
-	<property name="working" value="standalone" />
+	<property name="working" value="dist/standalone" />
 
 	<property name="cls" value="${working}/bin" />
 	<property name="dist" value="${working}/dist" />
