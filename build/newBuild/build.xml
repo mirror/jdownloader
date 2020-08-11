@@ -177,7 +177,7 @@
 	<target name="jarMain">
 		<mkdir dir="${dist}/libs" />
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 		</manifest>
 		<jar duplicate="fail" file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
 
@@ -187,27 +187,23 @@
 			</fileset>
 		</jar>
 		<jar duplicate="fail" file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
-
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
 		<jar duplicate="fail" file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
-
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
 		</jar>
 		<jar duplicate="fail" file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
-
 			<fileset dir="${cls}">
 				<include name="jd/nutils/**" />
 			</fileset>
 		</jar>
 
 		<jar duplicate="fail" file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
-
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/dynamic/**/*" />
 			</fileset>
@@ -224,13 +220,11 @@
 		<jar duplicate="fail" file="${dist}/libs/laf/syntheticaJDCustom.jar" manifest="${dist}/Manifest.MF">
 
 			<fileset dir="${cls}">
-
 				<include name="org/jdownloader/gui/laf/**/*" />
 				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
 			</fileset>
 
 			<fileset dir="src">
-
 				<include name="org/jdownloader/gui/laf/**/*" />
 				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
 				<exclude name="**/*.java" />
@@ -272,7 +266,7 @@
 		</pathconvert>
 		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="JD-Team and AppWork GmbH" />
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<!-- <attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" /> -->
@@ -292,6 +286,7 @@
 				<exclude name="org/appwork/**/*" />
 				<exclude name="org/jdownloader/gui/laf/**/*" />
 				<exclude name="org/jdownloader/update/**/*" />
+				<exclude name="org/jdownloader/launcher/**/*" />
 				<exclude name="org/jdownloader/uninstaller/**/*" />
 				<exclude name="org/jdownloader/installer/**/*" />
 				<exclude name="org/jdownloader/dynamic/**/*" />
@@ -365,7 +360,7 @@
 		<echo file="${working}/classpath">Core.jar${line.separator}${cp}${line.separator}${cpe}</echo>
 		<!--launcher-->
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="AppWork GmbH" />
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 			<attribute name="Main-Class" value="org.jdownloader.update.launcher.JDLauncher" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<!--<attribute name="Class-Path" value="" />-->
@@ -382,6 +377,7 @@
 			<fileset dir="${cls}">
 				<include name="classpath" />
 				<include name="jd/Main.class" />
+				<include name="org/jdownloader/launcher/**/*" />
 				<include name="org/jdownloader/logging/**/*" />
 				<include name="org/jdownloader/updatev2/**/*" />
 				<include name="org/jdownloader/update/**/*.class" />
@@ -462,7 +458,7 @@
 	<!-- Build optional addon plugins -->
 	<target name="jarOptionals" description="Creates the Optional Plugins">
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="JD-Team and Friends" />
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 		</manifest>
 
 		<buildAddon package="EventScripter" include="eventscripter" />
@@ -504,7 +500,7 @@
 	<!-- Build optional reconnect plugins -->
 	<target name="jarReconnectOptionals" depends="compile" description="Creates the Optional Reconnect Addons">
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 		</manifest>
 
 
