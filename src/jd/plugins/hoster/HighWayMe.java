@@ -704,7 +704,10 @@ public class HighWayMe extends UseNet {
 
     private void handleAPIErrors(final Browser br, final Account account) throws PluginException, InterruptedException {
         final String lang = System.getProperty("user.language");
-        String statusMessage = null;
+        String statusMessage = PluginJSonUtils.getJson(br, "error");
+        if (StringUtils.isEmpty(statusMessage)) {
+            statusMessage = "Unknown error";
+        }
         try {
             switch (statuscode) {
             case 0:
@@ -712,55 +715,38 @@ public class HighWayMe extends UseNet {
                 break;
             case 1:
                 /* Login or password missing -> disable account */
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nDein Account wurde gesperrt!";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nYour account was banned!";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 2:
-                statusMessage = "Not enough free traffic";
+                /* Not enough free traffic */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 3:
-                statusMessage = "Not enough premium traffic";
+                /* Not enough premium traffic */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 4:
                 /* Too many simultaneous downloads */
-                statusMessage = "Too many simultaneous downloads";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 1 * 60 * 1000l);
             case 5:
                 /* Login or password missing -> disable account */
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nCode 5: Login Fehler";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nCode 5: Login failure";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 6:
                 /* Invalid link --> Disable host --> This should never happen */
-                statusMessage = "Invalid link";
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "invalid_link", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), statusMessage, 5, 5 * 60 * 1000l);
             case 7:
-                /* This should never happen */
-                statusMessage = "Undefined errorstate";
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Undefined errorstate");
+                /* 2020-08-11: This errorcode does not exist anymore serverside - it should never happen! RE: admin */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
             case 8:
                 /* Temp error, try again in some minutes */
-                statusMessage = "Temporary error";
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "temporary_error", 5, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), statusMessage, 5, 5 * 60 * 1000l);
             case 9:
                 /* File not found --> Do not trust this errormessage */
+                /* Override serverside errormessage */
                 statusMessage = "File not found (?)";
                 mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 10:
                 /* Host offline or invalid url -> Skip to next download candidate */
-                statusMessage = "Invalid URL or unsupported host";
                 mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
-                statusMessage = "Host itself is currently unavailable";
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), statusMessage, 5, 5 * 60 * 1000l);
             case 12:
                 /* MOCH itself is under maintenance --> Temp. disable account */
@@ -779,7 +765,6 @@ public class HighWayMe extends UseNet {
                  * Host-specified traffic limit reached e.g. traffic for keep2share.cc is empty but account still has traffic left for other
                  * hosts.
                  */
-                statusMessage = "Host specified traffic limit has been reached";
                 mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 100:
                 /* Login or password missing -> disable account */

@@ -19,11 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornozavr.net" }, urls = { "https?://(?:www\\.)?pornozavr\\.net/to/\\d+/[a-z0-9\\-]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornozavr.net" }, urls = { "https?://(?:www\\.)?pornozavr\\.net/([a-z0-9\\-]+)\\.html" })
 public class PornozavrNet extends PornEmbedParser {
     public PornozavrNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +39,23 @@ public class PornozavrNet extends PornEmbedParser {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
-        decryptedLinks.addAll(findEmbedUrls(null));
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = new Regex(parameter, this.getSupportedLinks()).getMatch(0).replace("-", " ");
+        }
+        decryptedLinks.addAll(findEmbedUrls(title));
+        if (decryptedLinks.size() == 0) {
+            final String dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            if (dllink != null) {
+                final DownloadLink dl = this.createDownloadlink(dllink);
+                dl.setForcedFileName(title + ".mp4");
+                decryptedLinks.add(dl);
+            } else {
+                decryptedLinks.add(createOfflinelink(parameter, "Failed to find any downloadable Content"));
+                return decryptedLinks;
+            }
+        }
         return decryptedLinks;
     }
 }
