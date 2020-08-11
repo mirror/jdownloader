@@ -1,0 +1,456 @@
+<project default="standalone" basedir=".">
+	<!-- Dependencies -->
+	<property name="dep.awu" value="../AppWorkUtils" />
+	<property name="dep.browser" value="../JDBrowser" />
+	<property name="dep.myjd" value="../MyJDownloaderClient" />
+	<property name="debug" value="true" />
+
+
+	<property name="working" value="update" />
+
+	<property name="cls" value="${working}/bin" />
+	<property name="dist" value="${working}/dist" />
+	<property name="res" value="ressourcen" />
+	<property name="pluginres" value="${dist}/pluginressourcen" />
+
+
+
+	<path id="classpath">
+		<fileset dir="${cls}" />
+		<!-- Dependencies -->
+		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+
+		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
+
+
+		<fileset dir="${res}/libs" includes="**/*.jar" />
+		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
+	</path>
+
+	<!-- Deletes the old build -->
+	<target name="clean">
+
+		<delete dir="${working}/bin" />
+		<delete dir="${dist}" />
+		<mkdir dir="${dist}" />
+		<mkdir dir="${working}" />
+	</target>
+
+	<!-- Compiles the code -->
+	<target name="compile" depends="clean">
+		<mkdir dir="${cls}" />
+
+
+
+		<!-- Build dependencies -->
+
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+
+
+
+
+		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+			<compilerarg line="-proc:none" />
+
+		</javac>
+
+		<echo message="Finished." />
+
+
+
+
+
+	</target>
+
+
+
+	<!-- Copies all the additional ressources  -->
+	<target name="copy_res" depends="clean">
+		<copy todir="${dist}/jd">
+			<fileset dir="${res}/jd" includes="**/*" />
+		</copy>
+
+
+		<copy todir="${dist}/libs">
+			<fileset dir="${res}/libs" includes="**/*">
+				<exclude name="**/*.info" />
+			</fileset>
+		</copy>
+		<copy todir="${dist}/libs">
+			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
+				<exclude name="miglayout.jar" />
+				<exclude name="**/*.info" />
+			</fileset>
+		</copy>
+		<copy todir="${dist}/libs">
+			<fileset dir="${dep.browser}/libs" includes="**/*.jar">
+				<exclude name="**/*.info" />
+			</fileset>
+		</copy>
+
+		<copy todir="${dist}">
+			<fileset dir="themes" includes="**/*">
+				<exclude name="**/*.psd" />
+				<exclude name="**/*.pnd" />
+			</fileset>
+
+		</copy>
+
+		<copy todir="${dist}/licenses">
+			<fileset dir="${res}/licenses" includes="**/*" />
+			<fileset dir="${res}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
+		</copy>
+
+		<copy todir="${dist}/tools">
+			<fileset dir="${res}/tools" includes="**/*" />
+		</copy>
+		<copy todir="${dist}">
+			<fileset dir="${res}" includes="*.html, *.txt, *.exe, *.bat, *.properties" />
+		</copy>
+
+		<mkdir dir="${dist}/java" />
+		<mkdir dir="${dist}/tmp" />
+
+
+
+		<mkdir dir="${dist}/translations" />
+
+		<copy todir="${dist}/translations">
+			<fileset dir="${dep.awu}/src" includes="**/*.lng" />
+			<fileset dir="${dep.browser}/src" includes="**/*.lng" />
+			<fileset dir="src" includes="**/*.lng" />
+		</copy>
+		<copy todir="${dist}">
+
+			<fileset dir="translations" includes="**/*.lng" />
+
+		</copy>
+
+	</target>
+
+	<!-- Make the default jar -->
+	<target name="jarMain">
+		<mkdir dir="${dist}/libs" />
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
+		</manifest>
+		<jar duplicate="fail" file="${dist}/libs/JDHttp.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/http/**/*" />
+			</fileset>
+		</jar>
+			
+		<jar duplicate="fail" file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/gui/**" />
+			</fileset>
+		</jar>
+			
+		<jar duplicate="fail" file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/captcha/**" />
+				<exclude name="jd/captcha/methods/**" />
+			</fileset>
+		</jar>
+
+		<jar duplicate="fail" file="${dist}/libs/JDUtils.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/nutils/**" />
+			</fileset>
+		</jar>
+
+		<jar duplicate="fail" file="${dist}/libs/Dynamics.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/dynamic/**/*" />
+			</fileset>
+		</jar>
+
+		<jar duplicate="fail" file="${dist}/libs/cons.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/container/**/*" />
+			</fileset>
+		</jar>
+		
+		<jar duplicate="fail" file="${dist}/libs/laf/syntheticaJDCustom.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/gui/laf/**/*" />
+				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
+			</fileset>
+			<fileset dir="src">
+				<include name="org/jdownloader/gui/laf/**/*" />
+				<exclude name="org/jdownloader/gui/laf/plain/**/*" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</jar>
+
+		<jar duplicate="fail" file="${dist}/libs/laf/syntheticaJDPlain.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="org/jdownloader/gui/laf/plain/**/*" />
+			</fileset>
+			<fileset dir="src">
+				<include name="org/jdownloader/gui/laf/plain/**/*" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</jar>
+
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+		<pathconvert pathsep=" " dirsep="/" property="class-path">
+			<path>
+				<fileset dir="${dist}/libs" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](libs[\\/].*)" to="\1" />
+
+		</pathconvert>
+		<pathconvert pathsep=" " dirsep="/" property="class-path-extensions">
+			<path>
+				<fileset dir="${dist}/extensions" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](extensions[\\/].*)" to="\1" />
+		</pathconvert>
+		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
+			
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />			
+			<!-- plugins that serialize own classes have to be put in the classpath -->
+			<!-- <attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" /> -->
+		</manifest>
+
+
+
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+		<delete file="${working}/version.nfo" failonerror="true" />		
+
+		<pathconvert pathsep="${line.separator}" dirsep="/" property="cp">
+			<path>
+				<fileset dir="${dist}/libs" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](libs[\\/].*)" to="\1" />
+
+		</pathconvert>
+		<pathconvert pathsep="${line.separator}" dirsep="/" property="cpe">
+			<path>
+				<fileset dir="${dist}/extensions" includes="**/*.jar" />
+			</path>
+			<mapper type="regexp" from="[\\/]dist[\\/](extensions[\\/].*)" to="\1" />
+		</pathconvert>
+
+		<delete file="${working}/classpath" failonerror="true" />
+		<echo file="${working}/classpath">Core.jar${line.separator}${cp}${line.separator}${cpe}</echo>
+		<!--launcher-->
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
+			<attribute name="Main-Class" value="org.jdownloader.launcher.JDLauncher" />
+			<!-- plugins that serialize own classes have to be put in the classpath -->
+			<!--<attribute name="Class-Path" value="" />-->
+		</manifest>
+		<!--CORE-->
+
+		<jar duplicate="fail" file="${dist}/Core.jar" manifest="${dist}/Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="**/*.class" />
+				<include name="**/*.txt" />
+				<include name="**/*.dat" />
+
+				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
+				<exclude name="jd/captcha/**" />
+				<exclude name="org/appwork/**/*" />
+				<exclude name="org/jdownloader/gui/laf/**/*" />
+				<exclude name="org/jdownloader/update/**/*" />
+				<exclude name="org/jdownloader/launcher/**/*" />
+				<exclude name="org/jdownloader/uninstaller/**/*" />
+				<exclude name="org/jdownloader/installer/**/*" />
+				<include name="org/jdownloader/dynamic/**/*" />
+				<exclude name="jd/dynamics/**" />
+				<exclude name="jd/gui/**" />
+				<exclude name="com/fastcgi/**" />
+
+
+				<include name="org/jdownloader/container/**/*" />
+
+
+				<exclude name="org/jdownloader/updatev2/**/*" />
+
+				<exclude name="jd/http/**" />
+				<include name="jd/nutils/**" />
+				<exclude name="jd/plugins/hoster/**" />
+				<include name="jd/plugins/hoster/RTMPDownload.class" />
+				<exclude name="jd/plugins/decrypter/**" />
+				<exclude name="org/jdownloader/extensions/*/**/*" />
+				<exclude name="jd/utils/dev/**" />
+				<exclude name="tests/**" />
+				<exclude name="**/test/**" />
+			</fileset>
+			<fileset dir="src">
+				<include name="**/*.js" />
+				<include name="**/*.html" />
+				<include name="**/*.css" />
+				<include name="org/jdownloader/captcha/v2/challenge/recaptcha/v2/example/*.jpg" />
+				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
+
+			</fileset>
+			<fileset dir="${cls}">
+				<include name="jd/plugins/hoster/RTMPDownload.class" />
+			</fileset>
+
+
+
+			<fileset dir="${res}">
+				<include name="*.properties" />
+				<exclude name="jd/captcha/methods" />
+			</fileset>
+		</jar>
+
+		<jar duplicate="fail" file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
+			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
+			<fileset dir="${working}">
+				<include name="version.nfo" />
+				<include name="classpath" />
+			</fileset>
+			<fileset dir="${cls}">
+				<include name="classpath" />
+				<include name="jd/Main.class" />
+				<include name="org/jdownloader/launcher/**/*" />
+				<include name="org/jdownloader/logging/**/*" />
+				<include name="org/jdownloader/updatev2/**/*" />
+				<include name="org/jdownloader/update/**/*.class" />
+				<include name="org/jdownloader/uninstaller/**/*.class" />
+				<include name="org/jdownloader/installer/**/*.class" />
+
+				<include name="org/appwork/**/*" />
+				<exclude name="org/appwork/update/server/**/*" />
+				<exclude name="org/appwork/utils/sms/**/*" />
+				<exclude name="org/appwork/utils/ide/**/*" />
+			</fileset>
+
+			<fileset dir="${dep.awu}/src">
+				<include name="org/appwork/utils/net/effective_tld_names.dat" />
+				<include name="org/appwork/remoteapi/html/*.css" />
+				<include name="org/appwork/remoteapi/html/*.js" />
+				<include name="org/appwork/remoteapi/html/*.html" />
+			</fileset>
+
+
+			<fileset dir="themes">
+				<include name="themes/standard/**/images/dialog/**/*" />
+				<include name="themes/standard/**/images/update*" />
+				<exclude name="**/*.psd" />
+				<exclude name="**/*.pnd" />
+			</fileset>
+		</jar>
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+
+	</target>
+
+
+
+	<!-- Copies compiled classes(hoster, decrypter, dynamics -->
+	<target name="copy_compiled">
+		<mkdir dir="${dist}/jd/plugins/hoster/" />
+		<copy todir="${dist}/jd/plugins/hoster/">
+			<fileset dir="${cls}/jd/plugins/hoster/">
+				<include name="**/*" />
+				<exclude name="RTMPDownload*" />
+			</fileset>
+		</copy>
+		<mkdir dir="${dist}/jd/plugins/decrypter/" />
+		<copy todir="${dist}/jd/plugins/decrypter/">
+			<fileset dir="${cls}/jd/plugins/decrypter/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- Use this to build an addon -->
+	<macrodef name="buildAddon" description="Function for creating an optional addon">
+
+		<attribute name="package" />
+		<attribute name="include" />
+		<sequential>
+			<echo message="Creating @{package}" />
+			<mkdir dir="${dist}/extensions" />
+
+			<jar duplicate="fail" jarfile="${dist}/extensions/@{package}.jar" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="org/jdownloader/extensions/@{include}/**/*" />
+				</fileset>
+				<fileset dir="src">
+					<include name="org/jdownloader/extensions/@{include}/**/*" />
+					<exclude name="**/*.java" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Build optional addon plugins -->
+	<target name="jarOptionals" description="Creates the Optional Plugins">
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
+		</manifest>
+		<buildAddon package="EventScripter" include="eventscripter" />
+		<buildAddon package="JDChat" include="chat" />
+		<buildAddon package="infobar" include="infobar" />
+		<buildAddon package="FolderWatch" include="folderwatchV2" />
+		<buildAddon package="infobar" include="infobar" />
+		<buildAddon package="JDShutdown" include="shutdown" />
+		<buildAddon package="JDGrowl" include="growl" />
+		<buildAddon package="AntiShutdown" include="antistandby" />
+		<buildAddon package="Extraction" include="extraction" />
+		<buildAddon package="Scheduler" include="schedulerV2" />
+		<buildAddon package="translator" include="translator" />
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+	</target>
+
+	<!-- Use this to build an reconnect plugin -->
+	<macrodef name="buildRecPlugin" description="Function for creating an optional router addon">
+		<attribute name="name" />
+		<sequential>
+			<echo message="Creating @{name}" />
+			<mkdir dir="${dist}/reconnect/" />
+			<jar duplicate="fail" jarfile="${dist}/reconnect/@{name}.reconnect" manifest="${dist}/Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/controlling/reconnect/plugins/@{name}/**" />
+				</fileset>
+			</jar>
+		</sequential>
+	</macrodef>
+
+	<!-- Build optional reconnect plugins -->
+	<target name="jarReconnectOptionals" depends="compile" description="Creates the Optional Reconnect Addons">
+		<manifest file="${dist}/Manifest.MF">
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
+		</manifest>
+		<delete file="${dist}/Manifest.MF" failonerror="true" />
+	</target>
+
+
+
+
+
+
+
+
+
+
+
+	<target name="standalone" depends="clean,compile,copy_res,jarReconnectOptionals,jarOptionals,jarMain,copy_compiled">
+		<echo message="Finished." />
+	</target>
+</project>

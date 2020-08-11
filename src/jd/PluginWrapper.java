@@ -13,16 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public abstract class PluginWrapper {
-
-    private transient LazyPlugin<?> lazy;
+    private final LazyPlugin<?> lazy;
 
     public PluginWrapper(final LazyPlugin<?> lazy) {
         this.lazy = lazy;
@@ -32,14 +28,4 @@ public abstract class PluginWrapper {
     public LazyPlugin<?> getLazy() {
         return lazy;
     }
-
-    @Deprecated
-    public static PluginWrapper getWrapper(String name) {
-        LazyHostPlugin ret = HostPluginController.getInstance().get("DirectHTTP");
-        if (ret != null) {
-            return ret.getPluginWrapper();
-        }
-        return null;
-    }
-
 }
