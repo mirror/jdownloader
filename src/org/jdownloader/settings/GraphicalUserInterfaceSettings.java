@@ -628,6 +628,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
     public static enum LookAndFeelType {
+        // https://github.com/JFormDesigner/FlatLaf https://www.formdev.com/flatlaf
+        FLATLAF_LIGHT(null, "com.formdev.flatlaf.FlatLightLaf"),
+        FLATLAF_DARK(null, "com.formdev.flatlaf.FlatDarkLaf"),
+        FLATLAF_INTELLIJ(null, "com.formdev.flatlaf.FlatIntelliJLaf"),
+        FLATLAF_DRACULA(null, "com.formdev.flatlaf.FlatDarculaLaf"),
         ALU_OXIDE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel"),
         BLACK_EYE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
         BLACK_MOON("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),

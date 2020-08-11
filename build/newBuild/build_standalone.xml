@@ -6,7 +6,7 @@
 	<property name="debug" value="true" />
 
 
-	<property name="working" value="update" />
+	<property name="working" value="standalone" />
 
 	<property name="cls" value="${working}/bin" />
 	<property name="dist" value="${working}/dist" />
@@ -14,7 +14,7 @@
 	<property name="pluginres" value="${dist}/pluginressourcen" />
 
 
-
+  
 	<path id="classpath">
 		<fileset dir="${cls}" />
 		<!-- Dependencies -->
@@ -30,9 +30,8 @@
 	<!-- Deletes the old build -->
 	<target name="clean">
 
-		<delete dir="${working}/bin" />
+		<delete dir="${cls}" />
 		<delete dir="${dist}" />
-		<mkdir dir="${dist}" />
 		<mkdir dir="${working}" />
 	</target>
 
@@ -155,13 +154,13 @@
 				<include name="jd/http/**/*" />
 			</fileset>
 		</jar>
-			
+
 		<jar duplicate="fail" file="${dist}/libs/JDGUI.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/gui/**" />
 			</fileset>
 		</jar>
-			
+
 		<jar duplicate="fail" file="${dist}/libs/JAntiCaptcha.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/captcha/**" />
@@ -186,7 +185,7 @@
 				<include name="org/jdownloader/container/**/*" />
 			</fileset>
 		</jar>
-		
+
 		<jar duplicate="fail" file="${dist}/libs/laf/syntheticaJDCustom.jar" manifest="${dist}/Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="org/jdownloader/gui/laf/**/*" />
@@ -224,9 +223,9 @@
 			<mapper type="regexp" from="[\\/]dist[\\/](extensions[\\/].*)" to="\1" />
 		</pathconvert>
 		<echo message="ClassPath ${class-path}  ${class-path-extensions}" />
-			
+
 		<manifest file="${dist}/Manifest.MF">
-			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />			
+			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<!-- <attribute name="Class-Path" value="JDownloader.jar ${class-path} ${class-path-extensions}" /> -->
 		</manifest>
@@ -234,7 +233,7 @@
 
 
 		<delete file="${dist}/Manifest.MF" failonerror="true" />
-		<delete file="${working}/version.nfo" failonerror="true" />		
+		<delete file="${working}/version.nfo" failonerror="true" />
 
 		<pathconvert pathsep="${line.separator}" dirsep="/" property="cp">
 			<path>
