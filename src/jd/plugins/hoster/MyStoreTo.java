@@ -26,7 +26,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -67,9 +66,6 @@ public class MyStoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (isStable()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
-        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://mystore.to/api/download.php", "FID=" + getFID(downloadLink));
         final String dllink = br.toString();
@@ -114,20 +110,6 @@ public class MyStoreTo extends PluginForHost {
             }
             throw e;
         }
-    }
-
-    private boolean isStable() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     private String getFID(final DownloadLink dl) {

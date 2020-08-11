@@ -7,7 +7,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
@@ -26,20 +25,6 @@ public class JDAPIImpl implements JDAPI {
         HostPluginController.getInstance().init();
         CrawlerPluginController.getInstance().init();
         return true;
-    }
-
-    @Override
-    public int sum(int a, int b) {
-        return a + b;
-    }
-
-    @Override
-    public void doSomethingCool() {
-        new Thread() {
-            public void run() {
-                Dialog.getInstance().showMessageDialog("Awesome");
-            }
-        }.start();
     }
 
     @Override
