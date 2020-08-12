@@ -250,7 +250,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("RtmpDump", "http://rtmpdump.mplayerhq.hu"));
         stats.add(new JLabel("UPNP:"), "");
         stats.add(disable("Cling", "https://github.com/4thline/cling"));
-        stats.add(new JLabel("Extraction:"), "");
+        stats.add(new JLabel("Extraction:"));
         stats.add(disable("7ZipJBindings", "https://github.com/borisbrodski/sevenzipjbinding"));
         stats.add(disable("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
         final LookAndFeel laf = UIManager.getLookAndFeel();
