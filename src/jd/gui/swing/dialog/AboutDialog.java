@@ -52,6 +52,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -253,10 +254,25 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("7ZipJBindings", "https://github.com/borisbrodski/sevenzipjbinding"));
         stats.add(disable("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
         final LookAndFeel laf = UIManager.getLookAndFeel();
-        if (laf != null && StringUtils.containsIgnoreCase(laf.getID(), "Synthetica")) {
+        if (laf != null) {
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_laf()), "");
-            stats.add(disable("Synthetica", "http://www.jyloo.com/synthetica/"));
-            stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2("(#112044)")), "skip");
+            if (StringUtils.containsIgnoreCase(laf.getID(), "FlatLaf")) {
+                stats.add(disable(laf.getName(), "https://www.formdev.com/flatlaf/"));
+            } else if (StringUtils.containsIgnoreCase(laf.getID(), "Synthetica")) {
+                stats.add(disable(laf.getName(), "http://www.jyloo.com/synthetica/"));
+                try {
+                    final Object info = UIManager.get("Synthetica.license.info");
+                    if (info instanceof String[]) {
+                        final String license = StringUtils.join(Arrays.asList((String[]) info), "\r");
+                        final String Licensee = new Regex(license, "Licensee\\s*=\\s*([^\r\n]+)").getMatch(0);
+                        final String LicenseRegistrationNumber = new Regex(license, "LicenseRegistrationNumber\\s*=\\s*([^\r\n]+)").getMatch(0);
+                        stats.add(disable(_GUI.T.jd_gui_swing_components_AboutDialog_synthetica2(Licensee + "(#" + LicenseRegistrationNumber + ")")), "skip");
+                    }
+                } catch (Throwable ignore) {
+                }
+            } else {
+                stats.add(disable(laf.getName(), ""));
+            }
         }
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
         stats.add(disable("See /themes/* folder for Icon Licenses"), "");

@@ -79,5 +79,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bcpkix-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bctls-jdk15on.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/laf/flatlaf.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
