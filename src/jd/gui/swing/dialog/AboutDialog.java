@@ -270,6 +270,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     }
                 } catch (Throwable ignore) {
                 }
+            } else if (StringUtils.containsIgnoreCase(laf.getID(), "Substance")) {
+                stats.add(disable(laf.getName(), "https://github.com/kirill-grouchnikov/radiance"));
             } else {
                 stats.add(disable(laf.getName(), ""));
             }

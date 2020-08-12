@@ -6,6 +6,7 @@ import jd.plugins.AddonPanel;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -132,7 +133,12 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     protected void initExtension() throws StartException {
-        configPanel = new InfoBarConfigPanel(this);
+        configPanel = new EDTHelper<InfoBarConfigPanel>() {
+            @Override
+            public InfoBarConfigPanel edtRun() {
+                return new InfoBarConfigPanel(InfoBarExtension.this);
+            }
+        }.getReturnValue();
     }
 
     @Override

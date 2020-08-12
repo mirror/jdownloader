@@ -1101,7 +1101,12 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         ChatExtension.COMMANDS.add("/nick ");
         ChatExtension.COMMANDS.add("/mode ");
         ChatExtension.COMMANDS.add("/join ");
-        configPanel = new ChatConfigPanel(this, getSettings());
+        configPanel = new EDTHelper<ChatConfigPanel>() {
+            @Override
+            public ChatConfigPanel edtRun() {
+                return new ChatConfigPanel(ChatExtension.this, getSettings());
+            }
+        }.getReturnValue();
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
