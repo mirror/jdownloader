@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
 import org.appwork.swing.MigPanel;
@@ -48,6 +49,7 @@ public abstract class AbstractPanelHeader extends MigPanel {
     public AbstractPanelHeader(String title, Icon imageIcon) {
         super("ins " + LAFOptions.getInstance().getExtension().customizePanelHeaderInsets(), "[]2[grow,fill][]0[]", "[grow,fill]");
         tableHeader = new JTableHeader();
+        tableHeader.setTable(new JTable());// flatlaf laf access header.getTable during rendering
         lbl = SwingUtils.toBold(new JLabel("") {
             private boolean paint;
 
@@ -73,7 +75,6 @@ public abstract class AbstractPanelHeader extends MigPanel {
                 } finally {
                     paint = false;
                 }
-
             }
         });
         add(icon = new JLabel(new AbstractIcon(IconKey.ICON_DOWNLOAD, 16)), "gapleft 1");
@@ -91,7 +92,6 @@ public abstract class AbstractPanelHeader extends MigPanel {
         SwingUtils.setOpaque(lbl, false);
         setOpaque(false);
         bt = new CloseButton(new AppAction() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 onCloseAction();

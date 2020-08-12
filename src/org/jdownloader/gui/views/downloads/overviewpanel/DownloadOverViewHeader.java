@@ -16,7 +16,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DownloadOverViewHeader extends AbstractPanelHeader {
-
     private final DownloadOverview overView;
 
     public DownloadOverViewHeader(DownloadOverview overView) {
