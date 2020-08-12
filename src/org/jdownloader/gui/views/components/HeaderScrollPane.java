@@ -6,6 +6,7 @@ import java.awt.Rectangle;
 import javax.swing.JComponent;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JViewport;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.table.JTableHeader;
@@ -61,7 +62,9 @@ public class HeaderScrollPane extends JScrollPane {
             }
         });
         this.getVerticalScrollBar().setBlockIncrement(15);
-        this.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, new JTableHeader());
+        final JTableHeader tableHeader = new JTableHeader();
+        tableHeader.setTable(new JTable());// flatlaf laf access header.getTable during rendering
+        this.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, tableHeader);
         LAFOptions.getInstance().getExtension().customizeHeaderScrollPane(this);
     }
 
