@@ -25,6 +25,7 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -628,11 +629,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
     public static enum LookAndFeelType {
-        // https://github.com/JFormDesigner/FlatLaf https://www.formdev.com/flatlaf
-        FLATLAF_LIGHT(null, "com.formdev.flatlaf.FlatLightLaf"),
-        FLATLAF_DARK(null, "com.formdev.flatlaf.FlatDarkLaf"),
-        FLATLAF_INTELLIJ(null, "com.formdev.flatlaf.FlatIntelliJLaf"),
-        FLATLAF_DRACULA(null, "com.formdev.flatlaf.FlatDarculaLaf"),
+        FLATLAF_LIGHT("flatlaf-themes", "com.formdev.flatlaf.FlatLightLaf", JVMVersion.JAVA_1_8),
+        FLATLAF_DARK("flatlaf-themes", "com.formdev.flatlaf.FlatDarkLaf", JVMVersion.JAVA_1_8),
+        FLATLAF_INTELLIJ("flatlaf-themes", "com.formdev.flatlaf.FlatIntelliJLaf", JVMVersion.JAVA_1_8),
+        FLATLAF_DRACULA("flatlaf-themes", "com.formdev.flatlaf.FlatDarculaLaf", JVMVersion.JAVA_1_8),
         ALU_OXIDE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel"),
         BLACK_EYE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
         BLACK_MOON("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),
@@ -655,6 +655,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
         private final String clazz;
         private final String extensionID;
+        private final long   minimumJVMVersoin;
 
         public final String getExtensionID() {
             return extensionID;
@@ -664,21 +665,34 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             return clazz;
         }
 
-        private LookAndFeelType(String extensionID, String clazz) {
+        public final long getMinimumJVMVersion() {
+            return minimumJVMVersoin;
+        }
+
+        private LookAndFeelType(String extensionID, String clazz, long minimumJVMVersoin) {
             this.clazz = clazz;
             this.extensionID = extensionID;
+            this.minimumJVMVersoin = minimumJVMVersoin;
+        }
+
+        private LookAndFeelType(String extensionID, String clazz) {
+            this(extensionID, clazz, JVMVersion.JAVA_1_6);
         }
 
         public boolean isAvailable() {
             try {
-                // do not use Class.forName here since this would load the class
-                final String path = "/" + getClazz().replace(".", "/") + ".class";
-                final URL classPath = getClass().getResource(path);
-                return classPath != null;
+                if (JVMVersion.isMinimum(getMinimumJVMVersion())) {
+                    // do not use Class.forName here since this would load the class
+                    final String path = "/" + getClazz().replace(".", "/") + ".class";
+                    final URL classPath = getClass().getResource(path);
+                    return classPath != null;
+                } else {
+                    return false;
+                }
             } catch (Throwable e) {
                 e.printStackTrace();
+                return false;
             }
-            return false;
         }
     }
 
