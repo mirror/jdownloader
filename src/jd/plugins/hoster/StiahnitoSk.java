@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -21,10 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -39,11 +40,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "https://(?:www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" })
 public class StiahnitoSk extends PluginForHost {
-
     public StiahnitoSk(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.stiahnito.sk/ucet/credit");
@@ -53,7 +51,6 @@ public class StiahnitoSk extends PluginForHost {
     public String getAGBLink() {
         return "http://www.stiahnito.sk/terms-and-conditions";
     }
-
     /*
      * Sister sites: hellshare.cz, (and their other domains), hellspy.cz (and their other domains), using same dataservers but slightly
      * different script
@@ -69,12 +66,10 @@ public class StiahnitoSk extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    private static final String  COOKIE_HOST                  = "http://stiahnito.sk";
+    private static final String  COOKIE_HOST                  = "https://stiahnito.sk";
     private static final boolean ALL_PREMIUMONLY              = true;
     private static final String  HTML_IS_STREAM               = "section\\-videodetail\"";
     private static Object        LOCK                         = new Object();
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -87,13 +82,12 @@ public class StiahnitoSk extends PluginForHost {
         setBrowserExclusive();
         br.setCustomCharset("utf-8");
         this.br.setDebug(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 502) {
-                link.getLinkStatus().setStatusText("We are sorry, but HellSpy is unavailable in your country");
-                return AvailableStatus.UNCHECKABLE;
-            }
+        /* 2020-08-12: GEO-blocked everywhere except Slovakia */
+        br.setAllowedResponseCodes(new int[] { 502 });
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 502) {
+            link.getLinkStatus().setStatusText("GEO-blocked");
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -122,14 +116,14 @@ public class StiahnitoSk extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         int maxchunks = FREE_MAXCHUNKS;
         String dllink = null;
-        requestFileInformation(downloadLink);
+        requestFileInformation(link);
         if (br.getHttpConnection().getResponseCode() == 502) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but HellShare is unavailable in your country", 4 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "GEO-blocked", 4 * 60 * 60 * 1000l);
         }
-        dllink = checkDirectLink(downloadLink, "free_directlink");
+        dllink = checkDirectLink(link, "free_directlink");
         if (dllink == null) {
             if (br.containsHTML(HTML_IS_STREAM)) {
                 dllink = getStreamDirectlink();
@@ -140,19 +134,12 @@ public class StiahnitoSk extends PluginForHost {
             }
         }
         if (dllink == null && ALL_PREMIUMONLY) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new AccountRequiredException();
         }
         br.setFollowRedirects(true);
         br.setReadTimeout(120 * 1000);
         /* Resume & unlimited chunks is definitly possible for stream links! */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, maxchunks);
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -163,7 +150,7 @@ public class StiahnitoSk extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("free_directlink", dllink);
+        link.setProperty("free_directlink", dllink);
         dl.startDownload();
     }
 
@@ -258,7 +245,6 @@ public class StiahnitoSk extends PluginForHost {
                 throw e;
             }
         }
-
     }
 
     @SuppressWarnings("deprecation")
@@ -344,7 +330,7 @@ public class StiahnitoSk extends PluginForHost {
         play_url = Encoding.htmlDecode(play_url);
         this.br.getPage(play_url);
         this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String dllink = br.getRegex("url: \"(http://stream\\d+\\.helldata\\.com[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("url: \"(https?://stream\\d+\\.helldata\\.com[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Stream-finallink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -379,5 +365,4 @@ public class StiahnitoSk extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
