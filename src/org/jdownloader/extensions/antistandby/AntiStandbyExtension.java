@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.antistandby;
 
 import java.awt.Dialog.ModalityType;
@@ -31,6 +30,7 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -40,7 +40,6 @@ import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
 import org.jdownloader.gui.translate._GUI;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> implements ShutdownVetoListener {
-
     private final AtomicReference<Thread>              currentThread = new AtomicReference<Thread>(null);
     private ExtensionConfigPanel<AntiStandbyExtension> configPanel;
 
@@ -55,7 +54,6 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     public AntiStandbyExtension() throws StartException {
         super();
         setTitle(T.jd_plugins_optional_antistandby_jdantistandby());
-
     }
 
     public boolean isLinuxRunnable() {
@@ -160,7 +158,12 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     @Override
     protected void initExtension() throws StartException {
         if (!Application.isHeadless()) {
-            configPanel = new AntistandbyConfigPanel(this);
+            configPanel = new EDTHelper<AntistandbyConfigPanel>() {
+                @Override
+                public AntistandbyConfigPanel edtRun() {
+                    return new AntistandbyConfigPanel(AntiStandbyExtension.this);
+                }
+            }.getReturnValue();
         }
     }
 
@@ -195,5 +198,4 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     public long getShutdownVetoPriority() {
         return 0;
     }
-
 }

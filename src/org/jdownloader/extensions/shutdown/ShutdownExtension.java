@@ -27,6 +27,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -131,7 +132,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     @Override
     protected void initExtension() throws StartException {
         if (!Application.isHeadless()) {
-            configPanel = new ShutdownConfigPanel(this);
+            configPanel = new EDTHelper<ShutdownConfigPanel>() {
+                @Override
+                public ShutdownConfigPanel edtRun() {
+                    return new ShutdownConfigPanel(ShutdownExtension.this);
+                }
+            }.getReturnValue();
         }
     }
 

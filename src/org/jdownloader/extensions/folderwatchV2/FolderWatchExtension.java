@@ -59,6 +59,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.reflection.Clazz;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -634,7 +635,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     @Override
     protected void initExtension() throws StartException {
         if (!Application.isHeadless()) {
-            configPanel = new FolderWatchConfigPanel(this);
+            configPanel = new EDTHelper<FolderWatchConfigPanel>() {
+                @Override
+                public FolderWatchConfigPanel edtRun() {
+                    return new FolderWatchConfigPanel(FolderWatchExtension.this);
+                }
+            }.getReturnValue();
         }
     }
 

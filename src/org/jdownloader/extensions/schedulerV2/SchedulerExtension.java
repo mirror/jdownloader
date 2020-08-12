@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.schedulerV2;
 
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
@@ -53,19 +53,17 @@ import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 
 public class SchedulerExtension extends AbstractExtension<SchedulerConfig, SchedulerTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Object> {
-
     private SchedulerConfigPanel                configPanel;
     private ScheduledExecutorService            scheduler;
     private final Object                        lock            = new Object();
     private CopyOnWriteArrayList<ScheduleEntry> scheduleEntries = new CopyOnWriteArrayList<ScheduleEntry>();
     private final ShutdownEvent                 shutDownEvent   = new ShutdownEvent() {
-
                                                                     @Override
-                                                                    public void onShutdown(ShutdownRequest shutdownRequest) {
-                                                                        CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(SchedulerExtension.this);
-                                                                        saveScheduleEntries(false);
-                                                                    }
-                                                                };
+        public void onShutdown(ShutdownRequest shutdownRequest) {
+            CFG_SCHEDULER.ENTRY_LIST.getEventSender().removeListener(SchedulerExtension.this);
+            saveScheduleEntries(false);
+        }
+    };
 
     @Override
     public boolean isHeadlessRunnable() {
@@ -75,7 +73,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     public void saveScheduleEntries(final boolean async) {
         if (async) {
             TaskQueue.getQueue().addAsynch(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     saveScheduleEntries(false);
@@ -133,13 +130,11 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     protected void start() throws StartException {
         if (!Application.isHeadless()) {
             new EDTRunner() {
-
                 @Override
                 protected void runInEDT() {
                     getConfigPanel().updateLayout();
                 }
             };
-
             // The extension can add items to the main toolbar and the main menu.
             MenuManagerMainToolbar.getInstance().registerExtender(this);
             MenuManagerMainmenu.getInstance().registerExtender(this);
@@ -174,7 +169,6 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                     break;
                 }
             }
-
             if (pos > -1) {
                 scheduleEntries.set(pos, newEntry);
                 saveScheduleEntries(true);
@@ -228,7 +222,12 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
     @Override
     protected void initExtension() throws StartException {
         if (!Application.isHeadless()) {
-            configPanel = new SchedulerConfigPanel(this);
+            configPanel = new EDTHelper<SchedulerConfigPanel>() {
+                @Override
+                public SchedulerConfigPanel edtRun() {
+                    return new SchedulerConfigPanel(SchedulerExtension.this);
+                }
+            }.getReturnValue();
         }
     }
 
@@ -253,7 +252,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         case SPECIFICDAYS: {
             Calendar c = Calendar.getInstance();
             // check whether day of week is correct
@@ -266,8 +265,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
-
+        break;
         case HOURLY: {
             Calendar event = Calendar.getInstance();
             event.setTimeInMillis(plan.getTimestamp() * 1000l);
@@ -277,7 +275,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         case CHOOSEINTERVAL: {
             long nowMin = Calendar.getInstance().getTimeInMillis() / (60 * 1000);
             long startMin = plan.getTimestamp() / 60;
@@ -286,7 +284,7 @@ public class SchedulerExtension extends AbstractExtension<SchedulerConfig, Sched
                 return true;
             }
         }
-            break;
+        break;
         }
         return false;
     }

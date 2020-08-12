@@ -55,6 +55,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
@@ -195,7 +196,12 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             this.entries = new ArrayList<ScriptEntry>(loadedEntries);
         }
         if (!Application.isHeadless()) {
-            configPanel = new EventScripterConfigPanel(this);
+            configPanel = new EDTHelper<EventScripterConfigPanel>() {
+                @Override
+                public EventScripterConfigPanel edtRun() {
+                    return new EventScripterConfigPanel(EventScripterExtension.this);
+                }
+            }.getReturnValue();
         }
         intervalController = new IntervalController(this);
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
