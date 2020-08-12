@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -67,7 +68,7 @@ public class BangbrosCom extends PluginForDecrypt {
         final boolean loginRequired = requiresAccount(parameter);
         if (!is_logged_in && loginRequired) {
             logger.info("Account required");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         br.getPage(parameter);
         if (isOffline(this.br, parameter)) {
@@ -76,6 +77,21 @@ public class BangbrosCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String title = null;
+        String cast_comma_separated = null;
+        final String cast_html = br.getRegex("<span class=\"tag\">Cast:(.*?)</span>").getMatch(0);
+        if (cast_html != null) {
+            final String[] castMembers = new Regex(cast_html, "class=\"tagB\">([^<]*)<").getColumn(0);
+            if (castMembers.length > 0) {
+                cast_comma_separated = "";
+                for (String castMember : castMembers) {
+                    castMember = castMember.trim();
+                    if (cast_comma_separated.length() > 0) {
+                        cast_comma_separated += ",";
+                    }
+                    cast_comma_separated += castMember;
+                }
+            }
+        }
         if (parameter.matches(type_userinput_video_couldbe_trailer)) {
             final String url_name = new Regex(parameter, "([a-z0-9\\-]+$)").getMatch(0);
             fid = new Regex(parameter, "/video(\\d+)").getMatch(0);
@@ -107,7 +123,12 @@ public class BangbrosCom extends PluginForDecrypt {
             if (title == null) {
                 title = this.br.getRegex("class=\"desTxt\\-hed\">([^<>\"]+)<").getMatch(0);
             }
-            if (title == null) {
+            if (title != null) {
+                title = Encoding.htmlDecode(title);
+                if (cast_comma_separated != null) {
+                    title = cast_comma_separated + "_" + title;
+                }
+            } else {
                 /* Fallback to id from inside url */
                 title = fid;
             }
@@ -125,7 +146,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 }
                 final String ext = ".mp4";
                 final DownloadLink dl = this.createDownloadlink(videourl, fid, productid, quality_url);
-                dl.setName(title + "_" + quality_url + ext);
+                dl.setForcedFileName(title + "_" + quality_url + ext);
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
@@ -134,7 +155,7 @@ public class BangbrosCom extends PluginForDecrypt {
             if (cfg.getBooleanProperty("GRAB_photos", false)) {
                 final String quality = "pictures";
                 final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
-                dl.setName(title + "_" + quality + ".zip");
+                dl.setForcedFileName(title + "_" + quality + ".zip");
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
@@ -143,18 +164,16 @@ public class BangbrosCom extends PluginForDecrypt {
             if (cfg.getBooleanProperty("GRAB_screencaps", false)) {
                 final String quality = "screencaps";
                 final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
-                dl.setName(title + "_" + quality + ".zip");
+                dl.setForcedFileName(title + "_" + quality + ".zip");
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
                 decryptedLinks.add(dl);
             }
         }
-        if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            fp.addLinks(decryptedLinks);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

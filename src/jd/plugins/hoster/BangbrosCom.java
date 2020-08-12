@@ -223,10 +223,8 @@ public class BangbrosCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     public void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
@@ -237,14 +235,22 @@ public class BangbrosCom extends PluginForHost {
                      * when the user logs in via browser.
                      */
                     br.setCookies(account.getHoster(), cookies);
+                    /* 2020-08-12: Allow re-usage of cookiees without checking but only every 30 seconds! */
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 30 * 1000l) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
                     br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
                     if (isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearAll();
+                        prepBR(br);
                     }
-                    logger.info("Cookie login failed --> Performing full login");
-                    br = prepBR(new Browser());
                 }
+                logger.info("Performing full login");
                 br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
                 final Form loginform = br.getForm(0);
                 if (loginform == null) {
@@ -294,18 +300,13 @@ public class BangbrosCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
+        /* 2020-08-12: Assume that all valid accounts are premium accounts */
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium Account");
-        account.setValid(true);
         return ai;
     }
 
@@ -327,18 +328,18 @@ public class BangbrosCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        final boolean is_this_plugin = downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        final boolean is_this_plugin = link.getHost().equalsIgnoreCase(plugin.getHost());
         if (is_this_plugin) {
             /* The original plugin is always allowed to download. */
             return true;
-        } else if (!downloadLink.isEnabled() && "".equals(downloadLink.getPluginPatternMatcher())) {
+        } else if (!link.isEnabled() && "".equals(link.getPluginPatternMatcher())) {
             /*
              * setMultiHostSupport uses a dummy DownloadLink, with isEnabled == false. we must set to true for the host to be added to the
              * supported host array.
              */
             return true;
-        } else if (getMainlink(downloadLink) != null && getMainlink(downloadLink).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+        } else if (getMainlink(link) != null && getMainlink(link).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
             /* Multihost download only possible for specified linktype. */
             return true;
         } else {
