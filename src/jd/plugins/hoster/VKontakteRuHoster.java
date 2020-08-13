@@ -31,8 +31,10 @@ import java.util.regex.Pattern;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -366,6 +368,7 @@ public class VKontakteRuHoster extends PluginForHost {
             } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
                 br.setFollowRedirects(true);
                 finalUrl = link.getStringProperty("directlink", null);
+                br.getPage(finalUrl);
                 /* Check if directlink is expired */
                 checkstatus = linkOk(link, link.getFinalFileName(), isDownload);
                 if (checkstatus != 1) {
@@ -549,25 +552,34 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new AccountRequiredException("This document is available only to its owner");
             }
         }
-        if (dl == null) {
-            if (StringUtils.isEmpty(this.finalUrl)) {
-                logger.warning("Failed to find final downloadurl");
-                /* 2020-05-05: It is sometimes tricky to determine the exact error */
-                final String response_content_type = br.getHttpConnection().getContentType();
-                if (response_content_type != null && response_content_type.contains("application/json")) {
-                    logger.info("Browser contains json response --> Probably error --> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access denied or content offline");
-                } else {
-                    logger.warning("Unknown error");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (this.finalUrl != null && this.finalUrl.contains(".m3u8")) {
+            /* HLS download */
+            br.getPage(this.finalUrl);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            if (dl == null) {
+                if (StringUtils.isEmpty(this.finalUrl)) {
+                    logger.warning("Failed to find final downloadurl");
+                    /* 2020-05-05: It is sometimes tricky to determine the exact error */
+                    final String response_content_type = br.getHttpConnection().getContentType();
+                    if (response_content_type != null && response_content_type.contains("application/json")) {
+                        logger.info("Browser contains json response --> Probably error --> Retrying");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access denied or content offline");
+                    } else {
+                        logger.warning("Unknown error");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
+                // most if not all components already opened connection via either linkOk or photolinkOk
+                br.getHeaders().put("Accept-Encoding", "identity");
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
             }
-            // most if not all components already opened connection via either linkOk or photolinkOk
-            br.getHeaders().put("Accept-Encoding", "identity");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, finalUrl), getMaxChunks(link, finalUrl));
+            handleServerErrors(link);
+            dl.startDownload();
         }
-        handleServerErrors(link);
-        dl.startDownload();
     }
 
     private String decryptURLSubL(String decryptType, String t, String e) throws PluginException {

@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -774,27 +775,31 @@ public class VKontakteRu extends PluginForDecrypt {
                     selectedQualities.add("1080p");
                 }
             }
-            for (final String selectedQualityValue : selectedQualities) {
-                final String finallink = foundQualities.get(selectedQualityValue);
-                if (finallink != null) {
+            final List<String> knownQualities = Arrays.asList(new String[] { "240p", "360p", "480p", "720p", "1080p" });
+            for (final Map.Entry<String, String> qualityEntry : foundQualities.entrySet()) {
+                final String thisQuality = qualityEntry.getKey();
+                final String finallink = qualityEntry.getValue();
+                final boolean userSelectedThisQuality = selectedQualities.contains(thisQuality);
+                final boolean isUnknownQuality = !knownQualities.contains(thisQuality);
+                /* 2020-08-13: Force-add unknown qualities! */
+                if (userSelectedThisQuality || isUnknownQuality) {
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
                     final String linkid = oid + "_" + id;
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     dl.setContentUrl(getProtocol() + "vk.com/video" + linkid);
-                    final String ext = getFileNameExtensionFromString(finallink, ".mp4");
-                    final String finalfilename = filename + "_" + selectedQualityValue + ext;
+                    final String finalfilename = filename + "_" + thisQuality + ".mp4";
                     dl.setFinalFileName(finalfilename);
                     dl.setProperty("directfilename", finalfilename);
                     dl.setProperty("directlink", finallink);
                     dl.setProperty("userid", oid);
                     dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_video_id, id);
                     dl.setProperty("embedhash", embedHash);
-                    dl.setProperty("selectedquality", selectedQualityValue);
+                    dl.setProperty("selectedquality", thisQuality);
                     dl.setProperty("nologin", true);
                     if (fastLinkcheck) {
                         dl.setAvailable(true);
                     }
-                    dl.setLinkID(LINKID_PREFIX + linkid + "_" + selectedQualityValue);
+                    dl.setLinkID(LINKID_PREFIX + linkid + "_" + thisQuality);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 }
@@ -1116,9 +1121,9 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } catch (final Throwable e) {
         }
-        foundQualities.clear();
         if (foundQualities.isEmpty()) {
             /* First try to do the same as in above json handling --> Fallback */
+            final String hls_master = PluginJSonUtils.getJson(source, "hls");
             final String http_url = PluginJSonUtils.getJson(source, "postlive_mp4");
             final String http_quality = http_url != null ? new Regex(http_url, "(\\d+)\\.mp4").getMatch(0) : null;
             if (http_url != null && http_quality != null) {
@@ -1135,6 +1140,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (finallink != null) {
                     foundQualities.put(qualityInfo[2], finallink);
                 }
+            }
+            /* 2020-08-13: Last resort - only download HLS stream if nothing else is available! */
+            if (foundQualities.isEmpty() && hls_master != null) {
+                foundQualities.put("HLS", hls_master);
             }
         }
         return foundQualities;

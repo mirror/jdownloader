@@ -213,10 +213,10 @@ public class RealDebridCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final UserResponse user = callRestAPI(account, "/user", UserResponse.TYPE);
-        ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
         if ("premium".equalsIgnoreCase(user.getType())) {
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
+            ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
             final HashMap<String, HostsResponse> hosts = callRestAPI(account, "/hosts", new TypeRef<HashMap<String, HostsResponse>>() {
             });
             final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -231,6 +231,7 @@ public class RealDebridCom extends PluginForHost {
             ai.setStatus("Free Account");
             /* 2020-08-11: Free accounts cannot be used to download anything */
             ai.setProperty("multiHostSupport", Property.NULL);
+            ai.setTrafficLeft(0);
         }
         return ai;
     }

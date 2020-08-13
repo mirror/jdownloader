@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|e|p|#\\!/v)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|d/|e|p|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
     public JetloadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,22 +52,24 @@ public class JetloadNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean        FREE_RESUME                  = true;
-    private final int            FREE_MAXCHUNKS               = 0;
-    private final int            FREE_MAXDOWNLOADS            = 20;
-    private final boolean        ACCOUNT_FREE_RESUME          = true;
-    private final int            ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int            ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean        FREE_RESUME              = true;
+    private final int            FREE_MAXCHUNKS           = 0;
+    private final int            FREE_MAXDOWNLOADS        = 20;
+    // private final boolean ACCOUNT_FREE_RESUME = true;
+    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
+    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /*
      * 2019-05-08: Generated via jetload.com account psp[AT]jdownloader[DOT]org Documentation: https://jetload.net/u/#!/api_docs
      */
-    private static final String  API_KEY                      = "b9yEWYHSNVZq1a2y";
-    private static final boolean prefer_linkcheck_via_API     = true;
-    private boolean              api_used                     = true;
-    private static final boolean useNewWay2020                = true;
+    /* 2020-08-13: Filecheck via API is broken? Only returns "maintenance" even with new API-Key ... */
+    private static final String  API_KEY                  = "SYhgMbFQ3BbLB6LY";
+    private static final boolean prefer_linkcheck_via_API = true;
+    private boolean              api_used                 = true;
+    private static final boolean useNewWay2020            = true;
+    private static final String  TYPE_VIDEO               = "https?://(?:www\\.)?jetload\\.net/(?:e|#\\!/v)/([A-Za-z0-9]+)";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -85,14 +87,25 @@ public class JetloadNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        return requestFileInformation(link, false);
+        final AvailableStatus status = requestFileInformation(link, false);
+        if (!link.isNameSet()) {
+            /* Set fallback name if needed */
+            if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+                /* Hm at least we know it is a video ... */
+                link.setName(this.getFID(link) + ".mp4");
+            } else {
+                link.setName(this.getFID(link));
+            }
+        }
+        return status;
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         api_used = false;
         this.setBrowserExclusive();
         /* 2020-03-10: Disabled - not required anymore */
-        final boolean allowWebsiteFallback = false;
+        /* 2020-08-13: Required again due to API "maintenance" error */
+        final boolean allowWebsiteFallback = true;
         AvailableStatus status = AvailableStatus.UNCHECKABLE;
         if (prefer_linkcheck_via_API) {
             status = this.requestFileInformationAPI(link, false);
@@ -118,6 +131,9 @@ public class JetloadNet extends PluginForHost {
         br.getPage(String.format("https://jetload.net/api/v2/check_file/%s/%s", API_KEY, this.getFID(link)));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if ("maintenance".equalsIgnoreCase(br.toString())) {
+            logger.info("API is under maintenance or broken");
+            return AvailableStatus.UNCHECKABLE;
         }
         final String status = PluginJSonUtils.getJson(br, "status");
         if ("400".equals(status)) {
@@ -130,13 +146,12 @@ public class JetloadNet extends PluginForHost {
         final String filesize = PluginJSonUtils.getJson(br, "file_size");
         if (filename != null) {
             link.setFinalFileName(filename);
-        } else {
-            link.setName(this.getFID(link));
         }
         if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
             link.setDownloadSize(Long.parseLong(filesize));
         }
         final String filestatus = PluginJSonUtils.getJson(br, "file_status");
+        /* 2020-08-13: Filename- and size can be given even if file is offline! */
         if (StringUtils.equalsIgnoreCase(filestatus, "Deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -164,11 +179,23 @@ public class JetloadNet extends PluginForHost {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         /* 2019-05-08: Very similar to their API but not exactly the same */
         if (useNewWay2020) {
+            final String fid = this.getFID(link);
+            br.getPage("https://" + this.getHost() + "/d/" + fid);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*404 File not found or has been removed")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String filename = br.getRegex(">File:([^<>\"]+)<").getMatch(0);
+            final String filesize = br.getRegex(">Size:\\s*(\\d+)\\s*<").getMatch(0);
+            if (!StringUtils.isEmpty(filename)) {
+                link.setName(filename);
+            }
+            if (!StringUtils.isEmpty(filesize)) {
+                link.setDownloadSize(Long.parseLong(filesize));
+            }
             if (!isDownload) {
                 /* Do not request captchas during availablecheck */
-                return AvailableStatus.UNCHECKABLE;
+                return AvailableStatus.TRUE;
             }
-            final String fid = this.getFID(link);
             br.getPage(link.getPluginPatternMatcher());
             /* 2020-01-22: Hardcoded reCaptchaV2 key */
             final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc90MkUAAAAAOrqIJqt4iXY_fkXb7j3zwgRGtUI").getToken();
@@ -197,8 +224,6 @@ public class JetloadNet extends PluginForHost {
             final String filesize = PluginJSonUtils.getJson(br, "file_size");
             if (filename != null) {
                 link.setFinalFileName(filename);
-            } else {
-                link.setName(this.getFID(link));
             }
             if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
                 link.setDownloadSize(Long.parseLong(filesize));
