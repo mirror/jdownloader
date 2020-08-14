@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -49,7 +50,9 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.LimitedInputStream;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -242,27 +245,40 @@ public class FirefileCc extends PluginForHost {
                         try {
                             FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
                             fos = new FileOutputStream(outputFile);
-                            final BufferedOutputStream bos = new BufferedOutputStream(fos, 1024 * 1024);
-                            final FirefileCipherOutputStream cos = new FirefileCipherOutputStream(bos);
+                            final FirefileCipherOutputStream cos = new FirefileCipherOutputStream(new BufferedOutputStream(fos, 1024 * 1024));
+                            final byte[] buf = new byte[512 * 1024];
                             try {
-                                long fileSize = src.length();
-                                int numFullChunks = (int) Math.floor(fileSize / Long.valueOf(this.CHUNK_SIZE_WITH_ENCRYPTION));
-                                int lastChunkSize = (int) fileSize - (numFullChunks * this.CHUNK_SIZE_WITH_ENCRYPTION);
+                                final long fileSize = src.length();
+                                final int numFullChunks = (int) Math.floor(fileSize / Long.valueOf(this.CHUNK_SIZE_WITH_ENCRYPTION));
+                                final long lastChunkSize = fileSize - (numFullChunks * this.CHUNK_SIZE_WITH_ENCRYPTION);
                                 for (int i = 0; i < numFullChunks + 1; i++) {
-                                    boolean isLastChunk = i == numFullChunks ? true : false;
-                                    final byte[] buffer = new byte[isLastChunk ? lastChunkSize : this.CHUNK_SIZE_WITH_ENCRYPTION];
-                                    fis.read(buffer, 0, buffer.length);
-                                    progress.updateValues(progress.getCurrent() + buffer.length, total);
-                                    final byte[] iv = Arrays.copyOfRange(buffer, 0, 16);
-                                    final byte[] payload = Arrays.copyOfRange(buffer, 16, buffer.length);
-                                    PaddedBufferedBlockCipher aes = this.getCipherInstanceRijndaelEngine(iv, plainKey.getBytes());
+                                    final boolean isLastChunk = i == numFullChunks ? true : false;
+                                    if (isLastChunk && lastChunkSize == 0) {
+                                        break;
+                                    }
+                                    final byte[] iv = IO.readStream(16, fis, new ByteArrayOutputStream(), false);
+                                    progress.updateValues(progress.getCurrent() + iv.length, total);
+                                    encryptionDone.addAndGet(-iv.length);
+                                    final PaddedBufferedBlockCipher aes = this.getCipherInstanceRijndaelEngine(iv, plainKey.getBytes());
                                     cos.setCipher(aes);
-                                    cos.write(payload, 0, payload.length);
-                                    encryptionDone.addAndGet(-buffer.length);
+                                    final LimitedInputStream lis = new LimitedInputStream(fis, isLastChunk ? lastChunkSize : CHUNK_SIZE_WITH_ENCRYPTION) {
+                                        @Override
+                                        public void close() throws IOException {
+                                        }
+                                    };
+                                    while (true) {
+                                        final int read = lis.read(buf);
+                                        if (read == -1) {
+                                            break;
+                                        } else if (read > 0) {
+                                            cos.write(buf, 0, read);
+                                            progress.updateValues(progress.getCurrent() + read, total);
+                                            encryptionDone.addAndGet(-read);
+                                        }
+                                    }
                                 }
-                            } finally {
                                 cos.close();
-                                bos.close();
+                            } finally {
                                 fos.close();
                             }
                         } finally {
