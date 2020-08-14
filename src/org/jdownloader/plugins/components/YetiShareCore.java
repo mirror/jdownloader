@@ -464,9 +464,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink, null, true);
-        handleDownload(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, null, true);
+        handleDownload(link, null);
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
@@ -489,165 +489,158 @@ public class YetiShareCore extends antiDDoSForHost {
             // }
             // }
             if (supports_availablecheck_over_info_page(link)) {
-                getPage(link.getPluginPatternMatcher());
+                br.setFollowRedirects(true);
                 /* For premium mode, we might get our final downloadurl here already. */
-                while (true) {
-                    final String redirect = this.br.getRedirectLocation();
-                    if (redirect != null) {
-                        if (isDownloadlink(redirect)) {
-                            continue_link = redirect;
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resume, maxchunks);
+                if (!this.isDownloadableContent(dl.getConnection())) {
+                    br.followConnection();
+                    this.dl = null;
+                }
+            }
+            if (this.dl == null) {
+                if (StringUtils.isEmpty(continue_link)) {
+                    checkErrors(link, account);
+                    continue_link = getContinueLink();
+                }
+                /* Passwords are usually before waittime. */
+                handlePassword(link);
+                /* Handle up to x pre-download pages before the (eventually existing) captcha */
+                final int startValue = 0;
+                /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
+                String loopLog = continue_link;
+                final int maxLoops = 8;
+                for (int i = startValue; i <= maxLoops; i++) {
+                    logger.info("Handling pre-download page " + (i + 1) + " of max. allowed " + maxLoops);
+                    timeBeforeCaptchaInput = System.currentTimeMillis();
+                    if (i > startValue) {
+                        loopLog += " --> " + continue_link;
+                    }
+                    if (isDownloadlink(continue_link)) {
+                        /*
+                         * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We
+                         * don't need a captcha in this case/loop/pass for sure! E.g. host '3rbup.com'.
+                         */
+                        waitTime(link, timeBeforeCaptchaInput);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
+                    } else {
+                        final Form continueform = getContinueForm(i, continue_link);
+                        if (i == startValue && continueform == null) {
+                            logger.info("No continue_form/continue_link available, plugin broken");
+                            checkErrorsLastResort(link, account);
+                        } else if (continueform == null) {
+                            logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
                             break;
                         } else {
-                            br.followRedirect();
+                            logger.info("Found continue_form/continue_link, continuing...");
                         }
-                    } else {
-                        continue_link = getContinueLink();
-                        break;
-                    }
-                }
-            }
-            if (StringUtils.isEmpty(continue_link)) {
-                checkErrors(link, account);
-                continue_link = getContinueLink();
-            }
-            /* Passwords are usually before waittime. */
-            handlePassword(link);
-            /* Handle up to x pre-download pages before the (eventually existing) captcha */
-            final int startValue = 0;
-            /* loopLog holds information about the continue_link of each loop so afterwards we get an overview via logger */
-            String loopLog = continue_link;
-            final int maxLoops = 8;
-            for (int i = startValue; i <= maxLoops; i++) {
-                logger.info("Handling pre-download page " + (i + 1) + " of max. allowed " + maxLoops);
-                timeBeforeCaptchaInput = System.currentTimeMillis();
-                if (i > startValue) {
-                    loopLog += " --> " + continue_link;
-                }
-                if (isDownloadlink(continue_link)) {
-                    /*
-                     * If we already found a downloadlink let's try to download it because html can still contain captcha html --> We don't
-                     * need a captcha in this case/loop/pass for sure! E.g. host '3rbup.com'.
-                     */
-                    waitTime(link, timeBeforeCaptchaInput);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_link, resume, maxchunks);
-                } else {
-                    final Form continueform = getContinueForm(i, continue_link);
-                    if (i == startValue && continueform == null) {
-                        logger.info("No continue_form/continue_link available, plugin broken");
-                        checkErrorsLastResort(link, account);
-                    } else if (continueform == null) {
-                        logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
-                        break;
-                    } else {
-                        logger.info("Found continue_form/continue_link, continuing...");
-                    }
-                    final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
-                        loopLog += " --> reCaptchaV2";
-                        captcha = true;
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        success = true;
-                        waitTime(link, timeBeforeCaptchaInput);
-                        continueform.put("capcode", "false");
-                        continueform.put("g-recaptcha-response", recaptchaV2Response);
-                        continueform.setMethod(MethodType.POST);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                    } else if (rcID != null) {
-                        /* Dead end! */
-                        captcha = true;
-                        success = false;
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
-                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        loopLog += " --> SolvemediaCaptcha";
-                        captcha = true;
-                        success = false;
-                        logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                            sm.setSecure(true);
-                        }
-                        File cf = null;
-                        try {
-                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        } catch (final Exception e) {
-                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
-                            } else {
-                                throw e;
+                        final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                        if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
+                            loopLog += " --> reCaptchaV2";
+                            captcha = true;
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            success = true;
+                            waitTime(link, timeBeforeCaptchaInput);
+                            continueform.put("capcode", "false");
+                            continueform.put("g-recaptcha-response", recaptchaV2Response);
+                            continueform.setMethod(MethodType.POST);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else if (rcID != null) {
+                            /* Dead end! */
+                            captcha = true;
+                            success = false;
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
+                        } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                            loopLog += " --> SolvemediaCaptcha";
+                            captcha = true;
+                            success = false;
+                            logger.info("Detected captcha method \"solvemedia\" for this host");
+                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                            if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                                sm.setSecure(true);
                             }
-                        }
-                        final String code = getCaptchaCode("solvemedia", cf, link);
-                        final String chid = sm.getChallenge(code);
-                        waitTime(link, timeBeforeCaptchaInput);
-                        continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
-                        continueform.put("adcopy_response", Encoding.urlEncode(code));
-                        continueform.setMethod(MethodType.POST);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                    } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
-                        loopLog += " --> Form_POST";
-                        success = true;
-                        waitTime(link, timeBeforeCaptchaInput);
-                        /* Use URL instead of Form - it is all we need! */
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
-                    } else {
-                        if (continue_link == null) {
-                            checkErrors(link, account);
-                            logger.warning("Failed to find continue_link");
-                            checkErrorsLastResort(link, account);
-                        }
-                        br.setFollowRedirects(false);
-                        waitTime(link, timeBeforeCaptchaInput);
-                        getPage(continue_link);
-                        /* Loop to handle redirects */
-                        while (true) {
-                            final String redirect = this.br.getRedirectLocation();
-                            if (redirect != null) {
-                                if (isDownloadlink(redirect)) {
-                                    continue_link = redirect;
-                                    break;
+                            File cf = null;
+                            try {
+                                cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            } catch (final Exception e) {
+                                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                    throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
                                 } else {
-                                    br.followRedirect();
+                                    throw e;
                                 }
-                            } else {
-                                continue_link = this.getContinueLink();
-                                break;
                             }
+                            final String code = getCaptchaCode("solvemedia", cf, link);
+                            final String chid = sm.getChallenge(code);
+                            waitTime(link, timeBeforeCaptchaInput);
+                            continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
+                            continueform.put("adcopy_response", Encoding.urlEncode(code));
+                            continueform.setMethod(MethodType.POST);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
+                            loopLog += " --> Form_POST";
+                            success = true;
+                            waitTime(link, timeBeforeCaptchaInput);
+                            /* Use URL instead of Form - it is all we need! */
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                        } else {
+                            if (continue_link == null) {
+                                checkErrors(link, account);
+                                logger.warning("Failed to find continue_link");
+                                checkErrorsLastResort(link, account);
+                            }
+                            br.setFollowRedirects(false);
+                            waitTime(link, timeBeforeCaptchaInput);
+                            getPage(continue_link);
+                            /* Loop to handle redirects */
+                            while (true) {
+                                final String redirect = this.br.getRedirectLocation();
+                                if (redirect != null) {
+                                    if (isDownloadlink(redirect)) {
+                                        continue_link = redirect;
+                                        break;
+                                    } else {
+                                        br.followRedirect();
+                                    }
+                                } else {
+                                    continue_link = this.getContinueLink();
+                                    break;
+                                }
+                            }
+                            br.setFollowRedirects(true);
+                            continue;
                         }
-                        br.setFollowRedirects(true);
-                        continue;
                     }
-                }
-                final URLConnectionAdapter con = dl.getConnection();
-                try {
-                    checkResponseCodeErrors(con);
-                } catch (final PluginException e) {
+                    final URLConnectionAdapter con = dl.getConnection();
                     try {
-                        br.followConnection(true);
-                    } catch (IOException ioe) {
-                        throw Exceptions.addSuppressed(e, ioe);
+                        checkResponseCodeErrors(con);
+                    } catch (final PluginException e) {
+                        try {
+                            br.followConnection(true);
+                        } catch (IOException ioe) {
+                            throw Exceptions.addSuppressed(e, ioe);
+                        }
+                        throw e;
                     }
-                    throw e;
+                    if (isDownloadableContent(con)) {
+                        success = true;
+                        loopLog += " --> " + con.getURL().toString();
+                        break;
+                    } else {
+                        try {
+                            br.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                        /* Get new continue_link for the next run */
+                        continue_link = getContinueLink();
+                        checkErrors(link, account);
+                        if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                            logger.info("Wrong captcha");
+                            continue;
+                        }
+                    }
                 }
-                if (isDownloadableContent(con)) {
-                    success = true;
-                    loopLog += " --> " + con.getURL().toString();
-                    break;
-                } else {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    /* Get new continue_link for the next run */
-                    continue_link = getContinueLink();
-                    checkErrors(link, account);
-                    if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        logger.info("Wrong captcha");
-                        continue;
-                    }
-                }
+                logger.info("loopLog: " + loopLog);
             }
-            logger.info("loopLog: " + loopLog);
         }
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
