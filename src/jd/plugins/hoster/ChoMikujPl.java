@@ -55,25 +55,26 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
-    private String               dllink                      = null;
-    private static final String  PREMIUMONLY                 = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
-    private static final String  ACCESSDENIED                = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
-    private final String         VIDEOENDINGS                = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
-    private static final String  MAINPAGE                    = "https://chomikuj.pl/";
+    private String               dllink                                                = null;
+    private static final String  PREMIUMONLY                                           = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
+    private static final String  ACCESSDENIED                                          = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów\\.";
+    private final String         VIDEOENDINGS                                          = "\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)";
+    private static final String  MAINPAGE                                              = "https://chomikuj.pl/";
     /* Pluging settings */
-    public static final String   DECRYPTFOLDERS              = "DECRYPTFOLDERS";
-    private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE = "AVOIDPREMIUMMP3TRAFFICUSAGE";
-    private Browser              cbr                         = null;
-    private static final int     free_maxchunks              = 1;
-    private static final boolean free_resume                 = false;
-    private static final int     free_maxdls                 = -1;
-    private static final int     account_maxchunks           = 0;
+    public static final String   DECRYPTFOLDERS                                        = "DECRYPTFOLDERS";
+    private static final String  AVOIDPREMIUMMP3TRAFFICUSAGE                           = "AVOIDPREMIUMMP3TRAFFICUSAGE";
+    private static final String  FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK = "FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK";
+    private Browser              cbr                                                   = null;
+    private static final int     free_maxchunks                                        = 1;
+    private static final boolean free_resume                                           = false;
+    private static final int     free_maxdls                                           = -1;
+    private static final int     account_maxchunks                                     = 0;
     /* TODO: Verify if premium users really can resume */
-    private static final boolean account_resume              = true;
-    private static final int     account_maxdls              = -1;
-    private boolean              serverIssue                 = false;
-    private boolean              premiumonly                 = false;
-    private boolean              plus18                      = false;
+    private static final boolean account_resume                                        = true;
+    private static final int     account_maxdls                                        = -1;
+    private boolean              serverIssue                                           = false;
+    private boolean              premiumonly                                           = false;
+    private boolean              plus18                                                = false;
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -325,10 +326,15 @@ public class ChoMikujPl extends antiDDoSForHost {
                 downloadurl = Encoding.htmlDecode(downloadurl);
             }
             if (downloadurl == null) {
+                logger.info("Failed to perform official download");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final Exception ep) {
             logger.info("Failed to get official downloadurl --> Checking if stream download is possible");
+            if (!this.getPluginConfig().getBooleanProperty(FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK, true)) {
+                logger.info("Stream download as fallback is not allowed --> Treat this as premiumonly content");
+                throw new AccountRequiredException();
+            }
             ep.printStackTrace();
             /* Premium users can always download the original file */
             if (isVideo(link) && !premium) {
@@ -863,7 +869,8 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Force download of the stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Account download: Prefer download of stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK, "Free (anonymous) download: Allow fallback to stream download if real file is not downloadable without account?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Decrypt subfolders in folders").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "IGNORE_TRAFFIC_LIMIT", "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download)?").setDefaultValue(false));
     }
