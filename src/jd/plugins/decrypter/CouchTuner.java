@@ -39,16 +39,16 @@ public class CouchTuner extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         String page = br.toString();
-        String fpName = br.getRegex("(?:og:)?(?:title|description)\" content=[\"'](?:\\s*Watch\\s*)?([^\"\']+)(?:\\s+online streaming free|\\s+Online\\s+\\|\\s+Couchtuner)").getMatch(0);
-        String[][] links = br.getRegex("<strong>Watch it here\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getMatches();
+        String fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
+        String[][] links = br.getRegex("<strong>Watch [iI]t [hH]ere\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getMatches();
         if (links == null || links.length == 0) {
-            links = br.getRegex("Watch [iI]t [hH]ere\\s*:\\s*</span>&nbsp;\\s+<a href=\"([^\"]+)\"").getMatches();
+            links = br.getRegex("Watch[^\"]*[iI]t[^\"]*[hH]ere\\s*:\\s*</span>&nbsp;\\s+<a href=\"([^\"]+)\"").getMatches();
         }
         if (links == null || links.length == 0) {
             links = br.getRegex("<iframe[^>]+src=[\"\']([^\"\']+)[\"\']").getMatches();
         }
         if (links == null || links.length == 0) {
-            links = br.getRegex("<a[\r\\n ]+href=\"([^\"]+)\" rel=\"bookmark\">").getMatches();
+            links = br.getRegex("<a[^>]+href=\"([^\"]+)\"[^>]*rel=\"bookmark\"[^>]*>").getMatches();
         }
         if (links == null || links.length == 0) {
             links = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getMatches();
