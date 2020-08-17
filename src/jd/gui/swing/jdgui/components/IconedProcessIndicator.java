@@ -20,7 +20,6 @@ import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class IconedProcessIndicator extends CircledProgressBar implements MouseListener {
-
     /**
      *
      */
@@ -44,12 +43,10 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     protected IconedProcessIndicator() {
         super();
-
     }
 
     public IconedProcessIndicator(Icon icon) {
         super();
-
         updatePainter(icon, Color.WHITE, Color.GRAY, Color.WHITE, Color.GREEN, Color.LIGHT_GRAY, Color.GREEN);
         ToolTipController.getInstance().register(this);
         setActive(false);
@@ -64,7 +61,6 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         activeValuePainter = getPainer(icon, 1.0f);
         activeValuePainter.setBackground(c3);
         activeValuePainter.setForeground(c4);
-
         activeNonValuePainter = getPainer(icon, 0.5f);
         activeNonValuePainter.setBackground(c5);
         activeNonValuePainter.setForeground(c6);
@@ -91,6 +87,7 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
         JLabel lbl = new JLabel(toString());
         lbl.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
         JTextArea txt = new JTextArea();
+        txt.setEditable(false);
         SwingUtils.setOpaque(txt, false);
         txt.setBorder(null);
         txt.setForeground((LAFOptions.getInstance().getColorForTooltipForeground()));
@@ -164,5 +161,4 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     public void mouseExited(MouseEvent e) {
     }
-
 }

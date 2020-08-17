@@ -87,12 +87,10 @@ public class UpdateController implements UpdateCallbackInterface {
         return installedRevisionJD;
     }
 
-    private UpdateHandler                     handler;
-    private boolean                           running;
+    private volatile UpdateHandler            handler;
+    private volatile boolean                  running;
     private final WeakHashMap<Thread, Object> confirmedThreads;
-    private String                            appid;
-    private String                            updaterid;
-    private UpdaterEventSender                eventSender;
+    private final UpdaterEventSender          eventSender;
     private Icon                              statusIcon;
     private String                            statusLabel;
     private double                            statusProgress      = -1;
@@ -107,15 +105,13 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setHandler(UpdateHandler handler, ConfigInterface updaterSetup, String appid, String updaterid) {
         this.handler = handler;
-        LogSource newLogger = handler.getLogger();
+        final LogSource newLogger = handler.getLogger();
         if (newLogger != null) {
             if (logger != null) {
                 logger.close();
             }
             logger = newLogger;
         }
-        this.appid = appid;
-        this.updaterid = updaterid;
         hasPendingUpdates = handler.hasPendingUpdates();
         handler.startIntervalChecker();
         try {
