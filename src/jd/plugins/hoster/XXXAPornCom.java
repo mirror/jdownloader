@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -28,9 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?(xxxaporndecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html|media\\.xxxaporn\\.com/video/\\d+)" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxaporn.com" }, urls = { "http://(www\\.)?(xxxaporndecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+\\.html|media\\.xxxaporn\\.com/video/\\d+)" })
 public class XXXAPornCom extends PluginForHost {
-
     private String              DLLINK    = null;
     private static final String EMBEDTYPE = "http://(www\\.)?media\\.xxxaporn\\.com/video/\\d+";
 
@@ -60,18 +58,18 @@ public class XXXAPornCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
         // Limit reached => Skip it
-        if (downloadLink.getDownloadURL().matches(EMBEDTYPE)) {
-            final String fileID = new Regex(downloadLink.getDownloadURL(), "xxxaporn\\.com/(video/)?(\\d+)").getMatch(1);
+        if (link.getDownloadURL().matches(EMBEDTYPE)) {
+            final String fileID = new Regex(link.getDownloadURL(), "xxxaporn\\.com/(video/)?(\\d+)").getMatch(1);
             br.getPage("http://media.xxxaporn.com/media/player/config_embed.php?vkey=" + fileID);
             if (br.containsHTML("Invalid video key\\!")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = new Regex(downloadLink.getDownloadURL(), "xxxaporn\\.com/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "xxxaporn\\.com/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("xxxaporn\\.com/video/\\d+/([a-z0-9\\-]+)</share>").getMatch(0);
             }
@@ -80,7 +78,7 @@ public class XXXAPornCom extends PluginForHost {
             }
             DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -98,7 +96,7 @@ public class XXXAPornCom extends PluginForHost {
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -106,7 +104,7 @@ public class XXXAPornCom extends PluginForHost {
         try {
             con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

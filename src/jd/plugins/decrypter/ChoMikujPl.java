@@ -244,6 +244,17 @@ public class ChoMikujPl extends PluginForDecrypt {
             parameter = redirect;
             getPage(parameter);
         }
+        /*
+         * If e.g. crawler found page 100 but that folder only has 50 pages, there will be a redirect to the max/last page --> We do not
+         * want to crawl anything then!
+         */
+        if (linkending != null && !br.getURL().contains(linkending)) {
+            logger.info("Accessed page doesn't exist");
+            final String errmsg = "LinkEnding mismatch: " + linkending;
+            final DownloadLink offline = this.createOfflinelink(parameter, errmsg, errmsg);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         final String numberof_files = br.getRegex("class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
         if (br.containsHTML("Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"") || ("0".equals(numberof_files) && !br.containsHTML("foldersList"))) {
             // Offline

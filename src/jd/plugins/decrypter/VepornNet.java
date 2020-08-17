@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -27,9 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporns.com" }, urls = { "https?://(?:www\\.)?ve(?:-)?porns?\\.(net|com)/video/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "veporns.com" }, urls = { "https?://(?:www\\.)?(?:ve(?:-)?porns?\\.(?:net|com)|veporno\\.net)/video/[A-Za-z0-9\\-_]+" })
 public class VepornNet extends antiDDoSForDecrypt {
     public VepornNet(PluginWrapper wrapper) {
         super(wrapper);

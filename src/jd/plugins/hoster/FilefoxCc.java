@@ -31,6 +31,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -154,6 +155,24 @@ public class FilefoxCc extends XFileSharingProBasic {
             dllink = new Regex(correctedBR, "class\\s*=\\s*\"btn btn-default\"\\s*href\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
         }
         return dllink;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo accInfo = super.fetchAccountInfoWebsite(account);
+        if (account.getType() == AccountType.FREE) {
+            /* 2020-08-17: Special */
+            final Regex expireRegex = new Regex(correctedBR, "Premium Account expires in (\\d+) days?, (\\d+) hours?");
+            final String daysStr = expireRegex.getMatch(0);
+            final String hoursStr = expireRegex.getMatch(1);
+            if (daysStr != null && hoursStr != null) {
+                account.setType(AccountType.PREMIUM);
+                final long days = Long.parseLong(daysStr) * 24 * 60 * 60 * 1000;
+                final long hours = Long.parseLong(hoursStr) * 60 * 60 * 1000;
+                accInfo.setValidUntil(System.currentTimeMillis() + days + hours);
+            }
+        }
+        return accInfo;
     }
 
     @Override

@@ -38,14 +38,13 @@ import jd.plugins.PluginForDecrypt;
  ru.album.ee
  en.album.ee
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album\\.ee|mallorca\\.as\\.album\\.ee|static1\\.album\\.ee|beta\\.album\\.ee|ru\\.album\\.ee|en\\.album\\.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" })
 public class AlbumEE extends PluginForDecrypt {
-
     private Pattern fileNamePattern    = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
     private Pattern albumNamePattern   = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
     private Pattern nextPagePattern    = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
-    private Pattern pictureURLPattern  = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
+    private Pattern pictureURLPattern  = Pattern.compile("<img src=\"([^\"]*//[\\w\\.]*?album.*?/files/.*?)\" alt");
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,9 +78,13 @@ public class AlbumEE extends PluginForDecrypt {
                 for (String link2 : links) {
                     picLinks.add("http://www.album.ee/" + link2);
                 }
-                if (onePageOnly) break;
+                if (onePageOnly) {
+                    break;
+                }
                 nextPage = br.getRegex(nextPagePattern).getMatch(0);
-                if (nextPage == null) break;
+                if (nextPage == null) {
+                    break;
+                }
                 br.getPage("http://www.album.ee/" + nextPage);
             } while (true);
         }
@@ -96,10 +99,17 @@ public class AlbumEE extends PluginForDecrypt {
                 logger.info("Found an offline link: " + parameter);
                 continue;
             }
-            if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (pictureURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            pictureURL = br.getURL(pictureURL).toString();
             dlLink = createDownloadlink(pictureURL);
-            if (filename != null) dlLink.setFinalFileName(filename);
-            if (fp != null) fp.add(dlLink);
+            if (filename != null) {
+                dlLink.setFinalFileName(filename);
+            }
+            if (fp != null) {
+                fp.add(dlLink);
+            }
             decryptedLinks.add(dlLink);
         }
         return decryptedLinks;
@@ -109,5 +119,4 @@ public class AlbumEE extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
