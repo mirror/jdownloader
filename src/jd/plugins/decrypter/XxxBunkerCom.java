@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,9 +30,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "https://(?:www\\.)?xxxbunker\\.com/([a-z0-9_\\-]+)" })
 public class XxxBunkerCom extends PornEmbedParser {
     public XxxBunkerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,6 +43,7 @@ public class XxxBunkerCom extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -69,7 +70,7 @@ public class XxxBunkerCom extends PornEmbedParser {
             decryptedLinks.add(getOffline(parameter));
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
-        } else if (br.getURL().equals("http://xxxbunker.com/")) {
+        } else if (!br.getURL().contains("/" + fid)) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -81,6 +82,11 @@ public class XxxBunkerCom extends PornEmbedParser {
             logger.info("Site maintenance, cannot decrypt link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
+        }
+        final String embedSelfhosted = br.getRegex("\"embedUrl\"\\s*:\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
+        if (embedSelfhosted != null) {
+            logger.info("Found embedSelfhosted");
+            br.getPage(embedSelfhosted);
         }
         br.setFollowRedirects(false);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -191,6 +197,13 @@ public class XxxBunkerCom extends PornEmbedParser {
         externID = br.getRegex("player\\.swf\\?config=(https?%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            dl.setFinalFileName(filename + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
