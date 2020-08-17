@@ -54,16 +54,16 @@ public class AnimeTheHyliaCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         // if taken from the decrypter then property "referer" is set to the main page of the "series"
         // this is redirected url from the link, so we should set it the same way as the decrypter would
         // if it is link not from decrypter
-        final String decryptedlink = downloadLink.getStringProperty("directlink", null);
-        if (downloadLink.getStringProperty("referer") == null) {
+        final String decryptedlink = link.getStringProperty("directlink", null);
+        if (link.getStringProperty("referer") == null) {
             br.getPage(decryptedlink);
             if (br.getRedirectLocation() != null) {
-                downloadLink.setProperty("referer", br.getRedirectLocation());
+                link.setProperty("referer", br.getRedirectLocation());
             }
         }
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -73,13 +73,12 @@ public class AnimeTheHyliaCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        final String filename = downloadLink.getStringProperty("decryptedfilename", null);
-        downloadLink.setFinalFileName(filename);
-        br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
+        // final String filename_crawler = downloadLink.getStringProperty("decryptedfilename", null);
+        br.getHeaders().put("Referer", link.getStringProperty("referer", null));
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getStringProperty("directlink", null));
+        br.getPage(link.getStringProperty("directlink", null));
         if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) {
-            downloadLink.getLinkStatus().setStatusText("Can't check filesize when servers are overloaded");
+            link.getLinkStatus().setStatusText("Can't check filesize when servers are overloaded");
             return AvailableStatus.TRUE;
         }
         if (decryptedlink.contains("/soundtracks/")) {
@@ -108,10 +107,10 @@ public class AnimeTheHyliaCom extends PluginForHost {
         try {
             con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                if (downloadLink.getFinalFileName() == null) {
+                link.setDownloadSize(con.getLongContentLength());
+                if (link.getFinalFileName() == null) {
                     String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
-                    downloadLink.setFinalFileName(name);
+                    link.setFinalFileName(name);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -126,13 +125,13 @@ public class AnimeTheHyliaCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) {
             /* This should NEVER happen via account! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
