@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -28,9 +27,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "http://adrivedecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "http://adrivedecrypted\\.com/\\d+" })
 public class AdriveCom extends PluginForHost {
-
     public AdriveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,17 +47,17 @@ public class AdriveCom extends PluginForHost {
     private String              dllink   = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Make sure links came via the new decrpter */
-        if (!downloadLink.getDownloadURL().matches("http://adrivedecrypted\\.com/\\d+")) {
+        if (!link.getDownloadURL().matches("http://adrivedecrypted\\.com/\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (downloadLink.getBooleanProperty("offline", false)) {
+        } else if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(downloadLink.getStringProperty("mainlink", null));
-        dllink = downloadLink.getStringProperty("directlink", null);
+        br.getPage(link.getStringProperty("mainlink", null));
+        dllink = link.getStringProperty("directlink", null);
         String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
         if (goToLink != null) {
             br.getPage("http://www.adrive.com" + goToLink);
@@ -72,18 +70,16 @@ public class AdriveCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File überprüfen */
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int maxChunks = -10;
-        if (downloadLink.getBooleanProperty(AdriveCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(AdriveCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
@@ -105,16 +101,16 @@ public class AdriveCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(AdriveCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(AdriveCom.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(AdriveCom.NOCHUNKS, false) == false) {
+                    link.setProperty(AdriveCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(AdriveCom.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(AdriveCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(AdriveCom.NOCHUNKS, false) == false) {
+                link.setProperty(AdriveCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;

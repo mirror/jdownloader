@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://(www\\.)?anime\\.thehylia\\.com/(downloads/series/|download_file/|soundtracks/album/)[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://(?:www\\.)?anime\\.thehylia\\.com/(downloads/series/|download_file/|soundtracks/album/)[a-z0-9\\-_]+" })
 public class AnimeTheHyliaCom extends PluginForDecrypt {
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,8 +43,18 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.contains("download_file")) {
+            final DownloadLink dl = createDownloadlink("https://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            dl.setContentUrl(parameter);
+            dl.setLinkID(new Regex(parameter, "download_file/(\\d+)").getMatch(0));
+            dl.setProperty("referer", parameter);
+            dl.setProperty("directlink", parameter);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No such series<|>No such album<")) {
+        if (br.containsHTML(">\\s*No such series<|>\\s*No such album<")) {
             logger.info("Link offline: " + parameter);
             final DownloadLink offline = this.createOfflinelink(parameter);
             decryptedLinks.add(offline);
@@ -52,15 +62,6 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         }
         String fpName = null;
         String[][] links;
-        if (parameter.contains("download_file")) {
-            final DownloadLink dl = createDownloadlink("https://anime.thehyliadecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setContentUrl(parameter);
-            dl.setLinkID(new Regex(parameter, "download_file/(\\d+)").getMatch(0));
-            dl.setProperty("referer", br.getRedirectLocation());
-            dl.setProperty("directlink", parameter);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         if (parameter.matches(type_series)) {
             fpName = br.getRegex("<\\!\\-\\-Series name: <b>([^<>\"]*?)</b><br>\\-\\->").getMatch(0);
             if (fpName == null) {
