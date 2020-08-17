@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 
+import jd.SecondLevelLaunch;
 import jd.gui.swing.jdgui.Flashable;
 import jd.gui.swing.jdgui.JDGui;
 
@@ -35,6 +36,17 @@ public class UpdateAction extends AbstractToolBarAction {
         setIconKey(IconKey.ICON_UPDATE);
         setEnabled(UpdateController.getInstance().isHandlerSet());
         setAccelerator(KeyEvent.VK_U);
+        SecondLevelLaunch.UPDATE_HANDLER_SET.executeWhenReached(new Runnable() {
+            @Override
+            public void run() {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        setEnabled(UpdateController.getInstance().isHandlerSet());
+                    }
+                };
+            }
+        });
     }
 
     public void actionPerformed(ActionEvent e) {
