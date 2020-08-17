@@ -368,7 +368,6 @@ public class VKontakteRuHoster extends PluginForHost {
             } else if (link.getPluginPatternMatcher().matches(VKontakteRuHoster.TYPE_VIDEOLINK)) {
                 br.setFollowRedirects(true);
                 finalUrl = link.getStringProperty("directlink", null);
-                br.getPage(finalUrl);
                 /* Check if directlink is expired */
                 checkstatus = linkOk(link, link.getFinalFileName(), isDownload);
                 if (checkstatus != 1) {
