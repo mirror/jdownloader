@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -45,11 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -523,9 +523,7 @@ public class PornHubCom extends PluginForDecrypt {
         int page = 1;
         final Set<String> dupes = new HashSet<String>();
         do {
-            if (this.isAbort()) {
-                return true;
-            }
+            logger.info("Crawling page: " + page);
             if (page > 1) {
                 final String nextpage_url = base_url + "/?page=" + page;
                 jd.plugins.hoster.PornHubCom.getPage(br, br.createGetRequest(nextpage_url));
@@ -547,16 +545,20 @@ public class PornHubCom extends PluginForDecrypt {
                     break;
                 }
             }
+            int itemsCount = 0;
             for (final String viewkey : viewkeys) {
                 if (dupes.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
                     final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
                     decryptedLinks.add(dl);
                     distribute(dl);
+                    itemsCount++;
                 }
             }
+            logger.info("Found " + itemsCount + " items on current page");
+            logger.info("Found " + dupes.size() + " items in total");
             page++;
-        } while (true);
+        } while (!this.isAbort());
         return true;
     }
 

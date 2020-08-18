@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -43,6 +46,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -185,6 +189,7 @@ public class DeepbridCom extends antiDDoSForHost {
             }
             dllink = PluginJSonUtils.getJsonValue(br, "link");
             if (StringUtils.isEmpty(dllink)) {
+                this.handleKnownErrors(this.br, account, link);
                 mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
             }
         }
@@ -439,29 +444,39 @@ public class DeepbridCom extends antiDDoSForHost {
          * \u003Ca href=\"..\/signup\" target=\"_blank\"\u003EUpgrade to premium\u003C\/a\u003E and forget waiting times and enjoy unlimited
          * features!" }
          */
-        final String errorcode = PluginJSonUtils.getJson(br, "error");
-        if (errorcode != null) {
-            if (errorcode.equals("0")) {
-                /* All ok */
-            } else if (errorcode.equals("1")) {
-                /* No link entered - this should never happen */
-                mhm.handleErrorGeneric(account, link, "api_error_1", 10, 5 * 60 * 1000l);
-            } else if (errorcode.equals("2")) {
-                /* http:// or https:// required --> WTF no idea what this means */
-                mhm.handleErrorGeneric(account, link, "api_error_2", 10, 5 * 60 * 1000l);
-            } else if (errorcode.equals("3")) {
-                /* Link not supported */
-                mhm.putError(account, link, 10 * 60 * 1000l, "Unsupported host");
-            } else if (errorcode.equals("9")) {
-                /* Hosters limit reached for this day */
-                mhm.putError(account, link, 10 * 60 * 1000l, "Daily limit reached for this host");
-            } else if (errorcode.equals("15")) {
-                /* Service detected usage of proxy which they do not tolerate */
-                mhm.putError(account, link, 15 * 60 * 1000l, "Proxy, VPN or VPS detected. Please contact deepbrid support!");
-            } else {
-                /* Unknown error */
-                mhm.handleErrorGeneric(account, link, "api_error_unknown", 10, 5 * 60 * 1000l);
-            }
+        long errorCode = 0;
+        String errorMsg = null;
+        try {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            errorCode = JavaScriptEngineFactory.toLong(entries.get("error"), 0);
+            errorMsg = (String) entries.get("message");
+        } catch (final Throwable e) {
+        }
+        if (errorCode == 0) {
+            /* All ok */
+        } else if (errorCode == 1) {
+            /* No link entered - this should never happen */
+            mhm.handleErrorGeneric(account, link, "api_error_1", 10, 5 * 60 * 1000l);
+        } else if (errorCode == 2) {
+            /* http:// or https:// required --> Should never happen(?) */
+            mhm.handleErrorGeneric(account, link, "api_error_2", 10, 5 * 60 * 1000l);
+        } else if (errorCode == 3) {
+            /* Link/Host not supported */
+            mhm.putError(account, link, 10 * 60 * 1000l, errorMsg);
+        } else if (errorCode == 9) {
+            /* Hosters limit reached for this day */
+            mhm.putError(account, link, 10 * 60 * 1000l, errorMsg);
+        } else if (errorCode == 15) {
+            /* Service detected usage of proxy which they do not tolerate */
+            /*
+             * 2020-08-18: E.g. {"error":15,
+             * "message":"Proxy, VPN or VPS detected. If you think this is a mistake, please \u003Ca href=\"..\/helpdesk\" target=\"_blank\"\u003Ecreate a support ticket\u003C\/a\u003E requesting to whitelist your account, we will be so happy to assist you!"
+             * }
+             */
+            throw new AccountUnavailableException("Proxy, VPN or VPS detected. Contact deepbrid.com support!", 15 * 60 * 1000l);
+        } else {
+            /* Unknown error */
+            mhm.handleErrorGeneric(account, link, "api_error_unknown", 10, 5 * 60 * 1000l);
         }
     }
 
