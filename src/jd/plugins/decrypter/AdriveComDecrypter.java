@@ -52,11 +52,18 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         }
         final UrlQuery query = UrlQuery.parse(parameter);
         String subfolderPath = query.get("path");
-        br.getPage(parameter);
         String iframe = null;
         final String subdomain = new Regex(parameter, "https?://(www\\d+[^/]+)/").getMatch(0);
         if (subdomain != null && !StringUtils.isEmpty(subfolderPath)) {
+            /*
+             * Workaround required: Subdomain/server given via users' URL may have changed in the meantime --> Access root folder --> Get
+             * new/working server/subdomain --> Then access desired subfolder
+             */
             br.getPage("https://www." + this.getHost() + "/public/" + fid);
+            if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(fid)) {
+                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
+                return decryptedLinks;
+            }
             iframe = br.getRegex("<iframe[^>]*src=\"(https?://\\w+\\.adrive.com/public/(?:view/)?[^\"]+\\.html)\"").getMatch(0);
             if (iframe == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
