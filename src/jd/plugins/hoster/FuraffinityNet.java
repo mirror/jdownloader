@@ -35,6 +35,8 @@ import jd.plugins.PluginException;
 public class FuraffinityNet extends antiDDoSForHost {
     public FuraffinityNet(PluginWrapper wrapper) {
         super(wrapper);
+        /* 2020-08-19: Try to avoid 503 errors */
+        this.setStartIntervall(1000l);
     }
     /* DEV NOTES */
     // Tags:
@@ -78,8 +80,11 @@ public class FuraffinityNet extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 503 });
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML(">\\s*System Error|>\\s*The submission you are trying to find is not in")) {
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many requests", 5 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML(">\\s*System Error|>\\s*The submission you are trying to find is not in")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*The owner of this page has elected to make it available to registered users only|>\\s*This submission contains Mature or Adult content")) {
             /* Content is online but we can't view/download it! */
@@ -97,7 +102,7 @@ public class FuraffinityNet extends antiDDoSForHost {
             /* Fallback */
             link.setName(this.getFID(link) + ".jpg");
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && link.getView().getBytesTotal() <= 0) {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
