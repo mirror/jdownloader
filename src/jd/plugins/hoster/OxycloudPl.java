@@ -17,13 +17,17 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -113,5 +117,29 @@ public class OxycloudPl extends YetiShareCore {
             }
         }
         return fileInfo;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        this.getPage("/download-limits-calculator");
+        final String trafficLeft = br.getRegex("class=\"fa fa-download\"></i>([^<>]*)</span>").getMatch(0);
+        final String expireDate = br.getRegex("This package is active until (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+        if (trafficLeft != null && expireDate != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd hh:mm", Locale.ENGLISH), this.br);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            ai.setStatus("Premium account");
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+            ai.setUnlimitedTraffic();
+        }
+        return ai;
     }
 }
