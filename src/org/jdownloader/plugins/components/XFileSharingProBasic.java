@@ -3948,13 +3948,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         final long premiumDurationMilliseconds = expire_milliseconds_precise_to_the_second - currentTime;
         if (premiumDurationMilliseconds <= 0) {
-            if (expire_milliseconds_precise_to_the_second > 0) {
-                /*
-                 * 2019-07-31: Most likely this logger will always get triggered because they will usually set the register date of new free
-                 * accounts into "premium_expire".
-                 */
-                logger.info("Premium expired --> Free account");
-            }
             /* Expired premium or no expire date given --> It is usually a Free Account */
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
