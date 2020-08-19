@@ -219,8 +219,10 @@ public class ChoMikujPl extends antiDDoSForHost {
                  * use up any traffic.
                  */
                 ai.setSpecialTraffic(true);
+                ai.setStatus("Account without traffic limitation (limitation disabled by user)");
             } else {
                 ai.setSpecialTraffic(false);
+                ai.setStatus("Account with traffic limitation");
             }
             final long hardcodedDailyFreeLimit = SizeFormatter.getSize("50MB");
             ai.setTrafficLeft(SizeFormatter.getSize(remainingTraffic.replace(",", ".")));
@@ -231,7 +233,6 @@ public class ChoMikujPl extends antiDDoSForHost {
             if (ai.getTrafficLeft() <= hardcodedDailyFreeLimit) {
                 ai.setTrafficMax(hardcodedDailyFreeLimit);
             }
-            ai.setStatus("Account with traffic limitation");
         } else {
             /*
              * 2019-07-16: Not sure if that is a good idea but at the moment we're handling all accounts as premium and set unlimited
@@ -543,7 +544,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && accountHasLessTrafficThanRequiredForThisFile) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not enough traffic to download this file", 30 * 60 * 1000l);
-                } else if (!StringUtils.isEmpty(msg)) {
+                } else if (!StringUtils.isEmpty(msg) && msg.length() <= 100) {
                     /* Try to display more precise errormessage, avoid plugin defect. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
                 } else {
