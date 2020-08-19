@@ -3946,7 +3946,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * account-info page anyways during account-check we at least don't have to waste another http-request for that.
          */
         ai.setUnlimitedTraffic();
-        if (expire_milliseconds_precise_to_the_second <= currentTime) {
+        final long premiumDurationMilliseconds = expire_milliseconds_precise_to_the_second - currentTime;
+        if (premiumDurationMilliseconds <= 0) {
             if (expire_milliseconds_precise_to_the_second > 0) {
                 /*
                  * 2019-07-31: Most likely this logger will always get triggered because they will usually set the register date of new free
@@ -3958,7 +3959,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
             /* Expire date is in the future --> It is a premium account */
-            ai.setValidUntil(expire_milliseconds_precise_to_the_second);
+            ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
         {
