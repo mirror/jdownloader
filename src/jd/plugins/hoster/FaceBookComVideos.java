@@ -548,11 +548,7 @@ public class FaceBookComVideos extends PluginForHost {
                     final String lang = System.getProperty("user.language");
                     final Form loginForm = br.getForm(0);
                     if (loginForm == null) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     loginForm.remove("persistent");
                     loginForm.put("persistent", "1");
