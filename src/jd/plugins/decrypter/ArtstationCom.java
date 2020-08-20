@@ -37,7 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
 public class ArtstationCom extends antiDDoSForDecrypt {
     public ArtstationCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -182,38 +182,57 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             }
             fp.setName(packageName);
         } else if (parameter.matches(TYPE_ARTIST) || true) {
-            final String username = parameter.substring(parameter.lastIndexOf("/") + 1);
+            final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 return decryptedLinks;
             }
             final LinkedHashMap<String, Object> json = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final String full_name = (String) json.get("full_name");
+            final String full_name_of_username_in_url = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
             final short entries_per_page = 50;
-            int entries_total = (int) JavaScriptEngineFactory.toLong(json.get("projects_count"), 0);
+            int entries_total = 0;
             int offset = 0;
             int page = 1;
+            /* Either all of user or only "likes" */
+            String type = "projects";
+            if (parameter.endsWith("/likes")) {
+                type = "likes";
+            }
             do {
-                getPage("/users/" + username + "/projects.json?randomize=false&page=" + page);
+                logger.info("Crawling page " + page + " | Offset " + offset);
+                getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
                 final LinkedHashMap<String, Object> pageJson = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                if (decryptedLinks.size() == 0) {
+                    /* We're crawling the first page */
+                    entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
+                }
                 final ArrayList<Object> ressourcelist = (ArrayList) pageJson.get("data");
                 for (final Object resource : ressourcelist) {
-                    final LinkedHashMap<String, Object> imageJson = (LinkedHashMap<String, Object>) resource;
-                    final String title = (String) imageJson.get("title");
-                    final String id = (String) imageJson.get("hash_id");
-                    final String description = (String) imageJson.get("description");
-                    if (inValidate(id)) {
+                    final LinkedHashMap<String, Object> imageInfo = (LinkedHashMap<String, Object>) resource;
+                    final LinkedHashMap<String, Object> uploaderInfo = (LinkedHashMap<String, Object>) imageInfo.get("user");
+                    final String full_name_of_uploader;
+                    if (uploaderInfo != null) {
+                        /* E.g. when crawling all likes of a user */
+                        full_name_of_uploader = (String) uploaderInfo.get("full_name");
+                    } else {
+                        /* E.g. when crawling all items of a user */
+                        full_name_of_uploader = full_name_of_username_in_url;
+                    }
+                    final String title = (String) imageInfo.get("title");
+                    final String id = (String) imageInfo.get("hash_id");
+                    final String description = (String) imageInfo.get("description");
+                    if (inValidate(id) || inValidate(full_name_of_uploader)) {
                         return null;
                     }
                     final String url_content = "https://artstation.com/artwork/" + id;
                     final DownloadLink dl = createDownloadlink(url_content);
                     String filename;
                     if (StringUtils.isNotEmpty(title)) {
-                        filename = full_name + "_" + id + "_" + title + ".jpg";
+                        filename = full_name_of_uploader + "_" + id + "_" + title + ".jpg";
                     } else {
-                        filename = full_name + "_" + id + ".jpg";
+                        filename = full_name_of_uploader + "_" + id + ".jpg";
                     }
                     filename = encodeUnicode(filename);
                     dl.setContentUrl(url_content);
@@ -222,24 +241,23 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     }
                     dl.setLinkID(id);
                     dl.setName(filename);
-                    dl.setProperty("full_name", full_name);
+                    dl.setProperty("full_name", full_name_of_uploader);
+                    // dl.setAvailable(true);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                     distribute(dl);
                     offset++;
-                    if (isAbort()) {
-                        break;
-                    }
                 }
                 if (ressourcelist.size() < entries_per_page) {
                     /* Fail safe */
+                    logger.info("Stopping because current page " + page + "  contains less items than: " + entries_per_page);
                     break;
                 }
                 page++;
-            } while (decryptedLinks.size() < entries_total);
+            } while (!this.isAbort() && decryptedLinks.size() < entries_total);
             String packageName = "";
-            if (StringUtils.isNotEmpty(full_name)) {
-                packageName = full_name;
+            if (StringUtils.isNotEmpty(full_name_of_username_in_url)) {
+                packageName = full_name_of_username_in_url;
             }
             if (decryptedLinks.size() > 1) {
                 if (StringUtils.isNotEmpty(projectTitle)) {
