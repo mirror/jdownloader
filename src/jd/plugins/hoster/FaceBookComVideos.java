@@ -119,9 +119,9 @@ public class FaceBookComVideos extends PluginForHost {
         }
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
-        final Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null && aa.isValid()) {
-            login(aa, br);
+            login(aa, this.br, false);
             loggedIN = true;
         }
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
@@ -191,7 +191,7 @@ public class FaceBookComVideos extends PluginForHost {
             } else {
                 /* Use mobile website */
                 br.setAllowedResponseCodes(new int[] { 500 });
-                br.getPage("https://m.facebook.com/video.php?v=" + videoID);
+                br.getPage("https://m.facebook.com/watch/?v=" + videoID);
                 /* 2020-06-12: Website does never return appropriate 404 code so we have to check for strings in html :/ */
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -199,15 +199,17 @@ public class FaceBookComVideos extends PluginForHost {
                 /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
                 String fallback_downloadurl = null;
                 /* Get standardized json object "VideoObject" */
-                final String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
+                String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
+                Map<String, Object> entries = null;
                 try {
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                     final String title = (String) entries.get("name");
                     final String uploadDate = (String) entries.get("uploadDate");
                     final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
                     if (StringUtils.isAllNotEmpty(title, uploadDate, uploader)) {
                         String date_formatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
                         if (date_formatted == null) {
+                            /* Fallback */
                             date_formatted = uploadDate;
                         }
                         filename = date_formatted + "_";
@@ -229,6 +231,30 @@ public class FaceBookComVideos extends PluginForHost {
                     // }
                 } catch (final Throwable e) {
                     logger.log(e);
+                    /*
+                     * 2020-08-20: Very very very very rare case: Redirect to:
+                     * m.facebook.com/groups/12345678?view=permalink&id=12345678&_rdr
+                     */
+                    logger.info("json1 failed - trying to find alternative json");
+                    json = br.getRegex("data-store=\"([^\"]+videoID[^\"]+)").getMatch(0);
+                    try {
+                        if (Encoding.isHtmlEntityCoded(json)) {
+                            json = Encoding.htmlDecode(json);
+                        }
+                        /* This json doesn't contain anything useful for us other than the downloadurl */
+                        entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                        fallback_downloadurl = (String) entries.get("src");
+                    } catch (final Throwable e2) {
+                        e2.printStackTrace();
+                        logger.info("json2 failed");
+                    }
+                    /* Hm still part of this strange edge-case ... */
+                    if (StringUtils.isEmpty(fallback_downloadurl)) {
+                        fallback_downloadurl = br.getRegex("/video_redirect/\\?src=(https?[^<>\"]+)\"").getMatch(0);
+                        if (fallback_downloadurl != null && Encoding.isHtmlEntityCoded(fallback_downloadurl)) {
+                            fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
+                        }
+                    }
                 }
                 if (filename == null) {
                     /* Fallback - json is not always given */
@@ -259,7 +285,7 @@ public class FaceBookComVideos extends PluginForHost {
                     }
                 }
                 if (StringUtils.isEmpty(this.dllink) && !StringUtils.isEmpty(fallback_downloadurl)) {
-                    logger.info("Failed to find downloadurl via videoembed --> Using fallback downloadurl --> This video is probably usually only streamable via MDP streaming!");
+                    logger.info("Failed to find downloadurl via videoembed --> Using fallback downloadurl --> This video is officially probably usually only streamable via MDP streaming!");
                     this.dllink = fallback_downloadurl;
                 }
             }
@@ -355,12 +381,8 @@ public class FaceBookComVideos extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        login(account, this.br, true);
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, br);
-        } catch (final PluginException e) {
-            throw e;
-        }
         ai.setStatus("Valid Facebook account is active");
         ai.setUnlimitedTraffic();
         return ai;
@@ -469,7 +491,7 @@ public class FaceBookComVideos extends PluginForHost {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
     }
 
-    public void login(final Account account, Browser br) throws Exception {
+    public void login(final Account account, final Browser br, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 setHeaders(br);
@@ -478,8 +500,9 @@ public class FaceBookComVideos extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(FACEBOOKMAINPAGE, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
                         /* We trust these cookies --> Do not check them */
+                        logger.info("Trust login cookies");
                         return;
                     }
                     final boolean follow = br.isFollowingRedirects();
@@ -491,16 +514,18 @@ public class FaceBookComVideos extends PluginForHost {
                     }
                     if (br.containsHTML("id=\"logoutMenu\"")) {
                         /* Save cookies to save new valid cookie timestamp */
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
                         return;
                     }
                     /* Get rid of old cookies / headers */
-                    br = new Browser();
+                    br.clearAll();
                     br.setCookiesExclusive(true);
                     setHeaders(br);
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(true);
-                final boolean prefer_mobile_login = false;
+                final boolean prefer_mobile_login = true;
                 // better use the website login. else the error handling below might be broken.
                 if (prefer_mobile_login) {
                     /* Mobile login = no crypto crap */

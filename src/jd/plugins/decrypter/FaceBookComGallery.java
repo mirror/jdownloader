@@ -1339,7 +1339,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, this.br);
+                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, this.br, false);
                 // New account is valid, let's add it to the premium overview
                 return true;
             } catch (final PluginException e) {
