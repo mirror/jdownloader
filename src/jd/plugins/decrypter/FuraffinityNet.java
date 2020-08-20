@@ -26,13 +26,17 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/gallery/([^/]+)" })
 public class FuraffinityNet extends PluginForDecrypt {
@@ -54,6 +58,13 @@ public class FuraffinityNet extends PluginForDecrypt {
         fp.setName(username);
         int page = 1;
         boolean hasNextPage = false;
+        /* Login if account is available */
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc != null) {
+            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            plg.setBrowser(this.br);
+            ((jd.plugins.hoster.FuraffinityNet) plg).login(acc, false);
+        }
         do {
             logger.info("Crawling page " + page);
             br.getPage(parameter + "/" + page);

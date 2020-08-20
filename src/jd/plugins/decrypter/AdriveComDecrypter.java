@@ -48,6 +48,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         if (fid == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final UrlQuery query = UrlQuery.parse(parameter);
@@ -115,6 +116,10 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML(fid)) {
             decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
             return decryptedLinks;
+        } else if (br.containsHTML("\"noFiles\"")) {
+            logger.info("Empty folder");
+            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
+            return decryptedLinks;
         }
         /*
          * E.g. required when user adds the root folder --> Path is not given in URL and we need to find the name of the current (=
@@ -145,7 +150,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
         final String[] links = new Regex(linktext, "<tr>(.*?)</tr>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleinfo : links) {
             if (singleinfo.contains("/folder.png")) {

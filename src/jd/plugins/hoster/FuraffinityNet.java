@@ -18,11 +18,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -35,6 +42,7 @@ import jd.plugins.PluginException;
 public class FuraffinityNet extends antiDDoSForHost {
     public FuraffinityNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.furaffinity.net/register");
         /* 2020-08-19: Try to avoid 503 errors */
         this.setStartIntervall(1000l);
     }
@@ -43,12 +51,13 @@ public class FuraffinityNet extends antiDDoSForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
-    private boolean              accountRequired   = false;
+    private static final boolean free_resume                = true;
+    private static final int     free_maxchunks             = 0;
+    private static final int     free_maxdownloads          = -1;
+    private String               dllink                     = null;
+    private boolean              server_issues              = false;
+    private boolean              accountRequired            = false;
+    private boolean              enableAdultContentRequired = false;
 
     @Override
     public String getAGBLink() {
@@ -78,7 +87,6 @@ public class FuraffinityNet extends antiDDoSForHost {
         }
         dllink = null;
         server_issues = false;
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
         getPage(link.getPluginPatternMatcher());
@@ -86,9 +94,13 @@ public class FuraffinityNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many requests", 5 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML(">\\s*System Error|>\\s*The submission you are trying to find is not in")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*The owner of this page has elected to make it available to registered users only|>\\s*This submission contains Mature or Adult content")) {
+        } else if (br.containsHTML(">\\s*The owner of this page has elected to make it available to registered users only")) {
             /* Content is online but we can't view/download it! */
             this.accountRequired = true;
+            return AvailableStatus.TRUE;
+        } else if (br.containsHTML(">\\s*This submission contains Mature or Adult content")) {
+            /* Content is online but we can't view/download it! */
+            this.enableAdultContentRequired = true;
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("class=\"download fullsize\"><a href=\"([^\"]+)").getMatch(0);
@@ -124,8 +136,18 @@ public class FuraffinityNet extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        this.doFree(link, null);
+    }
+
+    private void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (this.accountRequired) {
             throw new AccountRequiredException();
+        } else if (this.enableAdultContentRequired) {
+            if (account == null) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Adult content disabled in account", 2 * 60 * 60 * 1000l);
+            }
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
@@ -146,6 +168,104 @@ public class FuraffinityNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
+    }
+
+    public boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://www." + this.getHost() + "/login");
+                final Form loginform = br.getFormbyProperty("id", "login-form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* Handle login-captcha if required */
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                try {
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } finally {
+                    this.setDownloadLink(dlinkbefore);
+                }
+                loginform.put("name", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (final PluginException e) {
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        ai.setStatus("Registered (free) user");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
+        requestFileInformation(link);
+        doFree(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        /* 2020-08-20: No captchas at all except login captcha */
+        return false;
     }
 
     @Override

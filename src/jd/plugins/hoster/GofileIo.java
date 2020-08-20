@@ -36,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=\\d+)?" })
 public class GofileIo extends PluginForHost {
@@ -68,6 +69,10 @@ public class GofileIo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String c = getC(link);
+        /* 2020-08-20: Avoid blocks by user-agent - this is just a test based on a weak assumption, it is not necessarily! */
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        /* 2020-08-20: Slow servers, timeouts will often occur --> Try a higher readtimeout */
+        br.setReadTimeout(2 * 60 * 1000);
         br.getPage("https://" + this.getHost() + "/d/" + c);
         final GetRequest server = br.createGetRequest("https://apiv2.gofile.io/getServer?c=" + c);
         server.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
