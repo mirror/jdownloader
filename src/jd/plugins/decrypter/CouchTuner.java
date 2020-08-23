@@ -16,7 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -40,24 +42,25 @@ public class CouchTuner extends antiDDoSForDecrypt {
         getPage(parameter);
         String page = br.toString();
         String fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
-        String[][] links = br.getRegex("<strong>Watch [iI]t [hH]ere\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getMatches();
-        if (links == null || links.length == 0) {
-            links = br.getRegex("Watch[^\"]*[iI]t[^\"]*[hH]ere\\s*:\\s*</span>&nbsp;\\s+<a href=\"([^\"]+)\"").getMatches();
+        ArrayList<String> links = new ArrayList<String>();
+        Collections.addAll(links, br.getRegex("<strong>Watch [iI]t [hH]ere\\s*:</strong>\\s*</span>\\s*<a href=\"([^\"\']+)\"").getColumn(0));
+        if (links.isEmpty()) {
+            Collections.addAll(links, br.getRegex("Watch[^\"]*[iI]t[^\"]*[hH]ere\\s*:\\s*</span>&nbsp;\\s+<a href=\"([^\"]+)\"").getColumn(0));
         }
-        if (links == null || links.length == 0) {
-            links = br.getRegex("<iframe[^>]+src=[\"\']([^\"\']+)[\"\']").getMatches();
+        if (links.isEmpty()) {
+            Collections.addAll(links, br.getRegex("<iframe[^>]+src=[\"\']([^\"\']+)[\"\']").getColumn(0));
         }
-        if (links == null || links.length == 0) {
-            links = br.getRegex("<a[^>]+href=\"([^\"]+)\"[^>]*rel=\"bookmark\"[^>]*>").getMatches();
+        if (links.isEmpty()) {
+            Collections.addAll(links, br.getRegex("<a[^>]+href=\"([^\"]+)\"[^>]*rel=\"bookmark\"[^>]*>").getColumn(0));
         }
-        if (links == null || links.length == 0) {
-            links = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getMatches();
+        if (links.isEmpty()) {
+            Collections.addAll(links, br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getColumn(0));
         }
-        for (String[] link : links) {
-            link[0] = Encoding.htmlDecode(link[0]).replaceAll("^//", "https://");
-            decryptedLinks.add(createDownloadlink(link[0]));
+        for (String link : links) {
+            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
+            decryptedLinks.add(createDownloadlink(link));
         }
-        if (fpName != null) {
+        if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
