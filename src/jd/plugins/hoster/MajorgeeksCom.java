@@ -70,7 +70,7 @@ public class MajorgeeksCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/files/details/([^/]+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:files/details/([^/]+)\\.html|mg/getmirror/([^/]+),\\d+\\.html)");
         }
         return ret.toArray(new String[0]);
     }
@@ -79,7 +79,6 @@ public class MajorgeeksCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -89,6 +88,15 @@ public class MajorgeeksCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Corrects all added URL types to one main type. */
+        final String fid_of_mirror_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (fid_of_mirror_url != null) {
+            link.setPluginPatternMatcher("https://www." + this.getHost() + "/files/details/" + fid_of_mirror_url + ".html");
+        }
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);

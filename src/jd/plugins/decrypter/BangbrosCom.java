@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
 public class BangbrosCom extends PluginForDecrypt {
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,8 @@ public class BangbrosCom extends PluginForDecrypt {
     public static final String type_decrypted_zip                   = ".+\\.zip.*?";
 
     protected DownloadLink createDownloadlink(String url, final String fid, final String productid, final String quality) {
-        url = url.replaceAll("https?://", "bangbrosdecrypted://");
+        final String hostpart = this.getHost().split("\\.")[0];
+        url = url.replaceAll("https?://", hostpart + "decrypted://");
         final DownloadLink dl = super.createDownloadlink(url, true);
         dl.setProperty("fid", fid);
         if (quality != null) {
@@ -118,7 +119,11 @@ public class BangbrosCom extends PluginForDecrypt {
             final String productid = finfo.getMatch(0);
             fid = finfo.getMatch(1);
             final String directurl_photos = regexZipUrl(this.br, "pictures");
-            final String directurl_screencaps = regexZipUrl(this.br, "screencaps");
+            String directurl_screencaps = regexZipUrl(this.br, "screencaps");
+            if (directurl_screencaps != null) {
+                /* Protocol might sometimes be missing! */
+                directurl_screencaps = br.getURL(directurl_screencaps).toString();
+            }
             title = this.br.getRegex("class=\"vdo\\-hdd1\">([^<>\"]+)<").getMatch(0);
             if (title == null) {
                 title = this.br.getRegex("class=\"desTxt\\-hed\">([^<>\"]+)<").getMatch(0);
@@ -136,10 +141,11 @@ public class BangbrosCom extends PluginForDecrypt {
             final boolean fast_linkcheck = true;
             final String[] htmls_videourls = getVideourls(this.br);
             for (final String html_videourl : htmls_videourls) {
-                final String videourl = getVideourlFromHtml(html_videourl);
+                String videourl = getVideourlFromHtml(html_videourl);
                 if (videourl == null) {
                     continue;
                 }
+                videourl = br.getURL(videourl).toString();
                 final String quality_url = new Regex(videourl, "(\\d+p)").getMatch(0);
                 if (quality_url == null || !cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
                     continue;
@@ -152,7 +158,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
-            if (cfg.getBooleanProperty("GRAB_photos", false)) {
+            if (cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
                 final String quality = "pictures";
                 final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
                 dl.setForcedFileName(title + "_" + quality + ".zip");
@@ -161,7 +167,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
-            if (cfg.getBooleanProperty("GRAB_screencaps", false)) {
+            if (cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
                 final String quality = "screencaps";
                 final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
                 dl.setForcedFileName(title + "_" + quality + ".zip");
@@ -183,7 +189,7 @@ public class BangbrosCom extends PluginForDecrypt {
     }
 
     public static String getVideourlFromHtml(final String html) {
-        String videourl = new Regex(html, "\"(http[^<>\"]+)\"").getMatch(0);
+        String videourl = new Regex(html, "\"((https?:|//)[^<>\"]+)\"").getMatch(0);
         if (videourl != null) {
             videourl = Encoding.htmlDecode(videourl);
         }
@@ -191,7 +197,7 @@ public class BangbrosCom extends PluginForDecrypt {
     }
 
     public static String regexZipUrl(final Browser br, final String key) {
-        String zipurl = br.getRegex("(https?://[^<>\"\\']+/" + key + "/[^<>\"\\']+\\.zip[^<>\"\\']+)").getMatch(0);
+        String zipurl = br.getRegex("([^<>\"\\']+/" + key + "/[^<>\"\\']+\\.zip[^<>\"\\']+)").getMatch(0);
         if (zipurl != null) {
             zipurl = Encoding.htmlDecode(zipurl);
         }
@@ -207,7 +213,7 @@ public class BangbrosCom extends PluginForDecrypt {
 
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
             return false;
@@ -215,7 +221,6 @@ public class BangbrosCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.BangbrosCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setValid(false);
             return false;
         }
         return true;

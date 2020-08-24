@@ -20,6 +20,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,10 +35,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -61,10 +61,18 @@ public class XvideosComProfile extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?");
+            final StringBuilder sb = new StringBuilder();
+            sb.append("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/");
+            sb.append("(");
+            sb.append("(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?");
+            sb.append("|favorite/\\d+/[a-z0-9\\_]+");
+            sb.append(")");
+            ret.add(sb.toString());
         }
         return ret.toArray(new String[0]);
     }
+
+    private static final String TYPE_FAVOURITES = "https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -76,7 +84,9 @@ public class XvideosComProfile extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (parameter.matches(".+/photos/.+")) {
+        if (parameter.matches(TYPE_FAVOURITES)) {
+            this.crawlFavourites(parameter, decryptedLinks);
+        } else if (parameter.matches(".+/photos/.+")) {
             crawlPhotos(parameter, decryptedLinks);
         } else {
             crawlVideos(parameter, decryptedLinks);
@@ -86,6 +96,34 @@ public class XvideosComProfile extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private void crawlFavourites(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        final String fpname = new Regex(parameter, TYPE_FAVOURITES).getMatch(1);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpname);
+        String nextpage = null;
+        do {
+            final String[] urls = br.getRegex("\"(/video\\d+/[^<>\"]+)").getColumn(0);
+            for (String url : urls) {
+                url = br.getURL(url).toString();
+                final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                final DownloadLink dl = this.createDownloadlink(url);
+                /* Save http requests */
+                dl.setAvailable(true);
+                dl.setName(url_title + ".mp4");
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+            nextpage = br.getRegex("href=\"(/favorite/\\d+/[^/]+/\\d+)\"[^>]*class=\"no-page next-page\"").getMatch(0);
+            if (nextpage != null) {
+                logger.info("Working on page: " + nextpage);
+                br.getPage(nextpage);
+            } else {
+                break;
+            }
+        } while (!this.isAbort());
     }
 
     private void crawlVideos(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
