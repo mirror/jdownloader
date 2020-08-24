@@ -3046,7 +3046,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
             }
-            final long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
+            final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
             if (expire_milliseconds_precise_to_the_second > 0) {
                 /* Add current time to parsed value */
                 expire_milliseconds_precise_to_the_second += currentTime;

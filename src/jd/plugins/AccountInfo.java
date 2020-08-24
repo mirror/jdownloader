@@ -261,7 +261,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             setValidUntil(-1);
             return true;
         }
-        final long serverTime = getCurrentServerTime(br, formatter, -1);
+        final long serverTime = br.getCurrentServerTime(-1);
         if (serverTime > 0) {
             final long a1 = validuntil + (System.currentTimeMillis() - serverTime);
             setValidUntil(a1);
@@ -273,50 +273,8 @@ public class AccountInfo extends Property implements AccountTrafficView {
         }
     }
 
-    /** Wrapper, will use 'EEE, dd MMM yyyy HH:mm:ss z' as formatter value. */
-    public long getCurrentServerTime(final Browser br, final long fallback) {
-        return getCurrentServerTime(br, "EEE, dd MMM yyyy HH:mm:ss z", fallback);
-    }
-
     /**
-     * Tries to convert response Header 'Date' into milliseconds-timestamp. Returns fallback on failure. Usually you'd use
-     * System.currentTimeMillis as fallback value.
-     */
-    /**
-     * Please don't put such methods here because it's not possible to properly override them, better place them in Plugin,PluginForHost so
-     * the Plugin can easily modify it
-     *
-     * @param br
-     * @param formatter
-     * @param fallback
-     * @return
-     */
-    @Deprecated
-    private long getCurrentServerTime(final Browser br, final String formatter, final long fallback) {
-        long serverTime = -1;
-        if (br != null && br.getHttpConnection() != null) {
-            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
-            final String dateString = br.getHttpConnection().getHeaderField("Date");
-            if (dateString != null) {
-                if (StringUtils.isNotEmpty(formatter) && dateString.matches("[A-Za-z]+, \\d{1,2} [A-Za-z]+ \\d{4} \\d{1,2}:\\d{1,2}:\\d{1,2} [A-Z]+")) {
-                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
-                } else {
-                    final Date date = TimeFormatter.parseDateString(dateString);
-                    if (date != null) {
-                        serverTime = date.getTime();
-                    }
-                }
-            }
-        }
-        if (serverTime == -1) {
-            /* Fallback */
-            serverTime = fallback;
-        }
-        return serverTime;
-    }
-
-    /**
-     * -1 für Niemals ablaufen
+     * -1 = Expires never
      *
      * @param validUntil
      */

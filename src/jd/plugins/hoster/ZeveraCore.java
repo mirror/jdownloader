@@ -501,7 +501,7 @@ abstract public class ZeveraCore extends UseNet {
             ai.setUsedSpace((long) Double.parseDouble(space_used));
         }
         /* E.g. free account: "premium_until":false */
-        final long currentTime = ai.getCurrentServerTime(br, System.currentTimeMillis());
+        final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
         final long premium_until = (premium_until_str != null && premium_until_str.matches("\\d+")) ? Long.parseLong(premium_until_str) * 1000 : 0;
         if (premium_until > currentTime) {
             account.setType(AccountType.PREMIUM);
