@@ -17,12 +17,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -50,22 +53,50 @@ public class AdriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* Make sure links came via the new decrpter */
-        if (!link.getDownloadURL().matches("http://adrivedecrypted\\.com/\\d+")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (link.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String mainlink = link.getStringProperty("mainlink", null);
+        if (link.getBooleanProperty("directdl", false)) {
+            /* 2020-08-24: Special rare case */
+            if (mainlink == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(mainlink);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            this.dllink = br.getRegex("\"(https?://[^\"]+/public/view/[^<>\"]+)").getMatch(0);
+            if (!StringUtils.isEmpty(dllink)) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(this.dllink);
+                    if (con.isContentDisposition()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        } else {
+            /* Make sure links came via the new decrpter */
+            if (!link.getDownloadURL().matches("http://adrivedecrypted\\.com/\\d+") || mainlink == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (link.getBooleanProperty("offline", false)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(mainlink);
+            dllink = link.getStringProperty("directlink", null);
+            String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
+            if (goToLink != null) {
+                br.getPage("http://www.adrive.com" + goToLink);
+            }
+            if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            // filename and size are set already by decrypter! resetting to some stored property serves what point?
         }
-        br.getPage(link.getStringProperty("mainlink", null));
-        dllink = link.getStringProperty("directlink", null);
-        String goToLink = br.getRegex("<b>Please go to <a href=\"(/.*?)\"").getMatch(0);
-        if (goToLink != null) {
-            br.getPage("http://www.adrive.com" + goToLink);
-        }
-        if (br.containsHTML("The file you are trying to access is no longer available publicly\\.|The public file you are trying to download is associated with a non\\-valid ADrive") || br.getURL().equals("https://www.adrive.com/login")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // filename and size are set already by decrypter! resetting to some stored property serves what point?
         return AvailableStatus.TRUE;
     }
 

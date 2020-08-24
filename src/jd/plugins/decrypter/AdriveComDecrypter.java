@@ -120,6 +120,15 @@ public class AdriveComDecrypter extends PluginForDecrypt {
             logger.info("Empty folder");
             decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "adrive\\.com/public/(.+)").getMatch(0)));
             return decryptedLinks;
+        } else if (br.containsHTML("id=\"startdownload\"")) {
+            /* Special case: Single file, direct download */
+            final DownloadLink dl = createDownloadlink("http://adrivedecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setProperty("LINKDUPEID", "adrivecom://" + fid);
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("directlink", br.getURL());
+            dl.setProperty("directdl", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         /*
          * E.g. required when user adds the root folder --> Path is not given in URL and we need to find the name of the current (=

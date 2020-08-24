@@ -14,7 +14,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "xvideos.com", type = Type.HOSTER)
 public interface XvideosComConfig extends PluginConfigInterface {
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @TakeValueFromSubconfig("ENABLE_FAST_LINKCHECK")
     @DescriptionForConfigEntry("Enable fast linkcheck for profile crawler?")
     @Order(10)

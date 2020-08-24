@@ -41,6 +41,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -52,14 +53,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/media)?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "twitter.com", "t.co" }, urls = { "https?://(?:www\\.|mobile\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/status/\\d+|https?://(?:www\\.|mobile\\.)?twitter\\.com/(?!i/)[A-Za-z0-9_\\-]{2,}(?:/(?:media|likes))?|https://twitter\\.com/i/cards/tfw/v1/\\d+|https?://(?:www\\.)?twitter\\.com/i/videos/tweet/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" })
 public class TwitterCom extends PornEmbedParser {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String     TYPE_CARD      = "https?://(?:www\\.)?twitter\\.com/i/cards/tfw/v1/\\d+";
-    private static final String     TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+(?:/media)?";
+    private static final String     TYPE_USER_ALL  = "https?://(?:www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+(?:/(?:media|likes))?";
     private static final String     TYPE_USER_POST = "https?://(?:www\\.)?twitter\\.com.*?status/\\d+.*?";
     private static final String     TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
     private String                  username       = null;
@@ -452,11 +453,8 @@ public class TwitterCom extends PornEmbedParser {
         final boolean setting_force_grab_media = PluginJsonConfig.get(jd.plugins.hoster.TwitterCom.TwitterConfigInterface.class).isForceGrabMediaOnlyEnabled();
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
-        String max_count;
-        final boolean isMediaFromOriginalPosterOnly = parameter.endsWith("/media");
+        String max_countStr;
         int index = 0;
-        fp = FilePackage.getInstance();
-        fp.setName(username);
         final int expected_items_per_page = 20;
         int numberof_items_on_current_page = 0;
         String nextCursor = null;
@@ -472,7 +470,9 @@ public class TwitterCom extends PornEmbedParser {
         query.append("skip_status", "1", false);
         query.append("cards_platform", "Web-12", false);
         query.append("include_cards", "1", false);
-        query.append("include_composer_source", "true", false);
+        /* 2020-08-24: Not required anymore */
+        // query.append("include_composer_source", "true", false);
+        query.append("include_quote_count", "true", false);
         query.append("include_ext_alt_text", "true", false);
         query.append("include_reply_count", "1", false);
         query.append("tweet_mode", "extended", false);
@@ -481,21 +481,34 @@ public class TwitterCom extends PornEmbedParser {
         query.append("include_ext_media_color", "true", false);
         query.append("include_ext_media_availability", "true", false);
         query.append("send_error_codes", "true", false);
-        query.append("simple_quoted_tweets", "true", false);
-        if (isMediaFromOriginalPosterOnly || setting_force_grab_media) {
+        query.append("simple_quoted_tweet", "true", false);
+        final boolean isGrabLikedTweetsOfUser = parameter.endsWith("/likes");
+        final boolean isGrabMediaFromOriginalPosterOnly = parameter.endsWith("/media");
+        String fpname = username;
+        if (isGrabLikedTweetsOfUser) {
+            /* 2020-08-24: Most likely an account is required to do this! */
+            logger.info("Grabbing all liked items of a user");
+            content_type = "favorites";
+            max_countStr = PluginJSonUtils.getJson(br, "favourites_count");
+            query.append("simple_quoted_tweets", "true", false);
+            query.append("sorted_by_time", "true", false);
+            fpname += " - likes";
+        } else if (isGrabMediaFromOriginalPosterOnly || setting_force_grab_media) {
             logger.info("Grabbing self posted media only");
             content_type = "media";
-            max_count = media_count;
+            max_countStr = media_count;
         } else {
-            logger.info("Grabbing ALL media e.g. also retweets");
+            logger.info("Grabbing ALL media of a user e.g. also retweets");
             content_type = "profile";
-            max_count = statuses_count;
+            max_countStr = statuses_count;
             query.append("include_tweet_replies", "false", false);
         }
-        if (StringUtils.isEmpty(max_count)) {
+        if (StringUtils.isEmpty(max_countStr)) {
             /* This should never happen */
-            max_count = "??";
+            max_countStr = "??";
         }
+        fp = FilePackage.getInstance();
+        fp.setName(fpname);
         query.append("userId", user_id, false);
         query.append("count", expected_items_per_page + "", false);
         query.append("ext", "mediaStats,cameraMoment", true);
@@ -510,6 +523,10 @@ public class TwitterCom extends PornEmbedParser {
             }
             final String url = String.format("https://api.twitter.com/2/timeline/%s/%s.json", content_type, user_id);
             br.getPage(url + "?" + thisquery.toString());
+            if (br.containsHTML("Your credentials do not allow access to this resource")) {
+                /* 2020-08-24: {"errors":[{"code":220,"message":"Your credentials do not allow access to this resource."}]} */
+                throw new AccountRequiredException();
+            }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Object errors = entries.get("errors");
             if (errors != null) {
@@ -528,7 +545,7 @@ public class TwitterCom extends PornEmbedParser {
                 crawled_tweet_count++;
             }
             logger.info(String.format("Numberof tweets on current page: %d of expected max %d", numberof_items_on_current_page, expected_items_per_page));
-            logger.info(String.format("Numberof total tweets crawled: %d of expected total %s", crawled_tweet_count, max_count));
+            logger.info(String.format("Numberof total tweets crawled: %d of expected total %s", crawled_tweet_count, max_countStr));
             if (numberof_items_on_current_page == 0) {
                 logger.info("Found 0 tweets on current page --> Stopping");
                 break;
