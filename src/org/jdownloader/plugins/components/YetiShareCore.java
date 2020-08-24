@@ -491,10 +491,15 @@ public class YetiShareCore extends antiDDoSForHost {
             if (supports_availablecheck_over_info_page(link)) {
                 br.setFollowRedirects(true);
                 /* For premium mode, we might get our final downloadurl here already. */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resume, maxchunks);
-                if (!this.isDownloadableContent(dl.getConnection())) {
+                final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+                if (this.isDownloadableContent(con)) {
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, con.getRequest(), resume, maxchunks);
+                } else {
                     br.followConnection();
-                    this.dl = null;
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
             if (this.dl == null) {
