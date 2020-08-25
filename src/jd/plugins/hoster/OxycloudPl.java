@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -141,5 +142,16 @@ public class OxycloudPl extends YetiShareCore {
             ai.setUnlimitedTraffic();
         }
         return ai;
+    }
+    /* *************************** PUT API RELATED METHODS HERE *************************** */
+
+    @Override
+    protected String getAPIBase() {
+        return "https://" + this.getHost() + "/api/v1";
+    }
+
+    @Override
+    protected boolean supports_api() {
+        return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }
 }
