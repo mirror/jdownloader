@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -222,6 +224,10 @@ public class BitpornoCom extends PluginForHost {
                 }
             }
         }
+        if (StringUtils.isEmpty(this.dllink)) {
+            /* 2020-08-25: HLS */
+            dllink = br.getRegex("file\\s*:\\s*\"((?:https?://|/)[^<>\"]+)\"").getMatch(0);
+        }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -235,7 +241,7 @@ public class BitpornoCom extends PluginForHost {
         if (!filename.endsWith(extension)) {
             filename += extension;
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
             link.setFinalFileName(filename);
             if (dllink.contains("playercdn.net")) {
                 // br2.getHeaders().put("Referer", link.getDownloadURL().replace("/v/", "/e/"));
@@ -262,8 +268,8 @@ public class BitpornoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (br.containsHTML(html_video_encoding)) {
             /*
              * 2016-06-16, psp: I guess if this message appears longer than some hours, such videos can never be downloaded/streamed or only
@@ -275,21 +281,31 @@ public class BitpornoCom extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured");
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (dllink.contains(".m3u8")) {
+            /* HLS download */
+            br.getPage(dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            /* http download */
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private String getConfiguredVideoQuality() {
