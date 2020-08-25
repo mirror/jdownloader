@@ -44,7 +44,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
     }
 
     private static final String TYPE_ARTIST = "(?i)https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
-    private static final String TYPE_ALBUM  = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/[a-zA-Z0-9]+";
+    private static final String TYPE_ALBUM  = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/([a-zA-Z0-9]+)";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -76,7 +76,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         if (parameter.matches(TYPE_ALBUM)) {
-            final String project_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+            final String project_id = new Regex(parameter, TYPE_ALBUM).getMatch(0);
             if (inValidate(project_id)) {
                 return decryptedLinks;
             }
@@ -100,8 +100,8 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     if (results != null) {
                         for (final String result : results) {
                             String assetURL = result;
+                            final Browser br2 = br.cloneBrowser();
                             if (result.endsWith(fid) && StringUtils.containsIgnoreCase(playerEmbedded, "<iframe")) {
-                                final Browser br2 = br.cloneBrowser();
                                 getPage(br2, result);
                                 String pageDetail = br2.toString();
                                 if (StringUtils.containsIgnoreCase(url, "/marmosets/") && br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
@@ -116,6 +116,10 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                                 } else {
                                     assetURL = br2.getRegex("src\\s*=\\s*[\"']*([^\"']*)[\"']*").getMatch(0);
                                 }
+                            } else if (result.contains("embed.html")) {
+                                /* 2020-08-25: Embedded video (selfhosted by artstation but requires this extra step to download it) */
+                                getPage(br2, result);
+                                assetURL = br2.getRegex("<source[^>]*src=\"(https?://[^<>\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
                             }
                             if (StringUtils.isNotEmpty(assetURL)) {
                                 final DownloadLink dl2 = this.createDownloadlink(assetURL);
