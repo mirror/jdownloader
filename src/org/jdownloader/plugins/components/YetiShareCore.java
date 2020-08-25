@@ -25,10 +25,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -268,11 +271,6 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
-    /** See fetchAccountInfoAPI */
-    protected boolean supports_api() {
-        return false;
-    }
-
     /**
      * Enforces old, non-ajax login-method. </br>
      * This is only rarely needed e.g. filemia.com </br>
@@ -298,7 +296,7 @@ public class YetiShareCore extends antiDDoSForHost {
             setWeakFilename(link);
         }
         br.setFollowRedirects(true);
-        prepBrowser(this.br);
+        prepBrowserWebsite(this.br);
         final String fallback_filename = this.getFallbackFilename(link);
         final String[] fileInfo = getFileInfoArray();
         try {
@@ -1249,7 +1247,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected Browser prepBrowser(final Browser br) {
+    protected Browser prepBrowserWebsite(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 416, 429 });
         if (enable_random_user_agent()) {
             if (agent.get() == null) {
@@ -1461,15 +1459,6 @@ public class YetiShareCore extends antiDDoSForHost {
         return ai;
     }
 
-    /**
-     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
-     * Their API implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never
-     * be able to add support for it!
-     */
-    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
-        return null;
-    }
-
     protected long parseExpireTimeStamp(Account account, final String expireString) {
         if (expireString == null) {
             return -1;
@@ -1571,5 +1560,114 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+    /* *************************** PUT API RELATED METHODS HERE *************************** */
+
+    private static final String PROPERTY_API_ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String PROPERTY_API_ACCOUNT_ID   = "ACCOUNT_ID";
+
+    /** true = API will be used to login and for premium downloading */
+    protected boolean supports_api() {
+        return false;
+    }
+
+    protected String getAPIBase() {
+        return "https://" + this.getHost() + "/api/v2";
+    }
+
+    protected Browser prepBrowserAPI(final Browser br) {
+        // br.setAllowedResponseCodes(new int[] { 416, 429 });
+        // if (enable_random_user_agent()) {
+        // if (agent.get() == null) {
+        // agent.set(UserAgents.stringUserAgent());
+        // }
+        // br.getHeaders().put("User-Agent", agent.get());
+        // }
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
+    }
+
+    /**
+     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
+     * Their API implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never
+     * be able to add support for it!
+     */
+    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        this.loginAPI(account, true);
+        final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
+        postAccountInfo.put("access_token", account.getStringProperty(PROPERTY_API_ACCESS_TOKEN));
+        postAccountInfo.put("account_id", account.getStringProperty(PROPERTY_API_ACCOUNT_ID));
+        if (this.br.getURL() == null || !this.br.getURL().contains("/account/info")) {
+            this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
+            checkErrorsAPI(br, null, account);
+        }
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String server_timeStr = (String) entries.get("_datetime");
+        entries = (Map<String, Object>) entries.get("data");
+        final String status = (String) entries.get("status");
+        final String paidExpiryDateStr = (String) entries.get("paidExpiryDate");
+        long paidExpiryDate = 0;
+        final long currentTime;
+        if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        } else {
+            /* Fallback */
+            currentTime = System.currentTimeMillis();
+        }
+        if (paidExpiryDateStr != null && paidExpiryDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            paidExpiryDate = TimeFormatter.getMilliSeconds(paidExpiryDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        }
+        /* TODO: Make use of this */
+        this.postPageRaw(this.getAPIBase() + "/account/package", JSonStorage.serializeToJson(postAccountInfo), true);
+        Map<String, Object> packageInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        packageInfo = (Map<String, Object>) packageInfo.get("data");
+        final String accountType = (String) packageInfo.get("label");
+        checkErrorsAPI(br, null, account);
+        if (paidExpiryDate > currentTime || StringUtils.equalsIgnoreCase(accountType, "Premium")) {
+            account.setType(AccountType.PREMIUM);
+            if (paidExpiryDate > currentTime) {
+                ai.setValidUntil(paidExpiryDate);
+            }
+        } else {
+            /* Free- or expired premium account */
+            account.setType(AccountType.FREE);
+        }
+        final int simultaneousDownloads = (int) JavaScriptEngineFactory.toLong(packageInfo.get("concurrent_downloads"), 1);
+        account.setMaxSimultanDownloads(simultaneousDownloads);
+        return ai;
+    }
+
+    protected void loginAPI(final Account account, final boolean verifyToken) throws Exception {
+        String access_token = account.getStringProperty(PROPERTY_API_ACCESS_TOKEN);
+        String account_id = account.getStringProperty(PROPERTY_API_ACCOUNT_ID);
+        if (!StringUtils.isEmpty(access_token) && !StringUtils.isEmpty(account_id)) {
+            logger.info("Trying to re-use stored access_token");
+            final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
+            postAccountInfo.put("access_token", access_token);
+            postAccountInfo.put("account_id", account_id);
+            this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
+            checkErrorsAPI(br, null, account);
+            /** TODO: Check/test this */
+            logger.info("Successfully re-used access_token");
+            return;
+        }
+        logger.info("Performing full login");
+        final Map<String, Object> postLogin = new HashMap<String, Object>();
+        postLogin.put("key1", account.getUser());
+        postLogin.put("key2", account.getPass());
+        this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
+        access_token = PluginJSonUtils.getJson(br, "access_token");
+        account_id = PluginJSonUtils.getJson(br, "account_id");
+        checkErrorsAPI(br, null, account);
+        if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        account.setProperty(PROPERTY_API_ACCESS_TOKEN, access_token);
+        account.setProperty(PROPERTY_API_ACCOUNT_ID, account_id);
+    }
+
+    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) {
+        /** TODO: Add functionality */
     }
 }
