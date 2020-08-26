@@ -149,7 +149,7 @@ public class ArchiveOrg extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -205,7 +205,7 @@ public class ArchiveOrg extends PluginForHost {
         }
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(account, true);
         } catch (final PluginException e) {
             throw e;
         }
@@ -219,7 +219,7 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, true);
-        login(this.br, account, false);
+        login(account, false);
         if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
             doDownload(account, link, false, 1, "account_free_directlink");
         } else {
