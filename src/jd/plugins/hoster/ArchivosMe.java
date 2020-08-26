@@ -138,7 +138,7 @@ public class ArchivosMe extends YetiShareCore {
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /* 2020-01-18: Special */
-        login(account, true);
+        loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_edit.html")) {
             getPage("/account_edit.html");
         }
