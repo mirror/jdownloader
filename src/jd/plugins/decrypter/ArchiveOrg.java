@@ -16,8 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -25,6 +28,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,6 +39,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+" })
@@ -86,7 +92,47 @@ public class ArchiveOrg extends PluginForDecrypt {
             con.disconnect();
         }
         br.getPage(parameter);
-        if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
+        if (br.containsHTML("schema\\.org/Book")) {
+            /* Crawl all pages of a book */
+            final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
+            if (bookAjaxURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(bookAjaxURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/brOptions");
+            final String title = (String) entries.get("bookTitle");
+            final ArrayList<Object> imagesO = (ArrayList<Object>) entries.get("data");
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            for (final Object imageO : imagesO) {
+                /*
+                 * Most of all objects will contain an array with 2 items --> Books always have two vciewable pages. Exception = First page
+                 * --> Cover
+                 */
+                final ArrayList<Object> pagesO = (ArrayList<Object>) imageO;
+                for (final Object pageO : pagesO) {
+                    /* Grab "Preview"(???) version --> Usually "pageType":"NORMAL", "pageSide":"L", "viewable":true */
+                    entries = (Map<String, Object>) pageO;
+                    final int pageNum = (int) JavaScriptEngineFactory.toLong(entries.get("leafNum"), -1);
+                    final String url = (String) entries.get("uri");
+                    if (StringUtils.isEmpty(url) || pageNum == -1) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                    dl.setName(pageNum + "_ " + title + ".jpg");
+                    /* Assume all are online & downloadable */
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                }
+            }
+        } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
             int page = 2;
             do {
                 if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
