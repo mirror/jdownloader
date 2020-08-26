@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
@@ -464,10 +465,10 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
-        handleDownload(link, null);
+        handleDownloadWebsite(link, null);
     }
 
-    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+    public void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         final boolean resume = this.isResumeable(link, account);
         final int maxchunks = this.getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
@@ -645,15 +646,15 @@ public class YetiShareCore extends antiDDoSForHost {
                 logger.info("loopLog: " + loopLog);
             }
         }
-        /*
-         * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
-         * connections) --> Should work fine after the next try.
-         */
         if (dl == null) {
             checkErrors(link, account);
             checkErrorsLastResort(link, account);
         }
         final URLConnectionAdapter con = dl.getConnection();
+        /*
+         * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+         * connections) --> Should work fine after the next try.
+         */
         link.setProperty(directlinkproperty, con.getURL().toString());
         try {
             checkResponseCodeErrors(con);
@@ -1258,7 +1259,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return br;
     }
 
-    protected void login(final Account account, boolean force) throws Exception {
+    protected void loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -1408,7 +1409,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
             getPage("/account_home.html");
         }
@@ -1487,10 +1488,14 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        login(account, false);
-        br.setFollowRedirects(false);
-        getPage(link.getPluginPatternMatcher());
-        handleDownload(link, account);
+        if (this.supports_api()) {
+            this.handleDownloadAPI(link, account);
+        } else {
+            loginWebsite(account, false);
+            br.setFollowRedirects(false);
+            getPage(link.getPluginPatternMatcher());
+            handleDownloadWebsite(link, account);
+        }
     }
 
     @Override
@@ -1563,8 +1568,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
     /* *************************** PUT API RELATED METHODS HERE *************************** */
 
-    private static final String PROPERTY_API_ACCESS_TOKEN = "ACCESS_TOKEN";
-    private static final String PROPERTY_API_ACCOUNT_ID   = "ACCOUNT_ID";
+    protected static final String PROPERTY_API_ACCESS_TOKEN = "ACCESS_TOKEN";
+    protected static final String PROPERTY_API_ACCOUNT_ID   = "ACCOUNT_ID";
 
     /** true = API will be used to login and for premium downloading */
     protected boolean supports_api() {
@@ -1587,17 +1592,28 @@ public class YetiShareCore extends antiDDoSForHost {
         return br;
     }
 
+    /** 2020-08-26: Same pattern for user & pw ("key1" & "key2") */
+    protected boolean isAPICredential(final String str) {
+        return str.matches("[A-Za-z0-9]{64}");
+    }
+
+    protected String getAPIAccessToken(final Account account) {
+        return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN);
+    }
+
+    protected String getAPIAccountID(final Account account) {
+        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID);
+    }
+
     /**
-     * 2020-05-14: psp: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
-     * Their API implementation and documentation is SO BAD - I've not seen it working, checked about 15 websites --> We will probably never
-     * be able to add support for it!
+     * 2020-05-14: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
      */
     protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         this.loginAPI(account, true);
         final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-        postAccountInfo.put("access_token", account.getStringProperty(PROPERTY_API_ACCESS_TOKEN));
-        postAccountInfo.put("account_id", account.getStringProperty(PROPERTY_API_ACCOUNT_ID));
+        postAccountInfo.put("access_token", getAPIAccessToken(account));
+        postAccountInfo.put("account_id", getAPIAccountID(account));
         if (this.br.getURL() == null || !this.br.getURL().contains("/account/info")) {
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
             checkErrorsAPI(br, null, account);
@@ -1605,9 +1621,10 @@ public class YetiShareCore extends antiDDoSForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String server_timeStr = (String) entries.get("_datetime");
         entries = (Map<String, Object>) entries.get("data");
-        final String status = (String) entries.get("status");
-        final String paidExpiryDateStr = (String) entries.get("paidExpiryDate");
-        long paidExpiryDate = 0;
+        // final String status = (String) entries.get("status"); --> Mostly "active" (also free accounts)
+        final String datecreatedStr = (String) entries.get("datecreated");
+        final String premiumExpireDateStr = (String) entries.get("paidExpiryDate");
+        long premiumExpireMilliseconds = 0;
         final long currentTime;
         if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -1615,44 +1632,65 @@ public class YetiShareCore extends antiDDoSForHost {
             /* Fallback */
             currentTime = System.currentTimeMillis();
         }
-        if (paidExpiryDateStr != null && paidExpiryDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-            paidExpiryDate = TimeFormatter.getMilliSeconds(paidExpiryDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        if (premiumExpireDateStr != null && premiumExpireDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        /* TODO: Make use of this */
         this.postPageRaw(this.getAPIBase() + "/account/package", JSonStorage.serializeToJson(postAccountInfo), true);
         Map<String, Object> packageInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         packageInfo = (Map<String, Object>) packageInfo.get("data");
         final String accountType = (String) packageInfo.get("label");
+        final String level_type = (String) packageInfo.get("level_type");
         checkErrorsAPI(br, null, account);
-        if (paidExpiryDate > currentTime || StringUtils.equalsIgnoreCase(accountType, "Premium")) {
+        final long premiumDurationMilliseconds = premiumExpireMilliseconds - currentTime;
+        if (premiumExpireMilliseconds > currentTime || StringUtils.equalsIgnoreCase(level_type, "paid")) {
             account.setType(AccountType.PREMIUM);
-            if (paidExpiryDate > currentTime) {
-                ai.setValidUntil(paidExpiryDate);
+            if (premiumExpireMilliseconds > currentTime) {
+                ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             }
         } else {
             /* Free- or expired premium account */
             account.setType(AccountType.FREE);
         }
-        final int simultaneousDownloads = (int) JavaScriptEngineFactory.toLong(packageInfo.get("concurrent_downloads"), 1);
-        account.setMaxSimultanDownloads(simultaneousDownloads);
+        ai.setStatus(accountType);
+        final Object concurrent_downloadsO = packageInfo.get("concurrent_downloads");
+        if (concurrent_downloadsO != null && concurrent_downloadsO instanceof Integer) {
+            final int simultaneousDownloads = ((Integer) packageInfo.get("concurrent_downloads")).intValue();
+            if (simultaneousDownloads > 0) {
+                account.setMaxSimultanDownloads(simultaneousDownloads);
+            }
+        }
+        /* Now set unnecessary data */
+        if (datecreatedStr != null && datecreatedStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            ai.setCreateTime(TimeFormatter.getMilliSeconds(datecreatedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        }
         return ai;
     }
 
     protected void loginAPI(final Account account, final boolean verifyToken) throws Exception {
-        String access_token = account.getStringProperty(PROPERTY_API_ACCESS_TOKEN);
-        String account_id = account.getStringProperty(PROPERTY_API_ACCOUNT_ID);
+        String access_token = this.getAPIAccessToken(account);
+        String account_id = this.getAPIAccountID(account);
         if (!StringUtils.isEmpty(access_token) && !StringUtils.isEmpty(account_id)) {
             logger.info("Trying to re-use stored access_token");
             final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-            postAccountInfo.put("access_token", access_token);
-            postAccountInfo.put("account_id", account_id);
+            postAccountInfo.put("access_token", this.getAPIAccessToken(account));
+            postAccountInfo.put("account_id", this.getAPIAccountID(account));
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
-            checkErrorsAPI(br, null, account);
-            /** TODO: Check/test this */
-            logger.info("Successfully re-used access_token");
-            return;
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("data");
+            final int json_accountID = (int) JavaScriptEngineFactory.toLong(entries.get("id"), -1);
+            /* Compare accountID with stored accountID --> If it matches, we trust login to be successful */
+            if (json_accountID == Integer.parseInt(account_id)) {
+                logger.info("Successfully re-used access_token");
+                return;
+            } else {
+                logger.info("Failed to re-use access_token");
+            }
         }
         logger.info("Performing full login");
+        if (!this.isAPICredential(account.getUser()) || !this.isAPICredential(account.getPass())) {
+            /* TODO: Add info dialog */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         final Map<String, Object> postLogin = new HashMap<String, Object>();
         postLogin.put("key1", account.getUser());
         postLogin.put("key2", account.getPass());
@@ -1660,14 +1698,83 @@ public class YetiShareCore extends antiDDoSForHost {
         access_token = PluginJSonUtils.getJson(br, "access_token");
         account_id = PluginJSonUtils.getJson(br, "account_id");
         checkErrorsAPI(br, null, account);
-        if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id)) {
+        if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id) || !account_id.matches("\\d+")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.setProperty(PROPERTY_API_ACCESS_TOKEN, access_token);
         account.setProperty(PROPERTY_API_ACCOUNT_ID, account_id);
     }
 
-    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) {
+    private void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        String dllink = this.checkDirectLink(link, account);
+        if (dllink == null) {
+            this.loginAPI(account, false);
+            final Map<String, Object> postDownload = new HashMap<String, Object>();
+            postDownload.put("access_token", this.getAPIAccessToken(account));
+            postDownload.put("account_id", this.getAPIAccountID(account));
+            postDownload.put("file_id", this.getFUID(link));
+            this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
+            this.checkErrorsAPI(this.br, link, account);
+            dllink = PluginJSonUtils.getJson(this.br, "download_url");
+            if (StringUtils.isEmpty(dllink)) {
+                /* We're using an API --> Never throw plugin defect! */
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+            }
+            final boolean resume = this.isResumeable(link, account);
+            final int maxchunks = this.getMaxChunks(account);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        }
+        final URLConnectionAdapter con = dl.getConnection();
+        /*
+         * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+         * connections) --> Should work fine after the next try.
+         */
+        link.setProperty(directlinkproperty, con.getURL().toString());
+        try {
+            checkResponseCodeErrors(con);
+        } catch (final PluginException e) {
+            try {
+                br.followConnection(true);
+            } catch (IOException ioe) {
+                throw Exceptions.addSuppressed(e, ioe);
+            }
+            throw e;
+        }
+        if (!isDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            checkErrors(link, account);
+            checkErrorsLastResort(link, account);
+        }
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
+        dl.startDownload();
+    }
+
+    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         /** TODO: Add functionality */
+        Map<String, Object> entries = null;
+        try {
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        } catch (final Throwable e) {
+            /* API response is not json */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response");
+        }
+        /* E.g. {"message":"Username could not be found.","result":false} */
+        final boolean result = ((Boolean) entries.get("result")).booleanValue();
+        String msg = (String) entries.get("message");
+        if (!result) {
+            if (StringUtils.isEmpty(msg)) {
+                msg = "Unknown error";
+            }
+            if (link != null) {
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        }
     }
 }

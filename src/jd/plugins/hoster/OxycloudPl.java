@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -26,6 +29,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -123,7 +127,7 @@ public class OxycloudPl extends YetiShareCore {
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginWebsite(account, true);
         this.getPage("/download-limits-calculator");
         final String trafficLeft = br.getRegex("class=\"fa fa-download\"></i>([^<>]*)</span>").getMatch(0);
         final String expireDate = br.getRegex("This package is active until (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
@@ -153,5 +157,59 @@ public class OxycloudPl extends YetiShareCore {
     @Override
     protected boolean supports_api() {
         return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+    }
+
+    private void setAPIHeaders(final Browser br, final Account account) {
+        br.getHeaders().put("authentication", this.getAPIAccessToken(account));
+        br.getHeaders().put("account", this.getAPIAccountID(account));
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoAPI(account);
+        /* 2020-08-26: They've built some stuff on top of the normal YetiShare API --> Handle this here */
+        final Browser brc = br.cloneBrowser();
+        setAPIHeaders(brc, account);
+        this.getPage(brc, this.getAPIBase() + "/package/limits");
+        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("account");
+        final String accType = (String) entries.get("type");
+        final boolean isUnlimited = ((Boolean) entries.get("isUnlimited")).booleanValue();
+        final boolean isPremium = ((Boolean) entries.get("isPremium")).booleanValue();
+        if (isUnlimited) {
+            ai.setUnlimitedTraffic();
+        } else {
+            /*
+             * 2020-08-26: These values are usually null for free accounts but we'll try to set them anyways in case they change this in the
+             * future.
+             */
+            try {
+                final long maxDailyBytes = ((Long) entries.get("maxDailyBytes")).longValue();
+                final long dailyBytesLeft = ((Long) entries.get("dailyBytesLeft")).longValue();
+                ai.setTrafficMax(maxDailyBytes);
+                ai.setTrafficLeft(dailyBytesLeft);
+            } catch (final Throwable e) {
+                /* Double-check! If the total quota is 0, there is no traffic left at all! */
+                final Object totalBytesLeftO = entries.get("totalBytesLeft");
+                if (totalBytesLeftO == null) {
+                    ai.setTrafficLeft(0);
+                } else {
+                    try {
+                        final long totalBytesLeft = ((Long) totalBytesLeftO).longValue();
+                        ai.setTrafficLeft(totalBytesLeft);
+                    } catch (final Throwable e2) {
+                        ai.setTrafficLeft(0);
+                    }
+                }
+            }
+        }
+        if ("paid".equalsIgnoreCase(accType) || isPremium) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        /* Do not set account status here as upper code already did that! */
+        // ai.setStatus("Bla");
+        return ai;
     }
 }

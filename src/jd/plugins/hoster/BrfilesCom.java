@@ -174,7 +174,7 @@ public class BrfilesCom extends YetiShareCore {
             /* 2020-03-16: Special: Without account, all files will be shown as offline by this website */
             return AvailableStatus.UNCHECKABLE;
         }
-        this.login(account, false);
+        this.loginWebsite(account, false);
         return super.requestFileInformation(link, account, isDownload);
     }
 
@@ -183,16 +183,16 @@ public class BrfilesCom extends YetiShareCore {
         /* 2020-03-16: Special */
         if (account.getType() == AccountType.FREE) {
             /* Free account --> Login --> Availablecheck --> Download */
-            login(account, false);
+            loginWebsite(account, false);
             requestFileInformation(link, account, true);
             br.setFollowRedirects(false);
             if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher());
             }
-            handleDownload(link, account);
+            handleDownloadWebsite(link, account);
         } else {
             /* Premium - no availablecheck at all */
-            login(account, false);
+            loginWebsite(account, false);
             // requestFileInformation(link, account, true);
             br.setFollowRedirects(false);
             br.getPage(link.getPluginPatternMatcher());
@@ -205,14 +205,14 @@ public class BrfilesCom extends YetiShareCore {
                 final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
                 link.setProperty(directlinkproperty, redirect);
             }
-            handleDownload(link, account);
+            handleDownloadWebsite(link, account);
         }
     }
 
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("account_edit")) {
             getPage("/account_edit/");
         }
