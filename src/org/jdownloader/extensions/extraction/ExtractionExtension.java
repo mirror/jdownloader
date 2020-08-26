@@ -45,6 +45,7 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -145,7 +146,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         addExtractor(new XtreamSplit(this));
         addExtractor(new HachaSplit(this));
         addExtractor(new HJSplit(this));
-        addExtractor(new Zip4J(this));
+        try {
+            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
+                addExtractor(new Zip4J(this));
+            }
+        } catch (UnsupportedClassVersionError ignore) {
+        }
         /* must be last one! */
         addExtractor(new Multi(this));
     }

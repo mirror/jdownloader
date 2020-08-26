@@ -226,9 +226,9 @@ public class SecondLevelLaunch {
             } else {
                 AWTMacOSApplicationAdapter.enableMacSpecial();
             }
-        } catch (final Throwable e) {
-            LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
-            LoggerFactory.getDefaultLogger().log(e);
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + ignore);
+            LoggerFactory.getDefaultLogger().log(ignore);
         }
     }
 
