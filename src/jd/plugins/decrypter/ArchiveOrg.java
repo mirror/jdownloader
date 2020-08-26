@@ -31,10 +31,12 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,6 +44,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -60,13 +64,14 @@ public class ArchiveOrg extends PluginForDecrypt {
         final String parameter = param.toString().replace("://www.", "://").replace("/stream/", "/download/");
         final String host_decrypted = "archivedecrypted.org";
         /*
-         * 2017-01-25: We do not (yet) have to be logged in here. We can always see all items and their information but some may be limited
-         * to premium users only
+         * 2020-08-26: Login might sometimes be required for book downloads.
          */
-        // final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
-        // if (aa != null) {
-        // jd.plugins.hoster.ArchiveOrg.login(this.br, aa, false);
-        // }
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        if (aa != null) {
+            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            plg.setBrowser(this.br);
+            ((jd.plugins.hoster.ArchiveOrg) plg).login(aa, false);
+        }
         URLConnectionAdapter con = null;
         try {
             /* Check if we have a direct URL --> Host plugin */
