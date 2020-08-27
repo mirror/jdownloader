@@ -172,6 +172,11 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     @Override
+    protected String getAccountOverviewURL() {
+        return this.getMainPage() + "/account";
+    }
+
+    @Override
     protected boolean supports_api() {
         return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }

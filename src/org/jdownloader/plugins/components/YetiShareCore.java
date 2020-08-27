@@ -33,11 +33,17 @@ import java.util.regex.Pattern;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -1568,8 +1574,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
     /* *************************** PUT API RELATED METHODS HERE *************************** */
 
-    protected static final String PROPERTY_API_ACCESS_TOKEN = "ACCESS_TOKEN";
-    protected static final String PROPERTY_API_ACCOUNT_ID   = "ACCOUNT_ID";
+    protected static final String PROPERTY_API_ACCESS_TOKEN          = "ACCESS_TOKEN";
+    protected static final String PROPERTY_API_ACCOUNT_ID            = "ACCOUNT_ID";
+    protected static final String API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE = "API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE";
 
     /** true = API will be used to login and for premium downloading */
     protected boolean supports_api() {
@@ -1578,6 +1585,10 @@ public class YetiShareCore extends antiDDoSForHost {
 
     protected String getAPIBase() {
         return "https://" + this.getHost() + "/api/v2";
+    }
+
+    protected String getAccountOverviewURL() {
+        return this.getMainPage() + "/account_edit.html";
     }
 
     protected Browser prepBrowserAPI(final Browser br) {
@@ -1598,11 +1609,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected String getAPIAccessToken(final Account account) {
-        return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN);
+        return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(account.getUser() + ":" + account.getPass()));
     }
 
     protected String getAPIAccountID(final Account account) {
-        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID);
+        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(account.getUser() + ":" + account.getPass()));
     }
 
     /**
@@ -1688,7 +1699,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         logger.info("Performing full login");
         if (!this.isAPICredential(account.getUser()) || !this.isAPICredential(account.getPass())) {
-            /* TODO: Add info dialog */
+            showAPILoginInformation();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         final Map<String, Object> postLogin = new HashMap<String, Object>();
@@ -1697,12 +1708,68 @@ public class YetiShareCore extends antiDDoSForHost {
         this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
         access_token = PluginJSonUtils.getJson(br, "access_token");
         account_id = PluginJSonUtils.getJson(br, "account_id");
-        checkErrorsAPI(br, null, account);
+        /*
+         * 2020-08-27: API can basically return anything except expected json --> Do not check for errors here - just check for the expected
+         * token --> Account should be invalid of token is not available. Only check for errors if this account has been valid before
+         * already!
+         */
+        if (account.getBooleanProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(account.getUser() + ":" + account.getPass()), false)) {
+            checkErrorsAPI(br, null, account);
+        }
         if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id) || !account_id.matches("\\d+")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        account.setProperty(PROPERTY_API_ACCESS_TOKEN, access_token);
-        account.setProperty(PROPERTY_API_ACCOUNT_ID, account_id);
+        account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(account.getUser() + ":" + account.getPass()), access_token);
+        account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(account.getUser() + ":" + account.getPass()), account_id);
+        account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(account.getUser() + ":" + account.getPass()), true);
+    }
+
+    private Thread showAPILoginInformation() {
+        final String host = this.getHost();
+        final String account_overview_url = getAccountOverviewURL();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Login";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch geschieht:\r\n\t'" + account_overview_url + "'\t\r\n";
+                        message += "2. Scrolle herunter bis du die Eingabefelder \"Key 1\" und \"Key 2\" siehst.\r\n";
+                        message += "3. Klicke rechts in beiden Eingabefeldern auf \"Generate\".\r\n";
+                        message += "4. Scrolle bis ans Ende der Webseite und klicke auf \"Update Account\".\r\n";
+                        message += "5. Wechsle in JD, schließe diesen Dialog und öffne erneut die Maske um einen Account für diesen Anbieter hinzuzufügen.\r\n";
+                        message += "Gib den Wert von \"Key 1\" als Benutzername- und den Wert von \"Key 2\" als Passwort ein und bestätige deine Eingaben.\r\n";
+                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                    } else {
+                        title = host + " - Login";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "In order to use your account of this service in JDownloader, you need to follow these steps:\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + account_overview_url + "'\t\r\n";
+                        message += "2. Scroll down until you see the fields \"Key 1\" and \"Key 2\".\r\n";
+                        message += "3. For each of both fields there is a \"Generate\" button on the right side - click both of them.\r\n";
+                        message += "4. Scroll down all the way and confirm your generated keys by clicking on \"Update Account\".\r\n";
+                        message += "5. Now go back into JD, close this dialog and re-open the \"Add account\" dialog for this host.\r\n";
+                        message += "Enter the values of \"Key 1\" an \"Key 2\" into the username & password fields and confirm.\r\n";
+                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(account_overview_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
@@ -1763,7 +1830,7 @@ public class YetiShareCore extends antiDDoSForHost {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         } catch (final Throwable e) {
             /* API response is not json */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response");
+            throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
         }
         /* E.g. {"message":"Username could not be found.","result":false} */
         boolean result = true;
