@@ -414,7 +414,8 @@ public class UlozTo extends PluginForHost {
                     }
                     dllink = PluginJSonUtils.getJsonValue(br, "url");
                     if (StringUtils.isEmpty(dllink)) {
-                        dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
+                        /* 2020-08-27: pornfile.cz */
+                        dllink = PluginJSonUtils.getJsonValue(br, "slowDownloadLink");
                     }
                     if (StringUtils.isEmpty(dllink)) {
                         break;
