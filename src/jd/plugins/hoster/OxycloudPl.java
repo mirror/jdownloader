@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,8 +28,10 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -42,6 +45,9 @@ public class OxycloudPl extends YetiShareCore {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
+
+    private static final String PROPERTY_needs_premium = "needs_premium";
+    private static final String PROPERTY_is_private    = "is_private";
 
     /**
      * DEV NOTES YetiShare<br />
@@ -96,6 +102,17 @@ public class OxycloudPl extends YetiShareCore {
             /* Free(anonymous) and unknown account type */
             return 0;
         }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (link.getBooleanProperty(PROPERTY_needs_premium, false) && (account == null || account.getType() != AccountType.PREMIUM)) {
+            return false;
+        } else if (link.getBooleanProperty(PROPERTY_is_private, false)) {
+            /* Private files cannot be downloaded by anyone (?) or only by their uploader. */
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -183,24 +200,27 @@ public class OxycloudPl extends YetiShareCore {
              * 2020-08-26: These values are usually null for free accounts but we'll try to set them anyways in case they change this in the
              * future.
              */
-            try {
-                final long maxDailyBytes = ((Long) entries.get("maxDailyBytes")).longValue();
-                final long dailyBytesLeft = ((Long) entries.get("dailyBytesLeft")).longValue();
-                ai.setTrafficMax(maxDailyBytes);
-                ai.setTrafficLeft(dailyBytesLeft);
-            } catch (final Throwable e) {
-                /* Double-check! If the total quota is 0, there is no traffic left at all! */
-                final Object totalBytesLeftO = entries.get("totalBytesLeft");
-                if (totalBytesLeftO == null) {
-                    ai.setTrafficLeft(0);
-                } else {
-                    try {
-                        final long totalBytesLeft = ((Long) totalBytesLeftO).longValue();
-                        ai.setTrafficLeft(totalBytesLeft);
-                    } catch (final Throwable e2) {
-                        ai.setTrafficLeft(0);
-                    }
-                }
+            long totalBytesLeft = 0;
+            long dailyBytesLeft = 0;
+            Object totalBytesLeftO = entries.get("totalBytesLeft");
+            Object dailyBytesLeftO = entries.get("dailyBytesLeft");
+            if (totalBytesLeftO != null && totalBytesLeftO instanceof Number) {
+                totalBytesLeft = ((Number) totalBytesLeftO).longValue();
+            }
+            if (dailyBytesLeftO != null && totalBytesLeftO instanceof Number) {
+                dailyBytesLeft = ((Number) dailyBytesLeftO).longValue();
+            }
+            ai.setTrafficLeft(totalBytesLeft);
+            /* 2020-08-27: Rather display the complete traffic left than daily limits. */
+            // try {
+            // final long maxDailyBytes = ((Long) entries.get("maxDailyBytes")).longValue();
+            // ai.setTrafficMax(maxDailyBytes);
+            // ai.setTrafficLeft(dailyBytesLeft);
+            // } catch (final Throwable e) {
+            // }
+            if (dailyBytesLeft <= 0) {
+                /* TODO: Test what happens is a user tries to download in this state */
+                logger.warning("No daily traffic left");
             }
         }
         if ("paid".equalsIgnoreCase(accType) || isPremium) {
@@ -208,8 +228,142 @@ public class OxycloudPl extends YetiShareCore {
         } else {
             account.setType(AccountType.FREE);
         }
+        int maxNumberOfActiveDownloads = 1;
+        final Object maxNumberOfActiveDownloadsO = entries.get("maxNumberOfActiveDownloads");
+        if (maxNumberOfActiveDownloadsO != null && maxNumberOfActiveDownloadsO instanceof Number) {
+            maxNumberOfActiveDownloads = ((Number) maxNumberOfActiveDownloadsO).intValue();
+        }
+        if (maxNumberOfActiveDownloads > 0) {
+            account.setMaxSimultanDownloads(maxNumberOfActiveDownloads);
+        }
         /* Do not set account status here as upper code already did that! */
         // ai.setStatus("Bla");
         return ai;
+    }
+
+    private Account getApiAccount() {
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc != null && this.getAPIAccessToken(acc) != null && this.getAPIAccountID(acc) != null) {
+            return acc;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        final Account apiAccount = getApiAccount();
+        if (apiAccount != null) {
+            return massLinkcheckerAPI(urls, apiAccount);
+        } else {
+            /* No mass linkchecking possible */
+            return false;
+        }
+    }
+
+    /**
+     * Checks multiple URLs via API. Only works when an account with API credentials is given.
+     */
+    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final Account apiAccount) {
+        if (urls == null || urls.length == 0 || apiAccount == null) {
+            return false;
+        }
+        boolean linkcheckerHasFailed = false;
+        try {
+            final Browser br = new Browser();
+            this.setAPIHeaders(br, apiAccount);
+            this.prepBrowser(br, getMainPage());
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /*
+                     * 2020-08-27: Tested for up to 100 items but we'll check max. 50 per request.
+                     */
+                    if (index == urls.length || links.size() == 50) {
+                        break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
+                    }
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    // sb.append("%0A");
+                    sb.append(dl.getPluginPatternMatcher());
+                    sb.append("%2C");
+                }
+                getPage(br, this.getAPIBase() + "/file/check?links=" + sb.toString());
+                try {
+                    this.checkErrorsAPI(br, links.get(0), null);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    /* E.g. invalid apikey, broken serverside API. */
+                    logger.info("Fatal failure");
+                    return false;
+                }
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("files");
+                for (final DownloadLink link : links) {
+                    boolean foundResult = false;
+                    final String fuid = this.getFUID(link);
+                    for (final Object fileO : ressourcelist) {
+                        entries = (LinkedHashMap<String, Object>) fileO;
+                        final String url = (String) entries.get("url");
+                        final String fuid_tmp = this.getFUIDFromURL(url);
+                        if (fuid_tmp != null && fuid_tmp.equalsIgnoreCase(fuid)) {
+                            foundResult = true;
+                            break;
+                        }
+                    }
+                    if (!foundResult) {
+                        /**
+                         * This should never happen!
+                         */
+                        logger.warning("WTF failed to find information for fuid: " + fuid);
+                        linkcheckerHasFailed = true;
+                        continue;
+                    }
+                    final String status = (String) entries.get("status");
+                    if (!"online".equalsIgnoreCase(status)) {
+                        link.setAvailable(false);
+                        setWeakFilename(link);
+                    } else {
+                        link.setAvailable(true);
+                        String filename = (String) entries.get("filename");
+                        final long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
+                        link.setFinalFileName(filename);
+                        link.setDownloadSize(filesize);
+                        /* We don't care if one or both of these fields are not given though they should always be available! */
+                        try {
+                            link.setProperty(PROPERTY_needs_premium, ((Boolean) entries.get("isPremium")).booleanValue());
+                            link.setProperty(PROPERTY_is_private, ((Boolean) entries.get("isPrivate")).booleanValue());
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        }
+                        /* 2020-08-27: This hash is not usable for us */
+                        // String hash = (String) entries.get("hash");
+                        // if (!StringUtils.isEmpty(hash)) {
+                        // hash = hash.replace("-", "");
+                        // link.setMD5Hash(hash);
+                        // }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+            return false;
+        }
+        if (linkcheckerHasFailed) {
+            return false;
+        } else {
+            return true;
+        }
     }
 }

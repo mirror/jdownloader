@@ -1714,6 +1714,7 @@ public class YetiShareCore extends antiDDoSForHost {
             postDownload.put("access_token", this.getAPIAccessToken(account));
             postDownload.put("account_id", this.getAPIAccountID(account));
             postDownload.put("file_id", this.getFUID(link));
+            /* TODO: Make sure this will work */
             this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
             this.checkErrorsAPI(this.br, link, account);
             dllink = PluginJSonUtils.getJson(this.br, "download_url");
@@ -1765,8 +1766,13 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response");
         }
         /* E.g. {"message":"Username could not be found.","result":false} */
-        final boolean result = ((Boolean) entries.get("result")).booleanValue();
-        String msg = (String) entries.get("message");
+        boolean result = true;
+        String msg = null;
+        try {
+            result = ((Boolean) entries.get("result")).booleanValue();
+            msg = (String) entries.get("message");
+        } catch (final Throwable e) {
+        }
         if (!result) {
             if (StringUtils.isEmpty(msg)) {
                 msg = "Unknown error";
