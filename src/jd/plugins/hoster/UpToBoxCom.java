@@ -355,7 +355,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 String passCode = null;
                 Form dlform = null;
                 int counter = 0;
-                final int countermax = 2;
+                final int countermax = 4;
                 do {
                     logger.info(String.format("dlform loop %d of %d", counter + 1, countermax + 1));
                     for (Form form : br.getForms()) {
@@ -379,6 +379,8 @@ public class UpToBoxCom extends antiDDoSForHost {
                     if (waittime > 0) {
                         logger.info("Found pre-download-waittime: " + waittime);
                         this.sleep(waittime * 1001l, link);
+                    } else {
+                        logger.info("ZERO pre-download waittime");
                     }
                     this.submitForm(dlform);
                     checkErrorsWebsite(link, null);
@@ -393,7 +395,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 } while (counter <= countermax && dllink == null);
                 if (dllink == null) {
                     logger.warning("Failed to find final downloadurl");
-                    if (counter == countermax) {
+                    if (counter >= countermax) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download currently not possible (?)", 10 * 60 * 1000l);
                     } else if (br.containsHTML("id='ban'")) {
                         /*
