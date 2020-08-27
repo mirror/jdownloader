@@ -1771,6 +1771,9 @@ public class YetiShareCore extends antiDDoSForHost {
         try {
             result = ((Boolean) entries.get("result")).booleanValue();
             msg = (String) entries.get("message");
+            if (StringUtils.isEmpty(msg)) {
+                msg = (String) entries.get("response");
+            }
         } catch (final Throwable e) {
         }
         if (!result) {
