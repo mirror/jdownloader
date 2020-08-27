@@ -27,22 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.HashInfo;
-import jd.utils.locale.JDL;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -72,6 +56,22 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.components.firefile.FirefileCipherOutputStream;
 import org.jdownloader.plugins.components.firefile.FirefileLink;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.HashInfo;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firefile.cc" }, urls = { "https?://firefile\\.cc/drive/s/[a-zA-Z0-9]+![a-zA-Z0-9]+" })
 public class FirefileCc extends PluginForHost {
@@ -330,7 +330,7 @@ public class FirefileCc extends PluginForHost {
 
     private void download(DownloadLink link) throws Exception {
         if (link.getDownloadCurrent() > 0 && !StringUtils.equalsIgnoreCase(getHost(), link.getStringProperty(USED_PLUGIN, null))) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot resume paritial loaded file!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resume impossible! Either resume via previously used multihost or reset and start from scratch! See MEGA plugin settings if you want to auto-start from scratch!");
         }
         final FirefileLink linkData = FirefileLink.get(link);
         // check finished encrypted file. if the decryption interrupted - for whatever reason

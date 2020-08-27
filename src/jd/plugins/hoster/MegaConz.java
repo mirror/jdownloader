@@ -764,8 +764,7 @@ public class MegaConz extends PluginForHost {
         }
     }
 
-    private void apiDownload(DownloadLink link, Account account) throws Exception {
-        final String used_plugin = link.getStringProperty(USED_PLUGIN, null);
+    private void apiDownload(final DownloadLink link, final Account account) throws Exception {
         boolean resume = true;
         if (link.getDownloadCurrent() > 0 && !StringUtils.equalsIgnoreCase(getHost(), link.getStringProperty(USED_PLUGIN, null))) {
             logger.info("Resume impossible due to previous multihoster download");
@@ -774,13 +773,7 @@ public class MegaConz extends PluginForHost {
                 resume = false;
             } else {
                 logger.info("Auto-download from scratch = false --> Throwing Exception");
-                final String errormessage;
-                if (!StringUtils.isEmpty(used_plugin)) {
-                    errormessage = "Resume impossible! Either resume via: " + used_plugin + " or reset and start from scratch! See MEGA plugin settings if you want to auto-start from scratch!";
-                } else {
-                    errormessage = "Resume impossible! Either resume via previously used multihost or reset and start from scratch! See MEGA plugin settings if you want to auto-start from scratch!";
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resume impossible! Either resume via previously used multihost or reset and start from scratch! See MEGA plugin settings if you want to auto-start from scratch!");
             }
         }
         final AvailableStatus available = requestFileInformation(link);
@@ -1444,6 +1437,7 @@ public class MegaConz extends PluginForHost {
                     return false;
                 }
             }
+            /* Only allow download if an URL can be built for use with given PluginForHost. */
             return buildExternalDownloadURL(link, plugin) != null;
         }
         return true;
