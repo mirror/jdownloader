@@ -231,13 +231,7 @@ public class BitpornoCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String extension = null;
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
-            extension = getFileNameExtensionFromString(dllink, ".mp4");
-        } else {
-            extension = ".mp4";
-        }
+        final String extension = ".mp4";
         if (!filename.endsWith(extension)) {
             filename += extension;
         }
