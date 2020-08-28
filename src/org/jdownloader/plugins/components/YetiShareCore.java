@@ -1797,8 +1797,8 @@ public class YetiShareCore extends antiDDoSForHost {
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             // }
             br.setFollowRedirects(false);
-            // br.getHeaders().put("authentication", this.getAPIAccessToken(account));
-            // br.getHeaders().put("account", this.getAPIAccountID(account));
+            br.getHeaders().put("authentication", this.getAPIAccessToken(account));
+            br.getHeaders().put("account", this.getAPIAccountID(account));
             /*
              * 2020-08-28: TODO: Find a way to authenticate here. I've tried multiple things but was unable to download with premium speeds
              * only via API authentication!
