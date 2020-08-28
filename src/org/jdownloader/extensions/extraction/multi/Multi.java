@@ -296,7 +296,6 @@ public class Multi extends IExtraction {
                         if (is64BitJvm) {
                             libIDs.add("FreeBSD-amd64");
                             libIDs.remove("FreeBSD-i386");
-                            // libIDs.add("FreeBSD-amd64-2");// untested
                         } else {
                             libIDs.add("FreeBSD-i386");
                             libIDs.remove("FreeBSD-amd64");
@@ -326,6 +325,7 @@ public class Multi extends IExtraction {
                 case ARM:
                     if (is64BitJvm) {
                         libIDs.add("Linux-aarch64");
+                        libIDs.add("Linux-arm64");
                     } else {
                         if (CrossSystem.isRaspberryPi()) {
                             libIDs.add("Linux-armpi");

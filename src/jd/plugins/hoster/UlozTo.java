@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -47,6 +43,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -364,7 +364,7 @@ public class UlozTo extends PluginForHost {
                     }
                     if (captchaForm == null) {
                         logger.info("Failed to find captchaForm --> Assume captcha is not needed");
-                        dllink = getFinalDownloadurl();
+                        dllink = getFinalDownloadurl(br);
                         break;
                     }
                     captcha_failed = true;
@@ -430,7 +430,7 @@ public class UlozTo extends PluginForHost {
                     if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"") || isError2020) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    dllink = getFinalDownloadurl();
+                    dllink = getFinalDownloadurl(br);
                     if (StringUtils.isEmpty(dllink)) {
                         break;
                     }
@@ -440,7 +440,7 @@ public class UlozTo extends PluginForHost {
                         break;
                     } else {
                         try {
-                            br.followConnection();
+                            br.followConnection(true);
                         } catch (final IOException e) {
                             logger.log(e);
                         }
@@ -473,7 +473,7 @@ public class UlozTo extends PluginForHost {
                                 break;
                             } else {
                                 try {
-                                    br.followConnection();
+                                    br.followConnection(true);
                                 } catch (final IOException e) {
                                     logger.log(e);
                                 }
@@ -538,14 +538,14 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private String getFinalDownloadurl() {
+    private String getFinalDownloadurl(Browser br) {
         String dllink = PluginJSonUtils.getJsonValue(br, "url");
         if (StringUtils.isEmpty(dllink)) {
             dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /* 2020-08-27: pornfile.cz */
-            dllink = PluginJSonUtils.getJsonValue(br, "slowDownloadLink");
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2020-08-27: pornfile.cz */
+                dllink = PluginJSonUtils.getJsonValue(br, "slowDownloadLink");
+            }
         }
         return dllink;
     }
