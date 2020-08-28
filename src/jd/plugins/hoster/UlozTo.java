@@ -121,20 +121,20 @@ public class UlozTo extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (CTRLLOCK) {
             passwordProtected = isPasswordProtected();
-            correctDownloadLink(downloadLink);
+            correctDownloadLink(link);
             prepBR(this.br);
             br.setFollowRedirects(false);
-            if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
-                downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+            if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
+                link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
                 return AvailableStatus.TRUE;
             }
-            if (downloadLink.getDownloadURL().matches("https?://pornfile\\.cz/(podminky|tos)/[^/]+")) {
+            if (link.getDownloadURL().matches("https?://pornfile\\.cz/(podminky|tos)/[^/]+")) {
                 return AvailableStatus.FALSE;
             }
-            finalDirectDownloadURL = handleDownloadUrl(downloadLink);
+            finalDirectDownloadURL = handleDownloadUrl(link);
             if (finalDirectDownloadURL != null) {
                 return AvailableStatus.TRUE;
             }
@@ -151,7 +151,7 @@ public class UlozTo extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            handleAgeRestrictedRedirects(downloadLink);
+            handleAgeRestrictedRedirects(link);
             if (br.containsHTML("The file is not available at this moment, please, try it later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
             }
@@ -172,8 +172,8 @@ public class UlozTo extends PluginForHost {
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                downloadLink.getLinkStatus().setStatusText("This link is password protected");
+                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                link.getLinkStatus().setStatusText("This link is password protected");
             } else {
                 filename = getFilename();
                 // For video links
@@ -194,9 +194,9 @@ public class UlozTo extends PluginForHost {
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                 if (filesize != null) {
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
             }
             return AvailableStatus.TRUE;
@@ -303,6 +303,7 @@ public class UlozTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         }
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            /* TODO: 2020-08-28 Check if this is still required at this place */
             final Form form = br.getFormbyActionRegex("limit-exceeded");
             if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -325,13 +326,13 @@ public class UlozTo extends PluginForHost {
                 /* 2020-03-09: New */
                 dllink = br.getRegex("(/slowDownload[^\"<>]+)\"").getMatch(0);
             }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             if (dllink == null) {
                 if (passwordProtected) {
                     handlePassword(link);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 Browser cbr = null;
-                captcha_failed = true;
                 for (int i = 0; i <= 5; i++) {
                     if (i == 5) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -343,6 +344,30 @@ public class UlozTo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     br.getPage(url_free_dialog);
+                    final String redirect = PluginJSonUtils.getJson(br, "redirectDialogContent");
+                    if (redirect != null) {
+                        /* Check for extra captcha */
+                        br.getPage(redirect);
+                        final Form form = br.getFormbyActionRegex("limit-exceeded");
+                        if (form != null) {
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            br.submitForm(form);
+                        }
+                    }
+                    Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
+                    if (captchaForm == null) {
+                        captchaForm = br.getFormbyProperty("id", "frm-download-freeDownloadTab-freeDownloadForm");
+                    }
+                    if (captchaForm == null) {
+                        captchaForm = br.getFormbyProperty("id", "frm-freeDownloadForm-form");
+                    }
+                    if (captchaForm == null) {
+                        logger.info("Failed to find captchaForm --> Assume captcha is not needed");
+                        dllink = getFinalDownloadurl();
+                        break;
+                    }
+                    captcha_failed = true;
                     cbr = br.cloneBrowser();
                     cbr.getPage("/reloadXapca.php?rnd=" + System.currentTimeMillis());
                     if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
@@ -352,13 +377,6 @@ public class UlozTo extends PluginForHost {
                     final String timestamp = PluginJSonUtils.getJsonValue(cbr, "timestamp");
                     final String salt = PluginJSonUtils.getJsonValue(cbr, "salt");
                     String captchaUrl = PluginJSonUtils.getJsonValue(cbr, "image");
-                    Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-                    if (captchaForm == null) {
-                        captchaForm = br.getFormbyProperty("id", "frm-download-freeDownloadTab-freeDownloadForm");
-                    }
-                    if (captchaForm == null) {
-                        captchaForm = br.getFormbyProperty("id", "frm-freeDownloadForm-form");
-                    }
                     if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -412,14 +430,7 @@ public class UlozTo extends PluginForHost {
                     if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"") || isError2020) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    dllink = PluginJSonUtils.getJsonValue(br, "url");
-                    if (StringUtils.isEmpty(dllink)) {
-                        dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
-                    }
-                    if (StringUtils.isEmpty(dllink)) {
-                        /* 2020-08-27: pornfile.cz */
-                        dllink = PluginJSonUtils.getJsonValue(br, "slowDownloadLink");
-                    }
+                    dllink = getFinalDownloadurl();
                     if (StringUtils.isEmpty(dllink)) {
                         break;
                     }
@@ -525,6 +536,18 @@ public class UlozTo extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private String getFinalDownloadurl() {
+        String dllink = PluginJSonUtils.getJsonValue(br, "url");
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* 2020-08-27: pornfile.cz */
+            dllink = PluginJSonUtils.getJsonValue(br, "slowDownloadLink");
+        }
+        return dllink;
     }
 
     /**

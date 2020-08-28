@@ -584,7 +584,7 @@ public class PornHubCom extends PluginForDecrypt {
         final String username = jd.plugins.hoster.PornHubCom.getUserName(this, br);
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
-        final String fpName = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
+        final String siteTitle = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
         if (this.br.containsHTML("<span>Purchase</span>")) {
             /* 2020-02-19: Some videos have to be purchased separately even if the user owns a premium account */
             logger.info("This video has to be purchased separately");
@@ -640,7 +640,7 @@ public class PornHubCom extends PluginForDecrypt {
                     if (grab) {
                         logger.info("Grab:" + format + "/" + quality);
                         final String server_filename = jd.plugins.hoster.PornHubCom.getFilenameFromURL(url);
-                        String html_filename = fpName + "_";
+                        String html_filename = siteTitle + "_";
                         final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
                         dl.setProperty("directlink", url);
                         dl.setProperty("quality", quality);
@@ -710,7 +710,7 @@ public class PornHubCom extends PluginForDecrypt {
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
+            fp.setName(siteTitle);
             fp.addLinks(decryptedLinks);
             return decryptedLinks;
         } else {
