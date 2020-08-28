@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -46,8 +45,8 @@ public class OxycloudPl extends YetiShareCore {
         this.enablePremium(getPurchasePremiumURL());
     }
 
-    private static final String PROPERTY_needs_premium = "needs_premium";
-    private static final String PROPERTY_is_private    = "is_private";
+    private static final String PROPERTY_needs_premium      = "needs_premium";
+    private static final String PROPERTY_account_max_chunks = "max_chunks";
 
     /**
      * DEV NOTES YetiShare<br />
@@ -92,15 +91,11 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
-            return 0;
+        if (account == null) {
+            return 1;
         } else {
-            /* Free(anonymous) and unknown account type */
-            return 0;
+            /* Limits may vary depending on account type - controlled via API! */
+            return account.getIntegerProperty(PROPERTY_account_max_chunks, 1);
         }
     }
 
@@ -108,11 +103,9 @@ public class OxycloudPl extends YetiShareCore {
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (link.getBooleanProperty(PROPERTY_needs_premium, false) && (account == null || account.getType() != AccountType.PREMIUM)) {
             return false;
-        } else if (link.getBooleanProperty(PROPERTY_is_private, false)) {
-            /* Private files cannot be downloaded by anyone (?) or only by their uploader. */
-            return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -178,7 +171,7 @@ public class OxycloudPl extends YetiShareCore {
 
     @Override
     protected boolean supports_api() {
-        return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        return true;
     }
 
     private void setAPIHeaders(final Browser br, final Account account) {
@@ -233,13 +226,23 @@ public class OxycloudPl extends YetiShareCore {
         } else {
             account.setType(AccountType.FREE);
         }
-        int maxNumberOfActiveDownloads = 1;
+        final int maxNumberOfActiveDownloads;
         final Object maxNumberOfActiveDownloadsO = entries.get("maxNumberOfActiveDownloads");
         if (maxNumberOfActiveDownloadsO != null && maxNumberOfActiveDownloadsO instanceof Number) {
             maxNumberOfActiveDownloads = ((Number) maxNumberOfActiveDownloadsO).intValue();
+        } else {
+            /* Fallback */
+            maxNumberOfActiveDownloads = 1;
         }
         if (maxNumberOfActiveDownloads > 0) {
             account.setMaxSimultanDownloads(maxNumberOfActiveDownloads);
+        }
+        final Object maxNumberOfChunksO = entries.get("maxNumberOfChunks");
+        if (maxNumberOfChunksO != null && maxNumberOfChunksO instanceof Number) {
+            final int maxNumberOfChunks = ((Number) maxNumberOfActiveDownloadsO).intValue();
+            if (maxNumberOfChunks > 1) {
+                account.setProperty(PROPERTY_account_max_chunks, -maxNumberOfChunks);
+            }
         }
         /* Do not set account status here as upper code already did that! */
         // ai.setStatus("Bla");
@@ -345,11 +348,12 @@ public class OxycloudPl extends YetiShareCore {
                         /* We don't care if one or both of these fields are not given though they should always be available! */
                         try {
                             link.setProperty(PROPERTY_needs_premium, ((Boolean) entries.get("isPremium")).booleanValue());
-                            link.setProperty(PROPERTY_is_private, ((Boolean) entries.get("isPrivate")).booleanValue());
+                            /* 2020-08-28: isPrivate = file will not be grabbed by search engines. Whoever has the URL can download it. */
+                            // link.setProperty(PROPERTY_is_private, ((Boolean) entries.get("isPrivate")).booleanValue());
                         } catch (final Throwable e) {
                             logger.log(e);
                         }
-                        /* 2020-08-27: This hash is not usable for us */
+                        /* 2020-08-28: CRC32 hash of the first file chunk (50MiB) */
                         // String hash = (String) entries.get("hash");
                         // if (!StringUtils.isEmpty(hash)) {
                         // hash = hash.replace("-", "");

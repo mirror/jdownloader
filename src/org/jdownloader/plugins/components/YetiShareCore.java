@@ -1093,7 +1093,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    public void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
+    protected void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
         if (account != null && !this.isLoggedin()) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
@@ -1578,7 +1578,7 @@ public class YetiShareCore extends antiDDoSForHost {
     protected static final String PROPERTY_API_ACCOUNT_ID            = "ACCOUNT_ID";
     protected static final String API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE = "API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE";
 
-    /** true = API will be used to login and for premium downloading */
+    /** true = API will be used to login and for (premium/free)-account downloading. */
     protected boolean supports_api() {
         return false;
     }
@@ -1632,6 +1632,8 @@ public class YetiShareCore extends antiDDoSForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String server_timeStr = (String) entries.get("_datetime");
         entries = (Map<String, Object>) entries.get("data");
+        /* TODO: Maybe find a way to set this username as account username so that it looks better in the account overview in JD */
+        // final String username = (String) entries.get("username");
         // final String status = (String) entries.get("status"); --> Mostly "active" (also free accounts)
         final String datecreatedStr = (String) entries.get("datecreated");
         final String premiumExpireDateStr = (String) entries.get("paidExpiryDate");
@@ -1736,7 +1738,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         title = host + " - Login";
                         message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
                         message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch geschieht:\r\n\t'" + account_overview_url + "'\t\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch geschieht und logge dich auf der Webseite ein:\r\n\t'" + account_overview_url + "'\t\r\n";
                         message += "2. Scrolle herunter bis du die Eingabefelder \"Key 1\" und \"Key 2\" siehst.\r\n";
                         message += "3. Klicke rechts in beiden Eingabefeldern auf \"Generate\".\r\n";
                         message += "4. Scrolle bis ans Ende der Webseite und klicke auf \"Update Account\".\r\n";
@@ -1747,7 +1749,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         title = host + " - Login";
                         message += "Hello dear " + host + " user\r\n";
                         message += "In order to use your account of this service in JDownloader, you need to follow these steps:\r\n";
-                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + account_overview_url + "'\t\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically and login in your browser:\r\n\t'" + account_overview_url + "'\t\r\n";
                         message += "2. Scroll down until you see the fields \"Key 1\" and \"Key 2\".\r\n";
                         message += "3. For each of both fields there is a \"Generate\" button on the right side - click both of them.\r\n";
                         message += "4. Scroll down all the way and confirm your generated keys by clicking on \"Update Account\".\r\n";
@@ -1777,17 +1779,34 @@ public class YetiShareCore extends antiDDoSForHost {
         String dllink = this.checkDirectLink(link, account);
         if (dllink == null) {
             this.loginAPI(account, false);
-            final Map<String, Object> postDownload = new HashMap<String, Object>();
-            postDownload.put("access_token", this.getAPIAccessToken(account));
-            postDownload.put("account_id", this.getAPIAccountID(account));
-            postDownload.put("file_id", this.getFUID(link));
-            /* TODO: Make sure this will work */
-            this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
-            this.checkErrorsAPI(this.br, link, account);
-            dllink = PluginJSonUtils.getJson(this.br, "download_url");
-            if (StringUtils.isEmpty(dllink)) {
-                /* We're using an API --> Never throw plugin defect! */
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * The following commented-out code seems to be for an API call which only works with self-uploaded file whenever the internal
+             * file-id is known --> It is of no use for us!
+             */
+            // final Map<String, Object> postDownload = new HashMap<String, Object>();
+            // postDownload.put("access_token", this.getAPIAccessToken(account));
+            // postDownload.put("account_id", this.getAPIAccountID(account));
+            // postDownload.put("file_id", this.getFUID(link));
+            // /* TODO: Make sure this will work */
+            // this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
+            // this.checkErrorsAPI(this.br, link, account);
+            // dllink = PluginJSonUtils.getJson(this.br, "download_url");
+            // if (StringUtils.isEmpty(dllink)) {
+            // /* We're using an API --> Never throw plugin defect! */
+            // // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+            // }
+            br.setFollowRedirects(false);
+            // br.getHeaders().put("authentication", this.getAPIAccessToken(account));
+            // br.getHeaders().put("account", this.getAPIAccountID(account));
+            /*
+             * 2020-08-28: TODO: Find a way to authenticate here. I've tried multiple things but was unable to download with premium speeds
+             * only via API authentication!
+             */
+            this.getPage(link.getPluginPatternMatcher());
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                /* Do not throw plugin defect because we're using an API */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
             final boolean resume = this.isResumeable(link, account);
@@ -1817,7 +1836,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 logger.log(e);
             }
             checkErrors(link, account);
-            checkErrorsLastResort(link, account);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
