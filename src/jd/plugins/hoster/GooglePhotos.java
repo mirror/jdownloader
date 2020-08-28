@@ -78,7 +78,7 @@ public class GooglePhotos extends PluginForHost {
         String filename = null;
         URLConnectionAdapter con = null;
         try {
-            if (this.br.containsHTML("data\\-isvideo=\"true\"")) {
+            if (this.br.containsHTML("data-isvideo=\"true\"")) {
                 try {
                     /*
                      * Special for videos to find the filename. If we access the 'wrong' videourl we'll get a .gifv filename - if we access
@@ -122,6 +122,22 @@ public class GooglePhotos extends PluginForHost {
             } else {
                 /* For photos */
                 dllink = br.getRegex("2\\][\t\n\r ]*?,\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    /* 2020-08-28 */
+                    dllink = br.getRegex("\"(https://[^<>\"]+/pw/[^<>\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        /* Download highest resolution (without this, we might only get the thumbnail!) */
+                        final String widthStr = br.getRegex("data-width=\"(\\d+)\"").getMatch(0);
+                        final String heightStr = br.getRegex("data-height=\"(\\d+)\"").getMatch(0);
+                        if (widthStr != null && heightStr != null) {
+                            dllink += "=w" + widthStr + "-h" + heightStr + "-no?authuser=0";
+                        }
+                    }
+                }
+                if (dllink == null) {
+                    /* 2020-08-28: Last chance fallback --> Will most likely get us the best quality possible! */
+                    dllink = br.getRegex("data-url=\"(https://[^\"]+)\"").getMatch(0);
+                }
             }
             if (dllink != null && (filesize == 0 || filename == null)) {
                 if (con == null) {
@@ -220,7 +236,7 @@ public class GooglePhotos extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.GooglePhotos.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.GooglePhotos.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(true));
     }
 
     @Override
