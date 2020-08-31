@@ -291,7 +291,7 @@ public class OneFichierCom extends PluginForHost {
         if (filesize != null && filesize.matches("\\d+")) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (!StringUtils.isEmpty(description) && link.getComment().isEmpty()) {
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
         /* 2020-01-30: We cannot work with this checksum */

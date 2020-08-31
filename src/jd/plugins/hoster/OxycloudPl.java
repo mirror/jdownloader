@@ -51,7 +51,7 @@ public class OxycloudPl extends YetiShareCore {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
         /* 2020-08-31: Avoid "401 unauthorized" API response when user starts a lot of downloads at the same time. */
-        this.setStartIntervall(2000l);
+        this.setStartIntervall(1500l);
     }
 
     private static final String PROPERTY_needs_premium      = "needs_premium";

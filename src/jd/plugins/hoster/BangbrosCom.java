@@ -107,11 +107,11 @@ public class BangbrosCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getContentType().contains("text")) {
+                if (!isDownloadableContent(con)) {
                     /* Refresh directurl */
                     refreshDirecturl(link);
                     con = br.openHeadConnection(dllink);
-                    if (con.getContentType().contains("html")) {
+                    if (!isDownloadableContent(con)) {
                         server_issues = true;
                         return AvailableStatus.TRUE;
                     }
@@ -133,6 +133,10 @@ public class BangbrosCom extends PluginForHost {
             link.setFinalFileName(final_filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
+        return con != null && con.isOK() && con.isContentDisposition();
     }
 
     private String getDllink(final DownloadLink dl) throws IOException, PluginException {
@@ -268,6 +272,7 @@ public class BangbrosCom extends PluginForHost {
                 if (userCookies != null) {
                     logger.info("Performing user-cookie login");
                     br.setCookies(userCookies);
+                    /* 2020-08-31: Special: no https possible! */
                     br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
                 } else {
                     logger.info("Performing normal user/password login");
@@ -299,7 +304,7 @@ public class BangbrosCom extends PluginForHost {
                         br.getPage("/library");
                     }
                 }
-                if (!isLoggedin(br)) {
+                if (!isLoggedin(br) || !br.getURL().contains("/library")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");

@@ -43,7 +43,7 @@ public class VidbmCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidbm.com", "vidbom.com" });
+        ret.add(new String[] { "vidbm.com", "vidbom.com", "vidbem.com" });
         return ret;
     }
 
