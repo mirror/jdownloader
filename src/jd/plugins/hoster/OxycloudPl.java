@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,7 +23,9 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -32,17 +35,23 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OxycloudPl extends YetiShareCore {
     public OxycloudPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
+        /* 2020-08-31: Avoid "401 unauthorized" API response when user starts a lot of downloads at the same time. */
+        this.setStartIntervall(2000l);
     }
 
     private static final String PROPERTY_needs_premium      = "needs_premium";
@@ -174,6 +183,7 @@ public class OxycloudPl extends YetiShareCore {
         return true;
     }
 
+    /** Headers required for all custom built GET request that they've built on top of the official YetiShare API. */
     private void setAPIHeaders(final Browser br, final Account account) {
         br.getHeaders().put("authentication", this.getAPIAccessToken(account));
         br.getHeaders().put("account", this.getAPIAccountID(account));
@@ -259,6 +269,54 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     @Override
+    protected void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
+        /** 2020-08-31: Custom built method on top of the official YetiShare API. */
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        String dllink = this.checkDirectLink(link, account);
+        if (dllink == null) {
+            this.loginAPI(account, false);
+            this.setAPIHeaders(br, account);
+            br.getPage(this.getAPIBase() + "/file/download/" + this.getFUID(link));
+            this.checkErrorsAPI(this.br, link, account);
+            dllink = PluginJSonUtils.getJson(this.br, "url");
+            if (StringUtils.isEmpty(dllink)) {
+                /* Do not throw plugin defect because we're using an API */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+            }
+            final boolean resume = this.isResumeable(link, account);
+            final int maxchunks = this.getMaxChunks(account);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        }
+        final URLConnectionAdapter con = dl.getConnection();
+        /*
+         * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+         * connections) --> Should work fine after the next try.
+         */
+        link.setProperty(directlinkproperty, con.getURL().toString());
+        try {
+            checkResponseCodeErrors(con);
+        } catch (final PluginException e) {
+            try {
+                br.followConnection(true);
+            } catch (IOException ioe) {
+                throw Exceptions.addSuppressed(e, ioe);
+            }
+            throw e;
+        }
+        if (!isDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            checkErrors(link, account);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
+        }
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
+        dl.startDownload();
+    }
+
+    @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final Account apiAccount = getApiAccount();
         if (apiAccount != null) {
@@ -335,16 +393,21 @@ public class OxycloudPl extends YetiShareCore {
                         linkcheckerHasFailed = true;
                         continue;
                     }
+                    /* 2020-08-31: Filename- and filesize can even be given for offline items! */
                     final String status = (String) entries.get("status");
+                    String filename = (String) entries.get("filename");
+                    final long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
+                    if (!StringUtils.isEmpty(filename)) {
+                        link.setFinalFileName(filename);
+                    }
+                    if (filesize > 0) {
+                        link.setDownloadSize(filesize);
+                    }
                     if (!"online".equalsIgnoreCase(status)) {
                         link.setAvailable(false);
                         setWeakFilename(link);
                     } else {
                         link.setAvailable(true);
-                        String filename = (String) entries.get("filename");
-                        final long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
-                        link.setFinalFileName(filename);
-                        link.setDownloadSize(filesize);
                         /* We don't care if one or both of these fields are not given though they should always be available! */
                         try {
                             link.setProperty(PROPERTY_needs_premium, ((Boolean) entries.get("isPremium")).booleanValue());
