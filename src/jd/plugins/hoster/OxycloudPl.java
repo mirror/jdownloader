@@ -39,6 +39,7 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -314,6 +315,40 @@ public class OxycloudPl extends YetiShareCore {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
+    }
+
+    @Override
+    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        /** TODO: Add functionality */
+        Map<String, Object> entries = null;
+        try {
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        } catch (final Throwable e) {
+            /* API response is not json */
+            throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
+        }
+        /* E.g. {"message":"Username could not be found.","result":false} */
+        boolean result = true;
+        String msg = null;
+        try {
+            result = ((Boolean) entries.get("result")).booleanValue();
+            msg = (String) entries.get("message");
+            if (StringUtils.isEmpty(msg)) {
+                msg = (String) entries.get("response");
+            }
+        } catch (final Throwable e) {
+        }
+        if (!result) {
+            if (StringUtils.isEmpty(msg)) {
+                msg = "Unknown error";
+            }
+            if (msg.equalsIgnoreCase("Out of daily traffic")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            /* Ignore unknown errors - let template code handle them */
+        }
+        /* Check for basic errors */
+        super.checkErrorsAPI(br, link, account);
     }
 
     @Override

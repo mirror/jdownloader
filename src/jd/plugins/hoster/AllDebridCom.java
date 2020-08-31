@@ -26,6 +26,27 @@ import java.util.Map.Entry;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -49,27 +70,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -103,33 +103,11 @@ public class AllDebridCom extends antiDDoSForHost {
     private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
     /* New APIv4 apikey --> Replaces old token */
     private static final String          PROPERTY_apikey                   = "apiv4_apikey";
-    /* Property of old Deprecated APIv3. Only required to migrate users' accounts which were logged-in V3 to V4. */
-    private static final String          PROPERTY_old_token                = "token";
 
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
         synchronized (account) {
             try {
                 String apikey = account.getStringProperty(PROPERTY_apikey, null);
-                final String old_token = account.getStringProperty(PROPERTY_old_token, null);
-                if (apikey == null && old_token != null) {
-                    /* 2020-03-27: TODO: Remove this 4-8 weeks after release of plugin with APIv4 */
-                    logger.info("Trying to migrate account from APIv3 --> APIv4");
-                    getPage(api_base + "/migrate?" + agent + "&token=" + Encoding.urlEncode(old_token));
-                    /* Example good response: {"status": "success","data": {"apikey": "Newv4Apikey"}} */
-                    /* Example BAD response (no json but plaintext): "Bad token" (without "") --> This should never happen */
-                    apikey = PluginJSonUtils.getJson(br, "apikey");
-                    if (!StringUtils.isEmpty(apikey)) {
-                        logger.info("Migration successful");
-                        account.setProperty(PROPERTY_apikey, apikey);
-                        /* TODO: Is this a good idea? There will be no way back! */
-                        // account.removeProperty(PROPERTY_old_token);
-                    } else {
-                        logger.warning("Migration failed");
-                    }
-                } else if (old_token != null) {
-                    /* TODO: Remove this once we delete the old token on migration. */
-                    logger.info("This account has been upgraded from APIv3 to APIv4 in the past");
-                }
                 if (apikey != null) {
                     try {
                         loginAccount(account, accountInfo, apikey);
@@ -147,10 +125,6 @@ public class AllDebridCom extends antiDDoSForHost {
                 }
                 /* Full login */
                 logger.info("Performing full login");
-                if (apikey == null && old_token != null) {
-                    /* Only display this message to users with pre-existing but invalid login-token/apikey */
-                    showMigrationToNewAPIInformation();
-                }
                 getPage(api_base + "/pin/get?" + agent);
                 final String user_url = PluginJSonUtils.getJson(br, "user_url");
                 final String check_url = PluginJSonUtils.getJson(br, "check_url");
@@ -203,12 +177,13 @@ public class AllDebridCom extends antiDDoSForHost {
             getPage(api_base + "/user?" + agent);
             handleErrors(account, null);
             final String userName = PluginJSonUtils.getJson(br, "username");
-            if (userName != null && userName.length() > 2) {
-                // don't store the complete username
-                final String shortuserName = userName.substring(0, userName.length() / 2) + "****";
-                account.setUser(shortuserName);
+            if (!StringUtils.isEmpty(userName)) {
+                account.setUser(userName);
             }
-            /* Do not store any old website login credentials! */
+            /*
+             * Do not store any (old) website login credentials! The only thing we need is the users' apikey and we will store this as a
+             * property in our Account object!
+             */
             account.setPass(null);
             final boolean isPremium = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isPremium"));
             final boolean isTrial = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isTrial"));
@@ -352,61 +327,6 @@ public class AllDebridCom extends antiDDoSForHost {
         };
         thread.setDaemon(true);
         thread.start();
-        return thread;
-    }
-
-    /* 2020-03-25: TODO: Remove this dialog 2020-06 */
-    private Thread showMigrationToNewAPIInformation() throws InterruptedException {
-        final boolean displayAPIMigrationMessage = true;
-        final String key_api_migration_information = "api_migration_2020_03_25";
-        final boolean msg_was_displayed_to_user_already = this.getPluginConfig().getBooleanProperty(key_api_migration_information, false);
-        if (!displayAPIMigrationMessage || msg_was_displayed_to_user_already) {
-            logger.info("API migration information message has already been shown to user");
-            return null;
-        }
-        logger.info("Displaying API migration information message");
-        final int max_wait_seconds = 120;
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Alldebrid.com - neue API Version APIv4";
-                        message += "Hallo liebe(r) alldebrid NutzerIn\r\n";
-                        message += "Seit diesem Update hat sich die von uns verwendete API Version dieses Anbieters von v3 auf v4 geändert.\r\n";
-                        message += "Du wurdest u.U. deshalb automatisch ausgeloggt.\r\n";
-                        message += "Logge dich erneut ein, um deinen alldebrid Account weiterhin in JDownloader verwenden zu können.\r\n";
-                        message += "Bitte entschuldige die Unannehmlichkeiten.\r\n";
-                    } else {
-                        title = "Alldebrid.com - New API Version APIv4";
-                        message += "Hello dear alldebrid user\r\n";
-                        message += "With this update we are changing the used alldebrid API version from V3 to V4.\r\n";
-                        message += "You might have just been automatically logged-out because of this.\r\n";
-                        message += "Simply re-login to continue using your alldebrid account in JDownloader.\r\n";
-                        message += "Sorry for the trouble!\r\n";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(max_wait_seconds * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        /* Save this property so user will only see this dialog once! */
-        this.getPluginConfig().setProperty(key_api_migration_information, true);
-        /* Lave the user some time to read this dialog because another one will open soon to login! */
-        for (int i = 0; i < max_wait_seconds; i++) {
-            Thread.sleep(1000l);
-            if (!thread.isAlive()) {
-                /* Continue once user has closed the dialog */
-                break;
-            }
-        }
         return thread;
     }
 
