@@ -810,13 +810,9 @@ public class XHamsterCom extends PluginForHost {
                             br.submitForm(login);
                         }
                     } else {
-                        boolean isInvisibleCaptcha = false;
-                        String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
-                        if (StringUtils.isEmpty(siteKey)) {
-                            /* 2020-07-31: TODO: Check if hardcoded reCaptcha key is needed */
-                            // siteKey = recaptchaKeyV3;
-                            isInvisibleCaptcha = true;
-                        }
+                        /* 2020-08-31: Current key should be: 6Le0H9IUAAAAAIQylhldG3_JgdRkQInX5RUDXzqG */
+                        final String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
+                        final String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
                         final String id = createID();
                         final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"%s\"}}]";
                         String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
@@ -828,9 +824,9 @@ public class XHamsterCom extends PluginForHost {
                                 this.setDownloadLink(dummyLink);
                             }
                             final String recaptchaV2Response;
-                            if (isInvisibleCaptcha) {
+                            if (!StringUtils.isEmpty(siteKeyV3)) {
                                 /* 2020-03-17 */
-                                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, br, siteKey).getToken();
+                                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, br, siteKeyV3).getToken();
                             } else {
                                 /* Old */
                                 recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
