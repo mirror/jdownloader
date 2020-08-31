@@ -1195,7 +1195,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return ttt;
     }
 
-    private String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
+    protected String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
@@ -1774,39 +1774,25 @@ public class YetiShareCore extends antiDDoSForHost {
         return thread;
     }
 
-    private void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
+    /*
+     * This API call only works with self-uploaded file whenever the internal file-id is known --> It is of no use for us! TODO: Re-check
+     * this before using it in any official YetiShare plugin!
+     */
+    protected void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = this.checkDirectLink(link, account);
         if (dllink == null) {
             this.loginAPI(account, false);
-            /*
-             * The following commented-out code seems to be for an API call which only works with self-uploaded file whenever the internal
-             * file-id is known --> It is of no use for us!
-             */
-            // final Map<String, Object> postDownload = new HashMap<String, Object>();
-            // postDownload.put("access_token", this.getAPIAccessToken(account));
-            // postDownload.put("account_id", this.getAPIAccountID(account));
-            // postDownload.put("file_id", this.getFUID(link));
-            // /* TODO: Make sure this will work */
-            // this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
-            // this.checkErrorsAPI(this.br, link, account);
-            // dllink = PluginJSonUtils.getJson(this.br, "download_url");
-            // if (StringUtils.isEmpty(dllink)) {
-            // /* We're using an API --> Never throw plugin defect! */
-            // // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
-            // }
-            br.setFollowRedirects(false);
-            br.getHeaders().put("authentication", this.getAPIAccessToken(account));
-            br.getHeaders().put("account", this.getAPIAccountID(account));
-            /*
-             * 2020-08-28: TODO: Find a way to authenticate here. I've tried multiple things but was unable to download with premium speeds
-             * only via API authentication!
-             */
-            this.getPage(link.getPluginPatternMatcher());
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                /* Do not throw plugin defect because we're using an API */
+            final Map<String, Object> postDownload = new HashMap<String, Object>();
+            postDownload.put("access_token", this.getAPIAccessToken(account));
+            postDownload.put("account_id", this.getAPIAccountID(account));
+            postDownload.put("file_id", this.getFUID(link));
+            this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
+            this.checkErrorsAPI(this.br, link, account);
+            dllink = PluginJSonUtils.getJson(this.br, "download_url");
+            if (StringUtils.isEmpty(dllink)) {
+                /* We're using an API --> Never throw plugin defect! */
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
             final boolean resume = this.isResumeable(link, account);
