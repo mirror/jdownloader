@@ -78,8 +78,6 @@ public class XHamsterGallery extends PluginForDecrypt {
             sb.append("|");
             sb.append("users/[^/]+/photos");
             sb.append(")");
-            // final String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) +
-            // "/photos/gallery/[0-9A-Za-z_\\-/]+-(\\d+)";
             ret.add(sb.toString());
         }
         return ret.toArray(new String[0]);
