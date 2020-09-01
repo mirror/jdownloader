@@ -15,10 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -26,7 +29,6 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,13 +41,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com", "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
 public class PlayVidCom extends PluginForHost {
     public PlayVidCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,23 +74,24 @@ public class PlayVidCom extends PluginForHost {
     public static final String  quality_2160  = "2160p";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getBooleanProperty("offline", false)) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
+        final String qualityvalue = link.getStringProperty("qualityvalue", null);
         this.setBrowserExclusive();
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             login(this.br, account, false);
         }
-        if (!StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
+        final String stored_directurl = link.getStringProperty("directlink");
+        if (!StringUtils.containsIgnoreCase(qualityvalue, "hds_") && !StringUtils.containsIgnoreCase(stored_directurl, ".m3u8")) {
             br.setFollowRedirects(true);
-            String filename = downloadLink.getStringProperty("directname", null);
-            dllink = checkDirectLink(downloadLink, "directlink");
+            String filename = link.getStringProperty("directname", null);
+            dllink = checkDirectLink(link, "directlink");
             if (dllink == null) {
                 /* Refresh directlink */
-                br.getPage(downloadLink.getStringProperty("mainlink", null));
+                br.getPage(link.getStringProperty("mainlink", null));
                 if (isOffline(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -108,18 +108,18 @@ public class PlayVidCom extends PluginForHost {
             if (filename == null || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setFinalFileName(filename);
+            link.setFinalFileName(filename);
             // In case the link redirects to the finallink
-            if (downloadLink.getKnownDownloadSize() == -1) {
+            if (link.getKnownDownloadSize() == -1) {
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
                     if (!con.getContentType().contains("html") && con.isOK()) {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        link.setDownloadSize(con.getLongContentLength());
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    downloadLink.setProperty("directlink", dllink);
+                    link.setProperty("directlink", dllink);
                 } finally {
                     try {
                         if (con != null) {
@@ -129,28 +129,30 @@ public class PlayVidCom extends PluginForHost {
                     }
                 }
             }
+        } else if (StringUtils.containsIgnoreCase(stored_directurl, ".m3u8")) {
+            this.dllink = stored_directurl;
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        doDownload(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception {
+        doDownload(link, null);
     }
 
-    private void doDownload(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        final String qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
+    private void doDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        final String qualityvalue = link.getStringProperty("qualityvalue", null);
         if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (StringUtils.containsIgnoreCase(qualityvalue, "hds_")) {
-            final HDSContainer container = HDSContainer.read(downloadLink);
+            final HDSContainer container = HDSContainer.read(link);
             if (container == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 br.setFollowRedirects(true);
-                br.getPage(downloadLink.getStringProperty("mainlink", null).replace("http://", "https://"));
+                br.getPage(link.getStringProperty("mainlink", null).replace("http://", "https://"));
                 final LinkedHashMap<String, String> foundQualities = getQualities(br);
                 final String f4m = foundQualities.get(qualityvalue);
                 if (f4m == null) {
@@ -166,20 +168,25 @@ public class PlayVidCom extends PluginForHost {
                     if (hit == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        hit.write(downloadLink);
-                        final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+                        hit.write(link);
+                        final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
                         this.dl = dl;
                         dl.setEstimatedDuration(hit.getDuration());
                     }
                 }
             }
+        } else if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+            /* HLS download */
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
         } else {
             if (quality_720.equals(qualityvalue) && account == null) {
                 /* Should never happen! */
                 logger.info("User is not logged in but tries to download a quality which needs login");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -196,42 +203,29 @@ public class PlayVidCom extends PluginForHost {
         return false;
     }
 
-    private static final String MAINPAGE = "http://playvid.com";
-
-    @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean verify) throws Exception {
         synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!verify) {
+                        logger.info("Set cookies without check");
                         return;
                     }
+                    logger.info("Attempting cookie login");
+                    br.getPage("https://www." + account.getHoster() + "/");
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://accounts.playvid.com/de/login/playvid", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www." + account.getHoster() + "/de/account/login", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (br.containsHTML("\"status\":\"error\"")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                String continuelink = br.getRegex("\"redirect\":\"(https[^<>\"]*?)\"").getMatch(0);
+                String continuelink = PluginJSonUtils.getJson(br, "redirect");
                 if (continuelink == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -239,48 +233,32 @@ public class PlayVidCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                continuelink = continuelink.replace("\\", "");
+                if (continuelink.isEmpty()) {
+                    continuelink = "/";
+                }
                 br.getPage(continuelink);
-                final String cookie = br.getCookie(MAINPAGE, "sunsid");
-                if (cookie == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedIN(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.setCookie("https://accounts.playvid.com/", "sunsid", cookie);
-                br.setCookie(MAINPAGE, "sunsid", cookie);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
+    public boolean isLoggedIN(final Browser br) {
+        return br.getCookie(br.getHost(), "sunsid", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        account.setValid(true);
         ai.setStatus("Registered (free) user");
         return ai;
     }
@@ -315,7 +293,7 @@ public class PlayVidCom extends PluginForHost {
         final LinkedHashMap<String, String> foundqualities = new LinkedHashMap<String, String>();
         /** Decrypt qualities START */
         /** First, find all available qualities */
-        final String[] qualities = { "hds_manifest", "hds_manifest_720", "hds_manifest_480", "hds_manifest_360", "2160p", "1080p", "720p", "480p", "360p" };
+        final String[] qualities = { "hds_manifest", "hds_manifest_720", "hds_manifest_480", "hds_manifest_360", "2160p", "1080p", "720p", "480p", "360p", "data-hls-src1080", "data-hls-src720", "data-hls-src360", "data-hls-src480" };
         for (final String quality : qualities) {
             final String currentQualityUrl = getQuality(quality, videosource);
             if (currentQualityUrl != null) {
@@ -329,11 +307,18 @@ public class PlayVidCom extends PluginForHost {
     public static String getQuality(final String quality, final String videosource) {
         String videourl = new Regex(videosource, "video_vars(?:\\[video_urls\\])?\\[" + quality + "\\]= ?(https?://[^<>\"]*?)(\\&(?!sec)|$)").getMatch(0);
         if (videourl == null) {
-            /* 2019-07-26 */
-            final String qualityP = new Regex(quality, "(\\d+)p").getMatch(0);
-            if (qualityP != null) {
-                videourl = new Regex(videosource, "data\\-src" + qualityP + "=\"(https?[^\"]+)\"").getMatch(0);
+            /* 2020-09-01 */
+            videourl = new Regex(videosource, quality + "=\"(https?://[^\"]+)\"").getMatch(0);
+            if (videourl == null) {
+                /* 2019-07-26 */
+                final String qualityP = new Regex(quality, "(\\d+)p").getMatch(0);
+                if (qualityP != null) {
+                    videourl = new Regex(videosource, "data\\-src" + qualityP + "=\"(https?[^\"]+)\"").getMatch(0);
+                }
             }
+        }
+        if (Encoding.isHtmlEntityCoded(videourl)) {
+            videourl = Encoding.htmlDecode(videourl);
         }
         return videourl;
     }
