@@ -17,8 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -43,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com", "playvids.com", "pornflip.com" }, urls = { "https?://(?:www\\.)?playvid\\.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?playvids\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?v/[A-Za-z0-9\\-_]+|https?://(?:www\\.)?pornflip\\.com/(?:[a-z]{2}/)?[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class PlayVidComDecrypter extends PluginForDecrypt {
     public PlayVidComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,6 +92,11 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         if (jd.plugins.hoster.PlayVidCom.isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML("class=\"title-hide-user\"")) {
+            /* 2020-09-01: pornflip.com */
+            logger.info("Private video --> Account with permission required!");
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         /* Decrypt start */
         filename = PluginJSonUtils.getJson(br, "name");
@@ -102,16 +109,14 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             filename = new Regex(parameter, "/([^/]+)$").getMatch(0);
         }
         if (filename == null) {
-            logger.warning("Playvid.com decrypter failed..." + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename);
         /** Decrypt qualities START */
         foundQualities = ((jd.plugins.hoster.PlayVidCom) plugin).getQualities(this.br);
-        if (foundQualities == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (foundQualities == null || foundQualities.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
@@ -151,15 +156,23 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 }
             }
         }
+        if (decryptedLinks.size() == 0) {
+            logger.info("None of the selected qualities were found --> Adding all instead");
+            final Iterator<Entry<String, String>> iterator = foundQualities.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, String> entry = iterator.next();
+                final List<DownloadLink> ret = getVideoDownloadlinks(entry.getKey());
+                if (ret != null) {
+                    // tempList = new ArrayList<DownloadLink>();
+                    results.put(entry.getKey(), ret);
+                }
+            }
+        }
         for (List<DownloadLink> list : results.values()) {
             for (DownloadLink link : list) {
                 fp.add(link);
                 decryptedLinks.add(link);
             }
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.info("None of the selected qualities were found, decrypting done...");
-            return decryptedLinks;
         }
         return decryptedLinks;
     }
@@ -177,7 +190,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 if (containers != null) {
                     for (final HDSContainer container : containers) {
                         String fname = filename + "_" + qualityValue;
-                        final DownloadLink link = createDownloadlink("http://playviddecrypted.com/" + UniqueAlltimeID.create());
+                        final DownloadLink link = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), null, this.getHost(), "http://playviddecrypted.com/" + UniqueAlltimeID.create(), true);
                         link.setProperty("directlink", directlink);
                         link.setProperty("qualityvalue", qualityValue);
                         link.setProperty("mainlink", parameter);
@@ -201,7 +214,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 final String fname = filename + "_" + qualityValue + ".mp4";
-                final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + UniqueAlltimeID.create());
+                final DownloadLink dl = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), null, this.getHost(), "http://playviddecrypted.com/" + UniqueAlltimeID.create(), true);
                 dl.setProperty("directlink", directlink);
                 dl.setProperty("qualityvalue", qualityValue);
                 dl.setProperty("mainlink", parameter);
@@ -259,16 +272,13 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     private PluginForHost plugin = null;
 
     private boolean getUserLogin(final boolean force) throws Exception {
-        if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("playvid.com");
-        }
-        final Account aa = AccountController.getInstance().getValidAccount(plugin);
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
             logger.warning("There is no account available...");
             return false;
         }
         try {
-            ((jd.plugins.hoster.PlayVidCom) plugin).login(this.br, aa, force);
+            ((jd.plugins.hoster.PlayVidCom) JDUtilities.getPluginForHost(this.getHost())).login(this.br, aa, force);
         } catch (final PluginException e) {
             return false;
         }
