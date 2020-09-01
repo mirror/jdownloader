@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -47,6 +48,9 @@ public class DoodstreamCom extends XFileSharingProBasic {
      * captchatype-info: 2020-08-31: null<br />
      * other:<br />
      */
+    private static final String TYPE_STREAM   = "https?://[^/]+/e/.+";
+    private static final String TYPE_DOWNLOAD = "https?://[^/]+/d/.+";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -68,7 +72,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     public static final String getDefaultAnnotationPatternPartDoodstream() {
-        return "/e/[a-z0-9]+";
+        return "/(?:e|d)/[a-z0-9]+";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -111,9 +115,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        if (linkpart != null) {
+            link.setPluginPatternMatcher(getMainPage() + "/" + linkpart);
+        }
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
         if (fuid != null) {
-            link.setPluginPatternMatcher(getMainPage() + "/e/" + fuid);
             link.setLinkID(getHost() + "://" + fuid);
         }
     }
@@ -184,18 +191,34 @@ public class DoodstreamCom extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         setFUID(link);
-        /* First try to get filename from Chromecast json */
-        String filename = new Regex(correctedBR, "title:\"([^\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "<meta name=\"og:title\"[^>]*content=\"([^<>\"\\']+)\">").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            link.setName(this.getFallbackFilename(link));
-        } else {
-            if (!filename.endsWith(".mp4")) {
-                filename += ".mp4";
+        if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
+            /* First try to get filename from Chromecast json */
+            String filename = new Regex(correctedBR, "title:\"([^\"]+)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(correctedBR, "<meta name=\"og:title\"[^>]*content=\"([^<>\"\\']+)\">").getMatch(0);
             }
-            link.setFinalFileName(filename);
+            if (StringUtils.isEmpty(filename)) {
+                link.setName(this.getFallbackFilename(link));
+            } else {
+                if (!filename.endsWith(".mp4")) {
+                    filename += ".mp4";
+                }
+                link.setFinalFileName(filename);
+            }
+        } else {
+            String filename = br.getRegex("<meta name=\"og:title\"[^>]*content=\"([^<>\"\\']+)\">").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                link.setName(this.getFallbackFilename(link));
+            } else {
+                if (!filename.endsWith(".mp4")) {
+                    filename += ".mp4";
+                }
+                link.setFinalFileName(filename);
+            }
+            final String filesize = br.getRegex("class=\"size\">.*?</i>([^<>\"]+)<").getMatch(0);
+            if (!StringUtils.isEmpty(filesize)) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -210,6 +233,14 @@ public class DoodstreamCom extends XFileSharingProBasic {
          */
         String dllink = checkDirectLink(link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
+            if (link.getPluginPatternMatcher().matches(TYPE_DOWNLOAD)) {
+                /* Basically the same as the other type but hides that via iFrame. */
+                final String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);
+                if (embedURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                this.getPage(embedURL);
+            }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             final String continue_url = br.getRegex("'(/pass_md5/[^<>\"\\']+)'").getMatch(0);
             if (continue_url == null) {
