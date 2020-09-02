@@ -1097,6 +1097,9 @@ public class YetiShareCore extends antiDDoSForHost {
         logger.info("Last resort errorhandling");
         if (account != null && !this.isLoggedin()) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
+            /* Handle redirect to mainpage as premiumonly */
+            throw new AccountRequiredException();
         }
         logger.warning("Unknown error happened");
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

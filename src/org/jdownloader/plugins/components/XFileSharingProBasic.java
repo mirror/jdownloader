@@ -142,7 +142,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     private static AtomicInteger  maxFree                                  = new AtomicInteger(1);
     private static final String   PROPERTY_pw_required                     = "password_requested_by_website";
     protected static final String PROPERTY_captcha_required                = "captcha_requested_by_website";
-    private static final String   PROPERTY_ACCOUNT_apikey                  = "apikey";
+    protected static final String PROPERTY_ACCOUNT_apikey                  = "apikey";
     private static final String   PROPERTY_PLUGIN_api_domain_with_protocol = "apidomain";
 
     /**

@@ -38,7 +38,7 @@ public class MediaempireMe extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-09-01: Unknown<br />
+     * captchatype-info: 2020-09-02: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
@@ -78,13 +78,13 @@ public class MediaempireMe extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -2;
         }
     }
 
