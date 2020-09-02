@@ -270,8 +270,11 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Daily total downloadlimit for account is reached */
             logger.info("Daily limit reached");
             /* Workaround for account overview display bug so users see at least that there is no traffic left */
-            account.getAccountInfo().setTrafficLeft(0);
-            throw new AccountUnavailableException("Download limit reached", 5 * 60 * 1000);
+            try {
+                account.getAccountInfo().setTrafficLeft(0);
+            } catch (final Throwable e) {
+            }
+            throw new AccountUnavailableException("Daily download limit reached", 5 * 60 * 1000);
         }
     }
 
@@ -560,7 +563,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     } else if (new Regex(err, "You have reached max download request").matches()) {
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
                     } else if (new Regex(err, "You have reached max download limit of").matches()) {
-                        account.getAccountInfo().setTrafficLeft(0);
+                        try {
+                            account.getAccountInfo().setTrafficLeft(0);
+                        } catch (final Throwable e) {
+                        }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit Reached. Please purchase elite membership!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else if (new Regex(err, "Invalid .*? link\\. Cannot find Filename\\.").matches()) {
                         logger.info("Error: Disabling current host");
@@ -589,7 +595,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
                          * This message may also happens if you try to download with a free account with UN-confirmed E-Mail!! Browser will
                          * show a more precise errormessage in this case!
                          */
-                        account.getAccountInfo().setExpired(true);
+                        try {
+                            account.getAccountInfo().setExpired(true);
+                        } catch (final Throwable e) {
+                        }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     } else if (new Regex(err, "Please upgrade to Elite membership").matches()) {
                         /* 2019-09-05: Free Account daily downloadlimit reached */

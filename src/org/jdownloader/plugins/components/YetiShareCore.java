@@ -1456,57 +1456,65 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
         }
-        /* 2019-03-01: Bad german translation, example: freefile.me */
-        boolean isPremium = br.containsHTML("class\\s*=\\s*\"badge badge\\-success\"\\s*>\\s*(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP|PREMIUM)\\s*</span>");
+        getPage("/upgrade.html");
+        String expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</td>\\s*<td>\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (expireStr == null) {
+            expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</span>\\s*<input[^>]*value\\s*=\\s*\"(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expireStr == null) {
+                /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
+                expireStr = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
+            }
+        }
+        if (expireStr == null) {
+            /*
+             * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
+             * which we fail to find the expire-date.
+             */
+            logger.info("Failed to find expire-date --> Probably a FREE account");
+            setAccountLimitsByType(account, AccountType.FREE);
+            return ai;
+        }
+        long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+        final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
+        /* If the premium account is expired we'll simply accept it as a free account. */
         if (!isPremium) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
-            /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
+            /* Expired premium == FREE */
+            setAccountLimitsByType(account, AccountType.FREE);
+            // ai.setStatus("Registered (free) user");
         } else {
-            getPage("/upgrade.html");
-            /* If the premium account is expired we'll simply accept it as a free account. */
-            String expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</td>\\s*<td>\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-            if (expireStr == null) {
-                expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</span>\\s*<input[^>]*value\\s*=\\s*\"(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-                if (expireStr == null) {
-                    /* More wide RegEx to be more language independant (e.g. required for freefile.me) */
-                    expireStr = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
-                }
-            }
-            if (expireStr == null) {
-                /*
-                 * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
-                 * which we fail to find the expire-date.
-                 */
-                logger.info("Failed to find expire-date");
-                return ai;
-            }
-            long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-            isPremium = expire_milliseconds > System.currentTimeMillis();
-            if (!isPremium) {
-                /* Expired premium == FREE */
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
-                /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-                account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
-            } else {
-                ai.setValidUntil(expire_milliseconds, this.br);
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
-                ai.setStatus("Premium account");
-            }
+            ai.setValidUntil(expire_milliseconds, this.br);
+            setAccountLimitsByType(account, AccountType.PREMIUM);
+            // ai.setStatus("Premium account");
         }
         ai.setUnlimitedTraffic();
         return ai;
     }
 
-    protected long parseExpireTimeStamp(Account account, final String expireString) {
+    protected void setAccountLimitsByType(final Account account, final AccountType type) {
+        account.setType(type);
+        switch (type) {
+        case PREMIUM:
+            account.setConcurrentUsePossible(true);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
+            break;
+        case FREE:
+            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            account.setConcurrentUsePossible(false);
+            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
+            break;
+        case UNKNOWN:
+        default:
+            account.setConcurrentUsePossible(false);
+            account.setMaxSimultanDownloads(1);
+            break;
+        }
+    }
+
+    protected long parseExpireTimeStamp(final Account account, final String expireString) {
         if (expireString == null) {
             return -1;
         }
+        /** TODO: Try to auto-find correct format based on html/js/website language (??) */
         final String first = new Regex(expireString, "^(\\d+)/").getMatch(0);
         final String second = new Regex(expireString, "^\\d+/(\\d+)").getMatch(0);
         final int firstNumber = Integer.parseInt(first);
@@ -1642,7 +1650,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /** 2020-08-26: Same pattern for user & pw ("key1" & "key2") */
     protected boolean isAPICredential(final String str) {
-        return str.matches("[A-Za-z0-9]{64}");
+        return str != null && str.matches("[A-Za-z0-9]{64}");
     }
 
     protected String getAPIAccessToken(final Account account, final String key1, final String key2) {
