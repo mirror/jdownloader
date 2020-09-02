@@ -1666,7 +1666,7 @@ public class YetiShareCore extends antiDDoSForHost {
      */
     protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        this.loginAPI(account, true);
+        this.loginAPI(account, account.getUser(), account.getPass(), true);
         final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
         postAccountInfo.put("access_token", getAPIAccessToken(account, account.getUser(), account.getPass()));
         postAccountInfo.put("account_id", getAPIAccountID(account, account.getUser(), account.getPass()));
@@ -1724,9 +1724,9 @@ public class YetiShareCore extends antiDDoSForHost {
         return ai;
     }
 
-    protected void loginAPI(final Account account, final boolean verifyToken) throws Exception {
-        String access_token = this.getAPIAccessToken(account, account.getUser(), account.getPass());
-        String account_id = this.getAPIAccountID(account, account.getUser(), account.getPass());
+    protected void loginAPI(final Account account, final String key1, final String key2, final boolean verifyToken) throws Exception {
+        String access_token = this.getAPIAccessToken(account, key1, key2);
+        String account_id = this.getAPIAccountID(account, key1, key2);
         if (!StringUtils.isEmpty(access_token) && !StringUtils.isEmpty(account_id)) {
             logger.info("Trying to re-use stored access_token");
             if (!verifyToken) {
@@ -1749,13 +1749,13 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         logger.info("Performing full login");
-        if (!this.isAPICredential(account.getUser()) || !this.isAPICredential(account.getPass())) {
+        if (!this.isAPICredential(key1) || !this.isAPICredential(key2)) {
             showAPILoginInformation();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         final Map<String, Object> postLogin = new HashMap<String, Object>();
-        postLogin.put("key1", account.getUser());
-        postLogin.put("key2", account.getPass());
+        postLogin.put("key1", key1);
+        postLogin.put("key2", key2);
         this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
         access_token = PluginJSonUtils.getJson(br, "access_token");
         account_id = PluginJSonUtils.getJson(br, "account_id");
@@ -1764,15 +1764,15 @@ public class YetiShareCore extends antiDDoSForHost {
          * token --> Account should be invalid of token is not available. Only check for errors if this account has been valid before
          * already!
          */
-        if (account.getBooleanProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(account.getUser() + ":" + account.getPass()), false)) {
+        if (account.getBooleanProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), false)) {
             checkErrorsAPI(br, null, account);
         }
         if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id) || !account_id.matches("\\d+")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(account.getUser() + ":" + account.getPass()), access_token);
-        account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(account.getUser() + ":" + account.getPass()), account_id);
-        account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(account.getUser() + ":" + account.getPass()), true);
+        account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2), access_token);
+        account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2), account_id);
+        account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), true);
     }
 
     private Thread showAPILoginInformation() {
@@ -1831,7 +1831,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = this.checkDirectLink(link, account);
         if (dllink == null) {
-            this.loginAPI(account, false);
+            this.loginAPI(account, account.getUser(), account.getPass(), false);
             final Map<String, Object> postDownload = new HashMap<String, Object>();
             postDownload.put("access_token", this.getAPIAccessToken(account, account.getUser(), account.getPass()));
             postDownload.put("account_id", this.getAPIAccountID(account, account.getUser(), account.getPass()));

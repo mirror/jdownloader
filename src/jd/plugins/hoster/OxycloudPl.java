@@ -281,7 +281,7 @@ public class OxycloudPl extends YetiShareCore {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = this.checkDirectLink(link, account);
         if (dllink == null) {
-            this.loginAPI(account, false);
+            this.loginAPI(account, account.getUser(), account.getPass(), false);
             this.setAPIHeaders(br, account);
             br.getPage(this.getAPIBase() + "/file/download/" + this.getFUID(link));
             this.checkErrorsAPI(this.br, link, account);
