@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -174,5 +175,38 @@ public class KenfilesCom extends XFileSharingProBasic {
             }
         }
         return finallink;
+    }
+
+    @Override
+    protected Form findFormDownload2Free() {
+        /* 2020-09-02: Special */
+        Form dlForm = super.findFormDownload2Free();
+        if (dlForm != null) {
+            dlForm.remove("method_premium");
+        }
+        return dlForm;
+    }
+
+    @Override
+    protected String regexWaittime() {
+        String waitStr = super.regexWaittime();
+        if (waitStr == null) {
+            /* 2020-09-02: Special */
+            waitStr = new Regex(correctedBR, ">(\\d+)</span> seconds<").getMatch(0);
+        }
+        return waitStr;
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
+        /* 2020-09-02: Special */
+        /* Captcha START */
+        if (captchaForm.containsHTML("g-recaptcha")) {
+            handleRecaptchaV2(link, captchaForm);
+            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+        } else {
+            /* Run template code */
+            super.handleCaptcha(link, captchaForm);
+        }
     }
 }

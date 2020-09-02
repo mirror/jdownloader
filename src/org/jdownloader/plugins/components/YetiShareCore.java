@@ -36,6 +36,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -56,6 +57,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -1416,11 +1418,42 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    protected String getAccountEditURL() {
+        return "/account_edit.html";
+    }
+
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
+            /* TODO: Make this work for all YetiShare websites that support their API */
             getPage("/account_home.html");
+            String key1 = null;
+            String key2 = null;
+            final Form[] forms = br.getForms();
+            for (Form form : forms) {
+                final InputField fieldKey1 = form.getInputField("user_settings_form[apiKeyPublic]");
+                final InputField fieldKey2 = form.getInputField("user_settings_form[apiKeySecret]");
+                if (fieldKey1 != null) {
+                    key1 = fieldKey1.getValue();
+                }
+                if (fieldKey2 != null) {
+                    key2 = fieldKey2.getValue();
+                }
+            }
+            if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
+                try {
+                    // final AccountInfo apiInfo = this.fetchAccountInfoAPI(account);
+                    // return apiInfo;
+                } catch (final Throwable e) {
+                    logger.info("API handling inside website handling failed");
+                }
+            }
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, getAccountEditURL());
         }
         /* 2019-03-01: Bad german translation, example: freefile.me */
         boolean isPremium = br.containsHTML("class\\s*=\\s*\"badge badge\\-success\"\\s*>\\s*(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP|PREMIUM)\\s*</span>");
@@ -1611,12 +1644,12 @@ public class YetiShareCore extends antiDDoSForHost {
         return str.matches("[A-Za-z0-9]{64}");
     }
 
-    protected String getAPIAccessToken(final Account account) {
-        return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(account.getUser() + ":" + account.getPass()));
+    protected String getAPIAccessToken(final Account account, final String key1, final String key2) {
+        return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2));
     }
 
-    protected String getAPIAccountID(final Account account) {
-        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(account.getUser() + ":" + account.getPass()));
+    protected String getAPIAccountID(final Account account, final String key1, final String key2) {
+        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2));
     }
 
     /**
@@ -1626,8 +1659,8 @@ public class YetiShareCore extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         this.loginAPI(account, true);
         final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-        postAccountInfo.put("access_token", getAPIAccessToken(account));
-        postAccountInfo.put("account_id", getAPIAccountID(account));
+        postAccountInfo.put("access_token", getAPIAccessToken(account, account.getUser(), account.getPass()));
+        postAccountInfo.put("account_id", getAPIAccountID(account, account.getUser(), account.getPass()));
         if (this.br.getURL() == null || !this.br.getURL().contains("/account/info")) {
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
             checkErrorsAPI(br, null, account);
@@ -1683,13 +1716,17 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected void loginAPI(final Account account, final boolean verifyToken) throws Exception {
-        String access_token = this.getAPIAccessToken(account);
-        String account_id = this.getAPIAccountID(account);
+        String access_token = this.getAPIAccessToken(account, account.getUser(), account.getPass());
+        String account_id = this.getAPIAccountID(account, account.getUser(), account.getPass());
         if (!StringUtils.isEmpty(access_token) && !StringUtils.isEmpty(account_id)) {
             logger.info("Trying to re-use stored access_token");
+            if (!verifyToken) {
+                logger.info("Trust existing access_token");
+                return;
+            }
             final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-            postAccountInfo.put("access_token", this.getAPIAccessToken(account));
-            postAccountInfo.put("account_id", this.getAPIAccountID(account));
+            postAccountInfo.put("access_token", access_token);
+            postAccountInfo.put("account_id", account_id);
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("data");
@@ -1787,8 +1824,8 @@ public class YetiShareCore extends antiDDoSForHost {
         if (dllink == null) {
             this.loginAPI(account, false);
             final Map<String, Object> postDownload = new HashMap<String, Object>();
-            postDownload.put("access_token", this.getAPIAccessToken(account));
-            postDownload.put("account_id", this.getAPIAccountID(account));
+            postDownload.put("access_token", this.getAPIAccessToken(account, account.getUser(), account.getPass()));
+            postDownload.put("account_id", this.getAPIAccountID(account, account.getUser(), account.getPass()));
             postDownload.put("file_id", this.getFUID(link));
             this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
             this.checkErrorsAPI(this.br, link, account);
