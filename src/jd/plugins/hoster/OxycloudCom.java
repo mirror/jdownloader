@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
@@ -135,5 +137,13 @@ public class OxycloudCom extends YetiShareCore {
             }
         }
         return fileInfo;
+    }
+
+    @Override
+    protected long parseExpireTimeStamp(final Account account, final String expireString) {
+        if (expireString == null) {
+            return -1;
+        }
+        return TimeFormatter.getMilliSeconds(expireString, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
     }
 }
