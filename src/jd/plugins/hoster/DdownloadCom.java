@@ -27,8 +27,10 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -259,6 +261,84 @@ public class DdownloadCom extends XFileSharingProBasic {
             ai.setUnlimitedTraffic();
         }
         return ai;
+    }
+
+    @Override
+    public boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
+        try {
+            super.loginWebsite(account, validateCookies);
+        } catch (final PluginException e) {
+            Form twoFAForm = null;
+            final Form[] forms = br.getForms();
+            for (final Form form : forms) {
+                final InputField twoFAField = form.getInputField("code6");
+                if (twoFAField != null) {
+                    twoFAForm = form;
+                    break;
+                }
+            }
+            if (twoFAForm == null) {
+                /* Login failed */
+                throw e;
+            }
+            logger.info("2FA code required");
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            final DownloadLink dl_dummy;
+            if (dlinkbefore != null) {
+                dl_dummy = dlinkbefore;
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+            }
+            final String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+            if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            logger.info("Submitting 2FA code");
+            twoFAForm.put("code6", twoFACode);
+            this.submitForm(twoFAForm);
+            if (!this.br.getURL().contains("?op=my_account")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger 2-faktor-Authentifizierungscode!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(getMainPage()), "");
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isLoggedin() {
+        /* 2020-09-02: Allow "xfss" cookie without "login" cookie! */
+        final String mainpage = getMainPage();
+        logger.info("Doing login-cookiecheck for: " + mainpage);
+        final boolean login_xfss_CookieOkay = br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN) != null;
+        /* buttons or sites that are only available for logged in users */
+        // remove script tags
+        // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
+        final String htmlWithoutScriptTagsAndComments = br.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
+        final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
+        final boolean logoutOkay = new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/(user_)?logout\"").matches();
+        // unsafe, not every site does redirect
+        final boolean loginURLFailed = br.getURL().contains("op=") && br.getURL().contains("op=login");
+        /*
+         * 2019-11-11: Set myAccountOkay to true if there is currently a redirect which means in this situation we rely on our cookie ONLY.
+         * This may be the case if a user has direct downloads enabled. We access downloadurl --> Redirect happens --> We check for login
+         */
+        final boolean isRedirect = br.getRedirectLocation() != null;
+        final boolean myAccountOkay = (new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/my(-|_)account\"").matches() || isRedirect);
+        logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
+        logger.info("logoutOkay:" + logoutOkay);
+        logger.info("myAccountOkay:" + myAccountOkay);
+        logger.info("loginURLFailed:" + loginURLFailed);
+        final boolean ret = (login_xfss_CookieOkay) && ((logoutOkay || myAccountOkay) && !loginURLFailed);
+        logger.info("loggedin:" + ret);
+        return ret;
     }
 
     @Override
