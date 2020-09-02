@@ -52,6 +52,7 @@ public class OxycloudPl extends YetiShareCore {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
         /* 2020-08-31: Avoid "401 unauthorized" API response when user starts a lot of downloads at the same time. */
+        /* TODO: 2020-09-02: Check if this is still needed */
         this.setStartIntervall(1500l);
     }
 
@@ -167,6 +168,11 @@ public class OxycloudPl extends YetiShareCore {
         }
         return ai;
     }
+
+    @Override
+    protected String getAccountEditURL() {
+        return "/account";
+    }
     /* *************************** PUT API RELATED METHODS HERE *************************** */
 
     @Override
@@ -186,8 +192,8 @@ public class OxycloudPl extends YetiShareCore {
 
     /** Headers required for all custom built GET request that they've built on top of the official YetiShare API. */
     private void setAPIHeaders(final Browser br, final Account account) {
-        br.getHeaders().put("authentication", this.getAPIAccessToken(account));
-        br.getHeaders().put("account", this.getAPIAccountID(account));
+        br.getHeaders().put("authentication", this.getAPIAccessToken(account, account.getUser(), account.getPass()));
+        br.getHeaders().put("account", this.getAPIAccountID(account, account.getUser(), account.getPass()));
     }
 
     @Override
@@ -261,9 +267,9 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     private Account getApiAccount() {
-        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        if (acc != null && this.getAPIAccessToken(acc) != null && this.getAPIAccountID(acc) != null) {
-            return acc;
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null && this.getAPIAccessToken(account, account.getUser(), account.getPass()) != null && this.getAPIAccountID(account, account.getUser(), account.getPass()) != null) {
+            return account;
         } else {
             return null;
         }
