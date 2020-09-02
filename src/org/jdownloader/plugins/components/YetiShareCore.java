@@ -1426,8 +1426,13 @@ public class YetiShareCore extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
-            /* TODO: Make this work for all YetiShare websites that support their API */
             getPage("/account_home.html");
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
+            /* TODO: Make this work for all YetiShare websites that support their API */
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, getAccountEditURL());
             String key1 = null;
             String key2 = null;
             final Form[] forms = br.getForms();
@@ -1442,6 +1447,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
+                logger.info("Found possibly valid API login credentials");
                 try {
                     // final AccountInfo apiInfo = this.fetchAccountInfoAPI(account);
                     // return apiInfo;
@@ -1449,11 +1455,6 @@ public class YetiShareCore extends antiDDoSForHost {
                     logger.info("API handling inside website handling failed");
                 }
             }
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
-            final Browser brc = br.cloneBrowser();
-            this.getPage(brc, getAccountEditURL());
         }
         /* 2019-03-01: Bad german translation, example: freefile.me */
         boolean isPremium = br.containsHTML("class\\s*=\\s*\"badge badge\\-success\"\\s*>\\s*(?:BEZAHLT(er)? BENUTZER|PAID USER|USUARIO DE PAGO|VIP|PREMIUM)\\s*</span>");
