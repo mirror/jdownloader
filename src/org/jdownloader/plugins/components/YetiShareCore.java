@@ -1412,7 +1412,7 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (supports_api()) {
-            return fetchAccountInfoAPI(account, account.getPass(), account.getUser());
+            return fetchAccountInfoAPI(account, account.getUser(), account.getPass());
         } else {
             return fetchAccountInfoWebsite(account);
         }
