@@ -142,8 +142,27 @@ public class RapidGatorNet extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), "/file/([a-z0-9]{32}|\\d+)").getMatch(0);
     }
 
-    private String getURLFilename(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), ".+/(.+)\\.html$").getMatch(0);
+    private String getURLFilename(final DownloadLink link) throws UnsupportedEncodingException, IllegalArgumentException {
+        String urlfilename = new Regex(link.getPluginPatternMatcher(), ".+/(.+)\\.html$").getMatch(0);
+        if (urlfilename != null && FIX_FILENAMES) {
+            urlfilename = URLEncode.decodeURIComponent(urlfilename, "UTF-8", true);
+        }
+        return urlfilename;
+    }
+
+    /**
+     * Returns filename from URL (if present) or file-ID.
+     *
+     * @throws IllegalArgumentException
+     * @throws UnsupportedEncodingException
+     */
+    private String getFallbackFilename(final DownloadLink link) throws UnsupportedEncodingException, IllegalArgumentException {
+        String fname = getURLFilename(link);
+        if (fname == null) {
+            /* Final fallback */
+            fname = this.getFID(link);
+        }
+        return fname;
     }
 
     @Override
@@ -283,16 +302,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         link.removeProperty(HOTLINK);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-            String filenameFromURL = getURLFilename(link);
-            if (filenameFromURL != null) {
-                final String fileName;
-                if (FIX_FILENAMES) {
-                    fileName = URLEncode.decodeURIComponent(filenameFromURL, "UTF-8", true);
-                } else {
-                    fileName = filenameFromURL;
-                }
-                link.setName(fileName);
-            }
+            link.setName(getFallbackFilename(link));
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String freedlsizelimit = br.getRegex("'You can download files up to\\s*([\\d\\.]+ ?(MB|GB))\\s*in free mode<").getMatch(0);
@@ -305,21 +315,22 @@ public class RapidGatorNet extends antiDDoSForHost {
             filename = br.getRegex("<title>Download file\\s*([^<>\"]+)</title>").getMatch(0);
         }
         final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            if (filename.startsWith(".") && /* effectively unix based filesystems */!CrossSystem.isWindows()) {
+                /* Temp workaround for hidden files */
+                filename = filename.substring(1);
+            }
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        } else {
+            link.setName(getFallbackFilename(link));
         }
-        if (filename.startsWith(".") && /* effectively unix based filesystems */!CrossSystem.isWindows()) {
-            /* Temp workaround for hidden files */
-            filename = filename.substring(1);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        br.setFollowRedirects(false);
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
+        br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
