@@ -216,8 +216,13 @@ public class OxycloudPl extends YetiShareCore {
 
     @Override
     protected boolean supports_api() {
-        /* 2020-09-03: API has been shut down --> Use website */
-        return false;
+        return true;
+    }
+
+    @Override
+    protected boolean isAPICredential(final String str) {
+        /* 2020-09-03: Special: API allows auth via username and password instead of "Key1" and "Key2". */
+        return str != null && str.matches(".{1,}");
     }
 
     /** Headers required for all custom built GET request that they've built on top of the official YetiShare API. */
