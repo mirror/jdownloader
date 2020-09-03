@@ -64,7 +64,7 @@ public class OxycloudPl extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2<br />
+     * captchatype-info: 2020-09-03: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
@@ -104,9 +104,12 @@ public class OxycloudPl extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account == null) {
             return 1;
-        } else {
+        } else if (this.supports_api()) {
             /* Limits may vary depending on account type - controlled via API! */
             return account.getIntegerProperty(PROPERTY_account_max_chunks, 1);
+        } else {
+            /* Return default limit for account mode */
+            return -5;
         }
     }
 
@@ -121,16 +124,16 @@ public class OxycloudPl extends YetiShareCore {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 10;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 10;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
     }
 
     @Override

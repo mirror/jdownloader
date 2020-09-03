@@ -183,28 +183,28 @@ public class YetiShareCore extends antiDDoSForHost {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return -5;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -5;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -5;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return -1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 10;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
+        return -1;
     }
 
     /** Returns direct-link-property-String for current download mode based on account availibility and account type. */
