@@ -183,28 +183,28 @@ public class YetiShareCore extends antiDDoSForHost {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return -5;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -5;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 10;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 10;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
     }
 
     /** Returns direct-link-property-String for current download mode based on account availibility and account type. */
@@ -1412,7 +1412,7 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (supports_api()) {
-            return fetchAccountInfoAPI(account);
+            return fetchAccountInfoAPI(account, account.getPass(), account.getUser());
         } else {
             return fetchAccountInfoWebsite(account);
         }
@@ -1431,29 +1431,10 @@ public class YetiShareCore extends antiDDoSForHost {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
             /* TODO: Make this work for all YetiShare websites that support their API */
-            final Browser brc = br.cloneBrowser();
-            this.getPage(brc, getAccountEditURL());
-            String key1 = null;
-            String key2 = null;
-            final Form[] forms = br.getForms();
-            for (Form form : forms) {
-                final InputField fieldKey1 = form.getInputField("user_settings_form[apiKeyPublic]");
-                final InputField fieldKey2 = form.getInputField("user_settings_form[apiKeySecret]");
-                if (fieldKey1 != null) {
-                    key1 = fieldKey1.getValue();
-                }
-                if (fieldKey2 != null) {
-                    key2 = fieldKey2.getValue();
-                }
-            }
-            if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
-                logger.info("Found possibly valid API login credentials");
-                try {
-                    // final AccountInfo apiInfo = this.fetchAccountInfoAPI(account);
-                    // return apiInfo;
-                } catch (final Throwable e) {
-                    logger.info("API handling inside website handling failed");
-                }
+            final AccountInfo apiAccInfo = fetchAccountInfoWebsiteAPI(account);
+            if (apiAccInfo != null) {
+                logger.info("Found AccountInfo via API --> Prefer this over website AccountInfo");
+                return apiAccInfo;
             }
         }
         getPage("/upgrade.html");
@@ -1490,6 +1471,45 @@ public class YetiShareCore extends antiDDoSForHost {
         return ai;
     }
 
+    /** Tries to auto-find API keys in website HTML code and return account information from API! */
+    protected AccountInfo fetchAccountInfoWebsiteAPI(final Account account) {
+        /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
+        /* TODO: Make this work for all YetiShare websites that support their API */
+        try {
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, getAccountEditURL());
+            String key1 = null;
+            String key2 = null;
+            final Form[] forms = brc.getForms();
+            for (Form form : forms) {
+                final InputField fieldKey1 = form.getInputField("key1");
+                final InputField fieldKey2 = form.getInputField("key2");
+                if (fieldKey1 != null && fieldKey2 != null) {
+                    key1 = fieldKey1.getValue();
+                    key2 = fieldKey2.getValue();
+                    break;
+                }
+            }
+            if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
+                logger.info("Found possibly valid API login credentials");
+                try {
+                    final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(account, key1, key2);
+                    if (apiAccInfo != null) {
+                        logger.info("API AccountInfo found");
+                        return apiAccInfo;
+                    } else {
+                        logger.info("Failed to find API AccountInfo");
+                    }
+                } catch (final Throwable e) {
+                    logger.info("API handling inside website handling failed");
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     protected void setAccountLimitsByType(final Account account, final AccountType type) {
         account.setType(type);
         switch (type) {
@@ -1498,7 +1518,7 @@ public class YetiShareCore extends antiDDoSForHost {
             account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             break;
         case FREE:
-            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
+            /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
             break;
@@ -1664,12 +1684,12 @@ public class YetiShareCore extends antiDDoSForHost {
     /**
      * 2020-05-14: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
      */
-    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+    protected AccountInfo fetchAccountInfoAPI(final Account account, final String key1, final String key2) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        this.loginAPI(account, account.getUser(), account.getPass(), true);
+        this.loginAPI(account, key1, key2, true);
         final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-        postAccountInfo.put("access_token", getAPIAccessToken(account, account.getUser(), account.getPass()));
-        postAccountInfo.put("account_id", getAPIAccountID(account, account.getUser(), account.getPass()));
+        postAccountInfo.put("access_token", getAPIAccessToken(account, key1, key2));
+        postAccountInfo.put("account_id", getAPIAccountID(account, key1, key2));
         if (this.br.getURL() == null || !this.br.getURL().contains("/account/info")) {
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
             checkErrorsAPI(br, null, account);
@@ -1887,6 +1907,7 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
         }
         /* E.g. {"message":"Username could not be found.","result":false} */
+        /* {"status":"error","response":"User not found.","_datetime":"2020-09-03 13:48:46"} */
         boolean result = true;
         String msg = null;
         try {
@@ -1902,6 +1923,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 msg = "Unknown error";
             }
             if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }

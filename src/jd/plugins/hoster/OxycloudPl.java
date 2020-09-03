@@ -53,7 +53,7 @@ public class OxycloudPl extends YetiShareCore {
         this.enablePremium(getPurchasePremiumURL());
         /* 2020-08-31: Avoid "401 unauthorized" API response when user starts a lot of downloads at the same time. */
         /* TODO: 2020-09-02: Check if this is still needed */
-        this.setStartIntervall(1500l);
+        // this.setStartIntervall(1500l);
     }
 
     private static final String PROPERTY_needs_premium      = "needs_premium";
@@ -149,24 +149,50 @@ public class OxycloudPl extends YetiShareCore {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
+        final AccountInfo apiAccInfo = fetchAccountInfoWebsiteAPI(account);
+        if (apiAccInfo != null) {
+            logger.info("Found AccountInfo via API --> Prefer this over website AccountInfo");
+            return apiAccInfo;
+        }
         this.getPage("/download-limits-calculator");
         final String trafficLeft = br.getRegex("class=\"fa fa-download\"></i>([^<>]*)</span>").getMatch(0);
         final String expireDate = br.getRegex("This package is active until (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         if (trafficLeft != null && expireDate != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd hh:mm", Locale.ENGLISH), this.br);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
-            ai.setStatus("Premium account");
             ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
+            this.setAccountLimitsByType(account, AccountType.PREMIUM);
         } else {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
-            /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) user");
+            this.setAccountLimitsByType(account, AccountType.FREE);
             ai.setUnlimitedTraffic();
         }
         return ai;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsiteAPI(final Account account) {
+        try {
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, getAccountEditURL());
+            String key1 = brc.getRegex("name=\"user_settings_form\\[apiKeyPublic\\]\"[^>]* value=\"([^\"]+)\"").getMatch(0);
+            String key2 = brc.getRegex("name=\"user_settings_form\\[apiKeySecret\\]\"[^>]* value=\"([^\"]+)\"").getMatch(0);
+            if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
+                logger.info("Found possibly valid API login credentials");
+                try {
+                    final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(account, key1, key2);
+                    if (apiAccInfo != null) {
+                        logger.info("API AccountInfo found");
+                        return apiAccInfo;
+                    } else {
+                        logger.info("Failed to find API AccountInfo");
+                    }
+                } catch (final Throwable e) {
+                    logger.info("API handling inside website handling failed");
+                }
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -187,7 +213,8 @@ public class OxycloudPl extends YetiShareCore {
 
     @Override
     protected boolean supports_api() {
-        return true;
+        /* 2020-09-03: API has been shut down --> Use website */
+        return false;
     }
 
     /** Headers required for all custom built GET request that they've built on top of the official YetiShare API. */
@@ -197,8 +224,8 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     @Override
-    protected AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
-        final AccountInfo ai = super.fetchAccountInfoAPI(account);
+    protected AccountInfo fetchAccountInfoAPI(final Account account, final String key1, final String key2) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoAPI(account, key1, key2);
         /* 2020-08-26: They've built some stuff on top of the normal YetiShare API --> Handle this here */
         final Browser brc = br.cloneBrowser();
         setAPIHeaders(brc, account);
