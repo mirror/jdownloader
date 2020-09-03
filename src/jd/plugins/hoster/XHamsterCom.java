@@ -29,6 +29,7 @@ import javax.script.ScriptEngineManager;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -676,10 +677,39 @@ public class XHamsterCom extends PluginForHost {
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Password?", link);
                 }
-                br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
-                if (isPasswordProtected()) {
-                    link.setProperty("pass", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* New way */
+                    final String videoID = this.getFID(link);
+                    if (videoID == null) {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    /* 2020-09-03: Browser sends crypted password but uncrypted password seems to work fine too */
+                    final String json = String.format("[{\"name\":\"entityUnlockModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"c280e6b4-d696-479c-bb7d-eb0627d36fb1\",\"modelName\":\"entityUnlockModel\",\"itemState\":\"changed\",\"password\":\"%s\",\"entityModel\":\"videoModel\",\"entityID\":%s}}}]", passCode, videoID);
+                    br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                    br.getHeaders().put("content-type", "text/plain");
+                    br.getHeaders().put("accept", "*/*");
+                    br.postPageRaw("/x-api", json);
+                    /*
+                     * 2020-09-03: E.g. wrong password:
+                     * [{"name":"entityUnlockModelSync","extras":{"result":false,"error":{"password":"Falsches Passwort"}},"responseData":{
+                     * "$id":"c280e6b4-d696-479c-bb7d-eb0627d36fb1"}}]
+                     */
+                    if (br.containsHTML("\"password\"")) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    }
+                    /*
+                     * 2020-09-03: WTF:
+                     * [{"name":"entityUnlockModelSync","extras":{"result":false,"showCaptcha":true,"code":"403 Forbidden"},"responseData":{
+                     * "$id":"c280e6b4-d696-479c-bb7d-eb0627d36fb1"}}]
+                     */
+                } else {
+                    /* Old way */
+                    br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+                    if (isPasswordProtected()) {
+                        link.setProperty("pass", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    }
                 }
                 link.setFinalFileName(getFilename(link));
             } else if (br.containsHTML(HTML_PAID_VIDEO)) {
