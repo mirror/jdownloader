@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(?:www\\.)?ustream\\.tv/(?:embed/?)recorded/\\d+(?:/highlight/\\d+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(?:www\\.)?(?:ustream\\.tv|video\\.ibm\\.com)/(?:embed/)?recorded/\\d+(?:/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
     private String dllink = null;
 
@@ -153,11 +153,10 @@ public class UstreamTv extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        final String fid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String fid = new Regex(dl.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
         if (dl.getLinkID() == null || !dl.getLinkID().matches("\\d+")) {
-            dl.setLinkID(fid);
+            dl.setLinkID(this.getHost() + "://" + fid);
         }
         return fid;
     }
