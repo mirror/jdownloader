@@ -669,7 +669,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
                             }
                             break;
                         case MAC:
-                            if (toolkit.getClass().getName().equals("sun.lwawt.macosx.LWCToolkit")) {
+                            if (ReflectionUtils.isInstanceOf("sun.lwawt.macosx.LWCToolkit", toolkit)) {
                                 return "com.apple.laf.AquaLookAndFeel";
                             }
                             break;
