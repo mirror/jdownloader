@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspace.com" }, urls = { "https?://(?:www\\.)?myspace\\.com/([^/]+)/photos" })
 public class MyspaceCom extends PluginForDecrypt {
@@ -61,7 +61,7 @@ public class MyspaceCom extends PluginForDecrypt {
         do {
             page++;
             logger.info("Crawling page: " + page);
-            final String[] htmls = br.getRegex("<li[^>]*class=\"item media photo flexHeight cap size_300\"(.*?)</li>").getColumn(0);
+            final String[] htmls = br.getRegex("<li[^>]*class\\s*=\\s*\"item media photo flexHeight cap size_300\"\\s*(.*?)\\s*</li>").getColumn(0);
             if (htmls == null || htmls.length == 0) {
                 logger.info("Stopping because there are no new items on current page");
                 break;
@@ -69,8 +69,8 @@ public class MyspaceCom extends PluginForDecrypt {
             String lastPhotoID = null;
             boolean foundNewItem = false;
             for (final String html : htmls) {
-                final String photoID = new Regex(html, "data-photoId=\"(\\d+)\"").getMatch(0);
-                String url = new Regex(html, "data-image-url=\"(https?://[^\"]+)\"").getMatch(0);
+                final String photoID = new Regex(html, "data-photoId\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                String url = new Regex(html, "data-image-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
                 if (photoID == null || url == null) {
                     continue;
                 } else if (dupes.contains(photoID)) {
@@ -78,7 +78,7 @@ public class MyspaceCom extends PluginForDecrypt {
                 }
                 itemCounter++;
                 final String filename;
-                String title = new Regex(html, "data-title=\"([^\"]+)\"").getMatch(0);
+                String title = new Regex(html, "data-title\\s*=\\s*\"([^\"]+)\"").getMatch(0);
                 if (!StringUtils.isEmpty(title)) {
                     title = Encoding.htmlDecode(title);
                     filename = username + "_" + df.format(itemCounter) + "_" + title + ".jpg";

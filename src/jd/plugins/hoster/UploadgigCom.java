@@ -22,11 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -46,6 +43,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -214,9 +218,7 @@ public class UploadgigCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(url) || StringUtils.isEmpty(params) || StringUtils.isEmpty(idStr) || !idStr.matches("\\d+") || StringUtils.isEmpty(waittime_str) || !waittime_str.matches("\\d+")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured");
             }
-            /* 2020-07-10: Possible cat & mouse game */
-            /* 2020-08-10: 7 */
-            final long substraction_value = 7;
+            final long substraction_value = calc(br);
             final long id = Long.parseLong(idStr) - substraction_value;
             final String directurl = url + "id=" + id + "&" + params;
             // directurl = directurl.replace("/start/", "/s/");
@@ -250,6 +252,22 @@ public class UploadgigCom extends antiDDoSForHost {
         }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    protected long calc(Browser br) throws Exception {
+        final String calc = br.getRegex("<script>\\s*window\\[[^<>]*\\]\\s*=\\s*(.*?)\\s*;\\s*</script>").getMatch(0);
+        if (calc == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval("var result=" + calc);
+            final Number result = (Number) engine.get("result");
+            return result.longValue();
+        } catch (final Exception e) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+        }
     }
 
     private boolean getDllink(final Browser br) throws Exception {
@@ -298,16 +316,16 @@ public class UploadgigCom extends antiDDoSForHost {
 
     private boolean testLink(final String dllink, boolean throwException) throws Exception {
         try {
-            final Browser br2 = this.br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            dl = new jd.plugins.BrowserAdapter().openDownload(br2, this.getDownloadLink(), dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            final Browser brc = this.br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, this.getDownloadLink(), dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isOK()) {
                 try {
-                    br2.followConnection(true);
+                    brc.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (br2.getHttpConnection().getResponseCode() == 403 && br2.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
+                if (brc.getHttpConnection().getResponseCode() == 403 && brc.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
                 }
                 return false;
