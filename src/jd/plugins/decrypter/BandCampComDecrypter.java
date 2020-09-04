@@ -25,10 +25,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -41,6 +37,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/(?:album|track)/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
@@ -135,19 +135,22 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             trackcounter++;
         }
         final boolean decryptThumb = CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.GRABTHUMB, false);
-        final String thumbnail = br.getRegex("<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
-        if (decryptThumb && thumbnail != null) {
-            final DownloadLink thumb = createDownloadlink("directhttp://" + thumbnail);
-            thumb.setProperty("fromdecrypter", true);
-            thumb.setProperty("directdate", date);
-            thumb.setProperty("directartist", artist);
-            thumb.setProperty("directalbum", album);
-            thumb.setProperty("directname", "thumbnail");
-            thumb.setProperty("type", "jpg");
-            thumb.setProperty("directtracknumber", df.format(0));
-            final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(thumb);
-            thumb.setFinalFileName(formattedFilename);
-            decryptedLinks.add(thumb);
+        if (decryptThumb) {
+            String thumbnail = br.getRegex("<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (thumbnail != null) {
+                thumbnail = thumbnail.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
+                final DownloadLink thumb = createDownloadlink("directhttp://" + thumbnail);
+                thumb.setProperty("fromdecrypter", true);
+                thumb.setProperty("directdate", date);
+                thumb.setProperty("directartist", artist);
+                thumb.setProperty("directalbum", album);
+                thumb.setProperty("directname", "thumbnail");
+                thumb.setProperty("type", "jpg");
+                thumb.setProperty("directtracknumber", df.format(0));
+                final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(thumb);
+                thumb.setFinalFileName(formattedFilename);
+                decryptedLinks.add(thumb);
+            }
         }
         final String videos[][] = br.getRegex("<a class=\"has-video\"\\s*href=\"(/video/t/\\d+)\"\\s*data-href-mobile=\"(/.*?)\"").getMatches();
         if (videos != null) {

@@ -193,7 +193,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                         URL url = Application.getRessourceURL("");
                         File bin = new File(url.toURI());
                         File db = new File(bin.getParent(), ".svn/wc.db");
-                        if (db.exists()) {
+                        if (db.isFile()) {
                             String str = IO.readFileToString(db);
                             if (str.contains("svn://svn.jdownloader.org/jdownloader") || str.contains("SQLite format")) {
                                 str = null;
@@ -214,7 +214,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                             String str = IO.readFileToString(new File(bin.getParent(), ".svn/entries"));
                             if (str != null && str.contains("svn://svn.jdownloader.org/jdownloader/trunk")) {
                                 str = null;
-                                if (Application.getResource("JDownloader.jar").exists()) {
+                                if (Application.getResource("JDownloader.jar").isFile()) {
                                     JarFile jf = null;
                                     try {
                                         jf = new JarFile(Application.getResource("JDownloader.jar"));
@@ -250,14 +250,15 @@ public class LookAndFeelController implements LAFManagerInterface {
         } catch (Throwable e) {
             LogV3.log(e);
             try {
-                LookAndFeel currentLaf = UIManager.getLookAndFeel();
+                final LookAndFeel currentLaf = UIManager.getLookAndFeel();
                 // this may happen if the updater launcher already has set the look and feel.
                 if (currentLaf != null && !(currentLaf instanceof MetalLookAndFeel)) {
                     LogV3.info("Don't set System look and feel " + currentLaf + " is already set");
                     return;
                 }
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                LAFOptions.init(UIManager.getSystemLookAndFeelClassName());
+                final String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+                UIManager.setLookAndFeel(systemLookAndFeelClassName);
+                LAFOptions.init(systemLookAndFeelClassName);
             } catch (ClassNotFoundException e1) {
                 e1.printStackTrace();
             } catch (InstantiationException e1) {

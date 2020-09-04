@@ -41,17 +41,15 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         public boolean isEnabled() {
             if (value == null) {
                 return false;
-            }
-            if (value.getDescription() != null) {
+            } else if (value.getDescription() != null) {
                 return true;
-            }
-            if (value.getDefault() != null) {
+            } else if (value.getValidator() != null) {
                 return true;
-            }
-            if (value.getValidator() != null) {
+            } else if (value.getKeyHandler().hasDefaultValue()) {
                 return true;
+            } else {
+                return false;
             }
-            return false;
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -59,15 +57,15 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
                 return;
             }
             StringBuilder sb = new StringBuilder();
-
             if (value.getDescription() != null) {
                 sb.append(value.getDescription());
             }
-            if (value.getDefault() != null) {
+            final Object defaultValue = value.getDefault();
+            if (defaultValue != null) {
                 if (sb.length() > 0) {
                     sb.append("\r\n");
                 }
-                sb.append("Defaultvalue: " + JSonStorage.toString(value.getDefault()));
+                sb.append("Defaultvalue: " + JSonStorage.toString(defaultValue));
             }
             if (value.getValidator() != null) {
                 if (sb.length() > 0) {
@@ -79,7 +77,6 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         }
 
         public void setEntry(AdvancedConfigEntry value) {
-
             this.value = value;
             if (isEnabled()) {
                 putValue(Action.SMALL_ICON, iconEnabled);
@@ -87,7 +84,6 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
                 putValue(Action.SMALL_ICON, iconDisabled);
             }
         }
-
     }
 
     class ResetAction extends AbstractAction {
@@ -108,12 +104,12 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
             }
             EditColumn.this.stopCellEditing();
             new EDTHelper<Void>() {
-
                 @Override
                 public Void edtRun() {
                     try {
-                        Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + value.getDefault());
-                        value.setValue(value.getDefault());
+                        final Object defaultValue = value.getDefault();
+                        Dialog.getInstance().showConfirmDialog(0, "Reset to default?", "Really reset " + value.getKey() + " to " + defaultValue);
+                        value.setValue(defaultValue);
                         EditColumn.this.getModel().getTable().repaint();
                     } catch (DialogClosedException e1) {
                         e1.printStackTrace();
@@ -123,7 +119,6 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
                     return null;
                 }
             }.start(true);
-
         }
 
         private boolean equals(Object x, Object y) {
@@ -177,29 +172,20 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
             resetable = b;
             super.setEnabled(b);
         }
-
     }
 
     public static final int SIZE = 16;
-
     private InfoAction      editorInfo;
     private InfoAction      rendererInfo;
-
     private MergedIcon      iconDD;
-
     private MergedIcon      iconED;
-
     private MergedIcon      iconDE;
-
     private MergedIcon      iconEE;
-
     private InfoAction      info;
-
     private ResetAction     reset;
 
     public EditColumn() {
         super("Actions");
-
         iconDD = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16)), org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_RESET, 16)));
         iconED = new MergedIcon(new AbstractIcon(IconKey.ICON_HELP, 16), org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_RESET, 16)));
         iconDE = new MergedIcon(org.jdownloader.images.NewTheme.I().getDisabledIcon(new AbstractIcon(IconKey.ICON_HELP, 16)), new AbstractIcon(IconKey.ICON_RESET, 16));
@@ -260,13 +246,11 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         if (p.x - getBounds().x < getWidth() / 2) {
             // left
             this.tooltip.setTipText("Click to Open an infopanel");
-
         } else {
             // right
             this.tooltip.setTipText("Click to reset to " + obj.getDefault());
             System.out.println("RIGHT");
         }
-
         return this.tooltip;
     }
 
@@ -304,7 +288,6 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
         reset.setEntry(value);
         boolean resetable = reset.isEnabled();
         boolean info = this.info.isEnabled();
-
         if (resetable && info) {
             return iconEE;
         } else if (!resetable && info) {
@@ -315,5 +298,4 @@ public class EditColumn extends ExtTextColumn<AdvancedConfigEntry> {
             return iconDE;
         }
     }
-
 }
