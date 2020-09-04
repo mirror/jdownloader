@@ -1,5 +1,6 @@
 package org.jdownloader.settings;
 
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -14,6 +15,7 @@ import org.appwork.storage.config.annotations.ConfigEntryKeywords;
 import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntArrayValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
@@ -23,9 +25,11 @@ import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.JVMVersion;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -620,19 +624,65 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setPackagesBackgroundHighlightEnabled(boolean b);
 
+    class DefaultLookAndFeelTheme extends AbstractDefaultFactory<LookAndFeelType> {
+        @Override
+        public LookAndFeelType getDefaultValue() {
+            if (Application.isHeadless()) {
+                return LookAndFeelType.JAVA_SYSTEM;
+            } else {
+                if (Application.getRessourceURL("cfg/synthetica-license.key") != null && LookAndFeelType.DEFAULT.isAvailable()) {
+                    return LookAndFeelType.DEFAULT;
+                } else if (LookAndFeelType.FLATLAF_LIGHT.isAvailable()) {
+                    return LookAndFeelType.FLATLAF_LIGHT;
+                } else {
+                    return LookAndFeelType.JAVA_SYSTEM;
+                }
+            }
+        }
+    }
+
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
-    @DefaultEnumValue("DEFAULT")
+    @DefaultFactory(value = DefaultLookAndFeelTheme.class)
     LookAndFeelType getLookAndFeelTheme();
 
     void setLookAndFeelTheme(LookAndFeelType type);
 
-    // org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel
     public static enum LookAndFeelType {
         FLATLAF_LIGHT("flatlaf-themes", "com.formdev.flatlaf.FlatLightLaf", JVMVersion.JAVA_1_8),
         FLATLAF_DARK("flatlaf-themes", "com.formdev.flatlaf.FlatDarkLaf", JVMVersion.JAVA_1_8),
         FLATLAF_INTELLIJ("flatlaf-themes", "com.formdev.flatlaf.FlatIntelliJLaf", JVMVersion.JAVA_1_8),
         FLATLAF_DRACULA("flatlaf-themes", "com.formdev.flatlaf.FlatDarculaLaf", JVMVersion.JAVA_1_8),
+        JAVA_METAL(null, "javax.swing.plaf.metal.MetalLookAndFeel"),
+        JAVA_SYSTEM(null, null) {
+            @Override
+            public String getClazz() {
+                if (!Application.isHeadless()) {
+                    try {
+                        final Toolkit toolkit = Toolkit.getDefaultToolkit();
+                        switch (CrossSystem.getOSFamily()) {
+                        case WINDOWS:
+                            return "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+                        case LINUX:
+                            if (ReflectionUtils.isInstanceOf("sun.awt.SunToolkit", toolkit) && Boolean.TRUE.equals(ReflectionUtils.invoke("sun.awt.SunToolkit", "isNativeGTKAvailable", toolkit, Boolean.class))) {
+                                return "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+                            }
+                            break;
+                        case MAC:
+                            if (toolkit.getClass().getName().equals("sun.lwawt.macosx.LWCToolkit")) {
+                                return "com.apple.laf.AquaLookAndFeel";
+                            }
+                            break;
+                        default:
+                            break;
+                        }
+                    } catch (Throwable ignore) {
+                    }
+                }
+                return "javax.swing.plaf.metal.MetalLookAndFeel";
+            }
+        },
+        JAVA_NIMBUS(null, "javax.swing.plaf.nimbus.NimbusLookAndFeel"),
         ALU_OXIDE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaAluOxideLookAndFeel"),
         BLACK_EYE("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackEyeLookAndFeel"),
         BLACK_MOON("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel"),
@@ -661,7 +711,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             return extensionID;
         }
 
-        public final String getClazz() {
+        public String getClazz() {
             return clazz;
         }
 
