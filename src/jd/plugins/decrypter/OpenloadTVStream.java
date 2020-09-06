@@ -16,10 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -42,7 +46,7 @@ public class OpenloadTVStream extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         String page = br.toString();
-        String fpName = br.getRegex("<title>([^<]+) \\| Just Watch").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+(?:Just Watch|Clip Watching)").getMatch(0);
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
         // Handle TV show overview pages
         if (StringUtils.containsIgnoreCase(parameter, "/tvshows/")) {
@@ -67,6 +71,10 @@ public class OpenloadTVStream extends antiDDoSForDecrypt {
                 post.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
                 String postResult = br.getPage(post);
                 String videoURL = new Regex(postResult, "src=[\"']([^\"']+)[\"']").getMatch(0);
+                if (StringUtils.isEmpty(videoURL)) {
+                    Map<String, Object> entries = JSonStorage.restoreFromString(postResult, TypeRef.HASHMAP);
+                    videoURL = (String) JavaScriptEngineFactory.walkJson(entries, "embed_url");
+                }
                 if (videoURL != null) {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(videoURL)));
                 }
