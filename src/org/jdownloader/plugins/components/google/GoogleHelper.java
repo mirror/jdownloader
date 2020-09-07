@@ -175,7 +175,7 @@ public class GoogleHelper {
         final String serviceName;
         final String realhost;
         if (host.contains("google")) {
-            /* E.g. internal plugin host "dics.google.com" */
+            /* E.g. internal plugin host "docs.google.com" */
             realhost = "google.com";
             serviceName = "Google";
         } else {
