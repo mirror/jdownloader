@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -50,17 +53,27 @@ public class CatcutNet extends PluginForDecrypt {
             if (go_url != null) {
                 // under the a value
                 go_url = Encoding.urlDecode(go_url, true);
-                while (true) {
-                    if (isAbort()) {
-                        return decryptedLinks;
-                    }
-                    final String a = new Regex(go_url, "a=([a-zA-Z0-9_/\\+\\=\\-%]+)&?").getMatch(0);
-                    if (a != null) {
-                        go_url = Encoding.Base64Decode(a);
+                final String a = new Regex(go_url, "a=([a-zA-Z0-9_/\\+\\=\\-%]+)&?").getMatch(0);
+                if (a != null && Encoding.isHtmlEntityCoded(go_url)) {
+                    go_url = Encoding.Base64Decode(a);
+                }
+                if (go_url.matches("https?://[^/]+/.*away3\\.php.*")) {
+                    go_url += "&q=&r=&p=0&t=1&s=1&u14=&v14=&w7=";
+                    final long timeBefore = System.currentTimeMillis();
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    go_url += "&x=" + Encoding.urlEncode(recaptchaV2Response);
+                    final long timePassed = System.currentTimeMillis() - timeBefore;
+                    final long waittime = 15000 - timePassed;
+                    if (waittime > 0) {
+                        logger.info("Waiting: " + waittime);
+                        this.sleep(waittime, param);
                     } else {
-                        finallink = go_url;
-                        break;
+                        logger.info("Skipping waittime as captcha solving took so much time");
                     }
+                    br.getPage(go_url);
+                    finallink = new URL(Encoding.htmlDecode(br.toString())).toString();
+                } else {
+                    finallink = go_url;
                 }
             }
             if (finallink == null) {

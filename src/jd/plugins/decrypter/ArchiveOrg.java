@@ -21,6 +21,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,17 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -75,15 +75,17 @@ public class ArchiveOrg extends PluginForDecrypt {
             ((jd.plugins.hoster.ArchiveOrg) plg).login(aa, false);
         }
         URLConnectionAdapter con = null;
+        boolean isArchiveContent = false;
         try {
             /* Check if we have a direct URL --> Host plugin */
             con = br.openGetConnection(parameter);
+            isArchiveContent = con.getURL().toString().contains("view_archive.php");
             /*
              * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to differ
              * between a file or expected html.
              */
             final String host = Browser.getHost(con.getURL(), true);
-            if (con.isContentDisposition() || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) {
+            if ((con.isContentDisposition() || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
                 final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
                 if (con.getLongContentLength() > 0) {
                     fina.setDownloadSize(con.getLongContentLength());
@@ -138,6 +140,28 @@ public class ArchiveOrg extends PluginForDecrypt {
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                 }
+            }
+        } else if (isArchiveContent) {
+            /* 2020-09-07: Contents of a .zip file are also accessible and downloadable separately. */
+            final String archiveName = new Regex(br.getURL(), ".*/([^/]+)$").getMatch(0);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(archiveName));
+            final String[] htmls = br.getRegex("<tr><td>(.*?)</tr>").getColumn(0);
+            for (final String html : htmls) {
+                String url = new Regex(html, "(/download/[^\"\\']+)").getMatch(0);
+                final String filesizeStr = new Regex(html, "id=\"size\">(\\d+)").getMatch(0);
+                if (StringUtils.isEmpty(url)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                url = "https://archive.org" + url;
+                final DownloadLink dl = this.createDownloadlink(url);
+                if (filesizeStr != null) {
+                    dl.setDownloadSize(Long.parseLong(filesizeStr));
+                }
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
             }
         } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
             int page = 2;

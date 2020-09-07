@@ -139,13 +139,14 @@ public class UstreamTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (dllink == null) {
+        if (is_private) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Private or offline content");
+        } else if (dllink == null) {
             /* 2016-12-29: For some streams, we do not get any downloadurl via API e.g. 98355455 and 98364293. */
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not downloadable");
-        } else if (is_private) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video which only the owner can watch/download");
+        } else {
+            dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         }
-        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
