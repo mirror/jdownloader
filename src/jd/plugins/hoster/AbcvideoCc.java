@@ -119,6 +119,21 @@ public class AbcvideoCc extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean useRUA() {
+        /* 2020-09-07: Cat & mouse games */
+        return true;
+    }
+
+    @Override
+    public Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            /* 2020-09-07: Cat & mouse games */
+            prepBr.setCookie(getMainPage(), "game", "checker");
+        }
+        return prepBr;
+    }
+
+    @Override
     protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         String dllink = getDllink(link, account, br, correctedBR);
         final Browser brc = this.br.cloneBrowser();
