@@ -188,7 +188,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        new YoutubeHelper(br, getLogger()).login(account, true, true);
+        new YoutubeHelper(br, getLogger()).login(account, true);
         ai.setStatus(_GUI.T.lit_account_is_ok());
         ai.setValidUntil(-1);
         return ai;
@@ -1742,7 +1742,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         YoutubeHelper helper = new YoutubeHelper(br, getLogger());
         AbstractVariant variant = getVariant(downloadLink);
         if (account != null) {
-            helper.login(account, false, false);
+            helper.login(account, false);
         }
         // if (!Application.isJared(null)) throw new RuntimeException("Shit happened");
         boolean resume = true;

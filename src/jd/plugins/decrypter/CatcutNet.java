@@ -58,6 +58,7 @@ public class CatcutNet extends PluginForDecrypt {
                     go_url = Encoding.Base64Decode(a);
                 }
                 if (go_url.matches("https?://[^/]+/.*away3\\.php.*")) {
+                    /* 2020-09-07: New way */
                     go_url += "&q=&r=&p=0&t=1&s=1&u14=&v14=&w7=";
                     final long timeBefore = System.currentTimeMillis();
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
@@ -73,6 +74,7 @@ public class CatcutNet extends PluginForDecrypt {
                     br.getPage(go_url);
                     finallink = new URL(Encoding.htmlDecode(br.toString())).toString();
                 } else {
+                    /* Old way (without captcha & waittime) */
                     finallink = go_url;
                 }
             }

@@ -43,24 +43,6 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -124,6 +106,22 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -177,7 +175,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -771,30 +769,30 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String                YT_TITLE                         = "YT_TITLE";
-    public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
-    public static final String                YT_ID                            = "YT_ID";
-    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String                YT_DATE                          = "YT_DATE";
-    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String                YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1478,7 +1476,7 @@ public class YoutubeHelper {
     }
 
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
-        loggedIn = login(false, false);
+        loggedIn = login(false);
         this.vid = vid;
         final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -2475,78 +2473,26 @@ public class YoutubeHelper {
         return ret;
     }
 
-    public void login(final Account account, final boolean refresh, final boolean showDialog) throws Exception {
+    public void login(final Account account, final boolean refresh) throws Exception {
         synchronized (account) {
-            try {
-                br.setDebug(true);
-                br.setCookiesExclusive(true);
-                // delete all cookies
-                br.clearCookies(null);
-                Thread thread = Thread.currentThread();
-                boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
-                br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
-                if (account.getProperty("cookies") != null && !forceUpdateAndBypassCache) {
-                    @SuppressWarnings("unchecked")
-                    HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
-                    // cookies = null;
-                    if (cookies != null) {
-                        if (cookies.containsKey("SSID")) {
-                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                                final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                br.setCookie("youtube.com", key, value);
-                            }
-                            if (!refresh) {
-                                return;
-                            } else {
-                                br.getPage("https://www.youtube.com");
-                                br.followRedirect(true);
-                                if (br.containsHTML("<span.*?>\\s*Sign out\\s*</span>")) {
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-                br.setFollowRedirects(true);
-                GoogleHelper helper = new GoogleHelper(br) {
-                    @Override
-                    protected boolean validateSuccessOLD() {
-                        return br.getCookie("http://youtube.com", "SID") != null;
-                    }
-
-                    protected String breakRedirects(String url) throws IOException {
-                        String sidt = new Regex(url, "accounts\\/SetSID\\?ssdc\\=1\\&sidt=([^\\&]+)").getMatch(0);
-                        if (sidt != null) {
-                            String jsonUrl = br.getRegex("uri\\:\\s*\\'(.*?)\\'\\,").getMatch(0);
-                            jsonUrl = Encoding.unicodeDecode(jsonUrl);
-                            br.getPage(jsonUrl);
-                            return null;
-                        }
-                        if (br.getURL() != null && br.getURL().contains("/accounts/SetSID")) {
-                            return null;
-                        }
-                        return url;
-                    }
-                };
-                helper.setLogger(logger);
-                helper.setCacheEnabled(false);
-                if (helper.login(account, refresh)) {
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies cYT = br.getCookies("youtube.com");
-                    for (final Cookie c : cYT.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    // set login cookie of the account.
-                    account.setProperty("cookies", cookies);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", null);
-                }
-                throw e;
+            br.setDebug(true);
+            br.setCookiesExclusive(true);
+            // delete all cookies
+            br.clearCookies(null);
+            final GoogleHelper helper = new GoogleHelper(br);
+            helper.setLogger(br.getLogger());
+            // helper.setLogger(this.getLogger());
+            Thread thread = Thread.currentThread();
+            boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
+            br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
+            final boolean loggedIN;
+            if (!forceUpdateAndBypassCache) {
+                loggedIN = (helper.login(account, true));
+            } else {
+                loggedIN = (helper.login(account, refresh));
+            }
+            if (!loggedIN) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
@@ -2577,7 +2523,7 @@ public class YoutubeHelper {
         }
     }
 
-    public boolean login(final boolean refresh, final boolean showDialog) {
+    public boolean login(final boolean refresh) {
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
@@ -2585,7 +2531,7 @@ public class YoutubeHelper {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     try {
-                        this.login(n, refresh, showDialog);
+                        this.login(n, refresh);
                         if (n.isValid()) {
                             return true;
                         }
@@ -2605,7 +2551,7 @@ public class YoutubeHelper {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     try {
-                        this.login(n, refresh, showDialog);
+                        this.login(n, refresh);
                         if (n.isValid()) {
                             return true;
                         }
@@ -2623,7 +2569,7 @@ public class YoutubeHelper {
                 final Account n = it.next();
                 if (n.isEnabled() && n.isValid()) {
                     try {
-                        this.login(n, refresh, showDialog);
+                        this.login(n, refresh);
                         if (n.isValid()) {
                             return true;
                         }
