@@ -14,17 +14,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.GoogleService;
-
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.TextComponentInterface;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -48,6 +37,17 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.GoogleService;
 
 public class GoogleHelper {
     // private static final String COOKIES2 = "googleComCookies";
@@ -171,7 +171,17 @@ public class GoogleHelper {
         }
     }
 
-    private Thread showCookieLoginInformation() {
+    private Thread showCookieLoginInformation(final String host) {
+        final String serviceName;
+        final String realhost;
+        if (host.contains("google")) {
+            /* E.g. internal plugin host "dics.google.com" */
+            realhost = "google.com";
+            serviceName = "Google";
+        } else {
+            realhost = "youtube.com";
+            serviceName = "YouTube";
+        }
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -179,15 +189,15 @@ public class GoogleHelper {
                     String message = "";
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Google - Login";
-                        message += "Hallo liebe(r) Google NutzerIn\r\n";
-                        message += "Um deinen Google Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "Folge der Anleitung im folgenden Hilfe-Artikel - navigiere vor dem Exportieren der Cookies auf google.COM:\r\n";
+                        title = serviceName + " - Login";
+                        message += "Hallo liebe(r) " + serviceName + " NutzerIn\r\n";
+                        message += "Um deinen " + serviceName + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Öffne " + realhost + " in deinem Browser und folge dieser Anleitung:\r\n";
                         message += help_article_url;
                     } else {
-                        title = "Google - Login";
-                        message += "Hello dear Google user\r\n";
-                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions - go to google.COM before exporting your cookies:\r\n";
+                        title = serviceName + " - Login";
+                        message += "Hello dear " + serviceName + " user\r\n";
+                        message += "Open " + realhost + " in your browser and follow these instructions:\r\n";
                         message += help_article_url;
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
@@ -225,8 +235,8 @@ public class GoogleHelper {
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies lastSavedCookies = account.loadCookies("");
                 if (cookieLoginOnly && userCookies == null) {
-                    showCookieLoginInformation();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    showCookieLoginInformation(account.getHoster());
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter exported cookies in password field to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Check stored cookies */
                 if (lastSavedCookies != null || userCookies != null) {
@@ -265,29 +275,8 @@ public class GoogleHelper {
                         logger.info("Trust cookies without check");
                         return true;
                     }
-                    logger.info("Validating cookies");
                     br.setAllowedResponseCodes(new int[] { 400 });
-                    boolean loggedIN = false;
-                    final boolean useTwoLoginValidations = false;
-                    if (useTwoLoginValidations) {
-                        /* Old check */
-                        getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                        loggedIN = validateSuccessOLD();
-                        if (!loggedIN) {
-                            logger.info("First cookie validation failed --> 2nd validation ...");
-                            getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
-                            if (br.containsHTML("accounts\\.google\\.com/logout")) {
-                                loggedIN = true;
-                            }
-                        }
-                    } else {
-                        /* New check */
-                        getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
-                        if (br.containsHTML("accounts\\.google\\.com/logout")) {
-                            loggedIN = true;
-                        }
-                    }
-                    if (loggedIN) {
+                    if (validateCookies(account)) {
                         logger.info("Login with cookies successful");
                         validate(account);
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -459,6 +448,40 @@ public class GoogleHelper {
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean validateCookies(final Account account) throws IOException, InterruptedException {
+        logger.info("Validating cookies");
+        /*
+         * 2020-09-07: psp: I was unable to just use the google.com cookies for youtube so basically we now expect the user to import the
+         * correct cookies for the service they want to use so usually either "google.com" or "youtube.com" coookies.
+         */
+        if (account.getHoster().equals("youtube.com")) {
+            br.getPage("https://www.youtube.com/");
+            return br.containsHTML("\"key\":\"logged_in\",\"value\":\"1\"");
+        } else {
+            final boolean useTwoLoginValidations = false;
+            boolean loggedIN = false;
+            if (useTwoLoginValidations) {
+                /* Old check */
+                getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
+                loggedIN = validateSuccessOLD();
+                if (!loggedIN) {
+                    logger.info("First cookie validation failed --> 2nd validation ...");
+                    getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                    if (br.containsHTML("accounts\\.google\\.com/logout")) {
+                        loggedIN = true;
+                    }
+                }
+            } else {
+                /* New check */
+                getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
+                if (br.containsHTML("accounts\\.google\\.com/logout")) {
+                    loggedIN = true;
+                }
+            }
+            return loggedIN;
         }
     }
 
