@@ -891,6 +891,10 @@ public class TbCmV2 extends PluginForDecrypt {
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
             if (!helper.getLoggedIn()) {
+                /*
+                 * Only set User-Agent if we're not logged in because login session can be bound to User-Agent and tinkering around with
+                 * different User-Agents and the same cookies is just a bad idea!
+                 */
                 // firefox gets different result than chrome! lets hope switching wont cause issue.
                 br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
             }

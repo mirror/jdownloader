@@ -2484,7 +2484,6 @@ public class YoutubeHelper {
             // helper.setLogger(this.getLogger());
             Thread thread = Thread.currentThread();
             boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
-            br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
             final boolean loggedIN;
             if (!forceUpdateAndBypassCache) {
                 loggedIN = (helper.login(account, true));
