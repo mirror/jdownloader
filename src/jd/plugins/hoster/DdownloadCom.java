@@ -392,6 +392,8 @@ public class DdownloadCom extends XFileSharingProBasic {
         if (new Regex(correctedBR, ">\\s*This server is in maintenance mode").matches()) {
             /* <strong>Oops!</strong> This server is in maintenance mode. Refresh this page in some minutes. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 1000l);
         }
         /* Now execute template handling */
         super.checkErrors(link, account, checkAll);
