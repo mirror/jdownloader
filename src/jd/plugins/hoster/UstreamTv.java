@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,6 +28,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "https?://(?:www\\.)?(?:ustream\\.tv|video\\.ibm\\.com)/(?:embed/)?recorded/\\d+(?:/highlight/\\d+)?" })
 public class UstreamTv extends PluginForHost {
@@ -156,7 +156,7 @@ public class UstreamTv extends PluginForHost {
 
     private String getFID(final DownloadLink dl) {
         final String fid = new Regex(dl.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
-        if (dl.getLinkID() == null || !dl.getLinkID().matches("\\d+")) {
+        if (fid != null && (dl.getLinkID() == null || !dl.getLinkID().matches("\\d+"))) {
             dl.setLinkID(this.getHost() + "://" + fid);
         }
         return fid;
