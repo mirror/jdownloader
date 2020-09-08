@@ -30,6 +30,29 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.utils.locale.JDL;
+
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -67,29 +90,6 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
@@ -230,7 +230,7 @@ public class TbCmV2 extends PluginForDecrypt {
             videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
         }
         helper = new YoutubeHelper(br, getLogger());
-        helper.login(false);
+        helper.login(getLogger(), false);
         /*
          * you can not use this with /c or /channel based urls, it will pick up false positives. see
          * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only

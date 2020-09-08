@@ -360,7 +360,14 @@ public class SecondLevelLaunch {
         LoggerFactory.getDefaultLogger().info("OS:" + CrossSystem.getOSFamily() + "|" + CrossSystem.getOS() + "|64bit:" + CrossSystem.is64BitOperatingSystem());
         LoggerFactory.getDefaultLogger().info("CPU:" + CrossSystem.getARCHFamily() + "|64bit:" + CrossSystem.is64BitArch());
         LoggerFactory.getDefaultLogger().info("JavaVersion:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
-        LoggerFactory.getDefaultLogger().info("RaspberryPI:" +RaspberryPi.getRaspberryPiDetails();
+        try {
+            final RaspberryPi raspberryPi = RaspberryPi.getRaspberryPiDetails();
+            if (raspberryPi != null) {
+                LoggerFactory.getDefaultLogger().info("RaspberryPi detected:" + raspberryPi);
+            }
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();
