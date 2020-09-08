@@ -1476,7 +1476,7 @@ public class YoutubeHelper {
     }
 
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
-        loggedIn = login(false);
+        loggedIn = login(logger, false);
         this.vid = vid;
         final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -2522,7 +2522,7 @@ public class YoutubeHelper {
         }
     }
 
-    public boolean login(final boolean refresh) {
+    public boolean login(LogInterface logger, final boolean refresh) {
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
@@ -2535,6 +2535,7 @@ public class YoutubeHelper {
                             return true;
                         }
                     } catch (final Exception e) {
+                        logger.log(e);
                         n.setValid(false);
                         // should we not try other accounts??
                         return false;
@@ -2555,6 +2556,7 @@ public class YoutubeHelper {
                             return true;
                         }
                     } catch (final Exception e) {
+                        logger.log(e);
                         n.setValid(false);
                         return false;
                     }
@@ -2573,6 +2575,7 @@ public class YoutubeHelper {
                             return true;
                         }
                     } catch (final Exception e) {
+                        logger.log(e);
                         n.setValid(false);
                         return false;
                     }
