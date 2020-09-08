@@ -202,7 +202,9 @@ public class Multi extends IExtraction {
                 }
             }
             try {
-                org.appwork.utils.Files.deleteRecursiv(tmp);
+                if (false) {
+                    org.appwork.utils.Files.deleteRecursiv(tmp);
+                }
             } catch (final Throwable e1) {
             }
             logger.warning("Could not initialize Multiunpacker:#1");
@@ -211,7 +213,7 @@ public class Multi extends IExtraction {
                 final String s2 = System.getProperty("java.io.tmpdir");
                 tmp = new File(s2);
                 logger.finer("Try Lib Path: " + tmp + "->" + tmp.exists());
-                SevenZip.initSevenZipFromPlatformJAR(tmp);
+                SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
             } catch (Throwable e2) {
                 logger.warning("Could not initialize Multiunpacker:#2");
                 logger.log(e2);
