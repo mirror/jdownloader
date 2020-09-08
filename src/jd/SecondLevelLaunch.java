@@ -85,6 +85,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.os.RaspberryPi;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -295,15 +296,23 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             LoggerFactory.getDefaultLogger().log(e);
         }
-        // Mac OS specific
-        if (CrossSystem.isMac()) {
-            // Set MacApplicationName
-            // Must be in Main
-            SecondLevelLaunch.initMACProperties();
-        } else if (CrossSystem.isUnix()) {
-            initLinuxSpecials();
-        } else if (CrossSystem.isWindows()) {
-            initWindowsSpecials();
+        try {
+            switch (CrossSystem.getOSFamily()) {
+            case MAC:
+                initMACProperties();
+                break;
+            case LINUX:
+            case BSD:
+                initLinuxSpecials();
+                break;
+            case WINDOWS:
+                initWindowsSpecials();
+                break;
+            default:
+                break;
+            }
+        } catch (Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
         }
         /* hack for ftp plugin to use new ftp style */
         System.setProperty("ftpStyle", "new");
@@ -326,8 +335,21 @@ public class SecondLevelLaunch {
                     }
                 }
             }
-        } catch (Throwable e1) {
-            LoggerFactory.getDefaultLogger().log(e1);
+        } catch (Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
+        if (CrossSystem.isUnix() || CrossSystem.isMac()) {
+            try {
+                final File jar = Application.getResource("JDownloader.jar");
+                if (jar.isFile()) {
+                    /*
+                     * double click on JDownloader.jar requires executable flag
+                     */
+                    LoggerFactory.getDefaultLogger().info("setExecutable:" + jar.setExecutable(true));
+                }
+            } catch (Throwable ignore) {
+                LoggerFactory.getDefaultLogger().log(ignore);
+            }
         }
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
@@ -338,6 +360,7 @@ public class SecondLevelLaunch {
         LoggerFactory.getDefaultLogger().info("OS:" + CrossSystem.getOSFamily() + "|" + CrossSystem.getOS() + "|64bit:" + CrossSystem.is64BitOperatingSystem());
         LoggerFactory.getDefaultLogger().info("CPU:" + CrossSystem.getARCHFamily() + "|64bit:" + CrossSystem.is64BitArch());
         LoggerFactory.getDefaultLogger().info("JavaVersion:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
+        LoggerFactory.getDefaultLogger().info("RaspberryPI:" +RaspberryPi.getRaspberryPiDetails();
         try {
             java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
             List<String> arguments = runtimeMxBean.getInputArguments();

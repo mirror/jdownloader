@@ -54,6 +54,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.os.RaspberryPi;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
@@ -327,7 +328,7 @@ public class Multi extends IExtraction {
                         libIDs.add("Linux-aarch64");
                         libIDs.add("Linux-arm64");
                     } else {
-                        if (CrossSystem.isRaspberryPi()) {
+                        if (RaspberryPi.getRaspberryPiDetails() != null) {
                             libIDs.add("Linux-armpi");
                             libIDs.add("Linux-armpi2");
                         } else {

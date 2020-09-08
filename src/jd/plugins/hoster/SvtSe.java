@@ -54,9 +54,14 @@ public class SvtSe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
-        this.videoid = this.br.getRegex("data\\-video\\-id=\"([^<>\"]*?)\"").getMatch(0);
+        this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
+        if (videoid == null) {
+            videoid = this.br.getRegex("\"content\"\\s*:\\s*\\{[^\r\n]*?\"id\"\\s*:\\s*\"([^<>\"]+?)\"").getMatch(0);
+        }
         /* 404 --> Offline, videoid not found --> No video on page --> Offline */
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.videoid == null) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.videoid == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setLinkID(this.videoid);
