@@ -49,7 +49,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+" })
 public class ArchiveOrg extends PluginForDecrypt {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +60,10 @@ public class ArchiveOrg extends PluginForDecrypt {
         return ArchiveOrgConfig.class;
     }
 
+    private boolean isArchiveURL(final String url) {
+        return url != null && url.contains("view_archive.php");
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -68,39 +72,42 @@ public class ArchiveOrg extends PluginForDecrypt {
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("archive.org"));
         if (aa != null) {
-            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            final PluginForHost plg = JDUtilities.getPluginForHost("archive.org");
             plg.setBrowser(this.br);
             ((jd.plugins.hoster.ArchiveOrg) plg).login(aa, false);
         }
         URLConnectionAdapter con = null;
-        boolean isArchiveContent = false;
-        try {
-            /* Check if we have a direct URL --> Host plugin */
-            con = br.openGetConnection(parameter);
-            isArchiveContent = con.getURL().toString().contains("view_archive.php");
-            /*
-             * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to differ
-             * between a file or expected html.
-             */
-            final String host = Browser.getHost(con.getURL(), true);
-            if ((con.isContentDisposition() || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
-                final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                if (con.getLongContentLength() > 0) {
-                    fina.setDownloadSize(con.getLongContentLength());
+        boolean isArchiveContent = isArchiveURL(parameter);
+        if (isArchiveContent) {
+            br.getPage(parameter);
+        } else {
+            try {
+                /* Check if we have a direct URL --> Host plugin */
+                con = br.openGetConnection(parameter);
+                isArchiveContent = con.getURL().toString().contains("view_archive.php");
+                /*
+                 * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to differ
+                 * between a file or expected html.
+                 */
+                final String host = Browser.getHost(con.getURL(), true);
+                if ((con.isContentDisposition() || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
+                    final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
+                    if (con.getLongContentLength() > 0) {
+                        fina.setDownloadSize(con.getLongContentLength());
+                    }
+                    fina.setFinalFileName(getFileNameFromHeader(con));
+                    fina.setAvailable(true);
+                    decryptedLinks.add(fina);
+                    return decryptedLinks;
+                } else {
+                    br.followConnection();
                 }
-                fina.setFinalFileName(getFileNameFromHeader(con));
-                fina.setAvailable(true);
-                decryptedLinks.add(fina);
-                return decryptedLinks;
-            } else {
-                br.followConnection();
+            } finally {
+                con.disconnect();
             }
-        } finally {
-            con.disconnect();
         }
-        br.getPage(parameter);
         if (br.containsHTML("schema\\.org/Book")) {
             /* Crawl all pages of a book */
             final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
