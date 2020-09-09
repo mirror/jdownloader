@@ -17,9 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,9 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "https?://(?:www\\.)?imagenetz\\.de/[a-z0-9]+/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "https?://(?:www\\.)?imagenetz\\.de/([A-Za-z0-9]+)" })
 public class ImageNetzDe extends PluginForHost {
     public ImageNetzDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +37,7 @@ public class ImageNetzDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.imagenetz.de/?change=agb";
+        return "http://www.imagenetz.de/agb.php";
     }
 
     @Override
@@ -45,35 +45,61 @@ public class ImageNetzDe extends PluginForHost {
         return -1;
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Diese Datei existiert nicht mehr") || br.getURL().matches("^.*?imagenetz.de/?$")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("Diese Datei existiert nicht mehr") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Regex fileInfo = br.getRegex("<td height=\"22\" class=\"main\"><div align=\"left\"></div>[\t\n\r ]+<div align=\"left\">(.*?)</div></td>[\t\n\r ]+<td height=\"22\" class=\"main\"><div align=\"center\">(.*?)</div></td>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String description = br.getRegex("<strong>Beschreibung:</strong>\\s*([^<>\"]+)\\s*<").getMatch(0);
+        String filename = br.getRegex("class='dfname'>([^<>\"]+)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("data-title=\"([^<>\"]+)\"").getMatch(0);
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        String filesize = br.getRegex("<small>(\\d+([\\.,0-9]+)? MB)</small>").getMatch(0);
+        if (filename != null) {
+            link.setName(filename.trim());
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (description != null && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        final Form dlform = br.getForm(0);
-        if (dlform == null) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String dllink = br.getRegex("(/files[^<>\"\\']+)").getMatch(0);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        final String waitSecondsStr = br.getRegex("d='dlCD'><span>(\\d+)<").getMatch(0);
+        if (waitSecondsStr != null) {
+            this.sleep(Integer.parseInt(waitSecondsStr) * 1000l, link);
+        } else {
+            /* 2020-09-09: Static pre-download-waittime */
+            this.sleep(3000l, link);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
