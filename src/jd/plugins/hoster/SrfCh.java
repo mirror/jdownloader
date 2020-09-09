@@ -19,7 +19,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -31,17 +39,43 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+.*$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfCh extends PluginForHost {
     @SuppressWarnings("deprecation")
     public SrfCh(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "srf.ch" });
+        ret.add(new String[] { "rts.ch" });
+        ret.add(new String[] { "rsi.ch" });
+        ret.add(new String[] { "rtr.ch" });
+        ret.add(new String[] { "swissinfo.ch" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/play/(.+)\\?(?:id=[A-Za-z0-9\\-]+|urn=[A-Za-z0-9\\-:]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -60,8 +94,8 @@ public class SrfCh extends PluginForHost {
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>]*?) \\- Play [^\"]+\"").getMatch(0);
         if (filename == null) {
-            /* Get filename via url */
-            filename = new Regex(link.getPluginPatternMatcher(), "/([^/]+)\\?id=.+").getMatch(0);
+            /* Fallback: Obtain filename from url */
+            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
             filename = filename.replace("-", " ");
         }
         if (filename == null) {
@@ -84,8 +118,14 @@ public class SrfCh extends PluginForHost {
         final String channelname = convertDomainPartToShortChannelName(domainpart);
         /* xml also possible: http://il.srgssr.ch/integrationlayer/1.0/<channelname>/srf/video/play/<videoid>.xml */
         final boolean useV2 = true;
+        /* 2020-09-09: New URLs will contain this parameter */
+        String urn = UrlQuery.parse(link.getPluginPatternMatcher()).get("urn");
+        if (StringUtils.isEmpty(urn)) {
+            /* E.g. for older URLs --> We have to generate that parameter on our own. */
+            urn = "urn:" + channelname + ":video:" + videoid;
+        }
         if (useV2) {
-            this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/urn:" + channelname + ":video:" + videoid + ".json?onlyChapters=true&vector=portalplay");
+            this.br.getPage("https://il.srgssr.ch/integrationlayer/2.0/mediaComposition/byUrn/" + urn + ".json?onlyChapters=true&vector=portalplay");
         } else {
             this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".json");
         }
