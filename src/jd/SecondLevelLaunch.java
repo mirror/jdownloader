@@ -85,7 +85,8 @@ import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.RaspberryPi;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -361,9 +362,9 @@ public class SecondLevelLaunch {
         LoggerFactory.getDefaultLogger().info("CPU:" + CrossSystem.getARCHFamily() + "|64bit:" + CrossSystem.is64BitArch());
         LoggerFactory.getDefaultLogger().info("JavaVersion:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
         try {
-            final RaspberryPi raspberryPi = RaspberryPi.getRaspberryPiDetails();
-            if (raspberryPi != null) {
-                LoggerFactory.getDefaultLogger().info("RaspberryPi detected:" + raspberryPi);
+            final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+            if (hardwareType != null) {
+                LoggerFactory.getDefaultLogger().info("Hardware detected:" + hardwareType);
             }
         } catch (final Throwable ignore) {
             LoggerFactory.getDefaultLogger().log(ignore);

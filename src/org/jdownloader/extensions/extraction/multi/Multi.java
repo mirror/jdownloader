@@ -54,7 +54,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.RaspberryPi;
+import org.appwork.utils.os.hardware.RaspberryPi;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
@@ -202,9 +202,7 @@ public class Multi extends IExtraction {
                 }
             }
             try {
-                if (false) {
-                    org.appwork.utils.Files.deleteRecursiv(tmp);
-                }
+                org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e1) {
             }
             logger.warning("Could not initialize Multiunpacker:#1");
