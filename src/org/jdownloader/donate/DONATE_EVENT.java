@@ -29,7 +29,8 @@ public enum DONATE_EVENT {
                 if ((month == Calendar.SEPTEMBER && day >= 21) || (month == Calendar.OCTOBER && day <= 6)) {
                     return true;
                 }
-            } else if (year == 2020) {
+            } else if (year == 2020 && false) {
+                // Corona :(
                 if ((month == Calendar.SEPTEMBER && day >= 19) || (month == Calendar.OCTOBER && day <= 4)) {
                     return true;
                 }
