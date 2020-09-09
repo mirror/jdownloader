@@ -21,6 +21,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -32,23 +37,27 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?sourceforge\\.net/projects/[^/]+/files/[^\\?<>\"]{0,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(?:www\\.)?sourceforge\\.net/(?:projects/[^/]+/files/[^\\?<>\"]{0,}|settings/mirror_choices\\?projectname=.+\\&filename=.+)" })
 public class SourceForgeNet extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public SourceForgeNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_MIRRORCHOICES = ".+/mirror_choices\\?projectname=.+\\&filename=.+";
+
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String target_filename = null;
         String list_url = null;
-        String parameter = param.toString().replace("http://", "https://").replaceAll("(/stats/?(timeline)?)$", "");
+        String parameter;
+        if (param.toString().matches(TYPE_MIRRORCHOICES)) {
+            final UrlQuery query = UrlQuery.parse(param.toString());
+            parameter = "https://" + this.getHost() + "/projects/" + query.get("projectname") + "/files/" + query.get("filename");
+        } else {
+            parameter = param.toString().replace("http://", "https://").replaceAll("(/stats/?(timeline)?)$", "");
+        }
         /* We get downloadlinks depending on our useragent Update 07.04.2015: Really? Do we? Who added this comment? Me? */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setLoadLimit(br.getLoadLimit() * 5);
