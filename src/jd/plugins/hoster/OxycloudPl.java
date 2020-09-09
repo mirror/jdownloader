@@ -41,8 +41,10 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -134,6 +136,31 @@ public class OxycloudPl extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        /* 2020-09-09: Small experiment */
+        // final Account apiAccount = getApiAccount();
+        // if (apiAccount != null && !isDownload) {
+        // return requestFileInformationAPI(link, apiAccount);
+        // }
+        if (!link.isNameSet()) {
+            setWeakFilename(link);
+        }
+        br.setFollowRedirects(true);
+        prepBrowserWebsite(this.br);
+        /* 2020-09-09: Their URLs may be direct-URLs (even without account) ... */
+        final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+        if (this.isDownloadableContent(con)) {
+            link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+            link.setDownloadSize(con.getCompleteContentLength());
+            con.disconnect();
+            return AvailableStatus.TRUE;
+        } else {
+            br.followConnection();
+            return super.requestFileInformation(link, account, isDownload);
+        }
     }
 
     @Override
@@ -401,6 +428,14 @@ public class OxycloudPl extends YetiShareCore {
             /* No mass linkchecking possible */
             return false;
         }
+    }
+
+    protected final AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account apiaccount) throws Exception {
+        massLinkcheckerAPI(new DownloadLink[] { link }, apiaccount);
+        if (link.getAvailableStatus() == AvailableStatus.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return link.getAvailableStatus();
     }
 
     /**
