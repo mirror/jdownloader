@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.GoogleConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -36,6 +37,7 @@ import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -137,12 +139,16 @@ public class GoogleDrive extends PluginForHost {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
         pbr.setFollowRedirects(true);
+        pbr.setAllowedResponseCodes(new int[] { 429 });
         return pbr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         br = new Browser();
         privatefile = false;
         download_might_not_be_possible = false;
@@ -163,6 +169,33 @@ public class GoogleDrive extends PluginForHost {
             link.getLinkStatus().setStatusText("You are missing the rights to download this file");
             privatefile = true;
             return AvailableStatus.TRUE;
+        } else if (br.getHttpConnection().getResponseCode() == 429) {
+            logger.info("429 too many reqests detected");
+            if (br.getURL().contains("/sorry/index")) {
+                /*
+                 * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
+                 * continue downloading.
+                 */
+                logger.info("Google 'ISP block captcha' detected");
+                if (!isDownload) {
+                    logger.info("Don't ask for captcha during availablecheck");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                final Form captchaForm = br.getForm(0);
+                if (captchaForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                /* This should now redirect back to our normal download process .... */
+                br.submitForm(captchaForm);
+                /* Double-check to make sure access was granted */
+                if (br.getHttpConnection().getResponseCode() == 429) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
+            }
         }
         String jsredirect = br.getRegex("var url = \\'(http[^<>\"]*?)\\'").getMatch(0);
         if (jsredirect != null) {
@@ -264,16 +297,15 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        doFree(link, null);
     }
 
     private void doFree(final DownloadLink link, final Account account) throws Exception {
         if (privatefile) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        if (isDocument && dllink == null) {
+        } else if (isDocument && dllink == null) {
             // linkchecking should have download url provided.
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -488,7 +520,7 @@ public class GoogleDrive extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         doFree(link, account);
     }
 
