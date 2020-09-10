@@ -66,18 +66,20 @@ public class NewsAstraWebCom extends UseNet {
         return JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
     }
 
+    private final String jwtTokenProperty = "jwt_token";
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
             br.setFollowRedirects(true);
-            String jwtToken = account.getStringProperty("jwtToken", null);
+            String jwtToken = account.getStringProperty(jwtTokenProperty, null);
             Map<String, Object> response = null;
             try {
                 if (jwtToken != null) {
                     response = createPostRequest(br, "https://middleware.astraweb.com/subscription/getSubscriptionsForUser?XDEBUG_SESSION_START=PHPSTORM", jwtToken);
                     if (!StringUtils.equalsIgnoreCase("running", (String) response.get("status"))) {
-                        account.removeProperty("jwtToken");
+                        account.removeProperty(jwtTokenProperty);
                         jwtToken = null;
                     }
                 }
@@ -99,14 +101,14 @@ public class NewsAstraWebCom extends UseNet {
                         default:
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                    } else if (!response.containsKey("user") || !response.containsKey("jwt_token")) {
+                    } else if (!response.containsKey("user") || !response.containsKey(jwtTokenProperty)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        jwtToken = (String) response.get("jwt_token");
+                        jwtToken = (String) response.get(jwtTokenProperty);
                         if (jwtToken == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else {
-                            account.setProperty("jwtToken", jwtToken);
+                            account.setProperty(jwtTokenProperty, jwtToken);
                         }
                         final String username = (String) JavaScriptEngineFactory.walkJson(response, "user/meta_data/username");
                         if (username == null) {
@@ -135,7 +137,7 @@ public class NewsAstraWebCom extends UseNet {
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.removeProperty("jwtToken");
+                    account.removeProperty(jwtTokenProperty);
                 }
                 throw e;
             }
