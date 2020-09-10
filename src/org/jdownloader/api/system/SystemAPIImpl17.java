@@ -24,8 +24,8 @@ public class SystemAPIImpl17 {
         final List<String> typeFilters;
         final List<String> pathFilters;
         if (CrossSystem.isUnix()) {
-            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs");
-            pathFilters = Arrays.asList("/proc/sys/fs/binfmt_misc", "/boot/efi");
+            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs");
+            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev");
         } else {
             typeFilters = Arrays.asList(new String[0]);
             pathFilters = Arrays.asList(new String[0]);
@@ -56,7 +56,7 @@ public class SystemAPIImpl17 {
             final Path root = entry.getKey();
             try {
                 final FileStore store = entry.getValue();
-                if ((customPath == null || !customPath.equals(root)) && (typeFilters.contains(store.type()) || store.isReadOnly() || pathFilters.contains(root.toString()))) {
+                if ((customPath == null || !customPath.equals(root)) && (store.isReadOnly() || typeFilters.contains(store.type()) || isFiltered(pathFilters, root.toString()))) {
                     continue;
                 } else {
                     storage.setPath(root.toString());
@@ -73,5 +73,16 @@ public class SystemAPIImpl17 {
             ret.add(storage);
         }
         return ret;
+    }
+
+    private static boolean isFiltered(final List<String> filters, final String path) {
+        if (filters.size() > 0 && path != null) {
+            for (String filter : filters) {
+                if (path.startsWith(filter)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
