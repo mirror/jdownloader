@@ -277,27 +277,29 @@ public class OxycloudPl extends YetiShareCore {
              * 2020-08-26: These values are usually null for free accounts but we'll try to set them anyways in case they change this in the
              * future.
              */
-            long totalBytesLeft = 0;
+            // long totalBytesLeft = 0;
             long dailyBytesLeft = 0;
-            Object totalBytesLeftO = entries.get("totalBytesLeft");
-            Object dailyBytesLeftO = entries.get("dailyBytesLeft");
-            if (totalBytesLeftO != null && totalBytesLeftO instanceof Number) {
-                totalBytesLeft = ((Number) totalBytesLeftO).longValue();
-            }
-            if (dailyBytesLeftO != null && totalBytesLeftO instanceof Number) {
+            long maxDailyBytes = 0;
+            // final Object totalBytesLeftO = entries.get("totalBytesLeft");
+            final Object dailyBytesLeftO = entries.get("dailyBytesLeft");
+            final Object maxDailyBytesO = entries.get("maxDailyBytes");
+            // if (totalBytesLeftO != null && totalBytesLeftO instanceof Number) {
+            // totalBytesLeft = ((Number) totalBytesLeftO).longValue();
+            // }
+            if (dailyBytesLeftO != null && dailyBytesLeftO instanceof Number) {
                 dailyBytesLeft = ((Number) dailyBytesLeftO).longValue();
             }
-            ai.setTrafficLeft(totalBytesLeft);
-            /* 2020-08-27: Rather display the complete traffic left than daily limits. */
-            // try {
-            // final long maxDailyBytes = ((Long) entries.get("maxDailyBytes")).longValue();
-            // ai.setTrafficMax(maxDailyBytes);
-            // ai.setTrafficLeft(dailyBytesLeft);
-            // } catch (final Throwable e) {
-            // }
+            if (maxDailyBytesO != null && maxDailyBytesO instanceof Number) {
+                maxDailyBytes = ((Number) maxDailyBytesO).longValue();
+            }
+            /* 2020-09-10: Display daily limits in account manager so it resembles their website. */
+            ai.setTrafficLeft(dailyBytesLeft);
+            if (maxDailyBytes > 0) {
+                ai.setTrafficMax(maxDailyBytes);
+            }
             if (dailyBytesLeft <= 0) {
                 /* TODO: Test what happens is a user tries to download in this state */
-                logger.warning("No daily traffic left");
+                logger.warning("No daily traffic left - account probably can't be used for downloading today");
             }
         }
         if ("paid".equalsIgnoreCase(accType) || isPremium) {
@@ -316,7 +318,10 @@ public class OxycloudPl extends YetiShareCore {
         if (maxNumberOfActiveDownloads > 0) {
             account.setMaxSimultanDownloads(maxNumberOfActiveDownloads);
         }
-        final Object maxNumberOfChunksO = entries.get("maxNumberOfChunks");
+        /*
+         * TODO: 2020-09-10: Wait to see if they change this again - they used to have two different fields for maxdownloads and maxchunks
+         */
+        final Object maxNumberOfChunksO = entries.get("maxNumberOfActiveDownloads");
         if (maxNumberOfChunksO != null && maxNumberOfChunksO instanceof Number) {
             final int maxNumberOfChunks = ((Number) maxNumberOfActiveDownloadsO).intValue();
             if (maxNumberOfChunks > 1) {
