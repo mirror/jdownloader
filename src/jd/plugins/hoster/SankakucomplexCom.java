@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -32,7 +33,7 @@ import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?chan\\.sankakucomplex\\.com/post/show/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?(chan|idol)\\.sankakucomplex\\.com/post/show/\\d+" })
 public class SankakucomplexCom extends antiDDoSForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +45,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.sankakucomplex.com/";
+        return "https://www.sankakucomplex.com/";
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -63,11 +64,12 @@ public class SankakucomplexCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("https://chan.sankakucomplex.com/", "locale", "en");
-        br.setCookie("https://chan.sankakucomplex.com/", "hide-news-ticker", "1");
-        br.setCookie("https://chan.sankakucomplex.com/", "auto_page", "1");
-        br.setCookie("https://chan.sankakucomplex.com/", "hide_resized_notice", "1");
-        br.setCookie("https://chan.sankakucomplex.com/", "blacklisted_tags", "");
+        final String host = new URL(downloadLink.getPluginPatternMatcher()).getHost();
+        br.setCookie("https://" + host, "locale", "en");
+        br.setCookie("https://" + host, "hide-news-ticker", "1");
+        br.setCookie("https://" + host, "auto_page", "1");
+        br.setCookie("https://" + host, "hide_resized_notice", "1");
+        br.setCookie("https://" + host, "blacklisted_tags", "");
         getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404: Page Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -90,7 +92,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)\\?\\d+$").getMatch(0);
+        String ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)(\\?|$)").getMatch(0);
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
@@ -113,17 +115,19 @@ public class SankakucomplexCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, dllink);
+                con = br2.openHeadConnection(dllink);
             } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (!con.getContentType().contains("text") && con.isOK()) {
+                if (con.getLongContentLength() > 0) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                }
+                downloadLink.setProperty("directlink", dllink);
+                return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
@@ -132,27 +136,17 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Disable chunks as we only download small files */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -163,18 +157,23 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openHeadConnection(dllink);
+                try {
+                    if (con.getContentType().contains("text") || con.getLongContentLength() == -1) {
+                        throw new IOException();
+                    } else {
+                        return dllink;
+                    }
+                } finally {
+                    con.disconnect();
                 }
-                con.disconnect();
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override

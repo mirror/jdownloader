@@ -325,13 +325,25 @@ public class Multi extends IExtraction {
                 switch (arch) {
                 case ARM:
                     if (is64BitJvm) {
+                        // new scheme
                         libIDs.add("Linux-aarch64");
+                        // old scheme
                         libIDs.add("Linux-arm64");
                     } else {
                         if (RaspberryPi.getRaspberryPiDetails() != null) {
+                            // new scheme
+                            libIDs.add("Linux-avmv5");
+                            libIDs.add("Linux-avmv6");// should work fine on most devices
+                            libIDs.add("Linux-avmv71");
+                            // old scheme
                             libIDs.add("Linux-armpi");
                             libIDs.add("Linux-armpi2");
                         } else {
+                            // new scheme
+                            libIDs.add("Linux-avmv5");
+                            libIDs.add("Linux-avmv6");// should work fine on most devices
+                            libIDs.add("Linux-avmv71");
+                            // old scheme
                             libIDs.add("Linux-arm2");
                             libIDs.add("Linux-arm");
                             libIDs.add("Linux-arm3");
