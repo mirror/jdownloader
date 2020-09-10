@@ -221,15 +221,17 @@ public class Multi extends IExtraction {
         return SevenZip.isInitializedSuccessfully();
     }
 
-    private boolean checkLibraries(final ExtractionExtension extractionExtension, final Set<String> libIDs) {
+    private String checkLibraries(final ExtractionExtension extractionExtension, final Set<String> libIDs) {
         logger.finer("Try Lib IDs: " + libIDs);
-        for (final String libID : libIDs) {
-            if (initLibrary(libID)) {
-                extractionExtension.getSettings().setLastWorkingLibID(libID);
-                return true;
+        if (libIDs.size() > 0) {
+            for (final String libID : libIDs) {
+                if (initLibrary(libID)) {
+                    extractionExtension.getSettings().setLastWorkingLibID(libID);
+                    return libID;
+                }
             }
         }
-        return false;
+        return null;
     }
 
     private Set<String> filter(Set<String> values) {
@@ -260,16 +262,16 @@ public class Multi extends IExtraction {
         return ret;
     }
 
-    private boolean hasLibrarySupport(final ExtractionExtension extractionExtension) {
+    private String hasLibrarySupport(final ExtractionExtension extractionExtension) {
         final String customLibID = System.getProperty("sevenzipLibID");
         if (StringUtils.isNotEmpty(customLibID)) {
             if (initLibrary(customLibID)) {
                 if (CrossSystem.isLinux() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily())) {
                     extractionExtension.getSettings().setLastWorkingLibID(customLibID);
                 }
-                return true;
+                return customLibID;
             }
-            return false;
+            return null;
         } else {
             final Set<String> libIDs = new LinkedHashSet<String>();
             final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
@@ -290,7 +292,6 @@ public class Multi extends IExtraction {
                         if (is64BitJvm) {
                             libIDs.add("DragonFlyBSD-amd64");
                         } else {
-                            logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                         }
                         break;
                     case FREEBSD:
@@ -312,12 +313,10 @@ public class Multi extends IExtraction {
                         }
                         break;
                     default:
-                        logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                         break;
                     }
                     break;
                 default:
-                    logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                     break;
                 }
                 break;
@@ -363,7 +362,6 @@ public class Multi extends IExtraction {
                     libIDs.add("Linux-ppc");
                     break;
                 default:
-                    logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                     break;
                 }
                 break;
@@ -386,7 +384,6 @@ public class Multi extends IExtraction {
                 }
                 break;
             default:
-                logger.info("TODO ARCH:" + arch + "|OS:" + os + "|64BitJVM:" + is64BitJvm);
                 break;
             }
             return checkLibraries(extractionExtension, filter(libIDs));
@@ -412,13 +409,14 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean isAvailable(ExtractionExtension extractionExtension) {
-        final boolean ret = hasLibrarySupport(extractionExtension);
-        if (!ret) {
+        final String libID = hasLibrarySupport(extractionExtension);
+        if (libID == null) {
             logger.info("Unsupported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            return false;
         } else {
-            logger.info("Supported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Supported SevenZipJBinding|ID=" + libID + "|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            return true;
         }
-        return ret;
     }
 
     @Override
