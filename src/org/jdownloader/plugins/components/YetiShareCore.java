@@ -1757,14 +1757,21 @@ public class YetiShareCore extends antiDDoSForHost {
             postAccountInfo.put("access_token", access_token);
             postAccountInfo.put("account_id", account_id);
             this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("data");
-            final int json_accountID = (int) JavaScriptEngineFactory.toLong(entries.get("id"), -1);
-            /* Compare accountID with stored accountID --> If it matches, we trust login to be successful */
-            if (json_accountID == Integer.parseInt(account_id)) {
-                logger.info("Successfully re-used access_token");
-                return;
-            } else {
+            try {
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                final int json_accountID = (int) JavaScriptEngineFactory.toLong(entries.get("id"), -1);
+                /* Compare accountID with stored accountID --> If it matches, we trust login to be successful */
+                if (json_accountID == Integer.parseInt(account_id)) {
+                    logger.info("Successfully re-used access_token");
+                    return;
+                } else {
+                    logger.info("Failed to re-use access_token");
+                }
+            } catch (final Throwable e) {
+                /*
+                 * 2020-09-10: E.g. misleading response on expired access_token: {"message":"Username could not be found.","result":false}
+                 */
                 logger.info("Failed to re-use access_token");
             }
         }
@@ -1906,8 +1913,10 @@ public class YetiShareCore extends antiDDoSForHost {
             /* API response is not json */
             throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
         }
+        /* Collection of errormessages (from the only testable YetiShare API, oxycloud.pl) */
         /* E.g. {"message":"Username could not be found.","result":false} */
         /* {"status":"error","response":"User not found.","_datetime":"2020-09-03 13:48:46"} */
+        /* {"success":false,"message":"You can`t download files of this size."} */
         boolean result = true;
         String msg = null;
         try {
@@ -1917,6 +1926,12 @@ public class YetiShareCore extends antiDDoSForHost {
                 msg = (String) entries.get("response");
             }
         } catch (final Throwable e) {
+            /* Try to parse other kinds of error responses */
+            try {
+                result = ((Boolean) entries.get("success")).booleanValue();
+                msg = (String) entries.get("message");
+            } catch (final Throwable e2) {
+            }
         }
         if (!result) {
             if (StringUtils.isEmpty(msg)) {
