@@ -255,7 +255,6 @@ public class BrDe extends PluginForHost {
                     }
                     line_counter++;
                 }
-                text = text.replaceAll("&apos;", "\\\\u0027");
                 text = HTMLEntities.unhtmlentities(text);
                 text = HTMLEntities.unhtmlAmpersand(text);
                 text = HTMLEntities.unhtmlAngleBrackets(text);
