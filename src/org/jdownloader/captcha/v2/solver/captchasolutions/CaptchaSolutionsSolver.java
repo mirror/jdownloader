@@ -165,17 +165,15 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
     protected boolean validateLogins() {
         if (!CFG_CAPTCHA_SOLUTIONS.ENABLED.isEnabled()) {
             return false;
-        }
-        if (StringUtils.isNotEmpty(config.getAPIKey()) && StringUtils.isNotEmpty(config.getAPISecret())) {
+        } else if (StringUtils.isNotEmpty(config.getAPIKey()) && StringUtils.isNotEmpty(config.getAPISecret())) {
+            return true;
+        } else if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.USER_NAME.getValue())) {
+            return false;
+        } else if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.PASSWORD.getValue())) {
+            return false;
+        } else {
             return true;
         }
-        if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.USER_NAME.getValue())) {
-            return false;
-        }
-        if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.PASSWORD.getValue())) {
-            return false;
-        }
-        return true;
     }
 
     public CaptchaSolutionsAccount loadAccount() {
@@ -206,10 +204,16 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         map.put("password", Encoding.urlEncode((config.getPassword().trim())));
         map.put("submit", "submit");
         //
-        URLConnectionAdapter conn = br.openPostConnection("https://www.captchasolutions.com/clients/login/", map);
-        br.loadConnection(conn);
+        final URLConnectionAdapter conn = br.openPostConnection("https://www.captchasolutions.com/clients/login/", map);
+        try {
+            br.loadConnection(conn);
+        } finally {
+            conn.disconnect();
+        }
         if (br.getRequest().getHttpConnection().getResponseCode() != 302) {
             throw new WTFException(StringUtils.trim(br.getRegex("<strong>Oh snap!</strong>(.*?)<").getMatch(0)));
+        } else {
+            br.followRedirect();
         }
         br.getPage("https://www.captchasolutions.com/clients/home/generatekeys/");
         String key = br.getRegex("<strong>API KEY</strong>.*?<p>(.*?)</p>").getMatch(0);
