@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -31,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[^/]+/.+" })
 public class GetComics extends PluginForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,9 +47,16 @@ public class GetComics extends PluginForDecrypt {
         br.getPage(parameter);
         final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
         String baseurl1 = br.getHost();
-        final String[] textBody = br.getRegex("<section class=\"post-contents\">(.*)<strong>(?:Screenshots|Notes)").getColumn(0);
-        final String[] links = (textBody == null || textBody.length == 0) ? null : HTMLParser.getHttpLinks(textBody[0], null);
-        if (links != null && links.length > 0) {
+        ArrayList<String> links = new ArrayList<String>();
+        final String textBody = br.getRegex("<section class=\"post-contents\">(.*)<strong>(?:Screenshots|Notes)").getMatch(0);
+        if (StringUtils.isNotEmpty(textBody)) {
+            Collections.addAll(links, HTMLParser.getHttpLinks(textBody, null));
+        } else {
+            Collections.addAll(links, br.getRegex("<h1[^>]+class\\s*=\\s*\"post-title\"[^>]*>\\s*<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
+            Collections.addAll(links, br.getRegex("<a[^>]+class\\s*=\\s*\"page-numbers[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
+            Collections.addAll(links, br.getRegex("href\\s*=\\s*\"([^\"]+)\"[^>]+class\\s*=\\s*\"pagination-button").getColumn(0));
+        }
+        if (!links.isEmpty()) {
             for (String link : links) {
                 String detectedLink = null;
                 if (StringUtils.containsIgnoreCase(link, "run.php-urls")) {
@@ -75,7 +83,7 @@ public class GetComics extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(detectedLink));
             }
         }
-        if (title != null) {
+        if (StringUtils.isEmpty(title)) {
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(Encoding.htmlDecode(title));
             filePackage.addLinks(decryptedLinks);
