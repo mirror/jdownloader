@@ -23,6 +23,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
+import jd.controlling.captcha.SkipException;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -57,31 +82,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.captcha.SkipException;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.CaptchaException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://(?:\\w+(?:\\.download)?\\.)?(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+(?:/.+)?" })
 public class RealDebridCom extends PluginForHost {
@@ -574,6 +574,7 @@ public class RealDebridCom extends PluginForHost {
                     }
 
                     private final boolean isInvalid(Browser br) {
+                        // Website no longer shows this information? 10.09.2020
                         return br.containsHTML("Your login informations are incorrect") || (Application.isHeadless() && br.containsHTML("The validity period of your password has been exceeded"));
                     }
 
@@ -581,12 +582,8 @@ public class RealDebridCom extends PluginForHost {
                         return br.containsHTML("Application allowed, you can close this page");
                     }
 
-                    private final boolean is2FARequired(Browser br) {
-                        return br.containsHTML("A temporary code has been sent to your email address and is required");
-                    }
-
-                    private final boolean is2FARequired(Form form) {
-                        return form.containsHTML("A temporary code has been sent to your email address and is required");
+                    private final boolean is2FARequired(String html) {
+                        return StringUtils.contains(html, "A temporary code has been sent to your email address and is required");
                     }
 
                     private final Boolean check(SolverJob<Boolean> job, Browser br) throws Exception {
@@ -626,7 +623,7 @@ public class RealDebridCom extends PluginForHost {
                         }
                         loginForm.getInputField("p").setValue(Encoding.urlEncode(getAccount().getPass()));
                         loginForm.getInputField("u").setValue(Encoding.urlEncode(getAccount().getUser()));
-                        if (is2FARequired(loginForm)) {
+                        if (is2FARequired(loginForm.getHtmlCode())) {
                             if (Application.isHeadless() || !BrowserSolverService.getInstance().isOpenBrowserSupported()) {
                                 String text = loginForm.getRegex("(A temporary.*?)\\s*</").getMatch(0);
                                 if (StringUtils.isEmpty(text)) {
@@ -644,49 +641,48 @@ public class RealDebridCom extends PluginForHost {
                         return loginForm;
                     }
 
+                    private Boolean handleLoginForm(SolverJob<Boolean> job, Browser br) throws Exception {
+                        Form loginForm = handleLoginForm(br, getLoginForm(br));
+                        br.submitForm(loginForm);
+                        Boolean result = check(job, br);
+                        if (result != null) {
+                            return result;
+                        } else if (is2FARequired(br.toString())) {
+                            loginForm = handleLoginForm(br, getLoginForm(br));
+                            br.submitForm(loginForm);
+                            result = check(job, br);
+                            if (result != null) {
+                                return result;
+                            }
+                        }
+                        return null;
+                    }
+
                     private final boolean handleAutoSolveChallenge(SolverJob<Boolean> job) {
                         try {
                             final String verificationUrl = getUrl();
                             autoSolveBr.clearCookies(verificationUrl);
                             autoSolveBr.getPage(verificationUrl);
-                            Form loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
-                            autoSolveBr.submitForm(loginForm);
-                            Boolean result = check(job, autoSolveBr);
-                            if (result != null) {
-                                return result.booleanValue();
-                            } else if (is2FARequired(autoSolveBr)) {
-                                loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
-                                autoSolveBr.submitForm(loginForm);
-                                result = check(job, autoSolveBr);
+                            for (int index = 0; index < 3; index++) {
+                                // (0)no captcha, (1)captcha, (2) maybe another captcha
+                                final Boolean result = handleLoginForm(job, autoSolveBr);
                                 if (result != null) {
                                     return result.booleanValue();
-                                }
-                            }
-                            Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
-                            if (allow == null) {
-                                loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
-                                autoSolveBr.submitForm(loginForm);
-                                result = check(job, autoSolveBr);
-                                if (result != null) {
-                                    return result.booleanValue();
-                                } else if (is2FARequired(autoSolveBr)) {
-                                    loginForm = handleLoginForm(autoSolveBr, getLoginForm(autoSolveBr));
-                                    autoSolveBr.submitForm(loginForm);
-                                    result = check(job, autoSolveBr);
-                                    if (result != null) {
-                                        return result.booleanValue();
+                                } else {
+                                    final Form allow = autoSolveBr.getFormBySubmitvalue("Allow");
+                                    if (allow != null) {
+                                        allow.setPreferredSubmit("Allow");
+                                        autoSolveBr.submitForm(allow);
+                                        final ClientSecret clientSecret = checkCredentials(code);
+                                        if (clientSecret != null) {
+                                            clientSecretResult.set(clientSecret);
+                                            job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
+                                            return true;
+                                        } else {
+                                            logger.info("No ClientSecret?!");
+                                            return false;
+                                        }
                                     }
-                                }
-                                allow = autoSolveBr.getFormBySubmitvalue("Allow");
-                            }
-                            if (allow != null) {
-                                allow.setPreferredSubmit("Allow");
-                                autoSolveBr.submitForm(allow);
-                                final ClientSecret clientSecret = checkCredentials(code);
-                                if (clientSecret != null) {
-                                    clientSecretResult.set(clientSecret);
-                                    job.addAnswer(new AbstractResponse<Boolean>(this, this, 100, true));
-                                    return true;
                                 }
                             }
                         } catch (CaptchaException e) {

@@ -61,6 +61,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         br.setAllowedResponseCodes(new int[] { 500 });
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
+            // TODO: add basicAuth support
             final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
             plg.setBrowser(this.br);
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);

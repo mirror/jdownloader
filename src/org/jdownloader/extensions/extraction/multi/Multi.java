@@ -173,16 +173,24 @@ public class Multi extends IExtraction {
     }
 
     private boolean initLibrary(final String libID) {
+        if (Multi.class.getResource("/" + libID + "/sevenzipjbinding-lib.properties") == null) {
+            logger.finer("LibID not found: " + libID);
+            return false;
+        } else {
+            logger.finer("LibID found: " + libID);
+        }
         File tmp = null;
         try {
-            logger.finer("Try Lib ID: " + libID);
             tmp = Application.getTempResource("7zip");
             try {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e) {
             }
-            logger.finer("Try Lib Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
+            logger.finer("Try LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
+            if (SevenZip.isInitializedSuccessfully()) {
+                return true;
+            }
         } catch (Throwable e) {
             if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
                 try {
@@ -193,12 +201,13 @@ public class Multi extends IExtraction {
                     System.load(new File(root, "mingwm10.dll").toString());
                     System.load(new File(root, "libgcc_s_dw2-1.dll").toString());
                     System.load(new File(root, "libstdc++-6.dll").toString());
+                    logger.finer("ReTry LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
                     SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
                     if (SevenZip.isInitializedSuccessfully()) {
                         return true;
                     }
                 } catch (final Throwable e2) {
-                    e2.printStackTrace();
+                    logger.log(e2);
                 }
             }
             try {
@@ -210,19 +219,21 @@ public class Multi extends IExtraction {
             try {
                 final String s2 = System.getProperty("java.io.tmpdir");
                 tmp = new File(s2);
-                logger.finer("Try Lib Path: " + tmp + "->" + tmp.exists());
+                logger.finer("Try LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
                 SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
+                if (SevenZip.isInitializedSuccessfully()) {
+                    return true;
+                }
             } catch (Throwable e2) {
                 logger.warning("Could not initialize Multiunpacker:#2");
                 logger.log(e2);
-                return false;
             }
         }
-        return SevenZip.isInitializedSuccessfully();
+        return false;
     }
 
     private String checkLibraries(final ExtractionExtension extractionExtension, final Set<String> libIDs) {
-        logger.finer("Try Lib IDs: " + libIDs);
+        logger.finer("Try LibIDs: " + libIDs);
         if (libIDs.size() > 0) {
             for (final String libID : libIDs) {
                 if (initLibrary(libID)) {
@@ -230,6 +241,11 @@ public class Multi extends IExtraction {
                     return libID;
                 }
             }
+        }
+        try {
+            logger.info("Available LibIDs:" + SevenZip.getPlatformList());
+        } catch (Throwable e) {
+            logger.log(e);
         }
         return null;
     }
@@ -239,6 +255,11 @@ public class Multi extends IExtraction {
         for (final String value : values) {
             final OperatingSystem os = CrossSystem.getOS();
             switch (os.getFamily()) {
+            case BSD:
+                if (!StringUtils.containsIgnoreCase(value, "BSD")) {
+                    continue;
+                }
+                break;
             case MAC:
                 if (!StringUtils.startsWithCaseInsensitive(value, "Mac-")) {
                     continue;
@@ -337,6 +358,10 @@ public class Multi extends IExtraction {
                             // old scheme
                             libIDs.add("Linux-armpi");
                             libIDs.add("Linux-armpi2");
+                            // old scheme without good PI detection
+                            libIDs.add("Linux-arm2");
+                            libIDs.add("Linux-arm");
+                            libIDs.add("Linux-arm3");
                         } else {
                             // new scheme
                             libIDs.add("Linux-avmv5");
@@ -414,7 +439,7 @@ public class Multi extends IExtraction {
             logger.info("Unsupported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
             return false;
         } else {
-            logger.info("Supported SevenZipJBinding|ID=" + libID + "|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Supported SevenZipJBinding|LibID=" + libID + "|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
             return true;
         }
     }
@@ -1183,25 +1208,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
