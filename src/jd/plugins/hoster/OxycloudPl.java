@@ -53,9 +53,6 @@ public class OxycloudPl extends YetiShareCore {
     public OxycloudPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
-        /* 2020-08-31: Avoid "401 unauthorized" API response when user starts a lot of downloads at the same time. */
-        /* TODO: 2020-09-02: Check if this is still needed */
-        // this.setStartIntervall(1500l);
     }
 
     private static final String PROPERTY_needs_premium      = "needs_premium";
@@ -111,7 +108,7 @@ public class OxycloudPl extends YetiShareCore {
             return account.getIntegerProperty(PROPERTY_account_max_chunks, 1);
         } else {
             /* Return default limit for account mode */
-            return -5;
+            return -10;
         }
     }
 
@@ -298,7 +295,6 @@ public class OxycloudPl extends YetiShareCore {
                 ai.setTrafficMax(maxDailyBytes);
             }
             if (dailyBytesLeft <= 0) {
-                /* TODO: Test what happens is a user tries to download in this state */
                 logger.warning("No daily traffic left - account probably can't be used for downloading today");
             }
         }
@@ -318,9 +314,6 @@ public class OxycloudPl extends YetiShareCore {
         if (maxNumberOfActiveDownloads > 0) {
             account.setMaxSimultanDownloads(maxNumberOfActiveDownloads);
         }
-        /*
-         * TODO: 2020-09-10: Wait to see if they change this again - they used to have two different fields for maxdownloads and maxchunks
-         */
         final Object maxNumberOfChunksO = entries.get("maxNumberOfActiveDownloads");
         if (maxNumberOfChunksO != null && maxNumberOfChunksO instanceof Number) {
             final int maxNumberOfChunks = ((Number) maxNumberOfActiveDownloadsO).intValue();
@@ -392,7 +385,6 @@ public class OxycloudPl extends YetiShareCore {
 
     @Override
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        /** TODO: Add functionality */
         Map<String, Object> entries = null;
         try {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
