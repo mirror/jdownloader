@@ -27,6 +27,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.config.GoogleConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -152,7 +153,7 @@ public class GoogleDrive extends PluginForHost {
         br = new Browser();
         privatefile = false;
         download_might_not_be_possible = false;
-        final Account account = AccountController.getInstance().getValidAccount(this);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             try {
                 login(br, account, false);
@@ -162,99 +163,10 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         prepBrowser(br, account);
-        br.getPage("https://docs.google.com/leaf?id=" + getID(link));
-        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().contains("accounts.google.com/")) {
-            link.getLinkStatus().setStatusText("You are missing the rights to download this file");
-            privatefile = true;
-            return AvailableStatus.TRUE;
-        } else if (br.getHttpConnection().getResponseCode() == 429) {
-            logger.info("429 too many reqests detected");
-            if (br.getURL().contains("/sorry/index")) {
-                /*
-                 * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
-                 * continue downloading.
-                 */
-                logger.info("Google 'ISP block captcha' detected");
-                if (!isDownload) {
-                    logger.info("Don't ask for captcha during availablecheck");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                final Form captchaForm = br.getForm(0);
-                if (captchaForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                /* This should now redirect back to our normal download process .... */
-                br.submitForm(captchaForm);
-                /* Double-check to make sure access was granted */
-                if (br.getHttpConnection().getResponseCode() == 429) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
-            }
-        }
-        String jsredirect = br.getRegex("var url = \\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (jsredirect != null) {
-            final String url_gdrive = "https://drive.google.com/file/d/" + getID(link) + "/view?ddrp=1";
-            br.getPage(url_gdrive);
-        }
-        String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
-        } else {
-            filename = filename.replace("의 사본", "");
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>([^\"]+) - Google Drive</title>").getMatch(0);
-        }
-        if (filename == null) {
-            /*
-             * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1 image
-             * per page) - we would need a decrypter for this.
-             */
-            download_might_not_be_possible = true;
-            final String type = getType(br);
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
-            if (filename != null && type != null) {
-                if (type.equals("article") && !filename.endsWith(".pdf")) {
-                    isDocument = true;
-                    // we can name it many formats! but we are only downloading as pdf at this stage.
-                    filename += ".pdf";
-                }
-            }
-        }
-        String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
-        if (size == null) {
-            // value is within html or a subquent ajax request to fetch json..
-            // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
-            // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
-            size = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
-        }
-        if (filename == null) {
-            /* 2019-05-22: New: Fallback */
-            filename = this.getLinkID(link);
-        }
-        if (filename == null) {
-            if (br.containsHTML("initFolderLandingPageApplication")) {
-                logger.info("This looks like an empty folder ...");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.unicodeDecode(filename.trim());
-        link.setName(filename);
-        if (size != null) {
-            link.setVerifiedFileSize(Long.parseLong(size));
-            link.setDownloadSize(SizeFormatter.getSize(size));
-        } else {
-            final Browser br2 = br.cloneBrowser();
+        if (PluginJsonConfig.get(GoogleConfig.class).isEnableExperimentalFeatures()) {
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(constructDownloadUrl(link));
+                con = br.openGetConnection(constructDownloadUrl(link));
                 if (con.isOK()) {
                     if (con.isContentDisposition()) {
                         String fileName = getFileNameFromHeader(con);
@@ -267,8 +179,12 @@ public class GoogleDrive extends PluginForHost {
                         }
                         dllink = con.getURL().toString();
                     } else {
-                        br2.followConnection();
-                        size = br2.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
+                        br.followConnection();
+                        final String filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+                        if (filename != null) {
+                            link.setName(Encoding.htmlDecode(filename).trim());
+                        }
+                        final String size = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
                         if (size != null) {
                             link.setDownloadSize(SizeFormatter.getSize(size + "B"));
                         }
@@ -281,6 +197,130 @@ public class GoogleDrive extends PluginForHost {
             } finally {
                 if (con != null) {
                     con.disconnect();
+                }
+            }
+        } else {
+            br.getPage("https://docs.google.com/leaf?id=" + getID(link));
+            if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getURL().contains("accounts.google.com/")) {
+                link.getLinkStatus().setStatusText("You are missing the rights to download this file");
+                privatefile = true;
+                return AvailableStatus.TRUE;
+            } else if (br.getHttpConnection().getResponseCode() == 429) {
+                logger.info("429 too many reqests detected");
+                if (br.getURL().contains("/sorry/index")) {
+                    /*
+                     * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to
+                     * e.g. continue downloading.
+                     */
+                    logger.info("Google 'ISP block captcha' detected");
+                    if (!isDownload) {
+                        logger.info("Don't ask for captcha during availablecheck");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    final Form captchaForm = br.getForm(0);
+                    if (captchaForm == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    /* 2020-09-11: TODO: This request might be missing the header "x-client-data" */
+                    /* This should now redirect back to our normal download process .... */
+                    br.submitForm(captchaForm);
+                    /* Double-check to make sure access was granted */
+                    if (br.getHttpConnection().getResponseCode() == 429) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
+                }
+            }
+            String jsredirect = br.getRegex("var url = \\'(http[^<>\"]*?)\\'").getMatch(0);
+            if (jsredirect != null) {
+                final String url_gdrive = "https://drive.google.com/file/d/" + getID(link) + "/view?ddrp=1";
+                br.getPage(url_gdrive);
+            }
+            String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+            } else {
+                filename = filename.replace("의 사본", "");
+            }
+            if (filename == null) {
+                filename = br.getRegex("<title>([^\"]+) - Google Drive</title>").getMatch(0);
+            }
+            if (filename == null) {
+                /*
+                 * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1
+                 * image per page) - we would need a decrypter for this.
+                 */
+                download_might_not_be_possible = true;
+                final String type = getType(br);
+                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
+                if (filename != null && type != null) {
+                    if (type.equals("article") && !filename.endsWith(".pdf")) {
+                        isDocument = true;
+                        // we can name it many formats! but we are only downloading as pdf at this stage.
+                        filename += ".pdf";
+                    }
+                }
+            }
+            String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
+            if (size == null) {
+                // value is within html or a subquent ajax request to fetch json..
+                // devnote: to fix, look for the json request to https://clients\d+\.google\.com/drive/v2internal/files/ + fuid and find the
+                // filesize, then search for the number within the base page. It's normally there. just not referenced as such.
+                size = br.getRegex("\\[null,\"" + (filename != null ? Pattern.quote(filename) : "[^\"]") + "\"[^\r\n]+\\[null,\\d+,\"(\\d+)\"\\]").getMatch(0);
+            }
+            if (filename == null) {
+                /* 2019-05-22: New: Fallback */
+                filename = this.getLinkID(link);
+            }
+            if (filename == null) {
+                if (br.containsHTML("initFolderLandingPageApplication")) {
+                    logger.info("This looks like an empty folder ...");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = Encoding.unicodeDecode(filename.trim());
+            link.setName(filename);
+            if (size != null) {
+                link.setVerifiedFileSize(Long.parseLong(size));
+                link.setDownloadSize(SizeFormatter.getSize(size));
+            } else {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = null;
+                try {
+                    con = br2.openGetConnection(constructDownloadUrl(link));
+                    if (con.isOK()) {
+                        if (con.isContentDisposition()) {
+                            String fileName = getFileNameFromHeader(con);
+                            if (fileName != null) {
+                                fileName = fileName.replace("의 사본", "");
+                                link.setFinalFileName(fileName);
+                            }
+                            if (con.getCompleteContentLength() != -1) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            }
+                            dllink = con.getURL().toString();
+                        } else {
+                            br2.followConnection();
+                            size = br2.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
+                            if (size != null) {
+                                link.setDownloadSize(SizeFormatter.getSize(size + "B"));
+                            }
+                        }
+                    } else if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 }
             }
         }
@@ -309,90 +349,128 @@ public class GoogleDrive extends PluginForHost {
             // linkchecking should have download url provided.
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // for some reason we do extra stuff, to not break existing code only enter if not document.
-        if (!isDocument) {
-            br.setFollowRedirects(false);
-            String streamLink = null;
-            /* Download not possible ? Download stream! */
-            String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
-            if (stream_map != null) {
-                final String[] links = stream_map.split("\\|");
-                streamLink = links[links.length - 1];
-                streamLink = Encoding.unicodeDecode(streamLink);
-            } else {
-                stream_map = br.getRegex("\"fmt_stream_map\",\"(.*?)\"").getMatch(0);
+        if (PluginJsonConfig.get(GoogleConfig.class).isEnableExperimentalFeatures()) {
+            /* This will not work for documents and stream URLs */
+            if (this.dllink == null) {
+                if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
+                    /*
+                     * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged
+                     * in but not necessarily!
+                     */
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
+                } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
+                    /*
+                     * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
+                     */
+                    /*
+                     * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged
+                     * in but not necessarily!
+                     */
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
+                }
+                if (br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) {
+                    if (download_might_not_be_possible) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be downloaded (officially) and/or you're missing the rights for that");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
+                    dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        dllink = HTMLEntities.unhtmlentities(dllink);
+                    }
+                }
+            }
+        } else {
+            // for some reason we do extra stuff, to not break existing code only enter if not document.
+            if (!isDocument) {
+                br.setFollowRedirects(false);
+                String streamLink = null;
+                /* Download not possible ? Download stream! */
+                String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
                 if (stream_map != null) {
                     final String[] links = stream_map.split("\\|");
                     streamLink = links[links.length - 1];
                     streamLink = Encoding.unicodeDecode(streamLink);
-                }
-            }
-            stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
-            if (stream_map != null) {
-                final String[] links = stream_map.split("\\,");
-                for (int i = 0; i < links.length; i++) {
-                    links[i] = Encoding.unicodeDecode(links[i]);
-                }
-                final UrlQuery query = Request.parseQuery(links[0]);
-                streamLink = Encoding.urlDecode(query.get("url"), false);
-            }
-            br.getPage("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
-            if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
-                /*
-                 * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
-                 * but not necessarily!
-                 */
-                downloadTempUnavailableAndOrOnlyViaAccount(account);
-            } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
-                /* 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant! */
-                /*
-                 * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged in
-                 * but not necessarily!
-                 */
-                downloadTempUnavailableAndOrOnlyViaAccount(account);
-            }
-            if ((br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
-                if (download_might_not_be_possible) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be downloaded (officially) and/or you're miasing the rights for that");
-                }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
-                dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
-                if (dllink != null) {
-                    dllink = HTMLEntities.unhtmlentities(dllink);
-                }
-            }
-            if (dllink == null && streamLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink == null) {
-                dllink = streamLink;
-            }
-            br.setFollowRedirects(true);
-            if (link.getVerifiedFileSize() == -1) {
-                // why do this here??? shouldnt this be action of the download core? -raztoki20170727
-                final Browser brc = br.cloneBrowser();
-                final GetRequest request = new GetRequest(brc.getURL(dllink));
-                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
-                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
-                URLConnectionAdapter con = null;
-                try {
-                    con = brc.openRequestConnection(request);
-                    if (con.isOK()) {
-                        if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                            link.setProperty("ServerComaptibleForByteRangeRequest", true);
-                        } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                            link.setProperty("ServerComaptibleForByteRangeRequest", true);
-                        }
+                } else {
+                    stream_map = br.getRegex("\"fmt_stream_map\",\"(.*?)\"").getMatch(0);
+                    if (stream_map != null) {
+                        final String[] links = stream_map.split("\\|");
+                        streamLink = links[links.length - 1];
+                        streamLink = Encoding.unicodeDecode(streamLink);
                     }
-                } finally {
-                    if (con != null) {
-                        con.disconnect();
+                }
+                stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
+                if (stream_map != null) {
+                    final String[] links = stream_map.split("\\,");
+                    for (int i = 0; i < links.length; i++) {
+                        links[i] = Encoding.unicodeDecode(links[i]);
+                    }
+                    final UrlQuery query = Request.parseQuery(links[0]);
+                    streamLink = Encoding.urlDecode(query.get("url"), false);
+                }
+                br.getPage("https://docs.google.com/uc?id=" + getID(link) + "&export=download");
+                if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
+                    /*
+                     * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged
+                     * in but not necessarily!
+                     */
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
+                } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
+                    /*
+                     * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
+                     */
+                    /*
+                     * 2019-01-18: Its not possible to download at this time - sometimes it is possible to download such files when logged
+                     * in but not necessarily!
+                     */
+                    downloadTempUnavailableAndOrOnlyViaAccount(account);
+                }
+                if ((br.containsHTML("<TITLE>Not Found</TITLE>") || br.getHttpConnection().getResponseCode() == 404) && streamLink == null) {
+                    if (download_might_not_be_possible) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be downloaded (officially) and/or you're missing the rights for that");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
+                    dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
+                    if (dllink != null) {
+                        dllink = HTMLEntities.unhtmlentities(dllink);
+                    }
+                }
+                if (dllink == null && streamLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dllink == null) {
+                    dllink = streamLink;
+                }
+                br.setFollowRedirects(true);
+                if (link.getVerifiedFileSize() == -1) {
+                    // why do this here??? shouldnt this be action of the download core? -raztoki20170727
+                    final Browser brc = br.cloneBrowser();
+                    final GetRequest request = new GetRequest(brc.getURL(dllink));
+                    request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+                    request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = brc.openRequestConnection(request);
+                        if (con.isOK()) {
+                            if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                                link.setProperty("ServerComaptibleForByteRangeRequest", true);
+                            } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                                link.setProperty("ServerComaptibleForByteRangeRequest", true);
+                            }
+                        }
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
                     }
                 }
             }
