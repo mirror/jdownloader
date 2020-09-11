@@ -48,6 +48,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.Files;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
@@ -345,33 +346,24 @@ public class Multi extends IExtraction {
                 switch (arch) {
                 case ARM:
                     if (is64BitJvm) {
-                        // old scheme
-                        libIDs.add("Linux-aarch64");
                         // new scheme
                         libIDs.add("Linux-arm64");
+                        // old scheme
+                        libIDs.add("Linux-aarch64");
                     } else {
+                        // new scheme
+                        libIDs.add("Linux-armv5");
+                        libIDs.add("Linux-armv6");// should work fine on most devices
+                        libIDs.add("Linux-armv71");
                         if (RaspberryPi.getRaspberryPiDetails() != null) {
-                            // new scheme
-                            libIDs.add("Linux-avmv5");
-                            libIDs.add("Linux-avmv6");// should work fine on most devices
-                            libIDs.add("Linux-avmv71");
                             // old scheme
                             libIDs.add("Linux-armpi");
                             libIDs.add("Linux-armpi2");
-                            // old scheme without good PI detection
-                            libIDs.add("Linux-arm2");
-                            libIDs.add("Linux-arm");
-                            libIDs.add("Linux-arm3");
-                        } else {
-                            // new scheme
-                            libIDs.add("Linux-avmv5");
-                            libIDs.add("Linux-avmv6");// should work fine on most devices
-                            libIDs.add("Linux-avmv71");
-                            // old scheme
-                            libIDs.add("Linux-arm2");
-                            libIDs.add("Linux-arm");
-                            libIDs.add("Linux-arm3");
                         }
+                        // old scheme without good PI detection
+                        libIDs.add("Linux-arm2");
+                        libIDs.add("Linux-arm");
+                        libIDs.add("Linux-arm3");
                     }
                     break;
                 case X86:
@@ -417,8 +409,7 @@ public class Multi extends IExtraction {
 
     public static final String getSevenZipJBindingVersion() {
         try {
-            final Method method = SevenZip.class.getMethod("getSevenZipJBindingVersion");
-            return (String) method.invoke(null, new Object[0]);
+            return ReflectionUtils.invoke(SevenZip.class.getName(), "getSevenZipJBindingVersion", null, String.class, new Object[0]);
         } catch (Throwable e) {
             return "4.65";
         }
@@ -1208,25 +1199,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

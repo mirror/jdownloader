@@ -23,6 +23,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -58,6 +59,14 @@ public class UploadrarCom extends XFileSharingProBasic {
             fileInfo[1] = br.getRegex("<p>\\s*size\\s*:\\s*([0-9\\.]+(?:\\s+|\\&nbsp;)?(KB|MB|GB))").getMatch(0);
         }
         return fileInfo;
+    }
+
+    @Override
+    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        super.doFree(link, account);
     }
 
     @Override
