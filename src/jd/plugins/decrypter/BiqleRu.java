@@ -47,11 +47,11 @@ public class BiqleRu extends PluginForDecrypt {
         if ("biqle.ru".equals(getHost()) || "daftsex.com".equals(getHost())) {
             final String decryptedhost = "biqledecrypted://";
             br.getPage(param.getCryptedUrl());
+            br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
                 ret.add(this.createOfflinelink(param.toString()));
                 return ret;
             }
-            br.followRedirect();
             final String title = br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0);
             final String daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             if (daxab != null) {
