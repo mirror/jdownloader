@@ -35,10 +35,10 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA_SOLUTIONS;
 
 public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implements GenericConfigEventListener<String> {
-    private CaptchaSolutionsConfigInterface     config;
-    private static final CaptchaSolutionsSolver INSTANCE   = new CaptchaSolutionsSolver();
-    private ThreadPoolExecutor                  threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
-    private LogSource                           logger;
+    private final CaptchaSolutionsConfigInterface config;
+    private static final CaptchaSolutionsSolver   INSTANCE   = new CaptchaSolutionsSolver();
+    private final ThreadPoolExecutor              threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private final LogSource                       logger;
 
     public static CaptchaSolutionsSolver getInstance() {
         return INSTANCE;
@@ -85,7 +85,6 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         Challenge<String> challenge = getChallenge(job);
         if (challenge instanceof RecaptchaV2Challenge) {
             RecaptchaV2Challenge rc2 = ((RecaptchaV2Challenge) challenge);
-            ;
             Browser br = new Browser();
             try {
                 br.setReadTimeout(5 * 60000);
@@ -94,11 +93,11 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
                 job.setStatus(SolverStatus.SOLVING);
                 long startTime = System.currentTimeMillis();
                 PostFormDataRequest r = new PostFormDataRequest("http://api.captchasolutions.com/solve");
-                ensureAPIKey();
+                final String[] credentials = ensureAPIKey();
                 r.addFormData(new FormData("p", "nocaptcha"));
                 r.addFormData(new FormData("googlekey", Encoding.urlEncode(rc2.getSiteKey())));
-                r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
-                r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
+                r.addFormData(new FormData("key", Encoding.urlEncode(credentials[0])));
+                r.addFormData(new FormData("secret", Encoding.urlEncode(credentials[0])));
                 r.addFormData(new FormData("pageurl", Encoding.urlEncode("http://" + rc2.getSiteDomain() + "/")));
                 br.getPage(r);
                 String token = br.getRegex("<decaptcha>\\s*(\\S+)\\s*</decaptcha>").getMatch(0);
@@ -127,17 +126,20 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
-            long startTime = System.currentTimeMillis();
-            ensureAPIKey();
+            final String[] credentials = ensureAPIKey();
             PostFormDataRequest r = new PostFormDataRequest("http://api.captchasolutions.com/solve");
             r.addFormData(new FormData("p", "upload"));
-            r.addFormData(new FormData("key", Encoding.urlEncode(config.getAPIKey())));
-            r.addFormData(new FormData("secret", Encoding.urlEncode(config.getAPISecret())));
+            r.addFormData(new FormData("key", Encoding.urlEncode(credentials[0])));
+            r.addFormData(new FormData("secret", Encoding.urlEncode(credentials[0])));
             // byte[] bytes = challenge.getAnnotatedImageBytes();
             final byte[] bytes = IO.readFile(challenge.getImageFile());
             r.addFormData(new FormData("captcha", "image.jpg", "image/jpg", bytes));
-            URLConnectionAdapter conn = br.openRequestConnection(r);
-            br.loadConnection(conn);
+            final URLConnectionAdapter con = br.openRequestConnection(r);
+            try {
+                br.loadConnection(con);
+            } finally {
+                con.disconnect();
+            }
             String decaptcha = br.getRegex("<decaptcha>(.*?)</decaptcha>").getMatch(0);
             if (StringUtils.isEmpty(decaptcha)) {
                 throw new SolverException("API Error");
@@ -165,7 +167,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
     protected boolean validateLogins() {
         if (!CFG_CAPTCHA_SOLUTIONS.ENABLED.isEnabled()) {
             return false;
-        } else if (StringUtils.isNotEmpty(config.getAPIKey()) && StringUtils.isNotEmpty(config.getAPISecret())) {
+        } else if (StringUtils.isAllNotEmpty(config.getAPIKey(), config.getAPISecret())) {
             return true;
         } else if (StringUtils.isEmpty(CFG_CAPTCHA_SOLUTIONS.USER_NAME.getValue())) {
             return false;
@@ -178,11 +180,11 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
     public CaptchaSolutionsAccount loadAccount() {
         CaptchaSolutionsAccount ret = new CaptchaSolutionsAccount();
-        Browser br = new Browser();
+        final Browser br = new Browser();
         br.setFollowRedirects(false);
         try {
-            ensureAPIKey();
-            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(config.getAPIKey()));
+            final String[] credentials = ensureAPIKey();
+            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(credentials[0]));
             String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
             ret.setTokens(Integer.parseInt(tokens));
             ret.setUserName(config.getUserName());
@@ -193,15 +195,17 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         return ret;
     }
 
-    private void ensureAPIKey() throws IOException {
-        if (StringUtils.isNotEmpty(config.getAPIKey()) && !StringUtils.isNotEmpty(config.getAPISecret())) {
-            return;
+    private synchronized String[] ensureAPIKey() throws IOException {
+        String key = config.getAPIKey();
+        String secret = config.getAPISecret();
+        if (StringUtils.isAllNotEmpty(key, secret)) {
+            return new String[] { key, secret };
         }
-        Browser br = new Browser();
+        final Browser br = new Browser();
         br.setFollowRedirects(false);
-        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
-        map.put("email", Encoding.urlEncode((config.getUserName().trim())));
-        map.put("password", Encoding.urlEncode((config.getPassword().trim())));
+        final LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+        map.put("email", Encoding.urlEncode(StringUtils.trim(config.getUserName())));
+        map.put("password", Encoding.urlEncode(StringUtils.trim(config.getPassword())));
         map.put("submit", "submit");
         //
         final URLConnectionAdapter conn = br.openPostConnection("https://www.captchasolutions.com/clients/login/", map);
@@ -213,13 +217,19 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         if (br.getRequest().getHttpConnection().getResponseCode() != 302) {
             throw new WTFException(StringUtils.trim(br.getRegex("<strong>Oh snap!</strong>(.*?)<").getMatch(0)));
         } else {
+            br.setFollowRedirects(true);
             br.followRedirect();
         }
         br.getPage("https://www.captchasolutions.com/clients/home/generatekeys/");
-        String key = br.getRegex("<strong>API KEY</strong>.*?<p>(.*?)</p>").getMatch(0);
-        String secret = br.getRegex("<strong>API SECRET</strong>.*?<p>(.*?)</p>").getMatch(0);
-        config.setAPIKey(key);
-        config.setAPISecret(secret);
+        key = br.getRegex("<strong>API KEY</strong>.*?<p>(.*?)</p>").getMatch(0);
+        secret = br.getRegex("<strong>API SECRET</strong>.*?<p>(.*?)</p>").getMatch(0);
+        if (StringUtils.isAllNotEmpty(key, secret)) {
+            config.setAPIKey(key);
+            config.setAPISecret(secret);
+            return new String[] { key, secret };
+        } else {
+            throw new WTFException("Login failed!");
+        }
     }
 
     @Override
@@ -228,7 +238,9 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
 
     @Override
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-        config.setAPIKey(null);
-        config.setAPISecret(null);
+        synchronized (this) {
+            config.setAPIKey(null);
+            config.setAPISecret(null);
+        }
     }
 }

@@ -17,7 +17,6 @@ package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,9 +26,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -37,13 +39,10 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
-
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
     private volatile long     account_validUntil     = -1;
+    private volatile long     account_LastValidUntil = -1;
     private volatile long     account_trafficLeft    = -1;
     private volatile long     account_trafficMax     = -1;
     private long              account_filesNum       = -1;
@@ -146,6 +145,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
      */
     public long getValidUntil() {
         return account_validUntil;
+    }
+
+    public long getLastValidUntil() {
+        return account_LastValidUntil;
     }
 
     /**
@@ -280,6 +283,10 @@ public class AccountInfo extends Property implements AccountTrafficView {
      */
     public void setValidUntil(final long validUntil) {
         this.account_validUntil = validUntil;
+    }
+
+    public void setLastValidUntil(final long validUntil) {
+        this.account_LastValidUntil = validUntil;
     }
 
     /**

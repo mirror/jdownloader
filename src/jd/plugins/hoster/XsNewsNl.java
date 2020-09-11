@@ -22,6 +22,7 @@ import jd.plugins.PluginException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.usenet.InvalidAuthException;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
@@ -73,6 +74,19 @@ public class XsNewsNl extends UseNet {
                     }
                 }
                 if (!containsSessionCookie(br)) {
+                    final AccountInfo oldai = account.getAccountInfo();
+                    if (oldai != null && oldai.getLastValidUntil() != -1 && oldai.getLastValidUntil() > System.currentTimeMillis()) {
+                        try {
+                            logger.info("Usenet only login");
+                            verifyUseNetLogins(account);
+                            ai.setStatus(oldai.getStatus());
+                            ai.setValidUntil(oldai.getLastValidUntil());
+                            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+                            return ai;
+                        } catch (InvalidAuthException e2) {
+                        }
+                    }
+                    logger.info("Full login");
                     account.clearCookies("");
                     br.clearCookies(getHost());
                     br.setCookie(getHost(), "lang", "en");
