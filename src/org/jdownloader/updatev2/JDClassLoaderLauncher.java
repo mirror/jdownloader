@@ -50,12 +50,6 @@ public class JDClassLoaderLauncher {
             if (Application.getResource("libs/sevenzipjbindingCustom.jar").isFile()) {
                 // custom build
                 sevenZipJBinding = "libs/sevenzipjbindingCustom";
-            } else if (Application.getResource("libs/sevenzipjbinding1602.jar").isFile()) {
-                // https://sourceforge.net/projects/sevenzipjbind/files/7-Zip-JBinding/16.02-2.01/
-                sevenZipJBinding = "libs/sevenzipjbinding1602";
-            } else if (Application.getResource("libs/sevenzipjbinding1509.jar").isFile()) {
-                // old 1509 builds
-                sevenZipJBinding = "libs/sevenzipjbinding1509";
             } else {
                 // very old
                 sevenZipJBinding = null;
