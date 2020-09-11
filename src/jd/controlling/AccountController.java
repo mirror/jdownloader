@@ -311,6 +311,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 ai = account.getAccountInfo();
                 if (ai != null) {
                     /* reset expired and setValid */
+                    ai.setLastValidUntil(ai.getValidUntil());
                     ai.setExpired(false);
                     ai.setValidUntil(-1);
                 }

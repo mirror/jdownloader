@@ -23,6 +23,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -58,6 +59,14 @@ public class XubsterCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "xubster.com" });
         return ret;
+    }
+
+    @Override
+    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
+        super.doFree(link, account);
     }
 
     @Override
