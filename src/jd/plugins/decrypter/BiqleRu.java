@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.encoding.Base64;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,11 +35,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
     public BiqleRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,12 +44,16 @@ public class BiqleRu extends PluginForDecrypt {
     /* Converts embedded crap to vk.com video-urls. */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if ("biqle.ru".equals(getHost())) {
+        if ("biqle.ru".equals(getHost()) || "daftsex.com".equals(getHost())) {
             final String decryptedhost = "biqledecrypted://";
             br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                ret.add(this.createOfflinelink(param.toString()));
+                return ret;
+            }
             br.followRedirect();
             final String title = br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0);
-            final String daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)\"").getMatch(0);
+            final String daxab = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             if (daxab != null) {
                 final Browser brc = br.cloneBrowser();
                 sleep(1000, param);
