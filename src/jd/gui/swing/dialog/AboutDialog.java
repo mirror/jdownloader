@@ -52,6 +52,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -251,7 +252,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("UPNP:"), "");
         stats.add(disable("Cling", "https://github.com/4thline/cling"));
         stats.add(new JLabel("Extraction:"));
-        stats.add(disable("7ZipJBindings", "https://github.com/borisbrodski/sevenzipjbinding"));
+        stats.add(disable("7ZipJBindings (" + get7ZipJBindingDetails() + ")", "https://github.com/borisbrodski/sevenzipjbinding"));
         stats.add(disable("Zip4J", "https://github.com/srikanth-lingala/zip4j"), "skip");
         final LookAndFeel laf = UIManager.getLookAndFeel();
         if (laf != null) {
@@ -291,6 +292,22 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
         return contentpane;
+    }
+
+    private String get7ZipJBindingDetails() {
+        String version = "4.65";
+        try {
+            version = ReflectionUtils.invoke("net.sf.sevenzipjbinding.SevenZip", "getSevenZipJBindingVersion", null, String.class, new Object[0]);
+        } catch (Throwable ignore) {
+        }
+        try {
+            final String usedPlatform = ReflectionUtils.invoke("net.sf.sevenzipjbinding.SevenZip", "getUsedPlatform", null, String.class, new Object[0]);
+            if (usedPlatform != null) {
+                return version + "/" + usedPlatform;
+            }
+        } catch (final Throwable ignore) {
+        }
+        return version;
     }
 
     private ExtButton disable(final Object object, final String url) {

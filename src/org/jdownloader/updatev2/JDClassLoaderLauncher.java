@@ -51,7 +51,7 @@ public class JDClassLoaderLauncher {
                 // custom build
                 sevenZipJBinding = "libs/sevenzipjbindingCustom";
             } else {
-                // very old
+                // default build
                 sevenZipJBinding = null;
             }
             final List<URL> classPathJARs = new ArrayList<URL>();
