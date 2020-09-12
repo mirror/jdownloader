@@ -559,7 +559,7 @@ public class HighWayMe extends UseNet {
             logger.info("Performing full login");
             br.postPage(API_BASE + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
             if (!isLoggedIN()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                accountInvalid();
             }
         }
         account.saveCookies(this.br.getCookies(this.br.getHost()), "");
@@ -768,13 +768,7 @@ public class HighWayMe extends UseNet {
                 mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, statusMessage);
             case 100:
                 /* Login or password missing -> disable account */
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                accountInvalid();
             case 200:
                 if (!org.appwork.utils.Application.isHeadless()) {
                     BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
@@ -792,6 +786,14 @@ public class HighWayMe extends UseNet {
         } catch (final PluginException e) {
             logger.info(this.getHost() + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
+        }
+    }
+
+    private void accountInvalid() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Falls du die 2-Faktor-Authentifizierung aktiviert hast, deaktiviere diese und versuche es erneut.\r\n3. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. If you have 2-factor-authentication enabled, disable it and try again.\r\n3. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
