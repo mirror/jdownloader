@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,11 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru", "yadi.sk" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)", "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/[a-f0-9]{24}" })
 public class DiskYandexNet extends PluginForHost {
@@ -622,17 +622,20 @@ public class DiskYandexNet extends PluginForHost {
                     br.setCookies("passport.yandex.com", cookies);
                     if (!force) {
                         /* Trust cookies */
+                        logger.info("Trust cookies without check");
                         return;
                     }
                     br.getPage("https://passport.yandex.com/profile");
                     if (br.containsHTML("mode=logout")) {
                         /* Set new cookie timestamp */
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     }
                     /* Failed - we have to perform a full login! */
                     br.clearCookies(br.getHost());
                 }
+                logger.info("Performing full login");
                 boolean isLoggedIN = false;
                 boolean requiresCaptcha;
                 final Browser ajaxBR = br.cloneBrowser();
