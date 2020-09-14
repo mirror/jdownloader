@@ -18,19 +18,25 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[^/]+/.+" })
 public class GetComics extends PluginForDecrypt {
@@ -44,7 +50,39 @@ public class GetComics extends PluginForDecrypt {
         final String parameter = param.toString();
         // Load page
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        final URLConnectionAdapter con = br.openGetConnection(parameter);
+        try {
+            final LinkCrawler crawler = getCrawler();
+            if (crawler.getDeepInspector().looksLikeDownloadableContent(con)) {
+                final CrawledLink direct = crawler.createDirectHTTPCrawledLink(getCurrentLink(), con);
+                decryptedLinks.add(direct.getDownloadLink());
+                // return decryptedLinks;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            con.disconnect();
+        }
+        if (br.containsHTML("You have been redirected through this website from a suspicious source")) {
+            String base64 = new Regex(parameter, "((aHR0c|ZnRwOi).+)($|\\?)").getMatch(0);
+            if (base64 != null) {
+                /* base64 http and ftp */
+                while (true) {
+                    if (base64.length() % 4 != 0) {
+                        base64 += "=";
+                    } else {
+                        break;
+                    }
+                }
+                final byte[] decoded = Base64.decode(base64);
+                if (decoded != null) {
+                    final String possibleURLs = new String(decoded, "UTF-8");
+                    decryptedLinks.add(createDownloadlink(possibleURLs));
+                    return decryptedLinks;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
         String baseurl1 = br.getHost();
         ArrayList<String> links = new ArrayList<String>();
