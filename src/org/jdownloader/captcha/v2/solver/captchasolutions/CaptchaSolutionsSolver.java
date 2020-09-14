@@ -185,7 +185,10 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         try {
             final String[] credentials = ensureAPIKey();
             br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(credentials[0]));
-            String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
+            final String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
+            if (tokens == null) {
+                throw new Exception("API Error!?");
+            }
             ret.setTokens(Integer.parseInt(tokens));
             ret.setUserName(config.getUserName());
         } catch (Exception e) {
