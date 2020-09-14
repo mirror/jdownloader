@@ -13,11 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,17 +33,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/([a-zA-Z0-9\\-\\.\\_]{11}B|[a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB)" })
 public class UniBytesCom extends PluginForHost {
-
     // DEV NOTES
     // UID are case sensitive.
     // [a-zA-Z0-9\\-\\.\\_]{11}Lqw-Us4P3UgBB = recently uploaded links + folder links?
     // [a-zA-Z0-9\\-\\.\\_]{11}B = short link??
     // it doesn't seem possible exchanging 11char uid between the different url structures.
-
     // other: they blocked our default User Agent.
-
     private final String CAPTCHATEXT      = "captcha\\.jpg";
     private final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private final String MAINPAGE         = "http://www.unibytes.com/";
@@ -85,13 +83,10 @@ public class UniBytesCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("Download file:</small><br/>\\s*([^<>\"]*?)\\s*<small>").getMatch(0);
-        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
+        String filename = br.getRegex("Download file:\\s*</small>\\s*<br/>\\s*([^<>\"]*?)\\s*<small>").getMatch(0);
+        String filesize = br.getRegex(">\\s*\\(([\\d\\.,]+\\s*(KB|MB|GB|B|bytes))\\)\\s*</").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("\\(([\\d\\.,]+ ?(KB|MB|GB|bytes))\\)").getMatch(0);
-            }
         }
         if (filename == null) {
             // Leave this in
@@ -113,12 +108,7 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");
         return ai;
@@ -223,8 +213,12 @@ public class UniBytesCom extends PluginForHost {
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML(FATALSERVERERROR)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
             }
@@ -262,9 +256,13 @@ public class UniBytesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("text")) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
