@@ -1,7 +1,6 @@
 package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.jdownloader.plugins.config.Order;
@@ -18,12 +17,4 @@ public interface GoogleConfig extends PluginConfigInterface {
     String getUserAgent();
 
     void setUserAgent(String userAgent);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Enable experimental features")
-    @Order(20)
-    boolean isEnableExperimentalFeatures();
-
-    void setEnableExperimentalFeatures(boolean b);
 }
