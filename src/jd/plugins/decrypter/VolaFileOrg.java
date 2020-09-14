@@ -6,6 +6,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.websocket.WebSocketClient;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
@@ -13,17 +26,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.websocket.ReadWebSocketFrame;
 import org.appwork.utils.net.websocket.WebSocketFrameHeader;
 import org.appwork.utils.parser.UrlQuery;
-
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.websocket.WebSocketClient;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "volafile.org" }, urls = { "https?://(?:www\\.)?volafile\\.(?:org|io)/r/[A-Za-z0-9\\-_]+" })
 public class VolaFileOrg extends PluginForDecrypt {
@@ -42,12 +44,15 @@ public class VolaFileOrg extends PluginForDecrypt {
         br.followRedirect();
         br.setCookie(getHost(), "allow-download", "1");
         final String checksum = PluginJSonUtils.getJson(br, "checksum2");
+        if (StringUtils.isEmpty(checksum)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String room = br.getRegex("\"room_id\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         if (room == null) {
             room = new Regex(parameter.getCryptedUrl(), "/r/([A-Za-z0-9\\-_]+)").getMatch(0);
-        }
-        if (StringUtils.isEmpty(checksum)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (StringUtils.isEmpty(room)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final UrlQuery query = new UrlQuery();
         query.add("room", URLEncoder.encode(room, "UTF-8"));
@@ -55,11 +60,10 @@ public class VolaFileOrg extends PluginForDecrypt {
         query.add("nick", "Alke");
         query.add("EIO", "3");
         query.add("transport", "websocket");
-        WebSocketClient wsc = null;
         String passCode = null;
         do {
+            final WebSocketClient wsc = new WebSocketClient(br, new URL("https://volafile.org/api/?" + query.toString()));
             try {
-                wsc = new WebSocketClient(br, new URL("https://volafile.org/api/?" + query.toString()));
                 wsc.connect();
                 ReadWebSocketFrame frame = wsc.readNextFrame();// sid
                 frame = wsc.readNextFrame();// session
@@ -71,10 +75,10 @@ public class VolaFileOrg extends PluginForDecrypt {
                         /* Password protected content */
                         if (passCode != null) {
                             /* Wrong password - Don't allow 2nd try. */
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                            throw new DecrypterRetryException(RetryReason.PASSWORD);
                         }
                         passCode = getUserInput("Password?", parameter);
-                        query.add("password", passCode);
+                        query.add("password", URLEncoder.encode(passCode, "UTF-8"));
                         continue;
                     }
                     final List<Object> list = JSonStorage.restoreFromString(string, TypeRef.LIST);
@@ -98,7 +102,7 @@ public class VolaFileOrg extends PluginForDecrypt {
                             }
                             ret.add(link);
                         }
-                        break;
+                        return ret;
                     }
                 } else {
                     logger.severe("Unsupported:" + frame);
