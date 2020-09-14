@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:ok\\.ru|odnoklassniki\\.ru)/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRuDecrypter extends PluginForDecrypt {
     public OkRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,9 +37,9 @@ public class OkRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("https?://(m|www)\\.", "https://www.").replace("/videoembed/", "/video/");
+        final String vid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        final String parameter = "https://ok.ru/video/" + vid;
         param.setCryptedUrl(parameter);
-        final String vid = new Regex(parameter, "(\\d+(-\\d+)?)$").getMatch(0);
         jd.plugins.hoster.OkRu.prepBR(this.br);
         br.getPage("https://ok.ru/video/" + vid);
         if (jd.plugins.hoster.OkRu.isOffline(br)) {
