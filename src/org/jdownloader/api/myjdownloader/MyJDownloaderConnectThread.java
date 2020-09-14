@@ -47,6 +47,7 @@ import org.appwork.utils.net.httpserver.requests.HTTPBridge;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.Docker;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionRequest;
@@ -1173,7 +1174,11 @@ public class MyJDownloaderConnectThread extends Thread implements HTTPBridge, Re
     }
 
     protected String getUniqueDeviceIDSalt() {
-        return Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath() + CrossSystem.getOS().name() + CrossSystem.getARCHFamily().name() + CrossSystem.is64BitArch() + CrossSystem.is64BitOperatingSystem() + System.getProperty("user.name"));
+        String idSalt = CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath() + CrossSystem.getOS().name() + CrossSystem.getARCHFamily().name() + CrossSystem.is64BitArch() + CrossSystem.is64BitOperatingSystem() + System.getProperty("user.name");
+        if (Docker.isInsideDocker()) {
+            idSalt = idSalt + Docker.getDockerContainerID();
+        }
+        return Hash.getSHA256(idSalt);
     }
 
     protected String getUniqueDeviceID() {
