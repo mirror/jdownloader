@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -13,10 +14,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javcl.com" }, urls = { "https?://(?:www\\.)?javcl\\.com/([a-z0-9\\-]+)" })
-public class JavCL extends PluginForDecrypt {
+public class JavCL extends antiDDoSForDecrypt {
     public JavCL(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -24,7 +24,7 @@ public class JavCL extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(parameter.getCryptedUrl());
+        getPage(parameter.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
             return ret;
