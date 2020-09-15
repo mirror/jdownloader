@@ -58,7 +58,7 @@ public class StreamzCc extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamz.ws", "streamz.cc", "streamz.bz", "streamz.vg" });
+        ret.add(new String[] { "streamz.ws", "streamz.cc", "streamz.bz", "streamz.vg", "streamzz.to" });
         return ret;
     }
 
@@ -127,7 +127,7 @@ public class StreamzCc extends antiDDoSForHost {
         // if (StringUtils.isNotEmpty(shareLink)) {
         // link.setPluginPatternMatcher(shareLink);
         // }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<center><b>\\s*File not found")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {

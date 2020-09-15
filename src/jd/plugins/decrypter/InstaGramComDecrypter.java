@@ -17,9 +17,7 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,15 +50,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/p/[A-Za-z0-9_-]+)?))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
-
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String           TYPE_GALLERY           = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
     private static final String           TYPE_STORY             = "https?://[^/]+/stories/.+";
+    private static final String           TYPE_SAVED_OBJECTS     = "https?://[^/]+/[^/]+/saved/?$";
     private String                        username_url           = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
@@ -215,6 +213,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (isPrivate && !logged_in) {
             logger.info("Account required to crawl this url");
             return decryptedLinks;
+        } else if (parameter.matches(TYPE_SAVED_OBJECTS) && !logged_in) {
+            /* Saved users own objects can only be crawled when he's logged in ;) */
+            logger.info("Account required to crawl your own saved items");
+            return decryptedLinks;
         }
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.addAllowedResponseCodes(new int[] { 502 });
@@ -234,7 +236,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         ArrayList<Object> resource_data_list;
-        if (parameter.matches(TYPE_GALLERY)) {
+        if (parameter.matches(TYPE_SAVED_OBJECTS)) {
+            /* TODO: Add pagination support */
+            fp.setName("saved_" + new Regex(parameter, "").getMatch(0));
+            final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
+            resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/edges");
+            for (final Object picO : resource_data_list) {
+                entries = (LinkedHashMap<String, Object>) picO;
+                entries = (LinkedHashMap<String, Object>) entries.get("node");
+                crawlAlbum(entries);
+            }
+            if (decryptedLinks.size() == 0) {
+                logger.info("User doesn't have any saved objects(?)");
+            }
+            return decryptedLinks;
+        } else if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
             if (logged_in) {
                 String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
@@ -266,11 +283,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             this.crawlStory(entries, param);
             return decryptedLinks;
         } else {
+            /* Crawl all items of a user */
             if (!this.br.containsHTML("user\\?username=.+")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            /* Crawl all items of a user */
             String id_owner = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
             if (id_owner == null) {
                 id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
@@ -589,11 +606,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setProperty("orderid", orderid);
         }
         if (taken_at_timestamp > 0) {
-            final SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
-            /* Timestamp */
-            final Date theDate = new Date(taken_at_timestamp * 1000);
-            final String date_formatted = target_format.format(theDate);
-            dl.setProperty("date", date_formatted);
+            jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, taken_at_timestamp);
         }
         decryptedLinks.add(dl);
         distribute(dl);

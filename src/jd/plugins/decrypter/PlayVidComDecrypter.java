@@ -116,7 +116,12 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         /** Decrypt qualities START */
         foundQualities = ((jd.plugins.hoster.PlayVidCom) plugin).getQualities(this.br);
         if (foundQualities == null || foundQualities.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /*
+             * 2020-09-15: Assume that content is offline as they got a lot of different URLs all with a pattern matching the one of single
+             * videos.
+             */
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */

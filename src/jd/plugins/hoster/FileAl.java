@@ -93,7 +93,8 @@ public class FileAl extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* 2019-05-03: Special: Set this to 1 to avoid unnerving 'ip_check' captchas (same will happen via browser) */
-        return 1;
+        /* 2020-09-15: Experimentally set -1 to let premium Users check if these unnerving "anti ddos Captchas" still exist. */
+        return -1;
     }
 
     @Override
