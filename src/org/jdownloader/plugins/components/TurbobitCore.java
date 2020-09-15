@@ -9,6 +9,14 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,14 +40,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -99,9 +99,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
-         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
-         * short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br>
+         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
+         * slow down the linkcheck and cause more http requests in a short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -755,6 +755,19 @@ public class TurbobitCore extends antiDDoSForHost {
                         }
                     }
                 }
+                if (br.containsHTML(">\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
+                    final Regex durationRegex = br.getRegex("You will be able to download at high speed again in (\\d+) hour\\(s\\) (\\d+) minute");
+                    final String hoursStr = durationRegex.getMatch(0);
+                    final String minutesStr = durationRegex.getMatch(1);
+                    long wait = 30 * 60 * 1000l;
+                    if (hoursStr != null && minutesStr != null) {
+                        wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
+                    }
+                    throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
+                }
+            }
+            if (dl == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
             }
             dl.startDownload();
         }
