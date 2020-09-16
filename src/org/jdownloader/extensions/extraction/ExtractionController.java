@@ -291,11 +291,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
             if (gotKilled()) {
                 return null;
             }
-            crashLog.write("Prepare:" + new Date());
+            crashLog.write("Prepare - " + new Date());
             if (extractor.prepare()) {
                 if (archive.isProtected()) {
                     final boolean isPasswordFindOptimizationEnabled = getExtension().getSettings().isPasswordFindOptimizationEnabled();
-                    crashLog.write("Archive is Protected:" + new Date());
+                    crashLog.write("Archive is Protected - " + new Date());
                     if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(crashLog, archive.getFinalPassword(), false)) {
                         /* open archive with found pw */
                         crashLog.write("Password " + archive.getFinalPassword() + " is invalid, try to find correct one");
@@ -316,7 +316,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         }
                         passwordList.addAll(pwList);
                         fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
-                        crashLog.write("Start password finding for " + archive);
+                        crashLog.write("Start password finding for " + archive + " - " + new Date());
                         String correctPW = null;
                         for (final String password : passwordList) {
                             if (password == null) {
@@ -327,7 +327,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                             }
                             if (checkPassword(crashLog, password, isPasswordFindOptimizationEnabled)) {
                                 correctPW = password;
-                                crashLog.write("Found password: \"" + correctPW + "\"");
+                                crashLog.write("Found password: \"" + correctPW + "\"" + " - " + new Date());
                                 break;
                             } else {
                                 // try trimmed password
@@ -335,7 +335,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                                 if (trimmed.length() != password.length()) {
                                     if (checkPassword(crashLog, trimmed, isPasswordFindOptimizationEnabled)) {
                                         correctPW = trimmed;
-                                        crashLog.write("Found password: \"" + correctPW + "\"");
+                                        crashLog.write("Found password: \"" + correctPW + "\"" + " - " + new Date());
                                         break;
                                     }
                                 }
@@ -356,14 +356,14 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                             }
                         }
                         fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                        crashLog.write("Found password for " + archive + "->" + archive.getFinalPassword() + ":" + new Date());
+                        crashLog.write("Found password for " + archive + "->" + archive.getFinalPassword() + " - " + new Date());
                     }
                     if (StringUtils.isNotEmpty(archive.getFinalPassword())) {
                         getExtension().addPassword(archive.getFinalPassword());
                     }
                 }
                 extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
-                crashLog.write("Extract To: " + extractToFolder + ":" + new Date());
+                crashLog.write("Extract To: " + extractToFolder + " - " + new Date());
                 final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
                     @Override
                     public long getSize() {
@@ -407,7 +407,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                     crashLog.write("Use Password: " + archive.getFinalPassword() + "|PW Protected:" + archive.isProtected() + ":" + archive.isPasswordRequiredToOpen());
                     ScheduledExecutorService scheduler = null;
                     try {
-                        crashLog.write("Start Extracting " + extractor + ":" + new Date());
+                        crashLog.write("Start Extracting " + extractor + " - " + new Date());
                         scheduler = DelayedRunnable.getNewScheduledExecutorService();
                         timer = scheduler.scheduleWithFixedDelay(new Runnable() {
                             public void run() {
@@ -417,7 +417,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         extractor.extract(this);
                     } finally {
                         extractor.close();
-                        crashLog.write("Extractor Returned:" + new Date());
+                        crashLog.write("Extractor Returned - " + new Date());
                         if (timer != null) {
                             timer.cancel(false);
                         }
