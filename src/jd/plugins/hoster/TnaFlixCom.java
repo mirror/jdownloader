@@ -190,6 +190,9 @@ public class TnaFlixCom extends PluginForHost {
             if (vkey == null) {
                 vkey = PluginJSonUtils.getJson(br, "vkey");
             }
+            if (StringUtils.isEmpty(vkey) || vkey.equals("null")) {
+                vkey = null;
+            }
             ajax_old_flv_downloadurl = PluginJSonUtils.getJsonValue(this.br, "flv");
             final String original_url = PluginJSonUtils.getJson(br, "link");
             if (original_url != null && videoid != null && original_url.contains(videoid)) {

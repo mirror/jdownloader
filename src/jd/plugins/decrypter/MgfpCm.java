@@ -20,8 +20,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,16 +36,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class MgfpCm extends PluginForDecrypt {
     public MgfpCm(PluginWrapper wrapper) {
         super(wrapper);
+        try {
+            // Browser.setRequestIntervalLimitGlobal(getHost(), 600, 100, 60000);
+            Browser.setRequestIntervalLimitGlobal(getHost(), 600);
+        } catch (final Throwable e) {
+        }
     }
 
     private static final String type_invalid = "https?://(www\\.)?imagefap\\.com/gallery/search=.+";
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /*
+         * 2020-09-16: One measure to try not to exceed rate limits:
+         * https://www.imagefaq.cc/forum/viewtopic.php?f=4&t=17675&sid=0ed66fda947338862f2cb3d32622e030
+         */
+        return 1;
+    }
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
