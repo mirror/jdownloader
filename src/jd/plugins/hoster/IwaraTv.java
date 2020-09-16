@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -91,6 +92,8 @@ public class IwaraTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Website is hosting video content ONLY! */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
@@ -98,6 +101,7 @@ public class IwaraTv extends PluginForHost {
         final String fid = getFID(link.getDownloadURL());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
+            /* Login if possible */
             try {
                 login(this.br, aa, false);
             } catch (final Throwable e) {
@@ -126,7 +130,7 @@ public class IwaraTv extends PluginForHost {
             link.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        boolean useApi = false;
+        boolean usedApi = false;
         boolean isVideo = true;
         if (this.br.getURL().matches(type_image)) {
             /* Picture */
@@ -142,8 +146,11 @@ public class IwaraTv extends PluginForHost {
             String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
             String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
             if (videoHash != null) {
-                useApi = true;
+                usedApi = true;
                 this.br.getPage("/api/video/" + videoHash);
+                if (br.toString().equals("[]")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
+                }
                 dllink = PluginJSonUtils.getJson(this.br, "uri");
             }
         } else {
@@ -154,7 +161,7 @@ public class IwaraTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filenameExt;
-        if (!useApi) {
+        if (!usedApi) {
             dllink = Encoding.htmlDecode(dllink);
             filenameExt = dllink;
         } else {
@@ -165,14 +172,13 @@ public class IwaraTv extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openHeadConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getCompleteContentLength());
                 link.setProperty("directlink", dllink);
             } else {
                 serverIssue = true;

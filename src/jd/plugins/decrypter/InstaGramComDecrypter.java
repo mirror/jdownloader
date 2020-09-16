@@ -266,6 +266,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 if (page > 0) {
+                    if (id_owner == null) {
+                        /* This should never happen */
+                        logger.warning("Pagination failed because required param 'id_owner' is missing");
+                        break;
+                    }
                     final Browser br = this.br.cloneBrowser();
                     prepBrAjax(br);
                     final Map<String, Object> vars = new LinkedHashMap<String, Object>();

@@ -43,13 +43,18 @@ public class IwaraTv extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("iwara.tv");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa != null) {
+            /* Login if account is available */
             try {
                 ((jd.plugins.hoster.IwaraTv) hostPlugin).login(br, aa, false);
             } catch (final Throwable e) {
             }
         }
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"cb_error\"|\"Processing video|>Sort by:")) {
+        /*
+         * 2020-09-16: Do not check for the following html for offline as it is always present: <div id="video-processing"
+         * class="video-processing hidden">Processing video, please check back in a while</div>
+         */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"cb_error\"|>Sort by:")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }

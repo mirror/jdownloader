@@ -184,20 +184,24 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public void init() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 20);
+        try {
+            // Browser.setRequestIntervalLimitGlobal(getHost(), 600, 100, 60000);
+            Browser.setRequestIntervalLimitGlobal(getHost(), 600);
+        } catch (final Throwable e) {
+        }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         try {
-            br.getPage(downloadLink.getDownloadURL());
-            if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
+            br.getPage(link.getDownloadURL());
+            if (link.getDownloadURL().matches(VIDEOLINK)) {
                 final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
                 if (filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+                link.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
             } else {
                 final String location = br.getRedirectLocation();
                 if (location != null) {
@@ -205,13 +209,13 @@ public class ImageFap extends PluginForHost {
                         br.getPage(location);
                     }
                     logger.info("Setting new downloadUrl: " + location);
-                    downloadLink.setUrlDownload(location);
+                    link.setUrlDownload(location);
                     br.getPage(location);
                 }
                 if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String picture_name = downloadLink.getStringProperty("original_filename");
+                String picture_name = link.getStringProperty("original_filename");
                 if (picture_name == null) {
                     picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
                     if (picture_name == null) {
@@ -221,8 +225,8 @@ public class ImageFap extends PluginForHost {
                         }
                     }
                 }
-                String galleryName = getGalleryName(downloadLink);
-                String username = downloadLink.getStringProperty("directusername");
+                String galleryName = getGalleryName(link);
+                String username = link.getStringProperty("directusername");
                 if (username == null) {
                     username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
                     if (username == null) {
@@ -243,26 +247,26 @@ public class ImageFap extends PluginForHost {
                 if (username != null) {
                     username = username.trim();
                 }
-                downloadLink.setProperty("galleryname", galleryName);
-                downloadLink.setProperty("directusername", username);
-                downloadLink.setProperty("original_filename", picture_name);
-                downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+                link.setProperty("galleryname", galleryName);
+                link.setProperty("directusername", username);
+                link.setProperty("original_filename", picture_name);
+                link.setFinalFileName(getFormattedFilename(link));
                 /* only set filepackage if not set yet */
                 try {
-                    if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                    if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(username + " - " + galleryName);
-                        fp.add(downloadLink);
+                        fp.add(link);
                     }
                 } catch (final Throwable e) {
                     /*
                      * does not work in stable 0.9580, can be removed with next major update
                      */
                     try {
-                        if (downloadLink.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
                             final FilePackage fp = FilePackage.getInstance();
                             fp.setName(username + " - " + galleryName);
-                            fp.add(downloadLink);
+                            fp.add(link);
                         }
                     } catch (final Throwable e2) {
                     }
