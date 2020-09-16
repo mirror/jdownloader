@@ -237,19 +237,68 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         ArrayList<Object> resource_data_list;
         if (parameter.matches(TYPE_SAVED_OBJECTS)) {
-            /* TODO: Add pagination support */
-            fp.setName("saved_" + new Regex(parameter, "").getMatch(0));
+            /* Crawl all saved objects of a user. Works similar to "crawl all posted items of a user" handling. */
+            username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
+            fp.setName("saved_" + username_url);
+            final String id_owner = br.getRegex("profilePage_(\\d+)").getMatch(0);
             final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
+            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
+            final long count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/count"), -1);
+            int page = 0;
+            int decryptedLinksLastSize = 0;
+            int decryptedLinksCurrentSize = 0;
             resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/edges");
-            for (final Object picO : resource_data_list) {
-                entries = (LinkedHashMap<String, Object>) picO;
-                entries = (LinkedHashMap<String, Object>) entries.get("node");
-                crawlAlbum(entries);
-            }
-            if (decryptedLinks.size() == 0) {
-                logger.info("User doesn't have any saved objects(?)");
-            }
+            do {
+                decryptedLinksLastSize = decryptedLinks.size();
+                for (final Object o : resource_data_list) {
+                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                    // pages > 0, have a additional nodes entry
+                    if (result.size() == 1 && result.containsKey("node")) {
+                        crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
+                    } else {
+                        crawlAlbum(result);
+                    }
+                }
+                decryptedLinksCurrentSize = decryptedLinks.size();
+                if (decryptedLinks.size() == 0) {
+                    logger.info("User doesn't have any saved objects(?)");
+                    return decryptedLinks;
+                }
+                if (page > 0) {
+                    final Browser br = this.br.cloneBrowser();
+                    prepBrAjax(br);
+                    final Map<String, Object> vars = new LinkedHashMap<String, Object>();
+                    vars.put("id", id_owner);
+                    vars.put("first", 12);
+                    vars.put("after", nextid);
+                    if (qHash == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
+                    getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                    final int responsecode = br.getHttpConnection().getResponseCode();
+                    if (responsecode == 404) {
+                        logger.warning("Error occurred: 404");
+                        return decryptedLinks;
+                    } else if (responsecode == 403 || responsecode == 429) {
+                        /* Stop on too many 403s as 403 is not a rate limit issue! */
+                        logger.warning("Failed to bypass rate-limit!");
+                        return decryptedLinks;
+                    } else if (responsecode == 439) {
+                        logger.info("Seems like user is using an unverified account - cannot grab more items");
+                        break;
+                    }
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
+                    resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
+                    if (resource_data_list == null || resource_data_list.size() == 0) {
+                        logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                        break;
+                    }
+                }
+                page++;
+            } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
             return decryptedLinks;
         } else if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
