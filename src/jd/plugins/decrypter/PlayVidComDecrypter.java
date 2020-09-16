@@ -125,7 +125,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         }
         /** Decrypt qualities END */
         /** Decrypt qualities, selected by the user */
-        final SubConfiguration cfg = SubConfiguration.getConfig("playvid.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);// currently the help text to best doesn't imply that it works on
         // selected resolutions only, maybe add another option for this
         final boolean q360p = cfg.getBooleanProperty(jd.plugins.hoster.PlayVidCom.ALLOW_360P, true);
@@ -137,31 +137,45 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
         if (q2160p || all) {
-            selectedQualities.add("2160p");
+            selectedQualities.add("2160");
         }
         if (q1080p || all) {
-            selectedQualities.add("1080p");
+            selectedQualities.add("1080");
         }
         if (q720p || all) {
-            selectedQualities.add("720p");
+            selectedQualities.add("720");
         }
         if (q480p || all) {
-            selectedQualities.add("480p");
+            selectedQualities.add("480");
         }
         if (q360p || all) {
-            selectedQualities.add("360p");
+            selectedQualities.add("360");
         }
-        for (final String quality : selectedQualities) {
-            final List<DownloadLink> ret = getVideoDownloadlinks(quality);
-            if (ret != null) {
-                // tempList = new ArrayList<DownloadLink>();
-                results.put(quality, ret);
-                if (best) {
-                    break;
+        // for (final String quality : selectedQualities) {
+        // final List<DownloadLink> ret = getVideoDownloadlinks(quality);
+        // if (ret != null) {
+        // // tempList = new ArrayList<DownloadLink>();
+        // results.put(quality, ret);
+        // if (best) {
+        // break;
+        // }
+        // }
+        // }
+        for (final String selectedQuality : selectedQualities) {
+            final Iterator<Entry<String, String>> iterator = foundQualities.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, String> entry = iterator.next();
+                final String qualityKey = entry.getKey();
+                if (qualityKey.contains(selectedQuality)) {
+                    final List<DownloadLink> ret = getVideoDownloadlinks(entry.getKey());
+                    if (ret != null) {
+                        // tempList = new ArrayList<DownloadLink>();
+                        results.put(entry.getKey(), ret);
+                    }
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (results.size() == 0) {
             logger.info("None of the selected qualities were found --> Adding all instead");
             final Iterator<Entry<String, String>> iterator = foundQualities.entrySet().iterator();
             while (iterator.hasNext()) {
@@ -173,11 +187,21 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 }
             }
         }
+        int index = 0;
         for (List<DownloadLink> list : results.values()) {
+            final boolean isLastEntryAndUserWantsBestOnly = index == results.size() - 1 && best;
+            if (isLastEntryAndUserWantsBestOnly) {
+                /* Best quality = Last item */
+                decryptedLinks.clear();
+            }
             for (DownloadLink link : list) {
                 fp.add(link);
                 decryptedLinks.add(link);
             }
+            if (isLastEntryAndUserWantsBestOnly) {
+                break;
+            }
+            index++;
         }
         return decryptedLinks;
     }

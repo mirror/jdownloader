@@ -149,7 +149,11 @@ public class MediafireCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(5000);
+        /*
+         * 2020-09-16: Removed interval for testing purposes. Seems like starting all downloads at once doesn't lead to errors/captchas
+         * anymore.
+         */
+        // this.setStartIntervall(5000);
         this.enablePremium("https://www.mediafire.com/upgrade/");
         setConfigElements();
     }
@@ -622,7 +626,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                    // offline file, to file/get_info as a single file... we need to return so the proper
+                // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
