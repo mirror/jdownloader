@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.Icon;
 
 import jd.plugins.FavitIcon;
@@ -24,6 +23,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.IDIcon;
 import org.appwork.utils.Hash;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
@@ -38,9 +38,7 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface
 import org.jdownloader.myjdownloader.client.json.IconDescriptor;
 
 public class ContentAPIImplV2 implements ContentAPIV2 {
-
     private final String                          usedByWebInterface = IconKey.ICON_FOLDER_OPEN + IconKey.ICON_DOWNLOADPASSWORD + IconKey.ICON_ADDCONTAINER;
-
     private final HashMap<String, IconDescriptor> descriptorMap;
 
     public ContentAPIImplV2() {
@@ -60,11 +58,10 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-            ImageIO.write(IconIO.toBufferedImage(favIcon), "png", out);
+            ImageProvider.writeImage(IconIO.toBufferedImage(favIcon), "png", out);
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
-
         } finally {
             try {
                 out.close();
@@ -81,7 +78,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-            ImageIO.write(IconIO.toBufferedImage(CrossSystem.getMime().getFileIcon(extension, 16, 16)), "png", out);
+            ImageProvider.writeImage(IconIO.toBufferedImage(CrossSystem.getMime().getFileIcon(extension, 16, 16)), "png", out);
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             throw new InternalApiException(e);
@@ -96,12 +93,9 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     public String getIconKey(Icon icon) {
         if (icon instanceof IDIcon) {
             Object id = ((IDIcon) icon).getIdentifier();
-
             IconDescriptor ret = JSonStorage.convert(id, new TypeRef<IconDescriptor>() {
             });
-
             String s = JSonStorage.serializeToJson(ret);
-
             try {
                 String cr32 = Hash.getMD5(s.getBytes("UTF-8"));
                 s = "kc." + cr32;
@@ -112,23 +106,18 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             } catch (Throwable e) {
                 throw new WTFException(e);
             }
-
         }
-
         return null;
     }
 
     @Override
     public IconDescriptor getIconDescription(String key) throws InternalApiException {
-
         if (key.startsWith("kc.")) {
             synchronized (descriptorMap) {
                 return descriptorMap.get(key);
             }
-
         }
         return null;
-
     }
 
     @Override
@@ -152,7 +141,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 }
                 BufferedImage ico = IconIO.toBufferedImage(createIcon(desc, size));
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-                ImageIO.write(ico, "png", out);
+                ImageProvider.writeImage(ico, "png", out);
             } else if (key.startsWith("kc.")) {
                 IconDescriptor desc = getIconDescription(key);
                 if (desc == null) {
@@ -160,11 +149,11 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 }
                 BufferedImage ico = IconIO.toBufferedImage(createIcon(desc, size));
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-                ImageIO.write(ico, "png", out);
+                ImageProvider.writeImage(ico, "png", out);
             } else {
                 BufferedImage ico = IconIO.toBufferedImage(new AbstractIcon(key, size));
                 out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-                ImageIO.write(ico, "png", out);
+                ImageProvider.writeImage(ico, "png", out);
             }
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
@@ -179,7 +168,6 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
 
     private Icon createIcon(IconDescriptor desc, int size) throws InternalApiException, StorageException {
         System.out.println("ICONget " + JSonStorage.serializeToJson(desc));
-
         if (desc.getCls() == null && desc.getKey() != null) {
             return NewTheme.I().getIcon(desc.getKey(), size);
         }
@@ -197,25 +185,20 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
             }
         } else if ("Merge".equals(desc.getCls())) {
             ExtMergedIcon ret = new ExtMergedIcon();
-
             int orgWidth = ((Number) desc.getPrps().get("width")).intValue();
             int orgHeight = ((Number) desc.getPrps().get("height")).intValue();
-
             double hfaktor = size / (double) (Math.max(orgHeight, orgWidth));
             for (int i = 0; i < desc.getRsc().size(); i++) {
                 int x = 0;
                 int y = 0;
                 HashMap<String, Object> props = desc.getRsc().get(i).getPrps();
-
                 int orgIconWidth = ((Number) props.get("width")).intValue();
                 int orgIconHeight = ((Number) props.get("height")).intValue();
                 int newIconSize = (int) (Math.max(orgIconWidth, orgIconHeight) * hfaktor);
                 if (props != null) {
-
                     if (props.containsKey("x")) {
                         x = (int) (((Number) props.get("x")).intValue() * hfaktor);
                     }
-
                     if (props.containsKey("y")) {
                         y = (int) (((Number) props.get("y")).intValue() * hfaktor);
                     }
@@ -223,9 +206,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
                 ret.add(createIcon(desc.getRsc().get(i), newIconSize), x, y);
             }
             ret.crop(size, size);
-
             return ret;
-
         } else if ("Favit".equals(desc.getCls())) {
             return new FavitIcon(createIcon(desc.getRsc().get(1), size), DomainInfo.getInstance(desc.getRsc().get(0).getKey()));
         }

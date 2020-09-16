@@ -4,8 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
-
 import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
@@ -106,7 +104,7 @@ public class Captcha9kwSolverMultiClick extends AbstractCaptcha9kwSolver<MultiCl
 
     protected static byte[] toByteArrayCaptcha(BufferedImage image, String type) throws IOException {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ImageIO.write(image, type, out);
+        ImageProvider.writeImage(image, type, out);
         return out.toByteArray();
     }
 

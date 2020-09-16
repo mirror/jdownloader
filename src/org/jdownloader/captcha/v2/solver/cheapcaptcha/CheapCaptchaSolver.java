@@ -19,6 +19,7 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.parser.UrlQuery;
@@ -88,7 +89,7 @@ public class CheapCaptchaSolver extends CESChallengeSolver<String> {
             switch (mode) {
             case 0:
                 final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ImageIO.write(ImageIO.read(new ByteArrayInputStream(data)), "jpg", bos);
+                ImageProvider.writeImage(ImageIO.read(new ByteArrayInputStream(data)), "jpg", bos);
                 r.addFormData(new FormData("captchafile", "image.jpg", "image/jpg", bos.toByteArray()));
                 break;
             case 1:

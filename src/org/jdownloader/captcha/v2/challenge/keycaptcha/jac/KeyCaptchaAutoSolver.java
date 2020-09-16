@@ -21,6 +21,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -46,11 +47,8 @@ public class KeyCaptchaAutoSolver {
     }
 
     private static final int     PUNISH_LINES      = 6;
-
     private static final boolean COLLECT_PIECES    = !Application.isJared(null);
-
     private static final int     COLOR_SCAN_LENGTH = 3;
-
     private LinkedList<Integer>  mouseArray        = new LinkedList<Integer>();
 
     private void marray(Point loc) {
@@ -84,9 +82,7 @@ public class KeyCaptchaAutoSolver {
      * @return
      */
     public static Rectangle getCroppedImage(BufferedImage source, int offset) {
-
         try {
-
             final int width = source.getWidth();
             final int height = source.getHeight();
             int x0 = 0;
@@ -96,14 +92,12 @@ public class KeyCaptchaAutoSolver {
             int i, j; // i - horizontal iterator; j - vertical iterator
             leftLoop: for (i = 0; i < width; i++) {
                 for (j = 0; j < height; j++) {
-
                     if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
                         break leftLoop;
                     }
                 }
             }
             x0 = Math.max(i - offset, 0);
-
             topLoop: for (j = 0; j < height; j++) {
                 for (i = 0; i < width; i++) {
                     if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
@@ -112,7 +106,6 @@ public class KeyCaptchaAutoSolver {
                 }
             }
             y0 = Math.max(j - offset, 0);
-
             rightLoop: for (i = width - 1; i >= 0; i--) {
                 for (j = 0; j < height; j++) {
                     if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
@@ -120,9 +113,7 @@ public class KeyCaptchaAutoSolver {
                     }
                 }
             }
-
             x1 = Math.min(i + 1 + offset, width);
-
             bottomLoop: for (j = height - 1; j >= 0; j--) {
                 for (i = 0; i < width; i++) {
                     if (Colors.getCMYKColorDifference1(source.getRGB(i, j), Color.WHITE.getRGB()) > 7.0d) {
@@ -131,12 +122,10 @@ public class KeyCaptchaAutoSolver {
                 }
             }
             y1 = Math.min(j + 1 + offset, height);
-
             return new Rectangle(x0, y0, x1 - x0, y1 - y0);
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
@@ -150,7 +139,6 @@ public class KeyCaptchaAutoSolver {
         }
         masks.mkdirs();
         for (File folder : Application.getResource("tmp").listFiles()) {
-
             if (folder.isDirectory() && folder.getName().contains(".png_col")) {
                 BufferedImage merge = IconIO.createEmptyImage(60, 60);
                 Graphics2D g = (Graphics2D) merge.getGraphics();
@@ -160,49 +148,38 @@ public class KeyCaptchaAutoSolver {
                     if (file.getName().endsWith(".png")) {
                         BufferedImage image = ImageIO.read(file);
                         files++;
-
                         for (int x = 0; x < image.getWidth(); x++) {
                             for (int y = 0; y < image.getHeight(); y++) {
                                 int rgb = image.getRGB(x, y);
                                 if (rgb == 0) {
                                     continue;
                                 }
-
                                 Color c = new Color(rgb, true);
                                 int tol = 200;
-
                                 if (Colors.getRGBDistance(rgb) == 0 && c.getRed() > tol && c.getGreen() > tol && c.getBlue() > tol && c.getAlpha() > tol) {
-
                                     g.drawLine(x, y, x, y);
                                 }
                             }
                         }
-
                     }
                 }
                 g.dispose();
                 if (files > 5) {
                     int m = 0;
-
                     File mask = new File(masks, "mask_" + m + ".png");
                     while (mask.exists()) {
                         m++;
                         mask = new File(masks, "mask_" + m + ".png");
                     }
-
-                    ImageIO.write(merge, "png", mask);
+                    ImageProvider.writeImage(merge, "png", mask);
                 }
-
             }
-
         }
-
     }
 
     public static void main2(String[] args) throws IOException {
         // helper funtion to sort puzzle pieces by form
         Application.setApplication(".jd_home");
-
         HashSet<File> dupe = new HashSet<File>();
         orgLoop: for (File orgFile : Application.getResource("").listFiles()) {
             if (!orgFile.getName().endsWith(".png")) {
@@ -233,13 +210,10 @@ public class KeyCaptchaAutoSolver {
                     if (image != null && image.getWidth() == org.getWidth() && image.getHeight() == org.getHeight()) {
                         for (int x = 0; x < image.getWidth(); x++) {
                             for (int y = 0; y < image.getHeight(); y++) {
-
                                 if (org.getRGB(x, y) == 0) {
                                     if (image.getRGB(x, y) != 0) {
                                         count++;
-
                                     }
-
                                 }
                             }
                         }
@@ -250,12 +224,9 @@ public class KeyCaptchaAutoSolver {
                             copy.delete();
                             IO.copyFile(f, copy);
                         }
-
                     }
-
                 }
             }
-
         }
     }
 
@@ -264,32 +235,25 @@ public class KeyCaptchaAutoSolver {
             mouseArray = new LinkedList<Integer>();
             // does not work. update required
             HashMap<BufferedImage, Point> imgPosition = new HashMap<BufferedImage, Point>();
-
             collectPIiecesDevOnly(images);
-
             int stepSize = 2;
             int stepSizeMask = 2;
             Rectangle cropping = getCroppedImage(images.backgroundImage, 45);
             BufferedImage back = images.backgroundImage.getSubimage(cropping.x, cropping.y, cropping.width, cropping.height);
-
             BufferedImage cropped = IconIO.createEmptyImage(back.getWidth(), back.getHeight());
             Graphics2D g = (Graphics2D) cropped.getGraphics();
             g.drawImage(back, 0, 0, null);
-
             back = cropped;
             int pieceID = 0;
             for (BufferedImage piece : images.pieces) {
                 BufferedImage mask = getMask(piece);
                 pieceID++;
                 if (mask != null) {
-
                     BufferedImage cleanedPiece = applyMask(piece, mask);
                     // Dialog.getInstance().showImage(cleanedPiece);
-
                     int best = Integer.MAX_VALUE;
                     Point bestPoint = null;
                     for (int x = -cleanedPiece.getWidth() / 2; x < cropped.getWidth() - cleanedPiece.getWidth() / 2; x += stepSize) {
-
                         for (int y = -cleanedPiece.getHeight() / 2; y < cropped.getHeight() - cleanedPiece.getHeight() / 2; y += stepSize) {
                             int count = 0;
                             int max = 50;
@@ -302,7 +266,6 @@ public class KeyCaptchaAutoSolver {
                                         if (y + y2 < 0 || y + y2 >= cropped.getHeight()) {
                                             continue;
                                         }
-
                                         try {
                                             int rgb = cropped.getRGB(x + x2, y + y2);
                                             if (!isWhite(rgb)) {
@@ -315,9 +278,7 @@ public class KeyCaptchaAutoSolver {
                                             count += 10000;
                                             break maskloop;
                                         }
-
                                     }
-
                                 }
                             }
                             int punLeft;
@@ -330,12 +291,10 @@ public class KeyCaptchaAutoSolver {
                                 punRight = getRightPunish(x, y, cropped, mask, cleanedPiece);
                                 punTop = getTopPunish(x, y, cropped, mask, cleanedPiece);
                                 punBottom = getBottomPunish(x, y, cropped, mask, cleanedPiece);
-
                                 count += punLeft / 8;
                                 count += punRight / 12;
                                 count += punTop / 8;
                                 count += punBottom / 12;
-
                                 // if (count < best) {
                                 // System.out.println("xXy " + x + "x" + y);
                                 // System.out.println("Piece " + pieceID);
@@ -347,25 +306,19 @@ public class KeyCaptchaAutoSolver {
                                 // System.out.println("Rate " + count);
                                 // }
                                 if (count < best) {
-
                                     bestPoint = new Point(x, y);
                                     // System.out.println(bestPoint);
                                     best = count;
                                 }
                             }
-
                         }
                     }
-
                     ImageAndPosition imagePos = new ImageAndPosition(piece, new Point(cropping.x + bestPoint.x, cropping.y + bestPoint.y));
                     imgPosition.put(imagePos.image, imagePos.position);
                     g.drawImage(cleanedPiece, bestPoint.x, bestPoint.y, null);
-
                     marray(new Point((int) (Math.random() * imagePos.position.x), (int) (Math.random() * imagePos.position.y)));
                     marray(imagePos.position);
-
                 }
-
             }
             // Dialog.getInstance().showImage(cropped);
             String positions = "";
@@ -391,17 +344,14 @@ public class KeyCaptchaAutoSolver {
         if (COLLECT_PIECES) {
             // collect_pieces
             // write images to jd_home
-
             int j = 0;
             File backf = Application.getResource("tmp/background_" + Hash.getMD5(IconIO.toJpgBytes(images.backgroundImage)) + "_" + j + ".png");
-
             while (backf.exists()) {
                 j++;
                 backf = Application.getResource("tmp/background_" + Hash.getMD5(IconIO.toJpgBytes(images.backgroundImage)) + "_" + j + ".png");
-
             }
             backf.delete();
-            ImageIO.write(images.backgroundImage, "png", backf);
+            ImageProvider.writeImage(images.backgroundImage, "png", backf);
             for (int i = 0; i < images.pieces.size(); i++) {
                 j = 0;
                 File file = Application.getResource("tmp/" + "piece_" + j + ".png");
@@ -410,7 +360,7 @@ public class KeyCaptchaAutoSolver {
                     file = Application.getResource("tmp/" + "piece_" + j + ".png");
                 }
                 file.delete();
-                ImageIO.write(images.pieces.get(i), "png", file);
+                ImageProvider.writeImage(images.pieces.get(i), "png", file);
             }
         }
     }
@@ -427,12 +377,10 @@ public class KeyCaptchaAutoSolver {
                 stepCount++;
             }
         }
-
         return sum / stepCount;
     }
 
     private int getTopPunish(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece) {
-
         int sum = 0;
         int num = PUNISH_LINES;
         int step = cleanedPiece.getWidth() / (num + 1);
@@ -444,7 +392,6 @@ public class KeyCaptchaAutoSolver {
                 stepCount++;
             }
         }
-
         return sum / stepCount;
     }
 
@@ -460,7 +407,6 @@ public class KeyCaptchaAutoSolver {
                 stepCount++;
             }
         }
-
         return sum / stepCount;
     }
 
@@ -476,9 +422,7 @@ public class KeyCaptchaAutoSolver {
                 stepCount++;
             }
         }
-
         return sum / stepCount;
-
     }
 
     private int getLeftPunishbyOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
@@ -500,13 +444,11 @@ public class KeyCaptchaAutoSolver {
                     double bestDiff = punish;
                     int bestColor = 0;
                     while (m-- > 0 && xx >= 0) {
-
                         int c = cropped.getRGB(xx, yy);
                         xx--;
                         // Colors.getColorDifference(color, color2)
                         double dif = Colors.getColorDifference(c, rgb);
                         Color col = new Color(c);
-
                         if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
                             dif *= 3;
                         }
@@ -514,12 +456,10 @@ public class KeyCaptchaAutoSolver {
                             bestDiff = dif;
                             bestColor = c;
                         }
-
                     }
                     Color pCol = new Color(rgb);
                     Color bCol = new Color(bestColor);
                     return (int) bestDiff;
-
                 }
             }
             if (notFoundColor) {
@@ -541,20 +481,16 @@ public class KeyCaptchaAutoSolver {
                 if (mask.getRGB(x2, y2) != 0) {
                     notFoundColor = false;
                     int rgb = cleanedPiece.getRGB(x2, y2);
-
                     int xx = x + x2 - 1;
                     int yy = y + y2;
                     int m = COLOR_SCAN_LENGTH;
                     double bestDiff = punish;
                     int bestColor = 0;
                     while (m-- > 0 && xx < cropped.getWidth()) {
-
                         int c = cropped.getRGB(xx, yy);
                         xx++;
-
                         double dif = Colors.getColorDifference(c, rgb);
                         Color col = new Color(c);
-
                         if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
                             dif *= 3;
                         }
@@ -562,12 +498,10 @@ public class KeyCaptchaAutoSolver {
                             bestDiff = dif;
                             bestColor = c;
                         }
-
                     }
                     Color pCol = new Color(rgb);
                     Color bCol = new Color(bestColor);
                     return (int) bestDiff;
-
                 }
             }
             if (notFoundColor) {
@@ -589,20 +523,16 @@ public class KeyCaptchaAutoSolver {
                 if (mask.getRGB(x2, y2) != 0) {
                     notFoundColor = false;
                     int rgb = cleanedPiece.getRGB(x2, y2);
-
                     int xx = x + x2;
                     int yy = y + y2 - 1;
                     int m = COLOR_SCAN_LENGTH;
                     double bestDiff = punish;
                     int bestColor = 0;
                     while (m-- > 0 && yy < cropped.getHeight()) {
-
                         int c = cropped.getRGB(xx, yy);
                         yy++;
-
                         double dif = Colors.getColorDifference(c, rgb);
                         Color col = new Color(c);
-
                         if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
                             dif *= 3;
                         }
@@ -610,12 +540,10 @@ public class KeyCaptchaAutoSolver {
                             bestDiff = dif;
                             bestColor = c;
                         }
-
                     }
                     Color pCol = new Color(rgb);
                     Color bCol = new Color(bestColor);
                     return (int) bestDiff;
-
                 }
             }
             if (notFoundColor) {
@@ -629,7 +557,6 @@ public class KeyCaptchaAutoSolver {
     }
 
     private int getTopPunishByOffset(int x, int y, BufferedImage cropped, BufferedImage mask, BufferedImage cleanedPiece, int offset) {
-
         int punish = 255;
         try {
             int x2 = offset;
@@ -638,20 +565,16 @@ public class KeyCaptchaAutoSolver {
                 if (mask.getRGB(x2, y2) != 0) {
                     notFoundColor = false;
                     int rgb = cleanedPiece.getRGB(x2, y2);
-
                     int xx = x + x2;
                     int yy = y + y2 - 1;
                     int m = COLOR_SCAN_LENGTH;
                     double bestDiff = punish;
                     int bestColor = 0;
                     while (m-- > 0 && yy >= 0) {
-
                         int c = cropped.getRGB(xx, yy);
                         yy--;
-
                         double dif = Colors.getColorDifference(c, rgb);
                         Color col = new Color(c);
-
                         if (col.getRed() == 255 && col.getGreen() == 255 && col.getBlue() == 255) {
                             dif *= 3;
                         }
@@ -659,7 +582,6 @@ public class KeyCaptchaAutoSolver {
                             bestDiff = dif;
                             bestColor = c;
                         }
-
                     }
                     Color pCol = new Color(rgb);
                     Color bCol = new Color(bestColor);
@@ -686,7 +608,6 @@ public class KeyCaptchaAutoSolver {
         BufferedImage merge = IconIO.createEmptyImage(60, 60);
         Graphics2D g = (Graphics2D) merge.getGraphics();
         g.setColor(Color.BLACK);
-
         for (int x = 0; x < maskImage.getWidth(); x++) {
             for (int y = 0; y < maskImage.getHeight(); y++) {
                 if (maskImage.getRGB(x, y) != 0) {
@@ -703,28 +624,22 @@ public class KeyCaptchaAutoSolver {
         int i = 0;
         BufferedImage mask = null;
         int bestCount = Integer.MAX_VALUE;
-
         while (true) {
-
             URL url = getClass().getResource("masks/mask_" + i + ".png");
             i++;
             if (url == null) {
                 return mask;
             }
             BufferedImage maskImage = ImageIO.read(url);
-
             int count = 0;
             for (int x = 0; x < maskImage.getWidth(); x++) {
                 for (int y = 0; y < maskImage.getHeight(); y++) {
-
                     if (maskImage.getRGB(x, y) != 0) {
-
                         int rgb = piece.getRGB(x, y);
                         if (rgb == 0) {
                             count++;
                         }
                     }
-
                 }
             }
             if (count < bestCount) {
@@ -733,5 +648,4 @@ public class KeyCaptchaAutoSolver {
             }
         }
     }
-
 }

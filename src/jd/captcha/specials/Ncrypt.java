@@ -13,15 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import javax.imageio.ImageIO;
 
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -30,6 +27,7 @@ import jd.captcha.utils.AnimatedGifEncoder;
 import jd.captcha.utils.GifDecoder;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.logging.LogController;
 
 public class Ncrypt {
@@ -40,10 +38,8 @@ public class Ncrypt {
         id = 3;
         final File f = list[id];
         // prepareCaptcha(f);
-
         for (final File file : list) {
             prepareCaptcha(file);
-
         }
         System.out.println(id);
         System.out.println(f);
@@ -63,10 +59,9 @@ public class Ncrypt {
                     final BufferedImage frame = d.getFrame(i);
                     frames[i] = jac.createCaptcha(frame);
                 }
-
                 // BasicWindow.showImage(frames[0].getImage(1));
                 fos = new FileOutputStream(file);
-                ImageIO.write(frames[0].getImage(1), "png", fos);
+                ImageProvider.writeImage(frames[0].getImage(1), "png", fos);
             }
         } catch (final Throwable e) {
             LogController.CL().log(e);

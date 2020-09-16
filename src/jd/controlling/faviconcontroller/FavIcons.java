@@ -269,7 +269,7 @@ public class FavIcons {
                                     outputFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
                                     FileCreationManager.getInstance().mkdir(outputFile.getParentFile());
                                     fos = new FileOutputStream(outputFile);
-                                    ImageIO.write(favicon, "png", fos);
+                                    ImageProvider.writeImage(favicon, "png", fos);
                                     outputFile = null;
                                     /* load and scale it again */
                                     if (requestors != null && requestors.size() > 0) {

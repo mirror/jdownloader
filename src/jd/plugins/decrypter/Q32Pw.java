@@ -23,11 +23,6 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,6 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.images.IconIO;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "q32.pw" }, urls = { "https?://(?:www\\.)?q32\\.pw/[A-Za-z0-9]+" })
 public class Q32Pw extends PluginForDecrypt {
@@ -222,17 +222,21 @@ public class Q32Pw extends PluginForDecrypt {
             w += bi.getWidth();
             widths[i++] = bi.getWidth();
         }
-        final BufferedImage stichedImageBuffer = IconIO.createEmptyImage(w, h);
+        final BufferedImage stichedImageBuffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         final Graphics graphic = stichedImageBuffer.getGraphics();
         w = 0;
         for (final BufferedImage bi : images) {
             graphic.drawImage(bi, w, 0, null);
             w += bi.getWidth();
         }
-        final File stitchedImageOutput = getLocalCaptchaFile(".jpg");
+        final byte[] image = IconIO.toJpgBytes(stichedImageBuffer);
+        if (image == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final File stitchedImageOutput = getLocalCaptchaFile(".png");
         // image contains transparency which results in incompatible jpg file when ImageIO is being used
         // IconIO.toJpgBytes removes transparency first
-        IO.writeToFile(stitchedImageOutput, IconIO.toJpgBytes(stichedImageBuffer));
+        IO.writeToFile(stitchedImageOutput, image);
         return stitchedImageOutput;
     }
 }

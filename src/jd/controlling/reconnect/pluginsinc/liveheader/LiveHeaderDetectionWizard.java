@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import javax.imageio.ImageIO;
-
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.reconnect.ProcessCallBack;
 import jd.controlling.reconnect.ProcessCallBackAdapter;
@@ -47,6 +45,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging2.LogSource;
@@ -493,7 +492,7 @@ public class LiveHeaderDetectionWizard {
                 FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
-                ImageIO.write(image, "png", fos);
+                ImageProvider.writeImage(image, "png", fos);
                 fos.flush();
                 fos.close();
                 this.sslFavIconHash = Hash.getMD5(imageFile);
@@ -533,7 +532,7 @@ public class LiveHeaderDetectionWizard {
                 FileCreationManager.getInstance().delete(imageFile, null);
                 imageFile.deleteOnExit();
                 fos = new FileOutputStream(imageFile);
-                ImageIO.write(image, "png", fos);
+                ImageProvider.writeImage(image, "png", fos);
                 fos.flush();
                 fos.close();
                 this.favIconHash = Hash.getMD5(imageFile);
