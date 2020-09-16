@@ -432,7 +432,7 @@ public class SecondLevelLaunch {
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
+                final LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
                 logger.severe("Uncaught Exception in: " + t.getId() + "=" + t.getName() + "|" + e.getMessage());
                 logger.log(e);
                 logger.close();
@@ -449,9 +449,10 @@ public class SecondLevelLaunch {
             System.setProperty("jna.tmpdir", Application.getResource("tmp/jna").getAbsolutePath());
             com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
                 @Override
-                public void uncaughtException(com.sun.jna.Callback arg0, Throwable arg1) {
-                    LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
-                    logger.log(arg1);
+                public void uncaughtException(com.sun.jna.Callback arg0, Throwable e) {
+                    final LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
+                    logger.severe("Uncaught Exception in: " + arg0 + "|" + e.getMessage());
+                    logger.log(e);
                     logger.close();
                 }
             });
