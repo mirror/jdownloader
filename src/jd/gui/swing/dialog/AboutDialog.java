@@ -210,6 +210,16 @@ public class AboutDialog extends AbstractDialog<Integer> {
             } catch (final Throwable e) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
             }
+            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_installdir()), "");
+            ExtButton bt;
+            final File directory = Application.getResource(".");
+            stats.add(bt = disable("<html><u>" + directory + "</u></html>"));
+            bt.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    CrossSystem.openFile(directory);
+                }
+            });
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
@@ -223,16 +233,6 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_updater()), "gapleft 10");
                 stats.add(disable("#" + map.get("UpdateClientV2Revision")));
             }
-            stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_installdir()), "gapleft 10");
-            ExtButton bt;
-            final File directory = Application.getResource(".");
-            stats.add(bt = disable("<html><u>" + directory + "</u></html>"));
-            bt.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    CrossSystem.openFile(directory);
-                }
-            });
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
