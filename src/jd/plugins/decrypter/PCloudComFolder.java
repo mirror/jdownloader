@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -32,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://(?:[a-z0-9]+\\.pcloud\\.(?:com|link)/#page=publink\\&code=|[a-z0-9]+\\.pcloud\\.(?:com|link)/publink/show\\?code=|pc\\.cd/)([A-Za-z0-9]+)" })
 public class PCloudComFolder extends PluginForDecrypt {
@@ -53,7 +53,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         main.setProperty("plain_code", foldercode);
         main.setProperty("mainlink", parameter);
         prepBR();
-        br.getPage("https://api.pcloud.com/showpublink?code=" + getFID(parameter));
+        br.getPage("https://eapi.pcloud.com/showpublink?code=" + getFID(parameter));
         final String result = PluginJSonUtils.getJsonValue(this.br, "result");
         /* 7002 = deleted by the owner, 7003 = abused */
         if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
