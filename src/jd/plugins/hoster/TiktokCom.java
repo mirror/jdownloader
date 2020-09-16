@@ -76,6 +76,10 @@ public class TiktokCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         String user = null;
         final String fid = getFID(link);
@@ -127,8 +131,9 @@ public class TiktokCom extends antiDDoSForHost {
             /* Rev. 40928 and earlier */
             dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
         }
+        /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
         br.setFollowRedirects(true);
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
@@ -157,8 +162,6 @@ public class TiktokCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* Do not yet set final filename */
         }
         return AvailableStatus.TRUE;
     }
@@ -195,9 +198,9 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {

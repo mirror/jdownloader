@@ -45,6 +45,8 @@ public class FileAl extends XFileSharingProBasic {
      * captchatype-info: 2019-05-03: reCaptchaV2<br />
      * other: Their website has strict anti-ddos measures which can easily be triggered and will lead to 'ip_check' pages --> More
      * reCaptchaV2 <br />
+     * 2020-09-16: I was unable to trigger these captchas anymore (in premium mode) thus set junlimited simultaneous downloads for premium
+     * mode
      */
     private static String[] domains = new String[] { "file.al" };
 
@@ -92,8 +94,6 @@ public class FileAl extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* 2019-05-03: Special: Set this to 1 to avoid unnerving 'ip_check' captchas (same will happen via browser) */
-        /* 2020-09-15: Experimentally set -1 to let premium Users check if these unnerving "anti ddos Captchas" still exist. */
         return -1;
     }
 
