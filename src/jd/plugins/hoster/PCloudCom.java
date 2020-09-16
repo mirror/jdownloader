@@ -22,8 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +43,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -97,13 +97,13 @@ public class PCloudCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBR();
         if (isCompleteFolder(link)) {
-            br.getPage("https://api.pcloud.com/showpublink?code=" + code);
+            br.getPage("https://eapi.pcloud.com/showpublink?code=" + code);
             this.updatestatuscode();
             if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            br.getPage("https://api.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
+            br.getPage("https://eapi.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             this.updatestatuscode();
             if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -126,14 +126,7 @@ public class PCloudCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         if (this.statuscode == ERROR_PREMIUMONLY) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         doFree(link);
     }
@@ -150,8 +143,12 @@ public class PCloudCom extends PluginForHost {
             maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (dl.getConnection().getContentType().contains("text")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
@@ -161,6 +158,7 @@ public class PCloudCom extends PluginForHost {
                         return;
                     }
                 } catch (final Throwable e) {
+                    logger.log(e);
                 }
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
@@ -169,12 +167,11 @@ public class PCloudCom extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
-            e.printStackTrace();
             // New V2 chunk errorhandling
             /* unknown error, we disable multiple chunks */
             if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
                 link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
             }
             throw e;
         }
@@ -188,7 +185,7 @@ public class PCloudCom extends PluginForHost {
             if (fileids == null || fileids.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://api.pcloud.com/getpubzip?fileids=";
+            dllink = "https://eapi.pcloud.com/getpubzip?fileids=";
             for (int i = 0; i < fileids.length; i++) {
                 final String currentID = fileids[i];
                 if (i == fileids.length - 1) {
@@ -256,7 +253,7 @@ public class PCloudCom extends PluginForHost {
                     }
                 }
                 prepBR();
-                postAPISafe("https://api.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                postAPISafe("https://eapi.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -285,7 +282,9 @@ public class PCloudCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -302,12 +301,7 @@ public class PCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         final String premium = PluginJSonUtils.getJsonValue(br, "premium");
         ai.setUnlimitedTraffic();
         if ("true".equals(premium)) {
@@ -342,7 +336,7 @@ public class PCloudCom extends PluginForHost {
             freeaccount_dllink = checkDirectLink(link, "freeaccount_dllink");
             if (freeaccount_dllink == null) {
                 /* tofolderid --> 0 = root */
-                getAPISafe("https://api.pcloud.com/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
+                getAPISafe("https://eapi.pcloud.com/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
                 new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
                 new_hash = PluginJSonUtils.getJsonValue(br, "hash");
                 api_filename = PluginJSonUtils.getJsonValue(br, "name");
@@ -378,8 +372,12 @@ public class PCloudCom extends PluginForHost {
                 maxchunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeaccount_dllink, ACCOUNT_FREE_RESUME, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (dl.getConnection().getContentType().contains("text")) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("freeaccount_dllink", freeaccount_dllink);
@@ -390,6 +388,7 @@ public class PCloudCom extends PluginForHost {
                             return;
                         }
                     } catch (final Throwable e) {
+                        logger.log(e);
                     }
                     /* unknown error, we disable multiple chunks */
                     if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
@@ -398,51 +397,47 @@ public class PCloudCom extends PluginForHost {
                     }
                 }
             } catch (final PluginException e) {
-                e.printStackTrace();
                 // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
                     link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
                 }
                 throw e;
             }
         } else if (this.statuscode == ERROR_PREMIUMONLY) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else {
             doFree(link);
         }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (con.getContentType().contains("test") || con.getLongContentLength() == -1) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
