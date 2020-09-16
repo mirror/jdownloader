@@ -80,7 +80,7 @@ public class StreamzCc extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9==]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9==]{10,})");
         }
         return ret.toArray(new String[0]);
     }
@@ -127,7 +127,7 @@ public class StreamzCc extends antiDDoSForHost {
         // if (StringUtils.isNotEmpty(shareLink)) {
         // link.setPluginPatternMatcher(shareLink);
         // }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not found")) {
+        if ((br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not found")) && !br.containsHTML("/download")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("The link in your browser URL is only valid for")) {
@@ -136,7 +136,7 @@ public class StreamzCc extends antiDDoSForHost {
             }
             final String redirectLink = link.getStringProperty("redirect_link");
             if (StringUtils.isEmpty(redirectLink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "page expired and no redirect_link found");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "page expired and no redirect_link found");
             }
             br.setFollowRedirects(false);
             br.getPage(redirectLink);
@@ -187,6 +187,7 @@ public class StreamzCc extends antiDDoSForHost {
             if (br.containsHTML(">Too many downloads? in the last few minutes")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many download in the last few minutes", 5 * 60 * 1000l);
             } else if (br.containsHTML("color=\"red\">\\s*Please|before you try to download this movie")) {
+                /* 2020-09-16: (Nearly) all URLs are premium-only */
                 throw new AccountRequiredException();
             }
             final Form continueForm = br.getFormbyActionRegex(".*dodownload\\.dll");

@@ -151,16 +151,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         if (q360p || all) {
             selectedQualities.add("360");
         }
-        // for (final String quality : selectedQualities) {
-        // final List<DownloadLink> ret = getVideoDownloadlinks(quality);
-        // if (ret != null) {
-        // // tempList = new ArrayList<DownloadLink>();
-        // results.put(quality, ret);
-        // if (best) {
-        // break;
-        // }
-        // }
-        // }
         for (final String selectedQuality : selectedQualities) {
             final Iterator<Entry<String, String>> iterator = foundQualities.entrySet().iterator();
             while (iterator.hasNext()) {
