@@ -20,12 +20,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import jd.captcha.utils.GifDecoder;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.utils.URLStream;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.DomainInfo;
@@ -34,13 +37,8 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.captcha.utils.GifDecoder;
-import net.miginfocom.swing.MigLayout;
-
 public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<Object> {
-
     public static Image[] getGifImages(InputStream openStream) {
-
         try {
             GifDecoder decoder = new GifDecoder();
             decoder.read(openStream);
@@ -51,14 +49,12 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                 // i + ".png"));
             }
             return ret;
-
         } finally {
             try {
                 openStream.close();
             } catch (final Throwable e) {
             }
         }
-
     }
 
     /**
@@ -82,9 +78,7 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
     }
 
     int                 fps;
-
     protected Image[]   images;
-
     protected Point     offset;
     private int         frame = 0;
     Timer               paintTimer;
@@ -93,7 +87,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
 
     public AbstractImageCaptchaDialog(ImageCaptchaChallenge<?> challenge, int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
         super(challenge, flags, title, type, domainInfo, explain);
-
         // if we have gif images, but read them as non indexed images, we try to fix this here.
         java.util.List<Image> ret = new ArrayList<Image>();
         if (images != null) {
@@ -102,8 +95,7 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                     if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {
                         ByteArrayOutputStream os = new ByteArrayOutputStream();
                         try {
-                            ImageIO.write((BufferedImage) images[i], "gif", os);
-
+                            ImageProvider.writeImage((BufferedImage) images[i], "gif", os);
                             InputStream is = new ByteArrayInputStream(os.toByteArray());
                             Image[] subImages = getGifImages(is);
                             for (Image ii : subImages) {
@@ -111,19 +103,15 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                             }
                             continue;
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            challenge.getPlugin().getLogger().log(e);
                         }
-
                     }
-
                 }
                 ret.add(images[i]);
             }
         }
-
         this.images = ret.toArray(new Image[] {});
         fps = 24;
-
     }
 
     protected MigLayout getDialogLayout() {
@@ -133,7 +121,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
     @Override
     protected JPanel createCaptchaPanel() {
         JPanel iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]")) {
-
             /**
              *
              */
@@ -146,7 +133,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                 try {
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f));
                     super.paintChildren(g);
-
                 } finally {
                     g2.setComposite(comp);
                 }
@@ -160,18 +146,13 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
                 scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
                 offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
                 AbstractImageCaptchaDialog.this.bounds = new Rectangle((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled.getWidth(), scaled.getHeight());
-
                 g.setClip(bounds);
                 g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
                 paintIconComponent(g, getWidth(), getHeight(), (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, scaled);
-
             }
-
         };
-
         final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
         if (size != 100) {
-
             iconPanel.setPreferredSize(new Dimension((int) (images[0].getWidth(null) * size / 100.0f), (int) (images[0].getHeight(null) * size / 100.0f)));
         } else {
             iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
@@ -197,7 +178,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
         final JComponent ret = super.layoutDialogContent();
         if (images.length > 1) {
             paintTimer = new Timer(1000 / fps, new ActionListener() {
-
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     frame = (frame + 1) % images.length;
@@ -206,7 +186,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
             });
             paintTimer.setRepeats(true);
             paintTimer.start();
-
         }
         JComponent b = createInputComponent();
         if (b != null) {
@@ -219,7 +198,6 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
 
     @Override
     protected String createReturnValue() {
-
         return null;
     }
 

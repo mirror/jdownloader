@@ -8,8 +8,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-
 import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -22,6 +20,7 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.DomainInfo;
@@ -138,7 +137,7 @@ public class AccountAPIImpl implements AccountAPI {
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
             if (plugin != null) {
-                ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
+                ImageProvider.writeImage(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
             }
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);

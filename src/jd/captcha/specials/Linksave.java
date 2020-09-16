@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
@@ -23,13 +22,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.nutils.Colors;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.jdownloader.logging.LogController;
 
 public class Linksave {
     public static void main(String args[]) throws IOException {
@@ -39,10 +39,8 @@ public class Linksave {
         id = 3;
         File f = list[id];
         // prepareCaptcha(f);
-
         for (File file : list) {
             prepareCaptcha(file);
-
         }
         System.out.println(id);
         System.out.println(f);
@@ -71,10 +69,8 @@ public class Linksave {
             for (int i = 0; i < n; i++) {
                 BufferedImage frame = d.getFrame(i);
                 frames[i] = jac.createCaptcha(frame);
-
             }
             int[][] grid = new int[frames[0].getWidth()][frames[0].getHeight()];
-
             for (int x = 0; x < grid.length; x++) {
                 for (int y = 0; y < grid[0].length; y++) {
                     int max = 0;
@@ -89,8 +85,9 @@ public class Linksave {
                         } else {
                             colors.put(frames[i].getGrid()[x][y], colors.get(frames[i].getGrid()[x][y]) + 1);
                         }
-                        if (hsb[2] < 0.2 && distance < 100) continue;
-
+                        if (hsb[2] < 0.2 && distance < 100) {
+                            continue;
+                        }
                         max = Math.max(max, frames[i].getGrid()[x][y]);
                     }
                     int mainColor = 0;
@@ -116,11 +113,14 @@ public class Linksave {
                         bl2++;
                     }
                 }
-                if (bl1 == 12) cleanBlack(x, 0, grid);
-                if (bl2 == 12) cleanBlack(x, gl1, grid);
+                if (bl1 == 12) {
+                    cleanBlack(x, 0, grid);
+                }
+                if (bl2 == 12) {
+                    cleanBlack(x, gl1, grid);
+                }
             }
             gl1 = grid.length - 1;
-
             for (int y = 0; y < grid.length; y++) {
                 int bl1 = 0;
                 int bl2 = 0;
@@ -132,22 +132,24 @@ public class Linksave {
                         bl2++;
                     }
                 }
-                if (bl1 == 12) cleanBlack(0, y, grid);
-                if (bl2 == 12) cleanBlack(gl1, y, grid);
+                if (bl1 == 12) {
+                    cleanBlack(0, y, grid);
+                }
+                if (bl2 == 12) {
+                    cleanBlack(gl1, y, grid);
+                }
             }
             frames[0].setGrid(grid);
-
             // BasicWindow.showImage(frames[0].getImage(1));
             fos = new FileOutputStream(file);
-            ImageIO.write(frames[0].getImage(1), "png", fos);
+            ImageProvider.writeImage(frames[0].getImage(1), "png", fos);
         } catch (Exception e) {
-
+            LogController.CL().log(e);
         } finally {
             try {
                 fos.close();
             } catch (final Throwable e) {
             }
         }
-
     }
 }

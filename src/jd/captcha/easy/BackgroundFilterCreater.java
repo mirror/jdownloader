@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha.easy;
 
 import java.awt.Image;
@@ -25,18 +24,17 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.logging.LogController;
 
 public class BackgroundFilterCreater {
     /**
      * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im Captchaordner der Methode
-     * 
+     *
      * @param files
      * @param methode
      * @return
@@ -44,7 +42,6 @@ public class BackgroundFilterCreater {
      */
     public static File create(EasyMethodFile methode) throws InterruptedException {
         return create(methode.getCaptchaFolder().listFiles(new FileFilter() {
-
             public boolean accept(File pathname) {
                 return pathname.isFile() && pathname.getName().matches("(?is).*\\.(jpg|png|gif)");
             }
@@ -53,7 +50,7 @@ public class BackgroundFilterCreater {
 
     /**
      * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von Dateien
-     * 
+     *
      * @param files
      * @param methode
      * @return
@@ -77,13 +74,12 @@ public class BackgroundFilterCreater {
             image = Utilities.loadImage(file);
             Captcha captcha = jac.createCaptcha(image);
             if (captcha == null || captcha.getWidth() != firstCaptcha.getWidth() || captcha.getHeight() != firstCaptcha.getHeight()) {
-
                 LogController.CL().info("ERROR Maske und Bild passen nicht zusammmen");
-
                 continue;
             }
-            if (i++ == 100) break;
-
+            if (i++ == 100) {
+                break;
+            }
             for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
                     HashMap<Integer, Integer> map = grid[x][y];
@@ -91,8 +87,9 @@ public class BackgroundFilterCreater {
                     if (!ignoreBlack || val != 0x000000) {
                         if (map.containsKey(val)) {
                             map.put(val, map.get(val) + 1);
-                        } else
+                        } else {
                             map.put(val, 0);
+                        }
                     }
                 }
             }
@@ -101,7 +98,6 @@ public class BackgroundFilterCreater {
             for (int y = 0; y < firstCaptcha.getHeight(); y++) {
                 Set<Entry<Integer, Integer>> map = grid[x][y].entrySet();
                 Entry<Integer, Integer> best = new Entry<Integer, Integer>() {
-
                     public Integer getKey() {
                         return -1;
                     }
@@ -115,7 +111,9 @@ public class BackgroundFilterCreater {
                     }
                 };
                 for (Entry<Integer, Integer> entry : map) {
-                    if (entry.getValue() > best.getValue()) best = entry;
+                    if (entry.getValue() > best.getValue()) {
+                        best = entry;
+                    }
                 }
                 firstCaptcha.setPixelValue(x, y, best.getKey());
             }
@@ -124,7 +122,7 @@ public class BackgroundFilterCreater {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(ret);
-            ImageIO.write(firstCaptcha.getImage(), "png", fos);
+            ImageProvider.writeImage(firstCaptcha.getImage(), "png", fos);
         } catch (IOException e) {
             LogController.CL().log(e);
         } finally {
@@ -135,5 +133,4 @@ public class BackgroundFilterCreater {
         }
         return ret;
     }
-
 }

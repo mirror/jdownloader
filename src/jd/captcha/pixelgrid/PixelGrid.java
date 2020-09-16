@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.captcha.pixelgrid;
 
 import java.awt.Color;
@@ -28,14 +27,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
@@ -44,9 +42,7 @@ import org.jdownloader.logging.LogController;
  *
  * @author JD-Team
  */
-
 public class PixelGrid {
-
     private static final long serialVersionUID = 1L;
 
     public void autoBottomTopAlign() {
@@ -73,13 +69,11 @@ public class PixelGrid {
                     int yd = getHeight() - y;
                     int yyd = yd * yd;
                     double diff = Math.sqrt(xx + yy);
-
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
                         bestOL = diff;
                     }
-
                     diff = Math.sqrt(xxd + yy);
                     if (diff < bestOR) {
                         xOR = x;
@@ -105,7 +99,6 @@ public class PixelGrid {
         grid[xOR][yOR] = 0x00FFCC;
         grid[xUR][yUR] = 0x3366FF;
         grid[xUL][yUL] = 0xFFCC33;
-
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);
         if (distBest == 0) {
@@ -125,11 +118,8 @@ public class PixelGrid {
             distBest = dist;
             g = 1;
         }
-
         skipw = (xUR - xUL) < (getHeight() / 3) || yUL < (getHeight() * 2 / 3) || yUR < (getHeight() * 2 / 3);
-
         System.out.println(distBest);
-
         int turn = 60;
         // if(Math.abs( Math.round(distBest * turn))>6)
         if (g > 1) {
@@ -138,11 +128,9 @@ public class PixelGrid {
             this.grid = turn((-distBest * turn)).grid;
             // if(Math.abs( Math.round(distBest * turn))>6)
         }
-
         // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
         // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
         // + g);
-
     }
 
     public void autoAlign() {
@@ -169,13 +157,11 @@ public class PixelGrid {
                     int yd = getHeight() - y;
                     int yyd = yd * yd;
                     double diff = Math.sqrt(xx + yy);
-
                     if (diff < bestOL) {
                         xOL = x;
                         yOL = y;
                         bestOL = diff;
                     }
-
                     diff = Math.sqrt(xxd + yy);
                     if (diff < bestOR) {
                         xOR = x;
@@ -201,7 +187,6 @@ public class PixelGrid {
         grid[xOR][yOR] = 0x00FFCC;
         grid[xUR][yUR] = 0x3366FF;
         grid[xUL][yUL] = 0xFFCC33;
-
         int g = 0;
         double distBest = getM(xOL, xOR, yOL, yOR);
         if (distBest == 0) {
@@ -221,9 +206,7 @@ public class PixelGrid {
             distBest = dist;
             g = 1;
         }
-
         skipw = (xUR - xUL) < (getHeight() / 3) || yUL < (getHeight() * 2 / 3) || yUR < (getHeight() * 2 / 3);
-
         dist = getM(yOL, yUL, xOL, xUL);
         if (dist == 0) {
             distW = distBest / ((yUL - yOL + 1) / 4);
@@ -236,14 +219,12 @@ public class PixelGrid {
             g = 2;
         }
         skipw = (yUL - yOL) < (getHeight() / 4) || xUL > (getWidth() / 3) || xOL > (getWidth() / 3);
-
         dist = getM(yOR, yUR, xOR, xUR);
         if (dist == 0) {
             distW = distBest / ((yUR - yOR + 1) / 4);
         } else {
             distW = dist / ((yUR - yOR + 1) / 4);
         }
-
         if (skipw || Math.abs(distW) < Math.abs(distWBest)) {
             skipw = (yUR - yOR) < (getHeight() / 4) || xUR > (getHeight() * 2 / 3) || xOR > (getWidth() * 2 / 3);
             if (!skipw) {
@@ -252,9 +233,7 @@ public class PixelGrid {
                 g = 3;
             }
         }
-
         // System.out.println(distWBest);
-
         int turn = 60;
         // if(Math.abs( Math.round(distBest * turn))>6)
         if (g > 1) {
@@ -263,11 +242,9 @@ public class PixelGrid {
             this.grid = turn((-distBest * turn)).grid;
             // if(Math.abs( Math.round(distBest * turn))>6)
         }
-
         // BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10,
         // getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:"
         // + g);
-
     }
 
     /**
@@ -285,7 +262,6 @@ public class PixelGrid {
             angle += 360;
         }
         angle /= 180;
-
         int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
         int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
         PixelGrid l = new PixelGrid(newWidth, newHeight);
@@ -299,14 +275,11 @@ public class PixelGrid {
                     newGrid[x][y] = owner.getJas().getColorFaktor() - 1;
                     continue;
                 }
-
                 newGrid[x][y] = grid[n[0]][n[1]];
-
             }
         }
         l.setGrid(newGrid);
         return l;
-
     }
 
     private double getM(int x0, int x1, int y0, int y1) {
@@ -314,10 +287,8 @@ public class PixelGrid {
     }
 
     public static void fillLetter(Letter l) {
-
         int limit = 200;
         int[][] tmp = new int[l.getWidth()][l.getHeight()];
-
         for (int x = 0; x < l.getWidth(); x++) {
             for (int y = 0; y < l.getHeight(); y++) {
                 if (l.grid[x][y] > limit && tmp[x][y] != 1) {
@@ -327,24 +298,19 @@ public class PixelGrid {
                         l.fillWithObject(p, 0);
                     }
                     // BasicWindow.showImage(l.getImage(2), x+" - "+y);
-
                 }
             }
         }
-
     }
 
     public static int[] getDimension(int[][] grid) {
-
         int topLines = 0;
         int bottomLines = 0;
         int leftLines = 0;
         int rightLines = 0;
-
         int width = grid.length;
         int height = grid[0].length;
         row: for (int x = 0; x < width; x++) {
-
             for (int y = 0; y < height; y++) {
                 // JDUtilities.getLogger().info(grid[x][y]+"");
                 if (grid[x][y] == 0) {
@@ -352,49 +318,38 @@ public class PixelGrid {
                     break row;
                 }
             }
-
             leftLines++;
         }
         // JDUtilities.getLogger().info("left "+leftLines);
         row: for (int x = width - 1; x >= 0; x--) {
-
             for (int y = 0; y < height; y++) {
-
                 if (grid[x][y] == 0) {
                     // grid[x][y] = 0xff0000;
                     break row;
                 }
             }
-
             rightLines++;
         }
         // JDUtilities.getLogger().info("right "+rightLines);
         if (leftLines >= width || width - rightLines > width) {
             return new int[] { 0, 0 };
         }
-
         line: for (int y = 0; y < height; y++) {
-
             for (int x = leftLines; x < width - rightLines; x++) {
                 if (grid[x][y] == 0) {
                     // grid[x][y] = 0xff0000;
-
                     break line;
                 }
             }
-
             topLines++;
         }
         line: for (int y = height - 1; y >= 0; y--) {
-
             for (int x = leftLines; x < width - rightLines; x++) {
                 if (grid[x][y] == 0) {
                     // grid[x][y] = 0xff0000;
-
                     break line;
                 }
             }
-
             bottomLines++;
         }
         // JDUtilities.getLogger().info("top "+topLines);
@@ -403,7 +358,6 @@ public class PixelGrid {
             return new int[] { 0, 0 };
         }
         return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
-
     }
 
     /** Why not simple return grid.clone(); ? */
@@ -417,7 +371,6 @@ public class PixelGrid {
                 ret[x][y] = grid[x][y];
             }
         }
-
         return ret;
     }
 
@@ -454,7 +407,6 @@ public class PixelGrid {
         if (y < 0 || grid.length == 0 || y >= grid[0].length) {
             return -1;
         }
-
         return grid[x][y];
     }
 
@@ -466,7 +418,6 @@ public class PixelGrid {
             }
             p.add(x, y, 0xff0000);
             tmp[x][y] = 1;
-
             PixelGrid.recFill(p, l, x - 1, y, tmp, i);
             // getObject(x - 1, y - 1, tmpGrid, object);
             PixelGrid.recFill(p, l, x, y - 1, tmp, i);
@@ -475,9 +426,7 @@ public class PixelGrid {
             // getObject(x + 1, y + 1, tmpGrid, object);
             PixelGrid.recFill(p, l, x, y + 1, tmp, i);
             // getObject(x - 1, y + 1, tmpGrid, object);
-
         }
-
     }
 
     /**
@@ -501,21 +450,16 @@ public class PixelGrid {
      * Internes grid
      */
     public int[][]            grid;
-
     private int[]             location = new int[] { 0, 0 };
-
     /**
      * ParameterDump
      */
     public JAntiCaptcha       owner;
-
     /**
      * Pixel Array
      */
     public int[]              pixel;
-
     protected int[][]         tmpGrid;
-
     protected final LogSource logger;
 
     /**
@@ -538,19 +482,14 @@ public class PixelGrid {
      *            Stärke des Effekts
      */
     public void blurIt(int faktor) {
-
         int[][] newGrid = new int[getWidth()][getHeight()];
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 PixelGrid.setPixelValue(x, y, newGrid, getAverage(x, y, faktor, faktor));
-
                 // getAverage(x, y, faktor, faktor)
             }
         }
-
         grid = newGrid;
-
     }
 
     /**
@@ -559,17 +498,14 @@ public class PixelGrid {
      * @return true/False
      */
     public boolean clean() {
-
         int topLines = 0;
         int bottomLines = 0;
         int leftLines = 0;
         int rightLines = 0;
         int avg = getAverage();
-
         for (int x = 0; x < getWidth(); x++) {
             boolean rowIsClear = true;
             for (int y = 0; y < getHeight(); y++) {
-
                 if (isElement(getPixelValue(x, y), avg)) {
                     rowIsClear = false;
                     break;
@@ -580,11 +516,9 @@ public class PixelGrid {
             }
             leftLines++;
         }
-
         for (int x = getWidth() - 1; x >= 0; x--) {
             boolean rowIsClear = true;
             for (int y = 0; y < getHeight(); y++) {
-
                 if (isElement(getPixelValue(x, y), avg)) {
                     rowIsClear = false;
                     break;
@@ -593,15 +527,12 @@ public class PixelGrid {
             if (!rowIsClear) {
                 break;
             }
-
             rightLines++;
         }
-
         if (leftLines >= getWidth() || getWidth() - rightLines > getWidth()) {
             logger.severe("cleaning failed. nothing left1");
             grid = new int[0][0];
             return false;
-
         }
         for (int y = 0; y < getHeight(); y++) {
             boolean lineIsClear = true;
@@ -616,7 +547,6 @@ public class PixelGrid {
             }
             topLines++;
         }
-
         for (int y = getHeight() - 1; y >= 0; y--) {
             boolean lineIsClear = true;
             for (int x = leftLines; x < getWidth() - rightLines; x++) {
@@ -630,7 +560,6 @@ public class PixelGrid {
             }
             bottomLines++;
         }
-
         if (getWidth() - leftLines - rightLines < 0 || getHeight() - topLines - bottomLines < 0) {
             logger.severe("cleaning failed. nothing left");
             grid = new int[0][0];
@@ -643,12 +572,9 @@ public class PixelGrid {
             for (int x = 0; x < getWidth() - leftLines - rightLines; x++) {
                 ret[x][y] = getPixelValue(x + leftLines, y + topLines);
             }
-
         }
         grid = ret;
-
         return true;
-
     }
 
     /**
@@ -665,7 +591,6 @@ public class PixelGrid {
                 if (Colors.getColorDifference(i, this.getPixelValue(x, y)) < d) {
                     this.setPixelValue(x, y, getMaxPixelValue());
                 }
-
             }
         }
         // grid = newgrid;
@@ -735,7 +660,6 @@ public class PixelGrid {
     public void crop(int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
         int newWidth = getWidth() - (leftPadding + rightPadding);
         int newHeight = getHeight() - (topPadding + bottomPadding);
-
         int[][] newGrid = new int[newWidth][newHeight];
         location[0] += leftPadding;
         location[1] += topPadding;
@@ -744,31 +668,20 @@ public class PixelGrid {
                 newGrid[x][y] = grid[x + leftPadding][y + topPadding];
             }
         }
-
         grid = newGrid;
-
     }
 
     public void desinx(double max, double omega, double phi) {
         omega = 2 * Math.PI / omega;
-
         int[][] tmp = new int[getWidth()][getHeight()];
-
         int shift;
-
         for (int y = 0; y < getHeight(); y++) {
-
             shift = (int) (max * Math.sin(omega * (y + phi)));
-
             for (int x = 0; x < getWidth(); x++) {
-
                 tmp[x][y] = x + shift < getWidth() && x + shift >= 0 ? grid[x + shift][y] : 0xFF;
             }
-
         }
-
         setGrid(tmp);
-
     }
 
     /**
@@ -781,22 +694,14 @@ public class PixelGrid {
     public void desiny(double max, double omega, double phi) {
         int shift;
         omega = 2 * Math.PI / omega;
-
         int[][] tmp = new int[getWidth()][getHeight()];
-
         for (int x = 0; x < getWidth(); x++) {
-
             shift = (int) (max * Math.sin(omega * (x + phi)));
-
             for (int y = 0; y < getHeight(); y++) {
-
                 tmp[x][y] = y + shift < getHeight() && y + shift >= 0 ? grid[x][y + shift] : 0xFF;
             }
-
         }
-
         setGrid(tmp);
-
     }
 
     /**
@@ -808,7 +713,6 @@ public class PixelGrid {
         int[] avg = { 0, 0, 0 };
         int[] bv;
         int i = 0;
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 // Nicht die Colormix Funktion verwenden!!! DIe gibt nur in
@@ -818,7 +722,6 @@ public class PixelGrid {
                 avg[1] += bv[1];
                 avg[2] += bv[2];
                 i++;
-
             }
         }
         if (i == 0) {
@@ -828,7 +731,6 @@ public class PixelGrid {
         avg[1] /= i;
         avg[2] /= i;
         return Colors.rgbToHex(avg);
-
     }
 
     /**
@@ -856,7 +758,6 @@ public class PixelGrid {
         if (height == 1 && py == 0) {
             height = 2;
         }
-
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 bv = Colors.hexToRgb(getPixelValue(x, y));
@@ -864,10 +765,8 @@ public class PixelGrid {
                 avg[1] += bv[1];
                 avg[2] += bv[2];
                 i++;
-
             }
         }
-
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
@@ -900,19 +799,15 @@ public class PixelGrid {
         if (height == 1 && py == 0) {
             height = 2;
         }
-
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
                 if (x != px || y != py) {
-
                     bv = Colors.hexToRgb(getPixelValue(x, y));
                     avg[0] += bv[0];
                     avg[1] += bv[1];
                     avg[2] += bv[2];
                     i++;
-
                 }
-
             }
         }
         if (i > 0) {
@@ -924,7 +819,6 @@ public class PixelGrid {
     }
 
     protected Vector<PixelObject> getColorObjects(int letterNum) {
-
         // int percent =
         // owner.getJas().getInteger("colorObjectDetectionPercent");
         // int running =
@@ -934,7 +828,6 @@ public class PixelGrid {
         HashMap<Integer[], PixelObject> map = new HashMap<Integer[], PixelObject>();
         logger.info("" + Colors.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
         logger.info("" + Colors.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
-
         logger.info("" + Colors.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
         final int avg = getAverage();
         int intensivity = 8;
@@ -943,10 +836,8 @@ public class PixelGrid {
         int d = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-
                 Integer key = getPixelValue(x, y);
                 int[] rgbA = Colors.hexToRgb(key);
-
                 if (isElement(key, avg) || Colors.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
                     // TODO map.get(key) is wrong; map is defined as
                     // <Integer[],...> not <Integer,...>
@@ -970,17 +861,14 @@ public class PixelGrid {
                                     PixelObject object = valsiter.next();
                                     if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
                                         dif = Colors.getHueColorDifference(bv, Colors.hexToRgb(object.getAverage()));
-
                                         if (dif < bestValue) {
                                             bestKey = key2;
                                             bestValue = dif;
                                             // map.get(key2).add(x, y,
                                             // getPixelValue(x,
                                             // y));
-
                                         }
                                     }
-
                                 }
                                 if (bestValue < intensivity) {
                                     map.get(bestKey).add(x, y, key);
@@ -1000,7 +888,6 @@ public class PixelGrid {
                             map.put(last, object);
                             d = 0;
                         }
-
                     } else {
                         // TODO map.get(key) is wrong; map is defined as
                         // <Integer[],...> not <Integer,...>
@@ -1012,10 +899,8 @@ public class PixelGrid {
                 }
             }
         }
-
         // int total = getWidth() * getHeight();
         java.util.List<Object[]> els = new ArrayList<Object[]>();
-
         Iterator<PixelObject> vals = map.values().iterator();
         Iterator<Integer[]> keys = map.keySet().iterator();
         while (keys.hasNext() && vals.hasNext()) {
@@ -1033,11 +918,9 @@ public class PixelGrid {
                 }
             }
         });
-
         int c = map.size();
         if (c > letterNum) {
             Iterator<Object[]> iter = els.iterator();
-
             double addd = intensivity / 2;
             while (c > letterNum) {
                 if (!iter.hasNext()) {
@@ -1060,7 +943,6 @@ public class PixelGrid {
                     if (key2 != integers) {
                         dif = key2[1] - integers[1];
                         dif2 = Math.abs((double) (key2[1] + obj.getWidth() - (integers[1] + object.getWidth())));
-
                         if (dif == 0 || dif2 == 0 || dif < 0 && dif + obj.getWidth() > 0) {
                             map.get(key2).add(object);
                             map.remove(integers);
@@ -1081,7 +963,6 @@ public class PixelGrid {
                             bestValue = dif2;
                         }
                     }
-
                 }
                 if (bestKey != null) {
                     dif = Colors.getHueColorDifference(Colors.hexToRgb(bestobj.getAverage()), Colors.hexToRgb(object.getAverage()));
@@ -1094,7 +975,6 @@ public class PixelGrid {
                 }
             }
         }
-
         java.util.List<Integer[]> ar = new ArrayList<Integer[]>();
         ar.addAll(map.keySet());
         Collections.sort(ar, new Comparator<Integer[]>() {
@@ -1125,7 +1005,6 @@ public class PixelGrid {
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
-
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 graphics.setColor(new Color(getPixelValue(x, y) == 0 ? 0 : 0xffffff));
@@ -1133,7 +1012,6 @@ public class PixelGrid {
             }
         }
         return image;
-
     }
 
     public int[][] getGrid() {
@@ -1151,7 +1029,6 @@ public class PixelGrid {
                 ret[x][y] = grid[x][y];
             }
         }
-
         return ret;
     }
 
@@ -1174,23 +1051,18 @@ public class PixelGrid {
      */
     public BufferedImage getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-
             logger.severe("Dimensionen falsch: " + getDim());
-
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
-
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-
                 graphics.setColor(new Color(getPixelValue(x, y)));
                 graphics.fillRect(x, y, 1, 1);
             }
         }
         return image;
-
     }
 
     /**
@@ -1205,13 +1077,10 @@ public class PixelGrid {
             // if(Utilities.isLoggerActive())logger.severe("Bild zu Klein.
             // Fehler!!. Buhcstbaen nicht richtig erkannt?");
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-
             return image;
-
         }
         BufferedImage image = new BufferedImage(getWidth() * faktor, getHeight() * faktor, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
-
         for (int y = 0; y < getHeight() * faktor; y += faktor) {
             for (int x = 0; x < getWidth() * faktor; x += faktor) {
                 graphics.setColor(new Color(getPixelValue(x / faktor, y / faktor)));
@@ -1219,7 +1088,6 @@ public class PixelGrid {
             }
         }
         return image;
-
     }
 
     public int[] getLocation() {
@@ -1255,7 +1123,6 @@ public class PixelGrid {
      * @param object
      */
     private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
-
         if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) {
             return;
         }
@@ -1263,10 +1130,8 @@ public class PixelGrid {
         // Utilities.trace(x+"/"+y);
         try {
             if (object.doesColorAverageFit(localValue)) {
-
                 object.add(x, y, localValue);
                 tmpGrid[x][y] = -1;
-
                 // Achtung!! Algos funktionieren nur auf sw basis richtig
                 // grid[x][y] = 254;
                 getObject(x - 1, y, tmpGrid, object);
@@ -1290,7 +1155,6 @@ public class PixelGrid {
             logger.log(e);
         }
         return;
-
     }
 
     /**
@@ -1303,7 +1167,6 @@ public class PixelGrid {
     public Vector<PixelObject> getObjects(double contrast, double objectContrast) {
         int[][] tmpGrid = getGridCopy();
         int dist;
-
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
@@ -1319,18 +1182,13 @@ public class PixelGrid {
             w.setImage(0, 0, this.getImage());
         }
         int line = 1;
-
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-
                 if (tmpGrid[x][y] < 0) {
                     continue;
                 }
-
                 if (getPixelValue(x, y) <= objectContrast * getMaxPixelValue()) {
-
                     // Füge 2 Objekte zusammen die scheinbar zusammen gehören
-
                     dist = 100;
                     if (lastObject != null) {
                         int xd = x - lastObject.getXMin() + lastObject.getWidth() / 2;
@@ -1339,7 +1197,6 @@ public class PixelGrid {
                     }
                     int d;
                     if (lastObject != null && lastObject.getArea() < owner.getJas().getInteger("minimumObjectArea") && dist < (d = owner.getJas().getInteger("minimumLetterWidth") / 2 + 1) * d) {
-
                         object = lastObject;
                         for (int i = 0; i < ret.size(); i++) {
                             if (ret.elementAt(i) == object) {
@@ -1347,9 +1204,7 @@ public class PixelGrid {
                                 break;
                             }
                         }
-
                         logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
-
                     } else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
@@ -1399,15 +1254,12 @@ public class PixelGrid {
                     lastObject = object;
                     for (int i = 0; i < ret.size(); i++) {
                         if (object.getArea() > ret.elementAt(i).getArea()) {
-
                             ret.add(i, object);
                             // if(Utilities.isLoggerActive())logger.finer(
                             // "Found
                             // Object size:"+object.getSize()+"
                             // "+object.getWidth()+" - "+object.getArea());
-
                             // BasicWindow.showImage(this.getImage());
-
                             object = null;
                             break;
                         }
@@ -1417,13 +1269,9 @@ public class PixelGrid {
                         // if(Utilities.isLoggerActive())logger.finer("Found
                         // Object size:"+object.getSize()+"
                         // "+object.getWidth()+" - "+object.getArea());
-
                     }
-
                 } else {
-
                     // logger.finer("fdsf");
-
                 }
             }
         }
@@ -1431,7 +1279,6 @@ public class PixelGrid {
             w.refreshUI();
         }
         return ret;
-
     }
 
     /**
@@ -1469,7 +1316,6 @@ public class PixelGrid {
     public String getString() {
         int avg = getAverage();
         StringBuilder ret = new StringBuilder();
-
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (isElement(getPixelValue(x, y), avg)) {
@@ -1477,13 +1323,10 @@ public class PixelGrid {
                 } else {
                     ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
                 }
-
             }
             ret.append(new char[] { '\r', '\n' });
         }
-
         return ret.toString();
-
     }
 
     /**
@@ -1528,7 +1371,6 @@ public class PixelGrid {
      */
     public void normalize() {
         normalize(1);
-
     }
 
     /**
@@ -1565,11 +1407,8 @@ public class PixelGrid {
                 }
             }
         }
-
         Double faktor = (double) (max - min) / (double) getMaxPixelValue();
-
         logger.fine(min + " <> " + max + " : " + faktor);
-
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 akt = getPixelValue(x, y);
@@ -1581,7 +1420,6 @@ public class PixelGrid {
                     setPixelValue(x, y, getMaxPixelValue());
                     continue;
                 }
-
                 akt -= min;
                 akt /= faktor;
                 akt *= multi;
@@ -1591,10 +1429,8 @@ public class PixelGrid {
                 akt = Math.min(akt, getMaxPixelValue());
                 akt = Math.max(akt, 0);
                 setPixelValue(x, y, akt);
-
             }
         }
-
     }
 
     /**
@@ -1627,13 +1463,11 @@ public class PixelGrid {
         int[][] newGrid = new int[getWidth()][getHeight()];
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-
                 if (x == 0 && y == 0 && faktor < 3) {
                     newGrid[0][0] = grid[0][0];
                 } else {
                     int localAVG = getAverageWithoutPoint(x, y, faktor, faktor);
                     if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= contrast * getMaxPixelValue()) {
-
                         PixelGrid.setPixelValue(x, y, newGrid, localAVG);
                     } else {
                         PixelGrid.setPixelValue(x, y, newGrid, getPixelValue(x, y));
@@ -1671,7 +1505,6 @@ public class PixelGrid {
                 if (x == 0 && y == 0 && faktor < 3) {
                     newGrid[0][0] = grid[0][0];
                 } else {
-
                     if (!isElement(getPixelValue(x, y), (int) (avg * contrast))) {
                         PixelGrid.setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor));
                     }
@@ -1694,7 +1527,6 @@ public class PixelGrid {
         int[][] newGrid = new int[getWidth()][getHeight()];
         int ignorh2 = (int) (getHeight() / middel);
         int ignorh1 = getHeight() - ignorh2;
-
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 if (x < pixels || y < pixels || y > ignorh1 || y < ignorh2) {
@@ -1725,7 +1557,6 @@ public class PixelGrid {
                         } else {
                             newGrid[x][y] = grid[x][y];
                         }
-
                     } else {
                         newGrid[x][y] = grid[x][y];
                     }
@@ -1742,7 +1573,6 @@ public class PixelGrid {
      */
     public void removeObjectFromGrid(PixelObject object) {
         colorObject(object, getMaxPixelValue());
-
     }
 
     /**
@@ -1753,14 +1583,11 @@ public class PixelGrid {
      */
     public void removeSmallObjects(double contrast, double objectContrast) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
-
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
         for (int i = 1; i < ret.size(); i++) {
-
             removeObjectFromGrid(ret.elementAt(i));
-
         }
     }
 
@@ -1771,18 +1598,15 @@ public class PixelGrid {
      */
     public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
-
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
-
         for (int i = 1; i < ret.size(); i++) {
             // BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
             // +ret.elementAt(i).getSize());
             if (ret.elementAt(i).getSize() < maxSize) {
                 removeObjectFromGrid(ret.elementAt(i));
             }
-
         }
     }
 
@@ -1793,11 +1617,9 @@ public class PixelGrid {
      */
     public void removeSmallObjects(double contrast, double objectContrast, int maxSize, int mindistx, int mindisty) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
-
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
-
         outer: for (int i = 0; i < ret.size(); i++) {
             // BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
             // +ret.elementAt(i).getSize());
@@ -1810,7 +1632,6 @@ public class PixelGrid {
                 }
                 removeObjectFromGrid(el);
             }
-
         }
     }
 
@@ -1823,9 +1644,7 @@ public class PixelGrid {
     public void sampleDown(int faktor) {
         int newWidth = (int) Math.ceil(getWidth() / (double) faktor);
         int newHeight = (int) Math.ceil(getHeight() / (double) faktor);
-
         int[][] newGrid = new int[getWidth()][getHeight()];
-
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
                 int localAVG = 0;
@@ -1839,24 +1658,18 @@ public class PixelGrid {
                         }
                         localAVG = Colors.mixColors(localAVG, getPixelValue(newX, newY), values, 1);
                         values++;
-
                     }
                 }
-
                 for (int gx = 0; gx < faktor; gx++) {
                     for (int gy = 0; gy < faktor; gy++) {
                         int newX = x * faktor + gx;
                         int newY = y * faktor + gy;
                         PixelGrid.setPixelValue(newX, newY, newGrid, localAVG);
-
                     }
                 }
-
             }
         }
-
         grid = newGrid;
-
     }
 
     /**
@@ -1867,13 +1680,12 @@ public class PixelGrid {
      */
     public void saveImageasJpg(File file) {
         BufferedImage bimg = null;
-
         bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
         bimg.setRGB(0, 0, getWidth(), getHeight(), getPixel(), 0, getWidth());
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(file);
-            ImageIO.write(bimg, "jpg", fos);
+            ImageProvider.writeImage(bimg, "jpg", fos);
         } catch (Exception e) {
             logger.log(e);
         } finally {
@@ -1897,7 +1709,6 @@ public class PixelGrid {
     public void setGridCopy(int[][] grid, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
         int newWidth = PixelGrid.getGridWidth(grid) - (leftPadding + rightPadding);
         int newHeight = PixelGrid.getGridHeight(grid) - (topPadding + bottomPadding);
-
         int[][] newGrid = new int[newWidth][newHeight];
         location[0] = 0;
         location[1] = 0;
@@ -1906,7 +1717,6 @@ public class PixelGrid {
                 newGrid[x][y] = grid[x + leftPadding][y + topPadding];
             }
         }
-
         this.grid = newGrid;
     }
 
@@ -2005,5 +1815,4 @@ public class PixelGrid {
         }
         return ret.toString();
     }
-
 }

@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Random;
 
-import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
@@ -52,6 +51,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
@@ -535,7 +535,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                                 if (p == null) {
                                     // solve by user
                                     BufferedImage image = CaptXSolver.toBufferedImage(new ByteArrayInputStream(bytes));
-                                    ImageIO.write(image, "png", file);
+                                    ImageProvider.writeImage(image, "png", file);
                                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
                                     if (cp == null) {
                                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
