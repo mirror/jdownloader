@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -25,7 +28,11 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.VikiComConfig;
+import org.jdownloader.plugins.components.config.VikiComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -167,19 +174,45 @@ public class VikiCom extends PluginForHost {
             apiUrl += "&sig=" + getSignature(apiUrl.replaceFirst("https?://[^/]+", ""));
             cbr.getPage(apiUrl);
             LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(cbr.toString());
-            String url = null;
-            for (String quality : new String[] { "1080p", "720p", "480p", "380p", "240p" }) {
-                url = (String) JavaScriptEngineFactory.walkJson(jsonEntries, quality + "/https/url");
-                if (url == null) {
-                    url = (String) JavaScriptEngineFactory.walkJson(jsonEntries, quality + "/http/url");
+            int maxQuality = 0;
+            final int qualityUserPreferred = getPreferredQuality();
+            String urlBEST = null;
+            String urlUserSelection = null;
+            final Iterator<Entry<String, Object>> iterator = jsonEntries.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final String qualityTmpStr = entry.getKey();
+                if (StringUtils.isEmpty(qualityTmpStr) || !qualityTmpStr.matches("\\d+p")) {
+                    /* Skip invalid items (e.g. MPD streams) */
+                    continue;
                 }
-                if (url != null) {
-                    break;
+                final Map<String, Object> qualityInfo = (Map<String, Object>) entry.getValue();
+                String urlTmp = (String) JavaScriptEngineFactory.walkJson(qualityInfo, "https/url");
+                if (StringUtils.isEmpty(urlTmp)) {
+                    urlTmp = (String) JavaScriptEngineFactory.walkJson(qualityInfo, "http/url");
+                }
+                if (StringUtils.isEmpty(urlTmp)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final int qualityTmp = Integer.parseInt(qualityTmpStr.replace("p", ""));
+                if (qualityTmp > maxQuality) {
+                    maxQuality = qualityTmp;
+                    urlBEST = urlTmp;
+                }
+                if (qualityTmp == qualityUserPreferred) {
+                    logger.info("Found user preferred quality: " + qualityUserPreferred);
+                    urlUserSelection = urlTmp;
                 }
             }
-            if (url != null) {
-                logger.info("Found http downloadurl");
-                dllink = url;
+            if (urlUserSelection != null) {
+                logger.info("Using user selected quality http downloadurl");
+                this.dllink = urlUserSelection;
+            } else if (urlBEST != null) {
+                logger.info("Using best quality http downloadurl");
+                this.dllink = urlBEST;
+            } else {
+                logger.info("Failed to find http downloadurl");
             }
             // 480p_1709221204.mp4 pattern. 720p is OK.
             // idpart = new Regex(url, "480p_(\\d+)").getMatch(0);
@@ -193,7 +226,7 @@ public class VikiCom extends PluginForHost {
             /* 2017-09-27: Check this: https://forum.kodi.tv/showthread.php?tid=148429 */
             /* 2017-03-11 - also possible for: 360p, 480p */
             dllink = String.format("http://content.viki.com/%s/%s_high_720p_%s.mp4", vid, vid, idpart);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("<source type=\"video/mp4\" src=\"(https?://[^<>\"]*?)\">").getMatch(0);
         }
         filename = Encoding.htmlDecode(filename);
@@ -474,5 +507,31 @@ public class VikiCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private int getPreferredQuality() {
+        final VikiComConfig cfg = PluginJsonConfig.get(VikiComConfig.class);
+        final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+        switch (quality) {
+        case BEST:
+            return 0;
+        case Q240P:
+            return 240;
+        case Q360P:
+            return 360;
+        case Q480P:
+            return 480;
+        case Q720P:
+            return 720;
+        case Q1080P:
+            return 1080;
+        default:
+            return 0;
+        }
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return VikiComConfig.class;
     }
 }
