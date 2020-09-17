@@ -68,11 +68,11 @@ public class RedditCom extends PluginForHost {
     }
 
     public static final String getApiBaseOauth() {
-        return "https://oauth.reddit.com/api/v1";
+        return "https://oauth.reddit.com";
     }
 
     public static final String getClientID() {
-        return "UNDER_DEVELOPMENT";
+        return "TODO_UNDER_DEVELOPMENT";
     }
 
     public static final String getRedirectURI() {
@@ -299,15 +299,21 @@ public class RedditCom extends PluginForHost {
                         logger.info("Trust token without check");
                         return;
                     }
-                    /* Check existing access_token */
-                    /* Perform an API request to check if our access_token is still valid. */
-                    br.getPage(getApiBaseOauth() + "/me/friends");
-                    checkErrors(br, null, account);
                     /* TODO: Check which error API will return on expired token. */
-                    // Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    // entries = (Map<String, Object>) entries.get("data");
-                    /* TODO: Check/fix this */
+                    br.getPage(getApiBaseOauth() + "/api/v1/me/friends");
+                    checkErrors(br, null, account);
                     loggedIN = br.getHttpConnection().isOK();
+                    if (loggedIN) {
+                        /*
+                         * Check existing access_token: Perform an API request to check if our access_token is still valid. This will also
+                         * ensure that the user has entered his correct username!
+                         */
+                        br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(account.getUser()) + "/saved?limit=1");
+                        checkErrors(br, null, account);
+                        if (!br.getHttpConnection().isOK()) {
+                            errorUsernameMismtach();
+                        }
+                    }
                 }
                 if (!loggedIN) {
                     /* Build new query containing only what we need. */
@@ -365,6 +371,14 @@ public class RedditCom extends PluginForHost {
             account.setProperty(PROPERTY_ACCOUNT_initial_password, account.getPass());
             /* Save cookies - but only so that we have the cookie-timestamp */
             account.saveCookies(br.getCookies(this.getHost()), "");
+        }
+    }
+
+    private void errorUsernameMismtach() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername: Dein Account ist gültig, aber der Benutzername ist nicht der mit dem du in deinem Browser angemeldet bist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Username mismatch: Please enter the username in which you are logged in in your browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -489,16 +503,12 @@ public class RedditCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        // if (br.getURL() == null || !br.getURL().contains("/me/friends")) {
-        // br.getPage(getApiBaseOauth() + "/me/friends");
-        // }
         /*
          * 2020-07-23: We're trying to request minimal API permissions (via oauth2 scopes) so we don't get access to the users' profile -->
          * Just display all accounts as free accounts! To get information about the users' profile, we'd have to additionally request the
          * scope "identity": https://github.com/reddit-archive/reddit/wiki/OAuth2
          */
-        /* TODO: Find out why this doesn't work */
-        // br.getPage(getApiBaseOauth() + "/user/test/saved");
+        // br.getPage(getApiBaseOauth() + "/api/v1/me");
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) user");
