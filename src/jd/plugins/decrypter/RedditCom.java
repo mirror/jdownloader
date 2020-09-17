@@ -19,22 +19,33 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:www\\.)?reddit\\.com/r/([^/]+)/comments/([a-z0-9]+)/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:www\\.)?reddit\\.com/(?:r/([^/]+)/comments/([a-z0-9]+)/[A-Za-z0-9\\-_]+|user/[^/]+/saved/)" })
 public class RedditCom extends PluginForDecrypt {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,15 +66,75 @@ public class RedditCom extends PluginForDecrypt {
         return dl;
     }
 
-    private FilePackage         fp                    = null;
-    private static final String TYPE_SELFHOSTED_VIDEO = "https?://v\\.redd\\.it/[a-z0-9]+.*";
-    private static final String TYPE_SELFHOSTED_IMAGE = "https?://i\\.redd\\.it/[a-z0-9]+.*";
+    private FilePackage           fp                      = null;
+    final ArrayList<DownloadLink> decryptedLinks          = new ArrayList<DownloadLink>();
+    private String                parameter               = null;
+    private static final String   TYPE_COMMENTS           = "https?://[^/]+/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)";
+    private static final String   TYPE_USER_SAVED_OBJECTS = "https://[^/]+/user/[^/]+/saved/";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String subredditTitle = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String commentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        parameter = param.toString();
+        if (parameter.matches(TYPE_USER_SAVED_OBJECTS)) {
+            crawlUserSavedObjects();
+        } else {
+            crawlComment();
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.info("Failed to find any downloadable content");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        return decryptedLinks;
+    }
+
+    private void crawlUserSavedObjects() throws Exception {
+        /* Login required */
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc == null) {
+            throw new AccountRequiredException();
+        }
+        /* Login */
+        final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
+        plugin.setBrowser(this.br);
+        ((jd.plugins.hoster.RedditCom) plugin).login(acc, false);
+        final ArrayList<String> lastItemDupes = new ArrayList<String>();
+        /* Prepare crawl process */
+        fp = FilePackage.getInstance();
+        fp.setName("saved items of user" + acc.getUser());
+        final int maxItemsPerCall = 100;
+        final UrlQuery query = new UrlQuery();
+        query.add("type", "links");
+        query.add("limit", Integer.toString(maxItemsPerCall));
+        int page = 0;
+        do {
+            page++;
+            logger.info("Crawling page: " + page);
+            br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?type=links&limit=" + maxItemsPerCall);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            crawlListing(entries);
+            entries = (Map<String, Object>) entries.get("data");
+            final String fullnameAfter = (String) entries.get("after");
+            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            /* Multiple fail safes to prevent an infinite loop. */
+            if (StringUtils.isEmpty(fullnameAfter)) {
+                logger.info("Seems like we've crawled everything");
+                break;
+            } else if (numberofItems < maxItemsPerCall) {
+                logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
+                break;
+            } else if (lastItemDupes.contains(fullnameAfter)) {
+                logger.info("Stopping because we already know this fullnameAfter");
+                break;
+            }
+            lastItemDupes.add(fullnameAfter);
+            query.remove("after");
+            query.add("after", fullnameAfter);
+        } while (!this.isAbort());
+    }
+
+    /** According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
+    private void crawlComment() throws Exception {
+        final String commentID = new Regex(this.parameter, this.getSupportedLinks()).getMatch(1);
         // final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         // if (acc == null) {
         // throw new AccountRequiredException();
@@ -75,27 +146,40 @@ public class RedditCom extends PluginForDecrypt {
         br.getPage("https://www.reddit.com/comments/" + commentID + "/.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            return;
         }
-        LinkedHashMap<String, Object> entries;
+        final String commentURLTitle = new Regex(this.parameter, TYPE_COMMENTS).getMatch(2);
+        if (commentURLTitle == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp = FilePackage.getInstance();
+        fp.setName(commentURLTitle);
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        /* https://www.reddit.com/dev/api/#fullnames */
         /* [0] = post/"first comment" */
         /* [1] = Comments */
-        for (final Object postO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) postO;
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/children/{0}/data");
+        final Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+        crawlListing(entries);
+    }
+
+    private static final String TYPE_CRAWLED_SELFHOSTED_VIDEO = "https?://v\\.redd\\.it/[a-z0-9]+.*";
+    private static final String TYPE_CRAWLED_SELFHOSTED_IMAGE = "https?://i\\.redd\\.it/[a-z0-9]+.*";
+
+    private void crawlListing(Map<String, Object> entries) throws Exception {
+        /* https://www.reddit.com/dev/api/#fullnames */
+        final ArrayList<Object> items = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
+        for (final Object itemO : items) {
+            entries = (Map<String, Object>) itemO;
+            // final String kind = (String)entries.get("kind"); --> We expect this to be "t3"
+            entries = (Map<String, Object>) entries.get("data");
             final long createdTimestamp = JavaScriptEngineFactory.toLong(entries.get("created"), 0) * 1000;
             final Date theDate = new Date(createdTimestamp);
             final String dateFormatted = new SimpleDateFormat("yyy-MM-dd").format(theDate);
             String title = (String) entries.get("title");
-            if (StringUtils.isEmpty(title)) {
-                /* Fallback */
-                title = commentID;
+            final String subredditTitle = (String) entries.get("subreddit");
+            if (StringUtils.isEmpty(title) || StringUtils.isEmpty(subredditTitle)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             title = dateFormatted + "_" + subredditTitle + " - " + title;
-            fp = FilePackage.getInstance();
-            fp.setName(title);
             /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
             boolean addedRedditSelfhostedVideo = false;
@@ -103,13 +187,14 @@ public class RedditCom extends PluginForDecrypt {
             if (!StringUtils.isEmpty(externalURL)) {
                 logger.info("Found external URL");
                 final DownloadLink dl = this.createDownloadlink(externalURL);
-                if (externalURL.matches(TYPE_SELFHOSTED_VIDEO)) {
+                if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
                     addedRedditSelfhostedVideo = true;
                     dl.setFinalFileName(title + ".mp4");
-                } else if (externalURL.matches(TYPE_SELFHOSTED_IMAGE)) {
+                } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
                     dl.setFinalFileName(title + ".jpg");
                 }
                 decryptedLinks.add(dl);
+                distribute(dl);
             }
             /* Look for embedded content from external sources - the object is always given but can be empty */
             final Object embeddedMediaO = entries.get("media_embed");
@@ -120,7 +205,9 @@ public class RedditCom extends PluginForDecrypt {
                     String media_embedStr = (String) embeddedMediaInfo.get("content");
                     final String[] links = HTMLParser.getHttpLinks(media_embedStr, this.br.getURL());
                     for (final String url : links) {
-                        decryptedLinks.add(this.createDownloadlink(url));
+                        final DownloadLink dl = this.createDownloadlink(url);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
                     }
                 }
             }
@@ -142,7 +229,9 @@ public class RedditCom extends PluginForDecrypt {
                                     if (Encoding.isHtmlEntityCoded(hls_url)) {
                                         hls_url = Encoding.htmlDecode(hls_url);
                                     }
-                                    decryptedLinks.add(this.createDownloadlink(hls_url));
+                                    final DownloadLink dl = this.createDownloadlink(hls_url);
+                                    decryptedLinks.add(dl);
+                                    distribute(dl);
                                 }
                             }
                         }
@@ -163,6 +252,7 @@ public class RedditCom extends PluginForDecrypt {
                             final DownloadLink dl = this.createDownloadlink("directhttp://" + bestImage);
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
+                            distribute(dl);
                         }
                     }
                 } else {
@@ -177,20 +267,18 @@ public class RedditCom extends PluginForDecrypt {
                 if (urls.length > 0) {
                     logger.info(String.format("Found %d URLs in selftext", urls.length));
                     for (final String url : urls) {
-                        decryptedLinks.add(this.createDownloadlink(url));
+                        final DownloadLink dl = this.createDownloadlink(url);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
                     }
                 } else {
                     logger.info("Failed to find any URLs in selftext");
                 }
             }
-            /* Only grab first post - stop then! */
-            break;
         }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Failed to find any downloadable content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        return decryptedLinks;
+    }
+
+    public static final String getApiBaseOauth() {
+        return jd.plugins.hoster.RedditCom.getApiBaseOauth();
     }
 }
