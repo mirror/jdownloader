@@ -27,16 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,6 +52,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -97,7 +97,7 @@ public class XHamsterCom extends PluginForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             /* Videos current pattern */
-            String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:preview|movies|videos)/[a-z0-9\\-]+\\-[A-Za-z0-9\\-]+$";
+            String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:preview|movies|videos)/[a-z0-9\\-]+\\-[A-Za-z0-9\\-]+(?:$|\\?)";
             /* Embed pattern: 2020-05-08: /embed/123 = current pattern, x?embed.php = old one */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(embed/[A-Za-z0-9]+|x?embed\\.php\\?video=[A-Za-z0-9]+)";
             /* Movies old pattern */
@@ -168,7 +168,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private static final String TYPE_MOBILE    = "(?i).+m\\.xhamster\\.+";
-    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)$";
+    private static final String TYPE_EMBED     = "(?i)^https?://(?:www\\.)?xhamster\\.[^/]+/(?:x?embed\\.php\\?video=|embed/)([A-Za-z0-9\\-]+)(?:$|\\?)";
     private static final String TYPE_PREMIUM   = ".+xhamsterpremium\\.com.+";
     private static final String NORESUME       = "NORESUME";
     private static Object       ctrlLock       = new Object();
@@ -211,12 +211,12 @@ public class XHamsterCom extends PluginForHost {
             fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(\\d+)").getMatch(0);
             if (fid == null) {
                 /* 2018-07-19: New */
-                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[a-z0-9\\-]+\\-([a-z0-9\\-]+)$").getMatch(0);
+                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[a-z0-9\\-]+\\-([a-z0-9\\-]+)(?:$|\\?)").getMatch(0);
             }
         } else {
             fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/(\\d+)/?").getMatch(0);
             if (fid == null) {
-                fid = new Regex(link.getPluginPatternMatcher(), "/videos/(?:[\\w\\-]+\\-)?([a-z0-9\\-]+)$").getMatch(0);
+                fid = new Regex(link.getPluginPatternMatcher(), "/videos/(?:[\\w\\-]+\\-)?([a-z0-9\\-]+)(?:$|\\?)").getMatch(0);
             }
         }
         return fid;
@@ -416,7 +416,7 @@ public class XHamsterCom extends PluginForHost {
         }
         if (filename == null) {
             /* Fallback to URL filename - first try to get nice name from URL. */
-            filename = new Regex(br.getURL(), "/(?:videos|movies)/(.+)\\d+$").getMatch(0);
+            filename = new Regex(br.getURL(), "/(?:videos|movies)/(.+)\\d+(?:$|\\?)").getMatch(0);
             if (filename == null) {
                 /* Last chance */
                 filename = new Regex(br.getURL(), "https?://[^/]+/(.+)").getMatch(0);
