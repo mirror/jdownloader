@@ -283,14 +283,8 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(CryptedLink param, Set<String> pagesDone, List<String> pagesTodo) throws Exception {
-        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>(▶|&#9658;?)</a>").getMatch(1);
-        if (nextPage == null) {
-            nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>&#9654;?</a>").getMatch(1);
-        }
-        String previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>(◄|&#9668;?)</a>").getMatch(1);
-        if (previousPage == null) {
-            previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1>&#9664;?</a>").getMatch(1);
-        }
+        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(▶|&#9654;?|&#9658;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cc;?)").getMatch(1);
+        String previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(◄|&#9664;?|&#9668;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cb;?)").getMatch(1);
         if (previousPage != null && !pagesTodo.contains(previousPage) && !pagesDone.contains(previousPage)) {
             pagesTodo.add(previousPage);
         }
