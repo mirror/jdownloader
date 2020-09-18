@@ -1351,9 +1351,9 @@ public class Multi extends IExtraction {
         case RAR_MULTI3:
         case RAR_MULTI4:
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (!ArchiveType.RAR_SINGLE.isValidPart(0, archiveFile)) {
+                if (!Boolean.TRUE.equals(ArchiveType.RAR_SINGLE.isValidPart(0, archiveFile, true))) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile + "|Exists:" + archiveFile.exists(true));
                 }
             }
             break;
@@ -1363,7 +1363,7 @@ public class Multi extends IExtraction {
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature == null || !"ZIP".equalsIgnoreCase(signature.getId())) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile + "|Exists:" + archiveFile.exists(true));
                 }
             }
             break;
@@ -1373,7 +1373,7 @@ public class Multi extends IExtraction {
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature == null || !"GZ".equalsIgnoreCase(signature.getId())) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile + "|Exists:" + archiveFile.exists(true));
                 }
             }
             break;
@@ -1383,7 +1383,7 @@ public class Multi extends IExtraction {
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature == null || !"BZ2".equalsIgnoreCase(signature.getId())) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile + "|Exists:" + archiveFile.exists(true));
                 }
             }
             break;
@@ -1393,7 +1393,7 @@ public class Multi extends IExtraction {
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature == null || !"7Z".equalsIgnoreCase(signature.getId())) {
                     archive.addCrcError(archiveFile);
-                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile);
+                    logger.severe("Missing/Broken" + type + " Signature: " + archiveFile + "|Exists:" + archiveFile.exists(true));
                 }
             }
             break;

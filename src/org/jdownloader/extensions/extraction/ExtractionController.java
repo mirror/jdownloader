@@ -261,7 +261,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
             extractor.setCrashLog(crashLog);
             crashLog.write("Start unpacking of " + firstArchiveFile.getFilePath());
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (!archiveFile.exists()) {
+                if (!archiveFile.exists(true)) {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
                         crashLog.write("Missing (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());

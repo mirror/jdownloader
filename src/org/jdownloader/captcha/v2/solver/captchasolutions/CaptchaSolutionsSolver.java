@@ -184,7 +184,7 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         br.setFollowRedirects(false);
         try {
             final String[] credentials = ensureAPIKey();
-            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(credentials[0]));
+            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(credentials[0]) + "&secret=" + Encoding.urlEncode(credentials[1]));
             final String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
             if (tokens == null) {
                 throw new Exception("API Error!?");
@@ -198,11 +198,27 @@ public class CaptchaSolutionsSolver extends CESChallengeSolver<String> implement
         return ret;
     }
 
+    private synchronized boolean verifyAPIKey(String[] credentials) {
+        final Browser br = new Browser();
+        br.setFollowRedirects(false);
+        try {
+            br.getPage("http://api.captchasolutions.com/solve?p=balance&key=" + Encoding.urlEncode(credentials[0]) + "&secret=" + Encoding.urlEncode(credentials[1]));
+            final String tokens = br.getRegex("<tokens>\\s*(\\d+)\\s*</tokens>").getMatch(0);
+            return tokens != null;
+        } catch (Exception e) {
+            logger.log(e);
+            return false;
+        }
+    }
+
     private synchronized String[] ensureAPIKey() throws IOException {
         String key = config.getAPIKey();
         String secret = config.getAPISecret();
         if (StringUtils.isAllNotEmpty(key, secret)) {
-            return new String[] { key, secret };
+            final String[] credentials = new String[] { key, secret };
+            if (verifyAPIKey(credentials)) {
+                return credentials;
+            }
         }
         final Browser br = new Browser();
         br.setFollowRedirects(false);

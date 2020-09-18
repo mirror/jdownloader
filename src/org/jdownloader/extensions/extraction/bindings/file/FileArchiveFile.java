@@ -97,12 +97,17 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
+        return exists(false);
+    };
+
+    @Override
+    public boolean exists(boolean ignoreCache) {
         if (FileStateManager.getInstance().hasFileState(getFile(), FILESTATE.WRITE_EXCLUSIVE)) {
             return false;
         }
-        Boolean ret = exists.get();
+        Boolean ret = ignoreCache ? null : exists.get();
         if (ret == null) {
-            ret = getFile().exists();
+            ret = getFile().isFile();
             exists.compareAndSet(null, ret);
         }
         return ret;

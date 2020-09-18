@@ -44,7 +44,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             return new FileArchiveFactoryNIO().findFiles(pattern, directory);
         } else {
             final ArrayList<File> ret = new ArrayList<File>();
-            if (pattern != null && directory != null && directory.exists()) {
+            if (pattern != null && directory != null && directory.isDirectory()) {
                 final String[] directoryFiles = directory.list();
                 if (directoryFiles != null) {
                     final String absoluteDirectoryPath = directory.getAbsolutePath();

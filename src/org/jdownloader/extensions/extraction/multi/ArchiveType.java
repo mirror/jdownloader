@@ -95,8 +95,8 @@ public enum ArchiveType {
         }
 
         @Override
-        protected Boolean isMultiPart(ArchiveFile archiveFile) {
-            return RAR_SINGLE.isMultiPart(archiveFile);
+        protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
+            return RAR_SINGLE.isMultiPart(archiveFile, false);
         }
     },
     /**
@@ -182,8 +182,8 @@ public enum ArchiveType {
         }
 
         @Override
-        protected Boolean isMultiPart(ArchiveFile archiveFile) {
-            return RAR_SINGLE.isMultiPart(archiveFile);
+        protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
+            return RAR_SINGLE.isMultiPart(archiveFile, false);
         }
     },
     /**
@@ -293,8 +293,8 @@ public enum ArchiveType {
         }
 
         @Override
-        protected Boolean isMultiPart(ArchiveFile archiveFile) {
-            return RAR_SINGLE.isMultiPart(archiveFile);
+        protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
+            return RAR_SINGLE.isMultiPart(archiveFile, false);
         }
     },
     /**
@@ -370,8 +370,8 @@ public enum ArchiveType {
          * DOES ONLY CHECK VALID RAR FILE, NOT IF ITS A VOLUME FILE if partIndex >0
          */
         @Override
-        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-            if (archiveFile.exists()) {
+        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
+            if (archiveFile.exists(verifiedResult)) {
                 final String signatureString;
                 try {
                     signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
@@ -383,7 +383,7 @@ public enum ArchiveType {
                     return signatureString.startsWith("52617221");
                 }
             }
-            return null;
+            return verifiedResult ? false : null;
         }
 
         /**
@@ -400,8 +400,8 @@ public enum ArchiveType {
          * 0x0100 First Volume (only in RAR 3.0 and later)
          */
         @Override
-        protected Boolean isMultiPart(ArchiveFile archiveFile) {
-            if (archiveFile.exists()) {
+        protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
+            if (archiveFile.exists(verifiedResult)) {
                 final String signatureString;
                 try {
                     signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 12);
@@ -416,10 +416,10 @@ public enum ArchiveType {
                             return flag > 0 && (flag % 2 != 0);
                         }
                     }
-                    return null;
+                    return verifiedResult ? false : null;
                 }
             }
-            return null;
+            return verifiedResult ? false : null;
         }
     },
     /**
@@ -1306,8 +1306,8 @@ public enum ArchiveType {
         }
 
         @Override
-        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-            return RAR_SINGLE.isValidPart(partIndex, archiveFile);
+        protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
+            return RAR_SINGLE.isValidPart(partIndex, archiveFile, false);
         }
     };
     protected String escapeRegex(String input) {
@@ -1356,11 +1356,11 @@ public enum ArchiveType {
         return bitset.size() != 0;
     }
 
-    protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
+    protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
         return null;
     }
 
-    protected Boolean isMultiPart(final ArchiveFile archiveFile) {
+    protected Boolean isMultiPart(final ArchiveFile archiveFile, boolean verifiedResult) {
         return null;
     }
 
@@ -1441,7 +1441,7 @@ public enum ArchiveType {
             if (filePathParts != null) {
                 final Boolean isMultiPart;
                 if (allowDeepInspection) {
-                    isMultiPart = archiveType.isMultiPart(link);
+                    isMultiPart = archiveType.isMultiPart(link, false);
                 } else {
                     isMultiPart = null;
                 }
@@ -1495,7 +1495,7 @@ public enum ArchiveType {
                             final File missingFile = new File(archiveType.buildMissingPart(filePathParts, partIndex, partStringLength));
                             sortedArchiveFiles.add(new MissingArchiveFile(missingFile.getName(), missingFile.getAbsolutePath()));
                         } else {
-                            if (allowDeepInspection && Boolean.FALSE.equals(archiveType.isValidPart(partIndex, archiveFiles[partIndex]))) {
+                            if (allowDeepInspection && Boolean.FALSE.equals(archiveType.isValidPart(partIndex, archiveFiles[partIndex], false))) {
                                 continue archiveTypeLoop;
                             }
                             sortedArchiveFiles.add(archiveFiles[partIndex]);
