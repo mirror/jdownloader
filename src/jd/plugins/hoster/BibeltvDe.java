@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -25,7 +27,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/videos/[a-z0-9\\-]+-(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/(videos/crn/(\\d+)|videos/([a-z0-9\\-]+-(\\d+)|(\\d+)-[a-z0-9\\-]+))" })
 public class BibeltvDe extends PluginForHost {
     public BibeltvDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,8 +68,36 @@ public class BibeltvDe extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return getFID(link.getPluginPatternMatcher());
     }
+
+    private String getFID(final String url) {
+        if (url == null) {
+            return null;
+        }
+        final Pattern pat = this.getSupportedLinks();
+        final Matcher m = pat.matcher(url);
+        if (!m.find()) {
+            return null;
+        }
+        String fid = null;
+        final int c = m.groupCount();
+        for (int i = 0; i <= c; i++) {
+            final String match = m.group(i);
+            if (match == null) {
+                continue;
+            }
+            if (match.matches("\\d+")) {
+                fid = match;
+                break;
+            }
+        }
+        return fid;
+    }
+
+    private static final String TYPE_REDIRECT         = "https?://[^/]+/mediathek/videos/crn/(\\d+)";
+    private static final String TYPE_FID_AT_BEGINNING = "https?://[^/]+/mediathek/videos/(\\d+).*";
+    private static final String TYPE_FID_AT_END       = "https?://[^/]+/mediathek/videos/[a-z0-9\\-]+-(\\d+)$";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
@@ -79,7 +108,46 @@ public class BibeltvDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", getFID(link)));
+        final String fid;
+        final boolean useCRNURL;
+        if (link.getPluginPatternMatcher().matches(TYPE_REDIRECT)) {
+            /* ID inside URL will work fine for "crn" API request. */
+            fid = this.getFID(link);
+            useCRNURL = true;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_FID_AT_BEGINNING)) {
+            useCRNURL = true;
+            fid = this.getFID(link);
+        } else {
+            // TYPE_FID_AT_END
+            useCRNURL = false;
+            fid = this.getFID(link);
+            /*
+             * 2020-09-18: We need to access the original URL once because the IDs in it may change. We need the ID inside the final URL to
+             * use it as a video-ID for API access!
+             */
+            // br.getPage(link.getPluginPatternMatcher());
+            // if (!new Regex(br.getURL(), this.getSupportedLinks()).matches()) {
+            // logger.info("Redirect to unsupported URL --> Content is probably not downloadable");
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
+            // fid = this.getFID(br.getURL());
+            // if (new Regex(link.getPluginPatternMatcher(), TYPE_REDIRECT).matches()) {
+            // /* Special handling for URLs which contain IDs that cannot be used via API! */
+            // br.getPage(link.getPluginPatternMatcher());
+            // if (br.getURL().matches(TYPE_REDIRECT) || !new Regex(br.getURL(), this.getSupportedLinks()).matches()) {
+            // logger.info("Redirect to unsupported URL --> Content is probably not downloadable");
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // } else {
+            // /* Set new URL which contains fileID which can be used via API. */
+            // link.setPluginPatternMatcher(br.getURL());
+            // }
+            // }
+        }
+        if (useCRNURL) {
+            br.getPage("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(crn,%22" + fid + "%22)&expand=");
+        } else {
+            br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", fid));
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
