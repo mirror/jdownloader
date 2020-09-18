@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jdownloader.controlling.FileCreationManager;
 
 public interface ArchiveFile {
-
     public static class ArchiveID {
         private final String archiveID;
 
@@ -39,6 +38,8 @@ public interface ArchiveFile {
 
     public boolean exists();
 
+    public boolean exists(boolean ignoreCache);
+
     public void invalidateExists();
 
     public String getName();
@@ -62,5 +63,4 @@ public interface ArchiveFile {
     public void notifyChanges(Object type);
 
     public String getArchiveID();
-
 }

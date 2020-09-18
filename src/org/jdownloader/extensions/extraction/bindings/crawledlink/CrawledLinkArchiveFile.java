@@ -129,8 +129,9 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public long getFileSize() {
         if (exists()) {
             return Math.max(size, new File(LinkTreeUtils.getDownloadDirectory(getLinks().get(0)), getName()).length());
+        } else {
+            return Math.max(0, size);
         }
-        return Math.max(0, size);
     }
 
     public void addMirror(CrawledLink link) {
@@ -260,7 +261,12 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
-        Boolean ret = exists.get();
+        return exists(false);
+    };
+
+    @Override
+    public boolean exists(boolean ignoreCache) {
+        Boolean ret = ignoreCache ? null : exists.get();
         if (ret == null) {
             ret = new File(LinkTreeUtils.getDownloadDirectory(getLinks().get(0)), getName()).exists();
             exists.compareAndSet(null, ret);

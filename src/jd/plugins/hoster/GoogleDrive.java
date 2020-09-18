@@ -18,15 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.GoogleConfig;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -48,6 +39,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -81,8 +81,17 @@ public class GoogleDrive extends PluginForHost {
         if (id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            link.setLinkID(this.getHost() + "://" + id);
             link.setPluginPatternMatcher("https://drive.google.com/file/d/" + id);
+        }
+    }
+
+    @Override
+    public String getLinkID(DownloadLink link) {
+        final String id = getFID(link);
+        if (id != null) {
+            return getHost().concat("://".concat(id));
+        } else {
+            return super.getLinkID(link);
         }
     }
 
@@ -106,15 +115,16 @@ public class GoogleDrive extends PluginForHost {
         // https://video.google.com/get_player?docid=0B2vAVBc_577958658756vEo2eUk
         if (downloadLink == null) {
             return null;
+        } else {
+            String id = new Regex(downloadLink.getDownloadURL(), "/(?:file|document)/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
+            if (id == null) {
+                id = new Regex(downloadLink.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
+                if (id == null) {
+                    id = new Regex(downloadLink.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+                }
+            }
+            return id;
         }
-        String id = new Regex(downloadLink.getDownloadURL(), "/(?:file|document)/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
-        if (id == null) {
-            id = new Regex(downloadLink.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
-        }
-        if (id == null) {
-            id = new Regex(downloadLink.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
-        }
-        return id;
     }
 
     public String   agent      = null;
@@ -331,7 +341,7 @@ public class GoogleDrive extends PluginForHost {
             }
             if (filename == null) {
                 /* Fallback */
-                filename = this.getLinkID(link);
+                filename = this.getFID(link);
             }
             filename = Encoding.unicodeDecode(filename.trim());
             link.setName(filename);

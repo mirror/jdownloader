@@ -176,8 +176,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public long getFileSize() {
         if (exists()) {
             return Math.max(new File(getFilePath()).length(), size);
+        } else {
+            return Math.max(0, size);
         }
-        return Math.max(0, size);
     }
 
     public void addMirror(DownloadLink link) {
@@ -348,12 +349,18 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean exists() {
-        if (FileStateManager.getInstance().hasFileState(new File(getFilePath()), FILESTATE.WRITE_EXCLUSIVE)) {
+        return exists(false);
+    };
+
+    @Override
+    public boolean exists(boolean ignoreCache) {
+        final File file = new File(getFilePath());
+        if (FileStateManager.getInstance().hasFileState(file, FILESTATE.WRITE_EXCLUSIVE)) {
             return false;
         }
-        Boolean ret = exists.get();
+        Boolean ret = ignoreCache ? null : exists.get();
         if (ret == null) {
-            ret = new File(getFilePath()).exists();
+            ret = file.isFile();
             exists.compareAndSet(null, ret);
         }
         return ret;

@@ -461,7 +461,8 @@ public class CompiledFiletypeFilter {
         DMG,
         SFX,
         XZ,
-        TGZ,
+        TXZ, // tar.xz
+        TGZ, // tar.gz
         LZH,
         LHA,
         AA("[a-z]{2}");

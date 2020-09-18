@@ -72,6 +72,11 @@ public class MissingArchiveFile implements ArchiveFile {
     }
 
     @Override
+    public boolean exists(boolean ignoreCache) {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
