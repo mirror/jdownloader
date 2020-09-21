@@ -56,16 +56,16 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXCHUNKS               = 0;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private final boolean FREE_RESUME               = true;
+    private final int     FREE_MAXCHUNKS            = 0;
+    private final int     FREE_MAXDOWNLOADS         = 20;
+    private final boolean ACCOUNT_FREE_RESUME       = true;
+    private final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private boolean       registered_only              = false;
+    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private boolean       registered_only           = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -211,7 +211,7 @@ public class ArchiveOrg extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         ai.setStatus("Registered (free) user");
         return ai;
     }
@@ -229,7 +229,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     @Override
