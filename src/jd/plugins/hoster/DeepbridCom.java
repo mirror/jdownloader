@@ -22,18 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -54,6 +42,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -148,12 +149,13 @@ public class DeepbridCom extends antiDDoSForHost {
                     /* Trash stored ticket-URL and try again! */
                     link.setProperty("ticketurl", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isContentDisposition()) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -204,7 +206,7 @@ public class DeepbridCom extends antiDDoSForHost {
         }
         logger.info("Max. allowed chunks: " + maxchunks);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
-        if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isContentDisposition()) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -231,6 +233,28 @@ public class DeepbridCom extends antiDDoSForHost {
         }
     }
 
+    private boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
+            final boolean hasContentType = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE));
+            if (urlConnection.isContentDisposition()) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
     @Override
     public FEATURE[] getFeatures() {
         return new FEATURE[] { FEATURE.MULTIHOST };
@@ -252,9 +276,8 @@ public class DeepbridCom extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (con.getContentType().contains("text") || con.getResponseCode() != 200 || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(property, Property.NULL);
-                        return null;
+                    if (!looksLikeDownloadableContent(dl.getConnection())) {
+                        throw new IOException();
                     } else {
                         return dllink;
                     }
@@ -264,9 +287,11 @@ public class DeepbridCom extends antiDDoSForHost {
             } catch (final Exception e) {
                 logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
+                return null;
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -469,9 +494,9 @@ public class DeepbridCom extends antiDDoSForHost {
         } else if (errorCode == 15) {
             /* Service detected usage of proxy which they do not tolerate */
             /*
-             * 2020-08-18: E.g. {"error":15,
-             * "message":"Proxy, VPN or VPS detected. If you think this is a mistake, please \u003Ca href=\"..\/helpdesk\" target=\"_blank\"\u003Ecreate a support ticket\u003C\/a\u003E requesting to whitelist your account, we will be so happy to assist you!"
-             * }
+             * 2020-08-18: E.g. {"error":15, "message":"Proxy, VPN or VPS detected. If you think this is a mistake, please \u003Ca
+             * href=\"..\/helpdesk\" target=\"_blank\"\u003Ecreate a support ticket\u003C\/a\u003E requesting to whitelist your account, we
+             * will be so happy to assist you!" }
              */
             throw new AccountUnavailableException("Proxy, VPN or VPS detected. Contact deepbrid.com support!", 15 * 60 * 1000l);
         } else {

@@ -16,7 +16,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream-mdh.co" }, urls = { "https?://stream-mdh.co/view/.*?/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stream-mdh.co" }, urls = { "https?://stream-mdh.co/(view|video)/.*?/.+" })
 public class StreamMdh extends antiDDoSForDecrypt {
     public StreamMdh(PluginWrapper wrapper) {
         super(wrapper);
