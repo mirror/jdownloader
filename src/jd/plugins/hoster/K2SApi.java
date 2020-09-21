@@ -373,10 +373,13 @@ public abstract class K2SApi extends PluginForHost {
                     final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
                     final String access = PluginJSonUtils.getJsonValue(filter, "access");
                     final String isFolder = PluginJSonUtils.getJsonValue(filter, "is_folder");
-                    if (!inValidate(name)) {
-                        dl.setName(name);
-                    } else {
-                        dl.setName(getFallbackFilename(dl));
+                    if (!dl.isNameSet()) {
+                        /* 2020-09-21: E.g. keep filenames if user adds an URL and it goes offline after first being online. */
+                        if (!inValidate(name)) {
+                            dl.setName(name);
+                        } else {
+                            dl.setName(getFallbackFilename(dl));
+                        }
                     }
                     if (!inValidate(size)) {
                         dl.setVerifiedFileSize(Long.parseLong(size));
