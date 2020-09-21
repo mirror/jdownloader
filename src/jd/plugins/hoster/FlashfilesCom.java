@@ -41,6 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -85,8 +86,9 @@ public class FlashfilesCom extends PluginForHost {
     private final boolean ACCOUNT_FREE_RESUME          = false;
     private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    /* 2020-09-21: Chunkload & resume impossible in premium mode (wtf?) */
+    private final boolean ACCOUNT_PREMIUM_RESUME       = false;
+    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     @Override
@@ -183,7 +185,7 @@ public class FlashfilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeform3, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!isDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -231,21 +233,21 @@ public class FlashfilesCom extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                if (!isDownloadableContent(con)) {
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 if (con != null) {
@@ -254,6 +256,10 @@ public class FlashfilesCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
+        return con != null && con.isOK() && con.isContentDisposition();
     }
 
     @Override
@@ -306,21 +312,19 @@ public class FlashfilesCom extends PluginForHost {
     }
 
     private boolean isLoggedin() {
-        return br.containsHTML("'logout\\.php");
+        return br.containsHTML("'logout") || br.getURL().contains("/myfiles.php");
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         /* Parts of this code are from 2018. Premium is untested! */
-        br.getPage("/index.php");
-        String expire = br.getRegex("Premium\\s*:\\s*(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}) UTC").getMatch(0);
+        if (br.getURL() == null || !br.getURL().contains("/myfiles.php")) {
+            br.getPage("/myfiles.php");
+        }
+        String expire = br.getRegex("Expires On\\s*:[^<>\"]*(\\d{4}\\-\\d{2}\\-\\d{2}[^<>\"]*\\d{2}:\\d{2}:\\d{2})[^<>\"]*UTC").getMatch(0);
         if (expire == null) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
@@ -329,10 +333,13 @@ public class FlashfilesCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
             ai.setTrafficLeft(0);
         } else {
+            if (Encoding.isHtmlEntityCoded(expire)) {
+                expire = Encoding.htmlDecode(expire);
+            }
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null), br);
             ai.setStatus("Premium User");
             ai.setUnlimitedTraffic();
         }
@@ -343,21 +350,23 @@ public class FlashfilesCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
         if (account.getType() == AccountType.FREE) {
+            br.getPage(link.getPluginPatternMatcher());
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                /* 2020-02-13: Untested */
-                dllink = link.getPluginPatternMatcher();
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                // br.getPage(link.getPluginPatternMatcher());
+                br.postPage("/alternate-download.php", "h=" + this.getFID(link));
+                final String id = PluginJSonUtils.getJson(br, "id");
+                final String downloadtoken = PluginJSonUtils.getJson(br, "downloadtoken");
+                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(downloadtoken)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                dllink = id + "&downloadtoken=" + Encoding.urlEncode(downloadtoken);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!isDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {

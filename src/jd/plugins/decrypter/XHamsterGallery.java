@@ -171,7 +171,7 @@ public class XHamsterGallery extends PluginForDecrypt {
                 }
             } while (!this.isAbort());
         } else {
-            /* Photo gallery */
+            /* Single Photo gallery */
             /* Error handling */
             if (br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Sorry, no photos found|error\">Gallery not found<|>Page Not Found<")) {
                 decryptedLinks.add(createOfflinelink(parameter));
@@ -222,6 +222,11 @@ public class XHamsterGallery extends PluginForDecrypt {
             } else if (fpname == null) {
                 /* Final fallback */
                 fpname = galleryID;
+            }
+            /* Add name of uploader to the beginning of our packagename if possible */
+            final String uploaderName = br.getRegex("/users/[^\"]+\"[^>]*class=\"link\">([^<>\"]+)<").getMatch(0);
+            if (uploaderName != null && !fpname.contains(uploaderName)) {
+                fpname = uploaderName + " - " + fpname;
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpname.trim()));

@@ -16,8 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,8 +35,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "docidecrypted://.+" })
 public class DociPl extends PluginForHost {
@@ -111,21 +119,41 @@ public class DociPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            final String docid = getDocumentID(this.br);
-            if (docid == null) {
+            // final String docid = getDocumentID(this.br);
+            final String fid = br.getRegex("data-id=\"([^\"]+)\"").getMatch(0);
+            if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = String.format("http://stream.%s/pdf/%s", this.br.getHost(), docid);
+            final String rcKey = br.getRegex("data-rcp=\"([^\"]+)\"").getMatch(0);
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+            final Map<String, Object> postData = new HashMap<String, Object>();
+            postData.put("file_id", fid);
+            postData.put("file_size", link.getView().getBytesTotal());
+            postData.put("file_extension", Plugin.getFileNameExtensionFromString(link.getName(), "mobi"));
+            postData.put("rc", recaptchaV2Response);
+            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            br.postPageRaw("/file/file_data/show", JSonStorage.serializeToJson(postData));
+            dllink = PluginJSonUtils.getJson(br, "url");
+            if (!StringUtils.isEmpty(dllink)) {
+                /* Check for: docs.google.com/viewer?embedded=true&url=http... */
+                final UrlQuery query = UrlQuery.parse(dllink);
+                final String embeddedURL = query.get("url");
+                if (!StringUtils.isEmpty(embeddedURL)) {
+                    dllink = embeddedURL;
+                }
+            }
+            /* 2020-09-21: Old way without captcha was easier */
+            // dllink = String.format("http://stream.%s/pdf/%s", this.br.getHost(), docid);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -136,14 +164,14 @@ public class DociPl extends PluginForHost {
         }
         final String final_server_filename = getFileNameFromHeader(dl.getConnection());
         if (final_server_filename != null) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(final_server_filename));
+            link.setFinalFileName(Encoding.htmlDecode(final_server_filename));
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -151,11 +179,11 @@ public class DociPl extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
+                    link.setProperty(property, Property.NULL);
                     dllink = null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
