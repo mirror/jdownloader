@@ -53,6 +53,11 @@ public class ImageFap extends PluginForHost {
         }
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 429 });
+        return br;
+    }
+
     private static final String VIDEOLINK = "https?://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
 
     private String DecryptLink(final String code) {
@@ -194,8 +199,16 @@ public class ImageFap extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
+        prepBR(this.br);
         try {
             br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 429) {
+                /*
+                 * 2020-09-21: Newly introduced rate limits:
+                 * https://www.imagefaq.cc/forum/viewtopic.php?f=4&t=17675&sid=0ed66fda947338862f2cb3d32622e030
+                 */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
+            }
             if (link.getDownloadURL().matches(VIDEOLINK)) {
                 final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
                 if (filename == null) {

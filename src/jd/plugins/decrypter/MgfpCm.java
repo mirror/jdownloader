@@ -26,7 +26,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,6 +33,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
@@ -58,10 +59,19 @@ public class MgfpCm extends PluginForDecrypt {
         return 1;
     }
 
+    private String getPage(final Browser br, final String url) throws Exception {
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
+        }
+        return br.toString();
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
+        jd.plugins.hoster.ImageFap.prepBR(this.br);
         String parameter = param.toString();
         final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
         if (oid != null) {
@@ -69,7 +79,7 @@ public class MgfpCm extends PluginForDecrypt {
             int pageIndex = 0;
             br.setFollowRedirects(true);
             while (true) {
-                br.getPage("https://www.imagefap.com/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                getPage(this.br, "https://www.imagefap.com/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 pageIndex++;
                 final String galleries[] = br.getRegex("(/gallery/\\d+|/gallery\\.php\\?gid=\\d+)").getColumn(0);
                 if (galleries == null || galleries.length == 0) {
@@ -92,9 +102,9 @@ public class MgfpCm extends PluginForDecrypt {
             br.setFollowRedirects(true);
             while (true) {
                 if (userGallery) {
-                    br.getPage("https://www.imagefap.com/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                    getPage(this.br, "https://www.imagefap.com/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 } else if (favoriteGallery) {
-                    br.getPage("https://www.imagefap.com/showfavorites.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                    getPage(this.br, "https://www.imagefap.com/showfavorites.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 } else {
                     return null;
                 }
@@ -111,7 +121,7 @@ public class MgfpCm extends PluginForDecrypt {
             return decryptedLinks;
         } else if (userID != null) {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            getPage(this.br, parameter);
             final String galleries[] = br.getRegex("((usergallery|showfavorites)\\.php\\?userid=\\d+&folderid=-?\\d+)").getColumn(0);
             if (galleries != null) {
                 for (final String gallery : galleries) {
@@ -149,21 +159,12 @@ public class MgfpCm extends PluginForDecrypt {
                 /**
                  * Workaround to get all images on one page for private galleries (site buggy)
                  */
-                br.getPage("https://www.imagefap.com/gallery.php?view=2");
+                getPage(this.br, "https://www.imagefap.com/gallery.php?view=2");
             } else if (!parameter.contains("view=2")) {
                 parameter = addParameter(parameter, "view=2");
                 parameter = addParameter(parameter, "gid=" + gid);
             }
-            try {
-                br.getPage(parameter);
-            } catch (final BrowserException e) {
-                final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
-                link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
-                link.setAvailable(false);
-                link.setProperty("offline", true);
-                decryptedLinks.add(link);
-                return decryptedLinks;
-            }
+            getPage(this.br, parameter);
             if (br.containsHTML(">This gallery has been flagged")) {
                 final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
                 link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
@@ -177,10 +178,10 @@ public class MgfpCm extends PluginForDecrypt {
                     parameter = br.getRedirectLocation();
                     parameter = addParameter(parameter, "view=2");
                     logger.info("New parameter is set: " + parameter);
-                    br.getPage(parameter);
+                    getPage(this.br, parameter);
                 } else {
                     logger.warning("Getting unknown redirect page");
-                    br.getPage(br.getRedirectLocation());
+                    getPage(this.br, br.getRedirectLocation());
                 }
             }
             if (br.getURL().contains("imagefap.com/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Could not find gallery<")) {
@@ -239,7 +240,7 @@ public class MgfpCm extends PluginForDecrypt {
             final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
             for (final String page : allPages) {
                 if (!page.equals("0")) {
-                    br.getPage(parameter + "&page=" + page);
+                    getPage(this.br, parameter + "&page=" + page);
                 }
                 final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                 if (info == null || info.length == 0) {
