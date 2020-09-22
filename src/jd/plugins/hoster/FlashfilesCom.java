@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -186,13 +186,19 @@ public class FlashfilesCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeform3, resumable, maxchunks);
         if (!isDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -234,7 +240,7 @@ public class FlashfilesCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -242,20 +248,22 @@ public class FlashfilesCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (!isDownloadableContent(con)) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
                 link.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
@@ -312,7 +320,7 @@ public class FlashfilesCom extends PluginForHost {
     }
 
     private boolean isLoggedin() {
-        return br.containsHTML("'logout") || br.getURL().contains("/myfiles.php");
+        return br.containsHTML("href\\s*=\\s*('|\")(logout\\.php|logout)\\1") || br.getURL().contains("/myfiles.php");
     }
 
     @Override
@@ -325,7 +333,14 @@ public class FlashfilesCom extends PluginForHost {
             br.getPage("/myfiles.php");
         }
         String expire = br.getRegex("Expires On\\s*:[^<>\"]*(\\d{4}\\-\\d{2}\\-\\d{2}[^<>\"]*\\d{2}:\\d{2}:\\d{2})[^<>\"]*UTC").getMatch(0);
-        if (expire == null) {
+        if (expire != null) {
+            if (Encoding.isHtmlEntityCoded(expire)) {
+                expire = Encoding.htmlDecode(expire);
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
+        }
+        if (expire == null || ai.isExpired()) {
+            ai.setExpired(false);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -333,13 +348,9 @@ public class FlashfilesCom extends PluginForHost {
             ai.setStatus("Registered (free) user");
             ai.setTrafficLeft(0);
         } else {
-            if (Encoding.isHtmlEntityCoded(expire)) {
-                expire = Encoding.htmlDecode(expire);
-            }
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null), br);
             ai.setStatus("Premium User");
             ai.setUnlimitedTraffic();
         }
@@ -367,14 +378,19 @@ public class FlashfilesCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (!isDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
