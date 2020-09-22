@@ -104,6 +104,7 @@ public class RedditCom extends PluginForDecrypt {
         }
         fp = FilePackage.getInstance();
         fp.setName("/r/" + subredditTitle);
+        /* 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! */
         final boolean stopAfterFirstPage = true;
         final int maxItemsPerCall = 100;
         final UrlQuery query = new UrlQuery();
@@ -148,6 +149,7 @@ public class RedditCom extends PluginForDecrypt {
         }
         fp = FilePackage.getInstance();
         fp.setName("/u/" + userTitle);
+        /* 2020-09-22: TODO Crawling entire user-profiles or subreddits will cause a lot of http requests - do not enable this yet! */
         final boolean stopAfterFirstPage = true;
         final int maxItemsPerCall = 100;
         final UrlQuery query = new UrlQuery();
