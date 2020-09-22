@@ -45,7 +45,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:www\\.)?reddit\\.com/(?:r/([^/]+)/comments/([a-z0-9]+)/[A-Za-z0-9\\-_]+|user/[^/]+/saved/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:www\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,21 +63,29 @@ public class RedditCom extends PluginForDecrypt {
         if (fp != null) {
             dl._setFilePackage(fp);
         }
+        distribute(dl);
         return dl;
     }
 
     private FilePackage           fp                      = null;
     final ArrayList<DownloadLink> decryptedLinks          = new ArrayList<DownloadLink>();
     private String                parameter               = null;
-    private static final String   TYPE_COMMENTS           = "https?://[^/]+/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)";
-    private static final String   TYPE_USER_SAVED_OBJECTS = "https://[^/]+/user/[^/]+/saved/";
+    private static final String   TYPE_SUBREDDIT          = "https?://[^/]+/r/([^/]+)";
+    private static final String   TYPE_SUBREDDIT_COMMENTS = "https?://[^/]+/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)";
+    private static final String   TYPE_USER               = "https://[^/]+/user/([^/]+)";
+    private static final String   TYPE_USER_SAVED_OBJECTS = "https://[^/]+/user/([^/]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         parameter = param.toString();
+        jd.plugins.hoster.RedditCom.prepBRAPI(this.br);
         if (parameter.matches(TYPE_USER_SAVED_OBJECTS)) {
             crawlUserSavedObjects();
-        } else {
+        } else if (parameter.matches(TYPE_USER)) {
+            crawlUser();
+        } else if (parameter.matches(TYPE_SUBREDDIT_COMMENTS)) {
             crawlComment();
+        } else {
+            crawlSubreddit();
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Failed to find any downloadable content");
@@ -85,6 +93,94 @@ public class RedditCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private void crawlSubreddit() throws Exception {
+        final ArrayList<String> lastItemDupes = new ArrayList<String>();
+        /* Prepare crawl process */
+        final String subredditTitle = new Regex(this.parameter, TYPE_SUBREDDIT).getMatch(0);
+        if (subredditTitle == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp = FilePackage.getInstance();
+        fp.setName("/r/" + subredditTitle);
+        final boolean stopAfterFirstPage = true;
+        final int maxItemsPerCall = 100;
+        final UrlQuery query = new UrlQuery();
+        query.add("type", "links");
+        query.add("limit", Integer.toString(maxItemsPerCall));
+        int page = 0;
+        do {
+            page++;
+            logger.info("Crawling page: " + page);
+            br.getPage("https://www." + this.getHost() + "/r/" + subredditTitle + "/.json?" + query.toString());
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            crawlListing(entries);
+            entries = (Map<String, Object>) entries.get("data");
+            final String fullnameAfter = (String) entries.get("after");
+            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            /* Multiple fail safes to prevent an infinite loop. */
+            if (StringUtils.isEmpty(fullnameAfter)) {
+                logger.info("Seems like we've crawled everything");
+                break;
+            } else if (numberofItems < maxItemsPerCall) {
+                logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
+                break;
+            } else if (lastItemDupes.contains(fullnameAfter)) {
+                logger.info("Stopping because we already know this fullnameAfter");
+                break;
+            } else if (stopAfterFirstPage) {
+                logger.info("Stopping after first page");
+                break;
+            }
+            lastItemDupes.add(fullnameAfter);
+            query.remove("after");
+            query.add("after", fullnameAfter);
+        } while (!this.isAbort());
+    }
+
+    private void crawlUser() throws Exception {
+        final ArrayList<String> lastItemDupes = new ArrayList<String>();
+        /* Prepare crawl process */
+        final String userTitle = new Regex(this.parameter, TYPE_USER).getMatch(0);
+        if (userTitle == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp = FilePackage.getInstance();
+        fp.setName("/u/" + userTitle);
+        final boolean stopAfterFirstPage = true;
+        final int maxItemsPerCall = 100;
+        final UrlQuery query = new UrlQuery();
+        query.add("type", "links");
+        query.add("limit", Integer.toString(maxItemsPerCall));
+        int page = 0;
+        do {
+            page++;
+            logger.info("Crawling page: " + page);
+            br.getPage("https://www." + this.getHost() + "/user/" + userTitle + "/.json?" + query.toString());
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            crawlListing(entries);
+            entries = (Map<String, Object>) entries.get("data");
+            final String fullnameAfter = (String) entries.get("after");
+            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            /* Multiple fail safes to prevent an infinite loop. */
+            if (StringUtils.isEmpty(fullnameAfter)) {
+                logger.info("Seems like we've crawled everything");
+                break;
+            } else if (numberofItems < maxItemsPerCall) {
+                logger.info("Stopping because we got less than " + maxItemsPerCall + " items");
+                break;
+            } else if (lastItemDupes.contains(fullnameAfter)) {
+                logger.info("Stopping because we already know this fullnameAfter");
+                break;
+            } else if (stopAfterFirstPage) {
+                logger.info("Stopping after first page");
+                break;
+            }
+            lastItemDupes.add(fullnameAfter);
+            query.remove("after");
+            query.add("after", fullnameAfter);
+        } while (!this.isAbort());
     }
 
     private void crawlUserSavedObjects() throws Exception {
@@ -109,7 +205,7 @@ public class RedditCom extends PluginForDecrypt {
         do {
             page++;
             logger.info("Crawling page: " + page);
-            br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?type=links&limit=" + maxItemsPerCall);
+            br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?" + query.toString());
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             crawlListing(entries);
             entries = (Map<String, Object>) entries.get("data");
@@ -134,7 +230,7 @@ public class RedditCom extends PluginForDecrypt {
 
     /** According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
     private void crawlComment() throws Exception {
-        final String commentID = new Regex(this.parameter, this.getSupportedLinks()).getMatch(1);
+        final String commentID = new Regex(this.parameter, TYPE_SUBREDDIT_COMMENTS).getMatch(1);
         // final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         // if (acc == null) {
         // throw new AccountRequiredException();
@@ -148,7 +244,7 @@ public class RedditCom extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
-        final String commentURLTitle = new Regex(this.parameter, TYPE_COMMENTS).getMatch(2);
+        final String commentURLTitle = new Regex(this.parameter, TYPE_SUBREDDIT_COMMENTS).getMatch(2);
         if (commentURLTitle == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -169,14 +265,19 @@ public class RedditCom extends PluginForDecrypt {
         final ArrayList<Object> items = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
         for (final Object itemO : items) {
             entries = (Map<String, Object>) itemO;
-            // final String kind = (String)entries.get("kind"); --> We expect this to be "t3"
+            final String kind = (String) entries.get("kind");
             entries = (Map<String, Object>) entries.get("data");
             final long createdTimestamp = JavaScriptEngineFactory.toLong(entries.get("created"), 0) * 1000;
             final Date theDate = new Date(createdTimestamp);
             final String dateFormatted = new SimpleDateFormat("yyy-MM-dd").format(theDate);
             String title = (String) entries.get("title");
             final String subredditTitle = (String) entries.get("subreddit");
-            if (StringUtils.isEmpty(title) || StringUtils.isEmpty(subredditTitle)) {
+            if (!"t3".equalsIgnoreCase(kind)) {
+                /*
+                 * Skip everything except links (e.g. skips comments, awards and so on. See API docs --> In-text search for "type prefixes")
+                 */
+                continue;
+            } else if (StringUtils.isEmpty(title) || StringUtils.isEmpty(subredditTitle)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             title = dateFormatted + "_" + subredditTitle + " - " + title;
@@ -193,8 +294,8 @@ public class RedditCom extends PluginForDecrypt {
                 } else if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
                     dl.setFinalFileName(title + ".jpg");
                 }
+                dl.setAvailable(true);
                 decryptedLinks.add(dl);
-                distribute(dl);
             }
             /* Look for embedded content from external sources - the object is always given but can be empty */
             final Object embeddedMediaO = entries.get("media_embed");
@@ -207,7 +308,6 @@ public class RedditCom extends PluginForDecrypt {
                     for (final String url : links) {
                         final DownloadLink dl = this.createDownloadlink(url);
                         decryptedLinks.add(dl);
-                        distribute(dl);
                     }
                 }
             }
@@ -231,7 +331,6 @@ public class RedditCom extends PluginForDecrypt {
                                     }
                                     final DownloadLink dl = this.createDownloadlink(hls_url);
                                     decryptedLinks.add(dl);
-                                    distribute(dl);
                                 }
                             }
                         }
@@ -252,7 +351,6 @@ public class RedditCom extends PluginForDecrypt {
                             final DownloadLink dl = this.createDownloadlink("directhttp://" + bestImage);
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
-                            distribute(dl);
                         }
                     }
                 } else {
@@ -269,7 +367,6 @@ public class RedditCom extends PluginForDecrypt {
                     for (final String url : urls) {
                         final DownloadLink dl = this.createDownloadlink(url);
                         decryptedLinks.add(dl);
-                        distribute(dl);
                     }
                 } else {
                     logger.info("Failed to find any URLs in selftext");

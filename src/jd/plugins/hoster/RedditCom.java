@@ -81,6 +81,7 @@ public class RedditCom extends PluginForHost {
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -253,7 +254,6 @@ public class RedditCom extends PluginForHost {
                 showUnderDevelopment();
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "This plugin is still under development", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             prepBRAPI(br);
             if (!isAuthorizationURL(account.getPass())) {

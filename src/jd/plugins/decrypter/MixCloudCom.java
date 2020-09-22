@@ -257,12 +257,14 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     /* Skip invalid objects */
                     continue;
                 }
+                final LinkedHashMap<String, Object> ownerInfo = (LinkedHashMap<String, Object>) entries.get("owner");
+                final String uploaderName = (String) ownerInfo.get("displayName");
                 final String id = (String) entries.get("id");
                 final String title = (String) entries.get("name");
                 final String url_preview = (String) entries.get("previewUrl");
                 // final Object isExclusiveO = entries.get("isExclusive");
                 // final boolean isExclusive = isExclusiveO != null ? ((Boolean) isExclusiveO).booleanValue() : false;
-                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(title)) {
+                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(title) || StringUtils.isEmpty(uploaderName)) {
                     /* Skip invalid objects */
                     continue;
                 } else if (dupes.contains(id)) {
@@ -307,7 +309,10 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 if (!StringUtils.isEmpty(comment)) {
                     dlink.setComment(comment);
                 }
-                dlink.setFinalFileName(filename_prefix + title + ext);
+                dlink.setFinalFileName(filename_prefix + uploaderName + " - " + title + ext);
+                /* Packagizer tags */
+                dlink.setProperty("title", title);
+                dlink.setProperty("uploader", uploaderName);
                 dlink.setAvailable(true);
                 decryptedLinks.add(dlink);
             }
