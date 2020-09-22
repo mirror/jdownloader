@@ -316,7 +316,7 @@ public class OxycloudPl extends YetiShareCore {
         }
         final Object maxNumberOfChunksO = entries.get("maxNumberOfActiveDownloads");
         if (maxNumberOfChunksO != null && maxNumberOfChunksO instanceof Number) {
-            final int maxNumberOfChunks = ((Number) maxSimultaneousDownloadsO).intValue();
+            final int maxNumberOfChunks = ((Number) maxNumberOfChunksO).intValue();
             if (maxNumberOfChunks > 1) {
                 account.setProperty(PROPERTY_account_max_chunks, -maxNumberOfChunks);
             }
