@@ -303,26 +303,25 @@ public class OxycloudPl extends YetiShareCore {
         } else {
             account.setType(AccountType.FREE);
         }
-        final int maxNumberOfActiveDownloads;
-        final Object maxNumberOfActiveDownloadsO = entries.get("maxNumberOfActiveDownloads");
-        if (maxNumberOfActiveDownloadsO != null && maxNumberOfActiveDownloadsO instanceof Number) {
-            maxNumberOfActiveDownloads = ((Number) maxNumberOfActiveDownloadsO).intValue();
+        final int maxSimultaneousDownloads;
+        final Object maxSimultaneousDownloadsO = entries.get("maxConcurrentDownloads");
+        if (maxSimultaneousDownloadsO != null && maxSimultaneousDownloadsO instanceof Number) {
+            maxSimultaneousDownloads = ((Number) maxSimultaneousDownloadsO).intValue();
         } else {
             /* Fallback */
-            maxNumberOfActiveDownloads = 1;
+            maxSimultaneousDownloads = 1;
         }
-        if (maxNumberOfActiveDownloads > 0) {
-            account.setMaxSimultanDownloads(maxNumberOfActiveDownloads);
+        if (maxSimultaneousDownloads > 0) {
+            account.setMaxSimultanDownloads(maxSimultaneousDownloads);
         }
         final Object maxNumberOfChunksO = entries.get("maxNumberOfActiveDownloads");
         if (maxNumberOfChunksO != null && maxNumberOfChunksO instanceof Number) {
-            final int maxNumberOfChunks = ((Number) maxNumberOfActiveDownloadsO).intValue();
+            final int maxNumberOfChunks = ((Number) maxSimultaneousDownloadsO).intValue();
             if (maxNumberOfChunks > 1) {
                 account.setProperty(PROPERTY_account_max_chunks, -maxNumberOfChunks);
             }
         }
-        /* Do not set account status here as upper code already did that! */
-        // ai.setStatus("Bla");
+        logger.info("Status: " + accType + " | MaxDls: " + maxSimultaneousDownloads + " | MaxChunks: " + account.getLongProperty(PROPERTY_account_max_chunks, 1));
         return ai;
     }
 
