@@ -531,6 +531,10 @@ public class PornHubCom extends PluginForDecrypt {
                 base_url = br.getURL();
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
+                /*
+                 * Error 404 can also happen on pages > 0 in which case we've probably tried to crawl one page too much --> Only add offline
+                 * item if nothing has been found before.
+                 */
                 if (dupes.size() == 0) {
                     decryptedLinks.add(createOfflinelink(parameter));
                 }

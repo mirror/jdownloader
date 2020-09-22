@@ -114,12 +114,12 @@ public class ImageFap extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         br.setFollowRedirects(true);
-        String pfilename = downloadLink.getName();
-        br.getPage(downloadLink.getDownloadURL());
-        if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
+        String pfilename = link.getName();
+        getPage(this.br, link.getDownloadURL());
+        if (link.getDownloadURL().matches(VIDEOLINK)) {
             String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (configLink == null) {
                 /* 2020-03-23 */
@@ -128,7 +128,7 @@ public class ImageFap extends PluginForHost {
             if (configLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage(configLink);
+            getPage(this.br, configLink);
             String finallink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -136,7 +136,7 @@ public class ImageFap extends PluginForHost {
             if (Encoding.isHtmlEntityCoded(finallink)) {
                 finallink = Encoding.htmlDecode(finallink);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -169,7 +169,7 @@ public class ImageFap extends PluginForHost {
             // Only set subdirectory if it wasn't set before or we'll get
             // subfolders
             // in subfolders which is bad
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, imagelink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, imagelink, false, 1);
             final long t = dl.getConnection().getContentLength();
             if (dl.getConnection().getResponseCode() == 404 || (t != -1 && t < 107)) {
                 dl.getConnection().disconnect();
@@ -182,7 +182,7 @@ public class ImageFap extends PluginForHost {
             if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0))) {
                 pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0);
             }
-            downloadLink.setFinalFileName(pfilename);
+            link.setFinalFileName(pfilename);
         }
         dl.startDownload();
     }
@@ -201,14 +201,7 @@ public class ImageFap extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         prepBR(this.br);
         try {
-            br.getPage(link.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 429) {
-                /*
-                 * 2020-09-21: Newly introduced rate limits:
-                 * https://www.imagefaq.cc/forum/viewtopic.php?f=4&t=17675&sid=0ed66fda947338862f2cb3d32622e030
-                 */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
-            }
+            getPage(this.br, link.getDownloadURL());
             if (link.getDownloadURL().matches(VIDEOLINK)) {
                 final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
                 if (filename == null) {
@@ -219,13 +212,13 @@ public class ImageFap extends PluginForHost {
                 final String location = br.getRedirectLocation();
                 if (location != null) {
                     if (!location.contains("/photo/")) {
-                        br.getPage(location);
+                        getPage(this.br, location);
                     }
                     logger.info("Setting new downloadUrl: " + location);
                     link.setUrlDownload(location);
-                    br.getPage(location);
+                    getPage(this.br, location);
                 }
-                if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String picture_name = link.getStringProperty("original_filename");
@@ -290,6 +283,20 @@ public class ImageFap extends PluginForHost {
             logger.log(e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    private String getPage(final Browser br, final String url) throws Exception {
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            /* 2020-09-22: Most likely they will allow a retry after one hour. */
+            final String waitSecondsStr = br.getRequest().getResponseHeader("Retry-After");
+            if (waitSecondsStr != null && waitSecondsStr.matches("\\d+")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", Integer.parseInt(waitSecondsStr) * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
+            }
+        }
+        return br.toString();
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
