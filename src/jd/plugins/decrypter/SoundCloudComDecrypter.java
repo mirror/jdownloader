@@ -326,16 +326,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             throw new DecrypterException("null");
         }
         setFilePackage(username, playlistname);
+        final ArrayList<Object> trackItemsFound = new ArrayList<Object>();
         /*
          * We will not get info about all tracks via this request - therefore we need to make another API call, collect the rest and then
          * add the URLs.
          */
-        final ArrayList<Object> itemsFound = new ArrayList<Object>();
-        String idsToGrab = "";
+        final ArrayList<String> trackIdsForPagination = new ArrayList<String>();
+        /* This is basically a debug switch. */
         boolean forceItemsToQueue = false;
-        final int max_tracks_per_request = 50;
-        int totalindex = 0;
-        int trackindex = 0;
         for (final Map<String, Object> item : tracks) {
             final String track_id = getString(item, "id");
             if (StringUtils.isEmpty(track_id)) {
@@ -345,25 +343,43 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             if (permalink == null || forceItemsToQueue) {
                 /* Track info not given --> Save trackID to get track object later */
                 forceItemsToQueue = true;
-                if (idsToGrab.length() > 0) {
-                    idsToGrab += ",";
-                }
-                idsToGrab += track_id;
-                trackindex++;
+                trackIdsForPagination.add(track_id);
             } else if (permalink != null) {
                 /* Track info already given --> Save Object for later */
-                itemsFound.add(item);
+                trackItemsFound.add(item);
             }
-            final boolean reachedEnd = totalindex == tracks.size() - 1;
-            /*
-             * Decide whether or not pagination is required. Either when we got over 50 items or if we reached the end and still got items
-             * left no matter how many.
-             */
-            if (trackindex >= max_tracks_per_request || (reachedEnd && idsToGrab.length() > 0)) {
-                /* Pagination handling */
+        }
+        /*
+         * Check if pagination is required.
+         */
+        if (!trackIdsForPagination.isEmpty()) {
+            logger.info("Handling pagination for " + trackIdsForPagination.size() + " objects");
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<String> tempIDs = new ArrayList<String>();
+            /* Collect all found items here because they're not returning them in the requested order. */
+            final ArrayList<Object> tempTrackItemsFound = new ArrayList<Object>();
+            int index = 0;
+            int paginationPage = 0;
+            while (!this.isAbort()) {
+                logger.info("Handling pagination page" + (paginationPage + 1));
+                tempIDs.clear();
+                while (true) {
+                    /* We test max 50 links at once. 2020-05-28: Checked to up to 100 but let's use max. 50. */
+                    if (index == trackIdsForPagination.size() || tempIDs.size() == 50) {
+                        break;
+                    } else {
+                        tempIDs.add(trackIdsForPagination.get(index));
+                        index++;
+                    }
+                }
+                sb.delete(0, sb.capacity());
+                for (final String idTemp : tempIDs) {
+                    sb.append(idTemp);
+                    sb.append("%2C");
+                }
                 final UrlQuery querytracks = new UrlQuery();
                 querytracks.add("playlistId", playlist_id);
-                querytracks.add("ids", Encoding.urlEncode(idsToGrab));
+                querytracks.add("ids", sb.toString());
                 querytracks.add("client_id", SoundcloudCom.getClientId(br));
                 querytracks.add("app_version", SoundcloudCom.getAppVersion(br));
                 querytracks.add("format", "json");
@@ -373,15 +389,36 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 br.getPage(SoundcloudCom.API_BASEv2 + "/tracks?" + querytracks.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 for (final Object tracko : ressourcelist) {
-                    itemsFound.add(tracko);
+                    tempTrackItemsFound.add(tracko);
                 }
-                idsToGrab = "";
-                trackindex = 0;
+                if (index == trackIdsForPagination.size()) {
+                    logger.info("Pagination has reached end");
+                    break;
+                }
+                paginationPage++;
             }
-            totalindex++;
+            /* Be sure to add new items sorted to main Array */
+            for (final String sortedTrackID : trackIdsForPagination) {
+                boolean foundTrackID = false;
+                for (final Object tempTrackItem : tempTrackItemsFound) {
+                    final LinkedHashMap<String, Object> tempTrackData = (LinkedHashMap<String, Object>) tempTrackItem;
+                    final String unsortedTrackID = getString(tempTrackData, "id");
+                    if (unsortedTrackID.equals(sortedTrackID)) {
+                        /* Found item --> Add it to main Array - it is now in order. */
+                        trackItemsFound.add(tempTrackItem);
+                        foundTrackID = true;
+                        break;
+                    }
+                }
+                if (!foundTrackID) {
+                    /* This should never happen but it's not a reason to throw an Exception! */
+                    logger.warning("Failed to find trackID: " + sortedTrackID);
+                }
+            }
         }
+        /* Finally add items so they appear in LinkGrabber. */
         int counter = 1;
-        for (final Object tracko : itemsFound) {
+        for (final Object tracko : trackItemsFound) {
             data = (Map<String, Object>) tracko;
             final String permalink = getString(data, "permalink");
             if (permalink == null) {
