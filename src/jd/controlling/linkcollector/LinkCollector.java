@@ -378,8 +378,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         public int hashCode() {
             if (downloadFolderRaw != null) {
                 return downloadFolderRaw.hashCode();
-            } else if (packageName != null) {
-                return packageName.hashCode();
             } else {
                 return CrawledPackageMappingID.class.hashCode();
             }
@@ -391,11 +389,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 return true;
             } else if (obj != null && obj instanceof CrawledPackageMappingID) {
                 final CrawledPackageMappingID other = (CrawledPackageMappingID) obj;
-                if (!StringUtils.equals(id, other.id)) {
-                    return false;
-                } else if (!StringUtils.equals(downloadFolder, other.downloadFolder)) {
+                if (!StringUtils.equals(downloadFolder, other.downloadFolder)) {
                     return false;
                 } else if (!StringUtils.equals(packageName, other.packageName)) {
+                    return false;
+                } else if (!StringUtils.equals(id, other.id)) {
                     return false;
                 } else {
                     return true;
@@ -1345,9 +1343,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
