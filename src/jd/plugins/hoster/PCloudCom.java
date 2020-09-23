@@ -18,17 +18,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 import java.util.Random;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -44,9 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -84,7 +81,6 @@ public class PCloudCom extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS                       = 20;
     private int                  statuscode                                      = 0;
     /* don't touch the following! */
-    private static Object        LOCK                                            = new Object();
     private String               account_auth                                    = null;
 
     public static String getAPIDomain(final String linkDomain) {
@@ -106,7 +102,6 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         final String code = getCODE(link);
@@ -250,30 +245,33 @@ public class PCloudCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        this.account_auth = account.getStringProperty("account_auth", null);
+                final Cookies cookies = account.loadCookies("");
+                this.account_auth = account.getStringProperty("account_auth", null);
+                if (cookies != null && this.account_auth != null) {
+                    br.setCookies(cookies);
+                    this.account_auth = account.getStringProperty("account_auth", null);
+                    if (!force) {
+                        logger.info("Trust token without checking");
                         return;
+                    }
+                    br.getPage("https://api.pcloud.com/userinfo?auth=" + Encoding.urlEncode(this.account_auth) + "&getlastsubscription=1");
+                    try {
+                        updatestatuscode();
+                        this.handleAPIErrors(br);
+                        logger.info("Token login successful");
+                        return;
+                    } catch (final PluginException e) {
+                        /* Wrong token = Will typically fail with errorcode 2000 */
+                        logger.info("Token login failed");
+                        br.clearAll();
                     }
                 }
                 prepBR();
+                logger.info("Performing full login");
                 // TODO: check US/EU account
                 postAPISafe("https://api.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
@@ -284,35 +282,20 @@ public class PCloudCom extends PluginForHost {
                     }
                 }
                 this.account_auth = PluginJSonUtils.getJsonValue(br, "auth");
-                if (this.account_auth == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (StringUtils.isEmpty(this.account_auth)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 account.setProperty("account_auth", this.account_auth);
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setProperty("cookies", Property.NULL);
+                    account.clearCookies("");
                 }
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
