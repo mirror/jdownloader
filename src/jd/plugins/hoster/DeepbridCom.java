@@ -142,7 +142,7 @@ public class DeepbridCom extends antiDDoSForHost {
             }
             dllink = br.getRegex("(https?://[^\"\\']+/dl/[^\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
-                dllink = br.getRegex("href=\"(https?://[^\"]+)\">DOWNLOAD NOW\\!").getMatch(0);
+                dllink = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"\\s*>\\s*DOWNLOAD NOW\\!").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 if (ticketurl != null) {
@@ -276,7 +276,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (!looksLikeDownloadableContent(dl.getConnection())) {
+                    if (!looksLikeDownloadableContent(con)) {
                         throw new IOException();
                     } else {
                         return dllink;
