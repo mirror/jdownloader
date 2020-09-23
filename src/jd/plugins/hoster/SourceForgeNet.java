@@ -47,7 +47,7 @@ public class SourceForgeNet extends PluginForHost {
     // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = -2;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
 
