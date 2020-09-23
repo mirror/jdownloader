@@ -185,7 +185,7 @@ public class FlashfilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeform3, resumable, maxchunks);
-        if (!isDownloadableContent(dl.getConnection())) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
@@ -247,7 +247,7 @@ public class FlashfilesCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (!isDownloadableContent(con)) {
+                if (!looksLikeDownloadableContent(con)) {
                     throw new IOException();
                 } else {
                     return dllink;
@@ -264,10 +264,6 @@ public class FlashfilesCom extends PluginForHost {
         } else {
             return null;
         }
-    }
-
-    protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
-        return con != null && con.isOK() && con.isContentDisposition();
     }
 
     @Override
@@ -377,7 +373,7 @@ public class FlashfilesCom extends PluginForHost {
                 dllink = id + "&downloadtoken=" + Encoding.urlEncode(downloadtoken);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!isDownloadableContent(dl.getConnection())) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);

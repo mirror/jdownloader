@@ -190,7 +190,7 @@ public class SourceForgeNet extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!dl.getConnection().isOK() || dl.getConnection().getContentType().contains("text")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -215,7 +215,7 @@ public class SourceForgeNet extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getResponseCode() != 200 || con.getContentType().contains("text") || con.getCompleteContentLength() == -1) {
+                if (!looksLikeDownloadableContent(con)) {
                     throw new IOException();
                 } else {
                     return dllink;
