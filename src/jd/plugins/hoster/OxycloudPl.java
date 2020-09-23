@@ -265,43 +265,46 @@ public class OxycloudPl extends YetiShareCore {
         Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("account");
         final String accType = (String) entries.get("type");
+        /* 2020-09-23: API returns false for free accounts although they do have unlimited traffic */
         final boolean isUnlimited = ((Boolean) entries.get("isUnlimited")).booleanValue();
         final boolean isPremium = ((Boolean) entries.get("isPremium")).booleanValue();
-        if (isUnlimited) {
-            ai.setUnlimitedTraffic();
-        } else {
-            /*
-             * 2020-08-26: These values are usually null for free accounts but we'll try to set them anyways in case they change this in the
-             * future.
-             */
-            // long totalBytesLeft = 0;
-            long dailyBytesLeft = 0;
-            long maxDailyBytes = 0;
-            // final Object totalBytesLeftO = entries.get("totalBytesLeft");
-            final Object dailyBytesLeftO = entries.get("dailyBytesLeft");
-            final Object maxDailyBytesO = entries.get("maxDailyBytes");
-            // if (totalBytesLeftO != null && totalBytesLeftO instanceof Number) {
-            // totalBytesLeft = ((Number) totalBytesLeftO).longValue();
-            // }
-            if (dailyBytesLeftO != null && dailyBytesLeftO instanceof Number) {
-                dailyBytesLeft = ((Number) dailyBytesLeftO).longValue();
-            }
-            if (maxDailyBytesO != null && maxDailyBytesO instanceof Number) {
-                maxDailyBytes = ((Number) maxDailyBytesO).longValue();
-            }
-            /* 2020-09-10: Display daily limits in account manager so it resembles their website. */
-            ai.setTrafficLeft(dailyBytesLeft);
-            if (maxDailyBytes > 0) {
-                ai.setTrafficMax(maxDailyBytes);
-            }
-            if (dailyBytesLeft <= 0) {
-                logger.warning("No daily traffic left - account probably can't be used for downloading today");
-            }
-        }
         if ("paid".equalsIgnoreCase(accType) || isPremium) {
             account.setType(AccountType.PREMIUM);
+            if (isUnlimited) {
+                ai.setUnlimitedTraffic();
+            } else {
+                /*
+                 * 2020-08-26: These values are usually null for free accounts but we'll try to set them anyways in case they change this in
+                 * the future.
+                 */
+                // long totalBytesLeft = 0;
+                long dailyBytesLeft = 0;
+                long maxDailyBytes = 0;
+                // final Object totalBytesLeftO = entries.get("totalBytesLeft");
+                final Object dailyBytesLeftO = entries.get("dailyBytesLeft");
+                final Object maxDailyBytesO = entries.get("maxDailyBytes");
+                // if (totalBytesLeftO != null && totalBytesLeftO instanceof Number) {
+                // totalBytesLeft = ((Number) totalBytesLeftO).longValue();
+                // }
+                if (dailyBytesLeftO != null && dailyBytesLeftO instanceof Number) {
+                    dailyBytesLeft = ((Number) dailyBytesLeftO).longValue();
+                }
+                if (maxDailyBytesO != null && maxDailyBytesO instanceof Number) {
+                    maxDailyBytes = ((Number) maxDailyBytesO).longValue();
+                }
+                /* 2020-09-10: Display daily limits in account manager so it resembles their website. */
+                ai.setTrafficLeft(dailyBytesLeft);
+                if (maxDailyBytes > 0) {
+                    ai.setTrafficMax(maxDailyBytes);
+                }
+                if (dailyBytesLeft <= 0) {
+                    logger.warning("No daily traffic left - account probably can't be used for downloading today");
+                }
+            }
         } else {
             account.setType(AccountType.FREE);
+            /* 2020-09-23: Free Accounts got speed limits and tighter download limits but no (official) traffic limit. */
+            ai.setUnlimitedTraffic();
         }
         final int maxSimultaneousDownloads;
         final Object maxSimultaneousDownloadsO = entries.get("maxConcurrentDownloads");

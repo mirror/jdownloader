@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
@@ -92,7 +94,17 @@ public class SrfCh extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<meta name=\"title\" content=\"([^<>]*?) \\- Play [^\"]+\"").getMatch(0);
+        final String json = br.getRegex("window\\.__SSR_DATA__ = (\\{.*?)</script>").getMatch(0);
+        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "initialData/videoDetail");
+        if (entries == null) {
+            logger.info("This is no downloadable content");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = (String) entries.get("title");
+        final String description = (String) entries.get("description");
+        String dateFormatted = null;
+        final String date = (String) entries.get("publishDate");
         if (filename == null) {
             /* Fallback: Obtain filename from url */
             filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
@@ -101,9 +113,18 @@ public class SrfCh extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!StringUtils.isEmpty(date)) {
+            dateFormatted = new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        }
         filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
         filename = encodeUnicode(filename);
+        if (dateFormatted != null) {
+            filename = dateFormatted + "_" + filename;
+        }
         link.setFinalFileName(filename);
+        if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
     }
 
