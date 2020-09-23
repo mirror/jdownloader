@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,9 +45,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public PCloudCom(PluginWrapper wrapper) {
@@ -60,7 +62,7 @@ public class PCloudCom extends PluginForHost {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    private static final String  MAINPAGE                                        = "http://pcloud.com";
+    private static final String  MAINPAGE                                        = "https://www.pcloud.com";
     private static final String  NICE_HOST                                       = "pcloud.com";
     private static final String  NICE_HOSTproperty                               = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String  NOCHUNKS                                        = NICE_HOSTproperty + "NOCHUNKS";
@@ -85,9 +87,28 @@ public class PCloudCom extends PluginForHost {
     private static Object        LOCK                                            = new Object();
     private String               account_auth                                    = null;
 
+    public static String getAPIDomain(final String linkDomain) {
+        if (StringUtils.containsIgnoreCase(linkDomain, "e.pcloud")) {
+            // europe data center
+            return "eapi.pcloud.com";
+        } else {
+            // us data center
+            return "api.pcloud.com";
+        }
+    }
+
+    public static String getAPIDomain(final DownloadLink link) throws Exception {
+        final String mainLink = link.getStringProperty("mainlink", null);
+        if (mainLink != null) {
+            return getAPIDomain(new URL(mainLink).getHost());
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         final String code = getCODE(link);
         final String fileid = getFID(link);
         /* Links before big change */
@@ -97,13 +118,13 @@ public class PCloudCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBR();
         if (isCompleteFolder(link)) {
-            br.getPage("https://eapi.pcloud.com/showpublink?code=" + code);
+            br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code);
             this.updatestatuscode();
             if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            br.getPage("https://eapi.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
+            br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             this.updatestatuscode();
             if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -143,7 +164,7 @@ public class PCloudCom extends PluginForHost {
             maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("text")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -177,7 +198,7 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private String getdllink(final DownloadLink dl) throws PluginException {
+    private String getdllink(final DownloadLink dl) throws Exception {
         String dllink = null;
         if (isCompleteFolder(dl)) {
             /* Select all IDs of the folder to download all as .zip */
@@ -185,7 +206,7 @@ public class PCloudCom extends PluginForHost {
             if (fileids == null || fileids.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://eapi.pcloud.com/getpubzip?fileids=";
+            dllink = "https://" + getAPIDomain(dl) + "/getpubzip?fileids=";
             for (int i = 0; i < fileids.length; i++) {
                 final String currentID = fileids[i];
                 if (i == fileids.length - 1) {
@@ -253,7 +274,8 @@ public class PCloudCom extends PluginForHost {
                     }
                 }
                 prepBR();
-                postAPISafe("https://eapi.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                // TODO: check US/EU account
+                postAPISafe("https://api.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -336,7 +358,7 @@ public class PCloudCom extends PluginForHost {
             freeaccount_dllink = checkDirectLink(link, "freeaccount_dllink");
             if (freeaccount_dllink == null) {
                 /* tofolderid --> 0 = root */
-                getAPISafe("https://eapi.pcloud.com/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
+                getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
                 new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
                 new_hash = PluginJSonUtils.getJsonValue(br, "hash");
                 api_filename = PluginJSonUtils.getJsonValue(br, "name");
@@ -372,7 +394,7 @@ public class PCloudCom extends PluginForHost {
                 maxchunks = 1;
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeaccount_dllink, ACCOUNT_FREE_RESUME, maxchunks);
-            if (dl.getConnection().getContentType().contains("text")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
@@ -419,8 +441,8 @@ public class PCloudCom extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("test") || con.getLongContentLength() == -1) {
+                con = br2.openHeadConnection(dllink);
+                if (!looksLikeDownloadableContent(con)) {
                     throw new IOException();
                 } else {
                     return dllink;
@@ -438,20 +460,6 @@ public class PCloudCom extends PluginForHost {
         } else {
             return null;
         }
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     private String getCODE(final DownloadLink dl) {

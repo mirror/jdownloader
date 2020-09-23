@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
@@ -30,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.PCloudCom;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -53,7 +55,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         main.setProperty("plain_code", foldercode);
         main.setProperty("mainlink", parameter);
         prepBR();
-        br.getPage("https://eapi.pcloud.com/showpublink?code=" + getFID(parameter));
+        br.getPage("https://" + PCloudCom.getAPIDomain(new URL(parameter).getHost()) + "/showpublink?code=" + getFID(parameter));
         final String result = PluginJSonUtils.getJsonValue(this.br, "result");
         /* 7002 = deleted by the owner, 7003 = abused */
         if (br.containsHTML("\"error\": \"Invalid link") || "7002".equals(result) || "7003".equals(result)) {
