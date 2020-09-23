@@ -24,6 +24,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -37,10 +44,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/(?:album|track)/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
@@ -66,13 +69,15 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String json = br.getRegex("trackinfo\\s*:\\s*(\\[.*\\])").getMatch(0);
+        String json = br.getRegex("trackinfo[^\\[]*(\\[[^\\]]+\\])").getMatch(0);
+        final String json_artist = br.getRegex("<script type=\"application/json\\+ld\">(.*?)</script>").getMatch(0);
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));
             return decryptedLinks;
         }
-        String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
+        final Map<String, Object> artistInfo = JSonStorage.restoreFromString(json_artist, TypeRef.HASHMAP);
+        String artist = (String) artistInfo.get("name");
         String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
         if (album == null) {
             album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
@@ -89,6 +94,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         // logger.warning("Decrypter broken for link: " + parameter);
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
+        if (Encoding.isHtmlEntityCoded(json)) {
+            json = Encoding.htmlDecode(json);
+        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         artist = Encoding.htmlDecode(artist.trim());
         album = Encoding.htmlDecode(album.trim());

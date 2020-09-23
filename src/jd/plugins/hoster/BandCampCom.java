@@ -118,6 +118,8 @@ public class BandCampCom extends PluginForHost {
         if (br.containsHTML("(>Sorry, that something isn't here|>start at the beginning</a> and you'll certainly find what)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* 2020-09-23: Decode html encoded json strings */
+        br.getRequest().setHtmlCode(Encoding.htmlDecode(br.toString()));
         final String file = br.getRegex("\"file\"\\s*:\\s*(null|\".*?\"|\\{.*?\\})").getMatch(0);
         if (file == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
