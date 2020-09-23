@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https://pclouddecrypted\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public PCloudCom(PluginWrapper wrapper) {
