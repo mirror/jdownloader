@@ -89,7 +89,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -185,14 +184,14 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-                                                  /**
-                                                   * these patterns should split filename and fileextension (extension must include the
-                                                   * point)
-                                                   */
-                                                  // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. does not say anything whether if the answer was correct or not
@@ -267,28 +266,6 @@ public abstract class PluginForHost extends Plugin {
                 return linkID;
             }
         }
-    }
-
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
-            final boolean hasContentType = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE));
-            if (urlConnection.isContentDisposition()) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return false;
     }
 
     public AccountInfo handleAccountException(final Account account, final LogInterface logger, Throwable throwable) {
@@ -1256,16 +1233,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         * 
+         *
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         * 
+         *
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         * 
+         *
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         * 
-         * 
-         * 
+         *
+         *
+         *
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);

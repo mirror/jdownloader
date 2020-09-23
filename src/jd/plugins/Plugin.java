@@ -138,6 +138,28 @@ public abstract class Plugin implements ActionListener {
         return null;
     }
 
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
+            final boolean hasContentType = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE));
+            if (urlConnection.isContentDisposition()) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
+                return true;
+            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
     protected static String[] buildAnnotationNames(List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>(pluginDomains.size());
         for (final String[] domains : pluginDomains) {
