@@ -357,14 +357,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final StringBuilder sb = new StringBuilder();
             final ArrayList<String> tempIDs = new ArrayList<String>();
             /* Collect all found items here because they're not returning them in the requested order. */
-            final ArrayList<Object> tempTrackItemsFound = new ArrayList<Object>();
+            final ArrayList<Object> unsortedTempTrackItemsFound = new ArrayList<Object>();
             int index = 0;
             int paginationPage = 0;
             while (!this.isAbort()) {
                 logger.info("Handling pagination page" + (paginationPage + 1));
                 tempIDs.clear();
                 while (true) {
-                    /* We test max 50 links at once. 2020-05-28: Checked to up to 100 but let's use max. 50. */
+                    /* 2020-09-23: We request max. 50 IDs at once. */
                     if (index == trackIdsForPagination.size() || tempIDs.size() == 50) {
                         break;
                     } else {
@@ -389,7 +389,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 br.getPage(SoundcloudCom.API_BASEv2 + "/tracks?" + querytracks.toString());
                 final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
                 for (final Object tracko : ressourcelist) {
-                    tempTrackItemsFound.add(tracko);
+                    unsortedTempTrackItemsFound.add(tracko);
                 }
                 if (index == trackIdsForPagination.size()) {
                     logger.info("Pagination has reached end");
@@ -400,7 +400,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             /* Be sure to add new items sorted to main Array */
             for (final String sortedTrackID : trackIdsForPagination) {
                 boolean foundTrackID = false;
-                for (final Object tempTrackItem : tempTrackItemsFound) {
+                for (final Object tempTrackItem : unsortedTempTrackItemsFound) {
                     final LinkedHashMap<String, Object> tempTrackData = (LinkedHashMap<String, Object>) tempTrackItem;
                     final String unsortedTrackID = getString(tempTrackData, "id");
                     if (unsortedTrackID.equals(sortedTrackID)) {
