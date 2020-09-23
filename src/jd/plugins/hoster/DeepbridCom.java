@@ -43,7 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -231,28 +230,6 @@ public class DeepbridCom extends antiDDoSForHost {
             }
             throw e;
         }
-    }
-
-    private boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
-            final boolean hasContentType = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE));
-            if (urlConnection.isContentDisposition()) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return false;
     }
 
     @Override
