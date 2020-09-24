@@ -72,6 +72,7 @@ public class PCloudCom extends PluginForHost {
     /* Errorcodes */
     private static final int     STATUS_CODE_OKAY                                = 0;
     private static final int     STATUS_CODE_PREMIUMONLY                         = 7005;
+    private static final int     STATUS_CODE_WRONG_LOCATION                      = 2321;
     /* Connection stuff */
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
@@ -289,7 +290,7 @@ public class PCloudCom extends PluginForHost {
                 try {
                     postAPISafe("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 } catch (PluginException e) {
-                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == 2321) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == STATUS_CODE_WRONG_LOCATION) {
                         postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                     }
                 }
@@ -381,7 +382,7 @@ public class PCloudCom extends PluginForHost {
             if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
                 /*
                  * only possible to copy files on same data center region!
-                 * 
+                 *
                  * not yet implemented for complete folder(zip)
                  */
                 /* tofolderid --> 0 = root */
@@ -509,7 +510,7 @@ public class PCloudCom extends PluginForHost {
                     statusMessage = "\r\nYour account has no free space anymore!";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 2321:
+            case STATUS_CODE_WRONG_LOCATION:
                 // wrong location
                 /*
                  * {"result": 2321, "error": "This user is on another location.", "location": { "label": "US", "id": 1, "binapi":
