@@ -151,7 +151,7 @@ public class PervcityCom extends PluginForHost {
             if (account == null) {
                 throw new AccountRequiredException();
             }
-            this.login(account);
+            this.login(account, false);
             br.getPage(String.format("https://members.%s/scenes/%s.html", this.getHost(), this.getFID(link)));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -254,7 +254,7 @@ public class PervcityCom extends PluginForHost {
 
     public static final long trust_cookie_age = 300000l;
 
-    private void login(final Account account) throws Exception {
+    private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
                 // Load cookies
@@ -264,7 +264,7 @@ public class PervcityCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !verifyCookies) {
                         /* We trust these cookies --> Do not check them */
                         logger.info("Trust login cookies as they're not that old");
                         return;
@@ -300,6 +300,13 @@ public class PervcityCom extends PluginForHost {
                 /* Check "Remember Me" checkbox to get long-lasting cookies */
                 loginform.put("rmb", "y");
                 br.submitForm(loginform);
+                /*
+                 * 2020-09-24: Sometimes a random redirect happens to "/login.php" leading to error 404 --> This is a small workaround for
+                 * that.
+                 */
+                if (!isLoggedIN() && !br.getURL().matches("https?://members\\.[^/]+/$")) {
+                    br.getPage("https://members." + account.getHoster() + "/");
+                }
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -317,7 +324,7 @@ public class PervcityCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        login(account);
+        login(account, true);
         final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         /* 2020-07-01: Assume that all valid accounts of this website are premium accounts ... */
