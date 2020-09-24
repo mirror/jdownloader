@@ -40,6 +40,8 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
@@ -139,25 +141,12 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
-            final boolean hasContentType = StringUtils.isNotEmpty(urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE));
-            if (urlConnection.isContentDisposition()) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
-                return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
-                return true;
-            } else {
-                return false;
+        return new LinkCrawlerDeepInspector() {
+            @Override
+            public List<CrawledLink> deepInspect(LinkCrawler lc, LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        return false;
+        }.looksLikeDownloadableContent(urlConnection);
     }
 
     protected static String[] buildAnnotationNames(List<String[]> pluginDomains) {

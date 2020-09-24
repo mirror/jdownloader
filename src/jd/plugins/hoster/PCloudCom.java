@@ -17,12 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,6 +41,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -70,18 +70,16 @@ public class PCloudCom extends PluginForHost {
     private static final String  DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = "DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION";
     private static final String  EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = "EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION";
     /* Errorcodes */
-    private static final long    ERROR_OKAY                                      = 0;
-    private static final long    ERROR_PREMIUMONLY                               = 7005;
+    private static final int     STATUS_CODE_OKAY                                = 0;
+    private static final int     STATUS_CODE_PREMIUMONLY                         = 7005;
     /* Connection stuff */
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
     private static final int     FREE_MAXDOWNLOADS                               = 20;
     private static final boolean ACCOUNT_FREE_RESUME                             = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS                          = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS                       = 20;
     private int                  statuscode                                      = 0;
-    /* don't touch the following! */
-    private String               account_auth                                    = null;
+    private String               downloadURL                                     = null;
 
     public static String getAPIDomain(final String linkDomain) {
         if (StringUtils.containsIgnoreCase(linkDomain, "e.pcloud")) {
@@ -104,52 +102,40 @@ public class PCloudCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
-        final String code = getCODE(link);
-        final String fileid = getFID(link);
-        /* Links before big change */
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         prepBR();
-        if (isCompleteFolder(link)) {
-            br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code);
-            this.updatestatuscode();
-            if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
-            this.updatestatuscode();
-            if (br.getHttpConnection().getResponseCode() == 404 || this.statuscode == 7002) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
         final String filename = link.getStringProperty("plain_name", null);
         final String filesize = link.getStringProperty("plain_size", null);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            link.setFinalFileName(filename);
+            link.setDownloadSize(Long.parseLong(filesize));
+            downloadURL = getDownloadURL(link, null, null);
+            return AvailableStatus.TRUE;
         }
-        if (this.statuscode == ERROR_PREMIUMONLY) {
-            link.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
-        }
-        link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (this.statuscode == ERROR_PREMIUMONLY) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        doFree(link);
+        doDownloadURL(link, null, null);
     }
 
-    public void doFree(final DownloadLink link) throws Exception, PluginException {
-        this.handleAPIErrors(this.br);
-        final String dllink = getdllink(link);
+    public void doDownloadURL(final DownloadLink link, final Account account, final String account_auth) throws Exception, PluginException {
+        final String directLinkID = account != null ? "account_dllink" : "free_dllink";
+        if (downloadURL == null) {
+            downloadURL = checkDirectLink(link, directLinkID);
+            if (downloadURL == null) {
+                downloadURL = getDownloadURL(link, account, account_auth);
+                if (downloadURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
         boolean resume = FREE_RESUME;
         int maxchunks = FREE_MAXCHUNKS;
         if (isCompleteFolder(link)) {
@@ -158,7 +144,7 @@ public class PCloudCom extends PluginForHost {
         } else if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false)) {
             maxchunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, resume, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -167,6 +153,7 @@ public class PCloudCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setProperty(directLinkID, downloadURL);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -193,15 +180,25 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private String getdllink(final DownloadLink dl) throws Exception {
-        String dllink = null;
-        if (isCompleteFolder(dl)) {
+    private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth) throws Exception {
+        final String code = getCODE(link);
+        if (isCompleteFolder(link)) {
+            if (account_auth != null) {
+                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
+            } else {
+                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code);
+            }
+            this.updatestatuscode();
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            handleAPIErrors(br);
             /* Select all IDs of the folder to download all as .zip */
             final String[] fileids = br.getRegex("\"fileid\": (\\d+)").getColumn(0);
             if (fileids == null || fileids.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://" + getAPIDomain(dl) + "/getpubzip?fileids=";
+            String dllink = "https://" + getAPIDomain(link) + "/getpubzip?fileids=";
             for (int i = 0; i < fileids.length; i++) {
                 final String currentID = fileids[i];
                 if (i == fileids.length - 1) {
@@ -210,21 +207,36 @@ public class PCloudCom extends PluginForHost {
                     dllink += currentID + "%2C";
                 }
             }
-            dllink += "&filename=" + dl.getStringProperty("plain_name", null) + "&code=" + dl.getStringProperty("plain_code", null);
+            dllink += "&filename=" + link.getStringProperty("plain_name", null) + "&code=" + code;
+            if (account_auth != null) {
+                dllink += "&auth=" + account_auth;
+            }
+            return dllink;
         } else {
+            final String fileid = getFID(link);
+            if (account_auth != null) {
+                br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
+            } else {
+                br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
+            }
+            this.updatestatuscode();
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            handleAPIErrors(br);
             final String hoststext = br.getRegex("\"hosts\": \\[(.*?)\\]").getMatch(0);
             if (hoststext == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String[] hosts = new Regex(hoststext, "\"([^<>\"]*?)\"").getColumn(0);
-            dllink = PluginJSonUtils.getJsonValue(br, "path");
+            String dllink = PluginJSonUtils.getJsonValue(br, "path");
             if (dllink == null || hosts == null || hosts.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replace("\\", "");
             dllink = "https://" + hosts[new Random().nextInt(hosts.length - 1)] + dllink;
+            return dllink;
         }
-        return dllink;
     }
 
     private boolean isCompleteFolder(final DownloadLink dl) {
@@ -245,35 +257,42 @@ public class PCloudCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private String login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                this.account_auth = account.getStringProperty("account_auth", null);
-                if (cookies != null && this.account_auth != null) {
+                String account_auth = account.getStringProperty("account_auth", null);
+                String account_api = account.getStringProperty("account_api", null);
+                if (cookies != null && StringUtils.isAllNotEmpty(account_auth, account_api)) {
                     br.setCookies(cookies);
-                    this.account_auth = account.getStringProperty("account_auth", null);
                     if (!force) {
                         logger.info("Trust token without checking");
-                        return;
+                        return account_auth;
                     }
-                    br.getPage("https://api.pcloud.com/userinfo?auth=" + Encoding.urlEncode(this.account_auth) + "&getlastsubscription=1");
+                    br.getPage("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
                     try {
                         updatestatuscode();
                         this.handleAPIErrors(br);
                         logger.info("Token login successful");
-                        return;
+                        updateAccountInfo(account, br);
+                        return account_auth;
                     } catch (final PluginException e) {
                         /* Wrong token = Will typically fail with errorcode 2000 */
                         logger.info("Token login failed");
+                        logger.log(e);
                         br.clearAll();
                     }
                 }
                 prepBR();
                 logger.info("Performing full login");
-                // TODO: check US/EU account
-                postAPISafe("https://api.pcloud.com/userinfo", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                try {
+                    postAPISafe("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                } catch (PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == 2321) {
+                        postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                    }
+                }
                 if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -281,17 +300,40 @@ public class PCloudCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not yet verified!\r\nCheck your mails and verify it!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                this.account_auth = PluginJSonUtils.getJsonValue(br, "auth");
-                if (StringUtils.isEmpty(this.account_auth)) {
+                account_auth = PluginJSonUtils.getJsonValue(br, "auth");
+                if (StringUtils.isEmpty(account_auth)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    account_api = br.getHost(true);
+                    getAPISafe("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
+                    account.setProperty("account_api", account_api);
+                    account.setProperty("account_auth", account_auth);
+                    account.saveCookies(br.getCookies(br.getURL()), "");
+                    updateAccountInfo(account, br);
+                    return account_auth;
                 }
-                account.setProperty("account_auth", this.account_auth);
-                account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.removeProperty("account_auth");
+                    account.removeProperty("account_api");
                 }
                 throw e;
+            }
+        }
+    }
+
+    private void updateAccountInfo(Account account, Browser br) {
+        synchronized (account) {
+            final String premium = PluginJSonUtils.getJsonValue(br, "premium");
+            if ("true".equals(premium)) {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(20);
+                account.setConcurrentUsePossible(true);
+            } else {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(true);
             }
         }
     }
@@ -311,110 +353,79 @@ public class PCloudCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         if ("true".equals(premium)) {
             ai.setStatus("Registered premium user");
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(20);
-            account.setConcurrentUsePossible(true);
         } else {
             ai.setStatus("Registered (free) user");
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(1);
-            account.setConcurrentUsePossible(true);
         }
         return ai;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        final String code = getCODE(link);
-        final String fileid = getFID(link);
-        String new_fileid = null;
-        String new_hash = null;
-        String freeaccount_dllink = null;
-        String download_host = null;
-        String api_filename = null;
-        requestFileInformation(link);
-        if (this.statuscode == ERROR_PREMIUMONLY && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
-            int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
-            /* File has too much traffic on it --> Move it into our account so we can download it (if wished by user). */
-            login(account, false);
-            freeaccount_dllink = checkDirectLink(link, "freeaccount_dllink");
-            if (freeaccount_dllink == null) {
+        try {
+            requestFileInformation(link);
+        } catch (PluginException e) {
+            if (STATUS_CODE_PREMIUMONLY != statuscode) {
+                throw e;
+            }
+        }
+        final String account_auth;
+        final String account_api;
+        synchronized (account) {
+            account_auth = login(account, false);
+            account_api = account.getStringProperty("account_api", null);
+            if (account_api == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        if (STATUS_CODE_PREMIUMONLY == statuscode) {
+            if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
+                /*
+                 * only possible to copy files on same data center region!
+                 * 
+                 * not yet implemented for complete folder(zip)
+                 */
                 /* tofolderid --> 0 = root */
-                getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + this.account_auth);
-                new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
-                new_hash = PluginJSonUtils.getJsonValue(br, "hash");
-                api_filename = PluginJSonUtils.getJsonValue(br, "name");
+                final String code = getCODE(link);
+                final String fileid = getFID(link);
+                getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + account_auth);
+                final String new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
+                final String new_hash = PluginJSonUtils.getJsonValue(br, "hash");
+                final String api_filename = PluginJSonUtils.getJsonValue(br, "name");
                 if (new_fileid == null || new_hash == null || api_filename == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                getAPISafe("/getfilelink?fileid=" + new_fileid + "&hashCache=" + new_hash + "&forcedownload=1&auth=" + this.account_auth);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final ArrayList<Object> ressourcelist = (ArrayList) entries.get("hosts");
-                freeaccount_dllink = PluginJSonUtils.getJsonValue(br, "path");
-                if (ressourcelist == null || freeaccount_dllink == null) {
+                getAPISafe("/getfilelink?fileid=" + new_fileid + "&hashCache=" + new_hash + "&forcedownload=1&auth=" + account_auth);
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final List<Object> ressourcelist = (List) entries.get("hosts");
+                final String path = PluginJSonUtils.getJsonValue(br, "path");
+                if (ressourcelist == null || path == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                download_host = (String) ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
-                freeaccount_dllink = "https://" + download_host + freeaccount_dllink;
+                final String download_host = (String) ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
+                downloadURL = "https://" + download_host + path;
                 if (this.getPluginConfig().getBooleanProperty(DELETE_FILE_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_DELETE_FILE_AFTER_DOWNLOADLINK_CREATION)) {
                     /*
                      * It sounds crazy but we'll actually delete the file before we download it as the directlink will still be valid and
                      * this way we avoid filling up the space of our account.
                      */
-                    getAPISafe("/deletefile?fileid=" + new_fileid + "&name=" + Encoding.urlEncode(api_filename) + "&id=000-0&auth=" + this.account_auth);
+                    getAPISafe("/deletefile?fileid=" + new_fileid + "&name=" + Encoding.urlEncode(api_filename) + "&id=000-0&auth=" + account_auth);
                     if (this.getPluginConfig().getBooleanProperty(DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION)) {
                         /* Delete file inside trash (FOREVER) in case user wants that. */
-                        getAPISafe("/trash_clear?fileid=" + new_fileid + "&id=000-0&auth=" + this.account_auth);
+                        getAPISafe("/trash_clear?fileid=" + new_fileid + "&id=000-0&auth=" + account_auth);
                     }
                 }
                 if (this.getPluginConfig().getBooleanProperty(EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION, defaultEMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION)) {
                     /* Let's empty the trash in case the user wants this. */
-                    getAPISafe("/trash_clear?folderid=0&auth=" + this.account_auth);
+                    getAPISafe("/trash_clear?folderid=0&auth=" + account_auth);
                 }
+            } else if (!Account.AccountType.PREMIUM.equals(account.getType())) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-            if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false)) {
-                maxchunks = 1;
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, freeaccount_dllink, ACCOUNT_FREE_RESUME, maxchunks);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("freeaccount_dllink", freeaccount_dllink);
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
-            } catch (final PluginException e) {
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
-                }
-                throw e;
-            }
-        } else if (this.statuscode == ERROR_PREMIUMONLY) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else {
-            doFree(link);
+            // use cached Link or generate fresh one with account
+            downloadURL = null;
         }
+        doDownloadURL(link, account, account_auth);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -445,12 +456,22 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private String getCODE(final DownloadLink dl) {
-        return dl.getStringProperty("plain_code", null);
+    private String getCODE(final DownloadLink dl) throws PluginException {
+        final String ret = dl.getStringProperty("plain_code", null);
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
     }
 
-    private String getFID(final DownloadLink dl) {
-        return dl.getStringProperty("plain_fileid", null);
+    private String getFID(final DownloadLink dl) throws PluginException {
+        final String ret = dl.getStringProperty("plain_fileid", null);
+        if (ret == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
     }
 
     private String getAPISafe(final String accesslink) throws IOException, PluginException {
@@ -471,7 +492,7 @@ public class PCloudCom extends PluginForHost {
         String statusMessage = null;
         try {
             switch (statuscode) {
-            case 0:
+            case STATUS_CODE_OKAY:
                 /* Everything ok */
                 break;
             case 2000:
@@ -488,11 +509,18 @@ public class PCloudCom extends PluginForHost {
                     statusMessage = "\r\nYour account has no free space anymore!";
                 }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 2321:
+                // wrong location
+                /*
+                 * {"result": 2321, "error": "This user is on another location.", "location": { "label": "US", "id": 1, "binapi":
+                 * "binapi.pcloud.com", "api": "api.pcloud.com" }}
+                 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 5002:
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error, no servers available. Try again later.'", 5 * 60 * 1000l);
             case 7002:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case 7005:
+            case STATUS_CODE_PREMIUMONLY:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             case 7014:
                 /*
