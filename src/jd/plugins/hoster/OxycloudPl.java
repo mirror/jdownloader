@@ -136,6 +136,22 @@ public class OxycloudPl extends YetiShareCore {
     }
 
     @Override
+    protected Browser prepBrowserWebsite(final Browser br) {
+        super.prepBrowserWebsite(br);
+        /* 2020-09-24: Special: HTTP/1.1 402 Payment Required */
+        final int[] allowedResponseCodes = br.getAllowedResponseCodes();
+        final int[] newAllowedResponseCodes = new int[allowedResponseCodes.length + 1];
+        int index = 0;
+        for (final int allowedResponseCode : allowedResponseCodes) {
+            newAllowedResponseCodes[index] = allowedResponseCode;
+            index++;
+        }
+        newAllowedResponseCodes[index] = 402;
+        br.setAllowedResponseCodes(newAllowedResponseCodes);
+        return br;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* 2020-09-09: Small experiment */
         // final Account apiAccount = getApiAccount();
@@ -156,6 +172,11 @@ public class OxycloudPl extends YetiShareCore {
             return AvailableStatus.TRUE;
         } else {
             br.followConnection();
+            if (br.getHttpConnection().getResponseCode() == 402) {
+                link.setProperty(PROPERTY_needs_premium, true);
+            } else {
+                link.setProperty(PROPERTY_needs_premium, false);
+            }
             return super.requestFileInformation(link, account, isDownload);
         }
     }
@@ -346,6 +367,9 @@ public class OxycloudPl extends YetiShareCore {
             this.loginAPI(account, account.getUser(), account.getPass(), false);
             this.setAPIHeaders(br, account);
             br.getPage(this.getAPIBase() + "/file/download/" + this.getFUID(link));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             this.checkErrorsAPI(this.br, link, account);
             dllink = PluginJSonUtils.getJson(this.br, "url");
             if (StringUtils.isEmpty(dllink)) {
