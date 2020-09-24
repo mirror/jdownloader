@@ -22,15 +22,17 @@ public abstract class LinkCrawlerDeepInspector {
             final long sizeDownloadableContent = 2 * 1024 * 1024l;
             if (urlConnection.isContentDisposition()) {
                 return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/force-download")) {
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/force-download")) {
                 return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "application/octet-stream")) {
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/octet-stream")) {
                 return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "audio/")) {
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "application/zip")) {
                 return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "video/")) {
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "audio/")) {
                 return true;
-            } else if (hasContentType && StringUtils.contains(urlConnection.getContentType(), "image/")) {
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "video/")) {
+                return true;
+            } else if (hasContentType && StringUtils.containsIgnoreCase(urlConnection.getContentType(), "image/")) {
                 return true;
             } else if (urlConnection.getLongContentLength() > sizeDownloadableContent && (!hasContentType || !isTextContent(urlConnection))) {
                 return true;
