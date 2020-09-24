@@ -280,7 +280,7 @@ public class PervcityCom extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://members." + this.getHost() + "/login.php");
+                br.getPage("https://members." + this.getHost() + "/");
                 final Form loginform = br.getFormbyActionRegex(".*auth\\.form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -300,13 +300,6 @@ public class PervcityCom extends PluginForHost {
                 /* Check "Remember Me" checkbox to get long-lasting cookies */
                 loginform.put("rmb", "y");
                 br.submitForm(loginform);
-                /*
-                 * 2020-09-24: Sometimes a random redirect happens to "/login.php" leading to error 404 --> This is a small workaround for
-                 * that.
-                 */
-                if (!isLoggedIN() && !br.getURL().matches("https?://members\\.[^/]+/$")) {
-                    br.getPage("https://members." + account.getHoster() + "/");
-                }
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
