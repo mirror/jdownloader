@@ -310,7 +310,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final String[] fileInfo = getFileInfoArray();
         try {
             if (supports_availablecheck_over_info_page(link)) {
-                getPage(link.getPluginPatternMatcher() + "~i");
+                getPage(this.getMainPage() + "/" + this.getFUID(link) + "~i");
                 /* Offline check is unsafe which is why we need to check for other errors first! */
                 try {
                     this.checkErrors(link, account);
@@ -1558,10 +1558,10 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account, true);
         if (this.supports_api()) {
             this.handleDownloadAPI(link, account);
         } else {
+            requestFileInformation(link, account, true);
             loginWebsite(account, false);
             br.setFollowRedirects(false);
             getPage(link.getPluginPatternMatcher());
