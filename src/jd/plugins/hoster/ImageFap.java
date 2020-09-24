@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -137,8 +138,12 @@ public class ImageFap extends PluginForHost {
                 finallink = Encoding.htmlDecode(finallink);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
@@ -172,11 +177,19 @@ public class ImageFap extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, imagelink, false, 1);
             final long t = dl.getConnection().getContentLength();
             if (dl.getConnection().getResponseCode() == 404 || (t != -1 && t < 107)) {
-                dl.getConnection().disconnect();
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0))) {
@@ -190,8 +203,8 @@ public class ImageFap extends PluginForHost {
     @Override
     public void init() {
         try {
-            // Browser.setRequestIntervalLimitGlobal(getHost(), 600, 100, 60000);
-            Browser.setRequestIntervalLimitGlobal(getHost(), 600);
+            // Browser.setRequestIntervalLimitGlobal(getHost(), 750, 100, 60000);
+            Browser.setRequestIntervalLimitGlobal(getHost(), 750);
         } catch (final Throwable e) {
         }
     }
@@ -288,6 +301,10 @@ public class ImageFap extends PluginForHost {
     private String getPage(final Browser br, final String url) throws Exception {
         br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 429) {
+            /*
+             *
+             * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
+             */
             /* 2020-09-22: Most likely they will allow a retry after one hour. */
             final String waitSecondsStr = br.getRequest().getResponseHeader("Retry-After");
             if (waitSecondsStr != null && waitSecondsStr.matches("\\d+")) {
@@ -343,17 +360,17 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
-                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
-                                                  }
-                                              };
+        {
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+            put("LABEL_FILENAME", "Define custom filename for pictures:");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-                                                  }
-                                              };
+        {
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
