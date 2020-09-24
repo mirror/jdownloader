@@ -1044,31 +1044,31 @@ public class ImgurComHoster extends PluginForHost {
         return SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_MP4, defaultMP4);
     }
 
-    public static final String getAuthorization() {
+    public static final String getAuthorization() throws Exception {
         final String clientid = getClientID();
         return "Client-ID " + clientid;
     }
 
-    public static final String getClientID() {
+    public static final String getClientID() throws Exception {
         final String clientid_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_ID, defaultAPISettingUserVisibleText);
-        if (StringUtils.equalsIgnoreCase("JDDEFAULT", clientid_setting)) {
-            return Encoding.Base64Decode("Mzc1YmE4Y2FmNjA0ZDQy");
+        if (StringUtils.isEmpty(clientid_setting) || StringUtils.equalsIgnoreCase("JDDEFAULT", clientid_setting)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             return clientid_setting;
         }
     }
 
-    public static final String getClientSecret() throws PluginException {
+    public static final String getClientSecret() throws Exception {
         final SubConfiguration conf = SubConfiguration.getConfig("imgur.com");
         final String clientsecret_setting = conf.getStringProperty(SETTING_CLIENT_SECRET, defaultAPISettingUserVisibleText);
-        if (StringUtils.equalsIgnoreCase("JDDEFAULT", clientsecret_setting)) {
-            return conf.getStringProperty("jdclientSecret");
+        if (StringUtils.isEmpty(clientsecret_setting) || StringUtils.equalsIgnoreCase("JDDEFAULT", clientsecret_setting)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             return clientsecret_setting;
         }
     }
 
-    private String getAuthURL() {
+    private String getAuthURL() throws Exception {
         return String.format("%s/oauth2/authorize?client_id=%s&response_type=token", getAPIBase(), getClientID());
     }
 
@@ -1089,7 +1089,7 @@ public class ImgurComHoster extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "502: 'Imgur over capacity'", 5 * 60 * 1000l);
     }
 
-    private Thread showLoginInformation() {
+    private Thread showLoginInformation() throws Exception {
         final String autURL = getAuthURL();
         final Thread thread = new Thread() {
             public void run() {
