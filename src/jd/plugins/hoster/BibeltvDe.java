@@ -95,9 +95,10 @@ public class BibeltvDe extends PluginForHost {
         return fid;
     }
 
-    private static final String TYPE_REDIRECT         = "https?://[^/]+/mediathek/videos/crn/(\\d+)";
-    private static final String TYPE_FID_AT_BEGINNING = "https?://[^/]+/mediathek/videos/(\\d+).*";
-    private static final String TYPE_FID_AT_END       = "https?://[^/]+/mediathek/videos/[a-z0-9\\-]+-(\\d+)$";
+    private static final String           TYPE_REDIRECT         = "https?://[^/]+/mediathek/videos/crn/(\\d+)";
+    private static final String           TYPE_FID_AT_BEGINNING = "https?://[^/]+/mediathek/videos/(\\d+).*";
+    private static final String           TYPE_FID_AT_END       = "https?://[^/]+/mediathek/videos/[a-z0-9\\-]+-(\\d+)$";
+    private LinkedHashMap<String, Object> entries               = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
@@ -151,7 +152,6 @@ public class BibeltvDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        LinkedHashMap<String, Object> entries = null;
         try {
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         } catch (final Throwable e) {
@@ -165,48 +165,47 @@ public class BibeltvDe extends PluginForHost {
             /* Fallback */
             filename = getFID(link);
         }
+        link.setFinalFileName(filename + ".mp4");
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
-        long max_width = 0;
-        long max_width_temp = 0;
-        for (final Object videoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) videoo;
-            final String dllink_tmp = (String) entries.get("url");
-            max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
-            final String type = (String) entries.get("type");
-            if (StringUtils.isEmpty(dllink_tmp) || max_width_temp == 0 || !"video/mp4".equals(type)) {
-                /* Skip invalid items and only grab http streams, ignore e.g. DASH streams. */
-                continue;
-            }
-            if (max_width_temp > max_width) {
-                dllink = dllink_tmp;
-                max_width = max_width_temp;
-            }
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
+            long max_width = 0;
+            long max_width_temp = 0;
+            for (final Object videoo : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) videoo;
+                final String dllink_tmp = (String) entries.get("url");
+                max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
+                final String type = (String) entries.get("type");
+                if (StringUtils.isEmpty(dllink_tmp) || max_width_temp == 0 || !"video/mp4".equals(type)) {
+                    /* Skip invalid items and only grab http streams, ignore e.g. DASH streams. */
+                    continue;
+                }
+                if (max_width_temp > max_width) {
+                    dllink = dllink_tmp;
+                    max_width = max_width_temp;
+                }
             }
-        } finally {
+        } catch (final Throwable e) {
+            logger.warning("Failed to find downloadurl");
+        }
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -218,7 +217,13 @@ public class BibeltvDe extends PluginForHost {
         if (tempunavailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video not available at the moment", 24 * 60 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* We're using an API so if we failed to find a downloadurl, display error and don't use ERROR_PLUGIN_DEFECT. */
+            /* 2020-09-25: E.g. GEO-blocked: "Dieses Video ist leider aus lizenzrechtlichen Gründen in Ihrem Land nicht verfügbar" */
+            String failureReason = (String) JavaScriptEngineFactory.walkJson(entries, "error/message");
+            if (StringUtils.isEmpty(failureReason)) {
+                failureReason = "Unknown error";
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, failureReason);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {

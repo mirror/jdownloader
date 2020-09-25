@@ -177,21 +177,25 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 }
             }
         }
-        int index = 0;
+        int bestQuality = 0;
+        DownloadLink bestDownloadurl = null;
         for (List<DownloadLink> list : results.values()) {
-            final boolean isLastEntryAndUserWantsBestOnly = index == results.size() - 1 && best;
-            if (isLastEntryAndUserWantsBestOnly) {
-                /* Best quality = Last item */
-                decryptedLinks.clear();
-            }
             for (DownloadLink link : list) {
                 fp.add(link);
                 decryptedLinks.add(link);
+                final String qualityStr = new Regex(link.getFinalFileName(), "(\\d+)\\.mp4").getMatch(0);
+                if (qualityStr != null) {
+                    final int qualityTmp = Integer.parseInt(qualityStr);
+                    if (qualityTmp > bestQuality) {
+                        bestQuality = qualityTmp;
+                        bestDownloadurl = link;
+                    }
+                }
             }
-            if (isLastEntryAndUserWantsBestOnly) {
-                break;
-            }
-            index++;
+        }
+        if (best && bestDownloadurl != null) {
+            decryptedLinks.clear();
+            decryptedLinks.add(bestDownloadurl);
         }
         return decryptedLinks;
     }
