@@ -325,8 +325,8 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         } else {
             FilePackage fp = (FilePackage) value;
             FilePackageView view = fp.getView();
-            PluginStateCollection ps = view.getPluginStates();
-            if (ps.size() > 0) {
+            final PluginStateCollection ps = view.getPluginStates();
+            if (ps != null && ps.size() > 0) {
                 columnHelper.icon = ps.getMergedIcon();
                 columnHelper.string = ps.isMultiline() ? "" : ps.getText();
                 columnHelper.tooltip = ps.getText();

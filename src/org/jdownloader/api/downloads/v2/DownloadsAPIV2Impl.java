@@ -84,8 +84,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
-        PluginStateCollection ps = fpView.getPluginStates();
-        if (ps.size() > 0) {
+        final PluginStateCollection ps = fpView.getPluginStates();
+        if (ps != null && ps.size() > 0) {
             fps.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(ps.getMergedIcon()));
             fps.setStatus(ps.isMultiline() ? "" : ps.getText());
             return fps;

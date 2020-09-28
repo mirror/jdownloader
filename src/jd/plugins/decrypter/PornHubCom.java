@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,11 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -50,6 +46,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -203,10 +205,13 @@ public class PornHubCom extends PluginForDecrypt {
         final Set<String> pages = new HashSet<String>();
         int page = 0;
         int maxPage = -1;
+        int addedItems = 0;
+        int foundItems = 0;
         String ajaxPaginationURL = null;
         final String containerURL = br.getURL();
         do {
             int numberofActuallyAddedItems = 0;
+            int numberOfDupeItems = 0;
             page++;
             logger.info(String.format("Crawling page %s| %d / %d", br.getURL(), page, maxPage));
             // account/fan-/paid-only
@@ -233,27 +238,38 @@ public class PornHubCom extends PluginForDecrypt {
             String[] vKeys = new Regex(mostRecentVideosSection, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
             if ((vKeys == null || vKeys.length == 0) && moreData != null) {
                 vKeys = new Regex(moreData, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
+                if (vKeys == null || vKeys.length == 0) {
+                    vKeys = br.getRegex("_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
+                    if (vKeys == null || vKeys.length == 0) {
+                        logger.info("no vKeys found!");
+                    }
+                }
             }
-            if (vKeys == null || vKeys.length == 0) {
-                vKeys = br.getRegex("_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
-            }
-            if (vKeys != null) {
+            if (vKeys != null && vKeys.length > 0) {
                 viewKeys.addAll(Arrays.asList(vKeys));
-            }
-            if (viewKeys.size() > 0) {
-                for (final String viewkey : viewKeys) {
-                    if (dupes.add(viewkey) && !isAbort()) {
-                        final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
-                        dl.setContainerUrl(containerURL);
-                        decryptedLinks.add(dl);
-                        distribute(dl);
-                        numberofActuallyAddedItems++;
+                if (viewKeys.size() > 0) {
+                    foundItems += viewKeys.size();
+                    for (final String viewkey : viewKeys) {
+                        if (isAbort()) {
+                            return true;
+                        } else if (dupes.add(viewkey)) {
+                            final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
+                            dl.setContainerUrl(containerURL);
+                            decryptedLinks.add(dl);
+                            distribute(dl);
+                            numberofActuallyAddedItems++;
+                            addedItems++;
+                        } else {
+                            numberOfDupeItems++;
+                        }
                     }
                 }
             }
             if (numberofActuallyAddedItems == 0) {
-                logger.info("Stopping because this page did not contain any NEW content");
+                logger.info("Stopping because this page did not contain any NEW content: page=" + page + "|max_page=" + maxPage + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
                 break;
+            } else {
+                logger.info("found NEW content: page=" + page + "|max_page=" + maxPage + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.size() : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
             }
             logger.info(String.format("Found %d new items", numberofActuallyAddedItems));
             final String next = br.getRegex("page_next[^\"]*?\"><a href=\"([^\"]+?)\"").getMatch(0);
@@ -282,6 +298,7 @@ public class PornHubCom extends PluginForDecrypt {
                 final int postPage = page + 1;
                 br.postPageRaw(ajaxPaginationURL + "&page=" + postPage, "o=best&page=" + postPage);
             } else {
+                logger.info("no next page! page=" + page + "|max_page=" + maxPage);
                 break;
             }
         } while (true);
@@ -519,16 +536,16 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     private boolean decryptAllVideosOfAPlaylist() throws Exception {
-        String base_url = null;
+        final URL base_url = br._getURL();
         int page = 1;
+        int addedItems = 0;
+        int foundItems = 0;
         final Set<String> dupes = new HashSet<String>();
         do {
             logger.info("Crawling page: " + page);
             if (page > 1) {
-                final String nextpage_url = base_url + "/?page=" + page;
+                final String nextpage_url = URLHelper.parseLocation(base_url, "?page=" + page);
                 jd.plugins.hoster.PornHubCom.getPage(br, br.createGetRequest(nextpage_url));
-            } else {
-                base_url = br.getURL();
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /*
@@ -538,29 +555,41 @@ public class PornHubCom extends PluginForDecrypt {
                 if (dupes.size() == 0) {
                     decryptedLinks.add(createOfflinelink(parameter));
                 }
+                logger.info("Stopping because of 404: page=" + page + "|all_found=" + foundItems + "|all_added=" + addedItems);
                 return true;
             }
+            int numberofActuallyAddedItems = 0;
+            int numberOfDupeItems = 0;
             final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
-            final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
-            if (viewkeys == null || viewkeys.length == 0) {
+            final String[] viewKeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
+            if (viewKeys == null || viewKeys.length == 0) {
+                logger.info("no vKeys found!");
+            } else {
+                foundItems += viewKeys.length;
+                for (final String viewKey : viewKeys) {
+                    if (isAbort()) {
+                        return true;
+                    } else if (dupes.add(viewKey)) {
+                        final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewKey);
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                        numberofActuallyAddedItems++;
+                        addedItems++;
+                    } else {
+                        numberOfDupeItems++;
+                    }
+                }
+            }
+            if (numberofActuallyAddedItems == 0) {
+                logger.info("Stopping because this page did not contain any NEW content: page=" + page + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.length : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
                 if (dupes.size() == 0) {
                     return false;
                 } else {
                     break;
                 }
+            } else {
+                logger.info("found NEW content: page=" + page + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.length : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
             }
-            int itemsCount = 0;
-            for (final String viewkey : viewkeys) {
-                if (dupes.add(viewkey)) {
-                    // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    itemsCount++;
-                }
-            }
-            logger.info("Found " + itemsCount + " items on current page");
-            logger.info("Found " + dupes.size() + " items in total");
             page++;
         } while (!this.isAbort());
         return true;

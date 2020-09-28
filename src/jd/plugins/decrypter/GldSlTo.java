@@ -47,13 +47,9 @@ public class GldSlTo extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (!br.containsHTML("<h2>DDL\\-Links</h2>") && !br.containsHTML("<h2>Stream\\-Links</h2>")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; goldesel\\.to</title>").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\&raquo; goldesel\\.to\\s*</title>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         }
         if (fpName == null) {
             fpName = new Regex(br.getURL(), "goldesel\\.to/.*/(.+)").getMatch(0);
@@ -61,7 +57,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
         fpName = Encoding.htmlDecode(fpName).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        String[] decryptIDs = br.getRegex("data=\"([^<>\"]*?)\"").getColumn(0);
+        String[] decryptIDs = br.getRegex("data\\s*=\\s*\"([^<>\"]*?)\"").getColumn(0);
         if (decryptIDs == null || decryptIDs.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -162,8 +158,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
