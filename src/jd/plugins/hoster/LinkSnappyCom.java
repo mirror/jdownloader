@@ -350,7 +350,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                     final JSonNode returnValue = dlNode.get("return");
                     if (returnValue instanceof JSonValue) {
-                        if (StringUtils.equalsIgnoreCase("null", returnValue.toString())) {
+                        if (((JSonValue) returnValue).getValue() == null || StringUtils.equalsIgnoreCase("null", returnValue.toString())) {
                             break;
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
