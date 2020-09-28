@@ -269,17 +269,29 @@ public class PornHubCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Video has been removed")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String photoImageSection = br.getRegex("(<div id=\"photoImageSection\">.*?</div>)").getMatch(0);
-            if (photoImageSection != null) {
-                dlUrl = new Regex(photoImageSection, "<img src=\"([^<>\"]+)\"").getMatch(0);
-            }
-            if (dlUrl == null) {
-                dlUrl = br.getRegex("name=\"twitter:image:src\" content=\"(https?[^<>\"]*?\\.[A-Za-z]{3,5})\"").getMatch(0);
+            String ext = null;
+            final String gifVideoAsMp4 = br.getRegex("<video class=\"centerImageVid\"[^>]*>\\s+<source src=\"(https://[^\"]+)").getMatch(0);
+            if (gifVideoAsMp4 != null) {
+                /* "gif" images --> short mp4 videos without sound */
+                this.dlUrl = gifVideoAsMp4;
+                ext = "mp4";
+            } else {
+                /* Single image */
+                String photoImageSection = br.getRegex("(<div id=\"photoImageSection\">.*?</div>)").getMatch(0);
+                if (photoImageSection != null) {
+                    dlUrl = new Regex(photoImageSection, "<img src=\"([^<>\"]+)\"").getMatch(0);
+                }
+                if (dlUrl == null) {
+                    dlUrl = br.getRegex("name=\"twitter:image:src\" content=\"(https?[^<>\"]*?\\.[A-Za-z]{3,5})\"").getMatch(0);
+                }
+                if (dlUrl != null) {
+                    ext = dlUrl.substring(dlUrl.lastIndexOf(".") + 1);
+                }
             }
             if (dlUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            html_filename = viewKey + dlUrl.substring(dlUrl.lastIndexOf("."));
+            html_filename = viewKey + "." + ext;
         } else if (link.getDownloadURL().matches(type_gif_webm)) {
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".webm");

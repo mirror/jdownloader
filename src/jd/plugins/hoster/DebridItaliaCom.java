@@ -189,6 +189,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
         /* Directlinks can be used for up to 2 days */
         link.setProperty("debriditaliadirectlink", dllink);
         /* They sometimes return html-encoded filenames - let's fix this! */
+        /**
+         * TODO: 2020-09-29: Why do we trust their filenames? Seems like it works out most of all times but sometimes, Content-Disposition
+         * header is not given ...
+         */
         String server_filename = getFileNameFromHeader(this.dl.getConnection());
         server_filename = Encoding.htmlDecode(server_filename);
         link.setFinalFileName(server_filename);
