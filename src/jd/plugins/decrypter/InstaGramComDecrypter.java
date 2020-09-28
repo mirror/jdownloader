@@ -565,16 +565,29 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             linkid_main = shortcode;
         }
         final boolean isVideo = ((Boolean) entries.get("is_video")).booleanValue();
-        String dllink;
+        String dllink = null;
         if (isVideo) {
             dllink = (String) entries.get("video_url");
         } else {
-            dllink = (String) entries.get("display_src");
-            if (dllink == null || !dllink.startsWith("http")) {
-                dllink = (String) entries.get("display_url");
+            /* Find best image-quality */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("display_resources");
+            long qualityMax = 0;
+            for (final Object qualityO : ressourcelist) {
+                final LinkedHashMap<String, Object> imageQualityInfo = (LinkedHashMap<String, Object>) qualityO;
+                final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("config_width"), 0);
+                if (widthTmp > qualityMax) {
+                    qualityMax = widthTmp;
+                    dllink = (String) imageQualityInfo.get("src");
+                }
             }
-            if (dllink == null || !dllink.startsWith("http")) {
-                dllink = (String) entries.get("thumbnail_src");
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = (String) entries.get("display_src");
+                if (dllink == null || !dllink.startsWith("http")) {
+                    dllink = (String) entries.get("display_url");
+                }
+                if (dllink == null || !dllink.startsWith("http")) {
+                    dllink = (String) entries.get("thumbnail_src");
+                }
             }
             /*
              * 2017-04-28: By removing the resolution inside the URL, we can download the original image - usually, resolution will be
