@@ -30,7 +30,7 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 public class NewsHostingCom extends UseNet {
     public NewsHostingCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://controlpanel.newshosting.com/signup/signup.php");
+        this.enablePremium("https://www.newshosting.com/usenet-access-plans.php");
     }
 
     @Override
@@ -97,11 +97,11 @@ public class NewsHostingCom extends UseNet {
                     final Form login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
                         br.getCookies(getHost()).clear();
-                    } else if (br.getCookie(getHost(), "sessionID") == null) {
+                    } else if (br.getCookie(getHost(), "sessionID", Cookies.NOTDELETEDPATTERN) == null) {
                         br.getCookies(getHost()).clear();
                     }
                 }
-                if (br.getCookie(getHost(), "sessionID") == null) {
+                if (br.getCookie(getHost(), "sessionID", Cookies.NOTDELETEDPATTERN) == null) {
                     account.clearCookies("");
                     final String userName = account.getUser();
                     br.getPage("https://controlpanel.newshosting.com/customer/index.php");
@@ -134,53 +134,58 @@ public class NewsHostingCom extends UseNet {
                     login = getLoginForm(br);
                     if (login != null && login.containsHTML("username") && login.containsHTML("password")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (br.getCookie(getHost(), "sessionID") == null) {
+                    } else if (br.getCookie(getHost(), "sessionID", Cookies.NOTDELETEDPATTERN) == null) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
-                final String userName = br.getRegex("Username:</strong>\\s*(.*?)<").getMatch(0);
-                final String customerID = br.getRegex("Customer ID:</strong>\\s*(\\d+)").getMatch(0);
+                final String userName = br.getRegex(">\\s*Username\\s*</div>\\s*<div[^>]+>\\s*(.*?)\\s*<").getMatch(0);
+                final String customerID = br.getRegex("(?:Customer|User)\\s*ID\\s*:\\s*(?:</strong>)?\\s*(\\d+)").getMatch(0);
                 if (userName == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     account.setProperty(USENET_USERNAME, userName.trim());
                 }
-                final String nntpStatus = br.getRegex("NNTP Status:</strong>\\s*<span.*?>(.+?)<").getMatch(0);
+                final String nntpStatus = br.getRegex(">\\s*NNTP Service\\s*</div>\\s*<div[^>]+>\\s*(.*?)\\s*<").getMatch(0);
                 if (!StringUtils.equalsIgnoreCase(nntpStatus, "active")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "NNTP Status:" + nntpStatus, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 final String validUntil = br.getRegex("Next Bill:</strong>\\s*(.*?)<").getMatch(0);
-                final String bucketType = br.getRegex("Plan:</strong>\\s*(.*?)<").getMatch(0);
+                final String connectionsString = br.getRegex(">\\s*Connections\\s*</div>\\s*<div[^>]+>\\s*(\\d+)\\s*<").getMatch(0);
+                final String bucketType = br.getRegex(">\\s*Your Plan\\s*</div>\\s*<div[^>]+>\\s*(.*?)\\s*<").getMatch(0);
+                int connections = 1;
                 if (bucketType != null) {
                     ai.setStatus(Encoding.htmlOnlyDecode(bucketType));
-                    // https://www.ssl-news.info/signup.php
                     if (StringUtils.containsIgnoreCase(bucketType, "lite")) {
-                        account.setMaxSimultanDownloads(30);
+                        connections = 30;
                     } else if (StringUtils.containsIgnoreCase(bucketType, "Unlimited")) {
-                        account.setMaxSimultanDownloads(30);
+                        connections = 30;
                     } else if (StringUtils.containsIgnoreCase(bucketType, "Powerpack")) {
-                        account.setMaxSimultanDownloads(60);
+                        connections = 60;
                     } else {
                         // smallest number of connections
-                        account.setMaxSimultanDownloads(5);
+                        connections = 5;
                     }
                 } else {
-                    account.setMaxSimultanDownloads(1);
                     ai.setStatus("Unknown Type");
                 }
+                if (connectionsString != null) {
+                    connections = Integer.parseInt(connectionsString);
+                }
+                account.setMaxSimultanDownloads(connections);
                 if (validUntil != null) {
                     final long date = TimeFormatter.getMilliSeconds(validUntil, "MMM dd',' yyyy", null);
                     if (date > 0) {
                         ai.setValidUntil(date + (24 * 60 * 60 * 1000l));
                     }
                 }
+                // TODO
                 final String trafficTotal = br.getRegex("Byte Allott?ment:</strong>\\s*(\\d+)").getMatch(0);
                 final String trafficLeft = br.getRegex("Bytes Remaining:</strong>\\s*(.*?)<").getMatch(0);
                 if (trafficLeft != null && trafficTotal != null) {
                     ai.setTrafficMax(Long.parseLong(trafficTotal));
                     ai.setTrafficLeft(trafficLeft);
-                } else if (StringUtils.equalsIgnoreCase(trafficLeft, "unlimited")) {
+                } else if (StringUtils.equalsIgnoreCase(trafficLeft, "unlimited") || StringUtils.equalsIgnoreCase(trafficLeft, "Powerpack")) {
                     ai.setUnlimitedTraffic();
                 }
             } catch (final PluginException e) {
@@ -213,8 +218,10 @@ public class NewsHostingCom extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("news.newshosting.com", false, 119, 23, 25, 80, 3128));
-        ret.addAll(UsenetServer.createServerList("news.newshosting.com", true, 563, 563));
+        for (final String server : new String[] { "news.newshosting.com", "news-us.newshosting.com", "news-eu.newshosting.com", "news-nl.newshosting.com", "news-de.newshosting.com" }) {
+            ret.addAll(UsenetServer.createServerList(server, false, 119, 23, 25, 80, 3128));
+            ret.addAll(UsenetServer.createServerList(server, true, 563, 443));
+        }
         return ret;
     }
 }
