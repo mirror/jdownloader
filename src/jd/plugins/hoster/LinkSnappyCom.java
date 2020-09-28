@@ -24,23 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -61,6 +44,25 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonNode;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -340,29 +342,40 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                     br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
                     final JSonObject dlNode = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                    final JSonObject downloadNode = (JSonObject) dlNode.get("return");
                     final String status = dlNode.get("status").toString();
-                    if ("ERROR".equalsIgnoreCase(status)) {
+                    if (StringUtils.equalsIgnoreCase("ERROR", status)) {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else if (!StringUtils.equalsIgnoreCase("OK", status)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final Integer currentProgress = Integer.parseInt(downloadNode.get("percent").toString());
-                    // download complete?
-                    if (currentProgress.intValue() == 100) {
-                        // cache finished, lets go to download part
-                        break;
-                    } else {
-                        this.getDownloadLink().addPluginProgress(waitProgress);
-                        waitProgress.updateValues(currentProgress.intValue(), 100);
-                        for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                            if (isAbort()) {
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            } else {
-                                Thread.sleep(1000);
-                            }
+                    final JSonNode returnValue = dlNode.get("return");
+                    if (returnValue instanceof JSonValue) {
+                        if (StringUtils.equalsIgnoreCase("null", returnValue.toString())) {
+                            break;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (currentProgress.intValue() != lastProgress) {
-                            lastProgressChange = System.currentTimeMillis();
-                            lastProgress = currentProgress.intValue();
+                    } else {
+                        final JSonObject downloadNode = (JSonObject) returnValue;
+                        final Integer currentProgress = Integer.parseInt(downloadNode.get("percent").toString());
+                        // download complete?
+                        if (currentProgress.intValue() == 100) {
+                            // cache finished, lets go to download part
+                            break;
+                        } else {
+                            this.getDownloadLink().addPluginProgress(waitProgress);
+                            waitProgress.updateValues(currentProgress.intValue(), 100);
+                            for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                                if (isAbort()) {
+                                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                                } else {
+                                    Thread.sleep(1000);
+                                }
+                            }
+                            if (currentProgress.intValue() != lastProgress) {
+                                lastProgressChange = System.currentTimeMillis();
+                                lastProgress = currentProgress.intValue();
+                            }
                         }
                     }
                 }

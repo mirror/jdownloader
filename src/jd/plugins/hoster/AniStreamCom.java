@@ -20,12 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +28,12 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AniStreamCom extends XFileSharingProBasic {
@@ -147,7 +147,7 @@ public class AniStreamCom extends XFileSharingProBasic {
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-09-28 */
             try {
-                final String b64 = br.getRegex("src=\"data:text/javascript;base64,([^\"]+)").getMatch(0);
+                final String b64 = br.getRegex("src\\s*=\\s*\"data:text/javascript;base64,([^\"]+)").getMatch(0);
                 final String js = Encoding.Base64Decode(b64);
                 final String json = new Regex(js, "(\\{.+\\})").getMatch(0);
                 Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
@@ -180,6 +180,7 @@ public class AniStreamCom extends XFileSharingProBasic {
                     logger.info("Failed to find any downloadurl");
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         return dllink;
