@@ -27,7 +27,7 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
         }
 
         public String getUsePremiumAPIEnabled_label() {
-            return "Use premium API? This helps to get around 2-factor-authentification login issues. Works ONLY for premium accounts! If not done before, you should enable 2-factor-authentification afterwards.";
+            return "Use premium API[recommended]? If you want to add 1fichier free-accounts, disable this and make sure to disable 2-factor-authentication in your 1fichier account!";
         }
     }
 

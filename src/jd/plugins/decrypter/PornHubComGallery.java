@@ -64,10 +64,7 @@ public class PornHubComGallery extends PluginForDecrypt {
             parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
         }
         jd.plugins.hoster.PornHubCom.getPage(br, parameter);
-        boolean privateImage = false;
-        if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage)) {
-            privateImage = true;
-        }
+        final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -91,7 +88,12 @@ public class PornHubComGallery extends PluginForDecrypt {
                 if (privateImage) {
                     dl.setProperty("private", Boolean.TRUE);
                 }
-                dl.setName(singleID + ".jpg");
+                if (br.containsHTML(singleID + "\">\\s*<div[^>]*class=\"gifStamp\"")) {
+                    /* gif images --> .mp4 videos without sound */
+                    dl.setName(singleID + ".mp4");
+                } else {
+                    dl.setName(singleID + ".jpg");
+                }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

@@ -655,6 +655,9 @@ public class OneFichierCom extends PluginForHost {
      * but we don't know this yet!
      */
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        if (!isApiKey(account.getPass())) {
+            invalidApiKey();
+        }
         br = new Browser();
         prepareBrowserAPI(br, account);
         /*
@@ -746,7 +749,6 @@ public class OneFichierCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000l);
             }
-            final String apikey_invalid_text = "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in the plugin settings so that you can login via username & password!\r\nKeep in mind that 2FA login via JD and username/password is not supported!";
             if (message.matches("Flood detected: IP Locked #\\d+")) {
                 /*
                  * 2019-07-18: This may even happen on the first login attempt. When this happens we cannot know whether the account is
@@ -759,7 +761,7 @@ public class OneFichierCom extends PluginForHost {
                 /* Login required but not logged in (this should never happen) */
                 if (account != null) {
                     /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, apikey_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    invalidApiKey();
                 } else {
                     throw new AccountRequiredException();
                 }
@@ -767,7 +769,7 @@ public class OneFichierCom extends PluginForHost {
                 /* Login required but not logged in */
                 if (account != null) {
                     /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, apikey_invalid_text, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    invalidApiKey();
                 } else {
                     throw new AccountRequiredException();
                 }
@@ -792,15 +794,20 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
+    private void invalidApiKey() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in JD plugin settings so that you can login via username & password!\r\nKeep in mind that 2-factor-authentification login via JD and username/password is not supported!\r\nIf you want to login into your FREE 1fichier account in JD via username & password you will first have to disable 2-factor-authentication in your 1fichier account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+    }
+
     private String getAPIErrormessage() {
         return PluginJSonUtils.getJson(br, "message");
     }
 
     /**
-     * 2020-06-10: This message was designed ti be displayed whenever a premium account which was used in API mode is not premium anymore.
+     * 2020-06-10: This message was designed to be displayed whenever a premium account which was used in API mode is not premium anymore.
      * Because free accounts of this host are pretty much useless and we do not want to encourage users to use the website mode, this has
      * only been used in one revision for a short time.
      */
+    @Deprecated
     private Thread showAPIFreeAccountLoginFailureInformation() {
         final Thread thread = new Thread() {
             public void run() {
@@ -1389,7 +1396,7 @@ public class OneFichierCom extends PluginForHost {
 
         public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key (premium users only):"));
+            add(new JLabel("Click here to find your API Key (premium users only)"));
             add(new JLink("https://1fichier.com/console/params.pl"));
             this.add(this.idLabel = new JLabel("Enter your API Key:"));
             add(this.pass = new ExtPasswordField() {
@@ -1417,7 +1424,7 @@ public class OneFichierCom extends PluginForHost {
         @Override
         public boolean validateInputs() {
             final String password = getPassword();
-            if (password == null || !password.trim().matches("[A-Za-z0-9\\-_=]{32}")) {
+            if (!isApiKey(password)) {
                 idLabel.setForeground(Color.RED);
                 return false;
             }
@@ -1429,6 +1436,10 @@ public class OneFichierCom extends PluginForHost {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
+    }
+
+    private static boolean isApiKey(final String str) {
+        return str != null && str.matches("[A-Za-z0-9\\-_=]{32}");
     }
 
     @Override

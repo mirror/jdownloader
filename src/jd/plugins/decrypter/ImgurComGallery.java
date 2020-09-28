@@ -87,8 +87,8 @@ public class ImgurComGallery extends PluginForDecrypt {
             /* Gallery URLs */
             sb.append(protocolPart + hostsPatternPart + "/(?:gallery|a)/[A-Za-z0-9]{5,7}");
             sb.append("|");
-            /* Direct-URLs */
-            sb.append("https?://i\\." + hostsPatternPart + "/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})\\.[A-Za-z0-9]{3,5}");
+            /* Direct-URLs (and those without file-extension) */
+            sb.append("https?://i\\." + hostsPatternPart + "/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})(?:\\.[A-Za-z0-9]{3,5})?");
             sb.append("|");
             /* "View"/Download URLs */
             sb.append(protocolPart + hostsPatternPart + "/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})");
@@ -107,23 +107,24 @@ public class ImgurComGallery extends PluginForDecrypt {
      * TODO: Update handling for type_subreddit_single_image: Such URLs can either lead to single images or to a gallery which cannot be
      * determined by RegEx!
      */
-    private final String            type_subreddit_single_image   = "https?://[^/]+/r/[^/]+/([A-Za-z0-9]{5,7})";
-    private final String            type_subreddit_gallery        = "https?://[^/]+/r/([^/]+)$";
-    private final String            type_album                    = "https?://[^/]+/a/[A-Za-z0-9]{5,7}";
-    private final String            type_gallery                  = "https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
-    public final static String      type_single_direct            = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
+    private final String            type_subreddit_single_image    = "https?://[^/]+/r/[^/]+/([A-Za-z0-9]{5,7})";
+    private final String            type_subreddit_gallery         = "https?://[^/]+/r/([^/]+)$";
+    private final String            type_album                     = "https?://[^/]+/a/[A-Za-z0-9]{5,7}";
+    private final String            type_gallery                   = "https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
+    public final static String      type_single_direct             = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
+    public final static String      type_single_direct_without_ext = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})$";
     /* User settings */
-    private static final String     SETTING_USE_API               = "SETTING_USE_API";
-    private static final String     SETTING_GRAB_SOURCE_URL_VIDEO = "SETTING_GRAB_SOURCE_URL_VIDEO";
-    private static final String     API_FAILED                    = "API_FAILED";
+    private static final String     SETTING_USE_API                = "SETTING_USE_API";
+    private static final String     SETTING_GRAB_SOURCE_URL_VIDEO  = "SETTING_GRAB_SOURCE_URL_VIDEO";
+    private static final String     API_FAILED                     = "API_FAILED";
     /* Constants */
-    private static Object           CTRLLOCK                      = new Object();
-    private ArrayList<DownloadLink> decryptedLinks                = new ArrayList<DownloadLink>();
-    private String                  parameter                     = null;
-    private String                  itemID                        = null;
-    private String                  author                        = null;
-    private String                  videoSource                   = null;
-    private boolean                 grabVideoSource               = false;
+    private static Object           CTRLLOCK                       = new Object();
+    private ArrayList<DownloadLink> decryptedLinks                 = new ArrayList<DownloadLink>();
+    private String                  parameter                      = null;
+    private String                  itemID                         = null;
+    private String                  author                         = null;
+    private String                  videoSource                    = null;
+    private boolean                 grabVideoSource                = false;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

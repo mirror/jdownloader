@@ -64,11 +64,13 @@ public class ArchiveOrg extends PluginForDecrypt {
         return url != null && url.contains("view_archive.php");
     }
 
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    final Set<String>                     dups           = new HashSet<String>();
+    final String                          host_decrypted = "archivedecrypted.org";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("://www.", "://").replace("/stream/", "/download/");
-        final String host_decrypted = "archivedecrypted.org";
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */
@@ -171,6 +173,14 @@ public class ArchiveOrg extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else if (StringUtils.containsIgnoreCase(parameter, "/details/")) {
+            if (br.containsHTML("id=\"gamepadtext\"")) {
+                /* 2020-09-29: Rare case: Download browser emulated games */
+                final String subfolderPath = new Regex(parameter, "/details/([^/]+)").getMatch(0);
+                br.getPage("https://archive.org/download/" + subfolderPath + "/" + subfolderPath + "_files.xml");
+                this.crawlXML(this.br, subfolderPath);
+                return this.decryptedLinks;
+            }
+            /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
             int page = 2;
             do {
                 if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
@@ -217,70 +227,12 @@ public class ArchiveOrg extends PluginForDecrypt {
             final String[] htmls = new Regex(html, "<tr >(.*?)</tr>").getColumn(0);
             final String xmlURLs[] = br.getRegex("<a href\\s*=\\s*\"([^<>\"]+_files\\.xml)\"").getColumn(0);
             String xmlSource = null;
-            final Set<String> dups = new HashSet<String>();
             if (xmlURLs != null && xmlURLs.length > 0) {
                 for (String xmlURL : xmlURLs) {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
                     xmlSource = brc.getPage(brc.getURL() + "/" + xmlURL);
-                    final String[] items = new Regex(xmlSource, "<file\\s*(.*?)\\s*</file>").getColumn(0);
-                    /*
-                     * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of
-                     * subfolders via only one request!
-                     */
-                    for (final String item : items) {
-                        /* <old_version>true</old_version> */
-                        final boolean isOldVersion = item.contains("old_version");
-                        final boolean isOriginal = item.contains("source=\"original\"");
-                        final boolean isMetadata = item.contains("<format>Metadata</format>");
-                        String name = new Regex(item, "name=\"([^\"]+)").getMatch(0);
-                        final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
-                        final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
-                        if (name == null) {
-                            continue;
-                        } else if (isOldVersion || isMetadata) {
-                            /* Skip old elements and metadata! They are invisible to the user anyways */
-                            continue;
-                        } else if (preferOriginal && !isOriginal) {
-                            /* Skip non-original content if user only wants original content. */
-                            continue;
-                        }
-                        if (Encoding.isHtmlEntityCoded(name)) {
-                            /* Will sometimes contain "&amp;" */
-                            name = Encoding.htmlDecode(name);
-                        }
-                        final String url = "https://" + host_decrypted + "/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name);
-                        if (dups.add(url)) {
-                            final DownloadLink fina = createDownloadlink(url);
-                            fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
-                            fina.setAvailable(true);
-                            final String filename;
-                            if (name.contains("/")) {
-                                /* Remove foldername/path from item name --> Nice filename */
-                                filename = name.substring(name.lastIndexOf("/") + 1);
-                            } else {
-                                filename = name;
-                            }
-                            fina.setFinalFileName(filename);
-                            final String subfolderPathInName = new Regex(name, "(.+)/[^/]+$").getMatch(0);
-                            final String thisPath;
-                            if (subfolderPathInName != null) {
-                                thisPath = subfolderPath + "/" + subfolderPathInName;
-                                // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
-                            } else {
-                                thisPath = subfolderPath;
-                                // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
-                            }
-                            fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
-                            final FilePackage fp = FilePackage.getInstance();
-                            fp.setName(thisPath);
-                            fina._setFilePackage(fp);
-                            if (sha1hash != null) {
-                                fina.setSha1Hash(sha1hash);
-                            }
-                            decryptedLinks.add(fina);
-                        }
-                    }
+                    this.crawlXML(brc, subfolderPath);
                 }
                 return decryptedLinks;
             }
@@ -336,6 +288,68 @@ public class ArchiveOrg extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private void crawlXML(final Browser br, final String subfolderPath) {
+        final boolean preferOriginal = PluginJsonConfig.get(ArchiveOrgConfig.class).isPreferOriginal();
+        final String[] items = new Regex(br.toString(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
+        /*
+         * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
+         * one request!
+         */
+        for (final String item : items) {
+            /* <old_version>true</old_version> */
+            final boolean isOldVersion = item.contains("old_version");
+            final boolean isOriginal = item.contains("source=\"original\"");
+            final boolean isMetadata = item.contains("<format>Metadata</format>");
+            String name = new Regex(item, "name=\"([^\"]+)").getMatch(0);
+            final String filesizeStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
+            final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
+            if (name == null) {
+                continue;
+            } else if (isOldVersion || isMetadata) {
+                /* Skip old elements and metadata! They are invisible to the user anyways */
+                continue;
+            } else if (preferOriginal && !isOriginal) {
+                /* Skip non-original content if user only wants original content. */
+                continue;
+            }
+            if (Encoding.isHtmlEntityCoded(name)) {
+                /* Will sometimes contain "&amp;" */
+                name = Encoding.htmlDecode(name);
+            }
+            final String url = "https://" + host_decrypted + "/download/" + subfolderPath + "/" + URLEncode.encodeURIComponent(name);
+            if (dups.add(url)) {
+                final DownloadLink fina = createDownloadlink(url);
+                fina.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                fina.setAvailable(true);
+                final String filename;
+                if (name.contains("/")) {
+                    /* Remove foldername/path from item name --> Nice filename */
+                    filename = name.substring(name.lastIndexOf("/") + 1);
+                } else {
+                    filename = name;
+                }
+                fina.setFinalFileName(filename);
+                final String subfolderPathInName = new Regex(name, "(.+)/[^/]+$").getMatch(0);
+                final String thisPath;
+                if (subfolderPathInName != null) {
+                    thisPath = subfolderPath + "/" + subfolderPathInName;
+                    // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + subfolderPathInName);
+                } else {
+                    thisPath = subfolderPath;
+                    // fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                }
+                fina.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(thisPath);
+                fina._setFilePackage(fp);
+                if (sha1hash != null) {
+                    fina.setSha1Hash(sha1hash);
+                }
+                decryptedLinks.add(fina);
+            }
+        }
     }
 
     /* NO OVERRIDE!! */
