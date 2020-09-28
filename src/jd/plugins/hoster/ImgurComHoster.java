@@ -96,6 +96,8 @@ public class ImgurComHoster extends PluginForHost {
     private static final String  SETTING_CUSTOM_PACKAGENAME       = "SETTING_CUSTOM_PACKAGENAME";
     /* DownloadLink properties */
     public static final String   PROPERTY_DOWNLOADLINK_DIRECT_URL = "directlink";
+    public static final String   PROPERTY_DOWNLOADLINK_TITLE      = "directtitle";
+    public static final String   PROPERTY_DOWNLOADLINK_FILETYPE   = "filetype";
     /* Constants */
     public static final int      responsecode_website_overloaded  = 502;
     private static final int     MAX_DOWNLOADS                    = -1;
@@ -194,7 +196,7 @@ public class ImgurComHoster extends PluginForHost {
                 } else {
                     link.removeProperty("decryptedfilesize");
                 }
-                link.setProperty("filetype", apiResponse[0]);
+                link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, apiResponse[0]);
                 link.setProperty("decryptedfinalfilename", apiResponse[2]);
                 if (this.dllink == null) {
                     dllink = getURLDownload(imgUID);
@@ -235,7 +237,7 @@ public class ImgurComHoster extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final String fileType = apiResponse[0];
-                    link.setProperty("filetype", fileType);
+                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, fileType);
                     link.setProperty("decryptedfinalfilename", apiResponse[2]);
                     long size = -1;
                     if (apiResponse[1] != null) {
@@ -291,6 +293,12 @@ public class ImgurComHoster extends PluginForHost {
                 } else if (!this.looksLikeDownloadableContent(con)) {
                     /* E.g. HTTP/1.1 503 first byte timeout */
                     dl_IMPOSSIBLE_SERVER_ISSUE = true;
+                } else if (con.getLongContentLength() == 0) {
+                    /*
+                     * This can really only happen if the user is adding wrong items e.g. adds a single item which actually contains a
+                     * galleryID --> Content-Disposition is given but there is nothing we can download!
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* All OK */
                     final long size = con.getCompleteContentLength();
@@ -307,10 +315,6 @@ public class ImgurComHoster extends PluginForHost {
                             logger.info("Using content-disposition filename");
                             /* 2020-09-24: Host is tagging their filenames --> Remove that */
                             contentDispositionFilename = contentDispositionFilename.replaceAll(" ?- Imgur", "");
-                            /* Small workaround for serverside bug: Content-Disposition: attachment; filename=" - Imgur.jpg" */
-                            if (contentDispositionFilename.matches("[ ]*?\\.[A-Za-z0-9]+")) {
-                                contentDispositionFilename = this.imgUID + contentDispositionFilename;
-                            }
                             link.setFinalFileName(contentDispositionFilename);
                         } else {
                             /* Set filename based on mime-type */
@@ -321,6 +325,8 @@ public class ImgurComHoster extends PluginForHost {
                             } else {
                                 logger.info("Set filename based on Content-Type header file-extension");
                                 link.setFinalFileName(this.imgUID + "." + mimeTypeExt);
+                                /* Set filetype as property so this can be used to determine the customized filename on next linkcheck. */
+                                link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, mimeTypeExt);
                             }
                         }
                     }
@@ -368,9 +374,6 @@ public class ImgurComHoster extends PluginForHost {
                 logger.log(e);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dl.getConnection().getCompleteContentLength() == 0) {
-            /* 2020-09-24: Rare case */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Filesize mismatch: File is empty");
         }
         dl.startDownload();
     }
@@ -996,7 +999,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static String getFiletype(final DownloadLink dl) {
-        final String ret = dl.getStringProperty("filetype", null);
+        final String ret = dl.getStringProperty(PROPERTY_DOWNLOADLINK_FILETYPE, null);
         final String storedDirectURL = dl.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
         if (ret != null) {
             final String image = new Regex(ret, "images/(.+)").getMatch(0);
@@ -1125,7 +1128,7 @@ public class ImgurComHoster extends PluginForHost {
             return null;
         }
         final String username = link.getStringProperty("directusername", "-");
-        final String title = link.getStringProperty("directtitle", "-");
+        final String title = link.getStringProperty(PROPERTY_DOWNLOADLINK_TITLE, "-");
         final String imgid = getImgUID(link);
         final String orderid = link.getStringProperty("orderid", "-");
         /* Date: Maybe add this in the future, if requested by a user. */
