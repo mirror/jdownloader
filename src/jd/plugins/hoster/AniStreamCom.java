@@ -17,13 +17,18 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -140,9 +145,42 @@ public class AniStreamCom extends XFileSharingProBasic {
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = super.getDllink(link, account, br, src);
         if (StringUtils.isEmpty(dllink)) {
-            /* 2020-08-04 */
-            dllink = "/manifest-" + this.fuid + ".m3u8";
-            logger.info("Fallback to static downloadurl: " + dllink);
+            /* 2020-09-28 */
+            try {
+                final String b64 = br.getRegex("src=\"data:text/javascript;base64,([^\"]+)").getMatch(0);
+                final String js = Encoding.Base64Decode(b64);
+                final String json = new Regex(js, "(\\{.+\\})").getMatch(0);
+                Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/sources");
+                long qualityMax = 0;
+                String hlsMaster = null;
+                String bestHttpQuality = null;
+                for (final Object qualityO : ressourcelist) {
+                    entries = (Map<String, Object>) qualityO;
+                    final String url = (String) entries.get("src");
+                    if (url.contains(".m3u8")) {
+                        /* hls */
+                        hlsMaster = url;
+                    } else {
+                        /* http */
+                        final long qualityTmp = JavaScriptEngineFactory.toLong(entries.get("res"), 0);
+                        if (qualityTmp > qualityMax) {
+                            qualityMax = qualityTmp;
+                            bestHttpQuality = url;
+                        }
+                    }
+                }
+                if (!StringUtils.isEmpty(bestHttpQuality)) {
+                    logger.info("Found best http quality");
+                    dllink = bestHttpQuality;
+                } else if (!StringUtils.isEmpty(hlsMaster)) {
+                    logger.info("Found hls");
+                    dllink = hlsMaster;
+                } else {
+                    logger.info("Failed to find any downloadurl");
+                }
+            } catch (final Throwable e) {
+            }
         }
         return dllink;
     }
