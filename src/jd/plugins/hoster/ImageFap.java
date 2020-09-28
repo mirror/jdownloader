@@ -48,9 +48,18 @@ public class ImageFap extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         final String addedLink = link.getDownloadURL();
         if (addedLink.contains("imagedecrypted/")) {
-            final String newurl = "https://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/";
-            link.setUrlDownload(newurl);
-            link.setContentUrl(newurl);
+            final String photoID = new Regex(addedLink, "(\\d+)$").getMatch(0);
+            if (photoID != null) {
+                final String newurl = "https://www.imagefap.com/photo/" + photoID + "/";
+                link.setProperty("photoID", Long.parseLong(photoID));
+                link.setUrlDownload(newurl);
+                link.setContentUrl(newurl);
+            }
+        } else if (addedLink.contains("/photo/") && !link.hasProperty("photoID")) {
+            final String photoID = new Regex(addedLink, "/photo/(\\d+)").getMatch(0);
+            if (photoID != null) {
+                link.setProperty("photoID", Long.parseLong(photoID));
+            }
         }
     }
 
@@ -211,91 +220,85 @@ public class ImageFap extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         prepBR(this.br);
-        try {
-            getPage(this.br, link.getDownloadURL());
-            if (link.getDownloadURL().matches(VIDEOLINK)) {
-                final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
-                if (filename == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                link.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-            } else {
-                final String location = br.getRedirectLocation();
-                if (location != null) {
-                    if (!location.contains("/photo/")) {
-                        getPage(this.br, location);
-                    }
-                    logger.info("Setting new downloadUrl: " + location);
-                    link.setUrlDownload(location);
+        getPage(this.br, link.getDownloadURL());
+        if (link.getDownloadURL().matches(VIDEOLINK)) {
+            final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        } else {
+            final String location = br.getRedirectLocation();
+            if (location != null) {
+                if (!location.contains("/photo/")) {
                     getPage(this.br, location);
                 }
-                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                String picture_name = link.getStringProperty("original_filename");
+                getPage(this.br, location);
+            }
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String picture_name = link.getStringProperty("original_filename");
+            if (picture_name == null) {
+                picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
                 if (picture_name == null) {
-                    picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
+                    picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
                     if (picture_name == null) {
-                        picture_name = br.getRegex("<title>(.*?) uploaded by").getMatch(0);
-                        if (picture_name == null) {
-                            picture_name = br.getRegex("<title>(.*?) Porn Pic").getMatch(0);
-                        }
+                        picture_name = br.getRegex("<title>(.*?) Porn Pic").getMatch(0);
                     }
                 }
-                String galleryName = getGalleryName(link);
-                String username = link.getStringProperty("directusername");
+            }
+            String galleryName = getGalleryName(link);
+            String username = link.getStringProperty("directusername");
+            if (username == null) {
+                username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
                 if (username == null) {
-                    username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
+                    username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
                     if (username == null) {
-                        username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
+                        username = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
                         if (username == null) {
-                            username = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
-                            if (username == null) {
-                                username = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
-                            }
+                            username = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
                         }
                     }
                 }
-                if (galleryName == null || picture_name == null) {
-                    logger.info("galleryName: " + galleryName + " picture_name: " + picture_name);
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (galleryName == null || picture_name == null) {
+                logger.info("galleryName: " + galleryName + " picture_name: " + picture_name);
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            galleryName = Encoding.htmlDecode(galleryName).trim();
+            if (username != null) {
+                username = username.trim();
+            }
+            link.setProperty("galleryname", galleryName);
+            link.setProperty("directusername", username);
+            link.setProperty("original_filename", picture_name);
+            link.setFinalFileName(getFormattedFilename(link));
+            /* only set filepackage if not set yet */
+            try {
+                if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(username + " - " + galleryName);
+                    fp.add(link);
                 }
-                galleryName = Encoding.htmlDecode(galleryName).trim();
-                if (username != null) {
-                    username = username.trim();
-                }
-                link.setProperty("galleryname", galleryName);
-                link.setProperty("directusername", username);
-                link.setProperty("original_filename", picture_name);
-                link.setFinalFileName(getFormattedFilename(link));
-                /* only set filepackage if not set yet */
+            } catch (final Throwable e) {
+                /*
+                 * does not work in stable 0.9580, can be removed with next major update
+                 */
                 try {
-                    if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                    if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
                         final FilePackage fp = FilePackage.getInstance();
                         fp.setName(username + " - " + galleryName);
                         fp.add(link);
                     }
-                } catch (final Throwable e) {
-                    /*
-                     * does not work in stable 0.9580, can be removed with next major update
-                     */
-                    try {
-                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                            final FilePackage fp = FilePackage.getInstance();
-                            fp.setName(username + " - " + galleryName);
-                            fp.add(link);
-                        }
-                    } catch (final Throwable e2) {
-                    }
+                } catch (final Throwable e2) {
                 }
             }
-            return AvailableStatus.TRUE;
-        } catch (final Exception e) {
-            logger.log(e);
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     private String getPage(final Browser br, final String url) throws Exception {

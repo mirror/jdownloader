@@ -24,13 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,6 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -570,23 +570,25 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dllink = (String) entries.get("video_url");
         } else {
             /* Find best image-quality */
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("display_resources");
-            long qualityMax = 0;
-            for (final Object qualityO : ressourcelist) {
-                final LinkedHashMap<String, Object> imageQualityInfo = (LinkedHashMap<String, Object>) qualityO;
-                final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("config_width"), 0);
-                if (widthTmp > qualityMax) {
-                    qualityMax = widthTmp;
-                    dllink = (String) imageQualityInfo.get("src");
+            final List<Object> ressourcelist = (List<Object>) entries.get("display_resources");
+            if (ressourcelist != null) {
+                long qualityMax = 0;
+                for (final Object qualityO : ressourcelist) {
+                    final Map<String, Object> imageQualityInfo = (Map<String, Object>) qualityO;
+                    final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("config_width"), 0);
+                    if (widthTmp > qualityMax && imageQualityInfo.containsKey("src")) {
+                        qualityMax = widthTmp;
+                        dllink = (String) imageQualityInfo.get("src");
+                    }
                 }
             }
             if (StringUtils.isEmpty(dllink)) {
                 dllink = (String) entries.get("display_src");
                 if (dllink == null || !dllink.startsWith("http")) {
                     dllink = (String) entries.get("display_url");
-                }
-                if (dllink == null || !dllink.startsWith("http")) {
-                    dllink = (String) entries.get("thumbnail_src");
+                    if (dllink == null || !dllink.startsWith("http")) {
+                        dllink = (String) entries.get("thumbnail_src");
+                    }
                 }
             }
             /*
@@ -602,6 +604,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             try {
                 server_filename = getFileNameFromURL(new URL(dllink));
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         String filename;
