@@ -68,7 +68,7 @@ public class TwobayOrg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(db/\\d+/files/[^/]+|\\?[a-f0-9]{4,})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(db/\\d+/files/[^/]+|\\??[a-f0-9]{4,})");
         }
         return ret.toArray(new String[0]);
     }
