@@ -344,8 +344,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache check returned error", 20, 5 * 60 * 1000l);
                     } else if (!StringUtils.equalsIgnoreCase("OK", status)) {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache status is not OK", 20, 5 * 60 * 1000l);
-                    }
-                    if (data.get("return") == null) {
+                    } else if (data.get("return") == null) {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache return status is missing", 20, 5 * 60 * 1000l);
                     }
                     final Map<String, Object> cacheReturnStatus = (Map<String, Object>) data.get("return");
