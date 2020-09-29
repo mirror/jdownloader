@@ -46,6 +46,20 @@ public class MySpassDe extends PluginForHost {
         return "http://www.myspass.de/myspass/kontakt/";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+    }
+
     /*
      * Example final url (18.05.2015):
      * http://x3583brainc11021.s.o.l.lb.core-cdn.net/secdl/78de6150fffffffffff1f136aff77d61/55593149/11021brainpool/ondemand
@@ -53,16 +67,20 @@ public class MySpassDe extends PluginForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
-        link.setLinkID(fid);
         // br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." +
         // System.currentTimeMillis());
         /* 2018-12-29: New */
         br.getPage("https://www.myspass.de/includes/apps/video/getvideometadataxml.php?id=" + fid);
+        /* Alternative: http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=<fid> */
         if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -96,19 +114,38 @@ public class MySpassDe extends PluginForHost {
             }
         }
         if (dllink != null) {
-            link.setFinalFileName(filename + ext);
-            URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
+                /* 2020-09-29 */
+                logger.info("Trying to 'fix' final downloadurl");
+                final Regex dllinkInfo = new Regex(this.dllink, "/myspass2009/\\d+/(\\d+)/(\\d+)/(\\d+)/");
+                final int fidInt = Integer.parseInt(this.getFID(link));
+                for (int i = 0; i <= 2; i++) {
+                    final String tmpStr = dllinkInfo.getMatch(i);
+                    final int tmpInt = Integer.parseInt(tmpStr);
+                    if (tmpInt > fidInt) {
+                        final int newInt = tmpInt / fidInt;
+                        this.dllink = dllink.replace(tmpStr, Integer.toString(newInt));
+                    }
                 }
-            } finally {
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                logger.warning("Failed to fix final downloadurl --> Download might not be possible!");
+            }
+            if (!isDownload) {
+                link.setFinalFileName(filename + ext);
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                    con = br.openHeadConnection(dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        server_issues = true;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
         } else {
@@ -118,19 +155,19 @@ public class MySpassDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* 2017-02-04: Without the Range Header we'll be limited to ~100 KB/s */
-        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+        link.setProperty("ServerComaptibleForByteRangeRequest", true);
         br.getHeaders().put("Range", "bytes=" + 0 + "-");
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
