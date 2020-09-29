@@ -63,7 +63,7 @@ import jd.utils.locale.JDL;
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
  * --> New docs 2020-04-27: https://apidocs.imgur.com/?version=latest (scroll down to "Image thumbnails").
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://imgurdecrypted\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgur.com" }, urls = { "https?://(?:www\\.)?imgur\\.com/download/([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" })
 public class ImgurComHoster extends PluginForHost {
     public ImgurComHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,11 +74,6 @@ public class ImgurComHoster extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://imgur.com/tos";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("imgurdecrypted.com/", "imgur.com/"));
     }
 
     private enum TYPE {
@@ -105,8 +100,6 @@ public class ImgurComHoster extends PluginForHost {
     private static final int     MAXCHUNKS                        = 1;
     /* Variables */
     private String               dllink                           = null;
-    private boolean              dl_IMPOSSIBLE_APILIMIT_REACHED   = false;
-    private boolean              dl_IMPOSSIBLE_SERVER_ISSUE       = false;
     private String               imgUID                           = null;
 
     /* Documentation see: https://apidocs.imgur.com/ */
@@ -140,9 +133,10 @@ public class ImgurComHoster extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, null);
-        dl_IMPOSSIBLE_SERVER_ISSUE = false;
-        /* Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API! */
-        String filename_formatted = null;
+        /*
+         * Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API and only check
+         * directurl if needed!
+         */
         TYPE type = null;
         if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
             prepBRAPI(this.br);
@@ -201,7 +195,6 @@ public class ImgurComHoster extends PluginForHost {
                 if (this.dllink == null) {
                     dllink = getURLDownload(imgUID);
                 }
-                filename_formatted = getFormattedFilename(link);
             } else {
                 /*
                  * Workaround for API limit reached or in case user disabled API - second way does return 503 response in case API limit is
@@ -247,7 +240,6 @@ public class ImgurComHoster extends PluginForHost {
                     } else {
                         link.removeProperty("decryptedfilesize");
                     }
-                    filename_formatted = getFormattedFilename(link);
                 } catch (final PluginException e) {
                     logger.warning("Website handling failed --> Handling plain download");
                 }
@@ -256,81 +248,21 @@ public class ImgurComHoster extends PluginForHost {
                 }
             }
             link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
-        } else {
-            filename_formatted = getFormattedFilename(link);
         }
         if (dllink == null) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename_formatted != null) {
-            if (isDownload) {
-                link.setFinalFileName(filename_formatted);
-            } else {
-                link.setName(filename_formatted);
-            }
-        }
         if (!isDownload) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
-             * Keep server load down.
-             */
-            /*
-             * 2016-08-10: Additionally check filesize via url if user wants to have a specified format as the filesize from website json or
-             * API is usually for the original file!
+             * Keep server-load down.
              */
             URLConnectionAdapter con = null;
             br.setFollowRedirects(true);
             try {
                 con = this.br.openHeadConnection(this.dllink);
-                if (con.getResponseCode() == responsecode_website_overloaded) {
-                    websiteOverloaded();
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getURL().toString().contains("/removed.png")) {
-                    /* 2020-09-24: Redirect to: https://i.imgur.com/removed.png */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (!this.looksLikeDownloadableContent(con)) {
-                    /* E.g. HTTP/1.1 503 first byte timeout */
-                    dl_IMPOSSIBLE_SERVER_ISSUE = true;
-                } else if (con.getLongContentLength() == 0) {
-                    /*
-                     * This can really only happen if the user is adding wrong items e.g. adds a single item which actually contains a
-                     * galleryID --> Content-Disposition is given but there is nothing we can download!
-                     */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    /* All OK */
-                    final long size = con.getCompleteContentLength();
-                    if (size > 0) {
-                        link.setProperty("decryptedfilesize", size);
-                        link.setDownloadSize(size);
-                    }
-                    if (filename_formatted == null) {
-                        /* Hm still no filename given but we need one! */
-                        logger.info("No user defined filename given/possible --> Looking for last chance fallback filename");
-                        String contentDispositionFilename = Plugin.getFileNameFromDispositionHeader(con);
-                        if (contentDispositionFilename != null) {
-                            /* Might sometimes be given when "/download" URL is used. */
-                            logger.info("Using content-disposition filename");
-                            /* 2020-09-24: Host is tagging their filenames --> Remove that */
-                            contentDispositionFilename = contentDispositionFilename.replaceAll(" ?- Imgur", "");
-                            link.setFinalFileName(contentDispositionFilename);
-                        } else {
-                            /* Set filename based on mime-type */
-                            final String mimeTypeExt = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
-                            if (mimeTypeExt == null) {
-                                /* This should never happen */
-                                logger.warning("Unable to determine any filename");
-                            } else {
-                                logger.info("Set filename based on Content-Type header file-extension");
-                                link.setFinalFileName(this.imgUID + "." + mimeTypeExt);
-                                /* Set filetype as property so this can be used to determine the customized filename on next linkcheck. */
-                                link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, mimeTypeExt);
-                            }
-                        }
-                    }
-                }
+                checkConnectionAndSetFinalFilename(link, con);
             } finally {
                 try {
                     con.disconnect();
@@ -341,6 +273,73 @@ public class ImgurComHoster extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void checkConnectionAndSetFinalFilename(final DownloadLink link, final URLConnectionAdapter con) throws Exception {
+        if (con.getResponseCode() == responsecode_website_overloaded) {
+            websiteOverloaded();
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (con.getURL().toString().contains("/removed.png")) {
+            /* 2020-09-24: Redirect to: https://i.imgur.com/removed.png */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.looksLikeDownloadableContent(con)) {
+            /* E.g. HTTP/1.1 503 first byte timeout */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (con.getLongContentLength() == 0) {
+            /*
+             * This can really only happen if the user is adding wrong items e.g. adds a single item which actually contains a galleryID -->
+             * Content-Disposition is given but there is nothing we can download!
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            /* All OK */
+            final long size = con.getCompleteContentLength();
+            if (size > 0) {
+                link.setProperty("decryptedfilesize", size);
+                link.setDownloadSize(size);
+            }
+            /*
+             * Find- and set filename. Especially important: File-type given inside URLs added by crawler can be wrong! Find correct
+             * filetype --> Set it --> Then get user-defined filename and set it!
+             */
+            String finalFallbackFilename = null;
+            String contentDispositionFilename = Plugin.getFileNameFromDispositionHeader(con);
+            if (contentDispositionFilename != null) {
+                /* Might sometimes be given when "/download" URL is used. */
+                logger.info("Using content-disposition filename");
+                /* 2020-09-24: Host is tagging their filenames --> Remove that */
+                contentDispositionFilename = contentDispositionFilename.replaceAll(" ?- Imgur", "");
+                final String ext = Plugin.getFileNameExtensionFromString(contentDispositionFilename);
+                if (ext != null) {
+                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, ext);
+                }
+                finalFallbackFilename = contentDispositionFilename;
+            } else {
+                /* Set filename based on mime-type */
+                final String mimeTypeExt = jd.plugins.hoster.DirectHTTP.getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                if (mimeTypeExt == null) {
+                    /* This should never happen */
+                    logger.warning("Unable to determine any finalFallbackFilename");
+                } else {
+                    finalFallbackFilename = this.imgUID + "." + mimeTypeExt;
+                    link.setFinalFileName(this.imgUID + "." + mimeTypeExt);
+                    /* Set filetype as property so this can be used to determine the customized filename on next linkcheck. */
+                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, mimeTypeExt);
+                }
+            }
+            final String filename_formatted = getFormattedFilename(link);
+            if (filename_formatted != null) {
+                logger.info("Using filename_formatted: " + filename_formatted);
+                link.setFinalFileName(filename_formatted);
+            } else if (finalFallbackFilename != null) {
+                logger.info("Using finalFallbackFilename: " + finalFallbackFilename);
+                link.setFinalFileName(finalFallbackFilename);
+            } else {
+                /* This should never happen */
+                logger.warning("WTF no filename given at all");
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, null);
@@ -348,33 +347,8 @@ public class ImgurComHoster extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account, true);
-        if (dl_IMPOSSIBLE_APILIMIT_REACHED) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Api limit reached", 10 * 60 * 1000l);
-        } else if (this.dl_IMPOSSIBLE_SERVER_ISSUE) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            /* Should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Disable chunks as servers are fast and we usually only download small files. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, MAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            final int responsecode = dl.getConnection().getResponseCode();
-            if (responsecode == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (responsecode == responsecode_website_overloaded) {
-                websiteOverloaded();
-            } else if (responsecode == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 60 * 1000l);
-            }
-            logger.warning("Finallink leads to HTML code --> Following connection");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
+        checkConnectionAndSetFinalFilename(link, this.dl.getConnection());
         dl.startDownload();
     }
 
