@@ -417,7 +417,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             externID = new Regex(externID, "&file=([^&]+)").getMatch(0);
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             if (title != null) {
-                dl.setFinalFileName(title + getFileNameExtensionFromString(externID, ""));
+                dl.setForcedFileName(title + getFileNameExtensionFromString(externID, ""));
             }
             if (!processAll) {
                 return decryptedLinks;
@@ -916,6 +916,20 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        externID = br.getRegex("(https?://(?:www\\.)?camhub\\.world/embed/\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink(externID);
+            /* Filename is good to have but not necessarily required, */
+            if (title != null) {
+                title += ".mp4";
+                /* 2020-09-29: Special: Enforce this filename because host-plugin will not be able to find a meaningful filename! */
+                dl.setForcedFileName(title);
+            }
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
@@ -941,7 +955,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             externID = al.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                dl.setFinalFileName(title + ".flv");
+                dl.setForcedFileName(title + ".flv");
                 decryptedLinks.add(dl);
                 if (!processAll) {
                     return decryptedLinks;
@@ -975,7 +989,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                         if (type == null) {
                             type = "flv";
                         }
-                        dl.setFinalFileName(title + "." + type);
+                        dl.setForcedFileName(title + "." + type);
                         decryptedLinks.add(dl);
                         if (!processAll) {
                             return decryptedLinks;
@@ -1014,7 +1028,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
             if (title != null) {
-                dl.setFinalFileName(title + ".mp4");
+                dl.setForcedFileName(title + ".mp4");
             }
             decryptedLinks.add(dl);
             if (!processAll) {
