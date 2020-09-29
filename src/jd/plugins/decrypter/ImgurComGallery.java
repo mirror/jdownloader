@@ -91,7 +91,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             sb.append("https?://i\\." + hostsPatternPart + "/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})(?:\\.[A-Za-z0-9]{3,5})?");
             sb.append("|");
             /* "View"/Download URLs */
-            sb.append(protocolPart + hostsPatternPart + "/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})");
+            sb.append(protocolPart + hostsPatternPart + "/(?!download/)(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})");
             sb.append("|");
             /* "Reddit gallery" URLs (including those that only lead to single images) */
             sb.append(protocolPart + hostsPatternPart + "/r/[^/]+(?:/[A-Za-z0-9]{5,7})?");
@@ -190,7 +190,10 @@ public class ImgurComGallery extends PluginForDecrypt {
                             if (postInfo.contains("animated")) {
                                 url = "https://i." + this.getHost() + "/" + contentID + ".mp4";
                             } else {
-                                /* Assume we got a single .jpg image */
+                                /*
+                                 * Assume we got a single .jpg image. It could also be another file-extension such as .png in some cases but
+                                 * this will be corrected on download-attempt.
+                                 */
                                 url = "https://i." + this.getHost() + "/" + contentID + ".jpg";
                             }
                             dl = this.handleSingleItem(url, contentID);
@@ -368,7 +371,7 @@ public class ImgurComGallery extends PluginForDecrypt {
     }
 
     private String getHostpluginurl(final String lid) {
-        return "http://imgurdecrypted.com/download/" + lid;
+        return "https://imgur.com/download/" + lid;
     }
 
     private void api_decrypt(Map<String, Object> data) throws DecrypterException, ParseException {
@@ -438,7 +441,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             } else {
                 filesize = size;
             }
-            final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
+            final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
             dl.setAvailable(true);
             dl.setProperty("filetype", filetype);
             dl.setProperty("directlink", directlink);
@@ -513,7 +516,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                 title = encodeUnicode(title);
             }
             final String directlink = "http://i." + this.getHost() + "/" + imgUID + ext;
-            final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + imgUID);
+            final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
             dl.setDownloadSize(filesize);
             dl.setAvailable(true);
             dl.setProperty("filetype", ext.replace(".", ""));
