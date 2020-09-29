@@ -24,6 +24,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,25 +60,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonNode;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -284,7 +281,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
      * Check with linksnappy server if file needs to get downloaded first before the user can download it from there (2019-05-14: E.g.
      * rapidgator.net URLs).
      **/
-    private void cacheDLChecker() throws Exception {
+    private void cacheDLChecker(final Account account) throws Exception {
         if (isCache != null) {
             final String id = linkHash.toString();
             final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
@@ -341,41 +338,35 @@ public class LinkSnappyCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                     br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
-                    final JSonObject dlNode = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
-                    final String status = dlNode.get("status").toString();
+                    final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final String status = (String) data.get("status");
                     if (StringUtils.equalsIgnoreCase("ERROR", status)) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache check returned error", 20, 5 * 60 * 1000l);
                     } else if (!StringUtils.equalsIgnoreCase("OK", status)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache status is not OK", 20, 5 * 60 * 1000l);
                     }
-                    final JSonNode returnValue = dlNode.get("return");
-                    if (returnValue instanceof JSonValue) {
-                        if (((JSonValue) returnValue).getValue() == null || StringUtils.equalsIgnoreCase("null", returnValue.toString())) {
-                            break;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                    if (data.get("return") == null) {
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache return status is missing", 20, 5 * 60 * 1000l);
+                    }
+                    final Map<String, Object> cacheReturnStatus = (Map<String, Object>) data.get("return");
+                    final Integer currentProgress = (int) JavaScriptEngineFactory.toLong(cacheReturnStatus.get("percent"), 0);
+                    // download complete?
+                    if (currentProgress.intValue() == 100) {
+                        // cache finished, lets go to download part
+                        break;
                     } else {
-                        final JSonObject downloadNode = (JSonObject) returnValue;
-                        final Integer currentProgress = Integer.parseInt(downloadNode.get("percent").toString());
-                        // download complete?
-                        if (currentProgress.intValue() == 100) {
-                            // cache finished, lets go to download part
-                            break;
-                        } else {
-                            this.getDownloadLink().addPluginProgress(waitProgress);
-                            waitProgress.updateValues(currentProgress.intValue(), 100);
-                            for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                                if (isAbort()) {
-                                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                                } else {
-                                    Thread.sleep(1000);
-                                }
+                        this.getDownloadLink().addPluginProgress(waitProgress);
+                        waitProgress.updateValues(currentProgress.intValue(), 100);
+                        for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                            if (isAbort()) {
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            } else {
+                                Thread.sleep(1000);
                             }
-                            if (currentProgress.intValue() != lastProgress) {
-                                lastProgressChange = System.currentTimeMillis();
-                                lastProgress = currentProgress.intValue();
-                            }
+                        }
+                        if (currentProgress.intValue() != lastProgress) {
+                            lastProgressChange = System.currentTimeMillis();
+                            lastProgress = currentProgress.intValue();
                         }
                     }
                 }
@@ -589,7 +580,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                          * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is
                          * online but the link format is not added on linksnappy.
                          */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format.");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format");
                     } else if (new Regex(err, "File not found").matches()) {
                         if (i + 1 == MAX_DOWNLOAD_ATTEMPTS) {
                             // multihoster is not trusted source for offline...
@@ -628,7 +619,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinkmissing", 2, 5 * 60 * 1000l);
             }
-            cacheDLChecker();
+            cacheDLChecker(account);
         }
         dlResponseCode = -1;
         try {
