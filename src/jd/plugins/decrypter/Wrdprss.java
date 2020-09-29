@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hd-area.org", "movie-blog.org", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me", "linx.cloud", "cgpersia.com" }, urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl|be)/episode/.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+",
-        "https?://(www\\.)?linx\\.cloud/[\\w\\-]+\\d+/", "https?://(www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
+        "https?://(www\\.)?linx\\.cloud/[\\w\\-]+\\d+/", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
 public class Wrdprss extends antiDDoSForDecrypt {
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
@@ -87,7 +87,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         if (password != null) {
             link_passwds.add(password.trim());
         }
-        if (parameter.matches(".+watchseries-online.be.+")) {
+        if (parameter.matches(".+watchseries-online\\.be.+")) {
             if (br.getRedirectLocation() != null) {
                 br.followRedirect();
             }
@@ -98,7 +98,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
             }
             return decryptedLinks;
         }
-        if (parameter.matches(".+cgpersia.com.+")) {
+        if (parameter.matches(".+cgpersia\\.com.+")) {
             if (br.getRedirectLocation() != null) {
                 br.followRedirect();
             }
@@ -137,7 +137,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 decryptedLinks.add(dLink);
             }
         }
-        if (parameter.contains("urbanmusicdaily.me/")) {
+        if (parameter.contains("urbanmusicdaily\\.me/")) {
             // lets look for embeded types
             String[] embed = br.getRegex("file\\s*:\\s*(\"|')(https?://.*?)\\1").getColumn(1);
             if (embed != null) {
