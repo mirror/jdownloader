@@ -92,8 +92,12 @@ public class ImgurComHoster extends PluginForHost {
     /* DownloadLink properties */
     public static final String   PROPERTY_DOWNLOADLINK_DIRECT_URL = "directlink";
     public static final String   PROPERTY_DOWNLOADLINK_TITLE      = "directtitle";
-    public static final String   PROPERTY_DOWNLOADLINK_FILETYPE   = "filetype";
-    /* Constants */
+    public static final String   PROPERTY_DOWNLOADLINK_ORDERID    = "orderid";
+    public static final String   PROPERTY_DOWNLOADLINK_DATE       = "date";
+    public static final String   PROPERTY_DOWNLOADLINK_USERNAME   = "directusername";
+    /* Only store file-type from trusted sourced as this property will be preferred over every other filetype source!! */
+    private static final String  PROPERTY_DOWNLOADLINK_FILETYPE   = "filetype";
+    /* Various constants */
     public static final int      responsecode_website_overloaded  = 502;
     private static final int     MAX_DOWNLOADS                    = -1;
     private static final boolean RESUME                           = true;
@@ -205,7 +209,7 @@ public class ImgurComHoster extends PluginForHost {
                         /* 2020-09-24: https://svn.jdownloader.org/issues/88753 */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Website mode in development");
                     }
-                    this.br = prepBRWebsite(this.br);
+                    br = prepBRWebsite(this.br);
                     getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1101,10 +1105,10 @@ public class ImgurComHoster extends PluginForHost {
             /* We cannot generate a user-preferred filename without extension! */
             return null;
         }
-        final String username = link.getStringProperty("directusername", "-");
+        final String username = link.getStringProperty(PROPERTY_DOWNLOADLINK_USERNAME, "-");
         final String title = link.getStringProperty(PROPERTY_DOWNLOADLINK_TITLE, "-");
         final String imgid = getImgUID(link);
-        final String orderid = link.getStringProperty("orderid", "-");
+        final String orderid = link.getStringProperty(PROPERTY_DOWNLOADLINK_ORDERID, "-");
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;

@@ -100,14 +100,16 @@ public class ImgurComGallery extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-09-29: Preventive measure */
+        return 1;
+    }
+
     /*
      * TODO: Add API handling for this URL type 'subreddit': https://apidocs.imgur.com/?version=latest#98f68034-15a0-4044-a9ac-5ff3dc75c6b0
      */
-    /**
-     * TODO: Update handling for type_subreddit_single_image: Such URLs can either lead to single images or to a gallery which cannot be
-     * determined by RegEx!
-     */
-    private final String            type_subreddit_single_image    = "https?://[^/]+/r/[^/]+/([A-Za-z0-9]{5,7})";
+    private final String            type_subreddit_single_post     = "https?://[^/]+/r/([^/]+/[A-Za-z0-9]{5,7})";
     private final String            type_subreddit_gallery         = "https?://[^/]+/r/([^/]+)$";
     private final String            type_album                     = "https?://[^/]+/a/[A-Za-z0-9]{5,7}";
     private final String            type_gallery                   = "https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
@@ -123,8 +125,8 @@ public class ImgurComGallery extends PluginForDecrypt {
     private String                  parameter                      = null;
     private String                  itemID                         = null;
     private String                  author                         = null;
-    private String                  videoSource                    = null;
     private boolean                 grabVideoSource                = false;
+    private FilePackage             fp                             = null;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -151,13 +153,71 @@ public class ImgurComGallery extends PluginForDecrypt {
         synchronized (CTRLLOCK) {
             String galleryTitle = null;
             String fpName = null;
-            if (parameter.matches(type_subreddit_gallery) && !parameter.matches(type_subreddit_single_image)) {
-                /* Subreddit image-list --> Website-only */
+            if (parameter.matches(type_subreddit_single_post)) {
+                /* Single "reddit-style" posts can contain multiple images */
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
-                br.followRedirect();
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
+                }
+                final String postTitle = new Regex(parameter, type_subreddit_single_post).getMatch(0);
+                fp = FilePackage.getInstance();
+                fp.setName(postTitle);
+                final boolean preferWebsiteJson = true;
+                if (preferWebsiteJson) {
+                    this.site_decrypt();
+                } else {
+                    final String[] htmls = br.getRegex("(<div id=\"[A-Za-z0-9]+\" class=\"post-image-container[^\"]*\".*?</div>)").getColumn(0);
+                    if (htmls == null || htmls.length == 0) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (final String html : htmls) {
+                        final String contentID = new Regex(html, "id=\"([A-Za-z0-9]+)\"").getMatch(0);
+                        String title = null;
+                        if (contentID == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        /* Now find out what kind of content we got */
+                        final String url;
+                        if (html.contains("schema.org/VideoObject")) {
+                            // itemscope itemtype="http://schema.org/VideoObject"
+                            /* single gif/mp4 */
+                            url = getDirectURL(contentID, "gif");
+                        } else {
+                            // itemscope itemtype="http://schema.org/ImageObject"
+                            /* single jpg or an other type of image */
+                            url = getDirectURL(contentID, "jpg");
+                        }
+                        final DownloadLink dl = this.handleSingleItem(url, contentID);
+                        if (!StringUtils.isEmpty(title)) {
+                            if (Encoding.isHtmlEntityCoded(title)) {
+                                title = Encoding.htmlDecode(title);
+                            }
+                            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
+                        }
+                        dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, url);
+                        /* Set original contentURL so user has the same URLs when copying one as in browser. */
+                        dl.setContentUrl(this.parameter + "/" + contentID);
+                        dl.setAvailable(true);
+                        final String filename = ImgurComHoster.getFormattedFilename(dl);
+                        if (filename != null) {
+                            dl.setName(filename);
+                        }
+                        decryptedLinks.add(dl);
+                        distribute(dl);
+                    }
+                }
+                if (decryptedLinks.isEmpty()) {
+                    /* Probably offline */
+                    this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+                }
+                return decryptedLinks;
+            } else if (parameter.matches(type_subreddit_gallery)) {
+                /* Subreddit image-list --> Website-only */
+                br.setFollowRedirects(true);
+                br.getPage(parameter);
                 final String galleryName = new Regex(parameter, type_subreddit_gallery).getMatch(0);
                 int page = 1;
-                final FilePackage fp = FilePackage.getInstance();
+                fp = FilePackage.getInstance();
                 fp.setName(galleryName);
                 final ArrayList<String> dupes = new ArrayList<String>();
                 do {
@@ -184,17 +244,22 @@ public class ImgurComGallery extends PluginForDecrypt {
                         /* Now find out what kind of content we got */
                         final DownloadLink dl;
                         if (postInfo.contains("album")) {
-                            dl = this.createDownloadlink("https://" + this.getHost() + "/a/" + contentID);
+                            /*
+                             * 2020-09-29: We could return these as "normal album URLs" but this would require usage of their API --> We
+                             * want to try to avoid that!
+                             */
+                            // dl = this.createDownloadlink("https://" + this.getHost() + "/a/" + contentID);
+                            dl = this.createDownloadlink(this.parameter + "/" + contentID);
                         } else {
                             final String url;
                             if (postInfo.contains("animated")) {
-                                url = "https://i." + this.getHost() + "/" + contentID + ".mp4";
+                                url = getDirectURL(contentID, "mp4");
                             } else {
                                 /*
                                  * Assume we got a single .jpg image. It could also be another file-extension such as .png in some cases but
                                  * this will be corrected on download-attempt.
                                  */
-                                url = "https://i." + this.getHost() + "/" + contentID + ".jpg";
+                                url = getDirectURL(contentID, "jpg");
                             }
                             dl = this.handleSingleItem(url, contentID);
                             if (!StringUtils.isEmpty(title)) {
@@ -206,7 +271,6 @@ public class ImgurComGallery extends PluginForDecrypt {
                             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, url);
                             /* Set original contentURL so user has the same URLs when copying one as in browser. */
                             dl.setContentUrl(this.parameter + "/" + contentID);
-                            dl._setFilePackage(fp);
                             dl.setAvailable(true);
                             final String filename = ImgurComHoster.getFormattedFilename(dl);
                             if (filename != null) {
@@ -223,6 +287,10 @@ public class ImgurComGallery extends PluginForDecrypt {
                     }
                     br.getPage("/r/" + galleryName + "/new/page/" + page++ + "/hit?scrolled");
                 } while (!isAbort());
+                if (decryptedLinks.isEmpty()) {
+                    /* Probably offline */
+                    this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+                }
                 return decryptedLinks;
             } else if (parameter.matches(type_album) || parameter.matches(type_gallery)) {
                 /* Gallery (could also be single image) --> API required */
@@ -323,11 +391,9 @@ public class ImgurComGallery extends PluginForDecrypt {
                 if (galleryTitle != null) {
                     galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
                 }
+                /* TODO: Fix usage of custom packagenames */
                 fpName = ImgurComHoster.getFormattedPackagename(author, galleryTitle, itemID);
                 fpName = encodeUnicode(fpName);
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
             } else {
                 /* Single item */
                 this.decryptedLinks.add(handleSingleItem(this.parameter, this.itemID));
@@ -361,13 +427,18 @@ public class ImgurComGallery extends PluginForDecrypt {
     }
 
     public static String getURLMp4Download(final String imgUID) {
-        final String contentURL = "https://i.imgur.com/" + imgUID + ".mp4";
-        return contentURL;
+        return getDirectURL(imgUID, "mp4");
     }
 
     public static String getURLGifDownload(final String imgUID) {
-        final String contentURL = "https://i.imgur.com/" + imgUID + ".gif";
-        return contentURL;
+        return getDirectURL(imgUID, "gif");
+    }
+
+    public static String getDirectURL(final String imgUID, String ext) {
+        if (ext.contains(".")) {
+            ext = ext.replace(".", "");
+        }
+        return "https://i.imgur.com/" + imgUID + "." + ext;
     }
 
     private String getHostpluginurl(final String lid) {
@@ -395,6 +466,8 @@ public class ImgurComGallery extends PluginForDecrypt {
             return;
         }
         author = (String) JavaScriptEngineFactory.walkJson(data, "data/account_url");
+        /* TODO: 2020-09-29: Why aren't we using the "author" field? */
+        // author = (String) JavaScriptEngineFactory.walkJson(data, "data/author");
         if (author != null && StringUtils.equalsIgnoreCase(author, "Imgur")) {
             /* Some errorhandling */
             author = null;
@@ -414,8 +487,8 @@ public class ImgurComGallery extends PluginForDecrypt {
             final long size = JavaScriptEngineFactory.toLong(item.get("size"), -1);
             final long size_mp4 = JavaScriptEngineFactory.toLong(item.get("mp4_size"), -1);
             final String imgUID = (String) item.get("id");
-            /* TODO: */
-            videoSource = null;
+            /* TODO: Find video_source */
+            // videoSource = null;
             String filetype = (String) item.get("type");
             if (imgUID == null || (size == -1 && size_mp4 == -1) || directlink == null || filetype == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -425,7 +498,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                 /* E.g. 'image/gif' --> 'gif' */
                 filetype = filetype.split("/")[1];
             }
-            if (!inValidate(title)) {
+            if (!StringUtils.isEmpty(title)) {
                 title = Encoding.htmlDecode(title);
                 title = HTMLEntities.unhtmlentities(title);
                 title = HTMLEntities.unhtmlAmpersand(title);
@@ -456,57 +529,53 @@ public class ImgurComGallery extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             /* No need to hide directlinks */
             dl.setContentUrl(ImgurComHoster.getURLContent(imgUID));
-            if (videoSource != null && grabVideoSource) {
-                decryptedLinks.add(this.createDownloadlink(videoSource));
-            }
+            /* TODO: Find video_source */
+            // if (videoSource != null && grabVideoSource) {
+            // decryptedLinks.add(this.createDownloadlink(videoSource));
+            // }
             decryptedLinks.add(dl);
         }
     }
 
     private void site_decrypt() throws DecrypterException, ParseException, IOException {
         /* Removed differentiation between two linktypes AFTER revision 26468 */
-        if (this.br.containsHTML("class=\"js\\-post\\-truncated\"")) {
-            /* RegExes below will work for the json after this ajax request too! */
-            this.br.getPage("http://" + this.getHost() + "/ajaxalbums/getimages/" + this.itemID + "/hit.json?all=true");
-        }
-        String jsonarray = br.getRegex("\"images\":\\[(\\{.*?\\})\\]").getMatch(0);
-        if (jsonarray == null) {
-            jsonarray = br.getRegex("\"items\":\\[(.*?)\\]").getMatch(0);
-        }
-        /* Maybe it's just a single image in a gallery */
-        if (jsonarray == null) {
-            jsonarray = br.getRegex("image\\s*?:\\s*?(\\{.*?\\})").getMatch(0);
-        }
-        if (jsonarray == null) {
-            throw new DecrypterException("Decrypter broken!");
-        }
-        // final String json_num_images = PluginJSonUtils.getJson(jsonarray, "num_images");
-        String[] items = jsonarray.split("\\},\\{");
-        /* We assume that the API is always working fine */
-        if (items == null || items.length == 0) {
-            logger.info("Empty album: " + parameter);
-            return;
-        }
-        final int padLength = getPadLength(items.length);
+        // if (this.br.containsHTML("class=\"js\\-post\\-truncated\"")) {
+        // /* RegExes below will work for the json after this ajax request too! */
+        // this.br.getPage("http://" + this.getHost() + "/ajaxalbums/getimages/" + this.itemID + "/hit.json?all=true");
+        // }
+        final String json = br.getRegex("image\\s*:\\s*(\\{.+\\})").getMatch(0);
+        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        this.author = (String) entries.get("author");
+        entries = (Map<String, Object>) entries.get("album_images");
+        this.crawlWebsiteJson(entries);
+    }
+
+    private void crawlWebsiteJson(Map<String, Object> entries) throws ParseException {
+        final boolean user_prefers_mp4 = ImgurComHoster.userPrefersMp4();
+        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("images");
         int itemNumber = 0;
-        for (final String item : items) {
+        final int padLength = getPadLength(ressourcelist.size());
+        for (final Object imageO : ressourcelist) {
             itemNumber++;
-            String title = PluginJSonUtils.getJson(item, "title");
+            entries = (Map<String, Object>) imageO;
+            String title = (String) entries.get("title");
             final String itemnumber_formatted = String.format(Locale.US, "%0" + padLength + "d", itemNumber);
-            final String filesize_str = PluginJSonUtils.getJson(item, "size");
-            final String imgUID = PluginJSonUtils.getJson(item, "hash");
-            videoSource = PluginJSonUtils.getJson(item, "video_source");
-            String ext = PluginJSonUtils.getJson(item, "ext");
-            if (imgUID == null || filesize_str == null || ext == null) {
-                logger.info("Seems like user/album has no images at all?!");
+            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            final String imgUID = (String) entries.get("hash");
+            final String dateStr = (String) entries.get("datetime");
+            final String video_source = (String) entries.get("video_source");
+            /* TODO: What is this */
+            // videoSource = PluginJSonUtils.getJson(item, "video_source");
+            String ext = (String) entries.get("ext");
+            if (StringUtils.isEmpty(imgUID) || StringUtils.isEmpty(ext)) {
+                /* Skip invalid items */
                 continue;
             }
-            final long filesize = Long.parseLong(filesize_str);
             /* Correct sometimes broken ext */
             if (ext.contains("?")) {
                 ext = ext.substring(0, ext.lastIndexOf("?"));
             }
-            if (!inValidate(title)) {
+            if (!StringUtils.isEmpty(title)) {
                 title = Encoding.htmlDecode(title);
                 title = HTMLEntities.unhtmlentities(title);
                 title = HTMLEntities.unhtmlAmpersand(title);
@@ -515,25 +584,57 @@ public class ImgurComGallery extends PluginForDecrypt {
                 title = HTMLEntities.unhtmlDoubleQuotes(title);
                 title = encodeUnicode(title);
             }
-            final String directlink = "http://i." + this.getHost() + "/" + imgUID + ext;
+            final String dateFormatted;
+            if (!StringUtils.isEmpty(dateStr)) {
+                dateFormatted = new Regex(dateStr, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            } else {
+                dateFormatted = dateStr;
+            }
+            final String directlink;
+            if (ext.matches("\\.?(gif|mp4)")) {
+                /* Respect user-setting */
+                if (user_prefers_mp4) {
+                    directlink = getDirectURL(imgUID, "mp4");
+                } else {
+                    directlink = getDirectURL(imgUID, "gif");
+                }
+            } else {
+                directlink = getDirectURL(imgUID, ext.replace(".", ""));
+            }
             final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
             dl.setDownloadSize(filesize);
             dl.setAvailable(true);
-            dl.setProperty("filetype", ext.replace(".", ""));
-            dl.setProperty("directlink", directlink);
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
             dl.setProperty("decryptedfilesize", filesize);
-            dl.setProperty("directtitle", title);
-            dl.setProperty("directusername", author);
-            dl.setProperty("orderid", itemnumber_formatted);
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
+            if (!StringUtils.isEmpty(author)) {
+                dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_USERNAME, author);
+            }
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_ORDERID, itemnumber_formatted);
+            if (!StringUtils.isEmpty(dateFormatted)) {
+                dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DATE, dateFormatted);
+            }
             final String filename = ImgurComHoster.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             /* No need to hide directlinks */
             dl.setContentUrl(ImgurComHoster.getURLContent(imgUID));
-            if (videoSource != null && grabVideoSource) {
-                decryptedLinks.add(this.createDownloadlink(videoSource));
+            if (!StringUtils.isEmpty(video_source) && grabVideoSource) {
+                final DownloadLink externalVideo = this.createDownloadlink(video_source);
+                decryptedLinks.add(externalVideo);
+                distribute(externalVideo);
             }
             decryptedLinks.add(dl);
+            distribute(dl);
         }
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(final String url) {
+        final DownloadLink dl = createDownloadlink(url, true);
+        if (this.fp != null) {
+            dl._setFilePackage(fp);
+        }
+        return dl;
     }
 
     private final int getPadLength(final long size) {
@@ -562,30 +663,12 @@ public class ImgurComGallery extends PluginForDecrypt {
         return br;
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    protected boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private ArrayList<DownloadLink> createOfflineLink(final String link) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final DownloadLink offline = createDownloadlink("directhttp://" + link);
-        offline.setAvailable(false);
+        final DownloadLink offline = this.createDownloadlink(link);
         if (itemID != null) {
             offline.setFinalFileName(itemID);
         }
-        offline.setProperty("OFFLINE", true);
         decryptedLinks.add(offline);
         return decryptedLinks;
     }
