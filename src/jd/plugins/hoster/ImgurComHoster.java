@@ -314,7 +314,7 @@ public class ImgurComHoster extends PluginForHost {
                 contentDispositionFilename = contentDispositionFilename.replaceAll(" ?- Imgur", "");
                 final String ext = Plugin.getFileNameExtensionFromString(contentDispositionFilename);
                 if (ext != null) {
-                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, ext);
+                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, ext.replace(".", ""));
                 }
                 finalFallbackFilename = contentDispositionFilename;
             } else {
