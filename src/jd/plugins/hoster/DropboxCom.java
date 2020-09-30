@@ -18,15 +18,19 @@ import javax.swing.JLabel;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.DropBoxConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -82,7 +86,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     public static boolean useAPI() {
-        return DebugMode.TRUE_IN_IDE_ELSE_FALSE && (PluginJsonConfig.get(DropBoxConfig.class).isUseAPI() || HARDCODED_ENFORCE_API);
+        // return DebugMode.TRUE_IN_IDE_ELSE_FALSE && (PluginJsonConfig.get(DropBoxConfig.class).isUseAPI() || HARDCODED_ENFORCE_API);
+        return false;
     }
 
     @Override
@@ -668,15 +673,37 @@ public class DropboxCom extends PluginForHost {
         synchronized (account) {
             setBrowserExclusive();
             br.setFollowRedirects(true);
-            this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
+            // this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
             // this.br.setCookie("dropbox.com", "puc", "");
-            this.br.setCookie("dropbox.com", "goregular", "");
             if (refresh == false) {
                 Cookies accCookies = accountMap.get(account.getUser());
                 if (accCookies != null) {
+                    logger.info("Trust cookies without check");
                     br.getCookies("https://www.dropbox.com").add(accCookies);
                     return;
                 }
+            }
+            /* 2020-09-30: Website login is not possible anymore for multiple reasons. We're using cookie-login as a workaround. */
+            final boolean allowWebsiteLogin = false;
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            if (userCookies != null) {
+                br.setCookies(userCookies);
+                /* 2020-09-30: This will redirect to login page if cookies are invalid! */
+                br.getPage("https://www." + this.getHost() + "/account");
+                if (br.getURL().contains(br.getHost() + "/account")) {
+                    // account.saveCookies(br.getCookies(br.getHost()), "");
+                    logger.info("User cookie login successful");
+                    accountMap.put(account.getUser(), br.getCookies("https://www.dropbox.com"));
+                    return;
+                } else {
+                    logger.info("User cookie login failed");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            logger.info("Full login required");
+            if (!allowWebsiteLogin) {
+                showCookieLoginInformation();
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             try {
                 br.getPage("https://www.dropbox.com/login");
@@ -686,11 +713,7 @@ public class DropboxCom extends PluginForHost {
                     t = this.br.getCookie("dropbox.com", "t");
                 }
                 if (t == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "text/plain, */*; q=0.01");
@@ -701,12 +724,8 @@ public class DropboxCom extends PluginForHost {
                 postdata += "&login_sd=";
                 postdata += "";
                 br.postPage("/ajax_login", postdata);
-                if (br.getCookie("https://www.dropbox.com", "jar") == null || !"OK".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedInViaCookies() || !"OK".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 ok = true;
             } finally {
@@ -717,6 +736,47 @@ public class DropboxCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private boolean isLoggedInViaCookies() {
+        return br.getCookie("https://www.dropbox.com", "jar", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    private Thread showCookieLoginInformation() {
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Login";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = host + " - Login";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     /**
