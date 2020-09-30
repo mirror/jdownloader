@@ -1037,7 +1037,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 try {
                     String message = "";
                     final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language")) && !true) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = account.getHoster() + " - Login Captcha";
                         message += "Hallo liebe(r) " + account.getHoster() + " NutzerIn\r\n";
                         message += "Um den Account dieses Anbieters in JDownloader verwenden zu können, musst du derzeit ein Login-Captcha eingeben.\r\n";
