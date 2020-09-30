@@ -240,11 +240,14 @@ public class InstaGramCom extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(flink);
-            if (!con.isOK() || con.getContentType().contains("html") || con.getContentType().contains("text")) {
-                return null;
+            if (!looksLikeDownloadableContent(con)) {
+                throw new IOException();
+            } else {
+                return flink;
             }
         } catch (final Exception e) {
             logger.log(e);
+            return null;
         } finally {
             if (con != null) {
                 try {
@@ -253,7 +256,6 @@ public class InstaGramCom extends PluginForHost {
                 }
             }
         }
-        return flink;
     }
 
     public static void setReleaseDate(final DownloadLink dl, final long date) {
@@ -293,7 +295,7 @@ public class InstaGramCom extends PluginForHost {
             maxchunks = MAXCHUNKS_videos;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, maxchunks);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("text")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -414,6 +416,11 @@ public class InstaGramCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         /* We're already logged in - no need to login again here! */
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.handleDownload(link);
     }
 
