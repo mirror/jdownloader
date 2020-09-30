@@ -125,10 +125,6 @@ public class ImgurComHoster extends PluginForHost {
         }
     }
 
-    /**
-     * TODO: 1. Maybe add a setting to download albums as .zip (if possible via site). 2. Maybe add a setting to add numbers in front of the
-     * filenames (same way imgur does it when you download .zip files of albums).
-     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null, false);
@@ -137,12 +133,20 @@ public class ImgurComHoster extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, null);
+        if (this.dllink == null) {
+            dllink = getURLDownload(imgUID);
+        }
         /*
          * Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API and only check
          * directurl if needed!
          */
         TYPE type = null;
-        if (dllink == null || link.getLongProperty("decryptedfilesize", -1) == -1 || link.getStringProperty("decryptedfinalfilename", null) == null || getFiletype(link) == null) {
+        final boolean allowExtendedCheck = false;
+        if (allowExtendedCheck && (dllink == null || link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null)) {
+            /*
+             * TODO: Check this old handling: Also check whether or not we want to handle the "prefer mp4" setting here or only in crawler
+             * [handling ithere would make more sense]
+             */
             prepBRAPI(this.br);
             boolean apiMode = true;
             if (account == null && false && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API, true)) {
@@ -189,10 +193,7 @@ public class ImgurComHoster extends PluginForHost {
                 long size = -1;
                 if (apiResponse[1] != null) {
                     size = Long.valueOf(apiResponse[1]);
-                    link.setProperty("decryptedfilesize", size);
                     link.setDownloadSize(size);
-                } else {
-                    link.removeProperty("decryptedfilesize");
                 }
                 link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, apiResponse[0]);
                 link.setProperty("decryptedfinalfilename", apiResponse[2]);
@@ -239,10 +240,7 @@ public class ImgurComHoster extends PluginForHost {
                     long size = -1;
                     if (apiResponse[1] != null) {
                         size = Long.valueOf(apiResponse[1]);
-                        link.setProperty("decryptedfilesize", size);
                         link.setDownloadSize(size);
-                    } else {
-                        link.removeProperty("decryptedfilesize");
                     }
                 } catch (final PluginException e) {
                     logger.warning("Website handling failed --> Handling plain download");
@@ -298,7 +296,6 @@ public class ImgurComHoster extends PluginForHost {
             /* All OK */
             final long size = con.getCompleteContentLength();
             if (size > 0) {
-                link.setProperty("decryptedfilesize", size);
                 link.setDownloadSize(size);
             }
             /*

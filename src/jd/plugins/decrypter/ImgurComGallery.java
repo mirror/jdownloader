@@ -162,45 +162,21 @@ public class ImgurComGallery extends PluginForDecrypt {
                 this.siteCrawlAlbum();
             } else if (parameter.matches(type_gallery)) {
                 this.siteCrawlGallery();
-            } else if (parameter.matches(type_gallery)) {
+            } else if (!true) {
                 /* TODO: 2020-09-29: Cleanup old code! */
                 /* Gallery (could also be single image) --> API required */
+                if (loggedIN && !cfg.getBooleanProperty(SETTING_USE_API, true)) {
+                    logger.info("User prefers not to use the API --> Cannot crawl this type of URL without API");
+                    throw new DecrypterException(API_FAILED);
+                }
                 try {
-                    if (loggedIN && !cfg.getBooleanProperty(SETTING_USE_API, true)) {
-                        logger.info("User prefers not to use the API --> Cannot crawl this type of URL without API");
-                        throw new DecrypterException(API_FAILED);
+                    if (!loggedIN) {
+                        /* Anonymous API usage */
+                        ImgurComHoster.prepBRAPI(this.br);
+                        br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
                     }
-                    try {
-                        if (!loggedIN) {
-                            /* Anonymous API usage */
-                            ImgurComHoster.prepBRAPI(this.br);
-                            br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
-                        }
-                        if (parameter.matches(type_gallery)) {
-                            br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID);
-                            if (br.getHttpConnection().getResponseCode() == 404) {
-                                /*
-                                 * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this
-                                 * before!
-                                 */
-                                final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
-                                decryptedLinks.add(dl);
-                                return decryptedLinks;
-                            }
-                            boolean is_album = false;
-                            final String is_albumo = PluginJSonUtils.getJson(br.toString(), "is_album");
-                            if (is_albumo != null) {
-                                is_album = Boolean.parseBoolean(is_albumo);
-                            }
-                            if (parameter.matches(type_gallery) && !is_album) {
-                                /* We have a single picture and not an album. */
-                                final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
-                                decryptedLinks.add(dl);
-                                return decryptedLinks;
-                            }
-                        }
-                        /* We know that we definitly have an album --> Crawl it */
-                        br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/album/" + itemID);
+                    if (parameter.matches(type_gallery)) {
+                        br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID);
                         if (br.getHttpConnection().getResponseCode() == 404) {
                             /*
                              * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
@@ -209,55 +185,45 @@ public class ImgurComGallery extends PluginForDecrypt {
                             decryptedLinks.add(dl);
                             return decryptedLinks;
                         }
-                    } catch (final BrowserException e) {
-                        if (br.getHttpConnection().getResponseCode() == 429) {
-                            logger.info("API limit reached, using site");
-                            if (loggedIN) {
-                                account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "API Rate Limit reached");
-                            }
-                            throw new DecrypterException(API_FAILED);
+                        boolean is_album = false;
+                        final String is_albumo = PluginJSonUtils.getJson(br.toString(), "is_album");
+                        if (is_albumo != null) {
+                            is_album = Boolean.parseBoolean(is_albumo);
                         }
-                        logger.info("Server problems: " + parameter);
-                        throw e;
+                        if (parameter.matches(type_gallery) && !is_album) {
+                            /* We have a single picture and not an album. */
+                            final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
+                            decryptedLinks.add(dl);
+                            return decryptedLinks;
+                        }
                     }
-                    if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-                        return createOfflineLink(parameter);
+                    /* We know that we definitly have an album --> Crawl it */
+                    br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/album/" + itemID);
+                    if (br.getHttpConnection().getResponseCode() == 404) {
+                        /*
+                         * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
+                         */
+                        final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
                     }
-                    final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    galleryTitle = (String) JavaScriptEngineFactory.walkJson(data, "data/title");
-                    api_decrypt(data);
-                } catch (final DecrypterException e) {
-                    /* Make sure we only continue if the API failed or was disabled by the user. */
-                    if (!e.getMessage().equals(API_FAILED)) {
-                        throw e;
+                } catch (final BrowserException e) {
+                    if (br.getHttpConnection().getResponseCode() == 429) {
+                        logger.info("API limit reached");
+                        if (loggedIN) {
+                            account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "API Rate Limit reached");
+                        }
+                        throw new DecrypterException(API_FAILED);
                     }
-                    prepBRWebsite(this.br);
-                    br.getPage(parameter);
-                    if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"textbox empty\"|<h1>Zoinks! You've taken a wrong turn\\.</h1>|it's probably been deleted or may not have existed at all\\.</p>")) {
-                        return createOfflineLink(parameter);
-                    }
-                    author = br.getRegex("property=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
-                    if (author != null && StringUtils.equalsIgnoreCase(author, "Imgur")) {
-                        author = null;
-                    }
-                    galleryTitle = br.getRegex("<title>([^<>\"]*?) \\-(?: Album on)? Imgur</title>").getMatch(0);
-                    if (galleryTitle == null) {
-                        galleryTitle = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-                    }
-                    /* 2015-12-07: The few lines of code below seem not to work anymore/not needed anymore. */
-                    // final String album_info = br.getRegex("\"album_images\":\\{(.+)").getMatch(0);
-                    // if (album_info != null) {
-                    // final String count_pics_str = new Regex(album_info, "\"count\":(\\d+)").getMatch(0);
-                    // /* Only load that if needed - it e.g. won't work for galleries with only 1 picture. */
-                    // if (count_pics_str != null && Long.parseLong(count_pics_str) >= 10) {
-                    // logger.info("siteDecrypt: loading json to get all pictures");
-                    // br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    // br.getPage("http://imgur.com/gallery/" + LID + "/album_images/hit.json?all=true");
-                    // br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                    // }
-                    // }
+                    logger.info("Server problems: " + parameter);
+                    throw e;
                 }
+                if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+                    return createOfflineLink(parameter);
+                }
+                final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                galleryTitle = (String) JavaScriptEngineFactory.walkJson(data, "data/title");
+                api_decrypt(data);
                 if (galleryTitle != null) {
                     galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
                 }
@@ -372,15 +338,6 @@ public class ImgurComGallery extends PluginForDecrypt {
                 /* E.g. 'image/gif' --> 'gif' */
                 filetype = filetype.split("/")[1];
             }
-            if (!StringUtils.isEmpty(title)) {
-                title = Encoding.htmlDecode(title);
-                title = HTMLEntities.unhtmlentities(title);
-                title = HTMLEntities.unhtmlAmpersand(title);
-                title = HTMLEntities.unhtmlAngleBrackets(title);
-                title = HTMLEntities.unhtmlSingleQuotes(title);
-                title = HTMLEntities.unhtmlDoubleQuotes(title);
-                title = encodeUnicode(title);
-            }
             final long filesize;
             if (user_prefers_mp4 && size_mp4 > 0) {
                 filesize = size_mp4;
@@ -390,14 +347,19 @@ public class ImgurComGallery extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink(this.getHostpluginurl(imgUID));
             dl.setAvailable(true);
-            dl.setProperty("filetype", filetype);
-            dl.setProperty("directlink", directlink);
-            dl.setProperty("decryptedfilesize", filesize);
-            if (title != null) {
-                dl.setProperty("directtitle", title);
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
+            if (!StringUtils.isEmpty(title)) {
+                title = Encoding.htmlDecode(title);
+                title = HTMLEntities.unhtmlentities(title);
+                title = HTMLEntities.unhtmlAmpersand(title);
+                title = HTMLEntities.unhtmlAngleBrackets(title);
+                title = HTMLEntities.unhtmlSingleQuotes(title);
+                title = HTMLEntities.unhtmlDoubleQuotes(title);
+                title = encodeUnicode(title);
+                dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
             }
-            dl.setProperty("directusername", author);
-            dl.setProperty("orderid", itemnumber_formatted);
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_USERNAME, author);
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_ORDERID, itemnumber_formatted);
             final String filename = ImgurComHoster.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
@@ -636,7 +598,6 @@ public class ImgurComGallery extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             dl.setAvailable(true);
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directlink);
-            dl.setProperty("decryptedfilesize", filesize);
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
             if (!StringUtils.isEmpty(author)) {
                 dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_USERNAME, author);

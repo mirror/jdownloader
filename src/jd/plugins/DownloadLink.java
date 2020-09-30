@@ -84,6 +84,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
+
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -395,10 +396,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Die Groesse der Datei
+     * Filesize
      *
-     * @return Die Groesse der Datei
-     * @deprecated use {@link #getView()} sintead
+     * @return Filesize
+     * @deprecated use {@link #getView()} instead
      */
     public long getDownloadSize() {
         final long verifiedFileSize = getVerifiedFileSize();
@@ -409,9 +410,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurueck
+     * Returns current downloadspeed in bytes/second
      *
-     * @return Downloadgeschwindigkeit in bytes/sekunde
+     * @return Downloadspeed in bytes/second
      * @deprecated use {@link #getView()}
      */
     public long getDownloadSpeed() {
