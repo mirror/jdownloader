@@ -91,7 +91,7 @@ public class PorndoeCom extends PluginForHost {
             int quality_max = 0;
             int quality_temp = 0;
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "video/player/sources");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/video/player/sources");
             final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
             Map<String, Object> qualityInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             while (iterator.hasNext()) {

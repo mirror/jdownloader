@@ -27,6 +27,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -95,11 +97,15 @@ public class Tube8Com extends PluginForHost {
         link.setUrlDownload(url_new);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         correctDownloadLink(link);
         dllink = null;
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.br.setAllowedResponseCodes(new int[] { 500 });
         if (setEx) {
             this.setBrowserExclusive();
@@ -109,6 +115,9 @@ public class Tube8Com extends PluginForHost {
         if (fid == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!link.isNameSet()) {
+            link.setName(fid);
         }
         /* 2020-03-18: Do this to avoid redirectloop */
         br.getPage(String.format("https://www.tube8.com/threesome/redirect/%s/", fid));
@@ -121,9 +130,14 @@ public class Tube8Com extends PluginForHost {
         }
         if (br.containsHTML("class=\"video-removed-div\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (this.br.getHttpConnection().getResponseCode() == 500) {
+        } else if (this.br.getHttpConnection().getResponseCode() == 500) {
             return AvailableStatus.UNCHECKABLE;
+        } else if (br.containsHTML("class=\"geo-blocked-container\"")) {
+            if (isDownload) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            } else {
+                return AvailableStatus.TRUE;
+            }
         }
         String filename = br.getRegex("<span class=\"item\">\\s*(.*?)\\s*</span>").getMatch(0);
         if (filename == null) {
@@ -279,38 +293,46 @@ public class Tube8Com extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
         if (this.br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (downloadLink.getIntegerProperty("401", -1) == 401) {
-                downloadLink.removeProperty("401");
+            if (link.getIntegerProperty("401", -1) == 401) {
+                link.removeProperty("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, br);
         setEx = false;
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        requestFileInformation(link, true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (downloadLink.getIntegerProperty("401", -1) == 401) {
-                downloadLink.removeProperty("401");
+            if (link.getIntegerProperty("401", -1) == 401) {
+                link.removeProperty("401");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -320,12 +342,7 @@ public class Tube8Com extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            this.login(account, this.br);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        this.login(account, this.br);
         /* only support for free accounts at the moment */
         ai.setUnlimitedTraffic();
         ai.setStatus("Account ok");

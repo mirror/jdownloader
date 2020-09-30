@@ -84,7 +84,7 @@ public class NonktubeCom extends PluginForHost {
         String filename;
         if (true) {
             /* Faster way */
-            br.getPage("http://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
+            br.getPage("https://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
             if (br.containsHTML("Invalid video|<title>NONK Tube<") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
