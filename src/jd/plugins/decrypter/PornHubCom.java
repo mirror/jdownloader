@@ -214,14 +214,9 @@ public class PornHubCom extends PluginForDecrypt {
             int numberOfDupeItems = 0;
             page++;
             logger.info(String.format("Crawling page %s| %d / %d", br.getURL(), page, maxPage));
-            // account/fan-/paid-only
-            final String paidVideosSection = findVideoSection(br, "paidVideosSection");// /videos/paid
-            final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
-            final String moreData = findVideoSection(br, "moreData");// eg the videos listed in /videos/paid
-            // public
-            final String mostRecentVideosSection = findVideoSection(br, "mostRecentVideosSection");// /public
             final Set<String> viewKeys = new HashSet<String>();
             if (account != null) {
+                final String paidVideosSection = findVideoSection(br, "paidVideosSection");// /videos/paid
                 if (paidVideosSection != null) {
                     // /videos/premium contains paid/available premium videos while
                     // /videos/paid contains all un-paid videos
@@ -229,39 +224,42 @@ public class PornHubCom extends PluginForDecrypt {
                     brc.getPage(br.getURL() + "/premium");
                     decryptAllVideosOfAPornstar(brc, account, dupes);
                 }
+                final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
                 if (false && fanVideosSection != null) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(br.getURL() + "/fanonly");
                     decryptAllVideosOfAPornstar(brc.cloneBrowser(), account, dupes);
                 }
             }
-            String[] vKeys = new Regex(mostRecentVideosSection, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
-            if ((vKeys == null || vKeys.length == 0) && moreData != null) {
-                vKeys = new Regex(moreData, "_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
-                if (vKeys == null || vKeys.length == 0) {
-                    vKeys = br.getRegex("_vkey\\s*=\\s*\"(.*?)\"").getColumn(0);
-                    if (vKeys == null || vKeys.length == 0) {
-                        logger.info("no vKeys found!");
-                    }
+            for (final String section : new String[] { "moreData", "mostRecentVideosSection", "pornstarsVideoSection" }) {
+                final String sectionContent = findVideoSection(br, section);// /videos/fanonly
+                final String[] vKeys = new Regex(sectionContent, "_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
+                if (vKeys != null) {
+                    viewKeys.addAll(Arrays.asList(vKeys));
                 }
             }
-            if (vKeys != null && vKeys.length > 0) {
-                viewKeys.addAll(Arrays.asList(vKeys));
-                if (viewKeys.size() > 0) {
-                    foundItems += viewKeys.size();
-                    for (final String viewkey : viewKeys) {
-                        if (isAbort()) {
-                            return true;
-                        } else if (dupes.add(viewkey)) {
-                            final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
-                            dl.setContainerUrl(containerURL);
-                            decryptedLinks.add(dl);
-                            distribute(dl);
-                            numberofActuallyAddedItems++;
-                            addedItems++;
-                        } else {
-                            numberOfDupeItems++;
-                        }
+            if (viewKeys.size() == 0) {
+                final String[] vKeysAll = br.getRegex("_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
+                if (vKeysAll != null) {
+                    viewKeys.addAll(Arrays.asList(vKeysAll));
+                }
+            }
+            if (viewKeys.size() == 0) {
+                logger.info("no vKeys found!");
+            } else {
+                foundItems += viewKeys.size();
+                for (final String viewkey : viewKeys) {
+                    if (isAbort()) {
+                        return true;
+                    } else if (dupes.add(viewkey)) {
+                        final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
+                        dl.setContainerUrl(containerURL);
+                        decryptedLinks.add(dl);
+                        // distribute(dl);
+                        numberofActuallyAddedItems++;
+                        addedItems++;
+                    } else {
+                        numberOfDupeItems++;
                     }
                 }
             }
