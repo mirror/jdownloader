@@ -9,10 +9,13 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -979,16 +982,19 @@ public class TurbobitCore extends antiDDoSForHost {
                 getPage("https://" + curr_domain + "/login");
                 Form loginform = findAndPrepareLoginForm(br, account);
                 submitForm(loginform);
+                boolean requiredLoginCaptcha = false;
                 if (findLoginForm(br, account) != null) {
                     /* Check for stupid login captcha */
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), getMainpage(), true);
                     loginform = findAndPrepareLoginForm(br, account);
                     if (containsRecaptchaV2Class(br)) {
+                        requiredLoginCaptcha = true;
                         this.setDownloadLink(dummyLink);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         loginform.put("g-recaptcha-response", recaptchaV2Response);
                     } else if (loginform.containsHTML("class=\"reloadCaptcha\"")) {
                         /* Old captcha - e.g. wayupload.com */
+                        requiredLoginCaptcha = true;
                         final String captchaurl = br.getRegex("(https?://[^/]+/captcha/securimg[^\"<>]+)").getMatch(0);
                         if (captchaurl == null) {
                             logger.warning("Failed to find captchaURL");
@@ -1004,10 +1010,14 @@ public class TurbobitCore extends antiDDoSForHost {
                 universalLoginErrorhandling(br);
                 if (!isLoggedIN()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite und deaktiviere, den Login Captcha Schutz deines Accounts und versuche es erneut: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite, deaktiviere den Login Captcha Schutz deines Accounts und versuche es erneut: " + account.getHoster() + "/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\n3. Access the following site and disable the login captcha protection of your account and try again: turbobit.net/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.\r\n3. Access the following site and disable the login captcha protection of your account and try again: " + account.getHoster() + "/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                }
+                if (requiredLoginCaptcha) {
+                    /* Display hint to user on how to disable login captchas. */
+                    showLoginCaptchaInformation(account);
                 }
                 account.saveCookies(br.getCookies(curr_domain), "");
                 account.setProperty("UA", userAgent.get());
@@ -1019,6 +1029,45 @@ public class TurbobitCore extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    private Thread showLoginCaptchaInformation(final Account account) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language")) && !true) {
+                        title = account.getHoster() + " - Login Captcha";
+                        message += "Hallo liebe(r) " + account.getHoster() + " NutzerIn\r\n";
+                        message += "Um den Account dieses Anbieters in JDownloader verwenden zu können, musst du derzeit ein Login-Captcha eingeben.\r\n";
+                        message += "Falls dich das stört, kannst du folgendes tun:\r\n";
+                        message += "1. Logge dich im Browser ein.\r\n";
+                        message += "2. Navigiere zu: " + account.getHoster() + "/user/settings\r\n";
+                        message += "3. Entferne das Häckchen bei 'Captcha einsetzen, um meinen Account zu schützen' und klicke unten auf speichern.\r\n";
+                        message += "Dein Account sollte sich ab sofort ohne Login-Captchas in JD hinzufügen/prüfen lassen.\r\n";
+                    } else {
+                        title = account.getHoster() + " - Login-Captcha";
+                        message += "Hello dear " + account.getHoster() + " user\r\n";
+                        message += "In order to add/check your account of this service, you have to solve login-captchas at this moment.\r\n";
+                        message += "If that is annoying to you, you can deactivate them as follows:\r\n";
+                        message += "1. Login via browser.\r\n";
+                        message += "2. Open this page: " + account.getHoster() + "/user/settings\r\n";
+                        message += "3. Uncheck the checkbox 'Use a captcha to protect my account'.\r\n";
+                        message += "From now on, you should be able to add/check your account in JD without the need of a login-captcha.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(2 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     protected boolean isLoggedIN() {
