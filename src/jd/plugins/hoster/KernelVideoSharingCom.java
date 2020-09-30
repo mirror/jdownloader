@@ -86,7 +86,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
                 "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/|https?://vr\\.pornhat\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?porndr\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/", "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?xfig\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.xfig\\.net/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?momvids\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)",
                 "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?everydayporn\\.co/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cutscenes\\.net/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?boundhub\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?yourporngod\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngo\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+", "https?://(?:www\\.)?dato\\.porn/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)",
                 "https?://(?:www\\.)?rule34video\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camwhoreshd\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?videowebcam\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smutr\\.com/v/\\d+/", "https?://(?:www\\.)?private-shows\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?ok.xxx/video/\\d+/", "https?://(?:www\\.)?xtits\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)",
-                "https?://(?:www\\.)?zbporn\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theyarehuge\\.com/(?:v/\\d+-[a-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?crockotube\\.com/watch/[A-Za-z0-9\\-]+|embed/\\d+", "https?://(?:www\\.)?camhub\\.world/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
+                "https?://(?:www\\.)?zbporn\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theyarehuge\\.com/(?:v/\\d+-[a-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?crockotube\\.com/(?:watch/[A-Za-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?camhub\\.world/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -161,9 +161,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
 
     /*
      * List of hosts for which filename from inside html should be used as finding it via html would require additional RegExes or is
-     * impossible.
+     * impossible. </br> Tags: Force, enforce
      */
-    private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "xbabe.com" });
+    private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "xbabe.com", "wankoz.com" });
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
