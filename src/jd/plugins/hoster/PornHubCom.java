@@ -745,7 +745,8 @@ public class PornHubCom extends PluginForHost {
                 final Cookies freeCookies = account.loadCookies(COOKIE_ID_FREE);
                 final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
                 final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
-                if (!force && freeCookies != null && premiumCookies != null && (freeCookies.get("il") != null || premiumCookies.get("il") != null) && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                final boolean cookiesOk = freeCookies != null && premiumCookies != null && (freeCookies.get("il", Cookies.NOTDELETEDPATTERN) != null || premiumCookies.get("il", Cookies.NOTDELETEDPATTERN) != null);
+                if (!force && cookiesOk && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_FREE) <= trust_cookie_age) {
                     br.setCookies(getProtocolFree() + PORNHUB_FREE, freeCookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, premiumCookies);
                     plugin.getLogger().info("Trust login cookies:" + account.getType());
