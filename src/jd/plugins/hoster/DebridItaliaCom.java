@@ -15,13 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,8 +31,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -175,8 +177,12 @@ public class DebridItaliaCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
             if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the page or click the button below\\.</p>")) {
                 mhm.handleErrorGeneric(account, link, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
@@ -188,14 +194,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
         /* Directlinks can be used for up to 2 days */
         link.setProperty("debriditaliadirectlink", dllink);
-        /* They sometimes return html-encoded filenames - let's fix this! */
-        /**
-         * TODO: 2020-09-29: Why do we trust their filenames? Seems like it works out most of all times but sometimes, Content-Disposition
-         * header is not given ...
-         */
-        String server_filename = getFileNameFromHeader(this.dl.getConnection());
-        server_filename = Encoding.htmlDecode(server_filename);
-        link.setFinalFileName(server_filename);
+        if (link.getFinalFileName() == null) {
+            /* They sometimes return html-encoded filenames - let's fix this! */
+            final String server_filename = getFileNameFromHeader(this.dl.getConnection());
+            link.setFinalFileName(server_filename);
+        }
         try {
             // start the dl
             if (!this.dl.startDownload()) {
@@ -216,9 +219,19 @@ public class DebridItaliaCom extends antiDDoSForHost {
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
                 link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
+            } else {
+                throw e;
             }
-            throw e;
+        }
+    }
+
+    public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
+        final String ret = Plugin.getFileNameFromHeader(urlConnection);
+        if (StringUtils.equalsIgnoreCase("Download", ret)) {
+            return null;
+        } else {
+            return Encoding.htmlDecode(ret);
         }
     }
 
@@ -230,11 +243,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
             br.setFollowRedirects(true);
             // head connection not possible. -raztoki-20160112
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
-            if (con.isContentDisposition() && con.isOK()) {
+            if (looksLikeDownloadableContent(con)) {
                 if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(getFileNameFromHeader(con));
+                    final String server_filename = getFileNameFromHeader(con);
+                    link.setFinalFileName(server_filename);
                 }
-                link.setVerifiedFileSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setAvailable(true);
                 dllink = br.getURL();
                 return AvailableStatus.TRUE;
@@ -280,11 +296,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 final URLConnectionAdapter con = br2.openGetConnection(dllink);
                 try {
-                    if (StringUtils.containsIgnoreCase(con.getContentType(), "text") || !con.isOK() || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(property, Property.NULL);
-                        return null;
+                    if (!looksLikeDownloadableContent(con)) {
+                        throw new IOException();
                     } else {
                         return dllink;
                     }
@@ -294,9 +310,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
             } catch (Exception e) {
                 logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
+                return null;
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
