@@ -87,6 +87,7 @@ public class DropboxCom extends PluginForHost {
 
     public static boolean useAPI() {
         // return DebugMode.TRUE_IN_IDE_ELSE_FALSE && (PluginJsonConfig.get(DropBoxConfig.class).isUseAPI() || HARDCODED_ENFORCE_API);
+        /* 2020-09-30: Disabled so we can debug website related login stuff more easily */
         return false;
     }
 
@@ -673,8 +674,6 @@ public class DropboxCom extends PluginForHost {
         synchronized (account) {
             setBrowserExclusive();
             br.setFollowRedirects(true);
-            // this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
-            // this.br.setCookie("dropbox.com", "puc", "");
             if (refresh == false) {
                 Cookies accCookies = accountMap.get(account.getUser());
                 if (accCookies != null) {
