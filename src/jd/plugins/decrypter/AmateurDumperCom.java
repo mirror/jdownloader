@@ -116,7 +116,7 @@ public class AmateurDumperCom extends PornEmbedParser {
         externID = br.getRegex("<iframe[^<>]*?src=\"(https?://.*?)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(externID);
-            dl.setProperty("filename", filename);
+            dl.setForcedFileName(filename + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

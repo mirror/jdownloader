@@ -817,25 +817,24 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         final String url_source = getURL_source(br, dl);
         final String current_host = dl.getHost();
         /* Find 'real' filename and the one inside our URL. */
-        if (url_source.matches(type_only_numbers)) {
-            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
-        } else if (url_source.matches(type_embedded)) {
-            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
-                /* Filename from decrypter */
-                filename = dl.getStringProperty("filename", null);
-            }
-            if (StringUtils.isEmpty(filename)) {
-                /* Fallback to fuid */
-                filename = regexFUIDAuto(br, dl);
-            }
-        } else {
-            filename = regexFilenameSiteSpecific(br);
-            if (StringUtils.isEmpty(filename)) {
+        /* Prefer website-specific filename */
+        filename = regexFilenameSiteSpecific(br);
+        if (filename == null) {
+            if (url_source.matches(type_only_numbers)) {
+                filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
+            } else if (url_source.matches(type_embedded)) {
+                /* Embed content usually won't have any useful filename/title available */
+                filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
+                if (StringUtils.isEmpty(filename)) {
+                    /* Fallback to fuid as filename */
+                    filename = regexFUIDAuto(br, dl);
+                }
+            } else {
+                // filename = regexFilenameSiteSpecific(br);
                 filename = regexFilenameGeneral(br);
-            }
-            if (StringUtils.isEmpty(filename)) {
-                filename = regexStandardTitleWithHost(br, br.getHost());
+                if (StringUtils.isEmpty(filename)) {
+                    filename = regexStandardTitleWithHost(br, br.getHost());
+                }
             }
         }
         /* Now decide which filename we want to use */
@@ -965,6 +964,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else if (br.getHost().equalsIgnoreCase("porngo.com")) {
             /* 2020-06-27: Special */
             filename = br.getRegex("class=\"headline__title\">([^<>\"]+)<").getMatch(0);
+        } else if (br.getHost().equalsIgnoreCase("ok.xxx")) {
+            /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         } else {
             filename = null;
         }
