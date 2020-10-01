@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "https?://(?:www\\.)?freeviewmovies\\.com/(?:porn|video)/(\\d+)/([a-z0-9\\-]+)" })
 public class FreeViewMoviesCom extends PluginForHost {
     private String dllink = null;
 
@@ -70,7 +70,7 @@ public class FreeViewMoviesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -91,21 +91,7 @@ public class FreeViewMoviesCom extends PluginForHost {
         if (!br.getURL().contains(fid) || br.containsHTML(">404 Error Page")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- FreeViewMovies\\.com</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
-            }
-        }
-        if (filename == null) {
-            /* Fallback1 */
-            filename = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
-        }
-        if (filename == null) {
-            /* Fallback2 */
-            filename = fid;
-        }
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1).replace("-", " ");
         dllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -117,8 +103,8 @@ public class FreeViewMoviesCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
                 } else {
