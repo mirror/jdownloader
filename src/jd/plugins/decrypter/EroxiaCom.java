@@ -86,7 +86,7 @@ public class EroxiaCom extends PluginForDecrypt {
         }
         // Assume that we can hand it over to the host plugin
         if (tempID == null) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("eroxia.com/", "eroxiadecrypted.com/"));
+            final DownloadLink dl = createDownloadlink(parameter);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

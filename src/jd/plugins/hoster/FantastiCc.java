@@ -55,13 +55,13 @@ public class FantastiCc extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         int counter = 0;
-        String redirecturl = downloadLink.getDownloadURL();
-        downloadLink.setName(new Regex(redirecturl, "(?:videos/upload|embed)/(.+)").getMatch(0));
+        String redirecturl = link.getDownloadURL();
+        link.setName(new Regex(redirecturl, "(?:videos/upload|embed)/(.+)").getMatch(0));
         do {
             this.br.getPage(redirecturl);
             redirecturl = this.br.getRedirectLocation();
@@ -74,7 +74,7 @@ public class FantastiCc extends PluginForHost {
         if (filename == null) {
             filename = PluginJSonUtils.getJson(br, "title");
             if (filename == null) {
-                filename = new Regex(downloadLink.getDownloadURL(), "fantasti\\.cc/user/[^/]+/videos/upload/([^/]+)/.+").getMatch(0);
+                filename = new Regex(link.getDownloadURL(), "fantasti\\.cc/user/[^/]+/videos/upload/([^/]+)/.+").getMatch(0);
             }
         }
         dllink = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
@@ -94,6 +94,10 @@ public class FantastiCc extends PluginForHost {
             dllink = br.getRegex("src:\\s+(?:\"|\\')(http[^\"]+/(mp4|flv)/[^\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
+            /* 2020-10-01 */
+            dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"").getMatch(0);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -104,41 +108,45 @@ public class FantastiCc extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                downloadLink.setProperty("directlink", dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
+                link.setProperty("directlink", dllink);
             } else {
                 server_error = true;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_error) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
