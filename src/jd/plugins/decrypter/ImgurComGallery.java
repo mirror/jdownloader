@@ -24,7 +24,10 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -32,12 +35,11 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -47,7 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
 
@@ -115,10 +116,6 @@ public class ImgurComGallery extends PluginForDecrypt {
     private final String            type_gallery                   = "https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
     public final static String      type_single_direct             = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
     public final static String      type_single_direct_without_ext = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})$";
-    /* User settings */
-    private static final String     SETTING_USE_API                = "SETTING_USE_API";
-    private static final String     SETTING_GRAB_SOURCE_URL_VIDEO  = "SETTING_GRAB_SOURCE_URL_VIDEO";
-    private static final String     API_FAILED                     = "API_FAILED";
     /* Constants */
     private static Object           CTRLLOCK                       = new Object();
     private ArrayList<DownloadLink> decryptedLinks                 = new ArrayList<DownloadLink>();
@@ -130,7 +127,7 @@ public class ImgurComGallery extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         parameter = param.toString().replace("://m.", "://").replace("http://", "https://").replaceFirst("/all$", "");
         if (this.parameter.matches(type_single_direct)) {
             itemID = new Regex(parameter, type_single_direct).getMatch(0);
@@ -138,21 +135,14 @@ public class ImgurComGallery extends PluginForDecrypt {
             /* For all other types, the ID we are looking for is at the end of our URL. */
             itemID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         }
-        grabVideoSource = cfg.getBooleanProperty(SETTING_GRAB_SOURCE_URL_VIDEO, ImgurComHoster.defaultSOURCEVIDEO);
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
-        boolean loggedIN = false;
-        if (account != null) {
-            try {
-                ((ImgurComHoster) hostPlg).login(this.br, account, false);
-                loggedIN = true;
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-        }
+        this.prepBRWebsite(this.br);
+        grabVideoSource = cfg.getBooleanProperty(ImgurComHoster.SETTING_GRAB_SOURCE_URL_VIDEO, ImgurComHoster.defaultSOURCEVIDEO);
+        /* TODO: Test API functionality and add missing API calls (e.g. "reddit style" stuff) */
+        // final boolean useApiForAlbumCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        // final boolean useApiForGalleryCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        final boolean useApiForAlbumCrawling = false;
+        final boolean useApiForGalleryCrawling = false;
         synchronized (CTRLLOCK) {
-            String galleryTitle = null;
-            String fpName = null;
             if (parameter.matches(type_subreddit_single_post)) {
                 /* Single "reddit-style" posts can contain multiple images */
                 siteCrawlSingleRedditStylePost();
@@ -161,81 +151,39 @@ public class ImgurComGallery extends PluginForDecrypt {
             } else if (parameter.matches(type_album)) {
                 this.siteCrawlAlbum();
             } else if (parameter.matches(type_gallery)) {
-                this.siteCrawlGallery();
-            } else if (!true) {
-                /* TODO: 2020-09-29: Cleanup old code! */
-                /* Gallery (could also be single image) --> API required */
-                if (loggedIN && !cfg.getBooleanProperty(SETTING_USE_API, true)) {
-                    logger.info("User prefers not to use the API --> Cannot crawl this type of URL without API");
-                    throw new DecrypterException(API_FAILED);
+                if (useApiForGalleryCrawling) {
+                    this.apiCrawlGallery();
+                } else {
+                    this.siteCrawlGallery();
                 }
-                try {
-                    if (!loggedIN) {
-                        /* Anonymous API usage */
-                        ImgurComHoster.prepBRAPI(this.br);
-                        br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
-                    }
-                    if (parameter.matches(type_gallery)) {
-                        br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID);
-                        if (br.getHttpConnection().getResponseCode() == 404) {
-                            /*
-                             * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
-                             */
-                            final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
-                            decryptedLinks.add(dl);
-                            return decryptedLinks;
-                        }
-                        boolean is_album = false;
-                        final String is_albumo = PluginJSonUtils.getJson(br.toString(), "is_album");
-                        if (is_albumo != null) {
-                            is_album = Boolean.parseBoolean(is_albumo);
-                        }
-                        if (parameter.matches(type_gallery) && !is_album) {
-                            /* We have a single picture and not an album. */
-                            final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
-                            decryptedLinks.add(dl);
-                            return decryptedLinks;
-                        }
-                    }
-                    /* We know that we definitly have an album --> Crawl it */
-                    br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/album/" + itemID);
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        /*
-                         * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before!
-                         */
-                        final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
-                        decryptedLinks.add(dl);
-                        return decryptedLinks;
-                    }
-                } catch (final BrowserException e) {
-                    if (br.getHttpConnection().getResponseCode() == 429) {
-                        logger.info("API limit reached");
-                        if (loggedIN) {
-                            account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "API Rate Limit reached");
-                        }
-                        throw new DecrypterException(API_FAILED);
-                    }
-                    logger.info("Server problems: " + parameter);
-                    throw e;
-                }
-                if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-                    return createOfflineLink(parameter);
-                }
-                final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                galleryTitle = (String) JavaScriptEngineFactory.walkJson(data, "data/title");
-                api_decrypt(data);
-                if (galleryTitle != null) {
-                    galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
-                }
-                /* TODO: Fix usage of custom packagenames */
-                fpName = ImgurComHoster.getFormattedPackagename(author, galleryTitle, itemID);
-                fpName = encodeUnicode(fpName);
             } else {
                 /* Single item */
                 this.decryptedLinks.add(handleSingleItem(this.parameter, this.itemID));
             }
         }
         return decryptedLinks;
+    }
+
+    private void prepareAPIUsage() throws Exception {
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final boolean useAPIInAnonymousMode = cfg.getBooleanProperty(ImgurComHoster.SETTING_USE_API_IN_ANONYMOUS_MODE, true);
+        if (!ImgurComHoster.canUseAPI()) {
+            logger.info("API usage is impossible");
+            throw new DecrypterException("API usage not possible but required");
+        }
+        if (useAPIInAnonymousMode) {
+            br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
+        } else {
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account == null) {
+                logger.warning("User needs to add an account or enable anonymous API usage");
+                throw new AccountRequiredException();
+            }
+            final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
+            if (account != null) {
+                ((ImgurComHoster) hostPlg).login(this.br, account, false);
+            }
+        }
     }
 
     public static String getURLMp4Download(final String imgUID) {
@@ -300,17 +248,11 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         final long imgcount = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(data, "data/images_count"), 0);
         Object images = JavaScriptEngineFactory.walkJson(data, "data/images");
-        /* Either no images there or sometimes the number of wrong. */
-        if (imgcount == 0 || images == null || ((List) images).size() == 0) {
-            logger.info("Empty album: " + parameter);
-            return;
-        }
         author = (String) JavaScriptEngineFactory.walkJson(data, "data/account_url");
-        /* TODO: 2020-09-29: Why aren't we using the "author" field? */
-        // author = (String) JavaScriptEngineFactory.walkJson(data, "data/author");
-        if (author != null && StringUtils.equalsIgnoreCase(author, "Imgur")) {
+        if (!StringUtils.isEmpty(author) && !StringUtils.equalsIgnoreCase(author, "Imgur")) {
             /* Some errorhandling */
-            author = null;
+            this.fp = FilePackage.getInstance();
+            this.fp.setName(this.author);
         }
         /*
          * using links (i.imgur.com/imgUID(s)?.extension) seems to be problematic, it can contain 's' (imgUID + s + .extension), but not
@@ -531,6 +473,40 @@ public class ImgurComGallery extends PluginForDecrypt {
         this.crawlWebsiteJson(entries);
     }
 
+    private void apiCrawlGallery() throws Exception {
+        prepareAPIUsage();
+        br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID);
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+            return;
+        }
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("data");
+        boolean is_album = false;
+        final Object is_albumO = entries.get("is_album");
+        if (is_albumO != null && is_albumO instanceof Boolean) {
+            is_album = ((Boolean) is_albumO).booleanValue();
+        }
+        if (parameter.matches(type_gallery) && !is_album) {
+            /* TODO: Improve this handling to add/check/parse image data right away! */
+            /* We have a single picture and not an album. */
+            final DownloadLink dl = createDownloadlink(getHostpluginurl(itemID));
+            decryptedLinks.add(dl);
+            return;
+        } else if (is_album) {
+            br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/album/" + itemID);
+        }
+        final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        String galleryTitle = (String) JavaScriptEngineFactory.walkJson(data, "data/title");
+        api_decrypt(data);
+        if (galleryTitle != null) {
+            galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
+        }
+        /* TODO: Fix usage of custom packagenames */
+        // fpName = ImgurComHoster.getFormattedPackagename(author, galleryTitle, itemID);
+        // fpName = encodeUnicode(fpName);
+    }
+
     private void siteCrawlGallery() throws DecrypterException, ParseException, IOException {
         final String galleryID = new Regex(this.parameter, type_gallery).getMatch(0);
         this.fp = FilePackage.getInstance();
@@ -663,5 +639,35 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         decryptedLinks.add(offline);
         return decryptedLinks;
+    }
+
+    /** 2020-10-01: Use this in case they shut off all of the old website methods. */
+    private Thread showLoginRequiredDialog() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Imgur.com - Gallerie/Album Crawler";
+                        message += "Hallo liebe(r) Imgur NutzerIn\r\n";
+                        message += "Um Gallerien und Alben von imgur herunterladen zu können musst du deine eigenen Imgur API Zugangsdaten und/oder deinen imgur Account in JD eintragen.\r\n";
+                    } else {
+                        title = "Imgur.com - Gallery/Album crawler";
+                        message += "Hello dear Imgur user\r\n";
+                        message += "You need to add your own Imgur API credentials and or imgur account to JD in order to be able to crawl galleries & albums.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(1 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 }
