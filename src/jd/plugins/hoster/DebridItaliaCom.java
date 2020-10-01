@@ -53,12 +53,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return "https://www.debriditalia.com/premium.php";
     }
 
-    private static final String          API_BASE                      = "https://debriditalia.com/api.php";
-    private static MultiHosterManagement mhm                           = new MultiHosterManagement("debriditalia.com");
-    private static final String          NOCHUNKS                      = "NOCHUNKS";
-    private static final String          MAX_RETRIES_DL_ERROR_PROPERTY = "MAX_RETRIES_DL_ERROR";
-    private static final int             DEFAULT_MAX_RETRIES_DL_ERROR  = 50;
-    private String                       dllink                        = null;
+    private static final String          API_BASE = "https://debriditalia.com/api.php";
+    private static MultiHosterManagement mhm      = new MultiHosterManagement("debriditalia.com");
+    private static final String          NOCHUNKS = "NOCHUNKS";
+    private String                       dllink   = null;
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
@@ -188,17 +186,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 logger.log(e);
             }
             mhm.handleErrorGeneric(account, link, "", 50);
-            /* 2020-10-01: That old handling is not required anymore(?) */
-            // int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY,
-            // DEFAULT_MAX_RETRIES_DL_ERROR);
-            // if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the
-            // page or click the button below\\.</p>")) {
-            // mhm.handleErrorGeneric(account, link, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
-            // }
-            // if (br.containsHTML("No htmlCode read")) {
-            // mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
-            // }
-            // mhm.handleErrorGeneric(account, link, "unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
         }
         /* Directlinks can be used for up to 2 days */
         link.setProperty("debriditaliadirectlink", dllink);
