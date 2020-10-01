@@ -585,7 +585,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         externID = br.getRegex("\"(?:https?:)?//(www\\.)?freeviewmovies\\.com/embed/(\\d+)/\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add("http://www.freeviewmoviesdecrypted/video/" + externID);
+            decryptedLinks.add("https://www.freeviewmovies/video/" + externID);
             if (!processAll) {
                 return decryptedLinks;
             }

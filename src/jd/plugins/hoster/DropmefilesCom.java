@@ -20,8 +20,11 @@ import java.io.IOException;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -60,19 +63,29 @@ public class DropmefilesCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(getHost(), "language", "en");
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("due to ending of the share period|due to exceeding the limit|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
+        String filename = setDllinkAndReturnFilename();
         String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)<").getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private String setDllinkAndReturnFilename() {
+        String filename = null;
         final String downloadurl_source = this.br.getRegex("download_btn dragout start_dl_btn.+data\\-downloadurl=\"([^\"]+)").getMatch(0);
         if (downloadurl_source != null && downloadurl_source.contains(":")) {
             final String[] dlinfo = downloadurl_source.split(":");
@@ -81,23 +94,39 @@ public class DropmefilesCom extends PluginForHost {
             }
             dllink = new Regex(downloadurl_source, "(https?.+)").getMatch(0);
         }
-        if (filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
-        }
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        return filename;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        Form pwform = getPwForm();
+        if (pwform != null) {
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            pwform.setMethod(MethodType.POST);
+            pwform.setAction("/s1/checkPassword");
+            pwform.put("password", Encoding.urlEncode(passCode));
+            pwform.put("uid", this.getFID(link));
+            brc.submitForm(pwform);
+            if (!brc.containsHTML("\"result\"\\s*:\\s*\"ok\"")) {
+                /* Wrong password */
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            } else {
+                link.setDownloadPassword(passCode);
+                br.getPage(link.getPluginPatternMatcher());
+                setDllinkAndReturnFilename();
+            }
+        }
         if (dllink == null) {
             if (this.br.containsHTML("download when uploaded")) {
                 /* 2017-02-22: User already get their downloadlinks while the upload is still ongoing! */
@@ -105,17 +134,21 @@ public class DropmefilesCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < 1000) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection()) && dl.getConnection().getLongContentLength() < 1000) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue", 1 * 60 * 1000l);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    private Form getPwForm() {
+        for (final Form form : this.br.getForms()) {
+            if (form.hasInputFieldByName("password") && !form.hasInputFieldByName("username")) {
+                return form;
+            }
+        }
+        return null;
     }
 
     @Override

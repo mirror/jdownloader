@@ -46,8 +46,11 @@ public class FreeViewMoviesComCrawler extends PornEmbedParser {
             return decryptedLinks;
         }
         decryptedLinks.addAll(findEmbedUrls(name_url));
-        if (decryptedLinks.size() == 0) {
+        /* 2020-10-01: Prevent their own embed URLs from getting added as they do not contain a meaningful title inside URL. */
+        final String selfhostedDllink = br.getRegex("<source src=\"(http[^\"]+freeviewmovies[^\"]*)\" type=\"video/mp4").getMatch(0);
+        if (decryptedLinks.size() == 0 || selfhostedDllink != null) {
             /* Must be selfhosted content */
+            decryptedLinks.clear();
             decryptedLinks.add(this.createDownloadlink(parameter));
         }
         return decryptedLinks;
