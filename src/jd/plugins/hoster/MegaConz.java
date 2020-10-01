@@ -143,7 +143,9 @@ public class MegaConz extends PluginForHost {
             final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
-            if (uq.containsKey("utype")) {
+            if (uq == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (uq.containsKey("utype")) {
                 final String subscriptionCycle;
                 if (uq.containsKey("scycle")) {
                     subscriptionCycle = " (Subscription cycle: " + String.valueOf(uq.get("scycle")) + ")";
@@ -391,6 +393,7 @@ public class MegaConz extends PluginForHost {
             request.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
         }
         request.setContentType("text/plain;charset=UTF-8");
+        final int errorCode;
         if (postParams != null) {
             final HashMap<String, Object> sendParams = new HashMap<String, Object>();
             sendParams.put("a", action);
@@ -403,31 +406,40 @@ public class MegaConz extends PluginForHost {
                 final List<Map<String, Object>> postData = new ArrayList<Map<String, Object>>();
                 postData.add(sendParams);
                 request.setPostDataString(JSonStorage.toString(postData));
-                br.getPage(request);
-                final List<Object> requestResponse = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.LIST, null);
-                if (requestResponse != null && requestResponse.size() == 1) {
-                    final Object response = requestResponse.get(0);
-                    if (response instanceof Map) {
-                        return (Map<String, Object>) response;
+                final String response = br.getPage(request);
+                if (response.matches("^\\s*-?\\d+\\s*$")) {
+                    errorCode = Integer.parseInt(response);
+                } else if (response.matches("^\\s*\\[.*")) {
+                    final List<Object> requestResponse = JSonStorage.restoreFromString(response, TypeRef.LIST, null);
+                    if (requestResponse != null && requestResponse.size() == 1) {
+                        final Object responseObject = requestResponse.get(0);
+                        if (responseObject instanceof Map) {
+                            return (Map<String, Object>) responseObject;
+                        }
                     }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (request.getHtmlCode().contains("-26") && "us".equalsIgnoreCase(action)) {
+        if (errorCode == -26 && "us".equalsIgnoreCase(action)) {
             // API_EMFAREQUIRED = -26, // Multi-factor authentication required
             synchronized (account) {
                 account.setProperty("mfa", Boolean.TRUE);
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "2FA required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        } else if (request.getHtmlCode().contains("-16") && "us".equalsIgnoreCase(action)) {
+        } else if (errorCode == -16 && ("us".equalsIgnoreCase(action) || "uq".equalsIgnoreCase(action))) {
             // API_EBLOCKED (-16): User blocked
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "User blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (request.getHtmlCode().contains("-9") && "us".equalsIgnoreCase(action)) {
+        } else if (errorCode == -9 && "us".equalsIgnoreCase(action)) {
             // API_EOENT (-9): Object (typically, node or user) not found
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "User not found", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (request.getHtmlCode().contains("-15")) {
+        } else if (errorCode == -15) {
             // API_ESID (-15): Invalid or expired user session, please relogin
             if (sid != null && account != null) {
                 synchronized (account) {
@@ -443,7 +455,7 @@ public class MegaConz extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if (request.getHtmlCode().contains("-3") || request.getHtmlCode().contains("-4")) {
+        } else if (errorCode == -3 || errorCode == -4) {
             // API_EAGAIN (-3): A temporary congestion or server malfunction prevented your request from being processed. No data was
             // altered. Retry. Retries must be spaced with exponential backoff.
             // API_ERATELIMIT (-4):You have exceeded your command weight per time quota. Please wait a few seconds, then try again (this
@@ -460,7 +472,7 @@ public class MegaConz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
             } else {
-                if (request.getHtmlCode().contains("-3")) {
+                if (errorCode == -3) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "A temporary issue. Retry again later", 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You have exceeded your command weight per time quota. Retry again later", 5 * 60 * 1000l);
