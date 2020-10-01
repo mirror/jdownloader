@@ -16,9 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,10 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -160,8 +162,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 logger.info("Current host is not supported");
                 mhm.putError(account, link, 5 * 60 * 1000l, "not_supported");
             }
-            dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
-            if (dllink == null) {
+            try {
+                dllink = new URL(br.toString()).toString();
+            } catch (final MalformedURLException e) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 20, 5 * 60 * 1000l);
             }
         }
@@ -174,23 +177,28 @@ public class DebridItaliaCom extends antiDDoSForHost {
             chunks = 1;
         }
         if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
-        if (looksLikeDownloadableContent(dl.getConnection())) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
                 logger.log(e);
             }
-            int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
-            if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the page or click the button below\\.</p>")) {
-                mhm.handleErrorGeneric(account, link, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
-            }
-            if (br.containsHTML("No htmlCode read")) {
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
-            }
-            mhm.handleErrorGeneric(account, link, "unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "", 50);
+            /* 2020-10-01: That old handling is not required anymore(?) */
+            // int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY,
+            // DEFAULT_MAX_RETRIES_DL_ERROR);
+            // if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<p>For some reason the download not started\\. Please reload the
+            // page or click the button below\\.</p>")) {
+            // mhm.handleErrorGeneric(account, link, "Download_not_started", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+            // }
+            // if (br.containsHTML("No htmlCode read")) {
+            // mhm.handleErrorGeneric(account, link, "unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
+            // }
+            // mhm.handleErrorGeneric(account, link, "unknowndlerror2", maxRetriesOnDownloadError, 5 * 60 * 1000l);
         }
         /* Directlinks can be used for up to 2 days */
         link.setProperty("debriditaliadirectlink", dllink);
@@ -291,13 +299,13 @@ public class DebridItaliaCom extends antiDDoSForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                final URLConnectionAdapter con = br2.openGetConnection(dllink);
+                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
                     if (!looksLikeDownloadableContent(con)) {
                         throw new IOException();
@@ -309,7 +317,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 }
             } catch (Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 return null;
             }
         } else {
