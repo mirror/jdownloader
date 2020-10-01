@@ -57,7 +57,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
-import jd.utils.locale.JDL;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -82,29 +81,29 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     /* User settings */
-    private static final String  SETTING_MP4                      = "SETTING_MP4";
-    private static final String  SETTING_CLIENT_ID                = "CLIENT_ID";
-    private static final String  SETTING_CLIENT_SECRET            = "CLIENT_SECRET";
-    private static final String  SETTING_USE_API                  = "SETTING_USE_API";
-    private static final String  SETTING_GRAB_SOURCE_URL_VIDEO    = "SETTING_GRAB_SOURCE_URL_VIDEO";
-    private static final String  SETTING_CUSTOM_FILENAME          = "SETTING_CUSTOM_FILENAME";
-    private static final String  SETTING_CUSTOM_PACKAGENAME       = "SETTING_CUSTOM_PACKAGENAME";
+    private static final String  SETTING_MP4                       = "SETTING_MP4";
+    private static final String  SETTING_CLIENT_ID                 = "CLIENT_ID";
+    private static final String  SETTING_CLIENT_SECRET             = "CLIENT_SECRET";
+    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE";
+    public static final String   SETTING_GRAB_SOURCE_URL_VIDEO     = "SETTING_GRAB_SOURCE_URL_VIDEO";
+    private static final String  SETTING_CUSTOM_FILENAME           = "SETTING_CUSTOM_FILENAME";
+    private static final String  SETTING_CUSTOM_PACKAGENAME        = "SETTING_CUSTOM_PACKAGENAME";
     /* DownloadLink properties */
-    public static final String   PROPERTY_DOWNLOADLINK_DIRECT_URL = "directlink";
-    public static final String   PROPERTY_DOWNLOADLINK_TITLE      = "directtitle";
-    public static final String   PROPERTY_DOWNLOADLINK_ORDERID    = "orderid";
-    public static final String   PROPERTY_DOWNLOADLINK_DATE       = "date";
-    public static final String   PROPERTY_DOWNLOADLINK_USERNAME   = "directusername";
+    public static final String   PROPERTY_DOWNLOADLINK_DIRECT_URL  = "directlink";
+    public static final String   PROPERTY_DOWNLOADLINK_TITLE       = "directtitle";
+    public static final String   PROPERTY_DOWNLOADLINK_ORDERID     = "orderid";
+    public static final String   PROPERTY_DOWNLOADLINK_DATE        = "date";
+    public static final String   PROPERTY_DOWNLOADLINK_USERNAME    = "directusername";
     /* Only store file-type from trusted sourced as this property will be preferred over every other filetype source!! */
-    private static final String  PROPERTY_DOWNLOADLINK_FILETYPE   = "filetype";
+    private static final String  PROPERTY_DOWNLOADLINK_FILETYPE    = "filetype";
     /* Various constants */
-    public static final int      responsecode_website_overloaded  = 502;
-    private static final int     MAX_DOWNLOADS                    = -1;
-    private static final boolean RESUME                           = true;
-    private static final int     MAXCHUNKS                        = 1;
+    public static final int      responsecode_website_overloaded   = 502;
+    private static final int     MAX_DOWNLOADS                     = -1;
+    private static final boolean RESUME                            = true;
+    private static final int     MAXCHUNKS                         = 1;
     /* Variables */
-    private String               dllink                           = null;
-    private String               imgUID                           = null;
+    private String               dllink                            = null;
+    private String               imgUID                            = null;
 
     /* Documentation see: https://apidocs.imgur.com/ */
     public static String getAPIBase() {
@@ -149,7 +148,7 @@ public class ImgurComHoster extends PluginForHost {
              */
             prepBRAPI(this.br);
             boolean apiMode = true;
-            if (account == null && false && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API, true)) {
+            if (account == null && false && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, true)) {
                 /* Website, no longer works and requires Javascript/API */
                 apiMode = false;
             } else if (account != null) {
@@ -391,12 +390,22 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
             loginOauthTest(brlogin, account, force);
         } else {
             synchronized (account) {
                 brlogin.setFollowRedirects(true);
                 brlogin.setCookiesExclusive(true);
+                if (!canUseAPI()) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        showLoginPreparationInformation();
+                    }
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Verwendung nur mit eigenen API Zugangsdaten möglich!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "API usage is only possible with your own API application login credentials!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 prepBRAPI(brlogin);
                 /* Correct input so it is parsable via UrlQuery. */
                 if (!account.getPass().contains("?")) {
@@ -1012,7 +1021,7 @@ public class ImgurComHoster extends PluginForHost {
     public static final String getClientID() throws Exception {
         final String clientid_setting = SubConfiguration.getConfig("imgur.com").getStringProperty(SETTING_CLIENT_ID, defaultAPISettingUserVisibleText);
         if (StringUtils.isEmpty(clientid_setting) || StringUtils.equalsIgnoreCase("JDDEFAULT", clientid_setting)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         } else {
             return clientid_setting;
         }
@@ -1022,9 +1031,17 @@ public class ImgurComHoster extends PluginForHost {
         final SubConfiguration conf = SubConfiguration.getConfig("imgur.com");
         final String clientsecret_setting = conf.getStringProperty(SETTING_CLIENT_SECRET, defaultAPISettingUserVisibleText);
         if (StringUtils.isEmpty(clientsecret_setting) || StringUtils.equalsIgnoreCase("JDDEFAULT", clientsecret_setting)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         } else {
             return clientsecret_setting;
+        }
+    }
+
+    public static final boolean canUseAPI() {
+        try {
+            return getClientID() != null && getClientSecret() != null;
+        } catch (final Throwable e) {
+            return false;
         }
     }
 
@@ -1047,6 +1064,56 @@ public class ImgurComHoster extends PluginForHost {
 
     private void websiteOverloaded() throws PluginException {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "502: 'Imgur over capacity'", 5 * 60 * 1000l);
+    }
+
+    /** 2020-10-01: Part of the eventually required API login process in the future. */
+    private Thread showLoginPreparationInformation() throws Exception {
+        final String apiApplicationsURL = "https://api." + this.getHost() + "/oauth2/addclient";
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Imgur.com - Login Prozess vorbereiten";
+                        message += "Hallo liebe(r) Imgur NutzerIn\r\n";
+                        message += "Um einen Loginvorgang in JD zu ermöglichen, musst du eine eigene App dafür anlegen:\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + apiApplicationsURL + "'\t\r\n";
+                        message += "2. Falls nicht bereits geschehen, logge dich im Browser in deinen imgur Account ein.\r\n";
+                        message += "3. Wähle bei 'Authorization type' folgendes aus: 'OAuth 2 authorization with a callback URL'\r\n";
+                        message += "4. Gib TODO bei 'Authorization callback URL' ein.\r\n";
+                        message += "5. Nachdem du die App angelegt hast solltest du deine eigene 'Client-ID' und 'Client secret' sehen können.\r\n";
+                        message += "Falls das nicht der Fall sein sollte, solltest du diese Werte hier finden: imgur.com/account/settings/apps\r\n";
+                        message += "6. Trage deine Daten in JD ein unter Einstellungen -> Plugins -> imgur.com\r\n";
+                        message += "7. Versuche nun nochmals, deinen imgur.com Account in JD einzutragen.\r\n";
+                    } else {
+                        title = "Imgur.com - Prepare login process";
+                        message += "Hello dear Imgur user\r\n";
+                        message += "In order to be able to add your imgur account to JD, you will first need to register a custom app in your imgur account via browser:\r\n";
+                        message += "1. Open the following URL in your browser if it is not opened automatically:\r\n\t'" + apiApplicationsURL + "'\t\r\n";
+                        message += "2. If prompted to, login into your imgur account via browser.\r\n";
+                        message += "3. Select 'OAuth 2 authorization with a callback URL' as 'Authorization type'.\r\n";
+                        message += "4. Enter TODO in the 'Authorization callback URL' field.\r\n";
+                        message += "5. After registering your app you should see your own apps' 'Client-ID' and 'Client secret'.\r\n";
+                        message += "If this is not the case you will find these values here: imgur.com/account/settings/apps\r\n";
+                        message += "6. Enter these values in JD here: Settings -> Plugins -> imgur.com\r\n";
+                        message += "7. Now you can add your imgur.com account to JD.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(5 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(apiApplicationsURL);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private Thread showLoginInformation() throws Exception {
@@ -1177,7 +1244,13 @@ public class ImgurComHoster extends PluginForHost {
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
+                                                      put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
                                                       put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
                                                       put("LABEL_FILENAME", "Define custom filename:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
@@ -1186,7 +1259,13 @@ public class ImgurComHoster extends PluginForHost {
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
+                                                      put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden verwenden? Um die API überhaupt verwenden zu können deine eigenen API Zugangsdaten unten eintragen ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
                                                       put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
@@ -1217,14 +1296,14 @@ public class ImgurComHoster extends PluginForHost {
     private static final String defaultCustomPackagename         = "*username* - *title* - *galleryid*";
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, JDL.L("plugins.hoster.ImgUrCom.downloadMP4", "Download .mp4 files instead of .gif?")).setDefaultValue(defaultMP4));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "API settings - see imgur.com/account/settings/apps"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, "Use API in anonymous mode too (recommended - API will always be used in account mode!)").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add your imgur account to JDownloader!").setDefaultValue(defaultAPISettingUserVisibleText));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add your imgur account to JDownloader!").setDefaultValue(defaultAPISettingUserVisibleText));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Other settings:"));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_OTHER_SETTINGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));

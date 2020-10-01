@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixeldrainCom extends PluginForHost {
@@ -82,7 +86,7 @@ public class PixeldrainCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-    private static final String  API_BASE          = "https://pixeldrain.com/api";
+    public static final String   API_BASE          = "https://pixeldrain.com/api";
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -104,7 +108,7 @@ public class PixeldrainCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private Browser prepBR(final Browser br) {
+    public static Browser prepBR(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
@@ -123,17 +127,26 @@ public class PixeldrainCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = PluginJSonUtils.getJson(br, "name");
-        String filesize = PluginJSonUtils.getJson(br, "size");
-        if (!StringUtils.isEmpty(filename)) {
-            link.setFinalFileName(filename);
-        } else {
-            link.setName(this.getFID(link));
-        }
-        if (filesize != null && filesize.matches("\\d+")) {
-            link.setVerifiedFileSize(Long.parseLong(filesize));
-        }
+        final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        setDownloadLinkInfo(link, data);
         return AvailableStatus.TRUE;
+    }
+
+    public static void setDownloadLinkInfo(final DownloadLink link, final Map<String, Object> data) {
+        final boolean success = ((Boolean) data.get("success")).booleanValue();
+        if (!success) {
+            link.setAvailable(false);
+        } else {
+            link.setAvailable(true);
+            final String filename = (String) data.get("name");
+            final long filesize = JavaScriptEngineFactory.toLong(data.get("size"), 0);
+            if (!StringUtils.isEmpty(filename)) {
+                link.setFinalFileName(filename);
+            }
+            if (filesize > 0) {
+                link.setVerifiedFileSize(filesize);
+            }
+        }
     }
 
     @Override
