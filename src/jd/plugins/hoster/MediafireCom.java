@@ -211,7 +211,8 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        /* 2020-10-01: Changed from 10 to unlimited */
+        return -1;
     }
 
     @Override

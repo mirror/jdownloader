@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -130,5 +131,15 @@ public class TusfilesCom extends XFileSharingProBasic {
             }
         }
         return super.requestFileInformationWebsite(link, account, downloadsStarted);
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            /* 2020-10-01: Special */
+            offline = new Regex(correctedBR, ">\\s*The file you are trying to download is no longer available").matches();
+        }
+        return offline;
     }
 }
