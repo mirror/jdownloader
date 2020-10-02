@@ -425,6 +425,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 try {
                     vid = ClipDataCache.get(helper, vid.videoID);
                 } catch (Exception e) {
+                    logger.log(e);
                     if (hasCache) {
                         ClipDataCache.clearCache(vid.videoID);
                         vid = ClipDataCache.get(helper, vid.videoID);
@@ -827,7 +828,7 @@ public class TbCmV2 extends PluginForDecrypt {
             thislink.setProperty(YoutubeHelper.YT_ID, clip.videoID);
             thislink.setProperty(YoutubeHelper.YT_COLLECTION, l.getName());
             for (Entry<String, Object> es : globalPropertiesForDownloadLink.entrySet()) {
-                if (es.getKey() != null) {
+                if (es.getKey() != null && !thislink.hasProperty(es.getKey())) {
                     thislink.setProperty(es.getKey(), es.getValue());
                 }
             }
@@ -1083,7 +1084,7 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     protected String extractWebsiteTitle() {
-        return br.getRegex("<meta name=\"title\"\\s+[^<>]*content=\"(.*?)(?:\\s*-\\s*Youtube\\s*)?\"").getMatch(0);
+        return Encoding.htmlOnlyDecode(br.getRegex("<meta name=\"title\"\\s+[^<>]*content=\"(.*?)(?:\\s*-\\s*Youtube\\s*)?\"").getMatch(0));
     }
 
     /**
@@ -1097,8 +1098,6 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     public ArrayList<YoutubeClipData> parseChannelgrid(String channelID) throws IOException, InterruptedException {
-        // http://www.youtube.com/user/Gronkh/videos
-        // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
         Browser li = br.cloneBrowser();
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;

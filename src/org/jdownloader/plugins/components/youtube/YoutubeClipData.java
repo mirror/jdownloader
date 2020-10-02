@@ -26,27 +26,27 @@ public class YoutubeClipData {
     /**
      *
      */
-    public String                             user;
-    public String                             channelTitle;
-    public long                               date;
-    public String                             error;
-    public boolean                            ageCheck;
-    public String                             title;
-    public String                             videoID;
+    public String                             user                = null;
+    public String                             channelTitle        = null;
+    public long                               date                = -1;
+    public String                             error               = null;
+    public boolean                            ageCheck            = false;
+    public String                             title               = null;
+    public String                             videoID             = null;
     public int                                playlistEntryNumber = -1;
-    public String                             category;
-    public int                                duration;
-    public String                             channelID;
-    public long                               dateUpdated;
-    public String                             userGooglePlusID;
-    public VideoVariant                       bestVideoItag;
-    public String                             description;
+    public String                             category            = null;
+    public int                                duration            = -1;
+    public String                             channelID           = null;
+    public long                               dateUpdated         = -1;
+    public String                             userGooglePlusID    = null;
+    public VideoVariant                       bestVideoItag       = null;
+    public String                             description         = null;
     public Map<YoutubeITAG, StreamCollection> streams;
     public ArrayList<YoutubeSubtitleStorable> subtitles;
     public HashMap<String, String>            keywords3D;
     public HashSet<String>                    keywords;
-    public String                             approxThreedLayout;
-    public String                             views;
+    public String                             approxThreedLayout  = null;
+    public String                             views               = null;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
@@ -59,7 +59,7 @@ public class YoutubeClipData {
      */
     public boolean guessSBSorHOU3D() {
         if (keywords != null) {
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder();
             for (String s : keywords) {
                 sb.append(" ").append(s.toLowerCase(Locale.ENGLISH));
             }
@@ -69,19 +69,16 @@ public class YoutubeClipData {
             if (description != null) {
                 sb.append(" ").append(description.toLowerCase(Locale.ENGLISH));
             }
-            String str = sb.toString();
+            final String str = sb.toString();
             // should we be using sb instead of title here?
             if (title != null && title.contains("3d")) {
                 if (str.contains("sbs")) {
                     return true;
-                }
-                if (str.contains("side") && str.contains("by")) {
+                } else if (str.contains("side") && str.contains("by")) {
                     return true;
-                }
-                if (str.contains("hou")) {
+                } else if (str.contains("hou")) {
                     return true;
-                }
-                if (str.contains("cardboard")) {
+                } else if (str.contains("cardboard")) {
                     return true;
                 }
             }
@@ -106,41 +103,37 @@ public class YoutubeClipData {
         }
         if (highestProjection == 2 && threeDLayout != 3) {
             return Projection.SPHERICAL;
-        }
-        if (highestProjection == 3) {
+        } else if (highestProjection == 3) {
             return Projection.SPHERICAL_3D;
-        }
-        if (highestProjection == 2 && threeDLayout == 3) {
+        } else if (highestProjection == 2 && threeDLayout == 3) {
             return Projection.SPHERICAL_3D;
-        }
-        if (guessSBSorHOU3D()) {
+        } else if (guessSBSorHOU3D()) {
             return Projection.ANAGLYPH_3D;
+        } else {
+            return Projection.NORMAL;
         }
-        return Projection.NORMAL;
     }
 
     private boolean is3D() {
         // from yt player js
         if ("1".equals(approxThreedLayout)) {
             return true;
+        } else if (keywords != null && keywords.contains("3D")) {
+            return true;
+        } else if (keywords3D != null) {
+            final String enable = keywords3D.get("enable");
+            if (StringUtils.equals(enable, "true")) {
+                return true;
+            } else if (StringUtils.equals(enable, "LR")) {
+                return true;
+            } else if (StringUtils.equals(enable, "RL")) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
         }
-        if (keywords != null) {
-            if (keywords.contains("3D")) {
-                return true;
-            }
-        }
-        if (keywords3D != null) {
-            if (StringUtils.equals(keywords3D.get("enable"), "true")) {
-                return true;
-            }
-            if (StringUtils.equals(keywords3D.get("enable"), "LR")) {
-                return true;
-            }
-            if (StringUtils.equals(keywords3D.get("enable"), "RL")) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -153,30 +146,45 @@ public class YoutubeClipData {
         this.playlistEntryNumber = playlistEntryNumber;
     }
 
-    public void copyToDownloadLink(final DownloadLink thislink) {
-        if (StringUtils.isNotEmpty(title)) {
-            thislink.setProperty(YoutubeHelper.YT_TITLE, title);
+    public void copyToDownloadLink(final DownloadLink dest) {
+        setValue(dest, YoutubeHelper.YT_TITLE, title);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
+        setValue(dest, YoutubeHelper.YT_3D, is3D());
+        setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
+        setValue(dest, YoutubeHelper.YT_USER_NAME, user);
+        if (bestVideoItag != null) {
+            setValue(dest, YoutubeHelper.YT_BEST_VIDEO, bestVideoItag.getBaseVariant().getiTagVideo().name());
         }
-        if (playlistEntryNumber >= 0) {
-            thislink.setProperty(YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
+        setValue(dest, YoutubeHelper.YT_DATE, date);
+        setValue(dest, YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
+        setValue(dest, YoutubeHelper.YT_CHANNEL_ID, channelID);
+        setValue(dest, YoutubeHelper.YT_DURATION, duration);
+        setValue(dest, YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
+        setValue(dest, YoutubeHelper.YT_VIEWS, views);
+        dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
+    }
+
+    protected boolean setValue(DownloadLink dest, String key, Object value) {
+        if (dest.hasProperty(key) || value == null) {
+            return false;
+        } else if (value instanceof String) {
+            if (StringUtils.isEmpty((String) value)) {
+                return false;
+            } else {
+                dest.setProperty(key, value);
+                return true;
+            }
+        } else if (value instanceof Number) {
+            if (((Number) value).longValue() == -1) {
+                return false;
+            } else {
+                dest.setProperty(key, value);
+                return true;
+            }
+        } else {
+            dest.setProperty(key, value);
+            return true;
         }
-        thislink.setProperty(YoutubeHelper.YT_3D, is3D());
-        if (StringUtils.isNotEmpty(channelTitle)) {
-            thislink.setProperty(YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
-        }
-        if (StringUtils.isNotEmpty(user)) {
-            thislink.setProperty(YoutubeHelper.YT_USER_NAME, user);
-        }
-        thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, bestVideoItag == null ? null : bestVideoItag.getBaseVariant().getiTagVideo().name());
-        thislink.setProperty(YoutubeHelper.YT_DATE, date);
-        thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
-        if (StringUtils.isNotEmpty(channelID)) {
-            thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, channelID);
-        }
-        thislink.setProperty(YoutubeHelper.YT_DURATION, duration);
-        thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
-        thislink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
-        thislink.setProperty(YoutubeHelper.YT_VIEWS, views);
     }
 
     public StreamCollection getStreams(YoutubeITAG itag) {
