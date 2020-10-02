@@ -64,7 +64,8 @@ public class TakefileLink extends XFileSharingProBasic {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            /* 2020-10-02 */
+            return -2;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -91,7 +92,8 @@ public class TakefileLink extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 4;
+        /* 2020-10-02 */
+        return -1;
     }
 
     @Override
