@@ -82,9 +82,10 @@ public class ImgurComHoster extends PluginForHost {
 
     /* User settings */
     private static final String  SETTING_MP4                       = "SETTING_MP4";
+    public static final String   SETTING_USE_API                   = "SETTING_USE_API";
+    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE";
     private static final String  SETTING_CLIENT_ID                 = "CLIENT_ID";
     private static final String  SETTING_CLIENT_SECRET             = "CLIENT_SECRET";
-    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE";
     public static final String   SETTING_GRAB_SOURCE_URL_VIDEO     = "SETTING_GRAB_SOURCE_URL_VIDEO";
     private static final String  SETTING_CUSTOM_FILENAME           = "SETTING_CUSTOM_FILENAME";
     private static final String  SETTING_CUSTOM_PACKAGENAME        = "SETTING_CUSTOM_PACKAGENAME";
@@ -1039,10 +1040,14 @@ public class ImgurComHoster extends PluginForHost {
 
     public static final boolean canUseAPI() {
         try {
-            return getClientID() != null && getClientSecret() != null;
+            return isAPIEnabled() && getClientID() != null && getClientSecret() != null;
         } catch (final Throwable e) {
             return false;
         }
+    }
+
+    public static final boolean isAPIEnabled() {
+        return SubConfiguration.getConfig("imgur.com").getBooleanProperty(ImgurComHoster.SETTING_USE_API, false);
     }
 
     private String getAuthURL() throws Exception {
@@ -1245,6 +1250,7 @@ public class ImgurComHoster extends PluginForHost {
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API", "Use API instead of website?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
@@ -1260,6 +1266,7 @@ public class ImgurComHoster extends PluginForHost {
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
                                                       put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API", "Verwende API anstatt Webseite?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden verwenden? Um die API überhaupt verwenden zu können deine eigenen API Zugangsdaten unten eintragen ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
@@ -1298,11 +1305,15 @@ public class ImgurComHoster extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
+            final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, this.getPhrase("SETTING_USE_API")).setDefaultValue(false);
+            getConfig().addEntry(cfe);
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(false).setEnabledCondidtion(cfe, true));
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
+            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        }
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_OTHER_SETTINGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
