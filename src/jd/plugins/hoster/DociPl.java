@@ -128,26 +128,49 @@ public class DociPl extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             // final String docid = getDocumentID(this.br);
-            final String fid = br.getRegex("data-id=\"([^\"]+)\"").getMatch(0);
-            if (fid == null) {
+            final String fidStr = br.getRegex("data-file-id=(\\d+)").getMatch(0);
+            if (fidStr == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String rcKey = br.getRegex("data-rcp=\"([^\"]+)\"").getMatch(0);
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
-            final Map<String, Object> postData = new HashMap<String, Object>();
-            postData.put("file_id", fid);
-            postData.put("file_size", link.getView().getBytesTotal());
-            postData.put("file_extension", Plugin.getFileNameExtensionFromString(link.getName(), "mobi"));
-            postData.put("rc", recaptchaV2Response);
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            br.postPageRaw("/file/file_data/show", JSonStorage.serializeToJson(postData));
-            dllink = PluginJSonUtils.getJson(br, "url");
-            if (!StringUtils.isEmpty(dllink)) {
-                /* Check for: docs.google.com/viewer?embedded=true&url=http... */
-                final UrlQuery query = UrlQuery.parse(dllink);
-                final String embeddedURL = query.get("url");
-                if (!StringUtils.isEmpty(embeddedURL)) {
-                    dllink = embeddedURL;
+            final int fid = Integer.parseInt(fidStr);
+            final boolean useNewWay = true;
+            if (useNewWay) {
+                /* 2020-10-02 */
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("code", "");
+                postData.put("download_from_dir", 0);
+                postData.put("file_id", fid);
+                postData.put("item_id", fid);
+                postData.put("item_type", 1);
+                postData.put("menu_visible", 0);
+                postData.put("no_headers", 1);
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.postPageRaw("/download/payment_info", JSonStorage.serializeToJson(postData));
+                dllink = PluginJSonUtils.getJson(br, "download_url");
+                final String time = PluginJSonUtils.getJson(br, "time");
+                if (StringUtils.isEmpty(dllink) || StringUtils.isEmpty(time)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink += fidStr + "/" + time;
+            } else {
+                /* This seems to be needed to view a document on thei website - not (yet) useful for downloading! */
+                final String rcKey = br.getRegex("data-rcp=\"([^\"]+)\"").getMatch(0);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("file_id", fidStr);
+                postData.put("file_size", link.getView().getBytesTotal());
+                postData.put("file_extension", Plugin.getFileNameExtensionFromString(link.getName(), "mobi"));
+                postData.put("rc", recaptchaV2Response);
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.postPageRaw("/file/file_data/show", JSonStorage.serializeToJson(postData));
+                dllink = PluginJSonUtils.getJson(br, "url");
+                if (!StringUtils.isEmpty(dllink)) {
+                    /* Check for: docs.google.com/viewer?embedded=true&url=http... */
+                    final UrlQuery query = UrlQuery.parse(dllink);
+                    final String embeddedURL = query.get("url");
+                    if (!StringUtils.isEmpty(embeddedURL)) {
+                        dllink = embeddedURL;
+                    }
                 }
             }
             /* 2020-09-21: Old way without captcha was easier */

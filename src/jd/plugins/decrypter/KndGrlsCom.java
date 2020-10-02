@@ -31,52 +31,49 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "https?://(www\\.)?kindgirls\\.com/(video|gallery|girls)/([a-zA-Z0-9_\\-]+)(/[a-zA-Z0-9_\\-]+(/\\d+/?)?)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "https?://(?:www\\.)?kindgirls\\.com/(video|gallery|girls)/([^/]+)(/[^/]+(/\\d+/?)?)?" })
 public class KndGrlsCom extends PluginForDecrypt {
     public KndGrlsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_GALLERY = "https?://(?:www\\.)?kindgirls\\.com/gallery/([^/]+)(/[^/]+(/\\d+/?)?)?";
+    private static final String TYPE_GIRLS   = "https?://(?:www\\.)?kindgirls\\.com/girls/([^/]+)(/[^/]+(/\\d+/?)?)?";
+    private static final String TYPE_VIDEO   = "https?://(?:www\\.)?kindgirls\\.com/video/[^/]+)(/[^/]+(/\\d+/?)?)?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http:", "https:");
         final String page = br.getPage(parameter);
-        if (parameter.contains("com/gallery")) { // it's a gallery
-            if (br.containsHTML(">Sorry, gallery not found")) {
+        if (new Regex(parameter, TYPE_GALLERY).matches()) { // it's a gallery
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Sorry, gallery not found")) {
                 crawledLinks.add(createOfflinelink(parameter));
                 return crawledLinks;
             }
             return decryptGalleryLinks(br);
-        } else if (parameter.contains("com/girls")) { // it's a girl's gallery
+        } else if (new Regex(parameter, TYPE_GIRLS).matches()) { // it's a girl's gallery
             // collection
             return decryptGirlsGalleryCollection(page);
-        } else if (parameter.contains("com/video")) { // it's a video
+        } else if (new Regex(parameter, TYPE_VIDEO).matches()) { // it's a video
             return decryptVideoLinks(br);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private ArrayList<DownloadLink> decryptGirlsGalleryCollection(String page) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Regex girlGalleriesRex = new Regex(page, "<h4>Photo Galleries</h4>((<div class=\"gallery_list\"><a title='[a-zA-Z0-9, \\-_]+' href='/gallery/[a-zA-Z0-9_\\-/]+'><img src='[a-zA-Z0-9_\\.-/]+' alt='[a-zA-Z0-9 _\\-]+' border='0'><br /> *\\d+ photos</a></div>)+)");
-        String[][] matches = girlGalleriesRex.getMatches();
-        for (String[] match : matches) {
-            for (String gallerymatch : match) {
-                Regex galleryDetailRex = new Regex(gallerymatch, "<div class=\"gallery_list\"><a title='([a-zA-Z0-9, \\-_]+)' href='(/gallery/[a-zA-Z0-9_\\-/]+)'><img src='[a-zA-Z0-9_\\.-/]+' alt='[a-zA-Z0-9 _\\-]+' border='0'><br /> *(\\d+) photos</a></div>");
-                String link = "https://www.kindgirls.com" + galleryDetailRex.getMatch(1);
-                Browser galleryBrowser = br.cloneBrowser();
-                galleryBrowser.getPage(link);
-                for (DownloadLink currentLink : decryptGalleryLinks(galleryBrowser)) {
-                    decryptedLinks.add(currentLink);
-                }
-            }
+        final String[] urls = br.getRegex("\\'(/gallery/[^\\']+)\\'").getColumn(0);
+        for (String url : urls) {
+            url = br.getURL(url).toString();
+            decryptedLinks.add(this.createDownloadlink(url));
         }
         return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> decryptVideoLinks(Browser br) throws PluginException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (br.containsHTML("Video not found")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Video not found")) {
             logger.info("Link offline: " + br.getURL());
             return decryptedLinks;
         }
@@ -117,9 +114,22 @@ public class KndGrlsCom extends PluginForDecrypt {
         if (girlsname == null) {
             girlsname = br.getRegex("<div id='up_izq'><h3>([a-zA-Z0-9 _\\-]+)</h3>").getMatch(0);
         }
+        if (girlsname == null) {
+            /* 2020-10-02 */
+            girlsname = br.getRegex("<h3> <a href=\\'/girls/[^\\']+\\'>([^<>\"]+)</a>  </h3>").getMatch(0);
+        }
+        if (girlsname == null) {
+            /* Fallback */
+            girlsname = new Regex(br.getURL(), TYPE_GALLERY).getMatch(0);
+        }
         if (girlsname != null) {
+            final String galleryID = new Regex(br.getURL(), "/(\\d+)/?$").getMatch(0);
+            String packagename = girlsname.trim();
+            if (galleryID != null) {
+                packagename += "_" + galleryID;
+            }
             FilePackage fp = FilePackage.getInstance();
-            fp.setName("Kindgirls - " + girlsname.trim());
+            fp.setName("Kindgirls - " + packagename);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
