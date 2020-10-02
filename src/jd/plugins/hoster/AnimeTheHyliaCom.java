@@ -38,7 +38,7 @@ import jd.plugins.PluginForHost;
 public class AnimeTheHyliaCom extends PluginForHost {
     public AnimeTheHyliaCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://anime.thehylia.com/forums/register.php");
+        this.enablePremium("https://anime.thehylia.com/forums/register.php");
     }
 
     /* Connection stuff */
@@ -71,6 +71,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
             try {
                 login(aa, false);
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         // final String filename_crawler = downloadLink.getStringProperty("decryptedfilename", null);
@@ -82,7 +83,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (decryptedlink.contains("/soundtracks/")) {
-            dllink = br.getRegex("\"(http://[^<>\"]*?\\.mp3)\">Download").getMatch(0);
+            dllink = br.getRegex("\"(https?://[^<>\"]*?\\.mp3)\"\\s*>\\s*Download").getMatch(0);
         } else {
             if (br.getURL().contains("anime.thehylia.com/downloads/series/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -106,16 +107,18 @@ public class AnimeTheHyliaCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
                 if (link.getFinalFileName() == null) {
                     String name = Encoding.htmlDecode(getFileNameFromHeader(con).trim());
                     link.setFinalFileName(name);
                 }
+                return AvailableStatus.TRUE;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
@@ -132,18 +135,21 @@ public class AnimeTheHyliaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://anime.thehylia.com";
-    private static Object       LOCK     = new Object();
+    private static final String MAINPAGE = "https://anime.thehylia.com";
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -174,7 +180,9 @@ public class AnimeTheHyliaCom extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -184,12 +192,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
