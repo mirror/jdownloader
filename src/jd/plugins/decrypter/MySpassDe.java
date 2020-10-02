@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -30,6 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "myspass.de" }, urls = { "https?://(?:www\\.)?myspass\\.de/(?:(?:myspass/)?shows/(?:tv|web)shows/.+|channels/.+)" })
@@ -146,12 +148,8 @@ public class MySpassDe extends PluginForDecrypt {
                 /* Reset variables which we re-use. */
                 yearInsteadOfSeasonNumber = false;
                 needs_series_filename = true;
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
-                    return decryptedLinks;
-                }
                 /*
-                 * Normally we could use seasoncounter here but site is buggy - sometimes they either dont have all seasons or they just
+                 * Normally we could use seasoncounter here but site is buggy - sometimes they either don't have all seasons or they just
                  * start with- or use random numbers e.g. here the "first season" from 2011 has the season number 9:
                  * http://www.myspass.de/myspass/shows/tvshows/tv-total-wok-wm/
                  *
@@ -178,7 +176,7 @@ public class MySpassDe extends PluginForDecrypt {
                     seasonnumber = "0";
                 }
                 if (format_intern == null || seasonnumber_intern == null || seasonnumber == null) {
-                    /* E.g. Skip "Highlights"-tab. */
+                    /* E.g. Skip "Highlights"-tab and other invalid items. */
                     continue;
                 }
                 seasonnumber = seasonnumber.trim();
@@ -191,6 +189,7 @@ public class MySpassDe extends PluginForDecrypt {
                     needs_series_filename = false;
                 }
                 seasonnumber_formatted = df.format(seasonnumber_parsed);
+                /* Go through all years/seasons */
                 this.br.getPage("//www." + this.getHost() + "/frontend/php/ajax.php?query=bob&formatId=" + format_intern + "&seasonId=" + seasonnumber_intern + "&category=full_episode&sortBy=episode_desc");
                 if (yearInsteadOfSeasonNumber) {
                     fpName = show + " " + seasonnumber;
@@ -198,8 +197,9 @@ public class MySpassDe extends PluginForDecrypt {
                     fpName = show + " S" + seasonnumber_formatted;
                 }
                 fp.setName(fpName);
+                /* Get all video items of this season/year */
                 // final String[] html_episode_list = this.br.getRegex("<li class=\"played_video_li\".*?</li>").getColumn(-1);
-                br.getRequest().setHtmlCode(br.toString().replaceAll("\\\\", ""));
+                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
                 final String[] html_episode_list = this.br.getRegex("<tr.*?</tr>").getColumn(-1);
                 if (html_episode_list == null || html_episode_list.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -207,15 +207,23 @@ public class MySpassDe extends PluginForDecrypt {
                 }
                 for (final String html_episode : html_episode_list) {
                     // final String[] columns = new Regex(html_episode, "<td>(.*?)</td>").getColumn(0);
-                    final String singleLink = new Regex(html_episode, "<a href=\"(/shows/[^\"]+\\d+/)\"").getMatch(0);
+                    String item_title = new Regex(html_episode, "<a href=\"[^\"]+\">([^<]+)</a>").getMatch(0);
+                    final String singleLink = new Regex(html_episode, "<a href=\"/shows/([^\"]+\\d+/)\"").getMatch(0);
                     final String episodenumber = new Regex(html_episode, "Folge\\s*?(\\d+)").getMatch(0);
                     if (singleLink == null) {
                         /* Skip invalid items */
                         continue;
                     }
-                    final String url_content = "http://myspass.de" + singleLink;
+                    if (!StringUtils.isEmpty(item_title)) {
+                        /* Do a small correction which is sometimes needed */
+                        final String betterItemTitle = new Regex(item_title, "1 - (.+)").getMatch(0);
+                        if (betterItemTitle != null) {
+                            item_title = betterItemTitle;
+                        }
+                    }
+                    final String url_content = "http://myspass.de/shows/" + singleLink;
                     final String fid = new Regex(singleLink, "(\\d+)/$").getMatch(0);
-                    final DownloadLink dl = createDownloadlink("http://myspassdecrypted.de" + singleLink);
+                    final DownloadLink dl = createDownloadlink("http://myspassdecrypted.de/shows/" + singleLink);
                     dl.setProperty("needs_series_filename", needs_series_filename);
                     dl.setContentUrl(url_content);
                     dl.setLinkID(this.getHost() + "://" + fid);
@@ -226,17 +234,24 @@ public class MySpassDe extends PluginForDecrypt {
                         } else {
                             filename_temp = fid + "_" + show + "_S" + seasonnumber_formatted + "E" + episodenumber;
                         }
+                    } else if (!StringUtils.isEmpty(item_title)) {
+                        filename_temp = item_title;
                     } else {
-                        filename_temp = fid;
+                        /* Fallback/last-chance: Ugliest temporary filename */
+                        filename_temp = singleLink;
                     }
-                    dl.setName(filename_temp);
-                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    /* Final filename will be set by host plugin later */
+                    dl.setName(filename_temp + ".mp4");
                     if (fastlinkcheck) {
                         dl.setAvailable(true);
                     }
                     dl._setFilePackage(fp);
                     distribute(dl);
                     decryptedLinks.add(dl);
+                }
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    return decryptedLinks;
                 }
             }
         }
