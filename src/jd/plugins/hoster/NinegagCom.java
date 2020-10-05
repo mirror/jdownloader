@@ -29,10 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/gag/[a-zA-Z0-9]+" })
 public class NinegagCom extends PluginForHost {
@@ -68,33 +68,28 @@ public class NinegagCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String id = new Regex(link.getDownloadURL(), "([a-zA-Z0-9]+)$").getMatch(0);
-        String filename = PluginJSonUtils.getJsonValue(this.br, "title");
-        final String image_src = br.getRegex("rel=\"image_src\" href=\"(https?[^<>\"]*?)\"").getMatch(0);
-        String images = br.getRegex("\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
-        if (images == null) {
-            String jsonParse = br.getRegex("window\\._config\\s*=\\s*JSON\\.parse\\((.*?)\\)\\s*;\\s*</script").getMatch(0);
-            if (jsonParse != null) {
-                jsonParse = JSonStorage.restoreFromString(jsonParse, TypeRef.STRING);
-                if (filename == null) {
-                    filename = PluginJSonUtils.getJsonValue(jsonParse, "title");
-                }
-                images = new Regex(jsonParse, "\"post\"\\s*:\\s*\\{\\s*\"id\"\\s*:\"" + id + "\".*?\"images\"\\s*:\\s*(\\{.*?\\}\\s*\\})\\s*,").getMatch(0);
-            }
+        String filename = null;
+        String jsonParse = br.getRegex("window\\._config\\s*=\\s*JSON\\.parse\\((.*?)\\)\\s*;\\s*</script").getMatch(0);
+        Map<String, Object> map = null;
+        if (jsonParse != null) {
+            jsonParse = JSonStorage.restoreFromString(jsonParse, TypeRef.STRING);
+            map = JSonStorage.restoreFromString(jsonParse, TypeRef.HASHMAP);
+            filename = (String) JavaScriptEngineFactory.walkJson(map, "data/post/title");
         }
         if (filename == null) {
             filename = id;
         }
         boolean video = false;
-        if (images != null) {
-            final Map<String, Object> map = JSonStorage.restoreFromString(images, TypeRef.HASHMAP);
-            final Map<String, Object> image460sv = (Map<String, Object>) map.get("image460sv");
-            if (image460sv != null) {
+        if (map != null) {
+            final Map<String, Object> images = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "data/post/images");
+            final Map<String, Object> image460sv = (Map<String, Object>) images.get("image460sv");
+            if (image460sv != null && image460sv.get("url") != null) {
                 video = true;
                 dllink = (String) image460sv.get("url");
             }
         }
         if (dllink == null) {
-            dllink = image_src;
+            dllink = br.getRegex("rel\\s*=\\s*\"image_src\"\\s*href\\s*=\\s*\"(https?[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -113,8 +108,10 @@ public class NinegagCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html") && con.getResponseCode() == 200) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
                 link.setProperty("directlink", dllink);
             } else {
                 server_issues = true;
@@ -137,9 +134,9 @@ public class NinegagCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
-                br.followConnection();
+                br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
@@ -147,8 +144,9 @@ public class NinegagCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
