@@ -27,14 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,6 +53,14 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+(/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
@@ -79,7 +79,6 @@ public class FlickrCom extends PluginForHost {
     private static final String CUSTOM_FILENAME                  = "CUSTOM_FILENAME";
     private static final String CUSTOM_FILENAME_EMPTY_TAG_STRING = "CUSTOM_FILENAME_EMPTY_TAG_STRING";
     private static final String MAINPAGE                         = "http://flickr.com";
-    private static Object       LOCK                             = new Object();
     private String              dllink                           = null;
     private String              user                             = null;
     private String              id                               = null;
@@ -203,9 +202,11 @@ public class FlickrCom extends PluginForHost {
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "streams/stream");
             for (final Object streamO : ressourcelist) {
                 entries = (Map<String, Object>) streamO;
-                dllink = (String) entries.get("_content");
-                if (!StringUtils.isEmpty(dllink)) {
-                    break;
+                if (entries.get("type") instanceof String) {
+                    dllink = (String) entries.get("_content");
+                    if (!StringUtils.isEmpty(dllink)) {
+                        break;
+                    }
                 }
             }
             // dllink = apibr.getRegex("\"type\":\"orig\",\\s*?\"_content\":\"(https[^<>\"]*?)\"").getMatch(0);
@@ -251,13 +252,19 @@ public class FlickrCom extends PluginForHost {
         if (dllink != null && !isDownload) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                    }
                 }
             } finally {
                 try {
@@ -283,8 +290,12 @@ public class FlickrCom extends PluginForHost {
             /* Same as check below */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dl.startDownload()) {
@@ -325,15 +336,19 @@ public class FlickrCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
     public void login(final Account account, final boolean force, final Browser br) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
