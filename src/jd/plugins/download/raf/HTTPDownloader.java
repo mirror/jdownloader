@@ -1215,7 +1215,8 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         if (ioException != null) {
             LogSource.exception(logger, ioException);
             if (terminate()) {
-                if (StringUtils.containsIgnoreCase(ioException.getMessage(), "There is not enough space on the disk") || StringUtils.containsIgnoreCase(ioException.getMessage(), "No space left on device")) {
+                final String message = ioException.getMessage();
+                if (StringUtils.containsIgnoreCase(message, "There is not enough space on the disk") || StringUtils.containsIgnoreCase(message, "No space left on device") || StringUtils.containsIgnoreCase(message, "Disk quota exceeded")) {
                     addError(HTTPChunk.ERROR.NOT_ENOUGH_SPACE_ON_DISK);
                 } else {
                     addError(HTTPChunk.ERROR.FLUSHING);
