@@ -281,24 +281,22 @@ public class FlickrCom extends PluginForHost {
         requestFileInformation(link, true);
         if (br.getURL().contains("login.yahoo.com/config")) {
             throw new AccountRequiredException();
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        } else if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
+            dl.getConnection().disconnect();
             /* Same as check below */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
+        } else if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.startDownload()) {
+        } else if (dl.startDownload()) {
             /*
              * 2016-08-19: Detect "TZemporarily unavailable" message inside downloaded picture via md5 hash of the file:
              * https://board.jdownloader.org/showthread.php?t=70487"
@@ -335,8 +333,15 @@ public class FlickrCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, true);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
+        if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
+            dl.getConnection().disconnect();
+            /* Same as check below */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        } else if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
