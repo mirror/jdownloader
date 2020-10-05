@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -1156,15 +1158,22 @@ public class MegaConz extends PluginForHost {
                         try {
                             FileStateManager.getInstance().requestFileState(outputFile, FILESTATE.WRITE_EXCLUSIVE, this);
                             fos = new FileOutputStream(outputFile);
-                            final DigestInputStream dis = new DigestInputStream(fis, MessageDigest.getInstance("SHA-256"));
-                            final DigestOutputStream dos = new DigestOutputStream(fos, MessageDigest.getInstance("SHA-256"));
+                            final InputStream is;
+                            final OutputStream os;
+                            if (false) {
+                                is = new DigestInputStream(fis, MessageDigest.getInstance("SHA-256"));
+                                os = new DigestOutputStream(fos, MessageDigest.getInstance("SHA-256"));
+                            } else {
+                                is = fis;
+                                os = fos;
+                            }
                             try {
                                 final Cipher cipher = Cipher.getInstance("AES/CTR/nopadding");
                                 cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
-                                final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(dos, 1024 * 1024), cipher);
+                                final CipherOutputStream cos = new CipherOutputStream(new BufferedOutputStream(os, 1024 * 1024), cipher);
                                 int read = 0;
                                 final byte[] buffer = new byte[512 * 1024];
-                                while ((read = dis.read(buffer)) != -1) {
+                                while ((read = is.read(buffer)) != -1) {
                                     if (read > 0) {
                                         progress.updateValues(progress.getCurrent() + read, total);
                                         cos.write(buffer, 0, read);
@@ -1172,8 +1181,10 @@ public class MegaConz extends PluginForHost {
                                     }
                                 }
                                 cos.close();
-                                logger.info("Decryption-Input-SHA256:" + HexFormatter.byteArrayToHex(dis.getMessageDigest().digest()));
-                                logger.info("Decryption-Output-SHA256:" + HexFormatter.byteArrayToHex(dos.getMessageDigest().digest()));
+                                if (is instanceof DigestInputStream) {
+                                    logger.info("Decryption-Input-SHA256:" + HexFormatter.byteArrayToHex(((DigestInputStream) is).getMessageDigest().digest()));
+                                    logger.info("Decryption-Output-SHA256:" + HexFormatter.byteArrayToHex(((DigestOutputStream) os).getMessageDigest().digest()));
+                                }
                             } finally {
                                 fos.close();
                             }
