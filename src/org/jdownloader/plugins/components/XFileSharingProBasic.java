@@ -1881,6 +1881,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
                 /* For video streams we often don't get a Content-Disposition header. */
                 if (con.getResponseCode() == 503) {
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     /* Ok */
                     /*
                      * Too many connections but that does not mean that our directlink is invalid. Accept it and if it still returns 503 on
@@ -1889,17 +1894,22 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     logger.info("directurl lead to 503 | too many connections");
                     return directurl;
-                } else if (con.getCompleteContentLength() > 0 && isDownloadableContent(con)) {
-                    if (/* StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream") && */con.getCompleteContentLength() < 100) {
+                } else if (isDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() >= 0 && con.getCompleteContentLength() < 100) {
                         throw new Exception("very likely no file but an error message!length=" + con.getCompleteContentLength());
                     } else {
-                        if (setFilesize) {
+                        if (setFilesize && con.getCompleteContentLength() > 0) {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         return directurl;
                     }
                 } else {
                     /* Failure */
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     throw new Exception("no downloadable content?" + con.getResponseCode() + "|" + con.getContentType() + "|" + con.isContentDisposition());
                 }
             } catch (final Exception e) {
@@ -3567,7 +3577,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 handleDownload(link, account, dllink, formCon.getRequest());
                                 return;
                             } else {
-                                br.followConnection();
+                                try {
+                                    br.followConnection(true);
+                                } catch (IOException e) {
+                                    logger.log(e);
+                                }
                                 this.correctBR();
                             }
                             checkErrors(link, account, true);
@@ -3581,7 +3595,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
-        return con != null && con.isOK() && (con.isContentDisposition() || StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream") || !StringUtils.containsIgnoreCase(con.getContentType(), "text") || (con.getCompleteContentLength() >= 1024 * 1024l));
+        return looksLikeDownloadableContent(con);
     }
 
     protected void handleDownload(final DownloadLink link, final Account account, String dllink, final Request req) throws Exception {
