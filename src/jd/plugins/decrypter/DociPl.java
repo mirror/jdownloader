@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -60,9 +59,6 @@ public class DociPl extends PluginForDecrypt {
         /* Crawl subfolders */
         final String[] folders = br.getRegex("<article\\s*class\\s*=\\s*\"elem\"\\s*>\\s*<header>\\s*<img[^<>]*?dir[^<>]*?>\\s*<p[^<>]*?>\\s*<a href=\"(/[^<>\"]+)\"").getColumn(0);
         for (final String singleLink : folders) {
-            if (isAbort()) {
-                break;
-            }
             final String url = br.getURL(singleLink).toString();
             decryptedLinks.add(createDownloadlink(url));
         }
@@ -77,14 +73,14 @@ public class DociPl extends PluginForDecrypt {
             return decryptedLinks;
         }
         for (final String singleLink[] : files) {
-            if (isAbort()) {
-                break;
+            String filename = singleLink[1];
+            if (!filename.endsWith(".pdf")) {
+                filename += ".pdf";
             }
             final String url = br.getURL(singleLink[0]).toString().replaceFirst("https?://", Matcher.quoteReplacement(host_plugin_string));
             final DownloadLink link = createDownloadlink(url);
             link.setAvailable(true);
-            link.setMimeHint(CompiledFiletypeFilter.DocumentExtensions.PDF);
-            link.setName(singleLink[1]);
+            link.setName(filename);
             link.setDownloadSize(SizeFormatter.getSize(singleLink[2]));
             decryptedLinks.add(link);
         }

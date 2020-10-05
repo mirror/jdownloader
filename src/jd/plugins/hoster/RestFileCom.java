@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -67,6 +69,19 @@ public class RestFileCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 0;
         }
+    }
+
+    @Override
+    public Form findFormDownload1Free() throws Exception {
+        final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
+        if (download1 != null) {
+            download1.remove("method_premium");
+            /* 2020-10-05: Special */
+            download1.remove("method_free");
+            download1.remove("method_free");
+            download1.put("method_free", Encoding.urlEncode("Free Download"));
+        }
+        return download1;
     }
 
     @Override

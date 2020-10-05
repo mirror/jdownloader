@@ -178,6 +178,16 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            /* 2020-10-05: Special: Empty "embed URL". */
+            offline = new Regex(correctedBR, "<iframe src=\"/e/\"").matches();
+        }
+        return offline;
+    }
+
+    @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
         fuid = null;
         correctDownloadLink(link);

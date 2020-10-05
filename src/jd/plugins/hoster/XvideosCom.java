@@ -19,20 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -43,17 +29,41 @@ import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQ
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class XvideosCom extends PluginForHost {
     public XvideosCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://xvideos.red/");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es" });
+        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es", "xvideos.red" });
+        /* 2020-10-05: I've decided, not to add their "premium domain" as an extra host. */
+        // ret.add(new String[] { "xvideos.red" });
         return ret;
     }
 
@@ -152,14 +162,27 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        link.setName(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0));
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0));
+        }
         br.setFollowRedirects(false);
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
+        if (account != null) {
+            this.login(account, false);
+        } else {
+            /* Try to find ANY account --> Prefer xvideos.red as that is required to download premium content */
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account != null) {
+                this.login(account, false);
+            }
+        }
         br.getPage(link.getPluginPatternMatcher());
         while (br.getRedirectLocation() != null) {
             final String redirect = br.getRedirectLocation();
@@ -173,7 +196,11 @@ public class XvideosCom extends PluginForHost {
             }
             br.getPage(redirect);
         }
-        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(This video has been deleted|Page not found|>Sorry, this video is not available\\.|>We received a request to have this video deleted|class=\"inlineError\")")) {
+            logger.info("Content offline by html code");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Content offline by response code 404");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\"video_title_ori\"\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -208,6 +235,7 @@ public class XvideosCom extends PluginForHost {
         } else {
             filename = videoID + "_" + filename;
         }
+        String videoURL = null;
         if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
             final String hlsURL = getVideoHLS();
             if (StringUtils.isNotEmpty(hlsURL)) {
@@ -248,32 +276,55 @@ public class XvideosCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 }
             }
-        }
-        String videoURL = null;
-        final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
-        if (qualityhttp == PreferredHTTPQuality.HIGH) {
-            videoURL = getVideoHigh();
-        } else {
-            videoURL = getVideoLow();
-        }
-        if (videoURL != null && !isValidVideoURL(link, videoURL)) {
-            videoURL = null;
-        }
-        if (videoURL == null) {
-            /* Fallback / try to find BEST */
-            logger.info("Failed to find selected http quality");
-            videoURL = getVideoHigh();
-            if (!isValidVideoURL(link, videoURL)) {
-                videoURL = getVideoLow();
-                if (!isValidVideoURL(link, videoURL)) {
-                    videoURL = getVideoFlv();
-                    if (!isValidVideoURL(link, videoURL)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (account != null) {
+            /* When logged-in, official downloadlinks can be available */
+            logger.info("Looking for official download ...");
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(this.br.getURL("/video-download/" + videoID + "/"));
+            /* TODO: Add user quality selection */
+            if (brc.getURL().contains(videoID)) {
+                final String[] qualities = { "URL_MP4_4K", "URL_MP4HD", "URL", "URL_LOW" };
+                for (final String quality : qualities) {
+                    final String downloadURLTmp = PluginJSonUtils.getJson(brc, quality);
+                    if (!StringUtils.isEmpty(downloadURLTmp)) {
+                        logger.info("Found official download - quality = " + quality);
+                        videoURL = downloadURLTmp;
+                        break;
                     }
                 }
             }
+            if (StringUtils.isEmpty(videoURL)) {
+                logger.info("Failed to find any official downloadlink");
+            }
         }
-        videoURL = Encoding.htmlOnlyDecode(videoURL);
+        if (StringUtils.isEmpty(videoURL)) {
+            /* Download http streams */
+            final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
+            if (qualityhttp == PreferredHTTPQuality.HIGH) {
+                videoURL = getVideoHigh();
+            } else {
+                videoURL = getVideoLow();
+            }
+            if (videoURL != null && !isValidVideoURL(link, videoURL)) {
+                videoURL = null;
+            }
+            if (videoURL == null) {
+                /* Fallback / try to find BEST */
+                logger.info("Failed to find selected http quality");
+                videoURL = getVideoHigh();
+                if (!isValidVideoURL(link, videoURL)) {
+                    videoURL = getVideoLow();
+                    if (!isValidVideoURL(link, videoURL)) {
+                        videoURL = getVideoFlv();
+                    }
+                }
+            }
+            if (!isValidVideoURL(link, videoURL)) {
+                /* Assume that an account is required to access this content */
+                throw new AccountRequiredException();
+            }
+            videoURL = Encoding.htmlOnlyDecode(videoURL);
+        }
         if (Thread.currentThread() instanceof SingleDownloadController) {
             streamURL = videoURL;
         }
@@ -306,6 +357,13 @@ public class XvideosCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase("xvideos.red") && (account == null || account.getType() != AccountType.PREMIUM)) {
+            throw new AccountRequiredException();
+        }
         if (streamURL != null) {
             int chunks = 0;
             if (link.getBooleanProperty(XvideosCom.NOCHUNKS, false)) {
@@ -398,6 +456,122 @@ public class XvideosCom extends PluginForHost {
     @Override
     public Class<XvideosComConfig> getConfigInterface() {
         return XvideosComConfig.class;
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    setCookies(this.br, cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    /* Will redirect to xvideos.red if we're logged in as premium user */
+                    br.getPage("https://www.xvideos.com/");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("https://www.xvideos.com/account/signinform/create");
+                final String html = PluginJSonUtils.getJson(br, "form");
+                if (!StringUtils.isEmpty(html)) {
+                    br.getRequest().setHtmlCode(html);
+                }
+                final Form loginform = br.getForm(0);
+                if (loginform == null || !loginform.hasInputFieldByName("signin-form%5Bpassword%5D")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.setAction("/account/signinform");
+                // loginform.setMethod(MethodType.POST);
+                // loginform.put(Encoding.urlEncode("signin-form[votes]"), "");
+                // loginform.put(Encoding.urlEncode("signin-form[subs]"), "");
+                // loginform.put(Encoding.urlEncode("signin-form[post_referer]"), Encoding.urlEncode("https://www.xvideos.com/"));
+                loginform.put(Encoding.urlEncode("signin-form[login]"), Encoding.urlEncode(account.getUser()));
+                loginform.put(Encoding.urlEncode("signin-form[password]"), Encoding.urlEncode(account.getPass()));
+                loginform.put(Encoding.urlEncode("signin-form[rememberme]"), "on");
+                br.submitForm(loginform);
+                final String premium_redirect = PluginJSonUtils.getJson(br, "premium_redirect");
+                final String redirect_domain = PluginJSonUtils.getJson(br, "redirect_domain");
+                if (StringUtils.isEmpty(premium_redirect) && StringUtils.isEmpty(redirect_domain)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (redirect_domain != null) {
+                    /* xvideos.com FREE account */
+                    br.getPage(redirect_domain);
+                } else {
+                    /* xvideos.red PREMIUM account */
+                    br.getPage("https://www.xvideos.red/?" + premium_redirect);
+                }
+                /* Double-check! */
+                if (!this.isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private void setCookies(final Browser br, final Cookies cookies) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                br.setCookies(domain, cookies);
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.containsHTML("/account/signout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        /* Redirect to xvideos.red after login --> Premium Account | Redirect to xvideos.com == free */
+        if (br.getURL().contains("xvideos.red")) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        // login(account, false);
+        requestFileInformation(link, account);
+        handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        /* 2020-10-05: No captchas at all */
+        return false;
     }
 
     @Override
