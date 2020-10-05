@@ -226,6 +226,24 @@ public class PornHubCom extends PluginForHost {
         return getPage(br, br.createGetRequest(url));
     }
 
+    public static Request getFirstPageWithAccount(Plugin plugin, Account account, Browser br, final String url) throws Exception {
+        if (account == null) {
+            return getPage(br, url);
+        } else {
+            synchronized (account) {
+                final boolean verifiedLogin = login(plugin, br, account, false);
+                final Request request = getPage(br, url);
+                if (!isLoggedInHtml(br)) {
+                    plugin.getLogger().info("Not logged in?|VerifiedLogin:" + verifiedLogin);
+                    login(plugin, br, account, true);
+                    return getPage(br, url);
+                } else {
+                    return request;
+                }
+            }
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "static-access" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -251,16 +269,9 @@ public class PornHubCom extends PluginForHost {
             br.setFollowRedirects(true);
             getPage(br, createPornhubImageLink(viewKey, null));
             if (br.containsHTML(html_privateimage)) {
-                final Account aa = AccountController.getInstance().getValidAccount(this);
-                if (aa != null) {
-                    login(this, br, aa, false);
-                }
+                final Account account = AccountController.getInstance().getValidAccount(this);
                 br.setFollowRedirects(true);
-                getPage(br, createPornhubImageLink(viewKey, aa));
-                if (aa != null && !isLoggedInHtml(br) && br.containsHTML(html_privateimage)) {
-                    login(this, br, aa, true);
-                    getPage(br, createPornhubImageLink(viewKey, aa));
-                }
+                getFirstPageWithAccount(this, account, br, createPornhubImageLink(viewKey, account));
                 if (br.containsHTML(html_privateimage)) {
                     link.getLinkStatus().setStatusText("You're not authorized to watch/download this private image");
                     return AvailableStatus.TRUE;
@@ -326,16 +337,9 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             prepBr(br);
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa != null) {
-                this.login(this, br, aa, false);
-            }
+            final Account account = AccountController.getInstance().getValidAccount(this);
             br.setFollowRedirects(true);
-            getPage(br, createPornhubVideoLink(viewKey, aa));
-            if (aa != null && !isLoggedInHtml(br) && br.containsHTML(html_privatevideo)) {
-                login(this, br, aa, true);
-                getPage(br, createPornhubVideoLink(viewKey, aa));
-            }
+            getFirstPageWithAccount(this, account, br, createPornhubVideoLink(viewKey, account));
             if (br.containsHTML(html_privatevideo)) {
                 link.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
                 link.setName(html_filename);
@@ -708,17 +712,19 @@ public class PornHubCom extends PluginForHost {
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dlUrl, resume, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl.startDownload();
         }
@@ -734,7 +740,7 @@ public class PornHubCom extends PluginForHost {
     private static final String COOKIE_ID_FREE    = "v1_free";
     private static final String COOKIE_ID_PREMIUM = "v1_premium";
 
-    public static void login(Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
+    public static boolean login(Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 // Load cookies
@@ -746,12 +752,12 @@ public class PornHubCom extends PluginForHost {
                 final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
                 final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
                 final boolean cookiesOk = freeCookies != null && premiumCookies != null && (isLoggedInFreeCookieFree(freeCookies) || isLoggedInPremiumCookie(premiumCookies));
-                if (!force && cookiesOk && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_FREE) <= trust_cookie_age) {
+                if (!force && cookiesOk && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_FREE) <= trust_cookie_age) && (System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID_PREMIUM) <= trust_cookie_age)) {
                     br.setCookies(getProtocolFree() + PORNHUB_FREE, freeCookies);
                     br.setCookies(getProtocolPremium() + PORNHUB_PREMIUM, premiumCookies);
                     plugin.getLogger().info("Trust login cookies:" + account.getType());
                     /* We trust these cookies --> Do not check them */
-                    return;
+                    return false;
                 }
                 if (freeCookies != null && premiumCookies != null) {
                     /* Check cookies - only perform a full login if they're not valid anymore. */
@@ -764,7 +770,7 @@ public class PornHubCom extends PluginForHost {
                             account.setType(AccountType.PREMIUM);
                             plugin.getLogger().info("Verified(fast) premium->premium login cookies:" + account.getType());
                             saveCookies(br, account);
-                            return;
+                            return true;
                         } else {
                             // slow check
                             getPage(br, (getProtocolPremium() + PORNHUB_PREMIUM));
@@ -772,12 +778,12 @@ public class PornHubCom extends PluginForHost {
                                 account.setType(AccountType.PREMIUM);
                                 plugin.getLogger().info("Verified(slow) premium->premium login cookies:" + account.getType());
                                 saveCookies(br, account);
-                                return;
+                                return true;
                             } else if (isLoggedInHtmlFree(br)) {
                                 account.setType(AccountType.FREE);
                                 plugin.getLogger().info("Verified(slow) premium->free login cookies:" + account.getType());
                                 saveCookies(br, account);
-                                return;
+                                return true;
                             }
                         }
                     } else {
@@ -786,14 +792,14 @@ public class PornHubCom extends PluginForHost {
                             account.setType(AccountType.FREE);
                             plugin.getLogger().info("Verified(slow) free->free login cookies:" + account.getType());
                             saveCookies(br, account);
-                            return;
+                            return true;
                         } else {
                             getPage(br, (getProtocolPremium() + "pornhubpremium.com/user/login_status?ajax=1"));
                             if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(PORNHUB_PREMIUM))) {
                                 account.setType(AccountType.PREMIUM);
                                 plugin.getLogger().info("Verified(fast) free->premium login cookies:" + account.getType());
                                 saveCookies(br, account);
-                                return;
+                                return true;
                             }
                         }
                     }
@@ -850,6 +856,7 @@ public class PornHubCom extends PluginForHost {
                     account.setType(AccountType.FREE);
                 }
                 saveCookies(br, account);
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies(COOKIE_ID_FREE);

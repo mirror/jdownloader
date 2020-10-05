@@ -133,7 +133,7 @@ public class PornHubCom extends PluginForDecrypt {
         } else {
             parameter = parameter.replace("pornhubpremium.com", "pornhub.com");
         }
-        jd.plugins.hoster.PornHubCom.getPage(br, parameter);
+        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Offline because 404");
             decryptedLinks.add(createOfflinelink(parameter));
