@@ -45,6 +45,7 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
@@ -141,37 +142,30 @@ public class ImgurComHoster extends PluginForHost {
          * directurl if needed!
          */
         TYPE type = null;
-        final boolean allowExtendedCheck = false;
+        final boolean allowExtendedCheck = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         if (allowExtendedCheck && (dllink == null || link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null)) {
             /*
              * TODO: Check this old handling: Also check whether or not we want to handle the "prefer mp4" setting here or only in crawler
              * [handling ithere would make more sense]
              */
-            prepBRAPI(this.br);
-            boolean apiMode = true;
-            if (account == null && false && !this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, true)) {
-                /* Website, no longer works and requires Javascript/API */
-                apiMode = false;
-            } else if (account != null) {
-                /* API + account */
-                this.login(br, account, false);
-                getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
-                this.checkErrors(br, link, account);
-            } else {
-                /* API without account */
-                try {
-                    br.getHeaders().put("Authorization", getAuthorization());
-                    getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
-                    if (this.br.getHttpConnection().getResponseCode() == 429) {
-                        apiMode = false;
-                    }
-                } catch (final PluginException e) {
-                    logger.info("Disabled API mode");
-                    apiMode = false;
-                }
-            }
+            final boolean apiMode = canUseAPI() && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+            final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, true);
             String apiResponse[] = null;
             if (apiMode) {
+                prepBRAPI(this.br);
+                if (useApiInAnonymousMode) {
+                    br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
+                } else {
+                    this.login(br, null, false);
+                }
+                getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
+                this.checkErrors(br, link, account);
+                if (this.br.getHttpConnection().getResponseCode() == 429) {
+                    if (!useApiInAnonymousMode) {
+                        account.setError(AccountError.TEMP_DISABLED, 30 * 60 * 1000l, "Rate limit reached");
+                    }
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached");
+                }
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
