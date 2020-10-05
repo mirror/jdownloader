@@ -23,9 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,6 +41,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
@@ -182,6 +182,8 @@ public class FlickrCom extends PluginForDecrypt {
             fpName = br.getRegex("\"title\":\\{\"_content\":\"([^<>\"]*?)\"\\}").getMatch(0);
             if (fpName == null || fpName.equals("")) {
                 fpName = "flickr.com set " + setID + " of user " + this.username;
+            } else {
+                fpName = Encoding.unicodeDecode(fpName);
             }
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setID) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
@@ -491,6 +493,8 @@ public class FlickrCom extends PluginForDecrypt {
         fpName = br.getRegex("<title>(.*?) \\| Flickr</title>").getMatch(0);
         if (fpName == null) {
             fpName = "favourites of user " + username;
+        } else {
+            fpName = Encoding.unicodeDecode(fpName);
         }
         final FilePackage fp = FilePackage.getInstance();
         // lets allow merge, so if the user imports multiple pages manually they will go into the same favourites package.

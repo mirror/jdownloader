@@ -21,13 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +44,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(?:s/[a-f0-9]{10}/\\d+-\\d+|mpv/\\d+/[a-f0-9]{10}/#page\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends antiDDoSForHost {
@@ -118,8 +118,9 @@ public class EHentaiOrg extends antiDDoSForHost {
         }
     }
 
-    private Browser prepBR(final Browser br) {
+    private Browser prepBR(final Browser br, final DownloadLink link) {
         br.setReadTimeout(3 * 60 * 1000);
+        br.setCookie(Browser.getHost(link.getPluginPatternMatcher()), "nw", "1");
         // br.setConnectTimeout(3 * 60 * 1000);
         return br;
     }
@@ -158,7 +159,7 @@ public class EHentaiOrg extends antiDDoSForHost {
              */
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         }
-        prepBR(br);
+        prepBR(br, link);
         // nullfication
         dupe.clear();
         dllink = null;
