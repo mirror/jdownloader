@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -178,12 +179,12 @@ public class XvideosCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
         if (account != null) {
-            this.login(account, false);
+            this.login(this, br, account, false);
         } else {
             /* Try to find ANY account --> Prefer xvideos.red as that is required to download premium content */
             account = AccountController.getInstance().getValidAccount(this.getHost());
             if (account != null) {
-                this.login(account, false);
+                this.login(this, br, account, false);
             }
         }
         br.getPage(link.getPluginPatternMatcher());
@@ -469,7 +470,7 @@ public class XvideosCom extends PluginForHost {
         return XvideosComConfig.class;
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    public static boolean login(Plugin plugin, Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -477,20 +478,20 @@ public class XvideosCom extends PluginForHost {
                 final Cookies cookiesFree = account.loadCookies("");
                 final Cookies cookiesPremium = account.loadCookies("premium");
                 if (cookiesFree != null && cookiesPremium != null) {
-                    logger.info("Attempting cookie login");
+                    plugin.getLogger().info("Attempting cookie login");
                     setCookies(br, cookiesFree);
                     br.setCookies("xvideos.red", cookiesPremium);
                     if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        plugin.getLogger().info("Cookies are still fresh --> Trust cookies without login");
                         return false;
                     }
                     /* Will redirect to xvideos.red if we're logged in as premium user */
                     br.getPage("https://www.xvideos.com/");
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
+                    if (isLoggedin(br)) {
+                        plugin.getLogger().info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies("xvideos.com"), "");
-                        account.saveCookies(this.br.getCookies("xvideos.red"), "premium");
+                        account.saveCookies(br.getCookies("xvideos.com"), "");
+                        account.saveCookies(br.getCookies("xvideos.red"), "premium");
                         if (isPremium(br)) {
                             account.setType(AccountType.PREMIUM);
                         } else {
@@ -498,10 +499,10 @@ public class XvideosCom extends PluginForHost {
                         }
                         return true;
                     } else {
-                        logger.info("Cookie login failed");
+                        plugin.getLogger().info("Cookie login failed");
                     }
                 }
-                logger.info("Performing full login");
+                plugin.getLogger().info("Performing full login");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("https://www.xvideos.com/account/signinform/create");
                 final String html = PluginJSonUtils.getJson(br, "form");
@@ -534,7 +535,7 @@ public class XvideosCom extends PluginForHost {
                     br.getPage("https://www.xvideos.red/?" + premium_redirect);
                 }
                 /* Double-check! */
-                if (!this.isLoggedin(br)) {
+                if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     if (isPremium(br)) {
@@ -542,8 +543,8 @@ public class XvideosCom extends PluginForHost {
                     } else {
                         account.setType(AccountType.FREE);
                     }
-                    account.saveCookies(this.br.getCookies("xvideos.com"), "");
-                    account.saveCookies(this.br.getCookies("xvideos.red"), "premium");
+                    account.saveCookies(br.getCookies("xvideos.com"), "");
+                    account.saveCookies(br.getCookies("xvideos.red"), "premium");
                     return true;
                 }
             } catch (final PluginException e) {
@@ -556,7 +557,7 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    private void setCookies(final Browser br, final Cookies cookies) {
+    private static void setCookies(final Browser br, final Cookies cookies) {
         for (final String[] domains : getPluginDomains()) {
             for (final String domain : domains) {
                 br.setCookies(domain, cookies);
@@ -564,18 +565,18 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    private boolean isPremium(Browser br) {
+    private static boolean isPremium(Browser br) {
         return StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red");
     }
 
-    private boolean isLoggedin(Browser br) {
+    private static boolean isLoggedin(Browser br) {
         return br.containsHTML("/account/signout");
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(this, br, account, true);
         ai.setUnlimitedTraffic();
         return ai;
     }

@@ -20,14 +20,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,6 +33,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -45,7 +47,7 @@ public class XvideosComProfile extends PluginForDecrypt {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es" });
+        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es", "xvideos.red" });
         return ret;
     }
 
@@ -79,6 +81,16 @@ public class XvideosComProfile extends PluginForDecrypt {
         final String parameter = param.toString();
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
+        Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account != null) {
+            try {
+                jd.plugins.hoster.XvideosCom.login(this, br, account, false);
+            } catch (PluginException e) {
+                logger.info("Login failure");
+                handleAccountException(account, e);
+                account = null;
+            }
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
