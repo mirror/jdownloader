@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -15,22 +19,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "https?://(oe1|oe3|fm4)\\.orf\\.at/(player|programm)/\\d+/[a-zA-Z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "https?://[a-z0-9]+\\.orf\\.at/(?:player|programm)/\\d+/[a-zA-Z0-9]+|https?://radiothek\\.orf\\.at/[a-z0-9]+/\\d+/[a-zA-Z0-9]+" })
 public class OrfAt extends PluginForDecrypt {
     public OrfAt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_OLD = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private static final String TYPE_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        final String broadCastID = new Regex(parameter.getCryptedUrl(), "/(?:player|programm)/\\d+/([a-zA-Z0-9]+)").getMatch(0);
-        final String broadCastKey = new Regex(parameter.getCryptedUrl(), "/(?:player|programm)/(\\d+)/\\d+").getMatch(0);
-        final String domainID = new Regex(parameter.getCryptedUrl(), "https?://(oe1|oe3|fm4)\\.orf\\.at").getMatch(0);
-        if (domainID == null) {
+        final String broadCastID;
+        final String broadCastKey;
+        final String domainID;
+        if (parameter.getCryptedUrl().matches(TYPE_OLD)) {
+            broadCastID = new Regex(parameter.getCryptedUrl(), TYPE_OLD).getMatch(2);
+            broadCastKey = new Regex(parameter.getCryptedUrl(), TYPE_OLD).getMatch(1);
+            domainID = new Regex(parameter.getCryptedUrl(), TYPE_OLD).getMatch(0);
+        } else {
+            broadCastID = new Regex(parameter.getCryptedUrl(), TYPE_NEW).getMatch(2);
+            broadCastKey = new Regex(parameter.getCryptedUrl(), TYPE_NEW).getMatch(1);
+            domainID = new Regex(parameter.getCryptedUrl(), TYPE_NEW).getMatch(0);
+        }
+        if (broadCastID == null || broadCastKey == null || domainID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("https://audioapi.orf.at/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
