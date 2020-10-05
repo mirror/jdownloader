@@ -19,16 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -49,6 +39,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -136,27 +136,30 @@ public class XvideosCom extends PluginForHost {
     private boolean isValidVideoURL(final DownloadLink downloadLink, final String url) throws Exception {
         if (StringUtils.isEmpty(url)) {
             return false;
-        }
-        URLConnectionAdapter con = null;
-        try {
-            Thread.sleep(2000);
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            con = br2.openHeadConnection(Encoding.htmlOnlyDecode(url));
-            if (StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getResponseCode() == 200) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                return true;
-            } else {
+        } else {
+            URLConnectionAdapter con = null;
+            try {
+                Thread.sleep(2000);
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(Encoding.htmlOnlyDecode(url));
+                if (StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getResponseCode() == 200) {
+                    if (con.getCompleteContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    }
+                    return true;
+                } else {
+                    throw new IOException();
+                }
+            } catch (final IOException e) {
+                logger.log(e);
                 return false;
-            }
-        } catch (final IOException e) {
-            logger.log(e);
-            return false;
-        } finally {
-            if (con != null) {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
+            } finally {
+                if (con != null) {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
         }
@@ -370,6 +373,14 @@ public class XvideosCom extends PluginForHost {
                 chunks = 1;
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, streamURL, true, chunks);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (!this.dl.startDownload()) {
                 try {
                     if (dl.externalDownloadStop()) {
@@ -463,20 +474,28 @@ public class XvideosCom extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                final Cookies cookiesFree = account.loadCookies("");
+                final Cookies cookiesPremium = account.loadCookies("premium");
+                if (cookiesFree != null && cookiesPremium != null) {
                     logger.info("Attempting cookie login");
-                    setCookies(this.br, cookies);
+                    setCookies(br, cookiesFree);
+                    br.setCookies("xvideos.red", cookiesPremium);
                     if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
                         logger.info("Cookies are still fresh --> Trust cookies without login");
                         return false;
                     }
                     /* Will redirect to xvideos.red if we're logged in as premium user */
                     br.getPage("https://www.xvideos.com/");
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                        account.saveCookies(this.br.getCookies("xvideos.com"), "");
+                        account.saveCookies(this.br.getCookies("xvideos.red"), "premium");
+                        if (isPremium(br)) {
+                            account.setType(AccountType.PREMIUM);
+                        } else {
+                            account.setType(AccountType.FREE);
+                        }
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -515,14 +534,22 @@ public class XvideosCom extends PluginForHost {
                     br.getPage("https://www.xvideos.red/?" + premium_redirect);
                 }
                 /* Double-check! */
-                if (!this.isLoggedin()) {
+                if (!this.isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    if (isPremium(br)) {
+                        account.setType(AccountType.PREMIUM);
+                    } else {
+                        account.setType(AccountType.FREE);
+                    }
+                    account.saveCookies(this.br.getCookies("xvideos.com"), "");
+                    account.saveCookies(this.br.getCookies("xvideos.red"), "premium");
+                    return true;
                 }
-                account.saveCookies(this.br.getCookies(this.br.getHost()), "");
-                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.clearCookies("premium");
                 }
                 throw e;
             }
@@ -530,7 +557,6 @@ public class XvideosCom extends PluginForHost {
     }
 
     private void setCookies(final Browser br, final Cookies cookies) {
-        final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
             for (final String domain : domains) {
                 br.setCookies(domain, cookies);
@@ -538,7 +564,11 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isPremium(Browser br) {
+        return StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red");
+    }
+
+    private boolean isLoggedin(Browser br) {
         return br.containsHTML("/account/signout");
     }
 
@@ -547,12 +577,6 @@ public class XvideosCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        /* Redirect to xvideos.red after login --> Premium Account | Redirect to xvideos.com == free */
-        if (br.getURL().contains("xvideos.red")) {
-            account.setType(AccountType.PREMIUM);
-        } else {
-            account.setType(AccountType.FREE);
-        }
         return ai;
     }
 
