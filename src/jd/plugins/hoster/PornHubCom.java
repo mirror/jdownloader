@@ -872,11 +872,11 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isLoggedInHtmlPremium(final Browser br) {
-        return br != null && br.getURL() != null && br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInPremiumCookie(br.getCookies(getProtocolPremium() + PORNHUB_PREMIUM));
+        return br != null && br.getURL() != null && br.getURL().contains(PORNHUB_PREMIUM) && isLoggedInPremiumCookie(br.getCookies(getProtocolPremium() + PORNHUB_PREMIUM)) && isLoggedInHtml(br);
     }
 
     public static boolean isLoggedInHtmlFree(final Browser br) {
-        return br != null && br.getURL() != null && !br.getURL().contains(PORNHUB_FREE) && isLoggedInFreeCookieFree(br.getCookies(getProtocolFree() + PORNHUB_FREE));
+        return br != null && br.getURL() != null && !br.getURL().contains(PORNHUB_FREE) && isLoggedInFreeCookieFree(br.getCookies(getProtocolFree() + PORNHUB_FREE)) && isLoggedInHtml(br);
     }
 
     public static boolean isLoggedInFreeCookieFree(Cookies cookies) {
