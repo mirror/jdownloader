@@ -107,9 +107,6 @@ public class ImgurComGallery extends PluginForDecrypt {
         return 1;
     }
 
-    /*
-     * TODO: Add API handling for this URL type 'subreddit': https://apidocs.imgur.com/?version=latest#98f68034-15a0-4044-a9ac-5ff3dc75c6b0
-     */
     private final String            type_subreddit_single_post     = "https?://[^/]+/r/([^/]+/[A-Za-z0-9]{5,7})";
     private final String            type_subreddit_gallery         = "https?://[^/]+/r/([^/]+)$";
     private final String            type_album                     = "https?://[^/]+/a/([A-Za-z0-9]{5,7})";
@@ -137,9 +134,6 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         this.prepBRWebsite(this.br);
         grabVideoSource = cfg.getBooleanProperty(ImgurComHoster.SETTING_GRAB_SOURCE_URL_VIDEO, ImgurComHoster.defaultSOURCEVIDEO);
-        /* TODO: Test API functionality and add missing API calls (e.g. "reddit style" stuff) */
-        // final boolean useApiForAlbumCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        // final boolean useApiForGalleryCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         final boolean useAPI = ImgurComHoster.isAPIEnabled();
         synchronized (CTRLLOCK) {
             if (parameter.matches(type_subreddit_single_post)) {
@@ -177,6 +171,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         final boolean useAPIInAnonymousMode = cfg.getBooleanProperty(ImgurComHoster.SETTING_USE_API_IN_ANONYMOUS_MODE, true);
         if (!ImgurComHoster.canUseAPI()) {
             logger.info("API usage is impossible");
+            ImgurComHoster.showAPIPreparationInformation();
             throw new DecrypterException("API usage not possible but required");
         }
         if (useAPIInAnonymousMode) {
@@ -185,6 +180,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             final Account account = AccountController.getInstance().getValidAccount(this.getHost());
             if (account == null) {
                 logger.warning("User needs to add an account or enable anonymous API usage");
+                showLoginRequiredDialog();
                 throw new AccountRequiredException();
             }
             final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
@@ -254,17 +250,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         this.author = (String) data.get("account_url");
         final String galleryTitle = (String) data.get("title");
-        String packageName;
-        if (!StringUtils.isEmpty(galleryTitle)) {
-            packageName = galleryTitle;
-            if (!StringUtils.isEmpty(this.author)) {
-                packageName = this.author + " - " + galleryTitle;
-            }
-        } else {
-            packageName = this.itemID;
-        }
         this.fp = FilePackage.getInstance();
-        this.fp.setName(packageName);
+        this.fp.setName(getFormattedPackagename(this.author, galleryTitle, this.itemID));
         final long imgcount = JavaScriptEngineFactory.toLong(data.get("images_count"), 0);
         Object images = data.get("images");
         final List<Map<String, Object>> items = (List<Map<String, Object>>) images;
@@ -429,6 +416,7 @@ public class ImgurComGallery extends PluginForDecrypt {
      */
     private void apiCrawlSubredditStyleGallery() throws Exception {
         this.prepareAPIUsage();
+        final ArrayList<String> dupes = new ArrayList<String>();
         final String subredditName = new Regex(this.parameter, this.type_subreddit_gallery).getMatch(0);
         this.fp = FilePackage.getInstance();
         this.fp.setName("/r/" + subredditName);
@@ -450,7 +438,19 @@ public class ImgurComGallery extends PluginForDecrypt {
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             Object images = entries.get("data");
             final List<Map<String, Object>> items = (List<Map<String, Object>>) images;
+            boolean foundNewItems = false;
             for (final Map<String, Object> item : items) {
+                final String id = (String) item.get("id");
+                if (StringUtils.isEmpty(id)) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dupes.contains(id)) {
+                    /* Skip duplicates */
+                    continue;
+                }
+                dupes.add(id);
+                foundNewItems = true;
                 final DownloadLink dl = apiCrawlJsonSingleItem(item);
                 final String itemnumber_formatted = String.format(Locale.US, "%0" + padLength + "d", index);
                 dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_ORDERID, itemnumber_formatted);
@@ -459,6 +459,11 @@ public class ImgurComGallery extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 index++;
                 count++;
+            }
+            /* Fail-safe */
+            if (!foundNewItems) {
+                logger.info("Stopping because failed to find any new items on current page");
+                break;
             }
             page += 1;
         } while (count == maxcount && !this.isAbort());
@@ -612,9 +617,6 @@ public class ImgurComGallery extends PluginForDecrypt {
                 entries = (Map<String, Object>) entries.get("data");
             }
         } while (!this.isAbort());
-        /* TODO: Fix usage of custom packagenames */
-        // fpName = ImgurComHoster.getFormattedPackagename(author, galleryTitle, itemID);
-        // fpName = encodeUnicode(fpName);
     }
 
     private void siteCrawlGallery() throws DecrypterException, ParseException, IOException {
@@ -776,11 +778,11 @@ public class ImgurComGallery extends PluginForDecrypt {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = "Imgur.com - Gallerie/Album Crawler";
                         message += "Hallo liebe(r) Imgur NutzerIn\r\n";
-                        message += "Um Gallerien und Alben von imgur herunterladen zu können musst du deine eigenen Imgur API Zugangsdaten und/oder deinen imgur Account in JD eintragen.\r\n";
+                        message += "Um Gallerien und Alben von imgur herunterladen zu können musst du deinen Imgur Account in JD eintragen.\r\n";
                     } else {
                         title = "Imgur.com - Gallery/Album crawler";
                         message += "Hello dear Imgur user\r\n";
-                        message += "You need to add your own Imgur API credentials and or imgur account to JD in order to be able to crawl galleries & albums.\r\n";
+                        message += "You need to add your Imgur account to JD in order to be able to crawl galleries & albums.\r\n";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(1 * 60 * 1000);
@@ -794,5 +796,33 @@ public class ImgurComGallery extends PluginForDecrypt {
         thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    /** Returns user defined packagename. */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedPackagename(final String... params) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
+        String username = params[0];
+        String title = params[1];
+        final String galleryid = params[2];
+        if (username == null) {
+            username = "-";
+        }
+        if (title == null) {
+            title = "-";
+        }
+        String formattedFilename = cfg.getStringProperty(ImgurComHoster.SETTING_CUSTOM_PACKAGENAME, ImgurComHoster.defaultCustomPackagename);
+        if (!formattedFilename.contains("*galleryid*")) {
+            formattedFilename = ImgurComHoster.defaultCustomPackagename;
+        }
+        formattedFilename = formattedFilename.replace("*galleryid*", galleryid);
+        if (username != null) {
+            formattedFilename = formattedFilename.replace("*username*", username);
+        }
+        if (title != null) {
+            formattedFilename = formattedFilename.replace("*title*", title);
+        }
+        formattedFilename = formattedFilename.replaceFirst("^([ \\-_]+)", "").trim();
+        return formattedFilename;
     }
 }
