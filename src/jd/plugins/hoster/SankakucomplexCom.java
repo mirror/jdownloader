@@ -18,30 +18,38 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(www\\.)?(chan|idol)\\.sankakucomplex\\.com/post/show/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:chan|idol)\\.sankakucomplex\\.com/post/show/(\\d+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://chan.sankakucomplex.com/user/signup");
     }
 
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".jpg";
     private String              dllink            = null;
+    private boolean             accountRequired   = false;
 
     @Override
     public String getAGBLink() {
@@ -61,21 +69,38 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         br.setFollowRedirects(true);
-        final String host = new URL(downloadLink.getPluginPatternMatcher()).getHost();
+        final String host = new URL(link.getPluginPatternMatcher()).getHost();
         br.setCookie("https://" + host, "locale", "en");
         br.setCookie("https://" + host, "hide-news-ticker", "1");
         br.setCookie("https://" + host, "auto_page", "1");
         br.setCookie("https://" + host, "hide_resized_notice", "1");
         br.setCookie("https://" + host, "blacklisted_tags", "");
-        getPage(downloadLink.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404: Page Not Found<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
+            this.accountRequired = true;
+            return AvailableStatus.TRUE;
         }
-        String filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        dllink = checkDirectLink(downloadLink, "directlink");
+        String filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             dllink = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -103,10 +128,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         final String size = br.getRegex("<li>Original:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
         if (size != null) {
-            downloadLink.setDownloadSize(Long.parseLong(size.replace(",", "")));
+            link.setDownloadSize(Long.parseLong(size.replace(",", "")));
             return AvailableStatus.TRUE;
         }
         final Browser br2 = br.cloneBrowser();
@@ -114,17 +139,12 @@ public class SankakucomplexCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            try {
-                con = br2.openHeadConnection(dllink);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
-            }
-            if (!con.getContentType().contains("text") && con.isOK()) {
+            con = br2.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
                 if (con.getLongContentLength() > 0) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
-                downloadLink.setProperty("directlink", dllink);
-                return AvailableStatus.TRUE;
+                link.setProperty("directlink", dllink);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -134,13 +154,17 @@ public class SankakucomplexCom extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (this.accountRequired) {
+            throw new AccountRequiredException();
+        }
         /* Disable chunks as we only download small files */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             try {
                 br.followConnection(true);
@@ -152,28 +176,124 @@ public class SankakucomplexCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (con.getContentType().contains("text") || con.getLongContentLength() == -1) {
-                        throw new IOException();
-                    } else {
+                    if (this.looksLikeDownloadableContent(con)) {
                         return dllink;
+                    } else {
+                        return null;
                     }
                 } finally {
                     con.disconnect();
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
             }
         }
         return null;
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://chan." + this.getHost() + "/user/home");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://chan." + this.getHost() + "/user/login");
+                final Form loginform = br.getFormbyActionRegex(".*user/authenticate");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("user%5Bname%5D", Encoding.urlEncode(account.getUser()));
+                loginform.put("user%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(this.getHost(), "pass_hash", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        if (br.containsHTML(">\\s*Subscription Level\\s*:\\s*<a href=\"[^\"]+\">Plus<")) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
     }
 
     @Override

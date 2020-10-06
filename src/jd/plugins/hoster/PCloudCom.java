@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,9 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -77,8 +77,6 @@ public class PCloudCom extends PluginForHost {
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
     private static final int     FREE_MAXDOWNLOADS                               = 20;
-    private static final boolean ACCOUNT_FREE_RESUME                             = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS                          = 0;
     private int                  statuscode                                      = 0;
     private String               downloadURL                                     = null;
 
@@ -287,14 +285,25 @@ public class PCloudCom extends PluginForHost {
                 }
                 prepBR();
                 logger.info("Performing full login");
+                /* Depending on which selection the user met when he registered his account, a different endpoint is required for login. */
                 try {
                     postAPISafe("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 } catch (PluginException e) {
-                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == STATUS_CODE_WRONG_LOCATION) {
-                        postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
-                    }
+                    // if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == STATUS_CODE_WRONG_LOCATION) {
+                    // postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) +
+                    // "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                    // } else {
+                    // throw e;
+                    // }
+                    /*
+                     * 2020-10-06: API doesn't necessarily return correct response thus let's always try via 2nd API endpoint whenever there
+                     * is an error-response.
+                     */
+                    logger.info("Trying to login via 2nd API endpoint");
+                    postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 }
-                if (!"true".equals(PluginJSonUtils.getJsonValue(br, "emailverified"))) {
+                final String emailverified = PluginJSonUtils.getJson(br, "emailverified");
+                if (emailverified != null && !emailverified.equals("true")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -333,7 +342,8 @@ public class PCloudCom extends PluginForHost {
                 account.setConcurrentUsePossible(true);
             } else {
                 account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(1);
+                /* Last checked: 2020-10-06 */
+                account.setMaxSimultanDownloads(20);
                 account.setConcurrentUsePossible(true);
             }
         }
@@ -350,13 +360,6 @@ public class PCloudCom extends PluginForHost {
             }
         }
         login(account, true);
-        final String premium = PluginJSonUtils.getJsonValue(br, "premium");
-        ai.setUnlimitedTraffic();
-        if ("true".equals(premium)) {
-            ai.setStatus("Registered premium user");
-        } else {
-            ai.setStatus("Registered (free) user");
-        }
         return ai;
     }
 
