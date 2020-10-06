@@ -26,7 +26,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -141,8 +140,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         /* TODO: Test API functionality and add missing API calls (e.g. "reddit style" stuff) */
         // final boolean useApiForAlbumCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         // final boolean useApiForGalleryCrawling = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        // final boolean useAPI = ImgurComHoster.isAPIEnabled();
-        final boolean useAPI = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        final boolean useAPI = ImgurComHoster.isAPIEnabled();
         synchronized (CTRLLOCK) {
             if (parameter.matches(type_subreddit_single_post)) {
                 /* Single "reddit-style" posts can contain multiple images */
@@ -544,7 +542,13 @@ public class ImgurComGallery extends PluginForDecrypt {
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         this.author = (String) entries.get("author");
-        entries = (Map<String, Object>) entries.get("data");
+        final Object dataO = entries.get("data");
+        if (!(dataO instanceof Map)) {
+            /* 2020-10-06: Offline content e.g.: {"data":[],"success":true,"status":200} */
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+            return;
+        }
+        entries = (Map<String, Object>) dataO;
         this.websiteCrawlJsonMultipleItems(entries);
     }
 
@@ -618,6 +622,15 @@ public class ImgurComGallery extends PluginForDecrypt {
         this.fp = FilePackage.getInstance();
         fp.setName(galleryID);
         this.br.getPage("https://" + this.getHost() + "/gallery/" + galleryID + "/album_images/hit.json?all=true");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /*
+             * E.g.
+             * {"data":{"error":"Invalid gallery hash XXXX for gallery: main","request":"\/gallery\/XXXX\/album_images\/hit.json","method":
+             * "GET"},"success":false,"status":404}
+             */
+            this.decryptedLinks.add(this.createOfflinelink(this.parameter));
+            return;
+        }
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         this.author = (String) entries.get("author");

@@ -930,6 +930,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        externID = br.getRegex("(https?://redgifs\\.com/ifr/[A-Za-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
