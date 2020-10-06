@@ -1080,7 +1080,7 @@ public class ImgurComHoster extends PluginForHost {
                         message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + apiApplicationsURL + "'\t\r\n";
                         message += "2. Falls nicht bereits geschehen, logge dich im Browser in deinen imgur Account ein.\r\n";
                         message += "3. Wähle bei 'Authorization type' folgendes aus: 'OAuth 2 authorization with a callback URL'\r\n";
-                        message += "4. Gib TODO bei 'Authorization callback URL' ein.\r\n";
+                        message += "4. Gib 'https://jdownloader.org/' bei 'Authorization callback URL' ein.\r\n";
                         message += "5. Nachdem du die App angelegt hast solltest du deine eigene 'Client-ID' und 'Client secret' sehen können.\r\n";
                         message += "Falls das nicht der Fall sein sollte, solltest du diese Werte hier finden: imgur.com/account/settings/apps\r\n";
                         message += "6. Trage deine Daten in JD ein unter Einstellungen -> Plugins -> imgur.com\r\n";
@@ -1092,7 +1092,7 @@ public class ImgurComHoster extends PluginForHost {
                         message += "1. Open the following URL in your browser if it is not opened automatically:\r\n\t'" + apiApplicationsURL + "'\t\r\n";
                         message += "2. If prompted to, login into your imgur account via browser.\r\n";
                         message += "3. Select 'OAuth 2 authorization with a callback URL' as 'Authorization type'.\r\n";
-                        message += "4. Enter TODO in the 'Authorization callback URL' field.\r\n";
+                        message += "4. Enter 'https://jdownloader.org/' in the 'Authorization callback URL' field.\r\n";
                         message += "5. After registering your app you should see your own apps' 'Client-ID' and 'Client secret'.\r\n";
                         message += "If this is not the case you will find these values here: imgur.com/account/settings/apps\r\n";
                         message += "6. Enter these values in JD here: Settings -> Plugins -> imgur.com\r\n";

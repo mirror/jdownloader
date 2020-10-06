@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -25,8 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktComDecrypter extends antiDDoSForDecrypt {
@@ -37,6 +37,11 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(".+view\\.gif\\.php.+")) {
+            /* Pass this to host plugin */
+            decryptedLinks.add(this.createDownloadlink(parameter));
+            return decryptedLinks;
+        }
         setBrowserExclusive();
         br.setFollowRedirects(false);
         getPage(parameter);
@@ -59,7 +64,7 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             }
             br.followRedirect(true);
         }
-        final DownloadLink main = createDownloadlink(parameter.replace("efukt.com/", "efuktdecrypted.com/"));
+        final DownloadLink main = createDownloadlink(parameter);
         if (br.getURL().equals("http://efukt.com/") || br.getURL().equals("https://efukt.com/")) {
             main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
@@ -67,28 +72,19 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             decryptedLinks.add(main);
             return decryptedLinks;
         }
-        if (br.containsHTML("flashplayer") || br.containsHTML("videoplayer_contents")) {
+        if (br.containsHTML("flashplayer") || br.containsHTML("videoplayer_contents") || br.getURL().contains("view.gif")) {
             decryptedLinks.add(main);
         } else {
             /* We should have a picture gallery */
-            String title = br.getRegex("id=\"movie_title\" style=\"[^<>\"]+\">([^<>]*?)</div>").getMatch(0);
-            if (title == null) {
-                title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)").getMatch(0);
-            }
-            if (title == null) {
-                title = br.getRegex("<title>(?:eFukt.com\\s*\\|\\s*)?(.*?)\\s*\\|").getMatch(0);
-            }
-            if (title == null) {
-                title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
-            }
+            String title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
             title = Encoding.htmlDecode(title);
             title = title.trim();
             String[] pics = br.getRegex("<a target=\"_blank\" href=\"(/content/[^<>\"]*?)\"").getColumn(0);
             if (pics == null || pics.length == 0) {
-                pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://cdn\\.efukt\\.com/[^\"<>]*)\"\\s*onerror=").getColumn(0);
+                pics = br.getRegex("img\\s*src\\s*=\\s*\"(https?://media\\.efukt\\.com/[^\"<>]*)\"\\s*onerror=").getColumn(0);
             }
             if (pics == null || pics.length == 0) {
-                pics = br.getRegex("<img\\s*?src\\s*?=\\s*?\"(https?://cdn\\.efukt\\.com/[^\"<>]*\\.(gif|webm|jpg))\"\\s*?alt=\".*?\"\\s*?class=\"image_content\"").getColumn(0);
+                pics = br.getRegex("<img\\s*?src\\s*?=\\s*?\"(https?://media\\.efukt\\.com/[^\"<>]*\\.(gif|webm|jpg))\"\\s*?alt=\".*?\"\\s*?class=\"image_content\"").getColumn(0);
             }
             if (pics == null || pics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
