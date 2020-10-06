@@ -10,13 +10,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomix.info " }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one)/(?:gallery/)?([a-zA-Z0-9\\-_]+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomix.info " }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one)/link-gall/(\\d+)/([a-zA-Z0-9\\-_]+)/" })
 public class PornComixInfo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        /* 2020-10-06: They're blocking german IPs. Checked successfully using a US VPN. */
         br.getPage(parameter.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            return decryptedLinks;
+        }
         String postTitle = br.getRegex("class=\"post-title\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
         if (postTitle == null || postTitle.length() == 0) {
             postTitle = br.getRegex("<h1\\s+class\\s*=\\s*\"post-title[^\"]*\"><a[^>]*>\\s*([^<]+)\\s*</a></h1>").getMatch(0);
@@ -30,14 +35,12 @@ public class PornComixInfo extends PluginForDecrypt {
             }
             if (images != null) {
                 for (final String image : images) {
-                    if (!isAbort()) {
-                        final String url = Encoding.htmlDecode(image).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
-                        final DownloadLink link = createDownloadlink(url);
-                        link.setAvailable(true);
-                        link.setContainerUrl(parameter.getCryptedUrl());
-                        fp.add(link);
-                        distribute(link);
-                    }
+                    final String url = Encoding.htmlDecode(image).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
+                    final DownloadLink link = createDownloadlink(url);
+                    link.setAvailable(true);
+                    link.setContainerUrl(parameter.getCryptedUrl());
+                    fp.add(link);
+                    distribute(link);
                 }
             }
         }
