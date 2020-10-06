@@ -47,7 +47,7 @@ public abstract class LinkCrawlerDeepInspector {
                 return true;
             } else if (completeContentLength > sizeDownloadableContent && (!hasContentType || !isTextContent(urlConnection))) {
                 return true;
-            } else if (completeContentLength > sizeDownloadableContent && StringUtils.contains(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
+            } else if (completeContentLength > sizeDownloadableContent && (StringUtils.contains(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes") || (urlConnection.getResponseCode() == 206 && urlConnection.getRange() != null))) {
                 return true;
             } else if (StringUtils.endsWithCaseInsensitive(filePathName, ".epub") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > sizeDownloadableContent)) {
                 return true;

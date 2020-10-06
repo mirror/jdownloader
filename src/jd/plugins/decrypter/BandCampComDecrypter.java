@@ -36,7 +36,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.storage.JSonStorage;
@@ -70,11 +72,21 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String json = br.getRegex("trackinfo[^\\[]*(\\[[^\\]]+\\])").getMatch(0);
-        final String json_artist = br.getRegex("<script type=\"application/json\\+ld\">(.*?)</script>").getMatch(0);
+        String json_artist = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));
             return decryptedLinks;
+        }
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (Encoding.isHtmlEntityCoded(json)) {
+            json = Encoding.htmlDecode(json);
+        }
+        if (json_artist == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (Encoding.isHtmlEntityCoded(json_artist)) {
+            json_artist = Encoding.htmlDecode(json_artist);
         }
         final Map<String, Object> artistInfo = JSonStorage.restoreFromString(json_artist, TypeRef.HASHMAP);
         String artist = (String) artistInfo.get("name");
@@ -94,9 +106,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         // logger.warning("Decrypter broken for link: " + parameter);
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
-        if (Encoding.isHtmlEntityCoded(json)) {
-            json = Encoding.htmlDecode(json);
-        }
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         artist = Encoding.htmlDecode(artist.trim());
         album = Encoding.htmlDecode(album.trim());
