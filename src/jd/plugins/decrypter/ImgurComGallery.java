@@ -624,6 +624,8 @@ public class ImgurComGallery extends PluginForDecrypt {
         this.fp = FilePackage.getInstance();
         fp.setName(galleryID);
         this.br.getPage("https://" + this.getHost() + "/gallery/" + galleryID + "/album_images/hit.json?all=true");
+        Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
+        final Object dataO = entries.get("data");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /*
              * E.g.
@@ -632,11 +634,14 @@ public class ImgurComGallery extends PluginForDecrypt {
              */
             this.decryptedLinks.add(this.createOfflinelink(this.parameter));
             return;
+        } else if (!(dataO instanceof Map)) {
+            /* Very rare case: Single image and not a gallery: {"data":[],"success":true,"status":200} */
+            this.decryptedLinks.add(this.createDownloadlink(this.getHostpluginurl(this.itemID)));
+            return;
         }
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
-        Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         this.author = (String) entries.get("author");
-        entries = (Map<String, Object>) entries.get("data");
+        entries = (Map<String, Object>) dataO;
         this.websiteCrawlJsonMultipleItems(entries);
     }
 
