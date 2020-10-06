@@ -71,7 +71,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String json = br.getRegex("trackinfo[^\\[]*(\\[[^\\]]+\\])").getMatch(0);
+        String json = br.getRegex("trackinfo(?:&quot;|\")\\s*:\\s*(\\[.*?\\])(\\s*,\\s*\"|\\s*,\\s*&quot)").getMatch(0);
         String json_artist = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
@@ -85,8 +85,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         if (json_artist == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (Encoding.isHtmlEntityCoded(json_artist)) {
-            json_artist = Encoding.htmlDecode(json_artist);
         }
         final Map<String, Object> artistInfo = JSonStorage.restoreFromString(json_artist, TypeRef.HASHMAP);
         String artist = (String) artistInfo.get("name");
