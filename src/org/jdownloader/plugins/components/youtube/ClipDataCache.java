@@ -88,7 +88,7 @@ public class ClipDataCache {
                     cachedData = null;
                 } else if (StringUtils.isEmpty(cachedData.clipData.title)) {
                     cachedData = null;
-                } else if (cachedData.clipData.date == 0) {
+                } else if (cachedData.clipData.datePublished == 0) {
                     cachedData = null;
                 } else if (cachedData.isExpired()) {
                     cachedData = null;

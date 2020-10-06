@@ -28,7 +28,7 @@ public class YoutubeClipData {
      */
     public String                             user                = null;
     public String                             channelTitle        = null;
-    public long                               date                = -1;
+    public long                               datePublished       = -1;
     public String                             error               = null;
     public boolean                            ageCheck            = false;
     public String                             title               = null;
@@ -37,7 +37,7 @@ public class YoutubeClipData {
     public String                             category            = null;
     public int                                duration            = -1;
     public String                             channelID           = null;
-    public long                               dateUpdated         = -1;
+    public long                               dateUploaded        = -1;
     public String                             userGooglePlusID    = null;
     public VideoVariant                       bestVideoItag       = null;
     public String                             description         = null;
@@ -155,11 +155,11 @@ public class YoutubeClipData {
         if (bestVideoItag != null) {
             setValue(dest, YoutubeHelper.YT_BEST_VIDEO, bestVideoItag.getBaseVariant().getiTagVideo().name());
         }
-        setValue(dest, YoutubeHelper.YT_DATE, date);
+        setValue(dest, YoutubeHelper.YT_DATE, datePublished);
         setValue(dest, YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
         setValue(dest, YoutubeHelper.YT_CHANNEL_ID, channelID);
         setValue(dest, YoutubeHelper.YT_DURATION, duration);
-        setValue(dest, YoutubeHelper.YT_DATE_UPDATE, dateUpdated);
+        setValue(dest, YoutubeHelper.YT_DATE_UPLOAD, dateUploaded);
         setValue(dest, YoutubeHelper.YT_VIEWS, views);
         dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
     }
