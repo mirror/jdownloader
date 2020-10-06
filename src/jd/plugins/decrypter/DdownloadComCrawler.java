@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -27,10 +28,37 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddownload.com" }, urls = { "https?://(?:www\\.)?ddownload\\.com/d/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdownloadComCrawler extends antiDDoSForDecrypt {
     public DdownloadComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to", "esimpurcuesc.ddownload.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/d/([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -54,9 +82,11 @@ public class DdownloadComCrawler extends antiDDoSForDecrypt {
             fid = form.getInputFieldByName("id").getValue();
         }
         if (fid == null || !fid.matches("[a-z0-9]{12}")) {
-            return null;
+            /* Assume that URL is offline */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink("https?://" + this.getHost() + "/" + fid));
+        decryptedLinks.add(createDownloadlink("https://" + this.getHost() + "/" + fid));
         return decryptedLinks;
     }
 }

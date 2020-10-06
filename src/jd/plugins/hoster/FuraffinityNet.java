@@ -118,7 +118,7 @@ public class FuraffinityNet extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("html") || !con.isOK()) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else {
                     link.setDownloadSize(con.getCompleteContentLength());
