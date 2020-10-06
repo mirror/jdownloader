@@ -395,7 +395,8 @@ public class MegaConz extends PluginForHost {
             request.getHeaders().put(new HTTPHeader("Cache-Control", null, false));
         }
         request.setContentType("text/plain;charset=UTF-8");
-        final int errorCode;
+        Integer errorCode = null;
+        String requestResponseString = null;
         if (postParams != null) {
             final HashMap<String, Object> sendParams = new HashMap<String, Object>();
             sendParams.put("a", action);
@@ -408,26 +409,26 @@ public class MegaConz extends PluginForHost {
                 final List<Map<String, Object>> postData = new ArrayList<Map<String, Object>>();
                 postData.add(sendParams);
                 request.setPostDataString(JSonStorage.toString(postData));
-                final String response = br.getPage(request);
-                if (response.matches("^\\s*-?\\d+\\s*$")) {
-                    errorCode = Integer.parseInt(response);
-                } else if (response.matches("^\\s*\\[.*")) {
-                    final List<Object> requestResponse = JSonStorage.restoreFromString(response, TypeRef.LIST, null);
+                requestResponseString = br.getPage(request);
+                if (requestResponseString.matches("^\\s*-?\\d+\\s*$")) {
+                    errorCode = Integer.parseInt(requestResponseString);
+                } else if (requestResponseString.matches("^\\s*\\[.*")) {
+                    final List<Object> requestResponse = JSonStorage.restoreFromString(requestResponseString, TypeRef.LIST, null);
                     if (requestResponse != null && requestResponse.size() == 1) {
                         final Object responseObject = requestResponse.get(0);
                         if (responseObject instanceof Map) {
                             return (Map<String, Object>) responseObject;
+                        } else if (responseObject instanceof Number) {
+                            errorCode = ((Number) responseObject).intValue();
                         }
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (errorCode == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Response:" + requestResponseString);
         }
         if (errorCode == -26 && "us".equalsIgnoreCase(action)) {
             // API_EMFAREQUIRED = -26, // Multi-factor authentication required
