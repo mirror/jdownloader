@@ -72,7 +72,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
@@ -151,7 +150,7 @@ public class YoutubeHelper {
     public static final String  PAID_VIDEO                              = "Paid Video:";
     public static final String  YT_CHANNEL_ID                           = "YT_CHANNEL_ID";
     public static final String  YT_DURATION                             = "YT_DURATION";
-    public static final String  YT_DATE_UPDATE                          = "YT_DATE_UPDATE";
+    public static final String  YT_DATE_UPLOAD                          = "YT_DATE_UPDATE";
     public static final String  YT_GOOGLE_PLUS_ID                       = "YT_GOOGLE_PLUS_ID";
     public static final String  YT_VIEWS                                = "YT_VIEWS";
     private Browser             br;
@@ -516,7 +515,7 @@ public class YoutubeHelper {
                 return _GUI.T.YoutubeHelper_getDescription_title();
             }
         });
-        REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME") {
+        REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME", "DATE_PUBLISH") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_date();
@@ -546,10 +545,11 @@ public class YoutubeHelper {
                 }
             }
         });
-        REPLACER.add(new YoutubeReplacer("DATE_UDPATE") {
+        // keep compatibility with wrong 'DATE_UDPATE' TAG, 06.10.2020
+        REPLACER.add(new YoutubeReplacer("DATE_UPLOAD", "DATE_UDPATE") {
             @Override
             public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_date();
+                return _GUI.T.YoutubeHelper_getDescription_date_upload();
             }
 
             public DataSource getDataSource() {
@@ -570,7 +570,7 @@ public class YoutubeHelper {
                 if (formatter == null) {
                     formatter = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, TranslationFactory.getDesiredLocale());
                 }
-                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_UPDATE, -1);
+                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_UPLOAD, -1);
                 if (timestamp > 0) {
                     final String ret = formatter.format(timestamp);
                     helper.logger.info(" Youtube Replace Update-Date " + mod + " - " + timestamp + " > " + ret);
@@ -1188,64 +1188,11 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(vid.description)) {
             vid.description = getVidDescriptionFromMaps();
         }
-        if (vid.date <= 0) {
-            String string = getVidDateFromMaps();
-            if (string != null) {
-                // time. just parse for the date pattern(s).
-                String date = new Regex(string, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
-                if (date != null) {
-                    // seen in MMM dd, yyyy
-                    final SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
-                    try {
-                        vid.date = formatter.parse(date).getTime();
-                        logger.info("Date result " + vid.date + " " + new Date(vid.date));
-                    } catch (final Exception e) {
-                        final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
-                        log.log(e);
-                    }
-                } else if (new Regex(string, "\\d{4}-\\d{2}-\\d{2}").matches()) {
-                    final SimpleDateFormat formatter = new SimpleDateFormat("yyyy'-'MM'-'dd", Locale.ENGLISH);
-                    try {
-                        vid.date = formatter.parse(string).getTime();
-                        logger.info("Date result " + vid.date + " " + new Date(vid.date));
-                    } catch (final Exception e) {
-                        final LogSource log = LogController.getInstance().getPreviousThreadLogSource();
-                        log.log(e);
-                    }
-                } else if (new Regex(string, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
-                    // Streamed live 3 hours ago
-                    /*
-                     * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then
-                     * construct relative to users time. It should be equal to above as
-                     */
-                    final String tmpdays = new Regex(string, "(\\d+)\\s+days?").getMatch(0);
-                    final String tmphrs = new Regex(string, "(\\d+)\\s+hours?").getMatch(0);
-                    final String tmpmin = new Regex(string, "(\\d+)\\s+minutes?").getMatch(0);
-                    final String tmpsec = new Regex(string, "(\\d+)\\s+seconds?").getMatch(0);
-                    long days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (StringUtils.isNotEmpty(tmpdays)) {
-                        days = Integer.parseInt(tmpdays);
-                    }
-                    if (StringUtils.isNotEmpty(tmphrs)) {
-                        hours = Integer.parseInt(tmphrs);
-                    }
-                    if (StringUtils.isNotEmpty(tmpmin)) {
-                        minutes = Integer.parseInt(tmpmin);
-                    }
-                    if (StringUtils.isNotEmpty(tmpsec)) {
-                        seconds = Integer.parseInt(tmpsec);
-                    }
-                    final long time = System.currentTimeMillis() - ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
-                    final Calendar c = Calendar.getInstance();
-                    c.setTimeInMillis(time);
-                    c.set(Calendar.HOUR_OF_DAY, 0);
-                    c.set(Calendar.MINUTE, 0);
-                    c.set(Calendar.SECOND, 0);
-                    vid.date = c.getTimeInMillis();
-                } else {
-                    logger.info("Unknown date format:" + string);
-                }
-            }
+        if (vid.datePublished <= 0) {
+            vid.datePublished = getPublishedDateFromMaps();
+        }
+        if (vid.dateUploaded <= 0) {
+            vid.dateUploaded = getUploadedDateFromMaps();
         }
         if (StringUtils.isEmpty(vid.channelID)) {
             vid.channelID = getChannelIdFromMaps();
@@ -1357,18 +1304,88 @@ public class YoutubeHelper {
         return result;
     }
 
-    public String getVidDateFromMaps() {
-        String result = null;
+    public long getPublishedDateFromMaps() {
+        String publishedDate = null;
         if (ytInitialPlayerResponse != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "microformat/playerMicroformatRenderer/uploadDate");
+            publishedDate = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "microformat/playerMicroformatRenderer/publishDate");
         }
-        if (StringUtils.isEmpty(result) && ytInitialData != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/dateText/simpleText");
-            if (StringUtils.isEmpty(result)) {
-                result = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
+        return parseDate(publishedDate);
+    }
+
+    public long getUploadedDateFromMaps() {
+        String uploadedDate = null;
+        if (ytInitialPlayerResponse != null) {
+            uploadedDate = (String) JavaScriptEngineFactory.walkJson(ytInitialPlayerResponse, "microformat/playerMicroformatRenderer/uploadDate");
+        }
+        if (StringUtils.isEmpty(uploadedDate) && ytInitialData != null) {
+            uploadedDate = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/dateText/simpleText");
+            if (StringUtils.isEmpty(uploadedDate)) {
+                uploadedDate = (String) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/dateText/simpleText");
             }
         }
-        return result;
+        return parseDate(uploadedDate);
+    }
+
+    private long parseDate(String dateString) {
+        if (dateString != null) {
+            // time. just parse for the date pattern(s).
+            String date = new Regex(dateString, "([A-Za-z]+ \\d+, \\d{4})").getMatch(0);
+            if (date != null) {
+                // seen in MMM dd, yyyy
+                final SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy", Locale.ENGLISH);
+                try {
+                    final long result = formatter.parse(date).getTime();
+                    logger.info("Date(" + dateString + ") result " + result + " " + new Date(result));
+                    return result;
+                } catch (final Exception e) {
+                    logger.log(e);
+                }
+            } else if (new Regex(dateString, "\\d{4}-\\d{2}-\\d{2}").matches()) {
+                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy'-'MM'-'dd", Locale.ENGLISH);
+                try {
+                    final long result = formatter.parse(dateString).getTime();
+                    logger.info("Date(" + dateString + ") result " + result + " " + new Date(result));
+                    return result;
+                } catch (final Exception e) {
+                    logger.log(e);
+                }
+            } else if (new Regex(dateString, "\\d+\\s*(?:days?|hours?|minutes?|seconds?)").matches()) {
+                // Streamed live 3 hours ago
+                /*
+                 * streamed today.. x hours minutes etc. to keep it universal just show a day reference like above. parse, then construct
+                 * relative to users time. It should be equal to above as
+                 */
+                final String tmpdays = new Regex(dateString, "(\\d+)\\s+days?").getMatch(0);
+                final String tmphrs = new Regex(dateString, "(\\d+)\\s+hours?").getMatch(0);
+                final String tmpmin = new Regex(dateString, "(\\d+)\\s+minutes?").getMatch(0);
+                final String tmpsec = new Regex(dateString, "(\\d+)\\s+seconds?").getMatch(0);
+                long days = 0, hours = 0, minutes = 0, seconds = 0;
+                if (StringUtils.isNotEmpty(tmpdays)) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                if (StringUtils.isNotEmpty(tmphrs)) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (StringUtils.isNotEmpty(tmpmin)) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (StringUtils.isNotEmpty(tmpsec)) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                final long time = System.currentTimeMillis() - ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                final Calendar c = Calendar.getInstance();
+                c.setTimeInMillis(time);
+                c.set(Calendar.HOUR_OF_DAY, 0);
+                c.set(Calendar.MINUTE, 0);
+                c.set(Calendar.SECOND, 0);
+                final long result = c.getTimeInMillis();
+                logger.info("Date(" + dateString + ") result " + result + " " + new Date(result));
+                return result;
+            } else {
+                logger.info("Unknown date format:" + dateString);
+            }
+        }
+        return -1;
     }
 
     public String getVidTitleFromMaps() {
@@ -1744,7 +1761,7 @@ public class YoutubeHelper {
                                 logger.log(e);
                             }
                             final String itagID = query.get("itag");
-                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), c.getWidth(), c.getHeight(), StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.date);
+                            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), c.getWidth(), c.getHeight(), StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), query.getDecoded("type"), query, vid.datePublished);
                             if (itag == null) {
                                 this.logger.info("Unknown Line: " + query);
                                 this.logger.info(query + "");
@@ -2016,7 +2033,7 @@ public class YoutubeHelper {
             final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
             final String stereoLayout = (String) entry.get("stereoLayout");
             final String projectionType = (String) entry.get("projectionType");
-            final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.date);
+            final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, vid.datePublished);
             if (itag == null) {
                 logger.info("UNSUPPORTED/UNKNOWN?:" + JSonStorage.toString(entry));
                 try {
@@ -2230,7 +2247,7 @@ public class YoutubeHelper {
             type = Encoding.urlDecode(type, false);
         }
         final int itagID = Integer.parseInt(query.get("itag"));
-        final YoutubeITAG itag = YoutubeITAG.get(itagID, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+        final YoutubeITAG itag = YoutubeITAG.get(itagID, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.datePublished);
         if (itag == null) {
             this.logger.info("Unknown Line: " + r);
             this.logger.info("Unknown ITAG: " + query.get("itag"));
@@ -2400,26 +2417,26 @@ public class YoutubeHelper {
         try {
             // dd.MM.yyyy_HH-mm-ss
             // 2014-01-06T00:01:01.000Z
-            String date = clone.getRegex("<published>(.*?)</published>").getMatch(0);
+            final String date = clone.getRegex("<published>\\s*(.*?)\\s*</published>").getMatch(0);
             if (StringUtils.isNotEmpty(date)) {
                 DatatypeFactory f = DatatypeFactory.newInstance();
                 XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
-                vid.date = xgc.toGregorianCalendar().getTime().getTime();
+                vid.datePublished = xgc.toGregorianCalendar().getTime().getTime();
             }
         } catch (DatatypeConfigurationException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         try {
             // dd.MM.yyyy_HH-mm-ss
             // 2014-01-06T00:01:01.000Z
-            String date = clone.getRegex("<updated>(.*?)</updated>").getMatch(0);
+            final String date = clone.getRegex("<updated>\\s*(.*?)\\s*</updated>").getMatch(0);
             if (StringUtils.isNotEmpty(date)) {
                 DatatypeFactory f = DatatypeFactory.newInstance();
                 XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
-                vid.dateUpdated = xgc.toGregorianCalendar().getTime().getTime();
+                vid.dateUploaded = xgc.toGregorianCalendar().getTime().getTime();
             }
         } catch (DatatypeConfigurationException e) {
-            e.printStackTrace();
+            logger.log(e);
         }
         vid.category = clone.getRegex("<media:category.*?>(.*?)</media:category>").getMatch(0);
         // duration
@@ -2741,7 +2758,7 @@ public class YoutubeHelper {
         }
         final String itagID = query.get("itag");
         try {
-            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.date);
+            final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(itagID), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.datePublished);
             if (itag == null) {
                 this.logger.info("Unknown ITAG: " + itagID);
                 this.logger.info(url + "");
