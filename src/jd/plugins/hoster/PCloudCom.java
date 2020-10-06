@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +41,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -73,11 +73,12 @@ public class PCloudCom extends PluginForHost {
     private static final int     STATUS_CODE_OKAY                                = 0;
     private static final int     STATUS_CODE_PREMIUMONLY                         = 7005;
     private static final int     STATUS_CODE_WRONG_LOCATION                      = 2321;
+    private static final int     STATUS_CODE_INVALID_LOGIN                       = 2000;
     /* Connection stuff */
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
     private static final int     FREE_MAXDOWNLOADS                               = 20;
-    private int                  statuscode                                      = 0;
+    private int                  statusCode                                      = 0;
     private String               downloadURL                                     = null;
 
     public static String getAPIDomain(final String linkDomain) {
@@ -287,20 +288,15 @@ public class PCloudCom extends PluginForHost {
                 logger.info("Performing full login");
                 /* Depending on which selection the user met when he registered his account, a different endpoint is required for login. */
                 try {
+                    logger.info("Trying to login via US-API endpoint");
                     postAPISafe("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
                 } catch (PluginException e) {
-                    // if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && statuscode == STATUS_CODE_WRONG_LOCATION) {
-                    // postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) +
-                    // "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
-                    // } else {
-                    // throw e;
-                    // }
-                    /*
-                     * 2020-10-06: API doesn't necessarily return correct response thus let's always try via 2nd API endpoint whenever there
-                     * is an error-response.
-                     */
-                    logger.info("Trying to login via 2nd API endpoint");
-                    postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                    if (statusCode == STATUS_CODE_WRONG_LOCATION || statusCode == STATUS_CODE_INVALID_LOGIN) {
+                        logger.info("Trying to login via EU-API endpoint");
+                        postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                    } else {
+                        throw e;
+                    }
                 }
                 final String emailverified = PluginJSonUtils.getJson(br, "emailverified");
                 if (emailverified != null && !emailverified.equals("true")) {
@@ -368,7 +364,7 @@ public class PCloudCom extends PluginForHost {
         try {
             requestFileInformation(link);
         } catch (PluginException e) {
-            if (STATUS_CODE_PREMIUMONLY != statuscode) {
+            if (STATUS_CODE_PREMIUMONLY != statusCode) {
                 throw e;
             }
         }
@@ -381,7 +377,7 @@ public class PCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (STATUS_CODE_PREMIUMONLY == statuscode) {
+        if (STATUS_CODE_PREMIUMONLY == statusCode) {
             if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
                 /*
                  * only possible to copy files on same data center region!
@@ -495,11 +491,11 @@ public class PCloudCom extends PluginForHost {
     private void handleAPIErrors(final Browser br) throws PluginException {
         String statusMessage = null;
         try {
-            switch (statuscode) {
+            switch (statusCode) {
             case STATUS_CODE_OKAY:
                 /* Everything ok */
                 break;
-            case 2000:
+            case STATUS_CODE_INVALID_LOGIN:
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
                 } else {
@@ -538,7 +534,7 @@ public class PCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "This file can only be downloaded by registered/premium users");
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
@@ -555,7 +551,7 @@ public class PCloudCom extends PluginForHost {
     private void updatestatuscode() {
         final String error = PluginJSonUtils.getJsonValue(br, "result");
         if (error != null) {
-            statuscode = Integer.parseInt(error);
+            statusCode = Integer.parseInt(error);
         }
     }
 
