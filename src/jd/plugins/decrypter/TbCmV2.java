@@ -1038,6 +1038,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
                 if (dupeCheckSet.size() == before) {
+                    logger.info("no new video found, abort");
                     // no videos in the last round. we are probably done here
                     break;
                 }
@@ -1075,6 +1076,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     round = antiDdosSleep(round);
                     pbr.getPage(nextPage);
                 } else {
+                    logger.info("no next page found, abort");
                     break;
                 }
             }
