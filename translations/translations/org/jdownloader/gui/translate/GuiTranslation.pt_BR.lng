@@ -1436,6 +1436,7 @@ YoutubeHelper_getDescription_channel=Canal
 YoutubeHelper_getDescription_channel_id=ID do Canal
 YoutubeHelper_getDescription_collection=Nome da coleção
 YoutubeHelper_getDescription_date=Data de postagem. *date* ou ex.: *date[yyyy/MM/dd]*
+YoutubeHelper_getDescription_date_upload=Data de upload (ano, mês, dia). * date_upload* ou por exemplo: *date_upload[aaaa/MM/dd]*
 YoutubeHelper_getDescription_duration=Duração do vídeo *duration* ou ex.: *duration[segundos]*
 YoutubeHelper_getDescription_extension=Extensão do arquivo. ex.: .mp4
 YoutubeHelper_getDescription_fps=Taxa de quadros do vídeo
