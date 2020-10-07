@@ -140,6 +140,10 @@ public class InstaGramCom extends PluginForHost {
         final boolean isVideo = link.getBooleanProperty("isvideo", true);
         final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
         /* Request works only when user is logged in! */
+        /*
+         * TODO: If the original quality downloadurl has been grabbed and expires it would never be grabbed again: Try to improve this
+         * handling!
+         */
         if (userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null && !hasAlreadyCrawledBestQuality) {
             /*
              * Source of this idea:
