@@ -219,45 +219,50 @@ public class RtveEs extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink != null && dllink.matches("https?://rtve-hlsvod\\.secure\\.footprint\\.net/resources/TE_NGVA/mp4/.*\\.mp4/playlist\\.m3u8")) {
-            /* 2020-07-31: Some content can be downloaded via http instead of via HLS --> Prefer to do that */
-            logger.info("Modify HLS downloadurl --> HTTP downloadurl");
-            dllink = dllink.replace("/playlist.m3u8", "");
-        }
         if (geo_blocked) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (dl_not_possible_now != null) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + dl_not_possible_now);
-        }
-        if (dllink == null) {
+        } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("/manifest") || dllink.contains("m3u8")) {
-            /* HLS download */
-            this.br.getPage(dllink);
-            if (this.br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
-            }
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, url_hls);
-            dl.startDownload();
-        } else {
-            /* HTTP download */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dllink != null && dllink.matches("https?://rtve-hlsvod\\.secure\\.footprint\\.net/resources/TE_NGVA/mp4/.*\\.mp4/playlist\\.m3u8")) {
+            /* 2020-07-31: Some content can be downloaded via http instead of via HLS --> Prefer to do that */
+            logger.info("Try to download http stream");
+            final String httlpDownload = dllink.replace("/playlist.m3u8", "");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, httlpDownload, true, 0);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                dl.startDownload();
+                return;
+            } else {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
+                }
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                logger.info("HTTP download failed --> Fallback to HLS download");
             }
-            dl.startDownload();
         }
+        logger.info("HLS download");
+        /* HLS download */
+        this.br.getPage(dllink);
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
+        }
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        if (hlsbest == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String url_hls = hlsbest.getDownloadurl();
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, url_hls);
+        dl.startDownload();
     }
 
     @Override
