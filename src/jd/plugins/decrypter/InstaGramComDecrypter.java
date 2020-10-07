@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,13 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -204,7 +204,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (aa != null) {
             /* Login whenever possible */
             try {
-                jd.plugins.hoster.InstaGramCom.login(this.br, aa, false);
+                hostplugin.setBrowser(this.br);
+                ((jd.plugins.hoster.InstaGramCom) hostplugin).login(aa, false);
                 logged_in = true;
             } catch (final PluginException e) {
                 handleAccountException(aa, e);
@@ -522,7 +523,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (StringUtils.equalsIgnoreCase("GraphSidecar", typename) && !this.parameter.matches(TYPE_GALLERY) && (resource_data_list == null || resource_data_list.size() > 1)) {
-            final DownloadLink dl = this.createDownloadlink(createSingle_P_url(linkid_main));
+            final DownloadLink dl = this.createDownloadlink(createSinglePosturl(linkid_main));
             this.decryptedLinks.add(dl);
             distribute(dl);
         } else if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
@@ -536,7 +537,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
              * the json does not contain the other images --> This has to go back into the decrypter and get crawled as a single item.
              */
-            final DownloadLink dl = this.createDownloadlink(createSingle_P_url(linkid_main));
+            final DownloadLink dl = this.createDownloadlink(createSinglePosturl(linkid_main));
             this.decryptedLinks.add(dl);
             distribute(dl);
         } else if (resource_data_list != null && resource_data_list.size() > 0) {
@@ -556,7 +557,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    /** Crawls json objects of type "GraphImage". */
     private void crawlSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description, final String orderid) {
+        final String postID = (String) entries.get("id");
         final long taken_at_timestamp = JavaScriptEngineFactory.toLong(entries.get("taken_at_timestamp"), 0);
         String server_filename = null;
         final String shortcode = (String) entries.get("shortcode");
@@ -591,14 +594,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            /*
-             * 2017-04-28: By removing the resolution inside the URL, we can download the original image - usually, resolution will be
-             * higher than before then but it can also get smaller - which is okay as it is the original content.
-             */
-            // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
-            // if (resolution_inside_url != null) {
-            // dllink = dllink.replace(resolution_inside_url, "/"); // Invalid URL signature 2018-01-17
-            // } Moved to hoster plugin
         }
         if (!StringUtils.isEmpty(dllink)) {
             try {
@@ -640,7 +635,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else {
             linkid = linkid_main + shortcode != null ? shortcode : "";
         }
-        String content_url = createSingle_P_url(linkid_main);
+        String content_url = createSinglePosturl(linkid_main);
         if (isPrivate) {
             /*
              * Without account, private urls look exactly the same as offline urls --> Save private status for better host plugin
@@ -675,6 +670,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* For custom packagizer filenames */
             dl.setProperty("orderid", orderid);
         }
+        if (!StringUtils.isEmpty(postID)) {
+            dl.setProperty("postid", postID);
+        }
+        dl.setProperty("isvideo", isVideo);
         if (taken_at_timestamp > 0) {
             jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, taken_at_timestamp);
         }
@@ -682,7 +681,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         distribute(dl);
     }
 
-    private String createSingle_P_url(final String p_id) {
+    private String createSinglePosturl(final String p_id) {
         return String.format("https://www.instagram.com/p/%s", p_id);
     }
 
