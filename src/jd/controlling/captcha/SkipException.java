@@ -3,7 +3,6 @@ package jd.controlling.captcha;
 import org.jdownloader.captcha.v2.Challenge;
 
 public class SkipException extends Exception {
-
     /**
      *
      */
@@ -15,14 +14,17 @@ public class SkipException extends Exception {
         return challenge;
     }
 
-    public SkipException(Challenge<?> challenge, SkipRequest single) {
-        super(single.name());
-        this.skipRequest = single;
+    public SkipException(Challenge<?> challenge, SkipRequest skipRequest) {
+        this(challenge, skipRequest, null);
+    }
+
+    public SkipException(Challenge<?> challenge, SkipRequest skipRequest, final String message) {
+        super(skipRequest.name() + (message != null ? (":" + message) : ""));
+        this.skipRequest = skipRequest;
         this.challenge = challenge;
     }
 
     public SkipRequest getSkipRequest() {
         return skipRequest;
     }
-
 }

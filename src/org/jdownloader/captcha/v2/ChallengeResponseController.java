@@ -246,7 +246,7 @@ public class ChallengeResponseController {
         logger.info("Solver: " + solver);
         if (solver.size() == 0) {
             logger.info("No solver available!");
-            throw new SkipException(c, SkipRequest.BLOCK_HOSTER);
+            throw new SkipException(c, SkipRequest.BLOCK_HOSTER, "No solver available!");
         }
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);

@@ -740,6 +740,19 @@ public class PornHubCom extends PluginForHost {
     private static final String COOKIE_ID_FREE    = "v1_free";
     private static final String COOKIE_ID_PREMIUM = "v1_premium";
 
+    private static void setAccountType(Account account, Account.AccountType type) {
+        account.setType(type);
+        if (Account.AccountType.PREMIUM.equals(type)) {
+            /* Premium accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+        } else {
+            /* Free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+        }
+    }
+
     public static boolean login(Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -767,7 +780,7 @@ public class PornHubCom extends PluginForHost {
                         // fast check
                         getPage(br, (getProtocolPremium() + "pornhubpremium.com/user/login_status?ajax=1"));
                         if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(PORNHUB_PREMIUM))) {
-                            account.setType(AccountType.PREMIUM);
+                            setAccountType(account, AccountType.PREMIUM);
                             plugin.getLogger().info("Verified(fast) premium->premium login cookies:" + account.getType());
                             saveCookies(br, account);
                             return true;
@@ -775,12 +788,12 @@ public class PornHubCom extends PluginForHost {
                             // slow check
                             getPage(br, (getProtocolPremium() + PORNHUB_PREMIUM));
                             if (isLoggedInHtmlPremium(br)) {
-                                account.setType(AccountType.PREMIUM);
+                                setAccountType(account, AccountType.PREMIUM);
                                 plugin.getLogger().info("Verified(slow) premium->premium login cookies:" + account.getType());
                                 saveCookies(br, account);
                                 return true;
                             } else if (isLoggedInHtmlFree(br)) {
-                                account.setType(AccountType.FREE);
+                                setAccountType(account, AccountType.FREE);
                                 plugin.getLogger().info("Verified(slow) premium->free login cookies:" + account.getType());
                                 saveCookies(br, account);
                                 return true;
@@ -789,14 +802,14 @@ public class PornHubCom extends PluginForHost {
                     } else {
                         getPage(br, (getProtocolFree() + "www." + PORNHUB_FREE));
                         if (isLoggedInHtmlFree(br)) {
-                            account.setType(AccountType.FREE);
+                            setAccountType(account, AccountType.FREE);
                             plugin.getLogger().info("Verified(slow) free->free login cookies:" + account.getType());
                             saveCookies(br, account);
                             return true;
                         } else {
                             getPage(br, (getProtocolPremium() + "pornhubpremium.com/user/login_status?ajax=1"));
                             if (br.containsHTML("\"success\"\\s*:\\s*(\"1\"|true)") && isLoggedInPremiumCookie(br.getCookies(PORNHUB_PREMIUM))) {
-                                account.setType(AccountType.PREMIUM);
+                                setAccountType(account, AccountType.PREMIUM);
                                 plugin.getLogger().info("Verified(fast) free->premium login cookies:" + account.getType());
                                 saveCookies(br, account);
                                 return true;
@@ -851,10 +864,11 @@ public class PornHubCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (isLoggedInHtmlPremium(br)) {
-                    account.setType(AccountType.PREMIUM);
+                    setAccountType(account, AccountType.PREMIUM);
                 } else {
-                    account.setType(AccountType.FREE);
+                    setAccountType(account, AccountType.FREE);
                 }
+                plugin.getLogger().info("Verified fresh login:" + account.getType());
                 saveCookies(br, account);
                 return true;
             } catch (final PluginException e) {
@@ -895,28 +909,22 @@ public class PornHubCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        final boolean isCookieLoginOnly = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
-        login(this, br, account, true);
-        ai.setUnlimitedTraffic();
-        if (isLoggedInHtmlPremium(br)) {
-            account.setType(AccountType.PREMIUM);
-            /* Premium accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Premium Account");
-        } else {
-            account.setType(AccountType.FREE);
-            /* Free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(false);
-            ai.setStatus("Free Account");
-        }
-        logger.info("Account: " + account + " - is valid");
-        if (isCookieLoginOnly && account.getType() == AccountType.PREMIUM) {
-            /* Never modify previous AccountInfo if we're logged in via cookies only! */
-            return account.getAccountInfo();
-        } else {
-            return ai;
+        synchronized (account) {
+            final boolean isCookieLoginOnly = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
+            login(this, br, account, true);
+            ai.setUnlimitedTraffic();
+            if (AccountType.PREMIUM.equals(account.getType())) {
+                ai.setStatus("Premium Account");
+                if (isCookieLoginOnly) {
+                    /* Never modify previous AccountInfo if we're logged in via cookies only! */
+                    return account.getAccountInfo();
+                } else {
+                    return ai;
+                }
+            } else {
+                ai.setStatus("Free Account");
+                return ai;
+            }
         }
     }
 
