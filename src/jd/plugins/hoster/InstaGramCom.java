@@ -20,6 +20,13 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -27,10 +34,10 @@ import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -64,22 +71,24 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean RESUME                            = true;
+    private static final boolean RESUME                                      = true;
     /* Chunkload makes no sense for pictures/small files */
-    private static final int     MAXCHUNKS_pictures                = 1;
+    private static final int     MAXCHUNKS_pictures                          = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
-    private static final int     MAXCHUNKS_videos                  = 1;
-    private static final int     MAXDOWNLOADS                      = -1;
-    private static final String  MAINPAGE                          = "https://www.instagram.com";
-    public static final String   QUIT_ON_RATE_LIMIT_REACHED        = "QUIT_ON_RATE_LIMIT_REACHED";
-    public static final String   PREFER_SERVER_FILENAMES           = "PREFER_SERVER_FILENAMES";
-    public static final String   ONLY_GRAB_X_ITEMS                 = "ONLY_GRAB_X_ITEMS";
-    public static final String   ONLY_GRAB_X_ITEMS_NUMBER          = "ONLY_GRAB_X_ITEMS_NUMBER";
-    public static final boolean  defaultPREFER_SERVER_FILENAMES    = false;
-    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED = false;
-    public static final boolean  defaultONLY_GRAB_X_ITEMS          = false;
-    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER   = 25;
-    private boolean              is_private_url                    = false;
+    private static final int     MAXCHUNKS_videos                            = 1;
+    private static final int     MAXDOWNLOADS                                = -1;
+    private static final String  MAINPAGE                                    = "https://www.instagram.com";
+    public static final String   QUIT_ON_RATE_LIMIT_REACHED                  = "QUIT_ON_RATE_LIMIT_REACHED";
+    public static final String   PREFER_SERVER_FILENAMES                     = "PREFER_SERVER_FILENAMES";
+    private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY        = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
+    public static final String   ONLY_GRAB_X_ITEMS                           = "ONLY_GRAB_X_ITEMS";
+    public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
+    public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
+    public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
+    public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
+    public static final boolean  defaultONLY_GRAB_X_ITEMS                    = false;
+    public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER             = 25;
+    private boolean              is_private_url                              = false;
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -107,7 +116,7 @@ public class InstaGramCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
-                login(this.br, aa, false);
+                login(aa, false);
                 is_logged_in = true;
             } catch (final Throwable e) {
                 logger.log(e);
@@ -118,21 +127,53 @@ public class InstaGramCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         dllink = link.getStringProperty("directurl", null);
+        final boolean hasAlreadyCrawledBestQuality = link.getBooleanProperty("has_tried_to_crawl_original_url", false);
+        // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
          * higher than before then but it can also get smaller - which is okay as it is the original content.
          */
-        final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
-        if (resolution_inside_url != null) {
-            String drlink = dllink.replace(resolution_inside_url, "/");
-            drlink = checkLink(drlink);
-            if (drlink != null) {
-                dllink = drlink;
+        /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
+        // String drlink = dllink.replace(resolution_inside_url, "/");
+        final String imageid = link.getStringProperty("postid");
+        /* Important: Do not jump into this handling when downloading videos! */
+        final boolean isVideo = link.getBooleanProperty("isvideo", true);
+        final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
+        /* Request works only when user is logged in! */
+        if (userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null && !hasAlreadyCrawledBestQuality) {
+            /*
+             * Source of this idea:
+             * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/instaloadercontext.py#
+             * L462
+             */
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("User-Agent", "Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US");
+            brc.getPage("https://i.instagram.com/api/v1/media/" + imageid + "/info/");
+            /*
+             * New URL should be the BEST quality (resolution).
+             */
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
+            /*
+             * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture
+             * then! The resolution will usually not change - it will only remove the filters!
+             */
+            /*
+             * Source of this idea:
+             * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
+             */
+            if (this.dllink.contains("&se=")) {
+                this.dllink = this.dllink.replaceAll("&se=\\d+(&)?", "&");
+            } else {
+                logger.warning("WTF quality of \"original\" might not be better than the one we got before ...");
             }
+            link.setProperty("has_tried_to_crawl_original_url", true);
+            link.setProperty("directurl", this.dllink);
         } else {
             dllink = checkLink(dllink);
         }
         if (dllink == null) {
+            /* This will also act as a fallback in case that "original quality" handling fails */
             this.dllink = getFreshDirecturl(link);
             if (this.dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
@@ -311,24 +352,28 @@ public class InstaGramCom extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    logger.info("Attempting cookie login");
                     br.setCookies(MAINPAGE, cookies);
                     br.getPage(MAINPAGE + "/");
                     if (br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE).get("ds_user_id", Cookies.NOTDELETEDPATTERN) == null) {
                         /* Full login required */
-                        br.clearCookies(MAINPAGE);
+                        logger.info("Cookie login failed");
+                        br.clearAll();
                     } else {
                         /* Saved cookies were valid */
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
                 }
+                logger.info("Full login required");
                 br.getPage(MAINPAGE + "/");
                 final String csrftoken = br.getRegex("\"csrf_token\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (csrftoken == null) {
@@ -339,11 +384,13 @@ public class InstaGramCom extends PluginForHost {
                 if (rollout_hash == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                PostRequest post = new PostRequest("https://www.instagram.com/accounts/login/ajax/");
-                post.getHeaders().put("Accept", "*/*");
-                post.getHeaders().put("X-Instagram-AJAX", rollout_hash);
-                post.getHeaders().put("X-CSRFToken", csrftoken);
-                post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final RequestHeader ajaxHeaders = new RequestHeader();
+                ajaxHeaders.put("Accept", "*/*");
+                ajaxHeaders.put("X-Instagram-AJAX", rollout_hash);
+                ajaxHeaders.put("X-CSRFToken", csrftoken);
+                ajaxHeaders.put("X-Requested-With", "XMLHttpRequest");
+                final PostRequest post = new PostRequest("https://www.instagram.com/accounts/login/ajax/");
+                post.setHeaders(ajaxHeaders);
                 post.setContentType("application/x-www-form-urlencoded");
                 /* 2020-05-19: https://github.com/instaloader/instaloader/pull/623 */
                 final String enc_password = "#PWD_INSTAGRAM_BROWSER:0:" + System.currentTimeMillis() + ":" + account.getPass();
@@ -351,9 +398,57 @@ public class InstaGramCom extends PluginForHost {
                 br.getPage(post);
                 if ("fail".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
                     // 2 factor (Coded semi blind).
-                    if ("checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
-                        final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
-                        br.getPage(page);
+                    logger.info("Entering 2FA handling");
+                    if (!"checkpoint_required".equals(PluginJSonUtils.getJsonValue(br, "message"))) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
+                    br.getPage(page);
+                    final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
+                    if (json != null) {
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /* 2020-10-07: Unfinished code */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                        final ArrayList<Object> challenges = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge");
+                        boolean foundKnownChallenge = false;
+                        for (final Object challengeO : challenges) {
+                            entries = (Map<String, Object>) challengeO;
+                            final String challengeType = (String) entries.get("challengeType");
+                            if (StringUtils.isEmpty(challengeType)) {
+                                continue;
+                            }
+                            if (challengeType.equalsIgnoreCase("SelectVerificationMethodForm")) {
+                                foundKnownChallenge = true;
+                                /* Take the simplest way: Auto-select first option and ask user for verification code */
+                                entries = (Map<String, Object>) entries.get("fields");
+                                /* Assume it's mail verification */
+                                final String email = (String) entries.get("email");
+                                if (StringUtils.isEmpty(email)) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                PostRequest loginChoiceRequest = new PostRequest(br.getURL());
+                                loginChoiceRequest.setHeaders(ajaxHeaders);
+                                loginChoiceRequest.setContentType("application/x-www-form-urlencoded");
+                                post.setPostDataString("choice=1");
+                                br.getPage(loginChoiceRequest);
+                                final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
+                                final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account", dummyLink);
+                                if (code == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                }
+                                post.setPostDataString("security_code=" + code);
+                                br.getPage(post);
+                                /* TODO: Fully implement this */
+                            } else {
+                                /* Unknown challenge-type */
+                            }
+                        }
+                        if (!foundKnownChallenge) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown login challenge: Try cookie login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    } else {
                         // verify by email.
                         Form f = br.getFormBySubmitvalue("Verify+by+Email");
                         if (f == null) {
@@ -378,16 +473,10 @@ public class InstaGramCom extends PluginForHost {
                         // now 2factor most likely wont have the authenticated json if statement below....
                         // TODO: confirm what's next.
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unfinished code, please report issue with logs to Development Team.");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
                 if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {
@@ -403,7 +492,7 @@ public class InstaGramCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
-            login(this.br, account, true);
+            login(account, true);
         }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
@@ -436,6 +525,7 @@ public class InstaGramCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
         final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
         getConfig().addEntry(grabXitems);
