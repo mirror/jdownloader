@@ -83,6 +83,8 @@ public class InstaGramCom extends PluginForHost {
     private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY        = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
     public static final String   ONLY_GRAB_X_ITEMS                           = "ONLY_GRAB_X_ITEMS";
     public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
+    /* DownloadLink properties */
+    private static final String  PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
@@ -99,9 +101,12 @@ public class InstaGramCom extends PluginForHost {
         link.setPluginPatternMatcher(newurl);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         this.correctDownloadLink(link);
         dllink = null;
         server_issues = false;
@@ -112,74 +117,31 @@ public class InstaGramCom extends PluginForHost {
          * disabled for whatever reason.
          */
         prepBR(this.br);
-        boolean is_logged_in = false;
+        boolean isLoggedIN = false;
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
                 login(aa, false);
-                is_logged_in = true;
+                isLoggedIN = true;
             } catch (final Throwable e) {
                 logger.log(e);
             }
         }
-        if (this.is_private_url && !is_logged_in) {
+        if (this.is_private_url && !isLoggedIN) {
             link.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
         dllink = link.getStringProperty("directurl", null);
-        final boolean hasAlreadyCrawledBestQuality = link.getBooleanProperty("has_tried_to_crawl_original_url", false);
-        // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
-        /*
-         * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
-         * higher than before then but it can also get smaller - which is okay as it is the original content.
-         */
-        /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
-        // String drlink = dllink.replace(resolution_inside_url, "/");
-        final String imageid = link.getStringProperty("postid");
-        /* Important: Do not jump into this handling when downloading videos! */
-        final boolean isVideo = link.getBooleanProperty("isvideo", true);
-        final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
-        /* Request works only when user is logged in! */
-        /*
-         * TODO: If the original quality downloadurl has been grabbed and expires it would never be grabbed again: Try to improve this
-         * handling!
-         */
-        if (userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null && !hasAlreadyCrawledBestQuality) {
-            /*
-             * Source of this idea:
-             * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/instaloadercontext.py#
-             * L462
-             */
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("User-Agent", "Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US");
-            brc.getPage("https://i.instagram.com/api/v1/media/" + imageid + "/info/");
-            /*
-             * New URL should be the BEST quality (resolution).
-             */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-            this.dllink = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
-            /*
-             * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture
-             * then! The resolution will usually not change - it will only remove the filters!
-             */
-            /*
-             * Source of this idea:
-             * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
-             */
-            if (this.dllink.contains("&se=")) {
-                this.dllink = this.dllink.replaceAll("&se=\\d+(&)?", "&");
-            } else {
-                logger.warning("WTF quality of \"original\" might not be better than the one we got before ...");
-            }
-            link.setProperty("has_tried_to_crawl_original_url", true);
-            link.setProperty("directurl", this.dllink);
+        if (canGrabOriginalQualityDownloadurl(link, isLoggedIN) && !link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false)) {
+            this.dllink = this.getHighesQualityDownloadlink(link, true);
         } else {
-            dllink = checkLink(dllink);
+            this.dllink = checkLinkAndSetFilesize(link, this.dllink);
         }
         if (dllink == null) {
             /* This will also act as a fallback in case that "original quality" handling fails */
-            this.dllink = getFreshDirecturl(link);
+            this.dllink = getFreshDirecturl(link, isLoggedIN);
             if (this.dllink == null) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
             }
             // /* Set releasedate as property */
@@ -210,57 +172,134 @@ public class InstaGramCom extends PluginForHost {
                 }
             }
         }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-            } else if (con.isOK() && !con.getContentType().contains("html") && !con.getContentType().contains("text")) {
-                link.setDownloadSize(con.getLongContentLength());
-                /* Save it to have it in case it was re-freshed! */
-                link.setProperty("directurl", this.dllink);
-            } else {
-                /* Will get displayed as unknown error later on */
-                server_issues = true;
-            }
-        } finally {
+        if (!isDownload) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (con.getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+                } else if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    /* Save it to have it in case it was re-freshed! */
+                    link.setProperty("directurl", this.dllink);
+                } else {
+                    /* Will get displayed as unknown error later on */
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
-    private String getFreshDirecturl(final DownloadLink link) throws IOException, PluginException {
-        String dllink = null;
-        logger.info("Trying to refresh directurl");
-        final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
-        decrypter.setBrowser(this.br);
-        try {
-            final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl());
-            final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
-            DownloadLink foundLink = null;
-            if (items.size() == 1) {
-                foundLink = items.get(0);
+    private boolean canGrabOriginalQualityDownloadurl(final DownloadLink link, final boolean is_logged_in) {
+        // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
+        /*
+         * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
+         * higher than before then but it can also get smaller - which is okay as it is the original content.
+         */
+        /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
+        // String drlink = dllink.replace(resolution_inside_url, "/");
+        final String imageid = link.getStringProperty("postid");
+        /* Important: Do not jump into this handling when downloading videos! */
+        final boolean isVideo = link.getBooleanProperty("isvideo", true);
+        final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
+        return userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null;
+    }
+
+    /**
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
+     */
+    private String getHighesQualityDownloadlink(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
+        // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
+        /*
+         * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
+         * higher than before then but it can also get smaller - which is okay as it is the original content.
+         */
+        /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
+        // String drlink = dllink.replace(resolution_inside_url, "/");
+        /* Important: Do not jump into this handling when downloading videos! */
+        /*
+         * Source of this idea:
+         * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/instaloadercontext.py# L462
+         */
+        final String imageid = link.getStringProperty("postid");
+        if (imageid == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("User-Agent", "Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US");
+        brc.getPage("https://i.instagram.com/api/v1/media/" + imageid + "/info/");
+        /*
+         * New URL should be the BEST quality (resolution).
+         */
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final String downloadurl = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
+        if (StringUtils.isEmpty(downloadurl)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /*
+         * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture then!
+         * The resolution will usually not change - it will only remove the filters!
+         */
+        /*
+         * Source of this idea:
+         * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
+         */
+        if (removePictureEffects) {
+            logger.info("Trying to remove picture effects");
+            if (this.dllink.contains("&se=")) {
+                logger.info("Successfully removed picture effects");
+                this.dllink = this.dllink.replaceAll("&se=\\d+(&)?", "&");
             } else {
-                String orderID = link.getStringProperty("orderid");
-                if (orderID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (final DownloadLink linkTmp : items) {
-                    final String orderidTmp = linkTmp.getStringProperty("orderid");
-                    if (orderID.equals(orderidTmp)) {
-                        foundLink = linkTmp;
-                        break;
+                logger.info("Failed to remove picture effects");
+            }
+        }
+        link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
+        link.setProperty("directurl", downloadurl);
+        return downloadurl;
+    }
+
+    private String getFreshDirecturl(final DownloadLink link, final boolean isLoggedIN) throws IOException, PluginException {
+        String directurl = null;
+        logger.info("Trying to refresh directurl");
+        if (canGrabOriginalQualityDownloadurl(link, isLoggedIN)) {
+            logger.info("Tring to obtain fresh original quality downloadurl");
+            directurl = getHighesQualityDownloadlink(link, true);
+        } else {
+            logger.info("Trying to obtain fresh downloadurl via crawler");
+            final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
+            decrypter.setBrowser(this.br);
+            try {
+                final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl());
+                final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
+                DownloadLink foundLink = null;
+                if (items.size() == 1) {
+                    foundLink = items.get(0);
+                } else {
+                    String orderID = link.getStringProperty("orderid");
+                    if (orderID == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    for (final DownloadLink linkTmp : items) {
+                        final String orderidTmp = linkTmp.getStringProperty("orderid");
+                        if (orderID.equals(orderidTmp)) {
+                            foundLink = linkTmp;
+                            break;
+                        }
                     }
                 }
+                directurl = foundLink.getStringProperty("directurl");
+            } catch (final Throwable e) {
+                logger.log(e);
             }
-            dllink = foundLink.getStringProperty("directurl");
-        } catch (final Throwable e) {
-            logger.log(e);
         }
-        if (dllink == null) {
+        if (directurl == null) {
             /* On failure, check for offline. */
             logger.info("Failed to find fresh directurl --> Checking for offline");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("Oops, an error occurred")) {
@@ -276,10 +315,10 @@ public class InstaGramCom extends PluginForHost {
         } else {
             logger.info("Successfully found fresh directurl");
         }
-        return dllink;
+        return directurl;
     }
 
-    private String checkLink(final String flink) throws IOException, PluginException {
+    private String checkLinkAndSetFilesize(final DownloadLink link, final String flink) throws IOException, PluginException {
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
@@ -288,6 +327,7 @@ public class InstaGramCom extends PluginForHost {
             if (!looksLikeDownloadableContent(con)) {
                 throw new IOException();
             } else {
+                link.setDownloadSize(con.getCompleteContentLength());
                 return flink;
             }
         } catch (final Exception e) {
@@ -323,7 +363,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (this.is_private_url) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (server_issues) {
@@ -339,14 +379,14 @@ public class InstaGramCom extends PluginForHost {
         if (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4") || link.getName() != null && link.getName().contains(".mp4")) {
             maxchunks = MAXCHUNKS_videos;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, RESUME, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }
@@ -507,7 +547,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         /* We're already logged in - no need to login again here! */
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
