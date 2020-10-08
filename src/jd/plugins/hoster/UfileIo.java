@@ -131,7 +131,7 @@ public class UfileIo extends antiDDoSForHost {
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             String postData = "csrf_test_name=" + csrftest + "&slug=" + fileID + "&token=" + Encoding.urlEncode(recaptchaV2Response);
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            br.postPage("/ajax/generate_download/", postData);
+            postPage("/ajax/generate_download/", postData);
             if (!br.toString().startsWith("\"http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -196,16 +196,16 @@ public class UfileIo extends antiDDoSForHost {
                     if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
                         logger.info("Trust cookies without check");
                     }
-                    getPage("https://" + this.getHost() + "/");
+                    getPage("https://" + this.getHost() + "/dashboard");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
                         /* Save new cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     } else {
+                        logger.info("Cookie login failed");
                         br.clearAll();
                     }
-                    return;
                 }
                 logger.info("Performing full login");
                 getPage("https://" + this.getHost() + "/login");
@@ -251,13 +251,12 @@ public class UfileIo extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            throw e;
+        login(account, true);
+        if (!br.getURL().contains("/dashboard")) {
+            this.getPage("/dashboard");
         }
         ai.setUnlimitedTraffic();
-        if (br.containsHTML("class=\"plan\\-name\">Free Account<")) {
+        if (br.containsHTML("class=\"label\">Free Account|>\\s*As a free user, you have \\d+")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
