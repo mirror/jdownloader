@@ -217,11 +217,11 @@ public class ImgurComHoster extends PluginForHost {
             }
             link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
         }
-        if (this.dllink == null) {
+        if (StringUtils.isEmpty(this.dllink)) {
             /* Fallback */
             dllink = getURLDownload(imgUID);
         }
-        if (dllink == null) {
+        if (StringUtils.isEmpty(this.dllink)) {
             /* This should never happen */
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

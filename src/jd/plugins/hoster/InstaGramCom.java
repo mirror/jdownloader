@@ -235,6 +235,12 @@ public class InstaGramCom extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("User-Agent", "Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US");
         brc.getPage("https://i.instagram.com/api/v1/media/" + imageid + "/info/");
+        /* Offline errorhandling */
+        if (brc.getHttpConnection().getResponseCode() != 200) {
+            /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
+            /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /*
          * New URL should be the BEST quality (resolution).
          */
