@@ -28,7 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fucktube.com" }, urls = { "https?://(?:www\\.)?fucktube\\.com/([a-z0-9\\-]+)-(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fucktube.com" }, urls = { "https?://(?:www\\.)?fucktube\\.com/([a-z0-9\\-]+)-(\\d{4,})" })
 public class FucktubeCom extends antiDDoSForHost {
     public FucktubeCom(PluginWrapper wrapper) {
         super(wrapper);

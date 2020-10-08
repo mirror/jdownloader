@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -109,5 +111,27 @@ public class DepicMe extends XFileSharingProBasic {
     protected boolean isImagehoster() {
         /* 2020-06-11: Special */
         return true;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-10-08: Disabled as it returns wrong results */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /* 2020-10-08: Disabled as this doesn't work */
+        return false;
+    }
+
+    @Override
+    protected String getDllinkImagehost(final String src) {
+        /* 2020-10-08: Special */
+        String dllink = super.getDllinkImagehost(src);
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = new Regex(src, "src=\"(https?://[^\"]+)\"[^>]*class=\"pic\"").getMatch(0);
+        }
+        return dllink;
     }
 }
