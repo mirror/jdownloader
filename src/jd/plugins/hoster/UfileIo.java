@@ -88,7 +88,7 @@ public class UfileIo extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File no longer available|>\\s*That file has now been permanently removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"file-name\">([^<>\"]+)<").getMatch(0);

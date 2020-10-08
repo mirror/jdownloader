@@ -657,7 +657,11 @@ public class ImgurComGallery extends PluginForDecrypt {
             final DownloadLink dl = this.websiteCrawlJsonSingleItem(entries);
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_ORDERID, itemnumber_formatted);
             final String filename = ImgurComHoster.getFormattedFilename(dl);
-            dl.setFinalFileName(filename);
+            /*
+             * 2020-10-08: Do NOT set final filename here as website json is often missing information compared to API. This way, extended
+             * check will be allowed in host plugin!
+             */
+            dl.setName(filename);
             this.decryptedLinks.add(dl);
             distribute(dl);
         }
@@ -717,7 +721,11 @@ public class ImgurComGallery extends PluginForDecrypt {
             dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DATE, dateFormatted);
         }
         final String filename = ImgurComHoster.getFormattedFilename(dl);
-        dl.setFinalFileName(filename);
+        /*
+         * 2020-10-08: Do NOT set final filename here as website json is often missing information compared to API. This way, extended check
+         * will be allowed in host plugin!
+         */
+        dl.setName(filename);
         dl.setContentUrl(ImgurComHoster.getURLContent(imgUID));
         if (!StringUtils.isEmpty(video_source) && grabVideoSource) {
             final DownloadLink externalVideo = this.createDownloadlink(video_source);

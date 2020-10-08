@@ -134,9 +134,6 @@ public class ImgurComHoster extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, null);
-        if (this.dllink == null) {
-            dllink = getURLDownload(imgUID);
-        }
         /*
          * Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API and only check
          * directurl if needed!
@@ -156,7 +153,7 @@ public class ImgurComHoster extends PluginForHost {
                 if (useApiInAnonymousMode) {
                     br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
                 } else {
-                    this.login(br, null, false);
+                    this.login(br, account, false);
                 }
                 getPage(this.br, getAPIBaseWithVersion() + "/image/" + imgUID);
                 this.checkErrors(br, link, account);
@@ -189,63 +186,43 @@ public class ImgurComHoster extends PluginForHost {
                     size = Long.valueOf(apiResponse[1]);
                     link.setDownloadSize(size);
                 }
-                link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, apiResponse[0]);
-                link.setProperty("decryptedfinalfilename", apiResponse[2]);
                 if (this.dllink == null) {
                     dllink = getURLDownload(imgUID);
                 }
             } else {
-                /*
-                 * Workaround for API limit reached or in case user disabled API - second way does return 503 response in case API limit is
-                 * reached: http://imgur.com/download/ + imgUID. This code should never be reached!
-                 */
-                try {
-                    if (true) {
-                        /* 2020-09-24: https://svn.jdownloader.org/issues/88753 */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Website mode in development");
-                    }
-                    br = prepBRWebsite(this.br);
-                    getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
-                    if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    String api_like_json = br.getRegex("image\\s*:\\s*\\{(.*?)\\}").getMatch(0);
-                    if (api_like_json == null) {
-                        api_like_json = br.getRegex("bind\\(analytics\\.popAndLoad, analytics, \\{(.*?)\\}").getMatch(0);
-                    }
-                    /* This would usually mean out of date but we keep it simple in this case */
-                    if (api_like_json == null) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (userPrefersMp4()) {
-                        type = TYPE.MP4;
-                        apiResponse = parseAPIData(type, api_like_json);
-                    }
-                    if (apiResponse == null || Boolean.FALSE.equals(Boolean.valueOf(apiResponse[4]))) {
-                        type = TYPE.JPGORGIF;
-                        apiResponse = parseAPIData(type, api_like_json);
-                    }
-                    if (apiResponse == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String fileType = apiResponse[0];
-                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, fileType);
-                    link.setProperty("decryptedfinalfilename", apiResponse[2]);
-                    long size = -1;
-                    if (apiResponse[1] != null) {
-                        size = Long.valueOf(apiResponse[1]);
-                        link.setDownloadSize(size);
-                    }
-                } catch (final PluginException e) {
-                    logger.warning("Website handling failed --> Handling plain download");
+                /* Website mode */
+                br = prepBRWebsite(this.br);
+                getPage(this.br, "https://" + this.getHost() + "/" + imgUID);
+                if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("oembed\\.json")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (this.dllink == null) {
-                    dllink = getURLDownload(imgUID);
+                // String title = br.getRegex("property=\"og:title\" data-react-helmet=\"true\" content=\"([^<>\"]+)\"").getMatch(0);
+                String title = br.getRegex("link rel=\"alternate\" type=\"application/json\\+oembed\"[^>]*title=\"([^\"]*?)( - Imgur)?\"").getMatch(0);
+                this.dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
+                if (this.dllink != null) {
+                    /* 2020-10-08: Remove all arguments e.g. "?fb" - they would often alter the resolution/quality! */
+                    final String removeme = new Regex(this.dllink, "(\\?.+)").getMatch(0);
+                    if (removeme != null) {
+                        this.dllink = this.dllink.replace(removeme, "");
+                    }
+                }
+                if (!StringUtils.isEmpty(title) && !title.equalsIgnoreCase("imgur.com") && !title.matches(".*Imgur: The magic of the Internet.*")) {
+                    title = title.trim();
+                    final String removeme = new Regex(title, "( - [A-Za-z0-9]+ on Imgur)").getMatch(0);
+                    if (removeme != null) {
+                        title = title.replace(removeme, "");
+                    }
+                    link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, title);
                 }
             }
             link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
         }
+        if (this.dllink == null) {
+            /* Fallback */
+            dllink = getURLDownload(imgUID);
+        }
         if (dllink == null) {
+            /* This should never happen */
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
