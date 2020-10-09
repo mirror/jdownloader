@@ -1069,7 +1069,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } catch (final Throwable e) {
                         }
                     }
-                    if (setWeakFilename) {
+                    if (setWeakFilename && !dl.isNameSet()) {
                         /*
                          * We cannot get 'good' filenames via this call so we have to rely on our fallback-filenames (fuid or filename
                          * inside URL)!
@@ -4109,7 +4109,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
                     if (status != 200) {
                         link.setAvailable(false);
-                        setWeakFilename(link);
+                        if (!link.isNameSet()) {
+                            setWeakFilename(link);
+                        }
                     } else {
                         link.setAvailable(true);
                         String filename = (String) entries.get("name");
@@ -4134,7 +4136,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             if (isVideohost) {
                                 link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                             }
-                            if (allowWeakFilenameAsFallback) {
+                            if (allowWeakFilenameAsFallback && !link.isNameSet()) {
                                 setWeakFilename(link);
                             }
                         }
