@@ -269,12 +269,7 @@ public class ImgurComGallery extends PluginForDecrypt {
     }
 
     private DownloadLink apiCrawlJsonSingleItem(final Map<String, Object> item) throws DecrypterException, ParseException {
-        final boolean user_prefers_mp4 = ImgurComHoster.userPrefersMp4();
-        String title = (String) item.get("title");
-        final long size = JavaScriptEngineFactory.toLong(item.get("size"), -1);
-        final long size_mp4 = JavaScriptEngineFactory.toLong(item.get("mp4_size"), -1);
         final String imgUID = (String) item.get("id");
-        final String videoSource = (String) item.get("video_source");
         final boolean is_album = item.containsKey("is_album") ? ((Boolean) item.get("is_album")).booleanValue() : false;
         if (imgUID == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -283,10 +278,16 @@ public class ImgurComGallery extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/a/" + imgUID);
             return dl;
         } else {
+            final String videoSource = (String) item.get("video_source");
+            String title = (String) item.get("title");
+            final String description = (String) item.get("description");
+            final long size = JavaScriptEngineFactory.toLong(item.get("size"), -1);
+            final long size_mp4 = JavaScriptEngineFactory.toLong(item.get("mp4_size"), -1);
             String filetype = (String) item.get("type");
             if ((size == -1 && size_mp4 == -1) || filetype == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
+            final boolean user_prefers_mp4 = ImgurComHoster.userPrefersMp4();
             if (filetype.matches("image/[A-Za-z0-9]+")) {
                 /* E.g. 'image/gif' --> 'gif' */
                 filetype = filetype.split("/")[1];
@@ -315,8 +316,10 @@ public class ImgurComGallery extends PluginForDecrypt {
                 title = HTMLEntities.unhtmlAngleBrackets(title);
                 title = HTMLEntities.unhtmlSingleQuotes(title);
                 title = HTMLEntities.unhtmlDoubleQuotes(title);
-                title = encodeUnicode(title);
                 dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
+            }
+            if (!StringUtils.isEmpty(description)) {
+                dl.setComment(description);
             }
             final String filename = ImgurComHoster.getFormattedFilename(dl);
             dl.setFinalFileName(filename);
@@ -328,6 +331,9 @@ public class ImgurComGallery extends PluginForDecrypt {
             }
             return dl;
         }
+    }
+
+    public static void apiSetInformationOnDownloadLink(final DownloadLink link, final Map<String, Object> item) {
     }
 
     private void siteCrawlSubredditStyleGallery() throws PluginException, IOException, ParseException {
@@ -607,7 +613,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                 logger.info("Stopping because current page contained less than " + maxcount + " items");
                 break;
             } else {
-                /* TODO: Test pagination */
+                /* TODO: Test & enable pagination support */
                 if (true) {
                     break;
                 }
