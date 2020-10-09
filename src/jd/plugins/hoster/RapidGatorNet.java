@@ -302,7 +302,9 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         link.removeProperty(HOTLINK);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-            link.setName(getFallbackFilename(link));
+            if (!link.isNameSet()) {
+                link.setName(getFallbackFilename(link));
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String freedlsizelimit = br.getRegex("'You can download files up to\\s*([\\d\\.]+ ?(MB|GB))\\s*in free mode<").getMatch(0);
