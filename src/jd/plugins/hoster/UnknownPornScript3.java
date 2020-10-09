@@ -29,8 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me", "xxxkinky.com", "pornper.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "fantasy8.com", "pornstep.com", "erotictube.me", "freepornsite.me", "sweetkiss.me" }, urls = { "https?://(?:www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornper\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?fantasy8\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+",
-        "https?://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxkinky.com", "pornmobo.com", "kinkytube.me", "sexytube.me", "hottube.me", "pornstep.com", "erotictube.me", "freepornsite.me", "sweetkiss.me" }, urls = { "https?://(?:www\\.)?xxxkinky\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornmobo\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?kinkytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sexytube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?hottube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?pornstep\\.com/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?erotictube\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornsite\\.me/video/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?sweetkiss\\.me/video/\\d+/[a-z0-9\\-]+" })
 public class UnknownPornScript3 extends antiDDoSForHost {
     public UnknownPornScript3(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +44,7 @@ public class UnknownPornScript3 extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.fantasy8.com/static/terms";
+        return "https://www.xxxkinky.com/terms.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -58,9 +57,6 @@ public class UnknownPornScript3 extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Videos and Sex Movies at fantasy8\\.com Kinky Porn Tube</title>").getMatch(0);
-        }
         if (filename == null) {
             filename = br.getRegex("class=\"heading\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         }
