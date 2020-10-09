@@ -32,6 +32,7 @@ import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
@@ -83,8 +84,9 @@ public class ImgurComHoster extends PluginForHost {
 
     /* User settings */
     private static final String  SETTING_MP4                       = "SETTING_MP4";
+    private static final String  SETTING_ENABLE_EXTENDED_LINKCHECK = "SETTING_ENABLE_EXTENDED_LINKCHECK";
     public static final String   SETTING_USE_API                   = "SETTING_USE_API_2020_10_07";
-    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE";
+    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE_2020_10_09";
     private static final String  SETTING_CLIENT_ID                 = "CLIENT_ID";
     private static final String  SETTING_CLIENT_SECRET             = "CLIENT_SECRET";
     public static final String   SETTING_GRAB_SOURCE_URL_VIDEO     = "SETTING_GRAB_SOURCE_URL_VIDEO";
@@ -135,19 +137,17 @@ public class ImgurComHoster extends PluginForHost {
         imgUID = getImgUID(link);
         dllink = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, null);
         /*
-         * Avoid unneccessary requests --> If we have the directlink, filesize and a nice filename, do not access site/API and only check
+         * Avoid unneccessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
          * directurl if needed!
          */
-        TYPE type = null;
-        final boolean allowExtendedCheck = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        if (allowExtendedCheck && (dllink == null || link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null)) {
-            /*
-             * TODO: Check this old handling: Also check whether or not we want to handle the "prefer mp4" setting here or only in crawler
-             * [handling ithere would make more sense]
-             */
+        final boolean allowExtendedLinkCheck = this.getPluginConfig().getBooleanProperty(SETTING_ENABLE_EXTENDED_LINKCHECK, defaultSETTING_ENABLE_EXTENDED_LINKCHECK);
+        final boolean isLackingFileInformation = link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null;
+        boolean filesizeHasBeenSetInThisLinkcheck = false;
+        boolean filenameHasBeenSetInThisLinkcheck = false;
+        if (allowExtendedLinkCheck && isLackingFileInformation) {
+            logger.info("Handling extended linkcheck");
             final boolean apiMode = canUseAPI() && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-            final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, true);
-            String apiResponse[] = null;
+            final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API);
             if (apiMode) {
                 prepBRAPI(this.br);
                 if (useApiInAnonymousMode) {
@@ -162,32 +162,45 @@ public class ImgurComHoster extends PluginForHost {
                         account.setError(AccountError.TEMP_DISABLED, 30 * 60 * 1000l, "Rate limit reached");
                     }
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached");
-                }
-                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
+                } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (userPrefersMp4()) {
-                    type = TYPE.MP4;
-                    apiResponse = parseAPIData(type, this.br.toString());
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
+                /** TODO: Check if we can find the uploaders name- and upload-date here too */
+                String title = (String) entries.get("title");
+                final String description = (String) entries.get("description");
+                final long size = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
+                if (!StringUtils.isEmpty(title)) {
+                    title = Encoding.htmlDecode(title);
+                    title = HTMLEntities.unhtmlentities(title);
+                    title = HTMLEntities.unhtmlAmpersand(title);
+                    title = HTMLEntities.unhtmlAngleBrackets(title);
+                    title = HTMLEntities.unhtmlSingleQuotes(title);
+                    title = HTMLEntities.unhtmlDoubleQuotes(title);
+                    link.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
                 }
-                if (apiResponse == null || Boolean.FALSE.equals(Boolean.valueOf(apiResponse[4])) || apiResponse[3] == null) {
-                    type = TYPE.JPGORGIF;
-                    apiResponse = parseAPIData(type, this.br.toString());
-                }
-                if (apiResponse != null && apiResponse[1] == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (apiResponse == null || apiResponse[3] == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = apiResponse[3];
-                long size = -1;
-                if (apiResponse[1] != null) {
-                    size = Long.valueOf(apiResponse[1]);
+                if (size > 0) {
                     link.setDownloadSize(size);
+                    filesizeHasBeenSetInThisLinkcheck = true;
                 }
-                if (this.dllink == null) {
-                    dllink = getURLDownload(imgUID);
+                if (StringUtils.isEmpty(this.dllink)) {
+                    dllink = (String) entries.get("link");
+                    if (!StringUtils.isEmpty(this.dllink)) {
+                        /* Save new directurl */
+                        link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
+                    }
+                    if (size > 0) {
+                        /* Filename && filesize given --> We can set a filename here and save one http-request! */
+                        final String filename_formatted = getFormattedFilename(link);
+                        if (filename_formatted != null) {
+                            link.setName(filename_formatted);
+                            filenameHasBeenSetInThisLinkcheck = true;
+                        }
+                    }
+                }
+                if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+                    link.setComment(description);
                 }
             } else {
                 /* Website mode */
@@ -205,6 +218,8 @@ public class ImgurComHoster extends PluginForHost {
                     if (removeme != null) {
                         this.dllink = this.dllink.replace(removeme, "");
                     }
+                    /* Save new directurl */
+                    link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
                 }
                 if (!StringUtils.isEmpty(title) && !title.equalsIgnoreCase("imgur.com") && !title.matches(".*Imgur: The magic of the Internet.*")) {
                     title = title.trim();
@@ -215,7 +230,6 @@ public class ImgurComHoster extends PluginForHost {
                     link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, title);
                 }
             }
-            link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
         }
         if (StringUtils.isEmpty(this.dllink)) {
             /* Fallback */
@@ -226,7 +240,8 @@ public class ImgurComHoster extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!isDownload) {
+        final boolean checkDirectURLToFindMoreFileInformation = !filesizeHasBeenSetInThisLinkcheck && !filenameHasBeenSetInThisLinkcheck;
+        if (!isDownload && checkDirectURLToFindMoreFileInformation) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server-load down.
@@ -888,57 +903,6 @@ public class ImgurComHoster extends PluginForHost {
         return false;
     }
 
-    /**
-     * Parses json either from API, or also if previously set in the browser - it's basically the same as a response similar to the API isa
-     * stored in the html code when accessing normal content links: imgur.com/xXxXx
-     */
-    private String[] parseAPIData(TYPE type, final String json) throws PluginException {
-        final boolean animated = Boolean.TRUE.equals(Boolean.valueOf(PluginJSonUtils.getJsonValue(json, "animated")));
-        String url = null;
-        String fileSize = null;
-        String fileType = null;
-        switch (type) {
-        case MP4:
-            url = PluginJSonUtils.getJsonValue(json, "mp4");
-            fileSize = PluginJSonUtils.getJsonValue(json, "mp4_size");
-            fileType = "mp4";
-            break;
-        case JPGORGIF:
-            url = PluginJSonUtils.getJsonValue(json, "link");
-            fileSize = PluginJSonUtils.getJsonValue(json, "size");
-            fileType = new Regex(json, "\"(mime)?type\"\\s*:\\s*\"image\\\\?/([^<>]*?)\"").getMatch(1);
-            if (fileType == null) {
-                fileType = new Regex(json, "\"ext\"\\s*:\\s*\"\\.(.*?)\"").getMatch(0);
-            }
-            break;
-        }/* "mimetype" = site, "type" = API */
-        if (fileType == null) {
-            if (animated) {
-                if (TYPE.MP4.equals(type)) {
-                    fileType = "mp4";
-                } else {
-                    fileType = "gif";
-                }
-            } else {
-                fileType = "jpeg";
-            }
-        }
-        String finalFileName = null;
-        String title = PluginJSonUtils.getJsonValue(json, "title");
-        if (StringUtils.isEmpty(title)) {
-            finalFileName = imgUID + "." + fileType;
-        } else {
-            title = Encoding.htmlDecode(title);
-            title = HTMLEntities.unhtmlentities(title);
-            title = HTMLEntities.unhtmlAmpersand(title);
-            title = HTMLEntities.unhtmlAngleBrackets(title);
-            title = HTMLEntities.unhtmlSingleQuotes(title);
-            title = HTMLEntities.unhtmlDoubleQuotes(title);
-            finalFileName = title + "." + fileType;
-        }
-        return new String[] { fileType, fileSize, finalFileName, url, Boolean.toString(animated) };
-    }
-
     /** Returns a link for the user to open in browser. */
     public static final String getURLContent(final String imgUID) {
         final String contentURL = "https://imgur.com/" + imgUID;
@@ -1018,7 +982,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static final boolean isAPIEnabled() {
-        return DebugMode.TRUE_IN_IDE_ELSE_FALSE && SubConfiguration.getConfig("imgur.com").getBooleanProperty(ImgurComHoster.SETTING_USE_API, false);
+        return DebugMode.TRUE_IN_IDE_ELSE_FALSE && SubConfiguration.getConfig("imgur.com").getBooleanProperty(ImgurComHoster.SETTING_USE_API, defaultSETTING_USE_API);
     }
 
     private String getAuthURL() throws Exception {
@@ -1192,6 +1156,8 @@ public class ImgurComHoster extends PluginForHost {
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
+                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
+                                                      put("SETTING_ENABLE_EXTENDED_LINKCHECK", "Activate extended linkcheck? Enable this if file-titles are sometimes incomplete. Will only work for all items added after this setting has been changed!");
                                                       put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Use API instead of website?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
@@ -1199,7 +1165,6 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
                                                       put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
                                                       put("LABEL_FILENAME", "Define custom filename:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
@@ -1208,6 +1173,8 @@ public class ImgurComHoster extends PluginForHost {
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
+                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
+                                                      put("SETTING_ENABLE_EXTENDED_LINKCHECK", "Aktiviere erweiterten Linkcheck? Kann hilfreich sein, falls Dateinamen unvollständig sind. Nur gültig für alle Links, die nach Änderung dieser einstellung hinzugefügt werden!");
                                                       put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Verwende API anstatt Webseite?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden verwenden? Um die API überhaupt verwenden zu können deine eigenen API Zugangsdaten unten eintragen ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
@@ -1215,7 +1182,6 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
                                                       put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
@@ -1239,20 +1205,24 @@ public class ImgurComHoster extends PluginForHost {
         return "Translation not found!";
     }
 
-    private static final String defaultAPISettingUserVisibleText = "JDDEFAULT";
-    public static final boolean defaultMP4                       = false;
-    public static final boolean defaultSOURCEVIDEO               = false;
-    private static final String defaultCustomFilename            = "*username* - *title*_*orderid*_*imgid**ext*";
-    public static final String  defaultCustomPackagename         = "*username* - *title* - *galleryid*";
+    private static final String defaultAPISettingUserVisibleText         = "JDDEFAULT";
+    public static final boolean defaultMP4                               = false;
+    public static final boolean defaultSETTING_ENABLE_EXTENDED_LINKCHECK = false;
+    public static final boolean defaultSETTING_USE_API                   = false;
+    public static final boolean defaultSETTING_USE_API_IN_ANONYMOUS_MODE = false;
+    public static final boolean defaultSOURCEVIDEO                       = false;
+    private static final String defaultCustomFilename                    = "*username* - *title*_*orderid*_*imgid**ext*";
+    public static final String  defaultCustomPackagename                 = "*username* - *title* - *galleryid*";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_EXTENDED_LINKCHECK, this.getPhrase("SETTING_ENABLE_EXTENDED_LINKCHECK")).setDefaultValue(defaultSETTING_ENABLE_EXTENDED_LINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
-            final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, this.getPhrase("SETTING_USE_API")).setDefaultValue(false);
+            final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, this.getPhrase("SETTING_USE_API")).setDefaultValue(defaultSETTING_USE_API);
             getConfig().addEntry(cfe);
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(false).setEnabledCondidtion(cfe, true));
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(defaultSETTING_USE_API_IN_ANONYMOUS_MODE).setEnabledCondidtion(cfe, true));
             getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
             getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
             this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
