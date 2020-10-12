@@ -226,11 +226,20 @@ public class RtveEs extends PluginForHost {
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink != null && dllink.matches("https?://rtve-hlsvod\\.secure\\.footprint\\.net/resources/TE_NGVA/mp4/.*\\.mp4/playlist\\.m3u8")) {
+        String httpDownload = null;
+        boolean hlsDownloadPresent = true;
+        if (!this.dllink.contains(".m3u8")) {
+            logger.info("http downloadlink was given already");
+            httpDownload = this.dllink;
+            hlsDownloadPresent = false;
+        } else if (dllink.matches("https?://rtve-hlsvod\\.secure\\.footprint\\.net/resources/TE_NGVA/mp4/.*\\.mp4/playlist\\.m3u8")) {
+            logger.info("Attempting hls --> http workaround");
+            httpDownload = dllink.replace("/playlist.m3u8", "");
+        }
+        if (httpDownload != null) {
             /* 2020-07-31: Some content can be downloaded via http instead of via HLS --> Prefer to do that */
             logger.info("Try to download http stream");
-            final String httlpDownload = dllink.replace("/playlist.m3u8", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, httlpDownload, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, httpDownload, true, 0);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This content is not available in your country", 3 * 60 * 60 * 1000l);
             }
@@ -245,6 +254,10 @@ public class RtveEs extends PluginForHost {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
+                }
+                if (!hlsDownloadPresent) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: http download failed", 30 * 60 * 1000l);
                 }
                 logger.info("HTTP download failed --> Fallback to HLS download");
             }

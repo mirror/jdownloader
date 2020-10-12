@@ -1600,7 +1600,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.warning("Stopping after first loop because owner_id is not given");
                     break;
                 }
-                this.postPageSafe("https://" + this.getHost() + "/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&owner_id=%s&type=own&wall_start_from=%s", postvalue_fixed, currentOffset, ownerID, counter_wall_start_from));
+                this.postPageSafe("https://" + this.getHost() + "/al_wall.php", String.format("act=get_wall&al=1&fixed=%s&offset=%s&onlyCache=false&owner_id=%s&type=own&wall_start_from=%s", postvalue_fixed, currentOffset, ownerID, counter_wall_start_from));
                 this.br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
             }
             final int numberof_items_old = this.decryptedLinks.size();
