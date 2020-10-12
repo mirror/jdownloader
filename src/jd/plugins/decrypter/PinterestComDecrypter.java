@@ -399,10 +399,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * First let's find the board information map and user information map. This is a little bit different depending on whether the user
          * has an account or not.
          */
-        final LinkedHashMap<String, Object> boardPageResource;
+        LinkedHashMap<String, Object> boardPageResource;
         // final LinkedHashMap<String, Object> userResource;
         if (loggedIN) {
             boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
+            if (boardPageResource == null) {
+                /* 2020-10-12 */
+                boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "boards/content/{0}");
+            }
             // userResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root,
             // "resources/data/UserResource/{0}/data");
         } else {
@@ -668,7 +672,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                             nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmark\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
                         }
                     }
-                    System.out.println(i + ":" + nextbookmark);
+                    logger.info(i + ":" + nextbookmark);
                     if (i == 0 && numberof_pins_decrypted_via_current_function == 0) {
                         /* Usually the case when a user owns an account */
                         logger.info("Found nothing on first run - this means that everything will be crawled via ajax requests and nothing was found inside the json inside the html code");
