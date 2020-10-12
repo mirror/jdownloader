@@ -47,60 +47,20 @@ import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { /** Please add new entries to the END of this array! */
-        "kvs-demo.com", "hotmovs.com", "cartoontube.xxx", "theclassicporn.com", "alphaporno.com", "tubewolf.com", "voyeurhit.com", "yourlust.com", "pornicom.com", "pervclips.com", "wankoz.com", "tubecup.com", "hellporno.com", "h2porn.com", "finevids.xxx", "freepornvs.com", "mylust.com", "pornwhite.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "sleazyneasy.com", "yeswegays.com", "xbabe.com", "hdzog.com", "sex3.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com", "xcafe.com", "txxx.com", "anon-v.com", "hclips.com", "vjav.com", "shameless.com", "evilhub.com", "japan-whores.com", "needgayporn.com", "pornyeah.com", "javbangers.com", "analdin.com", "onlygayvideo.com", "bravoporn.com", "videocelebs.net", "xozilla.com", "pornhat.com", "porndr.com", "anyporn.com", "anysex.com", "uiporn.com",
-        "clipcake.com", "cliplips.com", "fapality.com", "xcum.com", "momvids.com", "babestube.com", "porngem.com", "camvideos.tv", "everydayporn.co", "cutscenes.net", "boundhub.com", "yourporngod.com", "porngo.com", "cwtvembeds.com", "dato.porn", "cambro.tv", "rule34video.com", "camwhoreshd.com", "camvideos.org", "videowebcam.tv", "webcamsbabe.com", "privat-zapisi.biz", "sexvid.xxx", "smutr.com", "private-shows.net", "pornbimbo.com", "ok.xxx", "zbporn.com", "theyarehuge.com", "camhub.world" }, urls = { /**
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             *
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * Please
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * add
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * new
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * entries
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * to
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * the
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * END
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * of
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * this
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             * array!
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             */
-                "https?://(?:www\\.)?kvs\\-demo\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?hotmovs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?cartoontube\\.xxx/(?:video\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theclassicporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?voyeurhit\\.com/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.|m\\.)?wankoz\\.com/videos/\\d+/[a-z0-9\\-_]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?",
-                "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sleazyneasy\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?",
-                "https?://(www\\.)?xbabe\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?", "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?anon\\-v\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?",
-                "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?analdin\\.com/(?:[a-z]{2}/)?(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?xozilla\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/|https?://vr\\.pornhat\\.com/videos/\\d+/[a-z0-9\\-_]+/",
-                "https?://(?:www\\.)?porndr\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/", "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?clipcake\\.com/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\.clipcake\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?cliplips\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?momvids\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)",
-                "https?://(?:www\\.)?everydayporn\\.co/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cutscenes\\.net/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?boundhub\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?yourporngod\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngo\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+", "https?://(?:www\\.)?dato\\.porn/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?rule34video\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camwhoreshd\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)",
-                "https?://(?:www\\.)?videowebcam\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smutr\\.com/v/\\d+/", "https?://(?:www\\.)?private-shows\\.net/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?ok.xxx/video/\\d+/", "https?://(?:www\\.)?zbporn\\.com/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?theyarehuge\\.com/(?:v/\\d+-[a-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?camhub\\.world/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
-public class KernelVideoSharingCom extends antiDDoSForHost {
-    public KernelVideoSharingCom(PluginWrapper wrapper) {
+public class KernelVideoSharingComV2 extends antiDDoSForHost {
+    public KernelVideoSharingComV2(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     /* Porn_plugin */
-    // Version 1.0
+    // Version 2.0
     // Tags:
     // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
@@ -115,29 +75,24 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      *
      * -Possible filename inside URL
      *
-     * -No serverside downloadlimits
-     *
-     * -No account support
      *
      * -Final downloadlink that fits the RegExes
      *
      * -Website should NOT link to external sources (needs decrypter)
      *
      */
-    /* Connection stuff */
-    private static final int    free_maxdownloads        = -1;
     /* E.g. normal kernel-video-sharing.com video urls */
-    private static final String type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
-    private static final String type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
+    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /* Rare case. Example: porngo.com */
-    private static final String type_normal_without_fuid = ".+/videos/([a-z0-9\\-]+)/?$";
-    private static final String type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
+    private static final String   type_normal_without_fuid = ".+/videos/([a-z0-9\\-]+)/?$";
+    private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
-    public static final String  type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";
-    public static final String  type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
-    private String              dllink                   = null;
-    private boolean             server_issues            = false;
-    private boolean             private_video            = false;
+    protected static final String type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";
+    protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
+    private String                dllink                   = null;
+    private boolean               server_issues            = false;
+    private boolean               private_video            = false;
 
     @Override
     public String getAGBLink() {
@@ -162,6 +117,28 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+    // public int getMaxSimultaneousFreeAccountDownloads() {
+    // return -1;
+    // }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
     /*
      * List of hosts for which filename from inside html should be used as finding it via html would require additional RegExes or is
      * impossible. </br> Tags: Force, enforce
@@ -173,35 +150,22 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         return requestFileInformation(link, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean download_started) throws Exception {
+    protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String filename_url = getURLFilename(link.getPluginPatternMatcher());
+        if (!link.isNameSet() && !StringUtils.isEmpty(filename_url)) {
+            /* Set this so that offline items have "nice" titles too. */
+            link.setName(filename_url);
+        }
         getPage(link.getPluginPatternMatcher());
         setSpecialFlags();
-        final String filename_url = regexURLFilenameAuto(this.br, link);
-        if (br.containsHTML("KernelTeamVideoSharingSystem\\.js|KernelTeamImageRotator_")) {
-            /* <script src="/js/KernelTeamImageRotator_3.8.1.jsx?v=3"></script> */
-            /* <script type="text/javascript" src="http://www.hclips.com/js/KernelTeamVideoSharingSystem.js?v=3.8.1"></script> */
-        }
-        String filename = regexFilenameAuto(br, link);
+        String filename = getFileTitle(link);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
-            /* Definitly offline - set url filename to avoid bad names! */
-            if (!StringUtils.isEmpty(filename_url)) {
-                link.setName(filename_url);
-            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /*
-         * 2019-07-25: Set fuid again here because for some hosts they're not given inside the URL which the user has added but rather
-         * inside their embed URLs and also inside html
-         */
-        final String fuid = regexFUIDAuto(this.br, link);
-        if (fuid != null) {
-            link.setLinkID(this.getHost() + "://" + fuid);
-            link.setName(fuid);
         }
         try {
             dllink = getDllink(br, this);
@@ -226,10 +190,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             link.setFinalFileName(filename);
         }
         // this prevents another check when download is about to happen! -raztoki
-        if (download_started) {
+        if (isDownload) {
             return AvailableStatus.TRUE;
-        }
-        if (dllink != null && !dllink.contains(".m3u8")) {
+        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8")) {
             URLConnectionAdapter con = null;
             try {
                 // if you don't do this then referrer is fked for the download! -raztoki
@@ -264,11 +227,13 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            logger.info("Unable to find filesize because failed to find final downloadurl");
         }
         return AvailableStatus.TRUE;
     }
 
-    private void setSpecialFlags() {
+    protected void setSpecialFlags() {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         if (br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
             this.private_video = true;
@@ -333,7 +298,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
     }
 
-    private int getMaxChunks(final DownloadLink link) {
+    protected int getMaxChunks(final DownloadLink link) {
         return 0;
     }
 
@@ -342,7 +307,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     /** TODO: Use this in future KVS plugins that need account support! See e.g. CamwhoresbayCom */
-    private void login(final Account account, final boolean force, final boolean test) throws Exception {
+    protected void login(final Account account, final boolean force, final boolean test) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -381,7 +346,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIN() {
+    protected boolean isLoggedIN() {
         return br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null;
     }
 
@@ -776,41 +741,38 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         return url_source;
     }
 
-    /**
-     * Finds title inside a KVS URL. <br />
-     * Automatically decides whether to use the current Browsers' URL or the original source URL added by the user.
-     */
-    public static String regexURLFilenameAuto(final Browser br, final DownloadLink dl) {
-        if (br == null || dl == null) {
-            return null;
+    protected String regexURLFilenameAuto(final DownloadLink link) {
+        /*
+         * Short URLs may redirect to longer ones containing the information we need --> Prefer title which might be stored in current
+         * browsers' URL.
+         */
+        String filenameURL = getURLFilename(this.br.getURL());
+        if (filenameURL == null) {
+            filenameURL = getURLFilename(link.getPluginPatternMatcher());
         }
-        final String url_source = getURL_source(br, dl);
-        String url_filename = regexURLFilename(url_source);
-        if (StringUtils.isEmpty(url_filename)) {
-            url_filename = regexFUIDAuto(br, dl);
+        if (filenameURL != null) {
+            filenameURL = filenameURL.replace("-", " ");
         }
-        return url_filename;
+        return filenameURL;
     }
 
     /**
-     * Finds title inside a given KVS URL. <br />
+     * Finds title inside given URL. <br />
      */
-    public static String regexURLFilename(final String url_source) {
+    protected String getURLFilename(final String url_source) {
         if (url_source == null) {
             return null;
         }
-        String filename_url = regexURLFilenameSiteSpecific(url_source);
-        if (StringUtils.isEmpty(filename_url)) {
-            if (url_source.matches(type_normal_fuid_at_end)) {
-                filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
-            } else if (url_source.matches(type_normal)) {
-                filename_url = new Regex(url_source, type_normal).getMatch(1);
-            } else if (url_source.matches(type_normal_without_fuid)) {
-                filename_url = new Regex(url_source, type_normal_without_fuid).getMatch(0);
-            } else {
-                /* We can only use fuid as filename */
-                filename_url = null;
-            }
+        String filename_url = null;
+        if (url_source.matches(type_normal_fuid_at_end)) {
+            filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
+        } else if (url_source.matches(type_normal)) {
+            filename_url = new Regex(url_source, type_normal).getMatch(1);
+        } else if (url_source.matches(type_normal_without_fuid)) {
+            filename_url = new Regex(url_source, type_normal_without_fuid).getMatch(0);
+        } else {
+            /* We can only use fuid as filename */
+            filename_url = null;
         }
         if (!StringUtils.isEmpty(filename_url)) {
             /* Make the url-filenames look better by using spaces instead of '-'. */
@@ -820,58 +782,37 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     /**
-     * Uses site-specific RegExes to find the URLFilename (if one is available for current website). <br />
-     * 2017-07-27: So far there are no site-specific RegExes for URLFilenames.
+     * Tries everything possible to find a nice file-title for KVS websites. <br />
      */
-    public static String regexURLFilenameSiteSpecific(final String url) {
-        if (url == null) {
-            return null;
-        }
-        final String host = Browser.getHost(url);
-        if (host == null) {
-            return null;
-        }
-        String filename = null;
-        if (host.equalsIgnoreCase("crockotube.com")) {
-            filename = new Regex(url, "/watch/(.+)-[A-Z0-9]+$").getMatch(0);
-        }
-        return filename;
-    }
-
-    /**
-     * Tries everything possible to find a nice filename for KVS websites. <br />
-     * Returns url_filename as fallback.
-     */
-    public static String regexFilenameAuto(final Browser br, final DownloadLink dl) {
+    protected String getFileTitle(final DownloadLink link) {
         String filename;
-        final String filename_url = regexURLFilenameAuto(br, dl);
-        final String url_source = getURL_source(br, dl);
-        final String current_host = dl.getHost();
+        String title_url = getURLFilename(br.getURL());
+        final String url_source = getURL_source(br, link);
+        final String current_host = link.getHost();
         /* Find 'real' filename and the one inside our URL. */
-        /* Prefer website-specific filename */
-        filename = regexFilenameSiteSpecific(br);
-        if (filename == null) {
-            if (url_source.matches(type_only_numbers)) {
-                filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
-            } else if (url_source.matches(type_embedded)) {
-                /* Embed content usually won't have any useful filename/title available */
-                filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
-                if (StringUtils.isEmpty(filename)) {
-                    /* Fallback to fuid as filename */
-                    filename = regexFUIDAuto(br, dl);
-                }
-            } else {
-                // filename = regexFilenameSiteSpecific(br);
-                filename = regexFilenameGeneral(br);
-                if (StringUtils.isEmpty(filename)) {
-                    filename = regexStandardTitleWithHost(br, br.getHost());
-                }
+        if (link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
+            /* Nice title is inside URL --> Prefer that! */
+            filename = title_url;
+        } else if (url_source.matches(type_only_numbers)) { /* TODO: Check the following (old) code */
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
+        } else if (url_source.matches(type_embedded)) {
+            /* Embed content usually won't have any useful filename/title available */
+            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                /* Fallback to fuid as filename */
+                filename = regexFUIDAuto(br, link);
+            }
+        } else {
+            // filename = regexFilenameSiteSpecific(br);
+            filename = regexFilenameGeneral(br);
+            if (StringUtils.isEmpty(filename)) {
+                filename = regexStandardTitleWithHost(br, br.getHost());
             }
         }
         /* Now decide which filename we want to use */
         final boolean filename_url_is_forced = domains_force_url_filename.contains(current_host);
         if (StringUtils.isEmpty(filename) || filename_url_is_forced) {
-            filename = filename_url;
+            filename = title_url;
         } else {
             /* Remove html crap and spaces at the beginning and end. */
             filename = Encoding.htmlDecode(filename);
@@ -882,20 +823,24 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     /** Tries to find unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
-    public static String regexFUIDAuto(final Browser br, final DownloadLink dl) {
+    protected String regexFUIDAuto(final Browser br, final DownloadLink dl) {
         final String url_source = getURL_source(br, dl);
         if (url_source == null) {
             return null;
         }
+        return getFUID(url_source);
+    }
+
+    protected String getFUID(final String url) {
         String fuid = null;
-        if (url_source.matches(type_only_numbers)) {
-            fuid = new Regex(url_source, type_only_numbers).getMatch(0);
-        } else if (url_source.matches(type_embedded)) {
-            fuid = new Regex(url_source, type_embedded).getMatch(0);
-        } else if (url_source.matches(type_normal_fuid_at_end)) {
-            fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
-        } else if (url_source.matches(type_normal)) {
-            fuid = new Regex(url_source, type_normal).getMatch(0);
+        if (url.matches(type_only_numbers)) {
+            fuid = new Regex(url, type_only_numbers).getMatch(0);
+        } else if (url.matches(type_embedded)) {
+            fuid = new Regex(url, type_embedded).getMatch(0);
+        } else if (url.matches(type_normal_fuid_at_end)) {
+            fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
+        } else if (url.matches(type_normal)) {
+            fuid = new Regex(url, type_normal).getMatch(0);
         } else if (br != null) {
             /* Rare case: Embed URL: No fuid given inside URL so we can try to find it via embed URL inside html. Example: porngo.com */
             fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
@@ -907,12 +852,12 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * Removes parts of hostname from filename e.g. if host is "testhost.com", it will remove things such as " - TestHost", "testhost.com"
      * and so on.
      */
-    private static String cleanupFilename(final Browser br, String filename_normal) {
+    private static String cleanupFilename(final Browser br, final String filename_normal) {
         final String host = br.getHost();
         if (host == null) {
             return filename_normal;
         }
-        final String host_without_tld = host.split("\\.")[0];
+        // final String host_without_tld = host.split("\\.")[0];
         String filename_clean = filename_normal.replace(" - " + host, "");
         filename_clean = filename_clean.replace("- " + host, "");
         filename_clean = filename_clean.replace(" " + host, "");
@@ -970,9 +915,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
 
     /**
      * Uses site-specific RegExes to find the filename (if one is available for current website). <br />
-     * Use this first to find the filename for KVS websites!
+     * Use this first to find the filename for KVS websites! TODO: Remove this
      */
-    public static String regexFilenameSiteSpecific(final Browser br) {
+    protected String regexFilenameSiteSpecific(final Browser br) {
         String filename;
         if (br.getHost().equalsIgnoreCase("yourlust.com")) {
             /* 2016-12-21 */
@@ -991,16 +936,16 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("sleazyneasy.com")) {
             /* 2020-05-04: Special: Enforce fallback to URL filename */
-            filename = regexURLFilename(br.getURL());
+            filename = getURLFilename(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("pornwhite.com")) {
             /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = regexURLFilename(br.getURL());
+            filename = getURLFilename(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("private-shows.net")) {
             /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = regexURLFilename(br.getURL());
+            filename = getURLFilename(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("anon-v.com")) {
             /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = regexURLFilename(br.getURL());
+            filename = getURLFilename(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("porngo.com")) {
             /* 2020-06-27: Special */
             filename = br.getRegex("class=\"headline__title\">([^<>\"]+)<").getMatch(0);
@@ -1009,7 +954,9 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("anon-v.com")) {
             /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
-            filename = regexURLFilenameSiteSpecific(br.getURL());
+            // filename = regexURLFilenameSiteSpecific(br.getURL());
+            /* TODO */
+            filename = null;
         } else {
             filename = null;
         }
@@ -1027,7 +974,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
+     * @author raztoki TODO: 2020-10-13: Remove this - should be replacable with StringUtils.isEmpty !
      */
     public static boolean inValidate(final String s, final Plugin plugin) {
         if (s == null || s.matches("\\s+") || s.equals("")) {
@@ -1037,11 +984,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
     }
 
     @Override

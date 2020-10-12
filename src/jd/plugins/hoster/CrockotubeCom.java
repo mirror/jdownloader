@@ -90,13 +90,19 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected String getFileTitle(final DownloadLink link) {
+        return this.getURLFilename(link.getPluginPatternMatcher());
+    }
+
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
     }
 
     @Override
     public int getMaxChunks(final Account account) {
-        return -2;
+        /* 2020-10-13: Some fileservers will allow up to 2 chunks but let's play it safe. */
+        return 1;
     }
 
     @Override
