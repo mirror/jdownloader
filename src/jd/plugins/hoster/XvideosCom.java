@@ -153,7 +153,7 @@ public class XvideosCom extends PluginForHost {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
     }
 
-    private boolean isValidVideoURL(final DownloadLink downloadLink, final String url) throws Exception {
+    private boolean isValidVideoURL(final DownloadLink link, final String url) throws Exception {
         if (StringUtils.isEmpty(url)) {
             return false;
         } else {
@@ -165,7 +165,7 @@ public class XvideosCom extends PluginForHost {
                 con = br2.openHeadConnection(Encoding.htmlOnlyDecode(url));
                 if (StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getResponseCode() == 200) {
                     if (con.getCompleteContentLength() > 0) {
-                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                        link.setDownloadSize(con.getCompleteContentLength());
                     }
                     return true;
                 } else {
@@ -489,11 +489,12 @@ public class XvideosCom extends PluginForHost {
         return XvideosComConfig.class;
     }
 
-    public boolean login(Plugin plugin, final Account account, final boolean force) throws Exception {
+    public boolean login(final Plugin plugin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                final Cookies cookiesUser = Cookies.parseCookiesFromJsonString(account.getPass());
                 final Cookies cookiesFree = account.loadCookies("");
                 final Cookies cookiesPremium = account.loadCookies("premium");
                 if (cookiesFree != null && cookiesPremium != null) {
@@ -504,24 +505,26 @@ public class XvideosCom extends PluginForHost {
                         plugin.getLogger().info("Cookies are still fresh --> Trust cookies without login");
                         return false;
                     }
-                    /* Will redirect to xvideos.red if we're logged in as premium user */
-                    br.getPage("https://www.xvideos.com/");
-                    if (isLoggedin(br)) {
-                        plugin.getLogger().info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(br.getCookies("xvideos.com"), "");
-                        account.saveCookies(br.getCookies("xvideos.red"), "premium");
-                        if (isPremium(br)) {
-                            account.setType(AccountType.PREMIUM);
-                        } else {
-                            account.setType(AccountType.FREE);
-                        }
+                    if (attemptCookieLogin(plugin, account)) {
                         return true;
                     } else {
-                        plugin.getLogger().info("Cookie login failed");
+                        br.clearAll();
                     }
                 }
                 plugin.getLogger().info("Performing full login");
+                if (cookiesUser != null) {
+                    /* 2020-10-13: Implemented as a workaround for login captchas */
+                    logger.info("Attempting user-cookie login");
+                    setCookies(br, cookiesUser);
+                    br.setCookies("xvideos.red", cookiesUser);
+                    if (attemptCookieLogin(plugin, account)) {
+                        plugin.getLogger().info("User-Cookie login successful");
+                        return true;
+                    } else {
+                        plugin.getLogger().info("User-Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("https://www.xvideos.com/account/signinform/create");
                 final String html = PluginJSonUtils.getJson(br, "form");
@@ -551,6 +554,10 @@ public class XvideosCom extends PluginForHost {
                             this.setDownloadLink(dl_dummy);
                         }
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        /*
+                         * 2020-10-13: TODO: It seems like this is send as a base64 crypted/altered string?? I was able to easily trigger
+                         * login captchas by trying to sign in a german FREE-account via Singapore VPN.
+                         */
                         loginform.put(Encoding.urlEncode("signin-form[hidden_captcha]"), Encoding.urlEncode(recaptchaV2Response));
                         // loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     } finally {
@@ -590,6 +597,26 @@ public class XvideosCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean attemptCookieLogin(final Plugin plugin, final Account account) throws IOException {
+        /* Will redirect to xvideos.red if we're logged in as premium user */
+        br.getPage("https://www.xvideos.com/");
+        if (isLoggedin(br)) {
+            plugin.getLogger().info("Cookie login successful");
+            /* Refresh cookie timestamp */
+            account.saveCookies(br.getCookies("xvideos.com"), "");
+            account.saveCookies(br.getCookies("xvideos.red"), "premium");
+            if (isPremium(br)) {
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
+            }
+            return true;
+        } else {
+            plugin.getLogger().info("Cookie login failed");
+            return false;
         }
     }
 

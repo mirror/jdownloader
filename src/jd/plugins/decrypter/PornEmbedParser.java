@@ -9,7 +9,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -216,18 +215,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        // slutload.com 1
-        externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
-        // slutload.com 2
-        if (externID == null) {
-            externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?slutload\\.com/embed_player/([A-Za-z0-9]+)/?\"").getMatch(0);
-        }
-        if (externID != null) {
-            decryptedLinks.add("//slutload.com/watch/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("pornerbros\\.com/content/(\\d+)\\.xml").getMatch(0);
         if (externID != null) {
             decryptedLinks.add("//www.pornerbros.com/" + externID + "/" + System.currentTimeMillis() + ".html");
@@ -394,31 +381,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("//www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
             decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // mofo 1
-        externID = br.getRegex("((?:https?:)?//(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
-        if (externID != null) {
-            if (!externID.startsWith("http")) {
-                externID = "https:" + externID;
-            }
-            final DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        // # mofo 2 embed
-        externID = br.getRegex("<embed\\s+[^>]+mofos\\.com/embed_player/[^>]+>").getMatch(-1);
-        if (externID != null) {
-            // now you can't seem to find the uid, just direct link
-            externID = new Regex(externID, "&file=([^&]+)").getMatch(0);
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            if (title != null) {
-                dl.setForcedFileName(title + getFileNameExtensionFromString(externID, ""));
-            }
             if (!processAll) {
                 return decryptedLinks;
             }
