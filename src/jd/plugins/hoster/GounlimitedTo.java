@@ -228,7 +228,9 @@ public class GounlimitedTo extends XFileSharingProBasic {
             } catch (final Exception e) {
                 /* Failure */
                 logger.log(e);
-                throw e;
+                if (downloadsStarted) {
+                    throw e;
+                }
             } finally {
                 if (con != null) {
                     try {
