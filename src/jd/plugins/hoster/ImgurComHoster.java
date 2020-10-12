@@ -146,7 +146,7 @@ public class ImgurComHoster extends PluginForHost {
         boolean filenameHasBeenSetInThisLinkcheck = false;
         if (allowExtendedLinkCheck && isLackingFileInformation) {
             logger.info("Handling extended linkcheck");
-            final boolean apiMode = canUseAPI() && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+            final boolean apiMode = canUseAPI();
             final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API);
             if (apiMode) {
                 prepBRAPI(this.br);
@@ -384,9 +384,7 @@ public class ImgurComHoster extends PluginForHost {
                 brlogin.setFollowRedirects(true);
                 brlogin.setCookiesExclusive(true);
                 if (!canUseAPI()) {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        showAPIPreparationInformation();
-                    }
+                    showAPIPreparationInformation();
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Verwendung nur mit eigenen API Zugangsdaten möglich!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -982,7 +980,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static final boolean isAPIEnabled() {
-        return DebugMode.TRUE_IN_IDE_ELSE_FALSE && SubConfiguration.getConfig("imgur.com").getBooleanProperty(ImgurComHoster.SETTING_USE_API, defaultSETTING_USE_API);
+        return SubConfiguration.getConfig("imgur.com").getBooleanProperty(ImgurComHoster.SETTING_USE_API, defaultSETTING_USE_API);
     }
 
     private String getAuthURL() throws Exception {
@@ -1218,15 +1216,14 @@ public class ImgurComHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_EXTENDED_LINKCHECK, this.getPhrase("SETTING_ENABLE_EXTENDED_LINKCHECK")).setDefaultValue(defaultSETTING_ENABLE_EXTENDED_LINKCHECK));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
-            final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, this.getPhrase("SETTING_USE_API")).setDefaultValue(defaultSETTING_USE_API);
-            getConfig().addEntry(cfe);
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(defaultSETTING_USE_API_IN_ANONYMOUS_MODE).setEnabledCondidtion(cfe, true));
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
-            this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        }
+        /* API settings */
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_API_SETTINGS")));
+        final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, this.getPhrase("SETTING_USE_API")).setDefaultValue(defaultSETTING_USE_API);
+        getConfig().addEntry(cfe);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API_IN_ANONYMOUS_MODE, this.getPhrase("SETTING_USE_API_IN_ANONYMOUS_MODE")).setDefaultValue(defaultSETTING_USE_API_IN_ANONYMOUS_MODE).setEnabledCondidtion(cfe, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_ID, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTID")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENT_SECRET, this.getPhrase("SETTING_API_CREDENTIALS_CLIENTSECRET")).setDefaultValue(defaultAPISettingUserVisibleText).setEnabledCondidtion(cfe, true));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_OTHER_SETTINGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
