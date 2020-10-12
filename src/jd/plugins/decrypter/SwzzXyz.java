@@ -20,16 +20,18 @@ import java.util.ArrayList;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "swzz.xyz" }, urls = { "https?://(?:www\\.)?swzz\\.xyz/link/[A-Za-z0-9]+/" })
 public class SwzzXyz extends antiDDoSForDecrypt {
@@ -51,27 +53,30 @@ public class SwzzXyz extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         // within packed
-        String finallink = br.getRegex("<a href=\"(https?[^\"]+)\" class=\"btn\\-wrapper link\"").getMatch(0);
+        String finallink = br.getRegex("<a\\s*href\\s*=\\s*\"(https?[^\"]+)\"\\s*class\\s*=\\s*\"btn\\-wrapper link\"").getMatch(0);
         if (StringUtils.isEmpty(finallink)) {
-            finallink = br.getRegex("var link\\s*=\\s*(\"|')([^'\"]*)").getMatch(1);
+            finallink = br.getRegex("var\\s*link\\s*=\\s*(\"|')([^'\"]*)").getMatch(1);
         }
         if (StringUtils.isEmpty(finallink)) {
             final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
             final ScriptEngine engine = manager.getEngineByName("javascript");
-            String result = null;
             try {
                 engine.eval("var res = " + js + ";");
-                result = (String) engine.get("res");
+                final String result = (String) engine.get("res");
+                finallink = new Regex(result, "var link\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
             } catch (final Exception e) {
-                e.printStackTrace();
+                logger.log(e);
             }
-            finallink = new Regex(result, "var link\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
         }
         if (StringUtils.isEmpty(finallink)) {
-            return null;
+            finallink = br.getRegex("href\\s*=\\s*\"(https?[^\"]+)\"\\s*role=\\s*\"button\"").getMatch(0);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        if (StringUtils.isEmpty(finallink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        }
     }
 }
