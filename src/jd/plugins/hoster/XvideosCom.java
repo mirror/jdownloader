@@ -60,6 +60,12 @@ public class XvideosCom extends PluginForHost {
         this.enablePremium("https://xvideos.red/");
     }
 
+    /**
+     * Put dead domains in here so that URLs leading to dead domains will still get added successfully if the content behind them is still
+     * online.
+     */
+    public static final String[] deadDomains = { "xvideos2.com", "xvideos3.com" };
+
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -131,6 +137,18 @@ public class XvideosCom extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(type_embed) || link.getPluginPatternMatcher().matches(type_special)) {
             link.setUrlDownload(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+").getMatch(-1) + "/video" + new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0) + "/");
             link.setContentUrl(link.getPluginPatternMatcher());
+        }
+        /*
+         * 2020-10-12: In general, we use the user-added domain but some are dead but the content might still be alive --> Use main plugin
+         * domain for such cases
+         */
+        for (final String deadDomain : deadDomains) {
+            if (link.getPluginPatternMatcher().contains(deadDomain)) {
+                final String newURL = link.getPluginPatternMatcher().replace(deadDomain + "/", this.getHost() + "/");
+                link.setPluginPatternMatcher(newURL);
+                link.setContentUrl(newURL);
+                break;
+            }
         }
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
     }

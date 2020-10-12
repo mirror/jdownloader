@@ -52,14 +52,15 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
-    private final String                  formats    = "formats";
+    private final String                  formats       = "formats";
     /** The list of server values displayed to the user */
-    private final String[]                allFormats = new String[] { "PDF", "TXT", "DOCX" };
-    private static final String           FORMAT_PPS = "class=\"format_ext\">\\.PPS</span>";
-    private static final String           TYPE_AUDIO = ".+/audiobook/.+";
-    private String                        origurl    = null;
-    private LinkedHashMap<String, Object> entries    = null;
-    private int                           json_type  = 1;
+    private final String[]                allFormats    = new String[] { "PDF", "TXT", "DOCX" };
+    private static final String           FORMAT_PPS    = "class=\"format_ext\">\\.PPS</span>";
+    private static final String           TYPE_DOCUMENT = ".+/(doc|document)/.+";
+    private static final String           TYPE_AUDIO    = ".+/audiobook/.+";
+    private String                        origurl       = null;
+    private LinkedHashMap<String, Object> entries       = null;
+    private int                           json_type     = 1;
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -343,10 +344,14 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        /* Account required */
-        throw new AccountRequiredException();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (link.getPluginPatternMatcher().matches(TYPE_DOCUMENT)) {
+            /* Account required to be able to download anything */
+            throw new AccountRequiredException();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This item is not downloadable");
+        }
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
@@ -526,7 +531,20 @@ public class ScribdCom extends PluginForHost {
         if (firstAvailableFormat == null) {
             /* E.g. for free accounts, this will return an empty list of items */
             logger.info("Seems like not a single download is available --> This item is READ-ONLY");
-            throw new AccountRequiredException();
+            if (account != null) {
+                if (link.getPluginPatternMatcher().matches(TYPE_DOCUMENT)) {
+                    /*
+                     * Should never happen - maybe we were logged-out or account is not premium but item is only downloadable for premium
+                     * users ... or not downloadable at all for some reason.
+                     */
+                    throw new AccountRequiredException();
+                } else {
+                    /* E.g. not even website provides download-button. Maybe downloadable inside their own app (DRM protected). */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This item is not downloadable");
+                }
+            } else {
+                throw new AccountRequiredException();
+            }
         }
         if (formatToDownload == null) {
             logger.info("User preferred format is not available - downloading first in the list: " + formatToDownload);
