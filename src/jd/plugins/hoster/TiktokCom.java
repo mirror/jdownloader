@@ -15,17 +15,22 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,6 +42,7 @@ import jd.plugins.PluginException;
 public class TiktokCom extends antiDDoSForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
         // this.enablePremium("");
     }
 
@@ -80,6 +86,7 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         String user = null;
         final String fid = getFID(link);
@@ -89,7 +96,7 @@ public class TiktokCom extends antiDDoSForHost {
         if (link.getPluginPatternMatcher().matches(".+/@[^/]+/video/\\d+.*?")) {
             user = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
         } else {
-            /* 2nd + 3rd linktype which does not contain username --> Find username */
+            /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL */
             br.setFollowRedirects(false);
             br.getPage(String.format("https://m.tiktok.com/v/%s.html", fid));
             final String redirect = br.getRedirectLocation();
@@ -106,60 +113,88 @@ public class TiktokCom extends antiDDoSForHost {
             filename += user + "_";
         }
         filename += fid + ".mp4";
-        // br.getPage(link.getPluginPatternMatcher());
-        /*
-         * 2020-07-21: TODO: Maybe make use of their oembed API - this could increase linkchecking speed:
-         * https://developers.tiktok.com/doc/Embed
-         */
-        br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class=\"unavailable\"")) {
-            /* 2020-07-03: E.g. <div class="unavailable"><h3>Oops! That video doesn’t exist</h3></div> */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String createDate = null;
-        final boolean use_new_way = true;
-        if (use_new_way) {
-            final String videoJson = br.getRegex(">window\\.__INIT_PROPS__\\s*=\\s*(\\{.*?\\}\\})</script>").getMatch(0);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-            entries = (LinkedHashMap<String, Object>) entries.get("/embed/:id");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
-            createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
-            dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/urls/{0}");
+        if (this.getPluginConfig().getBooleanProperty(FAST_LINKCHECK, defaultFAST_LINKCHECK) && !isDownload) {
+            br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+            final String status_msg = (String) entries.get("status_msg");
+            final String type = (String) entries.get("type");
+            if (!"video".equalsIgnoreCase(type)) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!StringUtils.isEmpty(status_msg)) {
+                /* {"status_msg":"Something went wrong"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String title = (String) entries.get("title");
+            if (!StringUtils.isEmpty(title) && StringUtils.isEmpty(link.getComment())) {
+                link.setComment(title);
+            }
+            /* Do not set final filename here! */
+            link.setName(filename);
         } else {
-            /* Rev. 40928 and earlier */
-            dllink = String.format("https://www.tiktok.com/node/video/playwm?id=%s", fid);
-        }
-        /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
-        br.setFollowRedirects(true);
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (!con.getContentType().contains("video")) {
+            String text_hashtags = null;
+            String createDate = null;
+            final boolean use_new_way = true;
+            if (use_new_way) {
+                // br.getPage(link.getPluginPatternMatcher());
+                /* Old version: https://www.tiktok.com/embed/<videoID> */
+                // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
+                /* Required headers! */
+                br.getHeaders().put("sec-fetch-dest", "iframe");
+                br.getHeaders().put("sec-fetch-mode", "navigate");
+                // br.getHeaders().put("sec-fetch-site", "cross-site");
+                // br.getHeaders().put("upgrade-insecure-requests", "1");
+                br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+                br.getPage("https://www.tiktok.com/embed/v2/" + fid);
+                if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    /* Try to add date to filename */
-                    /*
-                     * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
-                     * "Header dates" are all wrong now.
-                     */
-                    // createDate = con.getHeaderField("Last-Modified");
-                    if (!StringUtils.isEmpty(createDate)) {
-                        final String dateFormatted = convertDateFormat(createDate);
-                        filename = dateFormatted + "_" + filename;
-                    }
-                    link.setFinalFileName(filename);
-                    link.setDownloadSize(con.getCompleteContentLength());
+                final String videoJson = br.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoData/itemInfos");
+                /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
+                if (entries == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } finally {
+                // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
+                createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
+                text_hashtags = (String) entries.get("text");
+                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/urls/{0}");
+            } else {
+                /* Rev. 40928 and earlier */
+                /* 2020-10-12: This is still working! */
+                this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + fid);
+                this.dllink = this.br.toString();
+            }
+            if (!StringUtils.isEmpty(createDate)) {
+                final String dateFormatted = convertDateFormat(createDate);
+                filename = dateFormatted + "_" + filename;
+            }
+            link.setFinalFileName(filename);
+            if (!StringUtils.isEmpty(text_hashtags) && StringUtils.isEmpty(link.getComment())) {
+                link.setComment(text_hashtags);
+            }
+            /* 2020-09-16: Directurls can only be used one time! If tried to re-use, this will happen: HTTP/1.1 403 Forbidden */
+            br.setFollowRedirects(true);
+            if (!StringUtils.isEmpty(dllink) && !isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        server_issues = true;
+                    } else {
+                        /*
+                         * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
+                         * "Header dates" are all wrong now.
+                         */
+                        // createDate = con.getHeaderField("Last-Modified");
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -210,14 +245,18 @@ public class TiktokCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -251,7 +290,6 @@ public class TiktokCom extends antiDDoSForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
-
     // private static Object LOCK = new Object();
     //
     // private void login(final Account account, final boolean force) throws Exception {
@@ -371,6 +409,14 @@ public class TiktokCom extends antiDDoSForHost {
     // public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
     // return false;
     // }
+
+    private static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";
+    private static final boolean defaultFAST_LINKCHECK = true;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck? Filesize won't be displayed until download is started!").setDefaultValue(defaultFAST_LINKCHECK));
+    }
+
     @Override
     public void reset() {
     }

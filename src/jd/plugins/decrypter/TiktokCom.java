@@ -59,6 +59,7 @@ public class TiktokCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (new Regex(parameter, plg.getSupportedLinks()).matches()) {
+            /* Single URL for host plugin */
             decryptedLinks.add(this.createDownloadlink(parameter));
             return decryptedLinks;
         } else if (parameter.matches(".+tiktok\\.com/(@.+|share/user/\\d+.+)")) {
