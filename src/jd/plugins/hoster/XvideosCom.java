@@ -19,6 +19,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.XvideosComConfig;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -40,16 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfig.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 //xvideos.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -179,12 +180,12 @@ public class XvideosCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "gzip");
         br.getHeaders().put("Accept-Language", "en-gb");
         if (account != null) {
-            this.login(this, br, account, false);
+            this.login(this, account, false);
         } else {
             /* Try to find ANY account --> Prefer xvideos.red as that is required to download premium content */
             account = AccountController.getInstance().getValidAccount(this.getHost());
             if (account != null) {
-                this.login(this, br, account, false);
+                this.login(this, account, false);
             }
         }
         br.getPage(link.getPluginPatternMatcher());
@@ -470,7 +471,7 @@ public class XvideosCom extends PluginForHost {
         return XvideosComConfig.class;
     }
 
-    public static boolean login(Plugin plugin, Browser br, final Account account, final boolean force) throws Exception {
+    public boolean login(Plugin plugin, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -521,6 +522,23 @@ public class XvideosCom extends PluginForHost {
                 loginform.put(Encoding.urlEncode("signin-form[login]"), Encoding.urlEncode(account.getUser()));
                 loginform.put(Encoding.urlEncode("signin-form[password]"), Encoding.urlEncode(account.getPass()));
                 loginform.put(Encoding.urlEncode("signin-form[rememberme]"), "on");
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform.getHtmlCode()) || loginform.hasInputFieldByName(Encoding.urlEncode("signin-form[hidden_captcha]"))) {
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        loginform.put(Encoding.urlEncode("signin-form[hidden_captcha]"), Encoding.urlEncode(recaptchaV2Response));
+                        // loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                }
                 br.submitForm(loginform);
                 final String premium_redirect = PluginJSonUtils.getJson(br, "premium_redirect");
                 final String redirect_domain = PluginJSonUtils.getJson(br, "redirect_domain");
@@ -576,7 +594,7 @@ public class XvideosCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this, br, account, true);
+        login(this, account, true);
         ai.setUnlimitedTraffic();
         return ai;
     }

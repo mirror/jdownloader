@@ -125,7 +125,12 @@ public class DownloadGg extends PluginForHost {
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (filesize != null) {
-            filesize = filesize.replace("Mo", "MB");
+            /*
+             * 2020-10-12: Even the English version of this website will show filesizes in a different language sometimes e.g. "Ko" instead
+             * of "Kb".
+             */
+            filesize = filesize.replace("o", "b");
+            // filesize = filesize.replace("Mo", "MB");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;

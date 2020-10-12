@@ -67,12 +67,19 @@ public class OneChannelCh extends antiDDoSForDecrypt {
         } else {
             if (br.getURL().equals("http://www.primewire.is/") || br.getURL().contains("/index.php")) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             } else if (br.containsHTML(">No episodes listed<")) {
                 logger.info("Link offline (no downloadlinks available): " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             } else if (br.containsHTML("class=\"tv_container\"")) {
                 logger.info("Linktype (series overview) is not supported: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (br.containsHTML(">\\s*Currently there are no links")) {
+                logger.info("No downloadlinks available");
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             fpName = br.getRegex("<title>Watch ([^<>\"]*?) online.*?\\| [^<>\"]*?</title>").getMatch(0);
