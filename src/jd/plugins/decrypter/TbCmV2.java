@@ -279,11 +279,14 @@ public class TbCmV2 extends PluginForDecrypt {
                             UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
                             playListAction = IfUrlisAPlaylistAction.PROCESS;
                         } catch (DialogCanceledException e) {
+                            logger.log(e);
                             playListAction = IfUrlisAPlaylistAction.NOTHING;
                         } catch (DialogClosedException e) {
+                            logger.log(e);
                             playListAction = IfUrlisAPlaylistAction.NOTHING;
                         }
                     }
+                    logger.info("LinkIsPlaylistUrlAction:" + playListAction);
                     switch (playListAction) {
                     case PROCESS:
                         break;
@@ -313,11 +316,14 @@ public class TbCmV2 extends PluginForDecrypt {
                             UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
                             PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.VIDEO_ONLY;
                         } catch (DialogCanceledException e) {
+                            logger.log(e);
                             PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.PLAYLIST_ONLY;
                         } catch (DialogClosedException e) {
+                            logger.log(e);
                             PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.NOTHING;
                         }
                     }
+                    logger.info("LinkIsVideoAndPlaylistUrlAction:" + PlaylistVideoAction);
                     switch (PlaylistVideoAction) {
                     case PLAYLIST_ONLY:
                         // videoID = null;
