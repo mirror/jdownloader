@@ -245,7 +245,7 @@ public class InstaGramCom extends PluginForHost {
          * New URL should be the BEST quality (resolution).
          */
         final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-        final String downloadurl = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
+        String downloadurl = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
         if (StringUtils.isEmpty(downloadurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -259,9 +259,9 @@ public class InstaGramCom extends PluginForHost {
          */
         if (removePictureEffects) {
             logger.info("Trying to remove picture effects");
-            if (this.dllink.contains("&se=")) {
+            if (downloadurl.contains("&se=")) {
                 logger.info("Successfully removed picture effects");
-                this.dllink = this.dllink.replaceAll("&se=\\d+(&)?", "&");
+                downloadurl = downloadurl.replaceAll("&se=\\d+(&)?", "&");
             } else {
                 logger.info("Failed to remove picture effects");
             }

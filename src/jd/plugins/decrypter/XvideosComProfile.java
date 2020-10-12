@@ -39,6 +39,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -86,9 +88,10 @@ public class XvideosComProfile extends PluginForDecrypt {
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
         Account account = AccountController.getInstance().getValidAccount(getHost());
+        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
         if (account != null) {
             try {
-                jd.plugins.hoster.XvideosCom.login(this, br, account, false);
+                ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
             } catch (PluginException e) {
                 logger.info("Login failure");
                 handleAccountException(account, e);
