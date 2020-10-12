@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.XvideosCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -83,7 +84,17 @@ public class XvideosComProfile extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        /*
+         * 2020-10-12: In general, we use the user-added domain but some are dead but the content might still be alive --> Use main plugin
+         * domain for such cases
+         */
+        for (final String deadDomain : XvideosCom.deadDomains) {
+            if (parameter.contains(deadDomain)) {
+                parameter = parameter.replace(deadDomain + "/", this.getHost() + "/");
+                break;
+            }
+        }
         final boolean premiumAccountRequired = Browser.getHost(parameter).equals("xvideos.red");
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
