@@ -42,6 +42,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -322,6 +323,12 @@ public class InstaGramCom extends PluginForHost {
             logger.info("Successfully found fresh directurl");
         }
         return directurl;
+    }
+
+    public static void checkErrors(final Browser br) throws AccountRequiredException {
+        if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
+            throw new AccountRequiredException();
+        }
     }
 
     private String checkLinkAndSetFilesize(final DownloadLink link, final String flink) throws IOException, PluginException {

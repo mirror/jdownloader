@@ -48,6 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.InstaGramCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
@@ -178,6 +179,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.clearAll();
+        br.setFollowRedirects(true);
         fbAppId = null;
         qHash = null;
         br.addAllowedResponseCodes(new int[] { 502 });
@@ -222,6 +224,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         jd.plugins.hoster.InstaGramCom.prepBR(this.br);
         br.addAllowedResponseCodes(new int[] { 502 });
         getPage(param, br, parameter, null, null);
+        InstaGramCom.checkErrors(this.br);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
