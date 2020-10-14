@@ -27,16 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,6 +52,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -365,8 +365,10 @@ public class XHamsterCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = brc.openHeadConnection(dllink);
-                    if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "html") && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
                     }
@@ -640,18 +642,20 @@ public class XHamsterCom extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openHeadConnection(url);
-            if (con.isOK() && !StringUtils.containsIgnoreCase(con.getContentType(), "html") && !StringUtils.containsIgnoreCase(con.getContentType(), "text")) {
+            if (looksLikeDownloadableContent(con)) {
                 return true;
+            } else {
+                throw new IOException();
             }
         } catch (final IOException e) {
             logger.log(e);
+            return false;
         } finally {
             try {
                 con.disconnect();
             } catch (final Exception e) {
             }
         }
-        return false;
     }
 
     @Override
@@ -729,7 +733,12 @@ public class XHamsterCom extends PluginForHost {
             resume = false;
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Response code 416 --> Handling it");
                 if (link.getBooleanProperty(NORESUME, false)) {
@@ -740,7 +749,6 @@ public class XHamsterCom extends PluginForHost {
                 link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416");
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
         }
         if (passCode != null) {

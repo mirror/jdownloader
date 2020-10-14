@@ -16,9 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/channel/([A-Za-z0-9]+)" })
 public class BitchuteComChannel extends PluginForDecrypt {
     public BitchuteComChannel(PluginWrapper wrapper) {
@@ -41,7 +43,7 @@ public class BitchuteComChannel extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> dupes = new ArrayList<String>();
+        final Set<String> dupes = new HashSet<String>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -74,19 +76,20 @@ public class BitchuteComChannel extends PluginForDecrypt {
             final String[] videoIDs = br.getRegex("/video/([A-Za-z0-9]+)/").getColumn(0);
             int addedItems = 0;
             for (final String videoID : videoIDs) {
-                if (dupes.contains(videoID)) {
-                    continue;
+                if (isAbort()) {
+                    break;
+                } else if (dupes.add(videoID)) {
+                    dupes.add(videoID);
+                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/video/" + videoID);
+                    dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    dl.setAvailable(true);
+                    /* Property for packagizer */
+                    dl.setProperty("username", channelname);
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                    addedItems++;
                 }
-                dupes.add(videoID);
-                final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/video/" + videoID);
-                dl.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                dl.setAvailable(true);
-                /* Property for packagizer */
-                dl.setProperty("username", channelname);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
-                addedItems++;
             }
             logger.info("Crawling page: " + page + " | Found items so far: " + index);
             if (addedItems < itemsPerRequest) {
