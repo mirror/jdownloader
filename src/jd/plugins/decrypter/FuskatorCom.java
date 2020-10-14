@@ -56,7 +56,7 @@ public class FuskatorCom extends PluginForDecrypt {
          * Dan,chinese,litu,solo,outdoor","votes":6}
          */
         final String auth = performAjaxRequest(RequestType.AUTH, null, null);
-        if (StringUtils.isEmpty(auth) || !auth.matches("^[a-z0-9A-Z]+$")) {
+        if (StringUtils.isEmpty(auth)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String imagesJson = performAjaxRequest(RequestType.IMAGES_JSON, auth, hash);
