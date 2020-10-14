@@ -33,16 +33,16 @@ public class FuskatorCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<>();
+        final String url = cryptedLink.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         }
-        String hash = new Regex(parameter, "(thumbs|expanded)/([^/]+)/[^/]+").getMatch(1);
+        String hash = new Regex(url, "(thumbs|expanded)/([^/]+)/[^/]+").getMatch(1);
         String filePackageName = getFilePackageName(hash);
         /*
          * fuskator performs these XHR and then updates the page HTML with the info from the JSON:
@@ -63,7 +63,7 @@ public class FuskatorCom extends PluginForDecrypt {
         if (StringUtils.isEmpty(imagesJson)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        populateDecryptedLinks(decryptedLinks, parameter, imagesJson);
+        populateDecryptedLinks(decryptedLinks, url, imagesJson);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(filePackageName));
         fp.addLinks(decryptedLinks);
@@ -94,7 +94,7 @@ public class FuskatorCom extends PluginForDecrypt {
         }
     }
 
-    private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String parameter, String json) throws Exception {
+    private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url, String json) throws Exception {
         final Map<String, Object> pictures;
         try {
             pictures = JavaScriptEngineFactory.jsonToJavaMap(json);
@@ -103,7 +103,7 @@ public class FuskatorCom extends PluginForDecrypt {
         }
         final List<Map<String, Object>> images = (List<Map<String, Object>>) pictures.get("images");
         if (images == null || images.size() == 0) {
-            logger.warning("found 0 images for " + parameter);
+            logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final Map<String, Object> imageInfo : images) {
