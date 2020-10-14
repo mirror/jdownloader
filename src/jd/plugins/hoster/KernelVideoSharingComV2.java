@@ -132,7 +132,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = regexFUIDAuto(null, link);
+        final String fid = this.getFUID(link.getPluginPatternMatcher());
         if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
@@ -341,6 +341,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
@@ -450,11 +451,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             // E.g. xxxymovies.com, javbangers.com
             dllink = br.getRegex("video_url\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
         }
-        /* 2020-08-05: TODO: The following 4 lines should not be needed anymore. Remove them on next cleanup. */
-        // if (inValidate(dllink, plugin)) {
-        // // HD javbangers.com
-        // dllink = br.getRegex("video_alt_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
-        // }
         if (StringUtils.isEmpty(dllink)) {
             // function/0/http camwheres, pornyeah - find best quality
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
@@ -622,7 +618,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* 2019-11-26: Nested in js brackets */
             videoUrl = PluginJSonUtils.getJson(br, "video_url");
         }
-        if (videoUrl == null) {
+        if (StringUtils.isEmpty(videoUrl)) {
             return null;
         }
         return getDllinkCrypted(br, videoUrl);
@@ -761,9 +757,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (filenameURL == null) {
             filenameURL = getURLTitle(link.getPluginPatternMatcher());
         }
-        if (filenameURL != null) {
-            filenameURL = filenameURL.replace("-", " ");
-        }
         return filenameURL;
     }
 
@@ -801,7 +794,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String filename;
         String title_url = getURLTitle(br.getURL());
         final String url_source = getURL_source(br, link);
-        final String current_host = link.getHost();
+        // final String current_host = link.getHost();
         /* Find 'real' filename and the one inside our URL. */
         if (link.getPluginPatternMatcher().matches(type_normal) || link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
             /* Nice title is inside URL --> Prefer that! */
@@ -816,7 +809,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 /* Fallback to fuid as filename */
-                filename = regexFUIDAuto(br, link);
+                filename = this.getFUID(url_source);
             }
         } else {
             // filename = regexFilenameSiteSpecific(br);
@@ -837,15 +830,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return filename;
     }
 
-    /** Tries to find unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
-    protected String regexFUIDAuto(final Browser br, final DownloadLink dl) {
-        final String url_source = getURL_source(br, dl);
-        if (url_source == null) {
-            return null;
-        }
-        return getFUID(url_source);
-    }
-
+    /** Tries to return unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
     protected String getFUID(final String url) {
         String fuid = null;
         if (url.matches(type_only_numbers)) {

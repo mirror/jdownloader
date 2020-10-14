@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -55,11 +56,19 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected Browser prepBR(final Browser br) {
+        br.setCookie(this.getHost(), "kt_tcookie", "1");
+        br.setCookie(this.getHost(), "kt_is_visited", "1");
+        return br;
+    }
+
+    @Override
     protected void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
