@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -37,6 +34,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thisvid.com" }, urls = { "https?://(?:www\\.)?thisvid\\.com/(embed/\\d+|videos/[a-z0-9\\-]+/)" })
 public class ThisvidCom extends antiDDoSForHost {
@@ -86,22 +86,31 @@ public class ThisvidCom extends antiDDoSForHost {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
-        String filename = jd.plugins.hoster.KernelVideoSharingCom.regexURLFilename(link.getPluginPatternMatcher());
-        if (filename == null) {
+        String fallbackFileName = jd.plugins.hoster.KernelVideoSharingCom.regexURLFilename(link.getPluginPatternMatcher());
+        if (fallbackFileName == null) {
             /* For embeddded videos */
-            filename = this.getFID(link);
+            fallbackFileName = this.getFID(link);
         }
         final String ext = default_Extension;
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "kt_tcookie", "1");
         br.setCookie(this.getHost(), "kt_is_visited", "1");
         getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String title = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\\s*(- ThisVid.com)?\"").getMatch(0);
+        String fileName = null;
+        if (title != null) {
+            fileName = title;
+        } else {
+            fileName = fallbackFileName;
+        }
+        if (!fileName.endsWith(ext)) {
+            fileName += ext;
+        }
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(fileName);
         }
         is_private_video = this.br.containsHTML(">\\s*This video is a private video uploaded by");
         if (is_private_video) {
@@ -114,8 +123,10 @@ public class ThisvidCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (con.isOK() && !con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
@@ -130,7 +141,7 @@ public class ThisvidCom extends antiDDoSForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(fileName);
         }
         return AvailableStatus.TRUE;
     }
@@ -168,18 +179,19 @@ public class ThisvidCom extends antiDDoSForHost {
             }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection();
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }

@@ -21,14 +21,10 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,6 +33,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
@@ -179,16 +180,25 @@ public class TiktokCom extends antiDDoSForHost {
             if (!StringUtils.isEmpty(dllink) && !isDownload) {
                 URLConnectionAdapter con = null;
                 try {
-                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                     if (!this.looksLikeDownloadableContent(con)) {
                         server_issues = true;
+                        try {
+                            brc.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
                     } else {
                         /*
                          * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their
                          * "Header dates" are all wrong now.
                          */
                         // createDate = con.getHeaderField("Last-Modified");
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
                     }
                 } finally {
                     try {
@@ -255,41 +265,19 @@ public class TiktokCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // br2.setFollowRedirects(true);
-    // con = br2.openHeadConnection(dllink);
-    // if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // logger.log(e);
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // if (con != null) {
-    // con.disconnect();
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
+
     // private static Object LOCK = new Object();
     //
     // private void login(final Account account, final boolean force) throws Exception {
@@ -409,7 +397,6 @@ public class TiktokCom extends antiDDoSForHost {
     // public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
     // return false;
     // }
-
     private static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";
     private static final boolean defaultFAST_LINKCHECK = true;
 
