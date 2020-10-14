@@ -34,6 +34,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -183,6 +184,10 @@ public class XHamsterGallery extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (br.containsHTML(">This gallery (needs|requires) password<")) {
+                final boolean passwordHandlingBroken = true;
+                if (passwordHandlingBroken) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password-protected handling broken svn.jdownloader.org/issues/88690");
+                }
                 boolean failed = true;
                 for (int i = 1; i <= 3; i++) {
                     String passCode = getUserInput("Password?", param);

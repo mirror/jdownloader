@@ -674,6 +674,10 @@ public class XHamsterCom extends PluginForHost {
             if (onlyfor != null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (isPasswordProtected()) {
+                final boolean passwordHandlingBroken = true;
+                if (passwordHandlingBroken) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password-protected handling broken svn.jdownloader.org/issues/88690");
+                }
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Password?", link);
                 }
