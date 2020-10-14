@@ -60,7 +60,7 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
     public String getLinkID(final DownloadLink link) {
         String fid = getFID(link);
         if (fid == null) {
-            fid = this.getURLFilename(link.getPluginPatternMatcher());
+            fid = this.getURLTitle(link.getPluginPatternMatcher());
         }
         if (fid != null) {
             return this.getHost() + "://" + fid;
@@ -74,7 +74,7 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getURLFilename(final String url_source) {
+    protected String getURLTitle(final String url_source) {
         if (url_source == null) {
             return null;
         }
@@ -91,7 +91,7 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getFileTitle(final DownloadLink link) {
-        return this.getURLFilename(link.getPluginPatternMatcher());
+        return this.getURLTitle(link.getPluginPatternMatcher());
     }
 
     @Override
@@ -100,8 +100,8 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public int getMaxChunks(final Account account) {
-        /* 2020-10-13: Some fileservers will allow up to 2 chunks but let's play it safe. */
+    protected int getMaxChunks(final Account account) {
+        /* 2020-10-14: Some fileservers will allow up to 2 chunks but let's play it safe. */
         return 1;
     }
 

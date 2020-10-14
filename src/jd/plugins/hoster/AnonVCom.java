@@ -19,22 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
+import jd.parser.Regex;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XtitsCom extends KernelVideoSharingComV2 {
-    public XtitsCom(final PluginWrapper wrapper) {
+public class AnonVCom extends KernelVideoSharingComV2 {
+    public AnonVCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xtits.com" });
+        ret.add(new String[] { "anon-v.com" });
         return ret;
     }
 
@@ -48,28 +45,21 @@ public class XtitsCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:videos/\\d+/[a-z0-9\\-]+/?|embed/\\d+)");
-        }
-        return ret.toArray(new String[0]);
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
 
     @Override
-    protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final String fuid = this.getFUID(link.getPluginPatternMatcher());
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    protected String getURLTitle(final String url_source) {
+        String urlTitle = super.getURLTitle(url_source);
+        if (urlTitle != null) {
+            /* Special: Remove unwanted stuff */
+            final String removeme = new Regex(urlTitle, "(-?[a-f0-9]{16})").getMatch(0);
+            if (removeme != null) {
+                urlTitle = urlTitle.replace(removeme, "");
+            }
+            /* Make the url-filenames look better by using spaces instead of '-'. */
+            urlTitle = urlTitle.replace("-", " ");
         }
-        final String filetitle = getURLTitle(link.getPluginPatternMatcher());
-        link.setFinalFileName(filetitle + ".mp4");
-        final String urlOriginal = link.getPluginPatternMatcher();
-        /* 2020-10-13: Special workaround to prevent serverside issue of random infinite redirects */
-        link.setPluginPatternMatcher("https://www.xtits.com/popup-video/" + fuid + "/");
-        try {
-            return super.requestFileInformation(link, isDownload);
-        } finally {
-            link.setPluginPatternMatcher(urlOriginal);
-        }
+        return urlTitle;
     }
 }
