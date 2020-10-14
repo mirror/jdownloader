@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -48,7 +46,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -84,8 +81,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /* E.g. normal kernel-video-sharing.com video urls */
     private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
-    /* Rare case. Example: porngo.com */
-    private static final String   type_normal_without_fuid = ".+/videos/([a-z0-9\\-]+)/?$";
+    /* Rare case. Example: porngo.com, xbabe.com */
+    private static final String   type_normal_without_fuid = "^https?://[^/]+/videos/([a-z0-9\\-]+)/?$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
     protected static final String type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";
@@ -97,7 +94,23 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+/|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -147,11 +160,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return -1;
     }
 
-    /*
-     * List of hosts for which filename from inside html should be used as finding it via html would require additional RegExes or is
-     * impossible. </br> Tags: Force, enforce
-     */
-    private static final List<String> domains_force_url_filename = Arrays.asList(new String[] { "xbabe.com", "wankoz.com" });
+    protected Browser prepBR(final Browser br) {
+        return br;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -162,6 +173,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
+        prepBR(this.br);
         br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String titleUrl = getURLTitle(link.getPluginPatternMatcher());
@@ -176,7 +188,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         try {
-            dllink = getDllink(br, this);
+            dllink = getDllink();
         } catch (final PluginException e) {
             if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                 logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
@@ -253,9 +265,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         requestFileInformation(link, true);
         if (private_video) {
             throw new AccountRequiredException("Private video");
-        } else if (inValidate(dllink, this)) {
-            /* 2016-12-02: At this stage we should have a working hls to http workaround so we should never get hls urls. */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (StringUtils.isEmpty(this.dllink)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video (?)");
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -281,10 +292,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dl.startDownload();
         } else {
             /* http download */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, canResume(link), getMaxChunks(null));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable(link, null), getMaxChunks(null));
             final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
             if (workaroundURL != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, canResume(link), getMaxChunks(null));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, isResumeable(link, null), getMaxChunks(null));
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -304,10 +315,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private boolean canResume(final DownloadLink link) {
-        return true;
     }
 
     /** TODO: Use this in future KVS plugins that need account support! See e.g. CamwhoresbayCom */
@@ -366,27 +373,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return workaroundURL;
     }
 
-    public static String getDllink(final Browser br, final Plugin plugin) throws PluginException, IOException {
-        if (StringUtils.equals("camwhoreshd.com", plugin.getHost())) {
-            // TODO: add generic embed support
-            final String embed = br.getRegex("(https?://www.cwtvembeds.com/embed/\\d+)").getMatch(0);
-            if (embed != null && !StringUtils.equals(br._getURL().getPath(), new URL(embed).getPath())) {
-                try {
-                    plugin.getLogger().info("search embed:" + embed);
-                    final Browser brc = br.cloneBrowser();
-                    brc.setFollowRedirects(true);
-                    brc.getPage(embed);
-                    final String ret = getDllink(brc, plugin);
-                    if (ret != null) {
-                        return ret;
-                    }
-                } catch (PluginException e) {
-                    plugin.getLogger().log(e);
-                } catch (IOException e) {
-                    plugin.getLogger().log(e);
-                }
-            }
-        }
+    protected String getDllink() throws PluginException, IOException {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
@@ -408,18 +395,18 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* TODO: Eventually improve this */
             // see if there are non hls streams first. since regex does this based on first in entry of source == =[ raztoki20170507
             dllink = new Regex(json_playlist_source, "'file'\\s*:\\s*'((?!.*\\.m3u8)http[^<>\"']*?(mp4|flv)[^<>\"']*?)'").getMatch(0);
-            if (inValidate(dllink, plugin)) {
+            if (StringUtils.isEmpty(dllink)) {
                 dllink = new Regex(json_playlist_source, "'file'\\s*:\\s*'(http[^<>\"']*?(mp4|flv|m3u8)[^<>\"']*?)'").getMatch(0);
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             /* E.g. yourlust.com */
             dllink = br.getRegex("flashvars\\.video_html5_url\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
             /*
              * This will NOT e.g. work for: video_url_text: 'High Definition' --> E.g. xxxymovies.com --> But this one only has one quality
@@ -439,7 +426,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             // E.g. xxxymovies.com, javbangers.com
             dllink = br.getRegex("video_url\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
         }
@@ -448,7 +435,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // // HD javbangers.com
         // dllink = br.getRegex("video_alt_url\\s*:\\s*\\'((?:http|/)[^<>\"]*?)\\'").getMatch(0);
         // }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             // function/0/http camwheres, pornyeah - find best quality
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
             final String crypted;
@@ -475,7 +462,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             } else {
                 if (br.containsHTML("function/0/http")) {
                     dllink = br.getRegex("(function/0/http[^']+)'").getMatch(0);
-                    plugin.getLogger().info("function:" + dllink);
+                    this.getLogger().info("function:" + dllink);
                 }
             }
         }
@@ -501,29 +488,29 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getMatch(0); // 2018-06-20
             if (StringUtils.endsWithCaseInsensitive(dllink, "jpg/")) {
                 dllink = null;
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("(?:file|video)\\s*?:\\s*?(?:\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)(?:\"|')").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
         }
-        if (inValidate(dllink, plugin)) { // tryboobs.com
+        if (StringUtils.isEmpty(dllink)) { // tryboobs.com
             dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             /* 2016-11-01 - bravotube.net */
             dllink = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             /* 2018-03-12 - wankoz.com */
             dllink = br.getRegex("source[^']+src:\\s*'([^']*?)'").getMatch(0);
         }
@@ -555,7 +542,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dllink = httpurl_temp;
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             String video_url = br.getRegex("var\\s+video_url\\s*=\\s*(\"|')(.*?)(\"|')\\s*;").getMatch(1);
             if (video_url == null) {
                 video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
@@ -579,7 +566,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                             dllink = result.toString();
                         }
                     } catch (final Throwable e) {
-                        plugin.getLogger().log(e);
+                        this.getLogger().log(e);
                     }
                 } else {
                     dllink = video_url;
@@ -594,7 +581,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 return dllink;
             }
         }
-        if (inValidate(dllink, plugin)) {
+        if (StringUtils.isEmpty(dllink)) {
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
                 /* No licence key present in html and/or no player --> No video --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -781,6 +768,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!StringUtils.isEmpty(filename_url)) {
             /* Make the url-filenames look better by using spaces instead of '-'. */
             filename_url = filename_url.replace("-", " ");
+            /* Remove eventually existing spaces at the end */
+            filename_url = filename_url.trim();
         }
         return filename_url;
     }
@@ -795,6 +784,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         final String current_host = link.getHost();
         /* Find 'real' filename and the one inside our URL. */
         if (link.getPluginPatternMatcher().matches(type_normal) || link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
+            /* Nice title is inside URL --> Prefer that! */
+            filename = title_url;
+        } else if (url_source.matches(type_normal_without_fuid) && !title_url.matches("\\d+")) {
             /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
         } else if (url_source.matches(type_only_numbers)) { /* TODO: Check the following (old) code */
@@ -814,8 +806,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         /* Now decide which filename we want to use */
-        final boolean filename_url_is_forced = domains_force_url_filename.contains(current_host);
-        if (StringUtils.isEmpty(filename) || filename_url_is_forced) {
+        if (StringUtils.isEmpty(filename)) {
             filename = title_url;
         } else {
             /* Remove html crap and spaces at the beginning and end. */
@@ -962,24 +953,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /** Many websites in general use this format - title plus their own hostname as ending. */
     public static String regexStandardTitleWithHost(final Browser br, final String host) {
         return br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki TODO: 2020-10-13: Remove this - should be replacable with StringUtils.isEmpty !
-     */
-    public static boolean inValidate(final String s, final Plugin plugin) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else if (("upornia.com".equals(plugin.getHost()) || "vjav.com".equals(plugin.getHost())) && s.contains("/player/timeline")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
