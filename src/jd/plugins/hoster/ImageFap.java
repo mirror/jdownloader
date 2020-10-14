@@ -27,6 +27,7 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,8 +36,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -151,7 +157,7 @@ public class ImageFap extends PluginForHost {
         correctDownloadLink(link);
         prepBR(this.br);
         loadSessionCookies(this.br, this.getHost());
-        getPage(this.br, link.getDownloadURL());
+        getRequest(this, this.br, br.createGetRequest(link.getDownloadURL()));
         if (link.getDownloadURL().matches(VIDEOLINK)) {
             final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
             if (filename == null) {
@@ -236,18 +242,18 @@ public class ImageFap extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(true);
         String pfilename = link.getName();
-        getPage(this.br, link.getDownloadURL());
+        Request request = getRequest(this, this.br, this.br.createGetRequest(link.getDownloadURL()));
         if (link.getDownloadURL().matches(VIDEOLINK)) {
-            String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
+            String configLink = request.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (configLink == null) {
                 /* 2020-03-23 */
-                configLink = br.getRegex("url\\s*:\\s*'(http[^<>\"\\']+)\\'").getMatch(0);
+                configLink = request.getRegex("url\\s*:\\s*'(http[^<>\"\\']+)\\'").getMatch(0);
             }
             if (configLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            getPage(this.br, configLink);
-            String finallink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
+            request = getRequest(this, this.br, this.br.createGetRequest(configLink));
+            String finallink = request.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -326,9 +332,9 @@ public class ImageFap extends PluginForHost {
         }
     }
 
-    private String getPage(final Browser br, final String url) throws Exception {
+    public static Request getRequest(Plugin plugin, final Browser br, Request request) throws Exception {
         synchronized (LOCK) {
-            br.getPage(url);
+            br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
                  *
@@ -336,12 +342,12 @@ public class ImageFap extends PluginForHost {
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
                 final String waitSecondsStr = br.getRequest().getResponseHeader("Retry-After");
-                if (waitSecondsStr != null && waitSecondsStr.matches("\\d+")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", Integer.parseInt(waitSecondsStr) * 1000l);
+                if (waitSecondsStr != null && waitSecondsStr.matches("^\\s*\\d+\\s*$")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", Integer.parseInt(waitSecondsStr.trim()) * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
                 }
-            } else if (br.getURL().contains("rl_captcha.php")) {
+            } else if (StringUtils.containsIgnoreCase(br.getURL(), "rl_captcha.php")) {
                 /*
                  * 2020-10-14: Captcha required. Solving it will remove the rate limit FOR THIS BROWSER SESSION! All other browser sessions
                  * (including new sessions) with the current IP will still be rate-limited until one captcha is solved.
@@ -350,22 +356,30 @@ public class ImageFap extends PluginForHost {
                 if (captchaform == null || !br.containsHTML("/captcha\\.php") || !captchaform.hasInputFieldByName("captcha")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and failed to handle captcha", 5 * 60 * 1000l);
                 }
-                if (this.getPluginConfig().getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
+                if (SubConfiguration.getConfig("imagefap.com").getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached user prefers reconnect over captcha solving", 5 * 60 * 1000l);
                 }
-                final String code = this.getCaptchaCode("/captcha.php", this.getDownloadLink());
+                final String code;
+                if (plugin instanceof PluginForDecrypt) {
+                    final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
+                    code = ReflectionUtils.invoke(plugin.getClass().getName(), "getCaptchaCode", plugin, String.class, new Object[] { "/captcha.php", pluginForDecrypt.getCurrentLink() });
+                } else {
+                    final PluginForHost pluginForHost = (PluginForHost) plugin;
+                    code = ReflectionUtils.invoke(plugin.getClass().getName(), "getCaptchaCode", plugin, String.class, new Object[] { "/captcha.php", pluginForHost.getDownloadLink() });
+                }
                 captchaform.put("captcha", Encoding.urlEncode(code));
                 br.submitForm(captchaform);
                 br.followRedirect(true);
-                if (br.getURL().contains("rl_captcha.php")) {
+                if (StringUtils.containsIgnoreCase(br.getURL(), "rl_captcha.php")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and remained after captcha", 5 * 60 * 1000l);
-                }
-                synchronized (sessionCookies) {
-                    sessionCookies.put(br.getHost(), br.getCookies(br.getHost()));
+                } else {
+                    synchronized (sessionCookies) {
+                        sessionCookies.put(br.getHost(), br.getCookies(br.getHost()));
+                    }
                 }
             }
+            return br.getRequest();
         }
-        return br.toString();
     }
 
     /** Returns either the original server filename or one that is very similar to the original */
@@ -412,19 +426,19 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
-                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
-                                                  }
-                                              };
+        {
+            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
+            put("LABEL_FILENAME", "Define custom filename for pictures:");
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
-                                                  }
-                                              };
+        {
+            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
