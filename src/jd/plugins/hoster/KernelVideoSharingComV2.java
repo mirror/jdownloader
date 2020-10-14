@@ -42,6 +42,8 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -172,7 +174,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
-        this.setBrowserExclusive();
         prepBR(this.br);
         br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -317,16 +318,35 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    /** TODO: Use this in future KVS plugins that need account support! See e.g. CamwhoresbayCom */
-    protected void login(final Account account, final boolean force, final boolean test) throws Exception {
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleFree(link);
+        requestFileInformation(link);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        /* Registered users can watch private videos when they follow/subscribe to the uploaders. */
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        account.setConcurrentUsePossible(false);
+        ai.setStatus("Registered (free) user");
+        return ai;
+    }
+
+    protected void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!test) {
+                    if (!validateCookies) {
+                        logger.info("Trust cookies without check");
+                        return;
                     }
                     getPage("https://www." + this.getHost() + "/");
                     if (isLoggedIN()) {
