@@ -94,6 +94,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     private boolean               server_issues            = false;
     private boolean               private_video            = false;
 
+    public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.kvs-demo.com/terms.php";
@@ -122,7 +130,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return true;
     }
 
-    public int getMaxChunks(final Account account) {
+    protected int getMaxChunks(final Account account) {
         return 0;
     }
 
@@ -156,10 +164,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        final String filename_url = getURLFilename(link.getPluginPatternMatcher());
-        if (!link.isNameSet() && !StringUtils.isEmpty(filename_url)) {
+        final String titleUrl = getURLTitle(link.getPluginPatternMatcher());
+        if (!link.isNameSet() && !StringUtils.isEmpty(titleUrl)) {
             /* Set this so that offline items have "nice" titles too. */
-            link.setName(filename_url);
+            link.setName(titleUrl + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
         setSpecialFlags();
@@ -273,10 +281,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dl.startDownload();
         } else {
             /* http download */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, canResume(link), getMaxChunks(link));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, canResume(link), getMaxChunks(null));
             final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
             if (workaroundURL != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, canResume(link), getMaxChunks(link));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, canResume(link), getMaxChunks(null));
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -296,10 +304,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             dl.startDownload();
         }
-    }
-
-    protected int getMaxChunks(final DownloadLink link) {
-        return 0;
     }
 
     private boolean canResume(final DownloadLink link) {
@@ -746,9 +750,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
          * Short URLs may redirect to longer ones containing the information we need --> Prefer title which might be stored in current
          * browsers' URL.
          */
-        String filenameURL = getURLFilename(this.br.getURL());
+        String filenameURL = getURLTitle(this.br.getURL());
         if (filenameURL == null) {
-            filenameURL = getURLFilename(link.getPluginPatternMatcher());
+            filenameURL = getURLTitle(link.getPluginPatternMatcher());
         }
         if (filenameURL != null) {
             filenameURL = filenameURL.replace("-", " ");
@@ -759,15 +763,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /**
      * Finds title inside given URL. <br />
      */
-    protected String getURLFilename(final String url_source) {
+    protected String getURLTitle(final String url_source) {
         if (url_source == null) {
             return null;
         }
         String filename_url = null;
-        if (url_source.matches(type_normal_fuid_at_end)) {
-            filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
-        } else if (url_source.matches(type_normal)) {
+        if (url_source.matches(type_normal)) {
             filename_url = new Regex(url_source, type_normal).getMatch(1);
+        } else if (url_source.matches(type_normal_fuid_at_end)) {
+            filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
         } else if (url_source.matches(type_normal_without_fuid)) {
             filename_url = new Regex(url_source, type_normal_without_fuid).getMatch(0);
         } else {
@@ -786,11 +790,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected String getFileTitle(final DownloadLink link) {
         String filename;
-        String title_url = getURLFilename(br.getURL());
+        String title_url = getURLTitle(br.getURL());
         final String url_source = getURL_source(br, link);
         final String current_host = link.getHost();
         /* Find 'real' filename and the one inside our URL. */
-        if (link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
+        if (link.getPluginPatternMatcher().matches(type_normal) || link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
             /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
         } else if (url_source.matches(type_only_numbers)) { /* TODO: Check the following (old) code */
@@ -936,27 +940,19 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("sleazyneasy.com")) {
             /* 2020-05-04: Special: Enforce fallback to URL filename */
-            filename = getURLFilename(br.getURL());
+            filename = getURLTitle(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("pornwhite.com")) {
             /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = getURLFilename(br.getURL());
+            filename = getURLTitle(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("private-shows.net")) {
             /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = getURLFilename(br.getURL());
-        } else if (br.getHost().equalsIgnoreCase("anon-v.com")) {
-            /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = getURLFilename(br.getURL());
+            filename = getURLTitle(br.getURL());
         } else if (br.getHost().equalsIgnoreCase("porngo.com")) {
             /* 2020-06-27: Special */
             filename = br.getRegex("class=\"headline__title\">([^<>\"]+)<").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("ok.xxx")) {
             /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("anon-v.com")) {
-            /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
-            // filename = regexURLFilenameSiteSpecific(br.getURL());
-            /* TODO */
-            filename = null;
         } else {
             filename = null;
         }

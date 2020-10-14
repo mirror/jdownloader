@@ -174,8 +174,8 @@ public class GounlimitedTo extends XFileSharingProBasic {
     protected boolean isOffline(final DownloadLink link) {
         boolean offline = super.isOffline(link);
         if (!offline) {
-            /* 2020-06-09: Offline content will be liked to a sample video instead lol example: https://gounlimited.to/jdexamplebla */
-            offline = new Regex(correctedBR, "class=\"the_title mb-2\"[^>]*?>SampleVideo 720x480 2mb<").matches();
+            /* 2020-10-14: Offline content will be liked to a sample video instead lol example: https://gounlimited.to/jdexamplebla */
+            offline = new Regex(correctedBR, "<title>Watch 404 not found</title>|content=\"Watch video 404 not found\"").matches();
         }
         return offline;
     }
