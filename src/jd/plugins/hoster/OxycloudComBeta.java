@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.YetiShareCore;
 
@@ -170,30 +171,50 @@ public class OxycloudComBeta extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
             getPage("/upgrade");
         }
-        // String expireStr = br.getRegex("Reverts To Free Account.*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expireStr == null) {
-            /*
-             * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
-             * which we fail to find the expire-date.
-             */
-            logger.info("Failed to find expire-date --> Probably a FREE account");
-            setAccountLimitsByType(account, AccountType.FREE);
-            return ai;
-        }
-        long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-        final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
-        /* If the premium account is expired we'll simply accept it as a free account. */
+        boolean isPremium = br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
         if (!isPremium) {
-            /* Expired premium == FREE */
+            logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
-            // ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(expire_milliseconds, this.br);
-            setAccountLimitsByType(account, AccountType.PREMIUM);
-            // ai.setStatus("Premium account");
+            final Regex dailyTrafficRegex = br.getRegex("Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
+            final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
+            final String dailyTrafficMaxStr = dailyTrafficRegex.getMatch(1);
+            String expireStr = br.getRegex("Reverts To Free Account.*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
+            // .getMatch(0); /* Fits for: /account/edit */
+            final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
+            if (trafficStr != null) {
+                /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic is left?! */
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficStr));
+                ai.setStatus("Premium traffic package");
+            } else if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
+                logger.info("Premium with daily trafficlimit");
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                ai.setTrafficLeft(SizeFormatter.getSize(dailyTrafficLeftStr));
+                ai.setTrafficMax(SizeFormatter.getSize(dailyTrafficMaxStr));
+                ai.setStatus("Premium time with daily traffic limit");
+            } else if (expireStr != null) {
+                logger.info("Found premium expiredate");
+                long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+                isPremium = expire_milliseconds > System.currentTimeMillis();
+                /* If the premium account is expired we'll simply accept it as a free account. */
+                if (!isPremium) {
+                    /* Expired premium == FREE --> This should never happen! */
+                    setAccountLimitsByType(account, AccountType.FREE);
+                } else {
+                    ai.setValidUntil(expire_milliseconds, this.br);
+                    setAccountLimitsByType(account, AccountType.PREMIUM);
+                    ai.setStatus("Premium time with no data limit");
+                }
+                ai.setUnlimitedTraffic();
+            } else {
+                logger.info("WTF unknown premium account type??");
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                ai.setUnlimitedTraffic();
+                ai.setStatus("Premium time with unknown limits (possible JD plugin failure)");
+            }
         }
-        ai.setUnlimitedTraffic();
         return ai;
     }
 
