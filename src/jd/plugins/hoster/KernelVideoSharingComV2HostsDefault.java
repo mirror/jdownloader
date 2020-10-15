@@ -19,19 +19,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AnonVCom extends KernelVideoSharingComV2 {
-    public AnonVCom(final PluginWrapper wrapper) {
+public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2 {
+    public KernelVideoSharingComV2HostsDefault(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "porngo.com" });
+        ret.add(new String[] { "sleazyneasy.com" });
+        ret.add(new String[] { "pornwhite.com" });
+        ret.add(new String[] { "private-shows.net" });
         ret.add(new String[] { "anon-v.com" });
+        ret.add(new String[] { "voyeurhit.com" });
+        ret.add(new String[] { "hotmovs.com" });
         return ret;
     }
 
@@ -46,20 +52,5 @@ public class AnonVCom extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
-    }
-
-    @Override
-    protected String getURLTitle(final String url_source) {
-        String urlTitle = super.getURLTitle(url_source);
-        if (urlTitle != null) {
-            /* Special: Remove unwanted stuff */
-            final String removeme = new Regex(urlTitle, "(-?[a-f0-9]{16})").getMatch(0);
-            if (removeme != null) {
-                urlTitle = urlTitle.replace(removeme, "");
-            }
-            /* Make the url-filenames look better by using spaces instead of '-'. */
-            urlTitle = urlTitle.replace("-", " ");
-        }
-        return urlTitle;
     }
 }
