@@ -21,7 +21,7 @@ public class EliteBabesCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String url = cryptedLink.toString();
         br.setFollowRedirects(true);
         br.getPage(url);
