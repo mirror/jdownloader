@@ -254,6 +254,7 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
                 @Override
                 public void notifyServerCertificate(TlsServerCertificate arg0) throws IOException {
+                    // here we can access the ServerCertificate
                 }
             };
             return auth;
