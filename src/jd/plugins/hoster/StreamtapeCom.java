@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamtapeCom extends PluginForHost {
@@ -105,7 +105,7 @@ public class StreamtapeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Video not found")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Video not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -133,7 +133,12 @@ public class StreamtapeCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("(/get_video\\?id=[^<>\"']+)").getMatch(0);
+            // dllink = br.getRegex("(/get_video\\?id=[^<>\"']+)").getMatch(0);
+            /*
+             * 2020-10-15: New. Do NOT use the first URL inside html matching the (above) pattern. This will lead to a fake video which
+             * advises the user to disable his adblocker!
+             */
+            dllink = br.getRegex("document\\.getElementById\\(\"videolink\"\\)\\.innerHTML = \"([^\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
