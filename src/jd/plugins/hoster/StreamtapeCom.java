@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamtapeCom extends PluginForHost {
@@ -140,42 +140,49 @@ public class StreamtapeCom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
                 link.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     @Override
