@@ -25,15 +25,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -51,6 +42,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
@@ -153,10 +153,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
+
     // public int getMaxSimultaneousFreeAccountDownloads() {
     // return -1;
     // }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
@@ -833,15 +833,18 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /** Tries to return unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
     protected String getFUID(final String url) {
         String fuid = null;
-        if (url.matches(type_only_numbers)) {
-            fuid = new Regex(url, type_only_numbers).getMatch(0);
-        } else if (url.matches(type_embedded)) {
-            fuid = new Regex(url, type_embedded).getMatch(0);
-        } else if (url.matches(type_normal_fuid_at_end)) {
-            fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
-        } else if (url.matches(type_normal)) {
-            fuid = new Regex(url, type_normal).getMatch(0);
-        } else if (br != null) {
+        if (url != null) {
+            if (url.matches(type_only_numbers)) {
+                fuid = new Regex(url, type_only_numbers).getMatch(0);
+            } else if (url.matches(type_embedded)) {
+                fuid = new Regex(url, type_embedded).getMatch(0);
+            } else if (url.matches(type_normal_fuid_at_end)) {
+                fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
+            } else if (url.matches(type_normal)) {
+                fuid = new Regex(url, type_normal).getMatch(0);
+            }
+        }
+        if (fuid == null && br != null) {
             /* Rare case: Embed URL: No fuid given inside URL so we can try to find it via embed URL inside html. Example: porngo.com */
             fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
         }

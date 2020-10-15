@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,19 +35,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?bs\\.to/(serie/.*|out/\\d+)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?(?:bs\\.to|burningseries\\.co)/(serie/.*|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
     public BsTo(PluginWrapper wrapper) {
         super(wrapper);
         Browser.setRequestIntervalLimitGlobal("bs.to", 200);
     }
 
-    private static final String TYPE_SINGLE = "https?://(www\\.)?bs\\.to/serie/[^/]+/\\d+/[^/]+/[^/]+/[^/]+";
+    private static final String TYPE_SINGLE = "https?://(www\\.)?(?:bs\\.to|burningseries\\.co)/serie/[^/]+/\\d+/[^/]+/[^/]+/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (StringUtils.contains(parameter, "bs.to/out")) {
+        if (StringUtils.containsIgnoreCase(parameter, "bs.to/out") || StringUtils.containsIgnoreCase(parameter, "burningseries.co/out")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
@@ -84,7 +84,7 @@ public class BsTo extends PluginForDecrypt {
                     finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\" class=\"hoster-player\">").getMatch(0);
                     if (finallink == null) {
                         // final failover?
-                        finallink = br.getRegex("https?://(\\w+\\.)?bs\\.to/out/\\d+").getMatch(-1);
+                        finallink = br.getRegex("https?://(\\w+\\.)?(?:bs\\.to|burningseries\\.co)/out/\\d+").getMatch(-1);
                     }
                 }
             }
@@ -105,7 +105,7 @@ public class BsTo extends PluginForDecrypt {
                 }
                 /* 2019-07-26: Sadly we cannot re-use these tokens! */
                 // this.getPluginConfig().setProperty("recaptchaV2Response", recaptchaV2Response);
-            } else if (finallink.contains("bs.to/out/")) {
+            } else if (StringUtils.containsIgnoreCase(finallink, "bs.to/out") || StringUtils.containsIgnoreCase(finallink, "burningseries.co/out")) {
                 br.setFollowRedirects(false);
                 br.getPage(finallink);
                 if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {

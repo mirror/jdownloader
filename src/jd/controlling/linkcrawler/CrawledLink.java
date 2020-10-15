@@ -582,17 +582,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
             return dlLink.getUniqueID();
-        }
-        if (uniqueID != null) {
+        } else if (uniqueID != null) {
             return uniqueID;
-        }
-        synchronized (this) {
-            if (uniqueID != null) {
-                return uniqueID;
+        } else {
+            synchronized (this) {
+                if (uniqueID != null) {
+                    return uniqueID;
+                } else {
+                    uniqueID = new UniqueAlltimeID();
+                    return uniqueID;
+                }
             }
-            uniqueID = new UniqueAlltimeID();
         }
-        return uniqueID;
     }
 
     /**
@@ -623,14 +624,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public ArchiveInfo getArchiveInfo() {
         if (archiveInfo != null) {
             return archiveInfo;
-        }
-        synchronized (this) {
-            if (archiveInfo != null) {
-                return archiveInfo;
+        } else {
+            synchronized (this) {
+                if (archiveInfo != null) {
+                    return archiveInfo;
+                } else {
+                    archiveInfo = new ArchiveInfo();
+                    return archiveInfo;
+                }
             }
-            archiveInfo = new ArchiveInfo();
         }
-        return archiveInfo;
     }
 
     public boolean hasArchiveInfo() {
@@ -638,12 +641,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (larchiveInfo != null) {
             if (!BooleanStatus.UNSET.equals(larchiveInfo.getAutoExtract())) {
                 return true;
-            }
-            if (larchiveInfo.getExtractionPasswords() != null && larchiveInfo.getExtractionPasswords().size() > 0) {
+            } else if (larchiveInfo.getExtractionPasswords() != null && larchiveInfo.getExtractionPasswords().size() > 0) {
                 return true;
+            } else {
+                return false;
             }
+        } else {
+            return false;
         }
-        return false;
     }
 
     public void setArchiveInfo(ArchiveInfo archiveInfo) {
