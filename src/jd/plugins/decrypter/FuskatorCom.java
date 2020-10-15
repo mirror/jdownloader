@@ -34,7 +34,7 @@ public class FuskatorCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String url = cryptedLink.toString();
         br.setFollowRedirects(true);
         br.getPage(url);
@@ -46,9 +46,9 @@ public class FuskatorCom extends PluginForDecrypt {
         String filePackageName = getFilePackageName(hash);
         /*
          * fuskator performs these XHR and then updates the page HTML with the info from the JSON:
-         *
+         * 
          * 1. POST https://fuskator.com/ajax/auth.aspx -> WTzR0liw
-         *
+         * 
          * 2. POST https://fuskator.com/ajax/gal.aspx?X-Auth=WTzR0liw&hash=eZ3ETEmf4Dy ->
          * {"fuskerUrl":"https://www.imagefap.com/photo/2106672792/","hash":"eZ3ETEmf4Dy","hits":1908,"images":
          * [{"imageUrl":"//i10.fuskator.com/large/eZ3ETEmf4Dy/image-1.jpg","index":1,"height":1500,"width":889}, ....],
@@ -94,7 +94,7 @@ public class FuskatorCom extends PluginForDecrypt {
         }
     }
 
-    private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url, String json) throws Exception {
+    private void populateDecryptedLinks(List<DownloadLink> decryptedLinks, String url, String json) throws Exception {
         final Map<String, Object> pictures;
         try {
             pictures = JavaScriptEngineFactory.jsonToJavaMap(json);
