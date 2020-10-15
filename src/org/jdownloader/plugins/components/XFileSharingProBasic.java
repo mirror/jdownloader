@@ -518,6 +518,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
                 link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
             }
+            /* 2020-10-15: TODO: Maybe update this to accept subdomains and never alter them (?) See plugin for takefile.link */
             link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
             link.setLinkID(getHost() + "://" + fuid);
         }
