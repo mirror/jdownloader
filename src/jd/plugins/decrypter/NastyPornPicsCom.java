@@ -14,9 +14,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "erocurves.com" }, urls = { "https?://(?:www\\.)?erocurves\\.com/([^/]+)/$" })
-public class EroCurvesCom extends PluginForDecrypt {
-    public EroCurvesCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nastypornpics.com" }, urls = { "http?://(?:www\\.)?nastypornpics\\.com/pics/([^/]+)/$" })
+public class NastyPornPicsCom extends PluginForDecrypt {
+    public NastyPornPicsCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -53,7 +53,7 @@ public class EroCurvesCom extends PluginForDecrypt {
     private String getFilePackageName(String url) {
         String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (title == null) {
-            title = new Regex(url, "erocurves\\.com/([^/]+)/$").getMatch(0);
+            title = new Regex(url, "pics/([^/]+)/$").getMatch(0);
         }
         return title.trim();
     }

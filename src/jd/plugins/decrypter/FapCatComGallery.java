@@ -1,9 +1,13 @@
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -14,9 +18,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "erocurves.com" }, urls = { "https?://(?:www\\.)?erocurves\\.com/([^/]+)/$" })
-public class EroCurvesCom extends PluginForDecrypt {
-    public EroCurvesCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapcat.com" }, urls = { "https?://(?:www\\.)?fapcat\\.com/albums/.+" })
+public class FapCatComGallery extends PluginForDecrypt {
+    public FapCatComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -38,13 +42,26 @@ public class EroCurvesCom extends PluginForDecrypt {
     }
 
     private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
-        final String[] links = br.getRegex("href='([^']+\\.jpg)'").getColumn(0);
+        final String[] links = br.getRegex("href=\"([^\"]+\\.jpg/)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String link : links) {
-            final DownloadLink dl = createDownloadlink(link);
+            String location;
+            try {
+                // request to "link" is responded with 302 and the actual URL of the picture (in location header)
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(link);
+                location = brc.getURL();
+                if (StringUtils.isEmpty(link)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (IOException e) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
+            }
+            final DownloadLink dl = createDownloadlink(location);
+            dl.setName(new Regex(link, "/([^/]+\\.jpg)/$").getMatch(0));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
@@ -53,7 +70,10 @@ public class EroCurvesCom extends PluginForDecrypt {
     private String getFilePackageName(String url) {
         String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (title == null) {
-            title = new Regex(url, "erocurves\\.com/([^/]+)/$").getMatch(0);
+            title = new Regex(url, "albums/[^/]+/(.+)").getMatch(0);
+            if (title.endsWith("/")) {
+                title = title.substring(0, title.length() - 1);
+            }
         }
         return title.trim();
     }
