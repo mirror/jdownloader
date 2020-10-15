@@ -25,6 +25,15 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -42,15 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
@@ -83,7 +83,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /* E.g. normal kernel-video-sharing.com video urls */
     private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
-    /* Rare case. Example: porngo.com, xbabe.com */
+    /* Rare case. Example: xbabe.com */
     private static final String   type_normal_without_fuid = "^https?://[^/]+/videos/([a-z0-9\\-]+)/?$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
@@ -162,6 +162,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return -1;
     }
 
+    /** Disable this for hosts which e.g. have really slow fileservers as this would otherwise slow down linkchecking! */
+    protected boolean checkDirecturlForFilesize() {
+        return true;
+    }
+
     protected Browser prepBR(final Browser br) {
         return br;
     }
@@ -177,12 +182,24 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         prepBR(this.br);
         br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String fuidBeforeHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
         final String titleUrl = getURLTitle(link.getPluginPatternMatcher());
         if (!link.isNameSet() && !StringUtils.isEmpty(titleUrl)) {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(titleUrl + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
+        if (fuidBeforeHTTPRequest == null) {
+            /* Most likely required for URLs matching pattern: type_normal_without_fuid */
+            logger.info("Failed to find fuid in URL --> Looking for fuid in html");
+            final String fuidAfterHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
+            if (fuidAfterHTTPRequest != null) {
+                logger.info("Successfully found fuid in html: " + fuidAfterHTTPRequest);
+                link.setLinkID(this.getHost() + "://" + fuidAfterHTTPRequest);
+            } else {
+                logger.info("Failed to find fuid in html");
+            }
+        }
         setSpecialFlags();
         String filename = getFileTitle(link);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
@@ -213,7 +230,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // this prevents another check when download is about to happen! -raztoki
         if (isDownload) {
             return AvailableStatus.TRUE;
-        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8")) {
+        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && checkDirecturlForFilesize()) {
             URLConnectionAdapter con = null;
             try {
                 // if you don't do this then referrer is fked for the download! -raztoki
@@ -779,6 +796,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             filename_url = null;
         }
         if (!StringUtils.isEmpty(filename_url)) {
+            /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
+            final String removeme = new Regex(filename_url, "(-?[a-f0-9]{16})").getMatch(0);
+            if (removeme != null) {
+                filename_url = filename_url.replace(removeme, "");
+            }
             /* Make the url-filenames look better by using spaces instead of '-'. */
             filename_url = filename_url.replace("-", " ");
             /* Remove eventually existing spaces at the end */
@@ -845,7 +867,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         if (fuid == null && br != null) {
-            /* Rare case: Embed URL: No fuid given inside URL so we can try to find it via embed URL inside html. Example: porngo.com */
+            /*
+             * Rare case: Embed URL: No fuid given inside URL so we can try to find it via embed URL inside html. Example: xbabe.com and
+             * possibly others matching pattern: type_normal_without_fuid
+             */
             fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
         }
         return fuid;
@@ -898,16 +923,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             filename = br.getRegex("<h\\d+ class=\"title\">([^<>\"]*?)<").getMatch(0);
         }
         if (StringUtils.isEmpty(filename)) {
-            /* Working e.g. for wankoz.com */
-            filename = br.getRegex("<h\\d+ class=\"block_header\" id=\"desc_button\">([^<>\"]*?)</h\\d+>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
             /* Working e.g. for pervclips.com, pornicom.com */
             filename = br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Working e.g. for voyeurhit.com */
-            filename = br.getRegex("<div class=\"info\\-player\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
         }
         if (StringUtils.isEmpty(filename)) {
             /* Working e.g. for japan-whores.com */
@@ -937,18 +954,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
             /* 2019-08-28 */
             filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("sleazyneasy.com")) {
-            /* 2020-05-04: Special: Enforce fallback to URL filename */
-            filename = getURLTitle(br.getURL());
-        } else if (br.getHost().equalsIgnoreCase("pornwhite.com")) {
-            /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = getURLTitle(br.getURL());
-        } else if (br.getHost().equalsIgnoreCase("private-shows.net")) {
-            /* 2020-10-09: Special: Enforce fallback to URL filename */
-            filename = getURLTitle(br.getURL());
-        } else if (br.getHost().equalsIgnoreCase("porngo.com")) {
-            /* 2020-06-27: Special */
-            filename = br.getRegex("class=\"headline__title\">([^<>\"]+)<").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("ok.xxx")) {
             /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
