@@ -38,13 +38,13 @@ public class PornPicsComGallery extends PluginForDecrypt {
     }
 
     private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
-        final String[] links = br.getRegex("href='([^']+)\\.jpg'").getColumn(0);
+        final String[] links = br.getRegex("href='([^']+\\.jpg)'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String link : links) {
-            final DownloadLink dl = createDownloadlink(link + ".jpg");
+            final DownloadLink dl = createDownloadlink(link);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }

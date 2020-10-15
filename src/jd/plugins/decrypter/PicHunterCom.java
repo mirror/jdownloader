@@ -14,9 +14,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "erocurves.com" }, urls = { "https?://(?:www\\.)?erocurves\\.com/([^/]+)/$" })
-public class EroCurvesCom extends PluginForDecrypt {
-    public EroCurvesCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pichunter.com" }, urls = { "https?://(?:www\\.)?pichunter\\.com/gallery/([^/]+)/.+" })
+public class PicHunterCom extends PluginForDecrypt {
+    public PicHunterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -38,7 +38,7 @@ public class EroCurvesCom extends PluginForDecrypt {
     }
 
     private void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
-        final String[] links = br.getRegex("href='([^']+\\.jpg)'").getColumn(0);
+        final String[] links = br.getRegex("href=\"([^\"]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -53,7 +53,11 @@ public class EroCurvesCom extends PluginForDecrypt {
     private String getFilePackageName(String url) {
         String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (title == null) {
-            title = new Regex(url, "erocurves\\.com/([^/]+)/$").getMatch(0);
+            title = new Regex(url, "gallery/[^/]+/(.+)").getMatch(0);
+            int i = title.indexOf("#");
+            if (i > 0) {
+                title = title.substring(0, i);
+            }
         }
         return title.trim();
     }
