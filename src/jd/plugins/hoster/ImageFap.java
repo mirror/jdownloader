@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -158,7 +159,16 @@ public class ImageFap extends PluginForHost {
         correctDownloadLink(link);
         prepBR(this.br);
         loadSessionCookies(this.br, this.getHost());
-        getRequest(this, this.br, br.createGetRequest(link.getDownloadURL()));
+        try {
+            getRequest(this, this.br, br.createGetRequest(link.getDownloadURL()));
+        } catch (PluginException e) {
+            if (!(Thread.currentThread() instanceof SingleDownloadController) && e.getLinkStatus() == LinkStatus.ERROR_IP_BLOCKED) {
+                logger.log(e);
+                return AvailableStatus.UNCHECKED;
+            } else {
+                throw e;
+            }
+        }
         if (link.getDownloadURL().matches(VIDEOLINK)) {
             final String filename = br.getRegex(">Title:</td>[\t\n\r ]+<td width=35%>([^<>\"]*?)</td>").getMatch(0);
             if (filename == null) {
@@ -237,31 +247,70 @@ public class ImageFap extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private final String findFinalLink(Browser br, DownloadLink link) throws Exception {
+        if (link.getDownloadURL().matches(VIDEOLINK)) {
+            String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (configLink == null) {
+                /* 2020-03-23 */
+                configLink = br.getRegex("url\\s*:\\s*'(https?[^<>\"\\']+)\\'").getMatch(0);
+                if (configLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            getRequest(this, br, br.createGetRequest(configLink));
+            String videoLink = br.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
+            if (videoLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                if (Encoding.isHtmlEntityCoded(videoLink)) {
+                    videoLink = Encoding.htmlDecode(videoLink);
+                }
+                return videoLink;
+            }
+        } else {
+            String imageLink = br.getRegex("name=\"mainPhoto\".*src=\"(https?://[a-z0-9\\.\\-]+\\.imagefapusercontent\\.com/[^<>\"]+)\"").getMatch(0);
+            // if (imagelink == null) {
+            // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
+            // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
+            // "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
+            // }
+            if (imageLink == null) {
+                final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                if (returnID != null) {
+                    imageLink = DecryptLink(returnID);
+                }
+                if (imageLink == null) {
+                    imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
+                    if (imageLink == null) {
+                        imageLink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+                        if (imageLink == null) {
+                            imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
+                        }
+                    }
+                }
+            }
+            if (imageLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                return imageLink;
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
         String pfilename = link.getName();
-        Request request = getRequest(this, this.br, this.br.createGetRequest(link.getDownloadURL()));
+        if (false) {
+            // same request is done in requestFileInformation
+            getRequest(this, this.br, this.br.createGetRequest(link.getDownloadURL()));
+        }
+        // TODO: maybe add cache/reuse
+        final String finalLink = findFinalLink(br, link);
         if (link.getDownloadURL().matches(VIDEOLINK)) {
-            String configLink = request.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (configLink == null) {
-                /* 2020-03-23 */
-                configLink = request.getRegex("url\\s*:\\s*'(http[^<>\"\\']+)\\'").getMatch(0);
-            }
-            if (configLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            request = getRequest(this, this.br, this.br.createGetRequest(configLink));
-            String finallink = request.getRegex("<videoLink>(https?://[^<>\"]*?)</videoLink>").getMatch(0);
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (Encoding.isHtmlEntityCoded(finallink)) {
-                finallink = Encoding.htmlDecode(finallink);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -271,34 +320,10 @@ public class ImageFap extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(https?://[a-z0-9\\.\\-]+\\.imagefapusercontent\\.com/[^<>\"]+)\"").getMatch(0);
-            // if (imagelink == null) {
-            // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
-            // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
-            // "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
-            // }
-            if (imagelink == null) {
-                final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (returnID != null) {
-                    imagelink = DecryptLink(returnID);
-                }
-                if (imagelink == null) {
-                    imagelink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src=\"(https?://.*?)\"").getMatch(0);
-                    if (imagelink == null) {
-                        imagelink = br.getRegex("href=\"#\" onclick=\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
-                        if (imagelink == null) {
-                            imagelink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
-                        }
-                    }
-                }
-            }
-            if (imagelink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             // Only set subdirectory if it wasn't set before or we'll get
             // subfolders
             // in subfolders which is bad
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, imagelink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
             final long t = dl.getConnection().getContentLength();
             if (dl.getConnection().getResponseCode() == 404 || (t != -1 && t < 107)) {
                 try {
@@ -307,8 +332,7 @@ public class ImageFap extends PluginForHost {
                     logger.log(e);
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
+            } else if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
@@ -316,10 +340,12 @@ public class ImageFap extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!pfilename.endsWith(new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0))) {
-                pfilename += new Regex(imagelink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0);
+            if (link.getFinalFileName() == null) {
+                if (!pfilename.endsWith(new Regex(finalLink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0))) {
+                    pfilename += new Regex(finalLink, "(\\.[A-Za-z0-9]+)($|\\?)").getMatch(0);
+                }
+                link.setFinalFileName(pfilename);
             }
-            link.setFinalFileName(pfilename);
         }
         dl.startDownload();
     }
@@ -331,10 +357,6 @@ public class ImageFap extends PluginForHost {
             Browser.setRequestIntervalLimitGlobal(getHost(), 750);
         } catch (final Throwable e) {
         }
-    }
-
-    public static void main(String[] args) {
-        System.out.println(ImageFap.class.getName());
     }
 
     public static Request getRequest(Plugin plugin, final Browser br, Request request) throws Exception {
