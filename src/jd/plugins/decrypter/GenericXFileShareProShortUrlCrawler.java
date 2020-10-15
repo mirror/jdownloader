@@ -27,16 +27,19 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DdownloadComCrawler extends antiDDoSForDecrypt {
-    public DdownloadComCrawler(PluginWrapper wrapper) {
+public class GenericXFileShareProShortUrlCrawler extends antiDDoSForDecrypt {
+    public GenericXFileShareProShortUrlCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to", "esimpurcuesc.ddownload.com" });
+        ret.add(new String[] { "deimos.click", "phobos.click" });
+        ret.add(new String[] { "file.al", "1f.al" });
         return ret;
     }
 
@@ -88,5 +91,10 @@ public class DdownloadComCrawler extends antiDDoSForDecrypt {
         }
         decryptedLinks.add(createDownloadlink("https://" + this.getHost() + "/" + fid));
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 }

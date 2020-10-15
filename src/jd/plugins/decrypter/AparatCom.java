@@ -29,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(?:www\\.)?aparat.com/v/[./]+" })
 public class AparatCom extends PluginForDecrypt {
@@ -72,5 +73,10 @@ public class AparatCom extends PluginForDecrypt {
             filePackage.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 }

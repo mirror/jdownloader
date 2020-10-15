@@ -48,7 +48,7 @@ public class FileAl extends XFileSharingProBasic {
      * 2020-09-16: I was unable to trigger these captchas anymore (in premium mode) thus set junlimited simultaneous downloads for premium
      * mode
      */
-    private static String[] domains = new String[] { "file.al" };
+    private static String[] domains = new String[] { "file.al", "1f.al" };
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
