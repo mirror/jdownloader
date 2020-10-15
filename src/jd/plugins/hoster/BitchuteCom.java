@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,10 +31,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/video/([A-Za-z0-9\\-_]+)" })
 public class BitchuteCom extends antiDDoSForHost {
@@ -116,7 +116,7 @@ public class BitchuteCom extends antiDDoSForHost {
                     server_issues = true;
                     try {
                         brc.followConnection(true);
-                    } catch (final IOException e) {
+                    } catch (final Throwable e) {
                         logger.log(e);
                     }
                 } else {

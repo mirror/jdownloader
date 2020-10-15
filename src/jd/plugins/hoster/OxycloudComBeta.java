@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -120,6 +122,22 @@ public class OxycloudComBeta extends YetiShareCore {
     }
 
     @Override
+    protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
+        /* TODO: Consider checking for fuid in URL too in the future --> This might be a good offline indicator */
+        // final String fid = this.getFUIDFromURL(link);
+        // final boolean currentURLContainsFID = br.getURL().contains(fid);
+        boolean offline = super.isOfflineWebsite(link);
+        if (!offline) {
+            offline = isOfflineSpecial();
+        }
+        return offline;
+    }
+
+    private boolean isOfflineSpecial() {
+        return br.containsHTML(">\\s*File has been removed");
+    }
+
+    @Override
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         super.scanInfo(link, fileInfo);
         if (supports_availablecheck_over_info_page(link)) {
@@ -140,6 +158,9 @@ public class OxycloudComBeta extends YetiShareCore {
         if (waittimeBetweenDownloadsStr != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
         }
+        if (isOfflineSpecial()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -149,7 +170,8 @@ public class OxycloudComBeta extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
             getPage("/upgrade");
         }
-        String expireStr = br.getRegex("Reverts To Free Account.*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        // String expireStr = br.getRegex("Reverts To Free Account.*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expireStr == null) {
             /*
              * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
@@ -318,5 +340,52 @@ public class OxycloudComBeta extends YetiShareCore {
             loggedIN = br.containsHTML("/logout");
         }
         return loggedIN;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (this.supports_api()) {
+            this.handleDownloadAPI(link, account);
+        } else {
+            if (account.getType() == AccountType.FREE) {
+                super.handlePremium(link, account);
+            } else {
+                requestFileInformation(link, account, true);
+                loginWebsite(account, false);
+                br.setFollowRedirects(true);
+                String dllink = null;
+                final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+                if (this.looksLikeDownloadableContent(con)) {
+                    dllink = con.getURL().toString();
+                } else {
+                    br.followConnection();
+                    final String internalFileID = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
+                    if (internalFileID == null) {
+                        this.checkErrors(link, account);
+                        checkErrorsLastResort(link, account);
+                    }
+                    br.setFollowRedirects(false);
+                    br.getPage("/account/direct_download/" + internalFileID);
+                    dllink = br.getRedirectLocation();
+                }
+                if (dllink == null) {
+                    this.checkErrors(link, account);
+                    checkErrorsLastResort(link, account);
+                }
+                final boolean resume = this.isResumeable(link, account);
+                final int maxchunks = this.getMaxChunks(account);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+                if (!isDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    checkErrors(link, account);
+                    checkErrorsLastResort(link, account);
+                }
+                dl.startDownload();
+            }
+        }
     }
 }

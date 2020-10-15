@@ -97,11 +97,6 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.SibSoft_XFileShare;
-    }
-
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
     // other: group sister sites or aliased domains together, for easy
@@ -347,5 +342,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 }

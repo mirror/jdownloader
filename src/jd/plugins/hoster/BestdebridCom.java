@@ -287,12 +287,26 @@ public class BestdebridCom extends PluginForHost {
                 /** 2019-07-05: No idea how long this token is valid! */
                 final String status = PluginJSonUtils.getJson(br, "error");
                 if (status != null && !"0".equals(status)) {
-                    /* E.g. {"error":"bad username OR bad password"} */
-                    final String fail_reason = PluginJSonUtils.getJson(br, "message");
-                    if (!StringUtils.isEmpty(fail_reason)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Reason: " + fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!account.getBooleanProperty("has_been_checked_successfully_once", false)) {
+                        /*
+                         * This account is checked for the first time --> Show more detailed error message to let user know his potential
+                         * mistake of entering username & password instead of API Key (e.g. Headless/myjd) users.
+                         */
+                        final String jdLoginFailedText;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            jdLoginFailedText = "Ungültiger API Key?\r\nGib hier NICHT deinen Benutzername & Passwort ein!\r\nGib deinen API Key in beide Felder ein!\r\nDiesen findest du hier: bestdebrid.com/profile.php";
+                        } else {
+                            jdLoginFailedText = "Invalid API Key?\r\nDo NOT enter your username & password here!\r\nEnter your API Key in both fields!\r\nYou will find your API Key here: bestdebrid.com/profile.php";
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, jdLoginFailedText, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        /* E.g. {"error":"bad username OR bad password"} */
+                        final String fail_reason = PluginJSonUtils.getJson(br, "message");
+                        if (!StringUtils.isEmpty(fail_reason)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Reason: " + fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 /*
@@ -304,6 +318,7 @@ public class BestdebridCom extends PluginForHost {
                 if (!StringUtils.isEmpty(email)) {
                     account.setUser(email);
                 }
+                account.setProperty("has_been_checked_successfully_once", true);
             } catch (PluginException e) {
                 throw e;
             }
