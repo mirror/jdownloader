@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapcat.com" }, urls = { "https?://(?:www\\.)?fapcat\\.com/albums/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapcat.com" }, urls = { "https?://(?:www\\.)?fapcat\\.com/albums/(?!.*?sites).+" })
 public class FapCatComGallery extends SimpleHtmlBasedGalleryPlugin {
     public FapCatComGallery(PluginWrapper wrapper) {
         super(wrapper);
