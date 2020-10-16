@@ -14,7 +14,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babesource.com", "coedcherry.com", "elitebabes.com", "erocurves.com", "pornpics.com", "sexygirlspics.com", "pichunter.com", "nastypornpics.com" }, urls = { "https?://(?:www\\.)?babesource\\.com/galleries/.+", "https?://(?:www\\.)?coedcherry\\.com/.*pics/.+", "https?://(?:www\\.)?elitebabes\\.com/.+", "https?://(?:www\\.)?erocurves\\.com/.+", "https?://(?:www\\.)?pornpics\\.com/galleries/.+", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+", "https?://(?:www\\.)?pichunter\\.com/gallery/.+", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+", })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babesource.com", "coedcherry.com", "elitebabes.com", "erocurves.com", "pornpics.com", "sexygirlspics.com", "pichunter.com", "nastypornpics.com" }, urls = { "https?://(?:www\\.)?babesource\\.com/galleries/.+", "https?://(?:www\\.)?coedcherry\\.com/.*pics/.+", "https?://(?:www\\.)?elitebabes\\.com/(?!.*?model).+", "https?://(?:www\\.)?erocurves\\.com/.+", "https?://(?:www\\.)?pornpics\\.com/galleries/.+", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+", "https?://(?:www\\.)?pichunter\\.com/gallery/.+", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+", })
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
     public SimpleHtmlBasedGalleryPlugin(PluginWrapper wrapper) {
