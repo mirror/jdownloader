@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -28,6 +26,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ArchivosMe extends YetiShareCore {
@@ -164,7 +164,7 @@ public class ArchivosMe extends YetiShareCore {
             return ai;
         } else {
             /* Fallback to template handling */
-            return super.fetchAccountInfo(account);
+            return super.fetchAccountInfoWebsite(account);
         }
     }
 
