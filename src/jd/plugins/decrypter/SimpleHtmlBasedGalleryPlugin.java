@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -14,11 +15,48 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+<<<<<<< .mine
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+=======
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "babesource.com", "coedcherry.com", "elitebabes.com", "erocurves.com", "pornpics.com", "sexygirlspics.com", "pichunter.com", "nastypornpics.com" }, urls = { "https?://(?:www\\.)?babesource\\.com/galleries/.+", "https?://(?:www\\.)?coedcherry\\.com/.*pics/.+", "https?://(?:www\\.)?elitebabes\\.com/(?!.*?model).+", "https?://(?:www\\.)?erocurves\\.com/.+", "https?://(?:www\\.)?pornpics\\.com/galleries/.+", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+", "https?://(?:www\\.)?pichunter\\.com/gallery/.+", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+", })
+>>>>>>> .r43033
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
-
     public SimpleHtmlBasedGalleryPlugin(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getSupportedSites() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/galleries/([^/]+)-\\d+\\.html" });
+        ret.add(new String[] { "coedcherry.com", "https?://(?:www\\.)?coedcherry\\.com/.*pics/([^/]+)" });
+        ret.add(new String[] { "elitebabes.com", "https?://(?:www\\.)?elitebabes\\.com/([^/]+)-\\d+" });
+        ret.add(new String[] { "erocurves.com", "https?://(?:www\\.)?erocurves\\.com/.+" });
+        ret.add(new String[] { "pornpics.com", "https?://(?:www\\.)?pornpics\\.com/galleries/.+" });
+        ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+" });
+        ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/gallery/.+" });
+        ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] supportedSite : getSupportedSites()) {
+            ret.add(supportedSite[0]);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { getHost() };
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] supportedSite : getSupportedSites()) {
+            ret.add(supportedSite[1]);
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -32,7 +70,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             return decryptedLinks;
         }
         populateDecryptedLinks(decryptedLinks, url);
-        final String title = getFilePackageName();
+        final String title = getFilePackageName(url);
         if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
@@ -56,8 +94,9 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return links;
         }
-        return links;
     }
 
     protected DownloadLink buildDownloadLink(int padLength, int index, String link) {
@@ -71,8 +110,11 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return "image_" + String.format(Locale.US, "%0" + padLength + "d", index) + ".jpg";
     }
 
-    private String getFilePackageName() {
-        String title = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
+    private String getFilePackageName(String url) {
+        String title = br.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
+        if (title == null) {
+            // title = new Regex(url, getMatcher().pattern()).getMatch(1);
+        }
         return title != null ? Encoding.htmlDecode(title.trim()) : null;
     }
 }
