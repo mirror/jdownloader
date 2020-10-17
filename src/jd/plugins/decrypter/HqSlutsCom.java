@@ -14,12 +14,11 @@ public class HqSlutsCom extends SimpleHtmlBasedGalleryPlugin {
 
     protected String getFilePackageName(String url) {
         String title = br.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
-        String uri = new Regex(url, "hqsluts\\.com/(.+)").getMatch(0);
-        String id = new Regex(url, "hqsluts\\.com/[^/]+-(\\d+)").getMatch(0);
         String name;
         if (title == null) {
-            name = uri;
+            name = new Regex(url, "hqsluts\\.com/(.+)").getMatch(0);
         } else {
+            String id = new Regex(url, "hqsluts\\.com/[^/]+-(\\d+)").getMatch(0);
             name = title + " " + id;
         }
         return name != null ? Encoding.htmlDecode(name.trim()) : null;
