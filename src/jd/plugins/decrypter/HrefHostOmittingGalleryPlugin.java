@@ -1,5 +1,6 @@
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,14 +52,13 @@ public class HrefHostOmittingGalleryPlugin extends SimpleHtmlBasedGalleryPlugin 
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            String host = br.getHost();
-            String protocol = "http://";
-            if (url.startsWith("https://")) {
-                protocol = "https://";
-            }
             String[] linksWithHost = new String[links.length];
             for (int i = 0; i < links.length; i++) {
-                linksWithHost[i] = protocol + host + links[i];
+                try {
+                    linksWithHost[i] = br.getURL(links[i]).toString();
+                } catch (IOException e) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             return linksWithHost;
         }
