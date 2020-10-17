@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapcat.com" }, urls = { "https?://(?:www\\.)?fapcat\\.com/albums/(?!.*?sites).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapcat.com" }, urls = { "https?://(?:www\\.)?fapcat\\.com/albums/\\d+/.+" })
 public class FapCatComGallery extends SimpleHtmlBasedGalleryPlugin {
     public FapCatComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,8 @@ public class FapCatComGallery extends SimpleHtmlBasedGalleryPlugin {
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return links;
         }
-        return links;
     }
 }

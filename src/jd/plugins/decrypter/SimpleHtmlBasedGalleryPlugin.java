@@ -15,6 +15,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+/**
+ * A plugin for downloading JPGs via href links from plain HTML.
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     public SimpleHtmlBasedGalleryPlugin(PluginWrapper wrapper) {
@@ -32,6 +35,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/gallery/.+" });
         ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
         ret.add(new String[] { "prettynubiles.com", "http?://(?:www\\.)?prettynubiles\\.com/galleries/([^\\.]+)\\.html" });
+        ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/pics/.+" });
         return ret;
     }
 
@@ -107,7 +111,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return "image_" + String.format(Locale.US, "%0" + padLength + "d", index) + ".jpg";
     }
 
-    private String getFilePackageName(String url) {
+    protected String getFilePackageName(String url) {
         String title = br.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
         if (title == null) {
             // title = new Regex(url, getMatcher().pattern()).getMatch(1);
