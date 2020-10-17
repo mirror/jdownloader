@@ -43,13 +43,7 @@ public class FapCatComGallery extends SimpleHtmlBasedGalleryPlugin {
         }
     }
 
-    protected String[] determineLinks(String url) throws PluginException {
-        final String[] links = br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/)(?:\"|')").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("found 0 images for " + url);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return links;
-        }
+    protected String[] getRawLinks() {
+        return br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/)(?:\"|')").getColumn(0);
     }
 }

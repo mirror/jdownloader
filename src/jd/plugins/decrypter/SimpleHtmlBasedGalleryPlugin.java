@@ -1,5 +1,6 @@
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -16,7 +17,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * A plugin for downloading JPGs via href links from plain HTML.
+ * A plugin for downloading JPGs via href links from plain HTML. Those links can be absolute or relative to the host.
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
@@ -36,6 +37,8 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
         ret.add(new String[] { "prettynubiles.com", "http?://(?:www\\.)?prettynubiles\\.com/galleries/([^\\.]+)\\.html" });
         ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/pics/.+" });
+        ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/.+" });
+        ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/.+" });
         return ret;
     }
 
@@ -91,13 +94,26 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     }
 
     protected String[] determineLinks(String url) throws PluginException {
-        final String[] links = br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg)(?:\"|')").getColumn(0);
+        final String[] links = getRawLinks();
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            return links;
+            // in case the link is relative to the host, make it absolute
+            String[] linksWithHost = new String[links.length];
+            for (int i = 0; i < links.length; i++) {
+                try {
+                    linksWithHost[i] = br.getURL(links[i]).toString();
+                } catch (IOException e) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            return linksWithHost;
         }
+    }
+
+    protected String[] getRawLinks() {
+        return br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg)(?:\"|')").getColumn(0);
     }
 
     protected DownloadLink buildDownloadLink(int padLength, int index, String link) {
