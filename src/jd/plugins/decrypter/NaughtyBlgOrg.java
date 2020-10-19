@@ -72,8 +72,9 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
             contentReleaseName = br.getRegex("<h1 class=\"post\\-title(.*?)</h1>").getMatch(0);
         }
         if (contentReleaseName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.warning("Crawler broken or content offline");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         // replace en-dash with a real dash
         contentReleaseName = contentReleaseName.replace("&#8211;", "-");

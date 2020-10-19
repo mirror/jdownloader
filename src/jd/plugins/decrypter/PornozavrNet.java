@@ -48,7 +48,7 @@ public class PornozavrNet extends PornEmbedParser {
         if (decryptedLinks.size() == 0) {
             final String dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
             if (dllink != null) {
-                final DownloadLink dl = this.createDownloadlink(dllink);
+                final DownloadLink dl = this.createDownloadlink("directhttp://" + dllink);
                 dl.setForcedFileName(title + ".mp4");
                 decryptedLinks.add(dl);
             } else {
