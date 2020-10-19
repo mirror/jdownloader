@@ -29,7 +29,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/galleries/([^/]+)-\\d+\\.html" });
         ret.add(new String[] { "coedcherry.com", "https?://(?:www\\.)?coedcherry\\.com/.*pics/([^/]+)" });
-        ret.add(new String[] { "elitebabes.com", "https?://(?:www\\.)?elitebabes\\.com/([^/]+)-\\d+" });
+        ret.add(new String[] { "elitebabes.com", "https?://(?:www\\.)?elitebabes\\.com/.+" });
         ret.add(new String[] { "erocurves.com", "https?://(?:www\\.)?erocurves\\.com/.+" });
         ret.add(new String[] { "pornpics.com", "https?://(?:www\\.)?pornpics\\.com/galleries/.+" });
         ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+" });
