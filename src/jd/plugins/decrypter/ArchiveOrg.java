@@ -129,7 +129,7 @@ public class ArchiveOrg extends PluginForDecrypt {
             fp.setName(title);
             for (final Object imageO : imagesO) {
                 /*
-                 * Most of all objects will contain an array with 2 items --> Books always have two vciewable pages. Exception = First page
+                 * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page
                  * --> Cover
                  */
                 final ArrayList<Object> pagesO = (ArrayList<Object>) imageO;

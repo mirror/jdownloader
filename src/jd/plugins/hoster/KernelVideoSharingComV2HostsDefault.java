@@ -31,6 +31,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "kvs-demo.com" });
         ret.add(new String[] { "porngo.com" });
         ret.add(new String[] { "sleazyneasy.com" });
         ret.add(new String[] { "pornwhite.com" });
@@ -38,6 +39,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "anon-v.com" });
         ret.add(new String[] { "voyeurhit.com" });
         ret.add(new String[] { "hotmovs.com" });
+        ret.add(new String[] { "theclassicporn.com" });
         return ret;
     }
 

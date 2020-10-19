@@ -59,7 +59,7 @@ public class SuicidegirlsCom extends PluginForHost {
 
     /* Linktypes */
     private static final String  TYPE_DECRYPTED               = "http://suicidegirlsdecrypted/\\d+";
-    private static final String  TYPE_VIDEO                   = "https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/";
+    private static final String  TYPE_VIDEO                   = "https?://(?:www\\.)?suicidegirls\\.com/videos/(\\d+)/[A-Za-z0-9\\-_]+/";
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -83,8 +83,10 @@ public class SuicidegirlsCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         String filename = null;
-        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
-            br.getPage(link.getDownloadURL());
+        if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
+            final String videoID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
+            link.setLinkID(this.getHost() + "//" + videoID);
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -129,7 +131,7 @@ public class SuicidegirlsCom extends PluginForHost {
         } else {
             link.setName(filename);
         }
-        if (link.getFinalFileName() != null) {
+        if (link.getFinalFileName() == null && filename != null) {
             filename = encodeUnicode(filename);
             link.setFinalFileName(filename);
         }

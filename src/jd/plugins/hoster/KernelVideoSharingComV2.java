@@ -942,9 +942,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (br.getHost().equalsIgnoreCase("yourlust.com")) {
             /* 2016-12-21 */
             filename = br.getRegex("<h\\d+ class=\"[^<>]+>([^<>]*?)<").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("theclassicporn.com")) {
-            /* 2016-12-18 */
-            filename = br.getRegex("class=\"link\\-blue link\\-no\\-border\">([^<>\"]*?)<").getMatch(0);
         } else if (br.getHost().equalsIgnoreCase("alphaporno.com")) {
             /* 2017-08-03 */
             filename = br.getRegex("<h1 class=\"title\" itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
