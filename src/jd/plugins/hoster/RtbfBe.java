@@ -15,6 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -23,14 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtbf.be" }, urls = { "http://rtbf\\.bedecrypted/\\d+" })
 public class RtbfBe extends PluginForHost {
@@ -53,20 +53,20 @@ public class RtbfBe extends PluginForHost {
     private boolean possibly_geo_blocked = false;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         server_issues = false;
         possibly_geo_blocked = false;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
-        dllink = downloadLink.getStringProperty("directlink", null);
-        final String filename = downloadLink.getStringProperty("directfilename", null);
+        dllink = link.getStringProperty("directlink", null);
+        final String filename = link.getStringProperty("directfilename", null);
         if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         if (dllink.contains("m3u8")) {
-            checkFFProbe(downloadLink, "Download a HLS Stream");
-            final HLSDownloader downloader = new HLSDownloader(downloadLink, br, dllink);
+            checkFFProbe(link, "Download a HLS Stream");
+            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -74,15 +74,15 @@ public class RtbfBe extends PluginForHost {
             } else {
                 final long estimatedSize = downloader.getEstimatedSize();
                 if (estimatedSize > 0) {
-                    downloadLink.setDownloadSize(estimatedSize);
+                    link.setDownloadSize(estimatedSize);
                 }
             }
         } else {
             URLConnectionAdapter con = null;
             try {
                 con = this.br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     possibly_geo_blocked = con.getResponseCode() == 403;
                     server_issues = true;
@@ -113,7 +113,7 @@ public class RtbfBe extends PluginForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -30,7 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(?:www\\.)?(movie4k\\.(?:to|tv|org|io|lol)|movie\\.to)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie4k.to" }, urls = { "https?://(?:www\\.)?(movie4k\\.(?:to|tv|org|io|lol|dev)|movie\\.to)/{1,2}(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+(?:.*?\\.html)?|\\d+\\-[^<>\"/]*?)(\\.html)?" })
 public class Mv2kTo extends antiDDoSForDecrypt {
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
