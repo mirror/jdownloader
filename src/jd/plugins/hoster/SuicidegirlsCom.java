@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -188,31 +189,35 @@ public class SuicidegirlsCom extends PluginForHost {
     public static final String MAINPAGE = "http://suicidegirls.com";
     private static Object      LOCK     = new Object();
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (LOCK) {
             try {
                 prepBR(br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
+                if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
+                    if (!validateCookies) {
+                        logger.info("Trust cookies without checking");
+                        return;
+                    }
+                    logger.info("Checking login cookies");
                     // do a test
                     br.getPage("https://www.suicidegirls.com/member/account/");
                     if (br.containsHTML(">Log Out<")) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br = prepBR(new Browser());
                     }
-                    br = prepBR(new Browser());
                 }
+                logger.info("Performing full login");
                 br.getPage("https://www.suicidegirls.com");
                 final Form loginform = br.getFormbyProperty("id", "login-form");
                 if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // login can contain recaptchav2
                 if (loginform.containsHTML("g-recaptcha") && loginform.containsHTML("data-sitekey")) {
@@ -234,10 +239,11 @@ public class SuicidegirlsCom extends PluginForHost {
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                final String error = PluginJSonUtils.getJsonValue(br, "");
+                final String msg = PluginJSonUtils.getJsonValue(br, "message");
+                /* 2020-10-19: E.g. {"message":"Invalid username or password.","code":"invalid_credentials"} */
                 // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
                 // Encoding.urlEncode(account.getPass()));
-                if (!"0".equals(error)) {
+                if (!StringUtils.isEmpty(msg)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -252,16 +258,10 @@ public class SuicidegirlsCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, false);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/member/account")) {
             br.getPage("https://www.suicidegirls.com/member/account/");
         }
@@ -297,7 +297,7 @@ public class SuicidegirlsCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(br, account, false);
+        login(account, false);
         requestFileInformation(link, account);
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
@@ -333,7 +333,7 @@ public class SuicidegirlsCom extends PluginForHost {
             final LogInterface logger = br.getLogger();
             for (final Account account : accounts) {
                 try {
-                    login(br, account, false);
+                    login(account, false);
                     return account;
                 } catch (final PluginException e) {
                     logger.log(e);

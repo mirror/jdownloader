@@ -91,6 +91,12 @@ public class EgyuploadCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-10-19: html contains wrong filesizes */
+        return false;
+    }
+
+    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }

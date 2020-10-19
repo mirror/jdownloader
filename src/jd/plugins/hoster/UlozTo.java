@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,10 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "ulozto.net", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?ulozto\\.net/(?!soubory/)[\\!a-zA-Z0-9]+(?:/[^\\?\\s]+)?", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
 public class UlozTo extends PluginForHost {
@@ -123,7 +123,7 @@ public class UlozTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (CTRLLOCK) {
-            passwordProtected = isPasswordProtected();
+            passwordProtected = false;
             correctDownloadLink(link);
             prepBR(this.br);
             br.setFollowRedirects(false);
@@ -326,7 +326,6 @@ public class UlozTo extends PluginForHost {
                 /* 2020-03-09: New */
                 dllink = br.getRegex("(/slowDownload[^\"<>]+)\"").getMatch(0);
             }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             if (dllink == null) {
                 if (passwordProtected) {
                     handlePassword(link);
@@ -552,17 +551,13 @@ public class UlozTo extends PluginForHost {
 
     /**
      * @author raztoki
-     * @param downloadLink
+     * @param link
      * @throws Exception
      */
-    private void handlePassword(final DownloadLink downloadLink) throws Exception {
+    private void handlePassword(final DownloadLink link) throws Exception {
         final boolean ifr = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            String passCode = downloadLink.getDownloadPassword();
-            if (StringUtils.isEmpty(passCode)) {
-                passCode = getUserInput("Password?", downloadLink);
-            }
             final boolean preferFormHandling = true;
             if (preferFormHandling) {
                 /* 2016-12-07: Prefer this way to prevent failures due to wrong website language! */
@@ -570,27 +565,38 @@ public class UlozTo extends PluginForHost {
                 if (pwform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                String passCode = link.getDownloadPassword();
+                if (StringUtils.isEmpty(passCode)) {
+                    passCode = getUserInput("Password?", link);
+                }
                 pwform.put("password", Encoding.urlEncode(passCode));
                 br.submitForm(pwform);
+                if (this.isPasswordProtected()) {
+                    // failure
+                    logger.info("Incorrect password was entered");
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    logger.info("Correct password has been entered");
+                    link.setDownloadPassword(passCode);
+                    return;
+                }
             } else {
+                String passCode = link.getDownloadPassword();
+                if (StringUtils.isEmpty(passCode)) {
+                    passCode = getUserInput("Password?", link);
+                }
                 br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&password_send=Send&do=passwordProtectedForm-submit");
-            }
-            if (br.toString().equals("No htmlCode read")) {
-                // Benefit of statserv!
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (this.isPasswordProtected()) {
-                // failure
-                logger.info("Incorrect password was entered");
-                downloadLink.setDownloadPassword(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            } else if (!br.containsHTML(PREMIUMONLYUSERTEXT)) {
-                logger.info("Correct password was entered");
-                downloadLink.setDownloadPassword(passCode);
-                return;
-            } else {
-                logger.info("Correct password was entered");
-                downloadLink.setDownloadPassword(passCode);
-                return;
+                if (this.isPasswordProtected()) {
+                    // failure
+                    logger.info("Incorrect password was entered");
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    logger.info("Correct password has been entered");
+                    link.setDownloadPassword(passCode);
+                    return;
+                }
             }
         } finally {
             br.setFollowRedirects(ifr);

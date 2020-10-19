@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/(?:album/\\d+/[A-Za-z0-9\\-_]+/)?" })
 public class SuicidegirlsCom extends PluginForDecrypt {
@@ -68,6 +68,7 @@ public class SuicidegirlsCom extends PluginForDecrypt {
         final String parameter = param.toString();
         String fpName = null;
         final PluginForHost plugin = JDUtilities.getPluginForHost("suicidegirls.com");
+        plugin.setBrowser(this.br);
         final boolean loggedin = ((jd.plugins.hoster.SuicidegirlsCom) plugin).login(br) != null;
         ((jd.plugins.hoster.SuicidegirlsCom) plugin).prepBR(br);
         br.setFollowRedirects(true);
