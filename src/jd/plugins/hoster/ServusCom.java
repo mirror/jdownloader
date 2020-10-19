@@ -15,12 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -28,6 +35,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -77,28 +85,67 @@ public class ServusCom extends PluginForHost {
         return fid;
     }
 
-    @SuppressWarnings("deprecation")
+    private String dllink = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = this.getFID(link);
         if (fid == null) {
             /* This should never happen */
-            logger.warning("fid is null");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://stv.rbmbtnx.net/api/v1/manifests/" + fid + "/metadata");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* TODO: 2020-10-19: Auto-differentiate between old- and new content (= auto use old/new API) **/
+        final boolean newWay = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        String date = null, title = null, episodename = null, labelGroup = null, description = null;
+        final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
+        if (newWay) {
+            /* TODO: This one seems to be static but it would be better to obtain it dynamically. */
+            br.getHeaders().put("Authorization", "Basic SVgtMjJYNEhBNFdEM1cxMTpEdDRVSkFLd2ZOMG5IMjB1NGFBWTBmUFpDNlpoQ1EzNA==");
+            br.postPage("https://auth.redbullmediahouse.com/token", "grant_type=client_credentials");
+            /* 2020-10-19: This one will typically be valid for 5 minutes */
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String access_token = (String) entries.get("access_token");
+            if (StringUtils.isEmpty(access_token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().put("Authorization", "Bearer " + access_token);
+            br.getPage("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final ArrayList<Object> attributes = (ArrayList<Object>) entries.get("attributes");
+            /* TODO: This is NOT the release-date! */
+            // date = (String) entries.get("lastPublished");
+            title = (String) this.getAttribute(attributes, "title");
+            episodename = (String) this.getAttribute(attributes, "chapter");
+            description = (String) this.getAttribute(attributes, "long_description");
+            /* Find http stream - skip everything else! */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
+            for (final Object ressourceO : ressourcelist) {
+                entries = (Map<String, Object>) ressourceO;
+                final String url = (String) entries.get("url");
+                if (url != null && url.contains(".mp4")) {
+                    this.dllink = url;
+                    break;
+                }
+            }
+        } else {
+            br.getPage("https://stv.rbmbtnx.net/api/v1/manifests/" + fid + "/metadata");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
+            date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/*/{0}/startDate");
+            title = (String) entries.get("titleStv");
+            episodename = null;
+            labelGroup = (String) entries.get("labelGroup");
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-        final String episodenumber = new Regex(link.getDownloadURL(), "pisode\\-(\\d+)").getMatch(0);
-        String date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/*/{0}/startDate");
-        String title = (String) entries.get("titleStv");
-        String episodename = null;
-        String labelGroup = (String) entries.get("labelGroup");
         if (StringUtils.isEmpty(labelGroup)) {
             labelGroup = "ServusTV";
         }
@@ -122,32 +169,72 @@ public class ServusCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename += ".mp4";
         link.setFinalFileName(filename);
+        if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
+            link.setComment(description);
+        }
+        if (!StringUtils.isEmpty(dllink) && !this.dllink.contains(".m3u8") && !isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
+    }
+
+    /** 2020-10-19: Wrapper for sparkle-api.liiift.io json. Contains ArrayLists with maps containing keys and values. */
+    private Object getAttribute(final ArrayList<Object> fields, final String targetKey) {
+        HashMap<String, Object> entries = null;
+        for (final Object fieldO : fields) {
+            entries = (HashMap<String, Object>) fieldO;
+            final String fieldKey = (String) entries.get("fieldKey");
+            if (fieldKey.equals(targetKey)) {
+                return entries.get("fieldValue");
+            }
+        }
+        return null;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        String url_hls = null;
-        HlsContainer hlsbest = null;
-        /*
-         * 2017-10-04: It is unlikely that they still have official http urls (at this place) but we'll leave in these few lines of code
-         * anyways.
-         */
+        requestFileInformation(link, true);
         String httpstream = null;
-        if (httpstream == null) {
-            /* 2017-10-04: Only hls available and it is very easy to create the master URL --> Do not access Brightcove stuff at all! */
-            /* Use this to get some more information about the video [in json]: https://www.servus.com/at/p/<videoid>/personalize */
-            final String hls_master = String.format("https://stv.rbmbtnx.net/api/v1/manifests/%s.m3u8", this.getFID(link));
-            br.getPage(hls_master);
-            hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+        HlsContainer hlsbest = null;
+        if (!StringUtils.isEmpty(this.dllink)) {
+            /* New */
+            if (this.dllink.contains(".m3u8")) {
+                br.getPage(this.dllink);
+                hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                if (hlsbest == null) {
+                    /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+                }
+            } else {
+                httpstream = this.dllink;
+            }
+        } else {
+            /* Old */
+            if (httpstream == null) {
+                /* 2017-10-04: Only hls available and it is very easy to create the master URL --> Do not access Brightcove stuff at all! */
+                /* Use this to get some more information about the video [in json]: https://www.servus.com/at/p/<videoid>/personalize */
+                final String hls_master = String.format("https://stv.rbmbtnx.net/api/v1/manifests/%s.m3u8", this.getFID(link));
+                br.getPage(hls_master);
+                hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                if (hlsbest == null) {
+                    /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+                }
             }
         }
         if (hlsbest != null) {
-            url_hls = hlsbest.getDownloadurl();
+            final String url_hls = hlsbest.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
@@ -157,14 +244,18 @@ public class ServusCom extends PluginForHost {
             }
             /* Use http as fallback. */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, httpstream, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     if (dl.getConnection().getResponseCode() == 403) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                     } else if (dl.getConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                     }
-                    br.followConnection();
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } finally {
                     try {
