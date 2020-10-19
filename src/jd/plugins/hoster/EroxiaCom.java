@@ -17,10 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -65,7 +65,8 @@ public class EroxiaCom extends PluginForHost {
         }
         // Try to find direct link first
         dllink = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
-        if (dllink == null) {
+        final boolean allowCreateVideoUrlFromThumbnail = false;
+        if (dllink == null && allowCreateVideoUrlFromThumbnail) {
             /* 2020-10-01 */
             dllink = br.getRegex("\"(https?://[^/]+/thumbs/[^\"]*?\\.mp4)").getMatch(0);
             if (dllink != null) {
@@ -73,42 +74,44 @@ public class EroxiaCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            /* 2020-10-19 */
+            dllink = br.getRegex("<source src=\"(https?://[^/]+/videos/[^\"]+\\.mp4)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            /* Old code */
             dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<source[^>]*\\s+src=(\"|'|)(.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     // No direct link there -> 2nd way
                     dllink = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getPage(Encoding.htmlDecode(dllink));
-                    dllink = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dllink != null) {
+                        br.getPage(Encoding.htmlDecode(dllink));
+                        dllink = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
+                        if (dllink == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
             }
         }
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        if (!StringUtils.isEmpty(this.dllink)) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -117,6 +120,11 @@ public class EroxiaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (this.dllink == null) {
+            if (!br.containsHTML("id=\"thisPlayer\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No player available (?)");
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {

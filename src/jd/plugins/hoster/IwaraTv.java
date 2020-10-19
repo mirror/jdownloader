@@ -57,7 +57,7 @@ public class IwaraTv extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private final String         html_privatevideo = ">This video is only available for users that|>Private video<";
     public static final String   html_loggedin     = "/user/logout";
-    private static final String  type_image        = "https?://(?:www\\.)?iwara\\.tv/images/.+";
+    private static final String  type_image        = "https?://[^/]+/images/.+";
     private String               dllink            = null;
     private boolean              serverIssue       = false;
 
@@ -86,6 +86,7 @@ public class IwaraTv extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
+        br.setCookie("iwara.tv", "show_adult", "1");
         return br;
     }
 
@@ -135,7 +136,13 @@ public class IwaraTv extends PluginForHost {
         if (this.br.getURL().matches(type_image)) {
             /* Picture */
             isVideo = false;
-            dllink = this.br.getRegex("\"(https?://(?:www\\.)?iwara\\.tv/[^<>]+/large/public/[^<>\"]+)\"").getMatch(0);
+            dllink = this.br.getRegex("\"(https?://(?:[a-z0-9]+\\.)?iwara\\.tv/[^<>]+/large/public/[^<>\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = this.br.getRegex("(//[^/]+/sites/default/files/styles/large/public/photos/[^\"]+)").getMatch(0);
+                if (dllink != null) {
+                    dllink = "https:" + dllink;
+                }
+            }
         } else if (this.br.containsHTML("name=\"flashvars\"") || this.br.containsHTML("flowplayer\\.org/")) {
             /* Video */
             dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/").getMatch(0);
@@ -177,7 +184,7 @@ public class IwaraTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 link.setDownloadSize(con.getCompleteContentLength());
                 link.setProperty("directlink", dllink);
             } else {
@@ -193,19 +200,19 @@ public class IwaraTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink link) throws Exception {
         if (this.br.containsHTML(html_privatevideo)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (serverIssue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {

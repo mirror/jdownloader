@@ -44,7 +44,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         /* Embedded URL --> Will not contain external embed urls! --> Just pass that to our hosterplugin! */
         if (parameter.matches("https?://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
             final String singleEmbedID = new Regex(parameter, "ll_embed\\?f=([a-z0-9]+)$").getMatch(0);
-            final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + singleEmbedID);
+            final DownloadLink dl = createDownloadlink("https://www.liveleak.com/view?t=" + singleEmbedID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -82,7 +82,7 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("000");
             for (final String embedID : allEmbedcodes) {
-                final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + embedID);
+                final DownloadLink dl = createDownloadlink("https://www.liveleak.com/view?t=" + embedID);
                 if (allEmbedcodes.length > 1) {
                     dl.setName(filename + "_" + df.format(counter) + ".mp4");
                 } else {

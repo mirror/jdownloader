@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,11 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "https?://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{2,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "https?://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{4,}" })
 public class GldSlTo extends antiDDoSForDecrypt {
     public GldSlTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +47,10 @@ public class GldSlTo extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\&raquo; goldesel\\.to\\s*</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
@@ -59,8 +63,10 @@ public class GldSlTo extends antiDDoSForDecrypt {
         fp.setName(fpName);
         String[] decryptIDs = br.getRegex("data\\s*=\\s*\"([^<>\"]*?)\"").getColumn(0);
         if (decryptIDs == null || decryptIDs.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            /* 2020-10-19: Some URLs only got P2P/usenet sources available! */
+            logger.info("Failed to find any OCH mirrors");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -68,13 +74,9 @@ public class GldSlTo extends antiDDoSForDecrypt {
         int counter = 1;
         boolean captchafailed = false;
         for (final String decryptID : decryptIDs) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return decryptedLinks;
             }
             // br.setCookie("goldesel.to", "__utma", "222304525.384242273.1432990594.1432990594.1433159390.2");
             // br.setCookie("goldesel.to", "__utmz", "222304525.1432990594.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
@@ -85,18 +87,14 @@ public class GldSlTo extends antiDDoSForDecrypt {
             postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
             if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
-                    try {
-                        if (this.isAbort()) {
-                            logger.info("Decryption aborted by user: " + parameter);
-                            return decryptedLinks;
-                        }
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
                     }
                     final String capLink = br.getRegex("\"(inc/cirlecaptcha\\.php[^<>\"]*?)\"").getMatch(0);
                     if (capLink == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final File file = this.getLocalCaptchaFile();
                     getCaptchaBrowser(br).getDownload(file, "https://goldesel.to/" + capLink);

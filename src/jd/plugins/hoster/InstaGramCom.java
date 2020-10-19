@@ -490,13 +490,26 @@ public class InstaGramCom extends PluginForHost {
                                 loginChoiceRequest.setContentType("application/x-www-form-urlencoded");
                                 post.setPostDataString("choice=1");
                                 br.getPage(loginChoiceRequest);
+                                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                                final Object twoFaTextO = JavaScriptEngineFactory.walkJson(entries, "extraData/content/{1}/text");
+                                final String twoFaText;
+                                if (twoFaTextO != null && twoFaTextO instanceof String) {
+                                    twoFaText = (String) twoFaTextO;
+                                } else {
+                                    twoFaText = "2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account";
+                                }
                                 final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
-                                final String code = getUserInput("2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account", dummyLink);
+                                final String code = getUserInput(twoFaText, dummyLink);
                                 if (code == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response format", PluginException.VALUE_ID_PREMIUM_DISABLE);
                                 }
                                 post.setPostDataString("security_code=" + code);
                                 br.getPage(post);
+                                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                                final String status = (String) entries.get("status");
+                                if (!"success".equalsIgnoreCase(status)) {
+                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n2FA login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                                }
                                 /* TODO: Fully implement this */
                             } else {
                                 /* Unknown challenge-type */
