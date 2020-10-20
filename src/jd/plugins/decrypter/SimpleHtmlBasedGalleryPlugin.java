@@ -92,8 +92,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException, IOException {
         final String[] links = determineLinks();
         if (links == null || links.length == 0) {
-            logger.warning("found 0 images for " + url);
-            decryptedLinks.add(createOfflinelink(url));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             final int padLength = (int) Math.log10(links.length) + 1;
             int index = 1;
