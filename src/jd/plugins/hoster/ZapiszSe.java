@@ -114,7 +114,7 @@ public class ZapiszSe extends PluginForHost {
             br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
             final String[] urls = HTMLParser.getHttpLinks(br.toString(), br.getURL());
             for (final String url : urls) {
-                if (url.contains(link.getName())) {
+                if (Encoding.htmlDecode(url).contains(link.getName())) {
                     logger.info("Found possible downloadurl: " + url);
                     dllink = url;
                     break;
