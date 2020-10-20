@@ -19,7 +19,7 @@ public class FapCatComGallery extends SimpleHtmlBasedGalleryPlugin {
     }
 
     protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
-        final String[] links = determineLinks(url);
+        final String[] links = determineLinks();
         final int padLength = (int) Math.log10(links.length) + 1;
         int index = 1;
         for (final String link : links) {
