@@ -84,9 +84,11 @@ public class ServusCom extends PluginForHost {
         return fid;
     }
 
-    private String               dllink    = null;
-    private final Object         LOCK      = new Object();
-    private static final boolean useNewAPI = true;
+    private String               dllink                     = null;
+    private static Object        LOCK                       = new Object();
+    private static String        authToken                  = null;
+    private static long          authLastRefreshedTimestamp = 0;
+    private static final boolean useNewAPI                  = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -106,22 +108,30 @@ public class ServusCom extends PluginForHost {
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
         if (useNewAPI) {
-            String auth = null;
             synchronized (LOCK) {
-                auth = this.getPluginConfig().getStringProperty("authorization");
-                final long authTimestamp = this.getPluginConfig().getLongProperty("timestamp_authorization_last_refreshed", 0);
-                if (auth == null || System.currentTimeMillis() - authTimestamp > 8 * 60 * 60 * 1000l) {
+                final boolean refreshToken;
+                if (authToken == null) {
+                    logger.info("Token refresh needed because none is available");
+                    refreshToken = true;
+                } else if (System.currentTimeMillis() - authLastRefreshedTimestamp > 1 * 60 * 60 * 1000l) {
+                    logger.info("Token refresh needed because old one is too old");
+                    refreshToken = false;
+                } else {
+                    logger.info("No token refresh needed -> Re-using existing token: " + authToken);
+                    refreshToken = false;
+                }
+                if (refreshToken) {
                     logger.info("Obtaining current authorization value");
                     br.getPage("https://player.redbull.com/1.2.15-stv-release-723/rbup-datamanager.min.js");
-                    auth = br.getRegex("international/assets/\",a\\.auth=\"([^\"]+)").getMatch(0);
-                    if (auth == null) {
+                    authToken = br.getRegex("international/assets/\",a\\.auth=\"([^\"]+)").getMatch(0);
+                    if (authToken == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    this.getPluginConfig().setProperty("authorization", auth);
-                    this.getPluginConfig().setProperty("timestamp_authorization_last_refreshed", System.currentTimeMillis());
+                    this.getPluginConfig().setProperty("authorization", authToken);
+                    authLastRefreshedTimestamp = System.currentTimeMillis();
                 }
             }
-            br.getHeaders().put("Authorization", "Basic " + auth);
+            br.getHeaders().put("Authorization", "Basic " + authToken);
             br.postPage("https://auth.redbullmediahouse.com/token", "grant_type=client_credentials");
             /* 2020-10-19: This one will typically be valid for 5 minutes */
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
