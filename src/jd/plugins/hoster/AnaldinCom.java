@@ -22,15 +22,15 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WankozCom extends KernelVideoSharingComV2 {
-    public WankozCom(final PluginWrapper wrapper) {
+public class AnaldinCom extends KernelVideoSharingComV2 {
+    public AnaldinCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wankoz.com" });
+        ret.add(new String[] { "analdin.com" });
         return ret;
     }
 
@@ -44,6 +44,6 @@ public class WankozCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithAllowedLanguageInURL(getPluginDomains());
     }
 }
