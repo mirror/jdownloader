@@ -44,6 +44,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/[^/]+/.+" });
         ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/(?!\\d+).+" });
         ret.add(new String[] { "fapcat.com", "https?://(?:www\\.)?fapcat\\.com/albums/\\d+/.+" });
+        ret.add(new String[] { "hqsluts.com", "https?://(?:www\\.)?hqsluts\\.com/[^/]+-\\d+" });
         return ret;
     }
 
