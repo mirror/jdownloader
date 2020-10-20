@@ -84,20 +84,24 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     }
 
     protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
-        final String[] links = determineLinks(url);
-        final int padLength = (int) Math.log10(links.length) + 1;
-        int index = 1;
-        for (String link : links) {
-            decryptedLinks.add(buildDownloadLink(padLength, index, link));
-            index++;
+        final String[] links = determineLinks();
+        if (links == null || links.length == 0) {
+            logger.warning("found 0 images for " + url);
+            decryptedLinks.add(createOfflinelink(url));
+        } else {
+            final int padLength = (int) Math.log10(links.length) + 1;
+            int index = 1;
+            for (String link : links) {
+                decryptedLinks.add(buildDownloadLink(padLength, index, link));
+                index++;
+            }
         }
     }
 
-    protected String[] determineLinks(String url) throws PluginException {
+    protected String[] determineLinks() throws PluginException {
         final String[] links = getRawLinks();
         if (links == null || links.length == 0) {
-            logger.warning("found 0 images for " + url);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return links;
         } else {
             // in case the link is relative to the host, make it absolute
             String[] linksWithHost = new String[links.length];
