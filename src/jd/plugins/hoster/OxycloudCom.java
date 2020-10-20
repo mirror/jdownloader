@@ -173,8 +173,7 @@ public class OxycloudCom extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
             getPage("/upgrade");
         }
-        boolean isPremium = br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
-        if (!isPremium) {
+        if (!isPremiumAccount()) {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
@@ -199,10 +198,9 @@ public class OxycloudCom extends YetiShareCore {
             } else if (expireStr != null) {
                 logger.info("Found premium expiredate");
                 long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-                isPremium = expire_milliseconds > System.currentTimeMillis();
                 /* If the premium account is expired we'll simply accept it as a free account. */
-                if (!isPremium) {
-                    /* Expired premium == FREE --> This should never happen! */
+                if (expire_milliseconds < System.currentTimeMillis()) {
+                    /* Expired premium -> FREE --> This should never happen! */
                     setAccountLimitsByType(account, AccountType.FREE);
                 } else {
                     ai.setValidUntil(expire_milliseconds, this.br);
@@ -220,6 +218,18 @@ public class OxycloudCom extends YetiShareCore {
         return ai;
     }
 
+    private boolean isPremiumAccount() {
+        return br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
+    }
+
+    private void setAccountType(final Account account) {
+        if (isPremiumAccount()) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+    }
+
     @Override
     protected void loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
@@ -235,9 +245,11 @@ public class OxycloudCom extends YetiShareCore {
                         return;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage(this.getMainPage() + "/account");
-                    if (isLoggedin()) {
+                    getPage(this.getMainPage() + "/upgrade");
+                    if (isLoggedinOnUpgradePage()) {
                         logger.info("Successfully logged in via cookies");
+                        /* Set/Update account-type */
+                        setAccountType(account);
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     } else {
@@ -361,6 +373,15 @@ public class OxycloudCom extends YetiShareCore {
         boolean loggedIN = super.isLoggedin();
         if (!loggedIN) {
             loggedIN = br.containsHTML("/logout");
+        }
+        return loggedIN;
+    }
+
+    /** Login-check for "/upgrade" page */
+    private boolean isLoggedinOnUpgradePage() {
+        boolean loggedIN = super.isLoggedin();
+        if (!loggedIN) {
+            loggedIN = br.containsHTML("/account\"");
         }
         return loggedIN;
     }
