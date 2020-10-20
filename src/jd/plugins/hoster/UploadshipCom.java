@@ -17,13 +17,16 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
@@ -133,11 +136,51 @@ public class UploadshipCom extends YetiShareCore {
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = br.getRegex("How To Free Download\\s*:\\s*<b>([^<>\"]+)<").getMatch(0);
         }
+        if (fileInfo[0] != null && fileInfo[0].trim().equalsIgnoreCase("free download")) {
+            /* 2020-10-20: Workaround: Some files don't have any name given until download is started */
+            logger.info("No filename given for this file");
+            fileInfo[0] = null;
+        }
         fileInfo[1] = br.getRegex("\\[\\s*(\\d+)\\s*bytes\\s*\\]").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             /* Use default handling as fallback */
             super.scanInfo(link, fileInfo);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        if (account.getType() != AccountType.PREMIUM) {
+            /* 2020-10-20: Special */
+            if (br.getURL() == null || !br.getURL().contains("/account_home.html")) {
+                getPage("/account_home.html");
+            }
+            String expireStr = br.getRegex("Your Premium Expiration Date\\s*:\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expireStr == null) {
+                /*
+                 * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
+                 * which we fail to find the expire-date.
+                 */
+                logger.info("Failed to find expire-date --> Probably a FREE account");
+                setAccountLimitsByType(account, AccountType.FREE);
+                return ai;
+            }
+            final long expire_milliseconds = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+            final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
+            /* If the premium account is expired we'll simply accept it as a free account. */
+            if (!isPremium) {
+                /* Expired premium == FREE */
+                setAccountLimitsByType(account, AccountType.FREE);
+                // ai.setStatus("Registered (free) user");
+            } else {
+                ai.setValidUntil(expire_milliseconds, this.br);
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                // ai.setStatus("Premium account");
+            }
+            ai.setUnlimitedTraffic();
+        }
+        return ai;
     }
 }
