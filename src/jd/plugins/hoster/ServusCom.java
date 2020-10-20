@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -85,7 +84,9 @@ public class ServusCom extends PluginForHost {
         return fid;
     }
 
-    private String dllink = null;
+    private String               dllink    = null;
+    private final Object         LOCK      = new Object();
+    private static final boolean useNewAPI = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -102,12 +103,25 @@ public class ServusCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* TODO: 2020-10-19: Auto-differentiate between old- and new content (= auto use old/new API) **/
-        final boolean newWay = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
-        if (newWay) {
-            /* TODO: This one seems to be static but it would be better to obtain it dynamically. */
-            br.getHeaders().put("Authorization", "Basic SVgtMjJYNEhBNFdEM1cxMTpEdDRVSkFLd2ZOMG5IMjB1NGFBWTBmUFpDNlpoQ1EzNA==");
+        if (useNewAPI) {
+            String auth = null;
+            synchronized (LOCK) {
+                auth = this.getPluginConfig().getStringProperty("authorization");
+                final long authTimestamp = this.getPluginConfig().getLongProperty("timestamp_authorization_last_refreshed", 0);
+                if (auth == null || System.currentTimeMillis() - authTimestamp > 8 * 60 * 60 * 1000l) {
+                    logger.info("Obtaining current authorization value");
+                    br.getPage("https://player.redbull.com/1.2.15-stv-release-723/rbup-datamanager.min.js");
+                    auth = br.getRegex("international/assets/\",a\\.auth=\"([^\"]+)").getMatch(0);
+                    if (auth == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    this.getPluginConfig().setProperty("authorization", auth);
+                    this.getPluginConfig().setProperty("timestamp_authorization_last_refreshed", System.currentTimeMillis());
+                }
+            }
+            br.getHeaders().put("Authorization", "Basic " + auth);
             br.postPage("https://auth.redbullmediahouse.com/token", "grant_type=client_credentials");
             /* 2020-10-19: This one will typically be valid for 5 minutes */
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -117,6 +131,10 @@ public class ServusCom extends PluginForHost {
             }
             br.getHeaders().put("Authorization", "Bearer " + access_token);
             br.getPage("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2020-10-20: E.g. {"code":404,"message":"Asset not found"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final ArrayList<Object> attributes = (ArrayList<Object>) entries.get("attributes");
             /* TODO: This is NOT the release-date! */
@@ -124,7 +142,10 @@ public class ServusCom extends PluginForHost {
             title = (String) this.getAttribute(attributes, "title");
             episodename = (String) this.getAttribute(attributes, "chapter");
             description = (String) this.getAttribute(attributes, "long_description");
-            /* Find http stream - skip everything else! */
+            /*
+             * Find http stream - skip everything else! HLS = split audio/video which we cannot handle properly yet so we'll have to skip
+             * that too!
+             */
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
             for (final Object ressourceO : ressourcelist) {
                 entries = (Map<String, Object>) ressourceO;
@@ -135,15 +156,16 @@ public class ServusCom extends PluginForHost {
                 }
             }
         } else {
+            /* 2020-10-20: Old way - still works fine to obtain information about items but downloading won't work! */
             br.getPage("https://stv.rbmbtnx.net/api/v1/manifests/" + fid + "/metadata");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
-            date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/*/{0}/startDate");
+            date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/{0}/{0}/startDate");
             title = (String) entries.get("titleStv");
-            episodename = null;
+            episodename = (String) entries.get("chapter");
             labelGroup = (String) entries.get("labelGroup");
         }
         if (StringUtils.isEmpty(labelGroup)) {
@@ -207,7 +229,7 @@ public class ServusCom extends PluginForHost {
         requestFileInformation(link, true);
         String httpstream = null;
         HlsContainer hlsbest = null;
-        if (!StringUtils.isEmpty(this.dllink)) {
+        if (useNewAPI) {
             /* New */
             if (this.dllink.contains(".m3u8")) {
                 br.getPage(this.dllink);

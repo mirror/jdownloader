@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -90,15 +89,19 @@ public class IwaraTv extends PluginForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        /* Website is hosting video content ONLY! */
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        return requestFileInformation(link, false);
+    }
+
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
         serverIssue = false;
         this.setBrowserExclusive();
         prepBR(this.br);
+        /* 2020-10-20: Disabled because their streaming-servers are very slow --> Slowsdown linkcheck dramatically! */
+        final boolean findFilesize = false;
         final String fid = getFID(link.getDownloadURL());
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -174,26 +177,34 @@ public class IwaraTv extends PluginForHost {
         } else {
             filenameExt = filename;
         }
-        final String ext = getFileNameExtensionFromString(filenameExt, isVideo ? ".mp4" : ".png");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (isVideo) {
+            if (!filename.endsWith(".mp4")) {
+                filename += ".mp4";
+            }
+        } else {
+            final String ext = getFileNameExtensionFromString(filenameExt, isVideo ? ".mp4" : ".png");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
         }
         link.setFinalFileName(filename);
-        // In case the link redirects to the finallink
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-                link.setProperty("directlink", dllink);
-            } else {
-                serverIssue = true;
-            }
-        } finally {
+        if (findFilesize && !isDownload) {
+            // In case the link redirects to the finallink
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setProperty("directlink", dllink);
+                } else {
+                    serverIssue = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
