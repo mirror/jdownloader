@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -15,6 +16,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
@@ -41,6 +43,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/pics/.+" });
         ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/[^/]+/.+" });
         ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/(?!\\d+).+" });
+        ret.add(new String[] { "fapcat.com", "https?://(?:www\\.)?fapcat\\.com/albums/\\d+/.+" });
         return ret;
     }
 
@@ -85,7 +88,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException {
+    protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException, IOException {
         final String[] links = determineLinks();
         if (links == null || links.length == 0) {
             logger.warning("found 0 images for " + url);
@@ -94,8 +97,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             final int padLength = (int) Math.log10(links.length) + 1;
             int index = 1;
             for (String link : links) {
-                decryptedLinks.add(buildDownloadLink(padLength, index, link));
-                index++;
+                decryptedLinks.add(buildDownloadLink(padLength, index++, link));
             }
         }
     }
@@ -106,24 +108,30 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             return links;
         } else {
             // in case the link is relative to the host, make it absolute
-            String[] linksWithHost = new String[links.length];
+            final List<String> ret = new ArrayList<String>();
             for (int i = 0; i < links.length; i++) {
                 try {
-                    linksWithHost[i] = br.getURL(links[i]).toString();
+                    ret.add(br.getURL(links[i]).toString());
                 } catch (IOException e) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
             }
-            return linksWithHost;
+            return ret.toArray(new String[0]);
         }
     }
 
     protected String[] getRawLinks() {
-        return br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg)(?:\"|')").getColumn(0);
+        return br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(?:\"|')").getColumn(0);
     }
 
-    protected DownloadLink buildDownloadLink(int padLength, int index, String link) {
-        final DownloadLink dl = createDownloadlink(link);
+    protected DownloadLink buildDownloadLink(int padLength, int index, String link) throws IOException {
+        final URL url = new URL(link);
+        final DownloadLink dl;
+        if (url.getPath().matches(".*\\.(jpg)$")) {
+            dl = createDownloadlink(link);
+        } else {
+            dl = createDownloadlink("directhttp://" + link);
+        }
         dl.setAvailable(true);
         dl.setFinalFileName(buildFileName(padLength, index));
         return dl;
