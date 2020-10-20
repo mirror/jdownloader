@@ -25,16 +25,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,6 +38,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
@@ -87,7 +90,7 @@ public class ServusCom extends PluginForHost {
     private String               dllink                     = null;
     private static Object        LOCK                       = new Object();
     private static String        authToken                  = null;
-    private static long          authLastRefreshedTimestamp = 0;
+    private static long          authLastRefreshedTimestamp = -1;
     private static final boolean useNewAPI                  = true;
 
     @Override
@@ -104,7 +107,8 @@ public class ServusCom extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* TODO: 2020-10-19: Auto-differentiate between old- and new content (= auto use old/new API) **/
+        br.setCurrentURL(link.getPluginPatternMatcher());
+        /* TODO: 2020-10-19: Auto-differentiate between old- and new content (= auto use old/new API) * */
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
         if (useNewAPI) {
@@ -115,39 +119,43 @@ public class ServusCom extends PluginForHost {
                     refreshToken = true;
                 } else if (System.currentTimeMillis() - authLastRefreshedTimestamp > 1 * 60 * 60 * 1000l) {
                     logger.info("Token refresh needed because old one is too old");
-                    refreshToken = false;
+                    refreshToken = true;
                 } else {
                     logger.info("No token refresh needed -> Re-using existing token: " + authToken);
                     refreshToken = false;
                 }
                 if (refreshToken) {
                     logger.info("Obtaining current authorization value");
-                    br.getPage("https://player.redbull.com/1.2.15-stv-release-723/rbup-datamanager.min.js");
-                    authToken = br.getRegex("international/assets/\",a\\.auth=\"([^\"]+)").getMatch(0);
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("https://player.redbull.com/1.2.15-stv-release-723/rbup-datamanager.min.js");
+                    authToken = brc.getRegex("international/assets/\",a\\.auth=\"([^\"]+)").getMatch(0);
                     if (authToken == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        this.getPluginConfig().setProperty("authorization", authToken);
+                        authLastRefreshedTimestamp = System.currentTimeMillis();
                     }
-                    this.getPluginConfig().setProperty("authorization", authToken);
-                    authLastRefreshedTimestamp = System.currentTimeMillis();
                 }
             }
-            br.getHeaders().put("Authorization", "Basic " + authToken);
-            br.postPage("https://auth.redbullmediahouse.com/token", "grant_type=client_credentials");
+            PostRequest tokenRequest = br.createPostRequest("https://auth.redbullmediahouse.com/token", "grant_type=client_credentials");
+            tokenRequest.getHeaders().put("Authorization", "Basic " + authToken);
+            br.getPage(tokenRequest);
             /* 2020-10-19: This one will typically be valid for 5 minutes */
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String access_token = (String) entries.get("access_token");
             if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("Authorization", "Bearer " + access_token);
-            br.getPage("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid);
+            GetRequest assetRequest = br.createGetRequest("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid);
+            assetRequest.getHeaders().put("Authorization", "Bearer " + access_token);
+            br.getPage(assetRequest);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* 2020-10-20: E.g. {"code":404,"message":"Asset not found"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String contentType = (String) entries.get("contentType");
-            if (!contentType.equalsIgnoreCase("video")) {
+            if (!StringUtils.equalsIgnoreCase(contentType, "video")) {
                 /*
                  * 2020-10-20: E.g. "bundle" --> https://www.servustv.com/videos/aa-1q93mgb3w1w11/ --> Overview of series of video but
                  * nothing downloadable.
@@ -216,9 +224,13 @@ public class ServusCom extends PluginForHost {
         if (!StringUtils.isEmpty(dllink) && !this.dllink.contains(".m3u8") && !isDownload) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(this.dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(this.dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -291,22 +303,16 @@ public class ServusCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, httpstream, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
-                    if (dl.getConnection().getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                    } else if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                    }
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } finally {
-                    try {
-                        dl.getConnection().disconnect();
-                    } catch (final Throwable e) {
-                    }
                 }
             }
             dl.startDownload();
