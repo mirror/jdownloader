@@ -91,7 +91,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
 public class TbCmV2 extends PluginForDecrypt {
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
@@ -191,7 +191,7 @@ public class TbCmV2 extends PluginForDecrypt {
         if (StringUtils.containsIgnoreCase(cryptedLink, "yt.not.allowed")) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             if (cfg.isAndroidSupportEnabled()) {
-                if (cryptedLink.matches("https?://[\\w\\.]*yt\\.not\\.allowed/[a-z_A-Z0-9\\-]+")) {
+                if (cryptedLink.matches("https?://[\\w\\.]*yt\\.not\\.allowed/[%a-z_A-Z0-9\\-]+")) {
                     cryptedLink = cryptedLink.replaceFirst("yt\\.not\\.allowed", "youtu.be");
                 } else {
                     cryptedLink = cryptedLink.replaceFirst("yt\\.not\\.allowed", "youtube.com");
@@ -239,16 +239,16 @@ public class TbCmV2 extends PluginForDecrypt {
         if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
             playlistID = getListIDByUrls(cleanedurl);
         }
-        String userChannel = new Regex(cleanedurl, "/c/([A-Za-z0-9\\-_]+)").getMatch(0);
-        userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
-        channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
+        String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
+        userID = new Regex(cleanedurl, "/user/([^/\\?]+)").getMatch(0);
+        channelID = new Regex(cleanedurl, "/channel/([^/\\?]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
             br.getPage("https://www.youtube.com/c/" + userChannel);
             channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
                 helper.parserJson();
-                getChannelID();
+                channelID = getChannelID(helper, br);
             }
         }
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_ID, playlistID);
@@ -354,7 +354,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle());
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
                 // you can convert channelid UC[STATICHASH] (UserChanel) ? to UU[STATICHASH] (UsersUpload) which is covered below
-                getChannelID();
+                channelID = getChannelID(helper, br);
                 if (channelID != null) {
                     globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
                     playlistID = "UU" + channelID.substring(2);
@@ -726,8 +726,8 @@ public class TbCmV2 extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getChannelID() {
-        channelID = helper != null ? helper.getChannelIdFromMaps() : null;
+    private String getChannelID(YoutubeHelper helper, Browser br) {
+        String channelID = helper != null ? helper.getChannelIdFromMaps() : null;
         if (channelID == null) {
             channelID = br.getRegex("<meta itemprop=\"channelId\" content=\"(UC[A-Za-z0-9\\-_]+)\"").getMatch(0);
             if (channelID == null) {
@@ -737,6 +737,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
+        return channelID;
     }
 
     private <T> HashSet<T> createHashSet(List<T> list) {

@@ -24,17 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,6 +49,17 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -338,73 +338,91 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         br.setCookie(this.getHost(), "BetterJsPopCount", "1");
-        for (final String singleLink : links) {
-            final Browser br2 = br.cloneBrowser();
-            br2.getPage("/Link/" + singleLink + ".html");
-            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.(cc|co)/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
-                /* Advertising */
-                continue;
-            }
-            int retryCaptcha = 5;
-            while (!isAbort() && retryCaptcha-- > 0) {
-                if (br2.containsHTML("Security prompt")) {
-                    final String captcha = br2.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
-                    if (captcha != null && captcha.contains("circle.php")) {
-                        final File file = this.getLocalCaptchaFile();
-                        getCaptchaBrowser(br).getDownload(file, captcha);
-                        final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
-                        if (cp == null) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        final Form form = new Form();
-                        form.setMethod(MethodType.POST);
-                        form.setAction(br2.getURL());
-                        form.put("button.x", String.valueOf(cp.getX()));
-                        form.put("button.y", String.valueOf(cp.getY()));
-                        form.put("button", "send");
-                        br2.submitForm(form);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                } else {
-                    break;
-                }
-            }
-            String finallink = null;
-            final String first_rd = br2.getRedirectLocation();
-            if (first_rd != null && first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
-                br2.getPage(first_rd);
-                finallink = br2.getRedirectLocation();
-            } else if (first_rd != null && !first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
-                finallink = first_rd;
-            } else {
-                final String nextlink = br2.getRegex("(\"|')(https?://(www\\.)?filecrypt\\.(?:cc|co)/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
-                if (nextlink != null) {
-                    br2.getPage(nextlink);
-                    finallink = br2.getRedirectLocation();
-                }
-            }
-            if (finallink == null || finallink.matches(".*filecrypt\\.(cc|co)/.*")) {
-                // commented these out so that unhandled ads or what ever don't kill failover.
-                // logger.warning("Decrypter broken for link: " + parameter);
-                // return null;
-                continue;
-            }
-            final DownloadLink link = createDownloadlink(finallink);
-            decryptedLinks.add(link);
-            if (fpName != null) {
-                if (fp == null) {
-                    fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
-                }
-                fp.add(link);
-            }
-            distribute(link);
+        linkLoop: for (final String singleLink : links) {
             if (isAbort()) {
                 break;
+            } else {
+                String finallink = null;
+                int retryLink = 2;
+                while (!isAbort()) {
+                    finallink = handleLink(br, param, singleLink);
+                    if (StringUtils.equals("IGNORE", finallink)) {
+                        continue linkLoop;
+                    } else if (finallink != null || --retryLink == 0) {
+                        logger.info(singleLink + "->" + finallink + "|" + retryLink);
+                        break;
+                    }
+                }
+                if (finallink != null) {
+                    final DownloadLink link = createDownloadlink(finallink);
+                    decryptedLinks.add(link);
+                    if (fpName != null) {
+                        if (fp == null) {
+                            fp = FilePackage.getInstance();
+                            fp.setName(Encoding.htmlDecode(fpName.trim()));
+                        }
+                        fp.add(link);
+                    }
+                    distribute(link);
+                }
             }
         }
         return decryptedLinks;
+    }
+
+    private String handleLink(Browser br, CryptedLink param, String singleLink) throws Exception {
+        final Browser br2 = br.cloneBrowser();
+        if (StringUtils.startsWithCaseInsensitive(singleLink, "http://") || StringUtils.startsWithCaseInsensitive(singleLink, "https://")) {
+            br2.getPage(singleLink);
+        } else {
+            br2.getPage("/Link/" + singleLink + ".html");
+        }
+        if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.(cc|co)/usenet\\.html") || br2.containsHTML("powerusenet.xyz")) {
+            /* Advertising */
+            return "IGNORE";
+        }
+        int retryCaptcha = 5;
+        while (!isAbort() && retryCaptcha-- > 0) {
+            if (br2.containsHTML("Security prompt")) {
+                final String captcha = br2.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+                if (captcha != null && captcha.contains("circle.php")) {
+                    final File file = this.getLocalCaptchaFile();
+                    getCaptchaBrowser(br).getDownload(file, captcha);
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, null, "Click on the open circle");
+                    if (cp == null) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    final Form form = new Form();
+                    form.setMethod(MethodType.POST);
+                    form.setAction(br2.getURL());
+                    form.put("button.x", String.valueOf(cp.getX()));
+                    form.put("button.y", String.valueOf(cp.getY()));
+                    form.put("button", "send");
+                    br2.submitForm(form);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                break;
+            }
+        }
+        String finallink = null;
+        final String first_rd = br2.getRedirectLocation();
+        if (first_rd != null && first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
+            return handleLink(br2, param, first_rd);
+        } else if (first_rd != null && !first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
+            finallink = first_rd;
+        } else {
+            final String nextlink = br2.getRegex("(\"|')(https?://(www\\.)?filecrypt\\.(?:cc|co)/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
+            if (nextlink != null) {
+                return handleLink(br2, param, nextlink);
+            }
+        }
+        if (finallink == null || finallink.matches(".*filecrypt\\.(cc|co)/.*")) {
+            return null;
+        } else {
+            return finallink;
+        }
     }
 
     private void handleCnl2(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {

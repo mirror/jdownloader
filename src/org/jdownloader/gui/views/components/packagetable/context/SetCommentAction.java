@@ -2,16 +2,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -21,8 +11,22 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.InputDialog;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
+import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
+public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
     public SetCommentAction() {
         super();
         setName(_GUI.T.SetCommentAction_SetCommentAction_object_());
@@ -47,11 +51,14 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
                 break;
             }
         }
-
         try {
-            final String comment = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, _GUI.T.SetCommentAction_actionPerformed_dialog_title_(), "", def, null, null, null);
+            final InputDialog dialog = new InputDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON, _GUI.T.SetCommentAction_actionPerformed_dialog_title_(), "", def, null, null, null);
+            dialog.setLocator(new RememberAbsoluteDialogLocator("SetCommentAction"));
+            dialog.setDimensor(new RememberLastDialogDimension("SetCommentAction"));
+            final InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, dialog);
+            d.throwCloseExceptions();
+            final String comment = d.getMessage();
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     for (AbstractNode n : selection.getRawSelection()) {
@@ -67,7 +74,6 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
                     }
                     return null;
                 }
-
             });
         } catch (DialogClosedException e1) {
         } catch (DialogCanceledException e1) {

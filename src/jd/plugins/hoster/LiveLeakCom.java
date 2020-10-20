@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -100,9 +101,13 @@ public class LiveLeakCom extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openGetConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

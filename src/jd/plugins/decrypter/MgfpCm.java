@@ -44,7 +44,7 @@ public class MgfpCm extends PluginForDecrypt {
         super(wrapper);
         try {
             // Browser.setRequestIntervalLimitGlobal(getHost(), 600, 100, 60000);
-            Browser.setRequestIntervalLimitGlobal(getHost(), 600);
+            Browser.setRequestIntervalLimitGlobal(getHost(), 750);
         } catch (final Throwable e) {
         }
     }
@@ -61,10 +61,7 @@ public class MgfpCm extends PluginForDecrypt {
     }
 
     private String getPage(final Browser br, final String url) throws Exception {
-        br.getPage(url);
-        if (br.getHttpConnection().getResponseCode() == 429) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
-        }
+        jd.plugins.hoster.ImageFap.getRequest(this, br, br.createGetRequest(url));
         return br.toString();
     }
 
@@ -212,6 +209,10 @@ public class MgfpCm extends PluginForDecrypt {
                         galleryName = br.getRegex("<font[^<>]*?itemprop=\"name\"[^<>]*?>([^<>]+)<").getMatch(0);
                         if (galleryName == null) {
                             galleryName = br.getRegex("<title>\\s*(.*?)\\s*(Porn Pics (&amp;|&) Porn GIFs)?\\s*</title>").getMatch(0);
+                            if (galleryName == null) {
+                                logger.warning("Gallery name could not be found!");
+                                throw new DecrypterException("Decrypter broken for link: " + parameter);
+                            }
                         }
                     }
                 }
@@ -219,13 +220,9 @@ public class MgfpCm extends PluginForDecrypt {
             String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
             if (authorsName == null) {
                 authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
-            }
-            if (galleryName == null) {
-                logger.warning("Gallery name could not be found!");
-                throw new DecrypterException("Decrypter broken for link: " + parameter);
-            }
-            if (authorsName == null) {
-                authorsName = "Anonymous";
+                if (authorsName == null) {
+                    authorsName = "Anonymous";
+                }
             }
             galleryName = Encoding.htmlDecode(galleryName.trim());
             authorsName = Encoding.htmlDecode(authorsName.trim());

@@ -20,12 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +35,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OxycloudCom extends YetiShareCore {
@@ -173,7 +174,7 @@ public class OxycloudCom extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
             getPage("/upgrade");
         }
-        if (!isPremiumAccount()) {
+        if (!isPremiumAccount(br)) {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
@@ -218,7 +219,7 @@ public class OxycloudCom extends YetiShareCore {
         return ai;
     }
 
-    private boolean isPremiumAccount() {
+    private boolean isPremiumAccount(Browser br) {
         return br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
     }
 
@@ -241,7 +242,7 @@ public class OxycloudCom extends YetiShareCore {
                     if (isLoggedinOnUpgradePage()) {
                         logger.info("Successfully logged in via cookies");
                         /* Set/Update account-type */
-                        if (this.isPremiumAccount()) {
+                        if (this.isPremiumAccount(br)) {
                             setAccountLimitsByType(account, AccountType.PREMIUM);
                         } else {
                             setAccountLimitsByType(account, AccountType.FREE);

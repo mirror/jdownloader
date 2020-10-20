@@ -17,10 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -29,6 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biguz.net" }, urls = { "https?://(?:www\\.)?biguz\\.net/(?:watch\\.php\\?id=\\d+|video/\\?id=\\d+\\&name=[a-z0-9\\-]+)" })
 public class BiguzNet extends PluginForHost {
@@ -118,9 +119,13 @@ public class BiguzNet extends PluginForHost {
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
@@ -148,21 +153,18 @@ public class BiguzNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

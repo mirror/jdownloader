@@ -17,11 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,6 +27,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn-tube-club.com" }, urls = { "https?://(?:www\\.)?porn\\-tube\\-club\\.com/(v\\d+/\\d+|play/\\d+)" })
 public class PornTubeClubCom extends antiDDoSForHost {
@@ -114,13 +115,24 @@ public class PornTubeClubCom extends antiDDoSForHost {
             try {
                 // con = br.openHeadConnection(dllink);
                 /* 2019-02-21: Try GetConnection RE SVN ticket 86649 */
-                con = this.openAntiDDoSRequestConnection(br.cloneBrowser(), br.createGetRequest(dllink));
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = this.openAntiDDoSRequestConnection(brc, brc.createGetRequest(dllink));
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
-                    server_issues = true;
+                    try {
+                        brc.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    if (con.getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        server_issues = true;
+                    }
                 }
             } finally {
                 try {
@@ -148,21 +160,18 @@ public class PornTubeClubCom extends antiDDoSForHost {
         link.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
