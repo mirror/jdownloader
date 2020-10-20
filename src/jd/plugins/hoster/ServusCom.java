@@ -25,6 +25,14 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,14 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
@@ -98,7 +98,6 @@ public class ServusCom extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
-    @SuppressWarnings("deprecation")
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -108,7 +107,6 @@ public class ServusCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setCurrentURL(link.getPluginPatternMatcher());
-        /* TODO: 2020-10-19: Auto-differentiate between old- and new content (= auto use old/new API) * */
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
         if (useNewAPI) {
@@ -132,7 +130,6 @@ public class ServusCom extends PluginForHost {
                     if (authToken == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        this.getPluginConfig().setProperty("authorization", authToken);
                         authLastRefreshedTimestamp = System.currentTimeMillis();
                     }
                 }
