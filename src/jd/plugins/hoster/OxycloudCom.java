@@ -222,14 +222,6 @@ public class OxycloudCom extends YetiShareCore {
         return br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
     }
 
-    private void setAccountType(final Account account) {
-        if (isPremiumAccount()) {
-            account.setType(AccountType.PREMIUM);
-        } else {
-            account.setType(AccountType.FREE);
-        }
-    }
-
     @Override
     protected void loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
@@ -249,7 +241,11 @@ public class OxycloudCom extends YetiShareCore {
                     if (isLoggedinOnUpgradePage()) {
                         logger.info("Successfully logged in via cookies");
                         /* Set/Update account-type */
-                        setAccountType(account);
+                        if (this.isPremiumAccount()) {
+                            setAccountLimitsByType(account, AccountType.PREMIUM);
+                        } else {
+                            setAccountLimitsByType(account, AccountType.FREE);
+                        }
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     } else {
