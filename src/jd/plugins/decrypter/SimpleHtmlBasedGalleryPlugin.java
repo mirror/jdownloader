@@ -15,6 +15,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 /**
  * A plugin for downloading JPGs via href links from plain HTML. Those links can be absolute or relative to the host.
@@ -133,6 +135,12 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
     protected String getFilePackageName(String url) {
         String title = br.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
+        if (StringUtils.isNotEmpty(title)) {
+            String id = new Regex(url, "(\\d+)").getMatch(0);
+            if (StringUtils.isNotEmpty(id) && !title.contains(id)) {
+                title = title + " " + id;
+            }
+        }
         if (title == null) {
             // title = new Regex(url, getMatcher().pattern()).getMatch(1);
         }
