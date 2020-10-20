@@ -96,15 +96,22 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)|https?://m\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
         }
         return ret.toArray(new String[0]);
     }
+    // public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
+    // final List<String> ret = new ArrayList<String>();
+    // for (final String[] domains : pluginDomains) {
+    // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+|embed/\\d+)");
+    // }
+    // return ret.toArray(new String[0]);
+    // }
 
-    public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithAllowedLanguageInURL(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
         }
         return ret.toArray(new String[0]);
     }
@@ -404,7 +411,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
             /*
              * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
-             * first attempt (e.g. clipcake.com, cliplips.com [405]). Examples: hdzog.com (404), txxx.com (403)
+             * first attempt (e.g. clipcake.com). Examples: hdzog.com (404), txxx.com (403)
              */
             workaroundURL = con.getRequest().getUrl();
         }

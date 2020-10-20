@@ -136,6 +136,15 @@ public class ServusCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String contentType = (String) entries.get("contentType");
+            if (!contentType.equalsIgnoreCase("video")) {
+                /*
+                 * 2020-10-20: E.g. "bundle" --> https://www.servustv.com/videos/aa-1q93mgb3w1w11/ --> Overview of series of video but
+                 * nothing downloadable.
+                 */
+                logger.info("Content is not downloadable");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final ArrayList<Object> attributes = (ArrayList<Object>) entries.get("attributes");
             /* TODO: This is NOT the release-date! */
             // date = (String) entries.get("lastPublished");
@@ -231,12 +240,16 @@ public class ServusCom extends PluginForHost {
         HlsContainer hlsbest = null;
         if (useNewAPI) {
             /* New */
+            // if (StringUtils.isEmpty(this.dllink)) {
+            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked",
+            // 60 * 60 * 1000l);
+            // }
             if (this.dllink.contains(".m3u8")) {
                 br.getPage(this.dllink);
                 hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 if (hlsbest == null) {
                     /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked", 60 * 60 * 1000l);
                 }
             } else {
                 httpstream = this.dllink;
@@ -251,7 +264,7 @@ public class ServusCom extends PluginForHost {
                 hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 if (hlsbest == null) {
                     /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked", 60 * 60 * 1000l);
                 }
             }
         }

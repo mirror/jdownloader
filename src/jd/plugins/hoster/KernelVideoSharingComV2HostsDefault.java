@@ -40,6 +40,10 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "voyeurhit.com" });
         ret.add(new String[] { "hotmovs.com" });
         ret.add(new String[] { "theclassicporn.com" });
+        ret.add(new String[] { "porndr.com" });
+        ret.add(new String[] { "momvids.com" });
+        ret.add(new String[] { "wankoz.com" });
+        ret.add(new String[] { "clipcake.com" });
         return ret;
     }
 
