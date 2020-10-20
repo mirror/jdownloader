@@ -108,6 +108,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // return ret.toArray(new String[0]);
     // }
 
+    /** TODO: Remove this and integrate it into buildAnnotationUrlsDefaultVideosPattern as it is a commonly used pattern! */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithAllowedLanguageInURL(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
