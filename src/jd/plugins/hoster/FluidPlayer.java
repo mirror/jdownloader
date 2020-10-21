@@ -66,6 +66,10 @@ public class FluidPlayer extends PluginForHost {
         final String url_filename = new Regex(link.getDownloadURL(), "/video/([a-z0-9\\-]*\\-\\d+)\\.html").getMatch(0).replace("-", " ");
         String filename = br.getRegex("title: '([^<>\"']*?)',").getMatch(0);
         if (filename == null) {
+            /* 2020-10-21: pornclipsxxx.com */
+            filename = br.getRegex("<div class=\"header icon1\"><h2>([^<>\"]+)</h2>").getMatch(0);
+        }
+        if (filename == null) {
             filename = url_filename;
         }
         dllink = br.getRegex("'(?:file|video)'\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
