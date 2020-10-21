@@ -38,9 +38,9 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         ret.add(new String[] { "pornpics.com", "https?://(?:www\\.)?pornpics\\.com/galleries/.+" });
         ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+" });
         ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/gallery/.+" });
-        ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
-        ret.add(new String[] { "prettynubiles.com", "http?://(?:www\\.)?prettynubiles\\.com/galleries/[^\\.]+\\.html" });
-        ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/pics/.+" });
+        ret.add(new String[] { "nastypornpics.com", "https?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
+        ret.add(new String[] { "prettynubiles.com", "https?://(?:www\\.)?prettynubiles\\.com/galleries/[^\\.]+\\.html" });
+        ret.add(new String[] { "viewgals.com", "https?://(?:www\\.)?viewgals\\.com/pics/.+" });
         ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/[^/]+/.+" });
         ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/(?!\\d+).+" });
         ret.add(new String[] { "fapcat.com", "https?://(?:www\\.)?fapcat\\.com/albums/\\d+/.+" });
