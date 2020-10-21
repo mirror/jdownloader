@@ -149,9 +149,9 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
                 title = title + " " + id;
             }
         }
-        if (title == null) {
-            // title = new Regex(url, getMatcher().pattern()).getMatch(1);
-        }
+        // if (title == null) {
+        // // title = new Regex(url, getMatcher().pattern()).getMatch(1);
+        // }
         return title != null ? Encoding.htmlDecode(title.trim()) : null;
     }
 }
