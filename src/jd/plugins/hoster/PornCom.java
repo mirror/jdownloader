@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/videos/(embed/)?[a-z0-9\\-]*?\\-\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(?:\\w+\\.)?porn\\.com/(?:videos/[a-z0-9\\-]*?-|videos/embed/)(\\d+)" })
 public class PornCom extends antiDDoSForHost {
     /* DEV NOTES */
     /* Porn_plugin */
@@ -78,6 +79,20 @@ public class PornCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -92,7 +107,7 @@ public class PornCom extends antiDDoSForHost {
             }
         }
         br.getPage(link.getDownloadURL().replace("/embed/", "/"));
-        if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)") || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String q = link.getStringProperty("q", null);
@@ -105,10 +120,9 @@ public class PornCom extends antiDDoSForHost {
         }
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (dllink == null) {
-            final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
-            brc.getPage("https://www.porn.com/videos/embed/" + fid);
+            brc.getPage("https://www.porn.com/videos/embed/" + this.getFID(link));
             if (q != null) {
                 dllink = brc.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
             } else {
@@ -137,8 +151,8 @@ public class PornCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
             } else {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -205,20 +219,24 @@ public class PornCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink link) throws Exception {
         if (dllink == null && br.containsHTML(">Sorry, this video is only available to members")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             final long responsecode = ((HTTPConnection) dl).getResponseCode();
             if (responsecode == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403", 5 * 60 * 1000l);

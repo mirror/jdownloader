@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -110,5 +112,15 @@ public class IsraCloud extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 5;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
+        /* 2020-10-21: Special */
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            fileInfo[0] = new Regex(correctedBR, "lass=\"desc\">\\s*<span>([^<>\"]+)<").getMatch(0);
+        }
+        return fileInfo;
     }
 }

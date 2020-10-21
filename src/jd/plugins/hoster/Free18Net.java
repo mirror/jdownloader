@@ -77,12 +77,13 @@ public class Free18Net extends PluginForHost {
         }
         filename = filename.trim();
         link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        if (dllink != null) {
+        final boolean checkFilesize = false;
+        if (dllink != null && checkFilesize) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html") && con.getLongContentLength() != 0) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -103,8 +104,12 @@ public class Free18Net extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
