@@ -13,10 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,32 +38,28 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?" })
 public class AventertainmentsCom extends PluginForHost {
-
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.aventertainments.com/register.aspx?languageID=1&VODTypeID=1&Site=PPV");
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
 
+    /* TODO: 2020-10-21: Check if this linktype still exists */
     private final String         TYPE_IMAGE        = "https?://imgs\\.aventertainments\\.com/.+";
+    /* TODO: 2020-10-21: Check if this linktype still exists */
     private final String         TYPE_VIDEO_HTTP   = "https?://(?:www\\.)?aventertainments\\.com/newdlsample\\.aspx.*?\\.mp4";
+    /* TODO: 2020-10-21: Check if this linktype still exists */
     private final String         TYPE_VIDEO_HLS    = "https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u8";
-
+    private static final String  TYPE_NEW_2020     = "https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*?";
     public static String         html_loggedin     = "aventertainments.com/logout\\.aspx";
-
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -82,12 +81,17 @@ public class AventertainmentsCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
         String filename = link.getFinalFileName();
-        if (filename == null) {
-            filename = url_filename;
-        }
-        if (link.getDownloadURL().matches(TYPE_VIDEO_HLS)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_NEW_2020)) {
+            url_filename = UrlQuery.parse(link.getPluginPatternMatcher().toLowerCase()).get("proid");
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(url_filename)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("data-cast-title=\"([^\"]+)\"").getMatch(0);
+            this.dllink = br.getRegex("source src=\"(https?://[^\"]+)\" type=\"application/x-mpegurl\" />").getMatch(0);
+        } else if (link.getDownloadURL().matches(TYPE_VIDEO_HLS)) {
             dllink = link.getDownloadURL();
         } else {
             if (link.getDownloadURL().matches(TYPE_VIDEO_HTTP)) {
@@ -120,8 +124,8 @@ public class AventertainmentsCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                     link.setProperty("directlink", dllink);
                 } else {
                     server_issues = true;
@@ -133,17 +137,21 @@ public class AventertainmentsCom extends PluginForHost {
                 }
             }
         }
+        if (filename == null) {
+            /* Fallback */
+            filename = url_filename;
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void doFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink.matches(TYPE_VIDEO_HLS)) {
             br.getPage(dllink);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
@@ -151,8 +159,8 @@ public class AventertainmentsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             if (server_issues) {
@@ -160,7 +168,7 @@ public class AventertainmentsCom extends PluginForHost {
             } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

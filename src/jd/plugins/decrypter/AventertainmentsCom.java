@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample).+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/(?!newdlsample|ppv/new_detail\\.aspx).+" })
 public class AventertainmentsCom extends PluginForDecrypt {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
