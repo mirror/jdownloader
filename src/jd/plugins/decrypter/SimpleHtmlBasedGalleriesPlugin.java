@@ -45,8 +45,8 @@ public class SimpleHtmlBasedGalleriesPlugin extends SimpleHtmlBasedGalleryPlugin
     public static List<String[]> getSupportedSites() {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/\\?q=[^&]+&log-model=1" });
-        ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/\\?q=[^&]+&log-model=1" });
-        ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/\\?q=[^&]+&log-model=1" });
+        ret.add(new String[] { "nastypornpics.com", "https?://(?:www\\.)?nastypornpics\\.com/\\?q=[^&]+&log-model=1" });
+        ret.add(new String[] { "viewgals.com", "https?://(?:www\\.)?viewgals\\.com/\\?q=[^&]+&log-model=1" });
         ret.add(new String[] { "hqsluts.com", "https?://(?:www\\.)?hqsluts\\.com/sluts/.+" });
         ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/pornstars/.+" });
         ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/models/.+" });
