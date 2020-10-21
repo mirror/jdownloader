@@ -20,6 +20,9 @@ public class EliteBabesCom extends SimpleHtmlBasedGalleriesPlugin {
 
     protected String[] getGalleryUrls() throws PluginException {
         String[][] listItems = br.getRegex("<li>(.*?)</li>").getMatches();
+        if (listItems.length == 0) {
+            return new String[0];
+        }
         ArrayList<String> urls = new ArrayList<String>(listItems.length);
         for (String[] listItem : listItems) {
             try {
@@ -27,9 +30,10 @@ public class EliteBabesCom extends SimpleHtmlBasedGalleriesPlugin {
                     continue;
                 }
                 String galleryUrl = new Regex(listItem[0], "href\\s*=\\s*(?:\"|')([^\"']+)(?:\"|')").getMatch(0);
-                if (StringUtils.isNotEmpty(galleryUrl)) {
-                    urls.add(br.getURL(galleryUrl).toString());
+                if (StringUtils.isEmpty(galleryUrl)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery match found");
                 }
+                urls.add(br.getURL(galleryUrl).toString());
             } catch (IOException e) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
