@@ -25,15 +25,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -51,6 +42,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
@@ -100,6 +100,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         return ret.toArray(new String[0]);
     }
+
     // public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
     // final List<String> ret = new ArrayList<String>();
     // for (final String[] domains : pluginDomains) {
@@ -107,7 +108,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // }
     // return ret.toArray(new String[0]);
     // }
-
     /** TODO: Remove this and integrate it into buildAnnotationUrlsDefaultVideosPattern as it is a commonly used pattern! */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithAllowedLanguageInURL(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -423,7 +423,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
@@ -795,7 +795,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String filename_url = null;
         if (url_source.matches(type_normal)) {
             filename_url = new Regex(url_source, type_normal).getMatch(1);
-        } else if (url_source.matches(type_normal_fuid_at_end)) {
+        } else if (url_source.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url_source)) {
             filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
         } else if (url_source.matches(type_normal_without_fuid)) {
             filename_url = new Regex(url_source, type_normal_without_fuid).getMatch(0);
@@ -868,7 +868,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 fuid = new Regex(url, type_only_numbers).getMatch(0);
             } else if (url.matches(type_embedded)) {
                 fuid = new Regex(url, type_embedded).getMatch(0);
-            } else if (url.matches(type_normal_fuid_at_end)) {
+            } else if (url.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url)) {
                 fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
             } else if (url.matches(type_normal)) {
                 fuid = new Regex(url, type_normal).getMatch(0);
@@ -882,6 +882,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             fuid = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
         }
         return fuid;
+    }
+
+    protected boolean hasFUIDAtEnd(final String url) {
+        return true;
     }
 
     /**
