@@ -283,12 +283,22 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         if (br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
             this.private_video = true;
+        } else {
+            this.private_video = false;
         }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
+        this.handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        if ((private_video || StringUtils.isEmpty(this.dllink)) && account != null) {
+            login(account, false);
+            requestFileInformation(link, true);
+        }
         if (private_video) {
             throw new AccountRequiredException("Private video");
         } else if (StringUtils.isEmpty(this.dllink)) {
@@ -345,8 +355,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.handleFree(link);
         requestFileInformation(link);
+        this.handleDownload(link, account);
     }
 
     @Override
