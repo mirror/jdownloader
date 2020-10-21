@@ -19,7 +19,7 @@ import jd.plugins.PluginException;
 /**
  * A plugin for downloading all galleries in the current HTML page, which are on this host. Does not support paging right now.
  * 
- * For downloading the single galleries, it uses functionality from SimpleHtmlBasedGalleryPlugin, so make sure, that the galleries-page is
+ * For downloading the single galleries, it uses functionality from SimpleHtmlBasedGalleryPlugin, so make sure, that the gallery is
  * supported there.
  */
 //@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -33,7 +33,8 @@ public class SimpleHtmlBasedGalleriesPlugin extends SimpleHtmlBasedGalleryPlugin
         HOST_2_GALLERY_URL_IDENTIFIER.put("hqsluts.com", "/[^/\"']+-\\d+/");
         HOST_2_GALLERY_URL_IDENTIFIER.put("babesource.com", "[^\"']+babesource\\.com/galleries[^\"']+");
         HOST_2_GALLERY_URL_IDENTIFIER.put("pichunter.com", "/gallery/[^\"']+");
-        // HOST_2_GALLERY_URL_IDENTIFIER.put("sexhd.pics", "/gallery/[^/\"']+/[^/\"']+/[^/\"']+/");
+        HOST_2_GALLERY_URL_IDENTIFIER.put("sexhd.pics", "/gallery/[^/\"']+/[^/\"']+/[^/\"']+/?");
+        // TODO distinguish from single gallery
         // HOST_2_GALLERY_URL_IDENTIFIER.put("xxxporn.pics", "/sex/[^\"']+");
     }
 
@@ -49,8 +50,8 @@ public class SimpleHtmlBasedGalleriesPlugin extends SimpleHtmlBasedGalleryPlugin
         ret.add(new String[] { "hqsluts.com", "https?://(?:www\\.)?hqsluts\\.com/sluts/.+" });
         ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/pornstars/.+" });
         ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/models/.+" });
+        ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/?$" });
         // TODO distinguish from single gallery
-        // ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/" });
         // ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/[^/]+" });
         return ret;
     }
@@ -87,6 +88,9 @@ public class SimpleHtmlBasedGalleriesPlugin extends SimpleHtmlBasedGalleryPlugin
             return decryptedLinks;
         }
         String[] galleryUrls = getGalleryUrls();
+        if (galleryUrls == null || galleryUrls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (final String galleryUrl : galleryUrls) {
             if (!isAbort()) {
                 decryptedLinks.addAll(super.decryptIt(new CryptedLink(galleryUrl), progress));
@@ -101,6 +105,9 @@ public class SimpleHtmlBasedGalleriesPlugin extends SimpleHtmlBasedGalleryPlugin
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery url identifier configured for " + br.getHost());
         }
         String[][] matches = br.getRegex("href\\s*=\\s*(?:\"|')(" + galleryUrlIdentifier + ")(?:\"|')").getMatches();
+        if (matches.length == 0) {
+            return new String[0];
+        }
         String[] galleryUrls = new String[matches.length];
         for (int i = 0; i < matches.length; i++) {
             try {
