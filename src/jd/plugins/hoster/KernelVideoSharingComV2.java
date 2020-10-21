@@ -162,9 +162,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return -1;
     }
 
-    // public int getMaxSimultaneousFreeAccountDownloads() {
-    // return -1;
-    // }
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
@@ -242,29 +239,38 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 // if you don't do this then referrer is fked for the download! -raztoki
-                final Browser br = this.br.cloneBrowser();
-                br.setAllowedResponseCodes(new int[] { 405 });
+                final Browser brc = this.br.cloneBrowser();
+                brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
-                br.setFollowRedirects(true);
+                brc.setFollowRedirects(true);
                 try {
                     // br.getHeaders().put("Accept-Encoding", "identity");
-                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    final String workaroundURL = getHttpServerErrorWorkaroundURL(br.getHttpConnection());
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                    final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
                     if (workaroundURL != null) {
-                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                        con.disconnect();
+                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
                     }
                 } catch (final BrowserException e) {
+                    logger.log(e);
                     server_issues = true;
                     return AvailableStatus.TRUE;
                 }
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                    final String redirect_url = br.getHttpConnection().getRequest().getUrl();
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
+                    final String redirect_url = brc.getHttpConnection().getRequest().getUrl();
                     if (redirect_url != null) {
                         dllink = redirect_url;
                         logger.info("dllink: " + dllink);
                     }
                 } else {
+                    try {
+                        brc.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     server_issues = true;
                 }
             } finally {
@@ -294,15 +300,19 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         this.handleDownload(link, null);
     }
 
-    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+    protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if ((private_video || StringUtils.isEmpty(this.dllink)) && account != null) {
+            server_issues = false;
+            private_video = false;
             login(account, false);
             requestFileInformation(link, true);
         }
-        if (private_video) {
-            throw new AccountRequiredException("Private video");
-        } else if (StringUtils.isEmpty(this.dllink)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video (?)");
+        if (StringUtils.isEmpty(this.dllink)) {
+            if (private_video) {
+                throw new AccountRequiredException("Private video");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
+            }
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -310,7 +320,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        if (this.dllink.contains(".m3u8")) {
+        if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             /* hls download */
             /* Access hls master. */
             getPage(this.dllink);
@@ -327,13 +337,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
+            final int maxChunks = getMaxChunks(account);
+            final boolean isResumeable = isResumeable(link, account);
             /* http download */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable(link, null), getMaxChunks(null));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable, maxChunks);
             final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
             if (workaroundURL != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, isResumeable(link, null), getMaxChunks(null));
+                dl.getConnection().disconnect();
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, isResumeable, maxChunks);
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
@@ -341,13 +359,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 } else if (dl.getConnection().getResponseCode() == 503) {
                     /* Should only happen in rare cases */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
                 }
-                br.followConnection();
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             dl.startDownload();
         }
@@ -433,7 +447,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
