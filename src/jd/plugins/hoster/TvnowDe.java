@@ -68,7 +68,6 @@ public class TvnowDe extends PluginForHost {
     public static final String            TYPE_SERIES_SINGLE_EPISODE_NEW = "https?://[^/]+/(?:serien|shows)/([^/]+)/(?:[^/]+/)?(?!staffel\\-\\d+)([^/]+)$";
     public static final String            TYPE_DEEPLINK                  = "^[a-z]+://link\\.[^/]+/.+";
     public static final String            API_BASE                       = "https://api.tvnow.de/v3";
-    private static final String           API_NEW_BASE                   = "https://apigw.tvnow.de";
     public static final String            CURRENT_DOMAIN                 = "tvnow.de";
     private LinkedHashMap<String, Object> entries                        = null;
     private boolean                       usingNewAPI                    = false;
@@ -139,6 +138,7 @@ public class TvnowDe extends PluginForHost {
          */
         br.getPage(API_BASE + "/movies/" + urlpart + "?fields=" + getFields());
         if (br.getHttpConnection().getResponseCode() != 200) {
+            /* 2020-10-21: TODO: Check it this is still required for some edge-cases! */
             logger.info("URL might be offline");
             /*
              * Some content (very rare case) can only be accessed via new API as we are sometimes unable to find the correct parameters for
@@ -345,53 +345,90 @@ public class TvnowDe extends PluginForHost {
         final boolean isFree = link.getBooleanProperty("isFREE", false);
         final boolean isDRM = link.getBooleanProperty("isDRM", false);
         // final boolean isStrictDrm1080p;
+        String hdsMaster = null;
+        String hlsMaster = null;
+        boolean grabStreamDataFromNewAPIJson = false;
         if (this.usingNewAPI) {
             /* New API was already used in availablecheck (special case) */
             /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
             // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
+            grabStreamDataFromNewAPIJson = true;
         } else {
             /* Old API was used in availablecheck until now. */
             final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if (movieID.equals("-1")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (isDRM) {
+            } else if (isDRM) {
                 /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
             }
-            /*
-             * 2019-01-16: Usage of new API usually (not always) requires auth header --> Only use it in premium mode for now to get (higher
-             * quality) stream-URLs
-             */
-            final boolean useNewAPI = acc != null && acc.getType() == AccountType.PREMIUM;
-            if (useNewAPI) {
-                accessStreamInfoViaNewAPI(link);
-            } else {
-                final String urlpart = getURLPart(link);
-                br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
-            }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        }
-        String hdsMaster = null;
-        String hlsMaster = null;
-        try {
-            /* Make sure not to fail here in case no streams are given! */
-            entries = (LinkedHashMap<String, Object>) entries.get("manifest");
-            /* 2018-04-18: So far I haven't seen a single http stream! */
-            // final String urlHTTP = (String) entries.get("hbbtv");
-            hdsMaster = (String) entries.get("hds");
-            hlsMaster = (String) entries.get("hlsfairplayhd");
-            if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
-                hlsMaster = (String) entries.get("hlsfairplay");
-                if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
-                    hlsMaster = (String) entries.get("hlsclear");
+            try {
+                /*
+                 * 2019-01-16: Usage of new API usually (not always) requires auth header --> Only use it in premium mode for now to get
+                 * (higher quality) stream-URLs
+                 */
+                final boolean usePremiumModeWay = acc != null && acc.getType() == AccountType.PREMIUM;
+                final boolean useWebsite = false;
+                if (usePremiumModeWay && !useWebsite) {
+                    /* Access one of two possibel APIs */
+                    if (usePremiumModeWay) {
+                        /* 2020-10-21: json is now in website html */
+                        accessStreamInfoViaNewAPI(link);
+                        grabStreamDataFromNewAPIJson = true;
+                    } else {
+                        final String urlpart = getURLPart(link);
+                        br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
+                        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                        entries = (LinkedHashMap<String, Object>) entries.get("manifest");
+                        /* Make sure not to fail here in case no streams are given! */
+                        /* 2018-04-18: So far I haven't seen a single http stream! */
+                        // final String urlHTTP = (String) entries.get("hbbtv");
+                        hdsMaster = (String) entries.get("hds");
+                        hlsMaster = (String) entries.get("hlsfairplayhd");
+                        if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
+                            hlsMaster = (String) entries.get("hlsfairplay");
+                            if (StringUtils.isEmpty(hlsMaster) || !hlsMaster.startsWith("http")) {
+                                hlsMaster = (String) entries.get("hlsclear");
+                            }
+                            /* 2018-05-04: Only "hls" == Always DRM */
+                            // if (StringUtils.isEmpty(hlsMaster)) {
+                            // hlsMaster = (String) entries.get("hls");
+                            // }
+                        }
+                    }
+                } else {
+                    /* Dev-Test 2020-10-21 */
+                    grabStreamDataFromNewAPIJson = false;
+                    final String episodeID = link.getStringProperty("id_episode", null);
+                    final String apiURL = "G.https://bff.apigw.tvnow.de/module/player/" + episodeID + "?playertracking=true";
+                    br.setFollowRedirects(true);
+                    br.getPage(link.getPluginPatternMatcher());
+                    String json = br.getRegex("<script id=\"now-web-state\" type=\"application/json\">(.*?)</script>").getMatch(0);
+                    json = json.replace("&q;", "\"");
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, apiURL + "/body/videoConfig/videoSource/streams");
+                    /* 2020-10-21: Only hls and dash given */
+                    hlsMaster = (String) entries.get("hlsHdUrl");
+                    if (StringUtils.isEmpty(hlsMaster)) {
+                        hlsMaster = (String) entries.get("hlsUrl");
+                    }
                 }
-                /* 2018-05-04: Only "hls" == Always DRM */
-                // if (StringUtils.isEmpty(hlsMaster)) {
-                // hlsMaster = (String) entries.get("hls");
-                // }
+            } catch (final Exception e) {
+                logger.log(e);
             }
-        } catch (final Throwable e) {
+        }
+        try {
+            if (grabStreamDataFromNewAPIJson) {
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/videoSource/streams");
+                /* 2020-10-21: Only hls and dash given */
+                hlsMaster = (String) entries.get("hlsHdUrl");
+                if (StringUtils.isEmpty(hlsMaster)) {
+                    hlsMaster = (String) entries.get("hlsUrl");
+                }
+            }
+        } catch (final Exception e) {
+            logger.log(e);
         }
         if (!StringUtils.isEmpty(hlsMaster)) {
             hlsMaster = hlsMaster.replaceAll("(\\??filter=.*?)(&|$)", "");// show all available qualities
@@ -478,6 +515,7 @@ public class TvnowDe extends PluginForHost {
 
     /**
      * Access stream-information via apigw.tvnow.de/module/player/<episodeID> <br />
+     * 2020-10-21: This doesn't work anymore (?)
      */
     private void accessStreamInfoViaNewAPI(final DownloadLink link) throws Exception {
         logger.info("Trying to get streams via new API");
@@ -486,7 +524,10 @@ public class TvnowDe extends PluginForHost {
             logger.info("id_episode is null - content is not downloadable without this id");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(API_NEW_BASE + "/module/player/" + episodeID);
+        /* Old */
+        // br.getPage("https://apigw.tvnow.de/module/player/" + episodeID);
+        /* New 2020-10-21 */
+        br.getPage("https://bff.apigw.tvnow.de/module/player/" + episodeID + "?playertracking=true");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Extra offline-errorhandling & rare case: {"code":404,"message":"movie.not.found"} */
             logger.info("Content offline according to new API");

@@ -20,6 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,15 +36,11 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OxycloudCom extends YetiShareCore {
@@ -138,7 +139,7 @@ public class OxycloudCom extends YetiShareCore {
     }
 
     private boolean isOfflineSpecial() {
-        return br.containsHTML(">\\s*File has been removed");
+        return br.containsHTML(">\\s*File has been removed|>\\s*File not found");
     }
 
     @Override
@@ -164,6 +165,9 @@ public class OxycloudCom extends YetiShareCore {
         }
         if (isOfflineSpecial()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Musisz być użytkownikiem premium aby pobrać ten plik")) {
+            /* 2020-10-21 */
+            throw new AccountRequiredException();
         }
     }
 

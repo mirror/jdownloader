@@ -25,6 +25,15 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -42,15 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
@@ -96,11 +96,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)|https?://m\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos/\\d+/[a-z0-9\\-]+/|embed/\\d+/?)|https?://m\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
         }
         return ret.toArray(new String[0]);
     }
-
     // public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
     // final List<String> ret = new ArrayList<String>();
     // for (final String[] domains : pluginDomains) {
@@ -108,14 +107,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // }
     // return ret.toArray(new String[0]);
     // }
-    /** TODO: Remove this and integrate it into buildAnnotationUrlsDefaultVideosPattern as it is a commonly used pattern! */
-    public static String[] buildAnnotationUrlsDefaultVideosPatternWithAllowedLanguageInURL(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:[a-z]{2}/)?videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)|https?://m\\." + buildHostsPatternPart(domains) + "/videos/\\d+/[a-z0-9\\-]+/");
-        }
-        return ret.toArray(new String[0]);
-    }
 
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
