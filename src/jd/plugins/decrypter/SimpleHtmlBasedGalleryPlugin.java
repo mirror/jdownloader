@@ -31,15 +31,15 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
     public static List<String[]> getSupportedSites() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/galleries/([^/]+)-\\d+\\.html" });
-        ret.add(new String[] { "coedcherry.com", "https?://(?:www\\.)?coedcherry\\.com/.*pics/([^/]+)" });
+        ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/galleries/[^/]+-\\d+\\.html" });
+        ret.add(new String[] { "coedcherry.com", "https?://(?:www\\.)?coedcherry\\.com/.*pics/[^/]+" });
         ret.add(new String[] { "elitebabes.com", "https?://(?:www\\.)?elitebabes\\.com/.+" });
         ret.add(new String[] { "erocurves.com", "https?://(?:www\\.)?erocurves\\.com/.+" });
         ret.add(new String[] { "pornpics.com", "https?://(?:www\\.)?pornpics\\.com/galleries/.+" });
         ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+" });
         ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/gallery/.+" });
         ret.add(new String[] { "nastypornpics.com", "http?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
-        ret.add(new String[] { "prettynubiles.com", "http?://(?:www\\.)?prettynubiles\\.com/galleries/([^\\.]+)\\.html" });
+        ret.add(new String[] { "prettynubiles.com", "http?://(?:www\\.)?prettynubiles\\.com/galleries/[^\\.]+\\.html" });
         ret.add(new String[] { "viewgals.com", "http?://(?:www\\.)?viewgals\\.com/pics/.+" });
         ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/[^/]+/.+" });
         ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/(?!\\d+).+" });
