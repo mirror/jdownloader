@@ -79,6 +79,15 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
          *
          *
          *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
          * 
  * Please add new entries to the END of this array!
          */
@@ -233,10 +242,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 try {
                     // br.getHeaders().put("Accept-Encoding", "identity");
                     con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    final String workaroundURL = getHttpServerErrorWorkaroundURL(br.getHttpConnection());
+                    final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
                     if (workaroundURL != null) {
                         con.disconnect();
-                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                        con = openAntiDDoSRequestConnection(br, br.createHeadRequest(workaroundURL));
                     }
                 } catch (final BrowserException e) {
                     logger.log(e);
@@ -253,6 +262,11 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                         logger.info("dllink: " + dllink);
                     }
                 } else {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     server_issues = true;
                 }
             } finally {
@@ -269,17 +283,28 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         if (br.containsHTML(">\\s*This video is a private video uploaded by |Only active members can watch private videos")) {
             this.private_video = true;
+        } else {
+            this.private_video = false;
         }
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (private_video) {
-            throw new AccountRequiredException("Private video");
-        } else if (inValidate(dllink, this)) {
-            /* 2016-12-02: At this stage we should have a working hls to http workaround so we should never get hls urls. */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        if (false) {
+            // untested, handlePremium untested
+            if ((private_video || StringUtils.isEmpty(this.dllink)) && account != null) {
+                server_issues = false;
+                private_video = false;
+                login(account, false);
+                requestFileInformation(link, true);
+            }
+        }
+        if (inValidate(dllink, this)) {
+            if (private_video) {
+                throw new AccountRequiredException("Private video");
+            } else {
+                /* 2016-12-02: At this stage we should have a working hls to http workaround so we should never get hls urls. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
@@ -287,7 +312,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
-        if (this.dllink.contains(".m3u8")) {
+        if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             /* hls download */
             /* Access hls master. */
             getPage(this.dllink);
@@ -304,11 +329,14 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
+            final int maxChunks = getMaxChunks(link);
+            final boolean isResumeable = canResume(link);
             /* http download */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, canResume(link), getMaxChunks(link));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable, maxChunks);
             final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
             if (workaroundURL != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, canResume(link), getMaxChunks(link));
+                dl.getConnection().disconnect();
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, isResumeable, maxChunks);
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
@@ -331,6 +359,18 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, true);
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        handleDownload(link, null);
+    }
+
     private int getMaxChunks(final DownloadLink link) {
         return 0;
     }
@@ -340,7 +380,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     /** TODO: Use this in future KVS plugins that need account support! See e.g. CamwhoresbayCom */
-    private void login(final Account account, final boolean force, final boolean test) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -348,8 +388,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!test) {
-                    }
                     getPage("https://www." + this.getHost() + "/");
                     if (isLoggedIN()) {
                         logger.info("Cookie login successful");
