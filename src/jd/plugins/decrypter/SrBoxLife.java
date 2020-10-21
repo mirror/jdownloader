@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +30,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /** 2020-06-08: Current main domain is: isrbx.net */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
@@ -93,6 +93,9 @@ public class SrBoxLife extends antiDDoSForDecrypt {
         }
         // Some link can be crypted in this site, see if it is the case
         String[] linksCrypted = br.getRegex("\"(" + base + "[^\"]*go(?:\\.php)?(?:\\?|&|&amp;)url=.*?)\"").getColumn(0);
+        if (linksCrypted == null || linksCrypted.length == 0) {
+            linksCrypted = br.getRegex("(https?://biq.to/go/[^\"]+)").getColumn(0);
+        }
         // Added crypted links
         for (String redirectlink : linksCrypted) {
             final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);
