@@ -25,15 +25,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -52,48 +43,51 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphaporno.com", "tubewolf.com", "yourlust.com", "pornicom.com", "pervclips.com", "tubecup.com", "hellporno.com", "h2porn.com", "finevids.xxx", "freepornvs.com", "mylust.com", "sheshaft.com", "tryboobs.com", "tubepornclassic.com", "vikiporn.com", "fetishshrine.com", "katestube.com", "yeswegays.com", "hdzog.com", "sex3.com", "bravoteens.com", "yoxhub.com", "xxxymovies.com", "bravotube.net", "upornia.com", "xcafe.com", "txxx.com", "hclips.com", "vjav.com", "shameless.com", "evilhub.com", "japan-whores.com", "needgayporn.com", "pornyeah.com", "javbangers.com", "onlygayvideo.com", "bravoporn.com", "videocelebs.net", "pornhat.com", "anyporn.com", "anysex.com", "uiporn.com", "fapality.com", "xcum.com", "babestube.com", "porngem.com", "camvideos.tv", "everydayporn.co", "cutscenes.net", "boundhub.com",
         "yourporngod.com", "cwtvembeds.com", "dato.porn", "cambro.tv", "rule34video.com", "camvideos.org", "videowebcam.tv", "webcamsbabe.com", "privat-zapisi.biz", "sexvid.xxx", "smutr.com", "pornbimbo.com", "ok.xxx", "theyarehuge.com", "camhub.world" }, urls = { /**
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          *
-                                                                                                                                                                                                                                                                          * Please
-                                                                                                                                                                                                                                                                          * add
-                                                                                                                                                                                                                                                                          * new
-                                                                                                                                                                                                                                                                          * entries
-                                                                                                                                                                                                                                                                          * to
-                                                                                                                                                                                                                                                                          * the
-                                                                                                                                                                                                                                                                          * END
-                                                                                                                                                                                                                                                                          * of
-                                                                                                                                                                                                                                                                          * this
-                                                                                                                                                                                                                                                                          * array!
-                                                                                                                                                                                                                                                                          */
-                "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?",
-                "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?",
-                "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html",
-                "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/|https?://vr\\.pornhat\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/", "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?everydayporn\\.co/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cutscenes\\.net/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?boundhub\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)",
-                "https?://(?:www\\.)?yourporngod\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+", "https?://(?:www\\.)?dato\\.porn/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?rule34video\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?videowebcam\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smutr\\.com/v/\\d+/", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)",
-                "https?://(?:www\\.)?ok.xxx/video/\\d+/", "https?://(?:www\\.)?theyarehuge\\.com/(?:v/\\d+-[a-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?camhub\\.world/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         *
+         * 
+ * Please add new entries to the END of this array!
+         */
+        "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tubewolf\\.com/movies/[a-z0-9\\-]+", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pervclips\\.com/tube/videos/[^<>\"/]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:www\\.)?hellporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?h2porn\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "https?://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tryboobs\\.com/videos/\\d+/[a-z0-9\\-]+/?",
+        "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?vikiporn\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?fetishshrine\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?katestube\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yeswegays\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?hdzog\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://(?:www\\.)?bravoteens\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yoxhub\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?xxxymovies\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravotube\\.net/videos/[a-z0-9\\-]+", "https?://(?:www\\.)?upornia\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://xcafe\\.com/\\d+/?",
+        "https?://(?:www\\.)?txxx\\.com/videos/\\d+/[a-z0-9\\-]+/|(https?://(?:www\\.)?txxx\\.com/embed/\\d+)", "https?://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?shameless\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?evilhub\\.com/(?:videos|goto)/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?japan\\-whores\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?needgayporn.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?onlygayvideo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html",
+        "https?://(?:www\\.)?pornhat\\.com/video/[a-z0-9\\-_]+/|https?://vr\\.pornhat\\.com/videos/\\d+/[a-z0-9\\-_]+/", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?anysex\\.com/(?:embed/)?\\d+/", "https?://(?:www\\.)?uiporn\\.com/(?:videos/[a-z0-9\\-_]+/?|embed/\\d+)", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?babestube\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?everydayporn\\.co/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cutscenes\\.net/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?boundhub\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)",
+        "https?://(?:www\\.)?yourporngod\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cwtvembeds\\.com/embed/\\d+", "https?://(?:www\\.)?dato\\.porn/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?rule34video\\.com/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?videowebcam\\.tv/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?smutr\\.com/v/\\d+/", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?ok.xxx/video/\\d+/",
+        "https?://(?:www\\.)?theyarehuge\\.com/(?:v/\\d+-[a-z0-9\\-]+|embed/\\d+)", "https?://(?:www\\.)?camhub\\.world/(?:videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -161,6 +155,10 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    protected boolean hasFUIDAtEnd(final String url) {
+        return true;
     }
 
     @Override
@@ -760,7 +758,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * Finds title inside a KVS URL. <br />
      * Automatically decides whether to use the current Browsers' URL or the original source URL added by the user.
      */
-    public static String regexURLFilenameAuto(final Browser br, final DownloadLink dl) {
+    protected String regexURLFilenameAuto(final Browser br, final DownloadLink dl) {
         if (br == null || dl == null) {
             return null;
         }
@@ -822,7 +820,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
      * Tries everything possible to find a nice filename for KVS websites. <br />
      * Returns url_filename as fallback.
      */
-    public static String regexFilenameAuto(final Browser br, final DownloadLink dl) {
+    protected String regexFilenameAuto(final Browser br, final DownloadLink dl) {
         String filename;
         final String filename_url = regexURLFilenameAuto(br, dl);
         final String url_source = getURL_source(br, dl);
@@ -861,7 +859,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     /** Tries to find unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
-    public static String regexFUIDAuto(final Browser br, final DownloadLink dl) {
+    protected String regexFUIDAuto(final Browser br, final DownloadLink dl) {
         final String url_source = getURL_source(br, dl);
         if (url_source == null) {
             return null;
@@ -871,7 +869,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
                 fuid = new Regex(url_source, type_only_numbers).getMatch(0);
             } else if (url_source.matches(type_embedded)) {
                 fuid = new Regex(url_source, type_embedded).getMatch(0);
-            } else if (url_source.matches(type_normal_fuid_at_end)) {
+            } else if (url_source.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url_source)) {
                 fuid = new Regex(url_source, type_normal_fuid_at_end).getMatch(1);
             } else if (url_source.matches(type_normal)) {
                 fuid = new Regex(url_source, type_normal).getMatch(0);

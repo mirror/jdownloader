@@ -51,6 +51,11 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
         return buildSupportedNames(getPluginDomains());
     }
 
+    @Override
+    protected boolean hasFUIDAtEnd(String url) {
+        return false;
+    }
+
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
     }
