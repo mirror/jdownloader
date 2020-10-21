@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,7 +34,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
@@ -87,11 +85,13 @@ public class ServusCom extends PluginForHost {
         return fid;
     }
 
-    private String               dllink                     = null;
-    private static Object        LOCK                       = new Object();
-    private static String        authToken                  = null;
-    private static long          authLastRefreshedTimestamp = -1;
-    private static final boolean useNewAPI                  = true;
+    private static Object        LOCK                                     = new Object();
+    private static String        authToken                                = null;
+    private static long          authLastRefreshedTimestamp               = -1;
+    private static final boolean useNewAPI                                = true;
+    private Map<String, Object>  entries                                  = null;
+    private static final String  PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE = "HAS_TRIED_TO_CRAWL_RELEASE_DATE";
+    private static final String  PROPERTY_DATE_FORMATTED                  = "DATE_FORMATTED";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -109,6 +109,7 @@ public class ServusCom extends PluginForHost {
         br.setCurrentURL(link.getPluginPatternMatcher());
         String date = null, title = null, episodename = null, labelGroup = null, description = null;
         final String episodenumber = new Regex(link.getPluginPatternMatcher(), "pisode\\-(\\d+)").getMatch(0);
+        String dateFormatted = link.getStringProperty(PROPERTY_DATE_FORMATTED, null);
         if (useNewAPI) {
             synchronized (LOCK) {
                 final boolean refreshToken;
@@ -138,7 +139,7 @@ public class ServusCom extends PluginForHost {
             tokenRequest.getHeaders().put("Authorization", "Basic " + authToken);
             br.getPage(tokenRequest);
             /* 2020-10-19: This one will typically be valid for 5 minutes */
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String access_token = (String) entries.get("access_token");
             if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,17 +167,43 @@ public class ServusCom extends PluginForHost {
             title = (String) this.getAttribute(attributes, "title");
             episodename = (String) this.getAttribute(attributes, "chapter");
             description = (String) this.getAttribute(attributes, "long_description");
-            /*
-             * Find http stream - skip everything else! HLS = split audio/video which we cannot handle properly yet so we'll have to skip
-             * that too!
-             */
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
-            for (final Object ressourceO : ressourcelist) {
-                entries = (Map<String, Object>) ressourceO;
-                final String url = (String) entries.get("url");
-                if (url != null && url.contains(".mp4")) {
-                    this.dllink = url;
-                    break;
+            final String source_list_schedule_data = (String) this.getAttribute(attributes, "source_list_schedule_data");
+            if (source_list_schedule_data != null) {
+                try {
+                    /*
+                     * 2020-10-21: WTF this almost always contains multiple items but with the same dates --> Let's just grab the first one
+                     */
+                    final ArrayList<Object> dateList = JSonStorage.restoreFromString(source_list_schedule_data, TypeRef.LIST);
+                    final Map<String, Object> dateInfo = (Map<String, Object>) dateList.get(0);
+                    date = (String) dateInfo.get("startTimestamp");
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("Failed to grab releasedate via API");
+                }
+            }
+            /* 2020-10-21: Fallback in case release-date is not given via API. */
+            if (StringUtils.isEmpty(dateFormatted) && !link.getBooleanProperty(PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE, false)) {
+                try {
+                    br.getPage(link.getPluginPatternMatcher());
+                    /*
+                     * json will only be available for content which is already streamable not e.g. for content which hasn't been released
+                     * yet!
+                     */
+                    final String json = br.getRegex("<script type=\"application/ld\\+json\">([^<]+VideoObject[^<]+)</script>").getMatch(0);
+                    if (json != null) {
+                        link.setProperty(PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE, true);
+                        final Map<String, Object> websiteData = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                        if (StringUtils.isEmpty(title)) {
+                            title = (String) websiteData.get("name");
+                        }
+                        if (StringUtils.isEmpty(description)) {
+                            description = (String) websiteData.get("description");
+                        }
+                        date = (String) websiteData.get("uploadDate");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("Failed to grab release-date");
                 }
             }
         } else {
@@ -185,7 +212,7 @@ public class ServusCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
             date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/{0}/{0}/startDate");
             title = (String) entries.get("titleStv");
@@ -200,16 +227,20 @@ public class ServusCom extends PluginForHost {
             title = this.getFID(link);
         }
         title = title.trim();
-        final String date_formatted = formatDate(date);
+        if (dateFormatted == null && date != null) {
+            dateFormatted = formatDate(date);
+            link.setProperty(PROPERTY_DATE_FORMATTED, dateFormatted);
+        }
         String filename = "";
-        if (date_formatted != null) {
-            filename = date_formatted + "_";
+        if (dateFormatted != null) {
+            filename = dateFormatted + "_";
         }
         filename += labelGroup + "_" + title;
         if (episodenumber != null && !title.contains(episodenumber)) {
             filename += "_" + episodenumber;
         }
-        if (episodename != null) {
+        /* Title sometimes already contains episodename --> Do not add it twice! */
+        if (episodename != null && !filename.contains(episodename)) {
             filename += " - " + episodename;
         }
         filename = Encoding.htmlDecode(filename);
@@ -217,24 +248,6 @@ public class ServusCom extends PluginForHost {
         link.setFinalFileName(filename);
         if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
             link.setComment(description);
-        }
-        if (!StringUtils.isEmpty(dllink) && !this.dllink.contains(".m3u8") && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(this.dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
         }
         return AvailableStatus.TRUE;
     }
@@ -256,6 +269,7 @@ public class ServusCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
         String httpstream = null;
+        String hlsMaster = null;
         HlsContainer hlsbest = null;
         if (useNewAPI) {
             /* New */
@@ -263,23 +277,49 @@ public class ServusCom extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked",
             // 60 * 60 * 1000l);
             // }
-            if (this.dllink.contains(".m3u8")) {
-                br.getPage(this.dllink);
+            /*
+             * Find http stream - skip everything else! HLS = split audio/video which we cannot handle properly yet so we'll have to skip
+             * that too!
+             */
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
+            for (final Object ressourceO : ressourcelist) {
+                entries = (Map<String, Object>) ressourceO;
+                final String type = (String) entries.get("type");
+                final String url = (String) entries.get("url");
+                if (StringUtils.isEmpty(url)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                if (url.contains(".mp4")) {
+                    logger.info("Found http stream: " + httpstream);
+                    if (StringUtils.isEmpty(httpstream)) {
+                        httpstream = url;
+                    }
+                } else if (type.equalsIgnoreCase("hls")) {
+                    hlsMaster = url;
+                }
+            }
+            /*
+             * 2020-1021: They got a 2nd HLS stream available that can contain multiple language/quality audio streams. Also that one is in
+             * #EXT-X-VERSION:6 while the other one is #EXT-X-VERSION:4. See root json/_meta/links/manifest/href. E.g.
+             * https://rd-manifests.liiift.io/api/v1/dam/STV/hls/stv-international-<fid>/master.m3u8
+             */
+            final boolean preferHLS = false;
+            if (!StringUtils.isEmpty(hlsMaster) && preferHLS) {
+                br.getPage(hlsMaster);
                 hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 if (hlsbest == null) {
                     /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt oder GEO-blocked", 60 * 60 * 1000l);
                 }
-            } else {
-                httpstream = this.dllink;
             }
         } else {
             /* Old */
             if (httpstream == null) {
                 /* 2017-10-04: Only hls available and it is very easy to create the master URL --> Do not access Brightcove stuff at all! */
                 /* Use this to get some more information about the video [in json]: https://www.servus.com/at/p/<videoid>/personalize */
-                final String hls_master = String.format("https://stv.rbmbtnx.net/api/v1/manifests/%s.m3u8", this.getFID(link));
-                br.getPage(hls_master);
+                hlsMaster = getOldHLSMaster(link);
+                br.getPage(hlsMaster);
                 hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 if (hlsbest == null) {
                     /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
@@ -287,6 +327,7 @@ public class ServusCom extends PluginForHost {
                 }
             }
         }
+        /* 2020-10-21: Prefer HLS downloads as http may only be available in up to 720p while HLS is available in 1080p or higher. */
         if (hlsbest != null) {
             final String url_hls = hlsbest.getDownloadurl();
             checkFFmpeg(link, "Download a HLS Stream");
@@ -314,6 +355,10 @@ public class ServusCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private String getOldHLSMaster(final DownloadLink link) {
+        return String.format("https://stv.rbmbtnx.net/api/v1/manifests/%s.m3u8", this.getFID(link));
     }
 
     @SuppressWarnings({ "static-access" })
