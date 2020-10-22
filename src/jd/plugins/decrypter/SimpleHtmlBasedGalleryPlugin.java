@@ -5,9 +5,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -17,34 +22,105 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 /**
- * A plugin for downloading JPGs via href links from plain HTML. Those links can be absolute or relative to the host.
+ * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
+ * specific model. Each gallery will be put into an own folder with name like the "title" tag of the single gallery, with a best-effort
+ * unique name. Image names will be like "image_01", "image_02" and so on.
+ *
+ * Please note: right now, if a model has multiple pages worth of galleries, paging must be done manually.
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
+
+    protected static final String HTTPS_WWW_REGEX_PREFIX = "https?://(?:www\\.)?";
+
+    protected static class SiteData {
+        // these 2 are mandatory
+        public final String  host;
+        private final String galleryUrlRegexSuffix;
+        // if only single galleries are supported for that host, leave those 2 as "null"
+        private final String galleriesUrlRegexSuffix;
+        private final String galleryHrefRegex;
+        // access those only via their respective methods
+        private Pattern      _galleryUrlPattern;
+        private Pattern      _galleriesUrlPattern;
+
+        protected SiteData(String host, String galleryUrlRegexSuffix, String galleriesRegexSuffix, String galleryHrefRegex) {
+            this.host = host;
+            this.galleryUrlRegexSuffix = galleryUrlRegexSuffix;
+            this.galleriesUrlRegexSuffix = galleriesRegexSuffix;
+            this.galleryHrefRegex = galleryHrefRegex;
+        }
+
+        protected String getUrlRegex() {
+            String uri = galleryUrlRegexSuffix;
+            if (StringUtils.isNotEmpty(galleriesUrlRegexSuffix)) {
+                uri = "(" + uri + "|" + galleriesUrlRegexSuffix + ")";
+            }
+            return HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + uri;
+        }
+
+        protected synchronized Pattern getGalleryUrlPattern() {
+            if (_galleryUrlPattern == null) {
+                _galleryUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleryUrlRegexSuffix);
+            }
+            return _galleryUrlPattern;
+        }
+
+        protected synchronized Pattern getGalleriesUrlPattern() {
+            if (StringUtils.isEmpty(galleriesUrlRegexSuffix)) {
+                return null;
+            }
+            if (_galleriesUrlPattern == null) {
+                _galleriesUrlPattern = Pattern.compile(HTTPS_WWW_REGEX_PREFIX + host.replace(".", "\\.") + galleriesUrlRegexSuffix);
+            }
+            return _galleriesUrlPattern;
+        }
+    }
+
+    private enum Type {
+        GALLERY,
+        GALLERIES
+    }
+
+    private static class SiteAndType {
+        private final SiteData data;
+        private final Type     type;
+
+        private SiteAndType(SiteData data, Type type) {
+            this.data = data;
+            this.type = type;
+        }
+    }
+
+    private static final List<SiteData> SITE_DATA = new ArrayList<SiteData>();
+    static {
+        // only single gallery
+        SITE_DATA.add(new SiteData("coedcherry.com", "./*pics/[^/]+", null, null));
+        SITE_DATA.add(new SiteData("erocurves.com", "/.+", null, null));
+        SITE_DATA.add(new SiteData("pornpics.com", "/galleries/.+", null, null));
+        SITE_DATA.add(new SiteData("prettynubiles.com", "/galleries/[^\\.]+\\.html", null, null));
+        SITE_DATA.add(new SiteData("xxxporn.pics", "/sex/(?!\\d+).+", null, null));
+        SITE_DATA.add(new SiteData("fapcat.com", "/albums/\\d+/.+", null, null));
+        // single gallery and all per model
+        SITE_DATA.add(new SiteData("babesource.com", "/galleries/[^/]+-\\d+\\.html", "/pornstars/.+", "[^\"']+babesource\\.com/galleries[^\"']+"));
+        SITE_DATA.add(new SiteData("sexygirlspics.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+sexygirlspics\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData("pichunter.com", "/gallery/.+", "/models/.+", "/gallery/[^\"']+"));
+        SITE_DATA.add(new SiteData("nastypornpics.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+nastypornpics\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData("viewgals.com", "/pics/.+", "/\\?q=[^&]+&log-model=1", "[^\"']+viewgals\\.com/pics[^\"']+"));
+        SITE_DATA.add(new SiteData("sexhd.pics", "/gallery/[^/]+/[^/]+/.+", "/gallery/[^/]+/?$", "/gallery/[^/\"']+/[^/\"']+/[^/\"']+/?"));
+        SITE_DATA.add(new SiteData("hqsluts.com", "/[^/]+-\\d+", "/sluts/.+", "/[^/\"']+-\\d+/"));
+    }
+
     public SimpleHtmlBasedGalleryPlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getSupportedSites() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "babesource.com", "https?://(?:www\\.)?babesource\\.com/galleries/[^/]+-\\d+\\.html" });
-        ret.add(new String[] { "coedcherry.com", "https?://(?:www\\.)?coedcherry\\.com/.*pics/[^/]+" });
-        ret.add(new String[] { "elitebabes.com", "https?://(?:www\\.)?elitebabes\\.com/.+" });
-        ret.add(new String[] { "erocurves.com", "https?://(?:www\\.)?erocurves\\.com/.+" });
-        ret.add(new String[] { "pornpics.com", "https?://(?:www\\.)?pornpics\\.com/galleries/.+" });
-        ret.add(new String[] { "sexygirlspics.com", "https?://(?:www\\.)?sexygirlspics\\.com/pics/.+" });
-        ret.add(new String[] { "pichunter.com", "https?://(?:www\\.)?pichunter\\.com/gallery/.+" });
-        ret.add(new String[] { "nastypornpics.com", "https?://(?:www\\.)?nastypornpics\\.com/pics/.+" });
-        ret.add(new String[] { "prettynubiles.com", "https?://(?:www\\.)?prettynubiles\\.com/galleries/[^\\.]+\\.html" });
-        ret.add(new String[] { "viewgals.com", "https?://(?:www\\.)?viewgals\\.com/pics/.+" });
-        ret.add(new String[] { "sexhd.pics", "https?://(?:www\\.)?sexhd\\.pics/gallery/[^/]+/[^/]+/.+" });
-        ret.add(new String[] { "xxxporn.pics", "https?://(?:www\\.)?xxxporn\\.pics/sex/(?!\\d+).+" });
-        ret.add(new String[] { "fapcat.com", "https?://(?:www\\.)?fapcat\\.com/albums/\\d+/.+" });
-        ret.add(new String[] { "hqsluts.com", "https?://(?:www\\.)?hqsluts\\.com/[^/]+-\\d+" });
+        for (SiteData siteData : SITE_DATA) {
+            ret.add(new String[] { siteData.host, siteData.getUrlRegex() });
+        }
         return ret;
     }
 
@@ -71,83 +147,164 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> allImageLinks = new ArrayList<DownloadLink>();
         final String url = cryptedLink.toString();
-        br.setFollowRedirects(true);
-        br.getPage(url);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(url));
-            return decryptedLinks;
+        SiteAndType siteAndType = determineSiteAndType(url);
+        if (siteAndType.type == Type.GALLERY) {
+            crawlGallery(allImageLinks, url);
+        } else if (siteAndType.type == Type.GALLERIES) {
+            crawlGalleries(allImageLinks, url, siteAndType.data.galleryHrefRegex);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported site type " + siteAndType.type);
         }
-        populateDecryptedLinks(decryptedLinks, url);
-        final String title = getFilePackageName(url);
+        return allImageLinks;
+    }
+
+    private void crawlGallery(ArrayList<DownloadLink> allImageLinks, String url) throws PluginException, IOException {
+        final ArrayList<DownloadLink> galleryImageLinks = new ArrayList<DownloadLink>();
+        Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        // TODO e.g. retry in case of timeout, in order to not loose the already found links
+        brc.getPage(url);
+        if (brc.getHttpConnection().getResponseCode() == 404) {
+            galleryImageLinks.add(this.createOfflinelink(url));
+            return;
+        }
+        populateGalleryImageLinks(galleryImageLinks, brc);
+        final String title = getFilePackageName(url, brc);
         if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(galleryImageLinks);
         }
-        return decryptedLinks;
+        allImageLinks.addAll(galleryImageLinks);
     }
 
-    protected void populateDecryptedLinks(ArrayList<DownloadLink> decryptedLinks, String url) throws PluginException, IOException {
-        final String[] links = determineLinks();
-        if (links == null || links.length == 0) {
+    private void crawlGalleries(ArrayList<DownloadLink> allImageLinks, String url, String galleryHrefRegex) throws PluginException, IOException {
+        br.setFollowRedirects(true);
+        br.getPage(url);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            allImageLinks.add(this.createOfflinelink(url));
+            return;
+        }
+        String[] galleryUrls = getGalleryUrls(galleryHrefRegex);
+        if (galleryUrls == null || galleryUrls.length == 0) {
+            // TODO do not throw exception, as dev people will raise an issue about it
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            final int padLength = (int) Math.log10(links.length) + 1;
-            int index = 1;
-            for (String link : links) {
-                decryptedLinks.add(buildDownloadLink(padLength, index++, link));
+        }
+        for (final String galleryUrl : galleryUrls) {
+            if (!isAbort()) {
+                crawlGallery(allImageLinks, galleryUrl);
             }
         }
     }
 
-    protected String[] determineLinks() throws PluginException {
-        final String[] links = getRawLinks();
-        if (links == null || links.length == 0) {
-            return links;
+    protected String[] getGalleryUrls(String galleryHrefRegex) throws PluginException {
+        if (StringUtils.isEmpty(galleryHrefRegex)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery href regex configured for " + br.getHost());
+        }
+        String[][] matches = br.getRegex("href\\s*=\\s*(?:\"|')(" + galleryHrefRegex + ")(?:\"|')").getMatches();
+        if (matches.length == 0) {
+            return new String[0];
+        }
+        String[] galleryUrls = new String[matches.length];
+        for (int i = 0; i < matches.length; i++) {
+            try {
+                String match = matches[i][0];
+                if (StringUtils.isEmpty(match)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery match found");
+                }
+                galleryUrls[i] = br.getURL(match).toString();
+            } catch (IOException e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            }
+        }
+        return galleryUrls;
+    }
+
+    protected List<SiteData> getSiteData() {
+        return SITE_DATA;
+    }
+
+    private SiteAndType determineSiteAndType(String url) throws PluginException {
+        List<SiteData> siteData = getSiteData();
+        for (SiteData sd : siteData) {
+            Pattern galleryUrlPattern = sd.getGalleryUrlPattern();
+            if (galleryUrlPattern != null) {
+                if (new Regex(url, galleryUrlPattern).matches()) {
+                    return new SiteAndType(sd, Type.GALLERY);
+                }
+            }
+            Pattern galleriesUrlPattern = sd.getGalleriesUrlPattern();
+            if (galleriesUrlPattern != null) {
+                if (new Regex(url, galleriesUrlPattern).matches()) {
+                    return new SiteAndType(sd, Type.GALLERIES);
+                }
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "could not determine site data of " + url);
+    }
+
+    private void populateGalleryImageLinks(ArrayList<DownloadLink> imageLinks, Browser brc) throws PluginException, IOException {
+        final String[] imageUrls = determineImageUrls(brc);
+        if (imageUrls == null || imageUrls.length == 0) {
+            // TODO do not throw exception, as dev people will raise an issue about it
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final int padLength = (int) Math.log10(imageUrls.length) + 1;
+            int index = 1;
+            for (String imageUrl : imageUrls) {
+                imageLinks.add(buildImageDownloadLink(padLength, index++, imageUrl));
+            }
+        }
+    }
+
+    private String[] determineImageUrls(Browser brc) throws PluginException {
+        final String[] rawImageUrls = getRawImageUrls(brc);
+        if (rawImageUrls == null || rawImageUrls.length == 0) {
+            return rawImageUrls;
         } else {
             // in case the link is relative to the host, make it absolute
-            final List<String> ret = new ArrayList<String>();
-            for (int i = 0; i < links.length; i++) {
+            final List<String> imageUrls = new ArrayList<String>();
+            for (String rawImageUrl : rawImageUrls) {
                 try {
-                    ret.add(br.getURL(links[i]).toString());
+                    imageUrls.add(brc.getURL(rawImageUrl).toString());
                 } catch (IOException e) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
             }
-            return ret.toArray(new String[0]);
+            return imageUrls.toArray(new String[0]);
         }
     }
 
-    protected String[] getRawLinks() {
+    private String[] getRawImageUrls(Browser brc) {
         // "href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(?:\"|')" would not work for href="...patrick's_day01.jpg"
-        String[] rawlinks = br.getRegex("href\\s*=\\s*\"([^\"]+\\.jpg/?)\"").getColumn(0);
+        String[] rawlinks = brc.getRegex("href\\s*=\\s*\"([^\"]+\\.jpg/?)\"").getColumn(0);
         if (rawlinks == null || rawlinks.length == 0) {
-            rawlinks = br.getRegex("href\\s*=\\s*'([^']+\\.jpg/?)'").getColumn(0);
+            rawlinks = brc.getRegex("href\\s*=\\s*'([^']+\\.jpg/?)'").getColumn(0);
         }
         return rawlinks;
     }
 
-    protected DownloadLink buildDownloadLink(int padLength, int index, String link) throws IOException {
-        final URL url = new URL(link);
+    private DownloadLink buildImageDownloadLink(int padLength, int index, String imageUrl) throws IOException {
+        final URL url = new URL(imageUrl);
         final DownloadLink dl;
         if (url.getPath().matches(".*\\.(jpg)$")) {
-            dl = createDownloadlink(link);
+            dl = createDownloadlink(imageUrl);
         } else {
-            dl = createDownloadlink("directhttp://" + link);
+            dl = createDownloadlink("directhttp://" + imageUrl);
         }
         dl.setAvailable(true);
-        dl.setFinalFileName(buildFileName(padLength, index));
+        dl.setFinalFileName(buildImageFileName(padLength, index));
         return dl;
     }
 
-    private String buildFileName(int padLength, int index) {
+    private String buildImageFileName(int padLength, int index) {
         return "image_" + String.format(Locale.US, "%0" + padLength + "d", index) + ".jpg";
     }
 
-    protected String getFilePackageName(String url) {
-        String title = br.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
+    private String getFilePackageName(String url, Browser brc) {
+        String title = brc.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
         if (StringUtils.isNotEmpty(title)) {
             String id = new Regex(url, "(\\d+)").getMatch(0);
             if (StringUtils.isNotEmpty(id) && !title.contains(id)) {
