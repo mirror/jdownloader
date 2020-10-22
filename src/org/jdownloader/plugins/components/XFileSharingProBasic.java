@@ -1299,7 +1299,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             }
                         }
                         counter++;
-                    } while (imghost_next_form != null && counter < countermax);
+                    } while (StringUtils.isEmpty(dllink) && imghost_next_form != null && counter < countermax);
                 }
                 /* Check for errors and download1 Form. Only execute this once! */
                 if (StringUtils.isEmpty(dllink) && download1counter == 0) {

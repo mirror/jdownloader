@@ -816,7 +816,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 break;
             }
             // we require error handling here
-            if (dl.getConnection().getResponseCode() == 403 || dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
+            if (dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
                 try {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
@@ -828,11 +828,13 @@ public class TurbobitCore extends antiDDoSForHost {
                 if (downloadType == DownloadType.ACCOUNT_PREMIUM) {
                     logger.info("No traffic available");
                     throw new AccountUnavailableException("403: You have reached the limit of downloads from this IP address", 30 * 60 * 1000l);
+                } else {
+                    // some reason we have different error handling for free.
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
                 }
-                // some reason we have different error handling for free.
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
+            } else if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+            } else if (dl.getConnection().getResponseCode() == 404) {
                 try {
                     dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
                     br.followConnection();
