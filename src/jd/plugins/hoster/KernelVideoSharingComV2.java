@@ -164,6 +164,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -176,7 +177,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         dllink = null;
         server_issues = false;
         prepBR(this.br);
-        br.setFollowRedirects(true);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String fuidBeforeHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
         final String titleUrl = getURLTitle(link.getPluginPatternMatcher());
@@ -233,7 +233,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 final Browser brc = this.br.cloneBrowser();
                 brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
-                brc.setFollowRedirects(true);
                 try {
                     // br.getHeaders().put("Accept-Encoding", "identity");
                     con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
@@ -379,7 +378,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
@@ -929,9 +927,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public static String regexFilenameGeneral(final Browser br) {
         /* Works e.g. for hdzog.com */
         String filename = br.getRegex("var video_title\\s*?=\\s*?\"([^<>]*?)\";").getMatch(0);
-        if (StringUtils.isEmpty(filename)) { // tryboobs.com
-            filename = br.getRegex("data-title=\"(.*?)\"").getMatch(0);
-        }
         if (StringUtils.isEmpty(filename)) {
             /* Newer KVS e.g. tubecup.com */
             filename = br.getRegex("title[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
@@ -952,10 +947,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(filename)) {
             /* Working e.g. for pervclips.com, pornicom.com */
             filename = br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Working e.g. for japan-whores.com */
-            filename = br.getRegex("(?:<h1 itemprop=\")?name\">([^<>]+?)</h1>").getMatch(0);
         }
         return filename;
     }

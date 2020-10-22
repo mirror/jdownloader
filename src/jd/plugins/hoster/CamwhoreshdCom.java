@@ -23,7 +23,6 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
@@ -51,21 +50,6 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
-    }
-
-    @Override
-    protected String getURLTitle(final String url_source) {
-        String urlTitle = super.getURLTitle(url_source);
-        if (urlTitle != null) {
-            /* Special: Remove unwanted stuff */
-            final String removeme = new Regex(urlTitle, "(-?[a-f0-9]{16})").getMatch(0);
-            if (removeme != null) {
-                urlTitle = urlTitle.replace(removeme, "");
-            }
-            /* Make the url-filenames look better by using spaces instead of '-'. */
-            urlTitle = urlTitle.replace("-", " ");
-        }
-        return urlTitle;
     }
 
     @Override
