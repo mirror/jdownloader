@@ -415,11 +415,12 @@ public class InstaGramCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(MAINPAGE, cookies);
                     br.getPage(MAINPAGE + "/");
-                    if (br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) == null || br.getCookies(MAINPAGE).get("ds_user_id", Cookies.NOTDELETEDPATTERN) == null) {
+                    if (!isLoggedIn()) {
                         /* Full login required */
                         logger.info("Cookie login failed");
                         br.clearAll();
@@ -427,6 +428,30 @@ public class InstaGramCom extends PluginForHost {
                         /* Saved cookies were valid */
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
+                        return;
+                    }
+                }
+                if (userCookies != null) {
+                    /*
+                     * 2020-10-22: This can optionally be used as a workaround for login issues e.g. if a "security challenge" is demanded
+                     * on login and JD fails to handle it.
+                     */
+                    logger.info("Attempting User-Cookie login");
+                    br.setCookies(MAINPAGE, userCookies);
+                    br.getPage(MAINPAGE + "/");
+                    if (!isLoggedIn()) {
+                        /* Full login required */
+                        logger.info("User-Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        /* Saved cookies were valid */
+                        logger.info("User-Cookie login successful");
+                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        /* Make sure account has an unique username set. */
+                        final String fullname = PluginJSonUtils.getJson(br, "full_name");
+                        if (!StringUtils.isEmpty(fullname)) {
+                            account.setUser(fullname);
+                        }
                         return;
                     }
                 }
@@ -556,6 +581,15 @@ public class InstaGramCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    /** Checks loggedin state based on html code (NOT cookies!) */
+    private boolean isLoggedIn() {
+        // return br.getCookies(MAINPAGE).get("sessionid", Cookies.NOTDELETEDPATTERN) != null && br.getCookies(MAINPAGE).get("ds_user_id",
+        // Cookies.NOTDELETEDPATTERN) != null;
+        final String fullname = PluginJSonUtils.getJson(br, "full_name");
+        final String has_profile_pic = PluginJSonUtils.getJson(br, "has_profile_pic");
+        return fullname != null && has_profile_pic != null;
     }
 
     @Override
