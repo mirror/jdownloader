@@ -133,7 +133,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 } else {
                     entries = (LinkedHashMap<String, Object>) picO;
                     final String hash = (String) entries.get("hash");
-                    final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 1);
+                    final long haswebp = JavaScriptEngineFactory.toLong(entries.get("haswebp"), 0);
                     final String type;
                     if (haswebp == 1) {
                         type = "webp";
@@ -254,7 +254,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         dir = isNotBlank(dir) ? dir : "images";
         {
             /* 2020-10-22: Hack or bugfix?? */
-            final long haswebp = JavaScriptEngineFactory.toLong(image.get("haswebp"), 1);
+            final long haswebp = JavaScriptEngineFactory.toLong(image.get("haswebp"), 0);
             if (haswebp == 1) {
                 ext = "webp";
                 dir = "webp";
