@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,178 +34,192 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /** 2020-06-08: Current main domain is: isrbx.net */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "israbox.life" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html" })
-public class SrBoxLife extends antiDDoSForDecrypt {
-    public SrBoxLife(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://biq\\.to/go/[a-f0-9]{100,}" })
+public class SrBox extends antiDDoSForDecrypt {
+    public SrBox(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String base = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";
+    private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";
+    private static final String TYPE_SINGLE_REDIRECT = "https?://biq\\.to/go/[a-f0-9]{100,}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        getPage(parameter);
-        Browser.setRequestIntervalLimitGlobal(br.getHost(), 1000);
-        final String redirect = br.getRedirectLocation();
-        if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (redirect != null) {
-            br.setFollowRedirects(true);
-            getPage(redirect);
-        }
-        String fpName = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
+        if (parameter.matches(TYPE_SINGLE_REDIRECT)) {
+            /* Crawl single redirect-URL. */
+            /* 2020-10-22: Referer is required - mainpage is enough to make it work. */
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/");
+            this.getPage(parameter);
+            final String initialHost = Browser.getHost(parameter);
+            final String redirect = br.getRedirectLocation();
+            /* Redirect on mainpage = also offline */
+            if (redirect == null || redirect.contains(initialHost)) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } else {
+                decryptedLinks.add(this.createDownloadlink(redirect));
+            }
+        } else {
+            /* Crawl multiple URLs */
+            getPage(parameter);
+            Browser.setRequestIntervalLimitGlobal(br.getHost(), 1000);
+            final String redirect = br.getRedirectLocation();
+            if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            } else if (redirect != null) {
+                br.setFollowRedirects(true);
+                getPage(redirect);
+            }
+            String fpName = br.getRegex("<h1 itemprop=\"name\">(.*?)</h1>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                fpName = br.getRegex("<h1><a href[^>]+>(.*?)</a></h1>").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("<b>Download Fast:(.*?)</b>").getMatch(0);
+                    fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                     if (fpName == null) {
-                        fpName = br.getRegex("color=\"#ffffff\" size=\"1\">(.*?)free from rapidshare").getMatch(0);
+                        fpName = br.getRegex("<b>Download Fast:(.*?)</b>").getMatch(0);
+                        if (fpName == null) {
+                            fpName = br.getRegex("color=\"#ffffff\" size=\"1\">(.*?)free from rapidshare").getMatch(0);
+                        }
                     }
                 }
             }
-        }
-        // On this site, when an accent is set, the result is as extended ASCII
-        // character which is bad in the name of the package
-        fpName = Encoding.htmlDecode(fpName);
-        fpName = RemoveCharacter(fpName);
-        fpName = CapitalLetterForEachWords(fpName);
-        // Creation of the array of link that is supported by all plug-in
-        String[] links = br.getRegex("<a href=\"((?!javascript.+)[^\"]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            return null;
-        }
-        // Added links
-        for (String redirectlink : links) {
-            // prevent null in decryptedLinks
-            if (redirectlink.matches(base + ".+") || !redirectlink.startsWith("http")) {
-                continue;
+            // On this site, when an accent is set, the result is as extended ASCII
+            // character which is bad in the name of the package
+            fpName = Encoding.htmlDecode(fpName);
+            fpName = RemoveCharacter(fpName);
+            fpName = CapitalLetterForEachWords(fpName);
+            // Creation of the array of link that is supported by all plug-in
+            String[] links = br.getRegex("<a href=\"((?!javascript.+)[^\"]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                return null;
             }
-            final DownloadLink dl = createDownloadlink(redirectlink);
-            if (dl != null) {
-                decryptedLinks.add(dl);
-            }
-        }
-        // Some link can be crypted in this site, see if it is the case
-        String[] linksCrypted = br.getRegex("\"(" + base + "[^\"]*go(?:\\.php)?(?:\\?|&|&amp;)url=.*?)\"").getColumn(0);
-        if (linksCrypted == null || linksCrypted.length == 0) {
-            linksCrypted = br.getRegex("(https?://biq.to/go/[^\"]+)").getColumn(0);
-        }
-        // Added crypted links
-        for (String redirectlink : linksCrypted) {
-            final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);
-            if (base64 != null) {
-                decryptedLinks.add(createDownloadlink(base64));
-            } else {
-                final Browser br2 = br.cloneBrowser();
-                getPage(br2, redirectlink);
-                final String finallink = br2.getRedirectLocation();
-                if (finallink != null) {
-                    decryptedLinks.add(createDownloadlink(finallink));
+            // Added links
+            for (String redirectlink : links) {
+                // prevent null in decryptedLinks
+                if (redirectlink.matches(base + ".+") || !redirectlink.startsWith("http")) {
+                    continue;
+                }
+                final DownloadLink dl = createDownloadlink(redirectlink);
+                if (dl != null) {
+                    decryptedLinks.add(dl);
                 }
             }
-        }
-        /*
-         * Array of image to download the cover (It can be usable if the user want to create a subfolder with the name of the package
-         * because the folder is immediately created because it will download the cover in it
-         */
-        String[] TabImage2 = br.getRegex("<img src=\"(https?://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
-        String[] TabImage1 = br.getRegex("<img src=\"" + base + "uploads/(.*?)\"").getColumn(0);
-        // Number of pictures
-        int iImage = (TabImage1 != null ? TabImage1.length : 0) + (TabImage2 != null ? TabImage2.length : 0);
-        // Array for added Images as DownloadLink
-        DownloadLink[] tabImageLink = new DownloadLink[iImage];
-        int iImageFinal = 0;
-        int iImageIndex = 0;
-        if (TabImage1 != null) {
-            int iImageNet = 0;
-            for (String strImageLink : TabImage1) {
-                if (!strImageLink.toLowerCase().contains("foto")) {
-                    strImageLink = Request.getLocation("/uploads/" + strImageLink, br.getRequest());
-                    if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
-                        DownloadLink DLLink = createDownloadlink(strImageLink, false);
+            // Some link can be crypted in this site, see if it is the case
+            String[] linksCrypted = br.getRegex("\"(" + base + "[^\"]*go(?:\\.php)?(?:\\?|&|&amp;)url=.*?)\"").getColumn(0);
+            if (linksCrypted == null || linksCrypted.length == 0) {
+                linksCrypted = br.getRegex("(https?://biq.to/go/[^\"]+)").getColumn(0);
+            }
+            // Added crypted links
+            for (String redirectlink : linksCrypted) {
+                final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);
+                if (base64 != null) {
+                    decryptedLinks.add(createDownloadlink(base64));
+                } else {
+                    final Browser br2 = br.cloneBrowser();
+                    getPage(br2, redirectlink);
+                    final String finallink = br2.getRedirectLocation();
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
+                }
+            }
+            /*
+             * Array of image to download the cover (It can be usable if the user want to create a subfolder with the name of the package
+             * because the folder is immediately created because it will download the cover in it
+             */
+            String[] TabImage2 = br.getRegex("<img src=\"(https?://[\\w\\.]*?lectro\\.ws)/*?/uploads/posts/(.*?)\"").getColumn(1);
+            String[] TabImage1 = br.getRegex("<img src=\"" + base + "uploads/(.*?)\"").getColumn(0);
+            // Number of pictures
+            int iImage = (TabImage1 != null ? TabImage1.length : 0) + (TabImage2 != null ? TabImage2.length : 0);
+            // Array for added Images as DownloadLink
+            DownloadLink[] tabImageLink = new DownloadLink[iImage];
+            int iImageFinal = 0;
+            int iImageIndex = 0;
+            if (TabImage1 != null) {
+                int iImageNet = 0;
+                for (String strImageLink : TabImage1) {
+                    if (!strImageLink.toLowerCase().contains("foto")) {
+                        strImageLink = Request.getLocation("/uploads/" + strImageLink, br.getRequest());
+                        if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
+                            DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                            if (DLLink != null) {
+                                iImageIndex++;
+                                /* Fail safe */
+                                if (iImageIndex > tabImageLink.length - 1) {
+                                    break;
+                                }
+                                tabImageLink[iImageIndex] = DLLink;
+                                iImageFinal++;
+                            }
+                            strImageLink = strImageLink.replace("thumbs/", "").replace("medium/", "");
+                        }
+                        final DownloadLink DLLink = createDownloadlink(strImageLink, false);
                         if (DLLink != null) {
                             iImageIndex++;
-                            /* Fail safe */
                             if (iImageIndex > tabImageLink.length - 1) {
+                                /* Index-Fail-Safe */
                                 break;
                             }
                             tabImageLink[iImageIndex] = DLLink;
                             iImageFinal++;
                         }
-                        strImageLink = strImageLink.replace("thumbs/", "").replace("medium/", "");
                     }
-                    final DownloadLink DLLink = createDownloadlink(strImageLink, false);
-                    if (DLLink != null) {
-                        iImageIndex++;
-                        if (iImageIndex > tabImageLink.length - 1) {
-                            /* Index-Fail-Safe */
-                            break;
-                        }
-                        tabImageLink[iImageIndex] = DLLink;
-                        iImageFinal++;
-                    }
+                    iImageNet++;
                 }
-                iImageNet++;
             }
-        }
-        if (TabImage2 != null) {
-            for (String strImageLink : TabImage2) {
-                strImageLink = "http://www.lectro.ws/uploads/posts/" + strImageLink;
-                if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
+            if (TabImage2 != null) {
+                for (String strImageLink : TabImage2) {
+                    strImageLink = "http://www.lectro.ws/uploads/posts/" + strImageLink;
+                    if (strImageLink.contains("/thumbs/") || strImageLink.contains("/medium/")) {
+                        DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                        if (DLLink != null) {
+                            tabImageLink[iImageIndex++] = DLLink;
+                            iImageFinal++;
+                        }
+                        strImageLink = strImageLink.replace("thumbs/", "");
+                        strImageLink = strImageLink.replace("medium/", "");
+                    }
                     DownloadLink DLLink = createDownloadlink(strImageLink, false);
                     if (DLLink != null) {
                         tabImageLink[iImageIndex++] = DLLink;
                         iImageFinal++;
                     }
-                    strImageLink = strImageLink.replace("thumbs/", "");
-                    strImageLink = strImageLink.replace("medium/", "");
-                }
-                DownloadLink DLLink = createDownloadlink(strImageLink, false);
-                if (DLLink != null) {
-                    tabImageLink[iImageIndex++] = DLLink;
-                    iImageFinal++;
                 }
             }
-        }
-        if (tabImageLink != null) {
-            iImageIndex = 1;
-            for (DownloadLink DLLink : tabImageLink) {
-                if (DLLink != null) {
-                    String strExtension = "";
-                    int iIndex = DLLink.getPluginPatternMatcher().lastIndexOf('.');
-                    if (iIndex > -1) {
-                        strExtension = DLLink.getPluginPatternMatcher().substring(iIndex);
-                    }
-                    if (strExtension != "") {
-                        if (fpName != null) {
-                            String strName = fpName;
-                            // Delete the end of the filename only if it represents the year in parenthesis -- why??? raztoki20160115
-                            strName = ReplacePattern(strName, "\\([0-9]{4}\\)$").trim();
-                            if (iImageFinal > 1) {
-                                strName += "_" + Integer.toString(iImageIndex);
-                                iImageIndex++;
-                            }
-                            DLLink.setFinalFileName(strName + strExtension);
+            if (tabImageLink != null) {
+                iImageIndex = 1;
+                for (DownloadLink DLLink : tabImageLink) {
+                    if (DLLink != null) {
+                        String strExtension = "";
+                        int iIndex = DLLink.getPluginPatternMatcher().lastIndexOf('.');
+                        if (iIndex > -1) {
+                            strExtension = DLLink.getPluginPatternMatcher().substring(iIndex);
                         }
+                        if (strExtension != "") {
+                            if (fpName != null) {
+                                String strName = fpName;
+                                // Delete the end of the filename only if it represents the year in parenthesis -- why??? raztoki20160115
+                                strName = ReplacePattern(strName, "\\([0-9]{4}\\)$").trim();
+                                if (iImageFinal > 1) {
+                                    strName += "_" + Integer.toString(iImageIndex);
+                                    iImageIndex++;
+                                }
+                                DLLink.setFinalFileName(strName + strExtension);
+                            }
+                        }
+                        decryptedLinks.add(DLLink);
                     }
-                    decryptedLinks.add(DLLink);
                 }
             }
-        }
-        // Add all link in a package
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+            // Add all link in a package
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
