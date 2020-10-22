@@ -121,7 +121,12 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     }
 
     protected String[] getRawLinks() {
-        return br.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(?:\"|')").getColumn(0);
+        // "href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(?:\"|')" would not work for href="...patrick's_day01.jpg"
+        String[] rawlinks = br.getRegex("href\\s*=\\s*\"([^\"]+\\.jpg/?)\"").getColumn(0);
+        if (rawlinks == null || rawlinks.length == 0) {
+            rawlinks = br.getRegex("href\\s*=\\s*'([^']+\\.jpg/?)'").getColumn(0);
+        }
+        return rawlinks;
     }
 
     protected DownloadLink buildDownloadLink(int padLength, int index, String link) throws IOException {
