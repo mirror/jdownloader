@@ -18,9 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -114,7 +118,30 @@ public class ImgBabesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_https() {
-        return false;
+    public Form findImageForm(final Browser br) {
+        /* 2020-10-22: Special */
+        Form imghost_next_form = super.findImageForm(br);
+        if (imghost_next_form == null) {
+            imghost_next_form = br.getFormbyProperty("id", "myform");
+        }
+        /* 2020-10-22: Usually 3 seconds waittime */
+        final String waitStr = new Regex(correctedBR, "var countdown = (\\d+);").getMatch(0);
+        if (waitStr != null) {
+            try {
+                this.sleep(Long.parseLong(waitStr) * 1001l, this.getDownloadLink());
+            } catch (final Throwable e) {
+            }
+        }
+        return imghost_next_form;
+    }
+
+    @Override
+    protected String getDllinkImagehost(final String src) {
+        String dllink = new Regex(correctedBR, "id=\"source\" src=\"(https?://[^/]+/i\\.php\\?[^\";]+)").getMatch(0);
+        if (StringUtils.isEmpty(dllink)) {
+            /* Fallback to template handling */
+            dllink = super.getDllinkImagehost(src);
+        }
+        return dllink;
     }
 }

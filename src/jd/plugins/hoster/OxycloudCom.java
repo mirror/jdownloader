@@ -398,20 +398,25 @@ public class OxycloudCom extends YetiShareCore {
                 requestFileInformation(link, account, true);
                 loginWebsite(account, false);
                 br.setFollowRedirects(true);
-                String dllink = null;
-                final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
-                if (this.looksLikeDownloadableContent(con)) {
-                    dllink = con.getURL().toString();
+                String dllink = checkDirectLink(link, account);
+                if (dllink != null) {
+                    logger.info("Continuing with stored directURL");
                 } else {
-                    br.followConnection();
-                    final String internalFileID = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
-                    if (internalFileID == null) {
-                        this.checkErrors(link, account);
-                        checkErrorsLastResort(link, account);
+                    logger.info("Generating new directURL");
+                    final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+                    if (this.looksLikeDownloadableContent(con)) {
+                        dllink = con.getURL().toString();
+                    } else {
+                        br.followConnection();
+                        final String internalFileID = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
+                        if (internalFileID == null) {
+                            this.checkErrors(link, account);
+                            checkErrorsLastResort(link, account);
+                        }
+                        br.setFollowRedirects(false);
+                        br.getPage("/account/direct_download/" + internalFileID);
+                        dllink = br.getRedirectLocation();
                     }
-                    br.setFollowRedirects(false);
-                    br.getPage("/account/direct_download/" + internalFileID);
-                    dllink = br.getRedirectLocation();
                 }
                 if (dllink == null) {
                     this.checkErrors(link, account);
@@ -420,6 +425,7 @@ public class OxycloudCom extends YetiShareCore {
                 final boolean resume = this.isResumeable(link, account);
                 final int maxchunks = this.getMaxChunks(account);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+                link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
                 if (!isDownloadableContent(dl.getConnection())) {
                     try {
                         br.followConnection(true);
