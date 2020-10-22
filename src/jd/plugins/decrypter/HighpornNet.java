@@ -47,9 +47,14 @@ public class HighpornNet extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("www.", "");
         final String videoid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String initialHost = Browser.getHost(parameter);
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (isOffline(br)) {
+        if (!br.getURL().contains(initialHost)) {
+            logger.info("Redirect to external website");
+            decryptedLinks.add(this.createOfflinelink(br.getURL()));
+            return decryptedLinks;
+        } else if (isOffline(br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (!br.getURL().contains(videoid)) {

@@ -252,6 +252,14 @@ public class HitomiLa extends antiDDoSForDecrypt {
     String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) {
         ext = isNotBlank(ext) ? ext : (isNotBlank(dir) ? dir : image.get("name").split("\\.")[1]);
         dir = isNotBlank(dir) ? dir : "images";
+        {
+            /* 2020-10-22: Hack or bugfix?? */
+            final long haswebp = JavaScriptEngineFactory.toLong(image.get("haswebp"), 1);
+            if (haswebp == 1) {
+                ext = "webp";
+                dir = "webp";
+            }
+        }
         return "//a.hitomi.la/" + dir + '/' + full_path_from_hash(image.get("hash")) + '.' + ext;
     }
 
