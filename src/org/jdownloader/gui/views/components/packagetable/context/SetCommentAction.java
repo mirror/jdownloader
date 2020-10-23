@@ -57,7 +57,7 @@ public class SetCommentAction<PackageType extends AbstractPackageNode<ChildrenTy
             dialog.setDimensor(new RememberLastDialogDimension("SetCommentAction"));
             final InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, dialog);
             d.throwCloseExceptions();
-            final String comment = d.getMessage();
+            final String comment = d.getText();
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
