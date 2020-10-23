@@ -106,8 +106,9 @@ public class TwitterCom extends PornEmbedParser {
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
-        if (getUserLogin(false)) {
+        /* Some profiles can only be accessed if they accepted others as followers --> Login if the user has added his twitter account */
+        final Account account = getUserLogin(false);
+        if (account != null) {
             logger.info("Account available and we're logged in");
         } else {
             logger.info("No account available or login failed");
@@ -205,9 +206,9 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 /* Fallback to API/normal website */
             }
-            crawlAPITweet(parameter, null);
+            crawlAPITweet(parameter, null, account);
         } else {
-            crawlUserViaAPI(parameter);
+            crawlUserViaAPI(parameter, account);
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Could not find any media, decrypter might be broken");
@@ -234,10 +235,10 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlAPITweet(final String parameter, final FilePackage fp) throws Exception {
+    private void crawlAPITweet(final String parameter, final FilePackage fp, final Account account) throws Exception {
         logger.info("Crawling API tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
-        prepareAPI(this.br);
+        prepareAPI(this.br, account);
         br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
@@ -259,10 +260,13 @@ public class TwitterCom extends PornEmbedParser {
         return br;
     }
 
-    private Browser prepareAPI(final Browser br) throws DecrypterException, IOException {
+    private Browser prepareAPI(final Browser br, final Account account) throws DecrypterException, IOException {
         /* 2020-02-03: Static authtoken */
         prepAPIHeaders(br);
-        getAndSetGuestToken(br);
+        if (account == null) {
+            /* Gues token is only needed for anonymous users */
+            getAndSetGuestToken(br);
+        }
         return br;
     }
 
@@ -423,10 +427,10 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlUserViaAPI(final String parameter) throws Exception {
+    private void crawlUserViaAPI(final String parameter, final Account account) throws Exception {
         logger.info("Crawling API user");
         final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
-        this.prepareAPI(br);
+        this.prepareAPI(br, account);
         final boolean use_old_api_to_get_userid = true;
         LinkedHashMap<String, Object> entries;
         final String user_id;
@@ -671,19 +675,19 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /** Log in the account of the hostplugin */
-    @SuppressWarnings({ "deprecation", "static-access" })
-    private boolean getUserLogin(final boolean force) throws Exception {
+    @SuppressWarnings({ "static-access" })
+    private Account getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("twitter.com");
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        final Account aa = AccountController.getInstance().getValidAccount("twitter.com");
         if (aa == null) {
-            return false;
+            return null;
         }
         try {
             ((jd.plugins.hoster.TwitterCom) hostPlugin).login(br, aa, force);
+            return aa;
         } catch (final PluginException e) {
-            return false;
+            return null;
         }
-        return true;
     }
 
     public int getMaxConcurrentProcessingInstances() {

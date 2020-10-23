@@ -105,9 +105,12 @@ public class TwitterCom extends PluginForHost {
     private static Object LOCK = new Object();
 
     /** 2017-11-29: TODO: For videos: Check this way https://api.twitter.com/1.1/videos/tweet/config/<tweetid>.json */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         setconstants(link);
         prepBR(this.br);
         URLConnectionAdapter con = null;
@@ -170,18 +173,23 @@ public class TwitterCom extends PluginForHost {
             br.getHeaders().put("Origin", "https://twitter.com");
             br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweet_id);
             synchronized (LOCK) {
-                if (guest_token == null) {
-                    /* TODO: Improve this */
-                    /** TODO: Save guest_token throughout session so we do not generate them so frequently */
-                    jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
-                    guest_token = jd.plugins.decrypter.TwitterCom.generateNewGuestToken(br);
+                jd.plugins.decrypter.TwitterCom.prepAPIHeaders(br);
+                /* Set guest_token header if needed. */
+                if (account == null) {
+                    if (guest_token == null) {
+                        /** TODO: Save guest_token throughout session so we do not generate them so frequently */
+                        guest_token = jd.plugins.decrypter.TwitterCom.generateNewGuestToken(br);
+                    }
+                    if (guest_token != null) {
+                        br.getHeaders().put("x-guest-token", guest_token);
+                    } else {
+                        logger.warning("Failed to get guesttoken");
+                    }
                 }
-                if (guest_token != null) {
-                    br.getHeaders().put("x-guest-token", guest_token);
-                } else {
-                    logger.warning("Failed to get guesttoken");
-                }
-                /* Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests */
+                /*
+                 * Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many Requests -->
+                 * {"errors":[{"message":"Rate limit exceeded","code":88}]}
+                 */
                 br.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweet_id + ".json");
                 if (br.getHttpConnection().getResponseCode() == 429) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
@@ -524,7 +532,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(this.br, account, false);
-        requestFileInformation(link);
+        requestFileInformation(link, account, true);
         doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 
