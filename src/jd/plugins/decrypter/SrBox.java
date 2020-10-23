@@ -35,14 +35,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 /** 2020-06-08: Current main domain is: isrbx.net */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://biq\\.to/go/[a-f0-9]{100,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net))/go/[a-f0-9]{100,}" })
 public class SrBox extends antiDDoSForDecrypt {
     public SrBox(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x\\.(?:[a-zA-Z]+)|isbox\\.net)/";
-    private static final String TYPE_SINGLE_REDIRECT = "https?://biq\\.to/go/[a-f0-9]{100,}";
+    private static final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/go/[a-f0-9]{100,}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -110,7 +110,7 @@ public class SrBox extends antiDDoSForDecrypt {
             // Some link can be crypted in this site, see if it is the case
             String[] linksCrypted = br.getRegex("\"(" + base + "[^\"]*go(?:\\.php)?(?:\\?|&|&amp;)url=.*?)\"").getColumn(0);
             if (linksCrypted == null || linksCrypted.length == 0) {
-                linksCrypted = br.getRegex("(https?://biq.to/go/[^\"]+)").getColumn(0);
+                linksCrypted = br.getRegex("(https?://[^/]+/go/[a-f0-9]+)").getColumn(0);
             }
             // Added crypted links
             for (String redirectlink : linksCrypted) {
@@ -118,13 +118,18 @@ public class SrBox extends antiDDoSForDecrypt {
                 if (base64 != null) {
                     decryptedLinks.add(createDownloadlink(base64));
                 } else {
-                    final Browser br2 = br.cloneBrowser();
-                    getPage(br2, redirectlink);
-                    final String finallink = br2.getRedirectLocation();
-                    if (finallink != null) {
-                        decryptedLinks.add(createDownloadlink(finallink));
-                    }
+                    // final Browser br2 = br.cloneBrowser();
+                    // getPage(br2, redirectlink);
+                    // final String finallink = br2.getRedirectLocation();
+                    // if (finallink != null) {
+                    // decryptedLinks.add(createDownloadlink(finallink));
+                    // }
+                    /* 2020-10-23: There can be a lot of URLs and this can take quite some time --> URLs go into crawler again */
+                    decryptedLinks.add(createDownloadlink(redirectlink));
                 }
+                // if (this.isAbort()) {
+                // break;
+                // }
             }
             /*
              * Array of image to download the cover (It can be usable if the user want to create a subfolder with the name of the package
