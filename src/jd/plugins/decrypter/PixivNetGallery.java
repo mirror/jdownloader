@@ -247,8 +247,12 @@ public class PixivNetGallery extends PluginForDecrypt {
                     }
                     for (final Object workO : works) {
                         final Map<String, Object> entries = (Map<String, Object>) workO;
-                        final String galleryID = (String) entries.get("illustId");
-                        if (dups.add(galleryID)) {
+                        String galleryID = (String) entries.get("illustId");
+                        if (StringUtils.isEmpty(galleryID)) {
+                            /* 2020-10-23 */
+                            galleryID = (String) entries.get("id");
+                        }
+                        if (!StringUtils.isEmpty(galleryID) && dups.add(galleryID)) {
                             itemcounter++;
                             final DownloadLink dl = createDownloadlink(PixivNet.createSingleImageUrl(galleryID));
                             decryptedLinks.add(dl);
@@ -302,6 +306,7 @@ public class PixivNetGallery extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /** Generates DownloadLink for a single picture item. */
     private DownloadLink generateDownloadLink(final String parameter, final String contentID, String title, final String uploadDate, final String username, String tags, final String directurl) {
         if (title == null) {
             title = contentID;
@@ -332,6 +337,10 @@ public class PixivNetGallery extends PluginForDecrypt {
         dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
         if (!StringUtils.isEmpty(uploadDate)) {
             dl.setProperty(PixivNet.PROPERTY_UPLOADDATE, uploadDate);
+        }
+        if (!StringUtils.isEmpty(username)) {
+            /* Packagizer property */
+            dl.setProperty(PixivNet.PROPERTY_UPLOADER, username);
         }
         dl.setContentUrl(parameter);
         dl.setFinalFileName(filename);
