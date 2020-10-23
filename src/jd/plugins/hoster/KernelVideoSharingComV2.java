@@ -108,6 +108,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // return ret.toArray(new String[0]);
     // }
 
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
@@ -123,7 +131,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_mobile)) {
-            /* Correct mobile urls --> Normal URLs */
+            /* Correct mobile urls --> Normal URLs TODO: check this */
             final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
@@ -835,14 +843,33 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected String getFileTitle(final DownloadLink link) {
         String filename;
-        String title_url = getURLTitle(br.getURL());
+        final String fuid = this.getFUID(link.getPluginPatternMatcher());
+        String title_url = this.getURLTitle(br.getURL());
+        if (title_url == null) {
+            title_url = this.getURLTitle(link.getPluginPatternMatcher());
+        }
+        /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
+        if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
+            String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+            if (realURL == null) {
+                realURL = br.getRegex("(/videos/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+            }
+            if (realURL != null) {
+                /* TODO: Maybe set this as pluginpatternmatcher (?) */
+                logger.info("Found real URL corresponding to current embed URL: " + realURL);
+                try {
+                    realURL = br.getURL(realURL).toString();
+                    title_url = this.getURLTitle(realURL);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("URL parsing failure");
+                }
+            }
+        }
         final String url_source = getURL_source(br, link);
         // final String current_host = link.getHost();
         /* Find 'real' filename and the one inside our URL. */
-        if (link.getPluginPatternMatcher().matches(type_normal) || link.getPluginPatternMatcher().matches(type_normal_fuid_at_end)) {
-            /* Nice title is inside URL --> Prefer that! */
-            filename = title_url;
-        } else if (url_source.matches(type_normal_without_fuid) && !title_url.matches("\\d+")) {
+        if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
             /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
         } else if (url_source.matches(type_only_numbers)) { /* TODO: Check the following (old) code */
