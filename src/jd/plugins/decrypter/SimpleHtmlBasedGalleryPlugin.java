@@ -190,7 +190,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
         String[] galleryUrls = getGalleryUrls(galleryHrefRegex);
         if (galleryUrls == null || galleryUrls.length == 0) {
-            // TODO do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
+            // do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
             allImageLinks.add(this.createOfflinelink(url));
             return;
         }
@@ -270,7 +270,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     private void populateGalleryImageLinks(ArrayList<DownloadLink> imageLinks, Browser brc) throws PluginException, IOException {
         final String[] imageUrls = determineImageUrls(brc);
         if (imageUrls == null || imageUrls.length == 0) {
-            // TODO do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
+            // do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
             imageLinks.add(this.createOfflinelink(brc.getURL()));
         } else {
             final int padLength = (int) Math.log10(imageUrls.length) + 1;
