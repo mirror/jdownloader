@@ -85,7 +85,7 @@ public class EliteBabesCom extends SimpleHtmlBasedGalleryPlugin {
                 break;
             }
         }
-        // if next page defined
+        // if next page is available/in the list
         if (currentPageIndex < atLeastPage2Urls.size() - 1) {
             // navigate to next page
             br.getPage(atLeastPage2Urls.get(currentPageIndex + 1)); // TODO handle 404 ?
