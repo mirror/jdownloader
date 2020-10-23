@@ -38,7 +38,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         // these 2 are mandatory
         public final String  host;
         private final String galleryUrlRegexSuffix;
-        // if only single galleries are supported for that host, leave those 2 as "null"
+        // if only single galleries are supported for that host, leave those 2 as "null". otherwise both are mandatory
         private final String galleriesUrlRegexSuffix;
         private final String galleryHrefRegex;
         // access those only via their respective methods
@@ -132,6 +132,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    // TODO REVIEW really necessary?
     @Override
     public String[] siteSupportedNames() {
         return new String[] { getHost() };
@@ -193,29 +194,49 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String galleryUrl : galleryUrls) {
-            if (!isAbort()) {
-                crawlGallery(allImageLinks, galleryUrl);
+            if (isAbort()) {
+                break;
             }
+            crawlGallery(allImageLinks, galleryUrl);
         }
     }
 
-    protected String[] getGalleryUrls(String galleryHrefRegex) throws PluginException {
+    private String[] getGalleryUrls(String galleryHrefRegex) throws PluginException, IOException {
         if (StringUtils.isEmpty(galleryHrefRegex)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery href regex configured for " + br.getHost());
         }
+        ArrayList<String> galleryUrls = new ArrayList<String>(getCurrentGalleryUrls(galleryHrefRegex));
+        while (fetchMoreGalleries()) {
+            if (isAbort()) {
+                break;
+            }
+            galleryUrls.addAll(getCurrentGalleryUrls(galleryHrefRegex));
+        }
+        return galleryUrls.toArray(new String[0]);
+    }
+
+    // if there is another "page" of galleries available, fetch them, or navigate to that page and return true, so that getCurrentGalleryUrls()
+    // can parse them. otherwise, return false.
+    protected boolean fetchMoreGalleries() throws IOException {
+        // right now, no generic support for auto-paging of galleries
+        return false;
+    }
+
+    protected ArrayList<String> getCurrentGalleryUrls(String galleryHrefRegex) throws PluginException {
+        ArrayList<String> galleryUrls = new ArrayList<String>();
         String[][] matches = br.getRegex("href\\s*=\\s*(?:\"|')(" + galleryHrefRegex + ")(?:\"|')").getMatches();
         if (matches.length == 0) {
-            return new String[0];
+            return galleryUrls;
         }
-        String[] galleryUrls = new String[matches.length];
-        for (int i = 0; i < matches.length; i++) {
+        for (String[] match : matches) {
             try {
-                String match = matches[i][0];
-                if (StringUtils.isEmpty(match)) {
+                String url = match[0];
+                if (StringUtils.isEmpty(url)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery match found");
                 }
-                galleryUrls[i] = br.getURL(match).toString();
+                galleryUrls.add(br.getURL(url).toString());
             } catch (IOException e) {
+                // TODO e.g. retry instead, in order to not loose the already found links
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         }
