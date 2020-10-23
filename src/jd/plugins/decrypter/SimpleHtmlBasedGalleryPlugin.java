@@ -190,8 +190,9 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
         String[] galleryUrls = getGalleryUrls(galleryHrefRegex);
         if (galleryUrls == null || galleryUrls.length == 0) {
-            // TODO do not throw exception, as dev people will raise an issue about it
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // TODO do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
+            allImageLinks.add(this.createOfflinelink(url));
+            return;
         }
         for (final String galleryUrl : galleryUrls) {
             if (isAbort()) {
@@ -269,8 +270,8 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     private void populateGalleryImageLinks(ArrayList<DownloadLink> imageLinks, Browser brc) throws PluginException, IOException {
         final String[] imageUrls = determineImageUrls(brc);
         if (imageUrls == null || imageUrls.length == 0) {
-            // TODO do not throw exception, as dev people will raise an issue about it
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // TODO do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
+            imageLinks.add(this.createOfflinelink(brc.getURL()));
         } else {
             final int padLength = (int) Math.log10(imageUrls.length) + 1;
             int index = 1;
@@ -332,9 +333,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
                 title = title + " " + id;
             }
         }
-        // if (title == null) {
-        // // title = new Regex(url, getMatcher().pattern()).getMatch(1);
-        // }
+        // TODO what if title is "null" or empty?
         return title != null ? Encoding.htmlDecode(title.trim()) : null;
     }
 }
