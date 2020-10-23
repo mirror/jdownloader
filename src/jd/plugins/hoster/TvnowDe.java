@@ -349,12 +349,12 @@ public class TvnowDe extends PluginForHost {
         String hlsMaster = null;
         boolean grabStreamDataFromNewAPIJson = false;
         if (this.usingNewAPI) {
-            /* New API was already used in availablecheck (special case) */
+            /* New API was already accessed in availablecheck (special rare case) */
             /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
             // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
             grabStreamDataFromNewAPIJson = true;
         } else {
-            /* Old API was used in availablecheck until now. */
+            /* "Old" API was used in availablecheck until now. */
             final String movieID = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), -1));
             if (movieID.equals("-1")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -364,18 +364,20 @@ public class TvnowDe extends PluginForHost {
             }
             try {
                 /*
-                 * 2019-01-16: Usage of new API usually (not always) requires auth header --> Only use it in premium mode for now to get
-                 * (higher quality) stream-URLs
+                 * 2019-01-16: Usage of new API usually (not always) requires auth header --> Use it in premium mode only (also to get
+                 * [higher quality] stream-URLs and be able to download items that are only available for paid account users).
                  */
-                final boolean usePremiumModeWay = acc != null && acc.getType() == AccountType.PREMIUM;
+                /* 2020-10-23: Debug test */
                 final boolean useWebsite = false;
-                if (usePremiumModeWay && !useWebsite) {
-                    /* Access one of two possibel APIs */
+                if (!useWebsite) {
+                    /* Use one of two possible ways to find (hopefully) downloadable streaming URLs. */
+                    final boolean usePremiumModeWay = acc != null && acc.getType() == AccountType.PREMIUM;
                     if (usePremiumModeWay) {
-                        /* 2020-10-21: json is now in website html */
+                        /* 2020-10-21: json is now in website html too */
                         accessStreamInfoViaNewAPI(link);
                         grabStreamDataFromNewAPIJson = true;
                     } else {
+                        /* 2020-10-23: Website-way -> debug test */
                         final String urlpart = getURLPart(link);
                         br.getPage(API_BASE + "/movies/" + urlpart + "?fields=manifest");
                         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
