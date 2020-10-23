@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
@@ -28,9 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/\\d+(?:/[a-z0-9\\-_]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/(\\d+)(?:/[a-z0-9\\-_]+)?" })
 public class NaughtymachinimaCom extends PluginForHost {
     public NaughtymachinimaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +62,20 @@ public class NaughtymachinimaCom extends PluginForHost {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -68,12 +84,10 @@ public class NaughtymachinimaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/error/") || this.br.containsHTML("This video cannot be found\\.")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/" + getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2016-09-01: This check is not needed yet! */
-        // privatecontent = this.br.containsHTML(">This is a private video");
-        privatecontent = false;
+        privatecontent = this.br.containsHTML(">This is a private video");
         final String fid = new Regex(link.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
         final String url_name = new Regex(link.getDownloadURL(), "([a-z0-9\\-_]+)$").getMatch(0);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -100,17 +114,17 @@ public class NaughtymachinimaCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, default_Extension);
+        final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (dllink != null) {
+        if (!StringUtils.isEmpty(dllink)) {
             link.setFinalFileName(filename);
             if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                 final Browser br2 = br.cloneBrowser();
@@ -118,8 +132,8 @@ public class NaughtymachinimaCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (this.looksLikeDownloadableContent(con)) {
+                        link.setDownloadSize(con.getCompleteContentLength());
                         link.setProperty("directlink", dllink);
                     } else {
                         server_issues = true;
@@ -139,23 +153,27 @@ public class NaughtymachinimaCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (privatecontent) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

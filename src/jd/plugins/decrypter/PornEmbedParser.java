@@ -154,24 +154,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("http%3A%2F%2F(?:www\\.)?madthumbs\\.com%2Fvideos%2Fembed_config%3Fvid%3D[^<>\"]+videos%2F[^<>\"]+%2F(\\d+)%26splash%3Dhttp").getMatch(0);
-        }
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("//www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
-            decryptedLinks.add(dl);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("madthumbscdn\\.com/videos/\\d+/(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("(\"|'')((?:https?:)?//(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(externID.replace("tube8.com/embed/", "tube8.com/"));
