@@ -203,7 +203,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return subdomain;
     }
 
-    /* 2020-02-10: See also: https://board.jdownloader.org/showpost.php?p=457258&postcount=16 */
+    /* 2020-02-10: Thx to forum user "damo" - See also: https://board.jdownloader.org/showpost.php?p=457258&postcount=16 */
     /* ####################################################################################################################### */
     public static final Pattern SUBDOMAIN_FROM_URL_PATTERN  = Pattern.compile("/[0-9a-f]/([0-9a-f]{2})/");
     public static final Pattern URL_FROM_URL_PATTERN        = Pattern.compile("//..?\\.hitomi\\.la/");
