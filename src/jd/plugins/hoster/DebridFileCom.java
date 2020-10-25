@@ -171,7 +171,7 @@ public class DebridFileCom extends PluginForHost {
             br.getPage(WEBSITE_BASE + "/?language-picker-language=en-US");
             br.getPage(WEBSITE_BASE + "/service");
         }
-        final String premiumDaysStr = br.getRegex("VIP\\sexpires\\sin\\s*(\\d+)\\s*<small").getMatch(0);
+        final String premiumDaysStr = br.getRegex("(Premium :|VIP\\sexpires\\sin)\\s*(\\d+)\\s*<small").getMatch(1);
         String trafficleftStr = br.getRegex("</small>((<b>(\\d+(\\.|)\\d{1,2} [A-Za-z]+)</b>)|<strong>([A-Za-zé]+)</strong>)").getMatch(0);
         if (premiumDaysStr == null) {
             /* Free or plugin failure */
