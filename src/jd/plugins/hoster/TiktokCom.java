@@ -16,10 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,11 +39,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends antiDDoSForHost {
@@ -53,17 +54,11 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
+    private final boolean RESUME       = true;
     /* 2019-07-10: More chunks possible but that would not be such a good idea! */
-    private final int     FREE_MAXCHUNKS    = 1;
-    private final int     FREE_MAXDOWNLOADS = 20;
+    private final int     MAXCHUNKS    = 1;
+    private final int     MAXDOWNLOADS = 20;
 
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -160,12 +155,24 @@ public class TiktokCom extends antiDDoSForHost {
                 // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
                 text_hashtags = (String) entries.get("text");
+                /* 2020-10-26: Doesn't work anymore, returns 403 */
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/urls/{0}");
+                // {
+                // /* 2020-10-26: Test */
+                // dllink = br.getRegex("<video src=\"(https?://[^<>\"]+)\"").getMatch(0);
+                // if (Encoding.isHtmlEntityCoded(dllink)) {
+                // dllink = Encoding.htmlDecode(dllink);
+                // }
+                // }
+                // this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + fid);
+                // this.dllink = this.br.toString();
+                if (isDownload) {
+                    /* 2020-10-26: Workaround (??!) */
+                    this.dllink = generateDownloadurlOld(link);
+                }
             } else {
                 /* Rev. 40928 and earlier */
-                /* 2020-10-12: This is still working! */
-                this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + fid);
-                this.dllink = this.br.toString();
+                this.dllink = generateDownloadurlOld(link);
             }
             if (!StringUtils.isEmpty(createDate)) {
                 final String dateFormatted = convertDateFormat(createDate);
@@ -211,6 +218,11 @@ public class TiktokCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String generateDownloadurlOld(final DownloadLink link) throws IOException {
+        this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + this.getFID(link));
+        return new URL(br.toString()).toString();
+    }
+
     private String convertDateFormat(String sourceDate) {
         if (sourceDate == null) {
             return null;
@@ -245,16 +257,17 @@ public class TiktokCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, RESUME, MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        br.getHeaders().put("Referer", "https://www.tiktok.com/");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -269,134 +282,15 @@ public class TiktokCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return MAXDOWNLOADS;
     }
 
-    // private static Object LOCK = new Object();
-    //
-    // private void login(final Account account, final boolean force) throws Exception {
-    // synchronized (LOCK) {
-    // try {
-    // br.setFollowRedirects(true);
-    // br.setCookiesExclusive(true);
-    // final Cookies cookies = account.loadCookies("");
-    // if (cookies != null && !force) {
-    // this.br.setCookies(this.getHost(), cookies);
-    // return;
-    // }
-    // br.getPage("");
-    // if (br.containsHTML("")) {
-    // final DownloadLink dlinkbefore = this.getDownloadLink();
-    // final DownloadLink dl_dummy;
-    // if (dlinkbefore != null) {
-    // dl_dummy = dlinkbefore;
-    // } else {
-    // dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-    // this.setDownloadLink(dl_dummy);
-    // }
-    // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-    // if (dlinkbefore != null) {
-    // this.setDownloadLink(dlinkbefore);
-    // }
-    // // g-recaptcha-response
-    // }
-    // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-    // if (!isLoggedin()) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // }
-    // account.saveCookies(this.br.getCookies(this.getHost()), "");
-    // } catch (final PluginException e) {
-    // account.clearCookies("");
-    // throw e;
-    // }
-    // }
-    // }
-    //
-    // private boolean isLoggedin() {
-    // return br.getCookie(this.getHost(), "", Cookies.NOTDELETEDPATTERN) != null;
-    // }
-    //
-    // @Override
-    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-    // final AccountInfo ai = new AccountInfo();
-    // try {
-    // login(account, true);
-    // } catch (final PluginException e) {
-    // throw e;
-    // }
-    // String space = br.getRegex("").getMatch(0);
-    // if (space != null) {
-    // ai.setUsedSpace(space.trim());
-    // }
-    // ai.setUnlimitedTraffic();
-    // if (br.containsHTML("")) {
-    // account.setType(AccountType.FREE);
-    // /* free accounts can still have captcha */
-    // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(false);
-    // ai.setStatus("Registered (free) user");
-    // } else {
-    // final String expire = br.getRegex("").getMatch(0);
-    // if (expire == null) {
-    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    // } else {
-    // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-    // }
-    // account.setType(AccountType.PREMIUM);
-    // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-    // account.setConcurrentUsePossible(true);
-    // ai.setStatus("Premium account");
-    // }
-    // return ai;
-    // }
-    //
-    // @Override
-    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-    // requestFileInformation(link);
-    // login(account, false);
-    // br.getPage(link.getPluginPatternMatcher());
-    // if (account.getType() == AccountType.FREE) {
-    // doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
-    // } else {
-    // String dllink = this.checkDirectLink(link, "premium_directlink");
-    // if (dllink == null) {
-    // dllink = br.getRegex("").getMatch(0);
-    // if (StringUtils.isEmpty(dllink)) {
-    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // }
-    // dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-    // if (dl.getConnection().getContentType().contains("html")) {
-    // if (dl.getConnection().getResponseCode() == 403) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-    // } else if (dl.getConnection().getResponseCode() == 404) {
-    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-    // }
-    // logger.warning("The final dllink seems not to be a file!");
-    // br.followConnection();
-    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    // }
-    // link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-    // dl.startDownload();
-    // }
-    // }
-    //
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return ACCOUNT_FREE_MAXDOWNLOADS;
-    // }
-    //
-    // @Override
-    // public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-    // return false;
-    // }
     private static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";
     private static final boolean defaultFAST_LINKCHECK = true;
 
