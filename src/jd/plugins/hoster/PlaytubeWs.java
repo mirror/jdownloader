@@ -104,4 +104,34 @@ public class PlaytubeWs extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean isVideohosterEmbed() {
+        /* 2020-10-26 */
+        return true;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2020-10-26 */
+        return true;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-10-26 */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /* 2020-10-26 */
+        return false;
+    }
+
+    @Override
+    protected boolean useRUA() {
+        /* 2020-10-26 */
+        return true;
+    }
 }

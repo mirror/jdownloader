@@ -19,11 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault(final PluginWrapper wrapper) {
+public class PorngoCom extends KernelVideoSharingComV2 {
+    public PorngoCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -31,37 +32,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "kvs-demo.com" });
-        ret.add(new String[] { "sleazyneasy.com" });
-        ret.add(new String[] { "pornwhite.com" });
-        ret.add(new String[] { "private-shows.net" });
-        ret.add(new String[] { "anon-v.com" });
-        ret.add(new String[] { "voyeurhit.com" });
-        ret.add(new String[] { "hotmovs.com" });
-        ret.add(new String[] { "theclassicporn.com" });
-        ret.add(new String[] { "porndr.com" });
-        ret.add(new String[] { "momvids.com" });
-        ret.add(new String[] { "wankoz.com" });
-        ret.add(new String[] { "clipcake.com" });
-        ret.add(new String[] { "zbporn.com" });
-        ret.add(new String[] { "xozilla.com" });
-        ret.add(new String[] { "femdomtb.com" });
-        ret.add(new String[] { "cutscenes.net" });
-        ret.add(new String[] { "fetishshrine.com" });
-        ret.add(new String[] { "sheshaft.com" });
-        ret.add(new String[] { "yeswegays.com" });
-        ret.add(new String[] { "analdin.com" });
-        ret.add(new String[] { "tryboobs.com" });
-        ret.add(new String[] { "vikiporn.com" });
-        ret.add(new String[] { "katestube.com" });
-        ret.add(new String[] { "babestube.com" });
-        ret.add(new String[] { "japan-whores.com" });
-        ret.add(new String[] { "boundhub.com" });
-        ret.add(new String[] { "bravoteens.com" });
-        ret.add(new String[] { "onlygayvideo.com" });
-        ret.add(new String[] { "mylust.com" });
-        ret.add(new String[] { "yourporngod.com" });
-        ret.add(new String[] { "everydayporn.co" });
+        ret.add(new String[] { "porngo.com" });
         return ret;
     }
 
@@ -76,5 +47,15 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    protected String getFileTitle(final DownloadLink link) {
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = super.getFileTitle(link);
+        }
+        return title;
     }
 }

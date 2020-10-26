@@ -970,11 +970,13 @@ public class VKontakteRu extends PluginForDecrypt {
             /* 2020-06-17 */
             numberOfEntriesStr = br.getRegex("Show all (\\d+) albums").getMatch(0);
         }
+        if (numberOfEntriesStr == null) {
+            /* 2020-1^0-26 */
+            numberOfEntriesStr = br.getRegex(">Photo Albums<span class=\"ui_crumb_count\">(\\d+)<").getMatch(0);
+        }
         final String startOffset = br.getRegex("var preload\\s*=\\s*\\[(\\d+),\"").getMatch(0);
         if (numberOfEntriesStr == null) {
-            logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
-            decryptedLinks = null;
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
         final int numberOfEntries = (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr)));
