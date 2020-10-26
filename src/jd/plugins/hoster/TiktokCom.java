@@ -164,8 +164,6 @@ public class TiktokCom extends antiDDoSForHost {
                 // dllink = Encoding.htmlDecode(dllink);
                 // }
                 // }
-                // this.br.getPage("https://www.tiktok.com/node/video/playwm?id=" + fid);
-                // this.dllink = this.br.toString();
                 if (isDownload) {
                     /* 2020-10-26: Workaround (??!) */
                     this.dllink = generateDownloadurlOld(link);
