@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -58,6 +60,16 @@ public class PlaytubeWs extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            /* 2020-10-26: Special */
+            offline = new Regex(correctedBR, ">\\s*This video was deleted by|>\\s*File was locked by Copyright Agent").matches();
+        }
+        return offline;
     }
 
     @Override
@@ -133,5 +145,15 @@ public class PlaytubeWs extends XFileSharingProBasic {
     protected boolean useRUA() {
         /* 2020-10-26 */
         return true;
+    }
+
+    @Override
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2020-10-26: Special */
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2019-06-12: TODO: Update this RegEx for e.g. up-4ever.org */
+            fileInfo[0] = new Regex(correctedBR, "class=\"top\"><div class=\"title\">([^<>\"]+)<").getMatch(0);
+        }
+        return fileInfo;
     }
 }

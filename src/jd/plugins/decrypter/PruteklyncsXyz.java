@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -25,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?pruteklyncs\\.xyz/[A-Za-z0-9]+" })
 public class PruteklyncsXyz extends PluginForDecrypt {
@@ -45,6 +48,16 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(iframeURL);
+        if (br.containsHTML("passster-captcha-js")) {
+            /* 2020-10-26: Cheap clientside captcha */
+            final String nonce = PluginJSonUtils.getJson(br, "nonce");
+            final String post_id = PluginJSonUtils.getJson(br, "post_id");
+            if (StringUtils.isEmpty(nonce) || StringUtils.isEmpty(post_id)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.postPage("/wp-admin/admin-ajax.php", "action=validate_input&nonce=" + nonce + "&captcha=success&post_id=" + post_id + "&type=captcha&protection=full&elementor_content=");
+            br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        }
         final String[] links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
