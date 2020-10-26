@@ -17,6 +17,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -32,20 +45,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SmoozedTranslation;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" })
 public class SmoozedCom extends antiDDoSForHost {
@@ -53,6 +54,7 @@ public class SmoozedCom extends antiDDoSForHost {
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS         = new WeakHashMap<Account, Map<String, Object>>();
     public static final String                               PROPERTY_ACCOUNTINFO = "ACCOUNTINFO";
     public static final String                               PROPERTY_ACCOUNTHASH = "ACCOUNTHASH";
+    private static MultiHosterManagement                     mhm                  = new MultiHosterManagement("smoozed.com");
 
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -374,18 +376,18 @@ public class SmoozedCom extends antiDDoSForHost {
         while (--maxRedirect > 0) {
             con = br.openRequestConnection(request, false);
             if (con.getRequest().getLocation() == null) {
-                if (con.isContentDisposition()) {
+                if (this.looksLikeDownloadableContent(con)) {
                     con.disconnect();
                     br.setFollowRedirects(true);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, maxChunks >= 1 ? -maxChunks : 1);
-                    if (!dl.getConnection().isContentDisposition()) {
+                    if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                         try {
                             br.followConnection(true);
                         } catch (IOException e) {
                             logger.log(e);
                         }
                         errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 50);
                     } else {
                         dl.startDownload();
                         return;
@@ -397,7 +399,7 @@ public class SmoozedCom extends antiDDoSForHost {
                         logger.log(e);
                     }
                     errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 50);
                 }
             }
             try {

@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +58,22 @@ public class UploadBoyCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed-|direct/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        try {
+            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|direct/)?([a-z0-9]{12})").getMatch(0);
+            return result;
+        } catch (MalformedURLException e) {
+            logger.log(e);
+        }
+        return null;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -135,9 +152,9 @@ public class UploadBoyCom extends XFileSharingProBasic {
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         /* 2020-02-10: Special */
-        String dllink = super.getDllink(link, account, br, src);
+        String dllink = new Regex(correctedBR, "(https?://[^/]+/d/[a-z0-9]{12}/[^<>\"\\']+)").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
-            dllink = new Regex(correctedBR, "(https?://[^/]+/d/[a-z0-9]{12}/[^<>\"\\']+)").getMatch(0);
+            dllink = super.getDllink(link, account, br, src);
         }
         return dllink;
     }
