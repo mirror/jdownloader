@@ -41,9 +41,9 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
-    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.articlix.com" };
+    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.fc-lc.com", "short.articlix.com" };
     /** List of services for which waittime is skippable. */
-    private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
+    private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] { "fcc.lc" });
     // /** List of services for which captcha is skippable or not required. */
     /** TODO: Find a way to automatically detect this edge-case */
     private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] {});
@@ -110,6 +110,9 @@ public class FcLc extends antiDDoSForDecrypt {
              * of their working domains.
              */
             output = input.replace("curs.io", "cuto.io");
+        } else if (input.contains("fc.lc/")) {
+            /* 2020-10-26 */
+            output = input.replace("fc.lc/", "short.fc-lc.com/");
         } else {
             /* Nothing to correct */
             output = input;
@@ -186,6 +189,30 @@ public class FcLc extends antiDDoSForDecrypt {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!this.evalulateCaptcha(CaptchaType.reCaptchaV2, parameter)) {
+            /* 2020-10-26: short.fc-lc.com */
+            this.submitForm(form);
+        }
+        {
+            /* TODO 2020-10-26: Very unsure about that! */
+            boolean hasFoundNextForm = false;
+            Form nextForm = br.getFormbyActionRegex(".*redirecto\\.link/.+");
+            if (nextForm != null) {
+                hasFoundNextForm = true;
+                this.submitForm(nextForm);
+            }
+            nextForm = br.getFormbyActionRegex(".*fcc\\.lc/.+");
+            if (nextForm != null) {
+                hasFoundNextForm = true;
+                this.submitForm(nextForm);
+            }
+            if (hasFoundNextForm) {
+                form = getCaptchaForm();
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
         // form.remove("_Token%5Bunlocked%5D");
         // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
         // final InputField ifield = form.getInputField("_Token%5Bfields%5D");
@@ -245,7 +272,7 @@ public class FcLc extends antiDDoSForDecrypt {
                             key = getAppVarsResult("invisible_reCAPTCHA_site_key");
                         }
                         if (StringUtils.isEmpty(key)) {
-                            logger.warning("Failed to find reCaptchaV2 key");
+                            logger.warning("Failed to find reCaptchaV2 key --> Fallback to default handling");
                             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
                                 @Override
                                 public TYPE getType() {
@@ -327,6 +354,15 @@ public class FcLc extends antiDDoSForDecrypt {
                 f2 = br.getForm(0);
             }
             if (f2 != null) {
+                if (f2.getAction() == null || (!f2.getAction().startsWith("/") && !f2.getAction().startsWith("http"))) {
+                    /* 2020-10-26 */
+                    final String action = br.getRegex("var domain = \"(https?://[^<>\"]+)\";").getMatch(0);
+                    if (action != null) {
+                        f2.setAction(action);
+                    } else {
+                        f2.setAction("/links/go");
+                    }
+                }
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -379,6 +415,8 @@ public class FcLc extends antiDDoSForDecrypt {
         }
         if (domains_waittime_skippable.contains(source_host)) {
             /* Waittime is skippable for this host */
+            return true;
+        } else if (domains_waittime_skippable.contains(this.br.getHost())) {
             return true;
         }
         /* Waittime is NOT skippable for all other hosts */

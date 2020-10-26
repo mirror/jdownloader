@@ -405,7 +405,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private boolean isClubUrl(final String url) {
-        return new Regex(url, PATTERN_CLUB_LINK).matches() && !new Regex(url, PATTERN_PHOTO_MODULE).matches();
+        return new Regex(url, PATTERN_CLUB_LINK).matches() && !new Regex(url, PATTERN_PHOTO_MODULE).matches() && !isSingleVideo(url);
     }
 
     /**

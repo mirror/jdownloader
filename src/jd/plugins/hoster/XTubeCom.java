@@ -129,9 +129,10 @@ public class XTubeCom extends PluginForHost {
         }
         /* Find highest quality available! */
         for (int i = 2000; i >= 100; i--) {
-            dllink = this.br.getRegex("\"" + i + "\":\"(http[^<>\"]+)\"").getMatch(0);
+            dllink = this.br.getRegex("\"?" + i + "\"?:\\s*\"(http[^<>\"]+)\"").getMatch(0);
             if (dllink != null) {
                 dllink = dllink.replace("\\", "");
+                logger.info("Successfully found quality: " + i + "p");
                 break;
             }
         }
@@ -143,7 +144,7 @@ public class XTubeCom extends PluginForHost {
             link.setLinkID(this.getHost() + "://" + fileID);
         }
         if (dllink == null) {
-            /* Try the old way. */
+            /* Fallback: Try the old way. */
             if ("undefined".equals(ownerName)) {
                 final String contentOwnerId = br.getRegex("contentOwnerId\" value=\"([^\"]+)\"").getMatch(0);
                 if (contentOwnerId != null) {
