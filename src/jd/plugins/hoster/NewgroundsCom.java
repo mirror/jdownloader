@@ -16,20 +16,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,11 +75,11 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 429) {
             errorRateLimited();
         }
@@ -95,9 +98,9 @@ public class NewgroundsCom extends antiDDoSForHost {
         String ext = null;
         final boolean checkForFilesize;
         String url_filename = null;
-        if (downloadLink.getDownloadURL().matches(ARTLINK)) {
+        if (link.getDownloadURL().matches(ARTLINK)) {
             /* 2020-02-03: Such URLs are handled by the crawler from now on as they can lead to multiple pictures. */
-            url_filename = new Regex(downloadLink.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
+            url_filename = new Regex(link.getDownloadURL(), "/view/(.+)").getMatch(0).replace("/", "_");
             checkForFilesize = true;
             dllink = br.getRegex("id=\"dim_the_lights\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -116,10 +119,10 @@ public class NewgroundsCom extends antiDDoSForHost {
              * 2017-02-02: Do not check for filesize as only 1 download per minute is possible --> Accessing directurls makes no sense here.
              */
             checkForFilesize = false;
-            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
             url_filename = fid;
             // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (downloadLink.getDownloadURL().contains("/audio/listen/")) {
+            if (link.getDownloadURL().contains("/audio/listen/")) {
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim();
                     if (addID2Filename) {
@@ -144,41 +147,30 @@ public class NewgroundsCom extends antiDDoSForHost {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
                 }
-                final String videoPlayer = br.getRegex("iframe\\s*src\\s*=\\s*\\\\\"([^\"]*/videoplayer[^\"]*)\\\\\"").getMatch(0);
-                if (videoPlayer != null) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage(videoPlayer.replace("\\", ""));
-                    final String playerSrc = brc.getRegex("player\\.updateSrc\\((.*?)\\)").getMatch(0);
-                    if (playerSrc != null) {
-                        final List<Object> items = JSonStorage.restoreFromString(playerSrc, TypeRef.LIST);
-                        Map<String, Object> best = null;
-                        for (final Object item : items) {
-                            if (item instanceof Map) {
-                                final Map<String, Object> map = (Map<String, Object>) item;
-                                if (best == null || ((Number) map.get("res")).longValue() > ((Number) best.get("res")).longValue()) {
-                                    best = map;
-                                }
-                            }
-                        }
-                        if (best != null) {
-                            dllink = (String) best.get("src");
-                            if (filename != null) {
-                                filename += "_" + best.get("res") + "p";
-                            }
-                        }
-                    } else {
-                        dllink = brc.getRegex("src:\\s*\"([^\"]*)\"").getMatch(0);
-                    }
+                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+                br.getPage("https://www.newgrounds.com/portal/video/" + fid);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (dllink == null) {
-                    dllink = br.getRegex("\"src\":[\t\n\r ]+\"(https?:[^<>\"]*?)\"").getMatch(0);
-                    // Maybe video or .swf
-                    if (dllink == null) {
-                        dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                filename = (String) entries.get("title");
+                entries = (Map<String, Object>) entries.get("sources");
+                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                int qualityMax = 0;
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String qualityStr = entry.getKey();
+                    final ArrayList<Object> qualityInfoArray = (ArrayList<Object>) entry.getValue();
+                    final Map<String, Object> qualityInfo = (Map<String, Object>) qualityInfoArray.get(0);
+                    final String url = (String) qualityInfo.get("src");
+                    if (!qualityStr.matches("\\d+p") || StringUtils.isEmpty(url)) {
+                        /* Skip invalid items */
+                        continue;
                     }
-                    if (dllink != null) {
-                        dllink = dllink.replace("\\", "");
-                        dllink = Encoding.htmlDecode(dllink);
+                    final int quality = Integer.parseInt(qualityStr.replace("p", ""));
+                    if (quality > qualityMax) {
+                        qualityMax = quality;
+                        this.dllink = url;
                     }
                 }
                 if (addID2Filename && filename != null && fid != null) {
@@ -199,7 +191,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         if (dllink != null && checkForFilesize) {
             URLConnectionAdapter con = null;
             try {
@@ -213,13 +205,13 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (!filename.endsWith(ext)) {
                     filename += ext;
                 }
-                downloadLink.setFinalFileName(filename);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(filename);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
                     server_issues = true;
                 }
-                downloadLink.setProperty("directlink", dllink);
+                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -235,24 +227,24 @@ public class NewgroundsCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (accountneeded) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         final int chunks;
-        if (!downloadLink.getPluginPatternMatcher().matches(ARTLINK)) {
+        if (!link.getPluginPatternMatcher().matches(ARTLINK)) {
             // avoid 429, You're making too many requests. Wait a bit before trying again
-            sleep(30 * 1000l, downloadLink);
+            sleep(30 * 1000l, link);
             chunks = 1;
         } else {
             chunks = free_maxchunks;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, chunks);
         if (dl.getConnection().getResponseCode() == 429) {
             try {
                 br.followConnection(true);
@@ -262,7 +254,7 @@ public class NewgroundsCom extends antiDDoSForHost {
             /* 2017-11-16: E.g. happens for audio files */
             errorRateLimited();
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException ignore) {
@@ -281,7 +273,7 @@ public class NewgroundsCom extends antiDDoSForHost {
             }
             /* 2020-02-18: https://board.jdownloader.org/showthread.php?t=81805 */
             final boolean art_zip_download_broken_serverside = true;
-            if (downloadLink.getName().contains(".zip") && art_zip_download_broken_serverside) {
+            if (link.getName().contains(".zip") && art_zip_download_broken_serverside) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside please wait for a fix, then contact us to fix our plugin");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

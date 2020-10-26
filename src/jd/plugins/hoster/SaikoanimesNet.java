@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class CloudSaikoanimesNet extends YetiShareCore {
-    public CloudSaikoanimesNet(PluginWrapper wrapper) {
+public class SaikoanimesNet extends YetiShareCore {
+    public SaikoanimesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -45,6 +45,8 @@ public class CloudSaikoanimesNet extends YetiShareCore {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "cloud.saikoanimes.net", "saikoanimes.net", "saikocloud.ml" });
+        /* 2020-10-26: This is a different portal than cloud.saikoanimes.net!! */
+        ret.add(new String[] { "drive.saikoanimes.net" });
         return ret;
     }
 
