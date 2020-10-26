@@ -187,10 +187,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         prepBR(this.br);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String fuidBeforeHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
-        final String titleUrl = getURLTitle(link.getPluginPatternMatcher());
-        if (!link.isNameSet() && !StringUtils.isEmpty(titleUrl)) {
+        final String titleURL = this.getURLTitle(link.getPluginPatternMatcher());
+        if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
-            link.setName(titleUrl + ".mp4");
+            link.setName(titleURL + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
         if (fuidBeforeHTTPRequest == null) {
@@ -792,18 +792,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             url_source = dl.getContentUrlOrPatternMatcher();
         }
         return url_source;
-    }
-
-    protected String regexURLFilenameAuto(final DownloadLink link) {
-        /*
-         * Short URLs may redirect to longer ones containing the information we need --> Prefer title which might be stored in current
-         * browsers' URL.
-         */
-        String filenameURL = getURLTitle(this.br.getURL());
-        if (filenameURL == null) {
-            filenameURL = getURLTitle(link.getPluginPatternMatcher());
-        }
-        return filenameURL;
     }
 
     /**
