@@ -16,32 +16,27 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CamwhoreshdCom extends KernelVideoSharingComV2 {
-    public CamwhoreshdCom(final PluginWrapper wrapper) {
+public class PervclipsCom extends KernelVideoSharingComV2 {
+    public PervclipsCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        /*
-         * 2020-10-27: cwtvembeds.com is part of camwhoreshd.com - it is very unlikely going to happen that a user inserts a single
-         * camwhoreshd.com URL but just in case, we will support that too. Usually camwhoreshd.com will embed camwhoreshd.com videos
-         * (special case as cwtvembeds.com is their own website too.)!
-         */
-        ret.add(new String[] { "camwhoreshd.com", "cwtvembeds.com" });
+        ret.add(new String[] { "pervclips.com" });
         return ret;
     }
 
@@ -55,17 +50,39 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            /*
+             * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
+             * URL!
+             */
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/tube/videos/([a-z0-9\\-]+)/");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getFUID(final String url) {
+        /* No ID in filename --> Use URL title */
+        return getURLTitle(url);
+    }
+
+    @Override
+    protected String getURLTitle(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     protected String getDllink(final Browser br) throws PluginException, IOException {
-        final String embed = br.getRegex("(https?://www.cwtvembeds.com/embed/\\d+)").getMatch(0);
-        if (embed != null && !StringUtils.equals(br._getURL().getPath(), new URL(embed).getPath())) {
-            br.setFollowRedirects(true);
-            br.getPage(embed);
-            return super.getDllink(br);
+        /* 2020-10-27: Official download available: Highest quality + 20 seconds pre-download-waittime skippable! */
+        String officialDownloadurl = br.getRegex("\"(https?://[^\"]+\\.mp4\\?download=1[^\"]*)\"").getMatch(0);
+        if (officialDownloadurl != null) {
+            if (Encoding.isHtmlEntityCoded(officialDownloadurl)) {
+                officialDownloadurl = Encoding.htmlDecode(officialDownloadurl);
+            }
+            return officialDownloadurl;
         } else {
+            /* Fallback */
             return super.getDllink(br);
         }
     }
