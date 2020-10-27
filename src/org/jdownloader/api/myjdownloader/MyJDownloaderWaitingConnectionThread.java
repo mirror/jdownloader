@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.proxy.ProxyController;
+import jd.http.SocketConnectionFactory;
+
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.UniqueAlltimeID;
@@ -23,12 +26,8 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.appwork.utils.net.httpconnection.SocketStreamInterface;
 import org.appwork.utils.net.socketconnection.SocketConnection;
-import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
 import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
-
-import jd.controlling.proxy.ProxyController;
-import jd.http.SocketConnectionFactory;
 
 public class MyJDownloaderWaitingConnectionThread extends Thread {
     protected static class MyJDownloaderConnectionRequest {
@@ -150,6 +149,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                                 socket = SocketConnectionFactory.createSocket(proxy);
                                 socket.setReuseAddress(true);
                                 socket.setSoTimeout(180000);
+                                socket.setKeepAlive(true);
                                 socket.setTcpNoDelay(true);
                                 if (proxy == null || proxy.isDirect() || proxy.isNone()) {
                                     socket.connect(addr, 10000);
