@@ -10,43 +10,40 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
+    private final GenericConfigEventListener<String> listener;
 
     public AutoReconnectToggleAction() {
         super(CFG_RECONNECT.AUTO_RECONNECT_ENABLED);
         setIconKey(IconKey.ICON_AUTO_RECONNECT);
-        org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(new GenericConfigEventListener<String>() {
-
+        listener = new GenericConfigEventListener<String>() {
             @Override
             public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                if ("DummyRouterPlugin".equalsIgnoreCase(newValue)) {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            AutoReconnectToggleAction.this.setEnabled(false);
-                            AutoReconnectToggleAction.this.setSelected(false);
-                        }
-                    };
-                } else {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            AutoReconnectToggleAction.this.setEnabled(true);
-                        }
-                    };
-                }
+                updateAction(newValue);
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
             }
-        }, true);
-        if ("DummyRouterPlugin".equalsIgnoreCase(org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getValue())) {
-            AutoReconnectToggleAction.this.setEnabled(false);
-            AutoReconnectToggleAction.this.setSelected(false);
+        };
+        org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(listener);
+        updateAction(org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getValue());
+    }
+
+    private void updateAction(final String activePlugin) {
+        if ("DummyRouterPlugin".equalsIgnoreCase(activePlugin)) {
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    AutoReconnectToggleAction.this.setEnabled(false);
+                }
+            };
         } else {
-            AutoReconnectToggleAction.this.setEnabled(true);
+            new EDTRunner() {
+                @Override
+                protected void runInEDT() {
+                    AutoReconnectToggleAction.this.setEnabled(true);
+                }
+            };
         }
     }
 
@@ -64,5 +61,4 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
     protected String getNameWhenEnabled() {
         return _GUI.T.AutoReconnectToggleAction_getNameWhenEnabled_();
     }
-
 }

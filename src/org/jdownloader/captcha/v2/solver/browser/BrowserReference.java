@@ -41,6 +41,7 @@ import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public abstract class BrowserReference implements ExtendedHttpRequestHandler, HttpRequestHandler, ConnectionHook {
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
@@ -140,23 +141,22 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     protected void openURL(String url) {
-        final String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+        String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
         if (browserCmd == null || browserCmd.length == 0) {
-            CrossSystem.openURL(url);
-        } else {
-            final String[] cmds = new String[browserCmd.length];
-            for (int i = 0; i < browserCmd.length; i++) {
-                cmds[i] = browserCmd[i].replace("%s", url);
-            }
-            final ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
+            browserCmd = CFG_GENERAL.BROWSER_COMMAND_LINE.getValue();
+        }
+        browserCmd = CrossSystem.buildBrowserCommandline(browserCmd, url);
+        if (browserCmd != null && browserCmd.length > 0) {
+            final ProcessBuilder pb = ProcessBuilderFactory.create(browserCmd);
             pb.redirectErrorStream(true);
             try {
                 pb.start();
+                return;
             } catch (IOException e) {
                 LogController.CL().log(e);
-                CrossSystem.openURL(url);
             }
         }
+        CrossSystem.openURL(url);
     }
 
     @Override
