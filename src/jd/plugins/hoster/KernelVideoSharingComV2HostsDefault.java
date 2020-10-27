@@ -74,6 +74,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "videowebcam.tv" });
         ret.add(new String[] { "yoxhub.com" });
         ret.add(new String[] { "hdzog.com" });
+        ret.add(new String[] { "rule34video.com" });
         return ret;
     }
 

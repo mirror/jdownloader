@@ -22,15 +22,20 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XbabeCom extends KernelVideoSharingComV2 {
-    public XbabeCom(final PluginWrapper wrapper) {
+public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV2 {
+    public KernelVideoSharingComV2HostsDefault2(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "shameless.com" });
         ret.add(new String[] { "xbabe.com" });
+        ret.add(new String[] { "h2porn.com" });
+        ret.add(new String[] { "bravotube.net" });
+        ret.add(new String[] { "hellporno.com" });
         return ret;
     }
 
