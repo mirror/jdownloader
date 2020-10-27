@@ -64,7 +64,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
     // other #2: Special websites that have their own plugins (examples): pornktube.com, alotporn.com, , clipcake.com
-    // other #3: Plugins with "high security" removed 2015-07-02: BravoTubeNet, BravoTeensCom
+    // other #3: Plugins with "high security" removed 2015-07-02: BravoTubeNet
     // other #3: h2porn.com: Added without security stuff 2015-11-03 REV 29387
     // TODO: Check if it is possible to get nice filenames for embed-urls as well
     /**
