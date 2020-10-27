@@ -26,12 +26,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -46,6 +40,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/(?:album|track)/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
@@ -72,7 +72,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String json = br.getRegex("trackinfo(?:&quot;|\")\\s*:\\s*(\\[.*?\\])(\\s*,\\s*\"|\\s*,\\s*&quot)").getMatch(0);
-        String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));
@@ -83,14 +82,14 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         } else if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
         }
+        final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         if (json_album == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.HASHMAP);
         String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
         if (artist == null) {
-            /* 2020-10-26: Fallback */
-            artist = br.getRegex("name=\"title\" content=\"[^\"]+, by ([^<>\"]+)\"").getMatch(0);
+            artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
         }
         String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
         if (album == null) {

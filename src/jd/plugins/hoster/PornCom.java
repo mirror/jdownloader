@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(?:\\w+\\.)?porn\\.com/(?:videos/[a-z0-9\\-]*?-|videos/embed/)(\\d+)" })
 public class PornCom extends antiDDoSForHost {
@@ -104,6 +104,7 @@ public class PornCom extends antiDDoSForHost {
             try {
                 login(br, aa, false);
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
         br.getPage(link.getDownloadURL().replace("/embed/", "/"));
@@ -152,7 +153,9 @@ public class PornCom extends antiDDoSForHost {
         try {
             con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             } else {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -247,11 +250,10 @@ public class PornCom extends antiDDoSForHost {
     }
 
     private static final String MAINPAGE = "https://porn.com";
-    private static Object       LOCK     = new Object();
 
     /** Login e.g. needed for videos that are only available to registered users and/or premium content. */
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -290,14 +292,10 @@ public class PornCom extends antiDDoSForHost {
         login(br, account, true);
         ai.setUnlimitedTraffic();
         maxPrem.set(FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        /* free accounts can still have captcha */
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(false);
         ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;

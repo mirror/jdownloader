@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -40,7 +41,10 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?bandcamp\\.com/track/([a-z0-9\\-_]+)" })
 public class BandCampCom extends PluginForHost {
@@ -77,8 +81,12 @@ public class BandCampCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("text")) {
-            br.followConnection(true);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -98,14 +106,20 @@ public class BandCampCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
+            con = br2.openGetConnection(link.getDownloadURL());
+            if (looksLikeDownloadableContent(con)) {
                 DLLINK = link.getDownloadURL();
-                link.setVerifiedFileSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
             } else {
-                br.followConnection();
+                try {
+                    br2.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
             }
         } catch (final Exception e) {
             logger.log(e);
@@ -131,8 +145,8 @@ public class BandCampCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             logger.info("DLLINK = " + DLLINK);
+            DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         }
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         if (!link.getBooleanProperty("fromdecrypter", false)) {
             String tracknumber = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
             if (tracknumber == null) {
@@ -155,39 +169,53 @@ public class BandCampCom extends PluginForHost {
                     date = Long.toString(TimeFormatter.getMilliSeconds(date, "dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH));
                 }
             }
-            final Regex inforegex = br.getRegex("<title>\\s*(.*?)\\s*\\|\\s*(.*?)\\s*</title>");
-            String artist = br.getRegex("artist\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
-            final String albumname = inforegex.getMatch(0);
-            if (artist == null) {
+            final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
+            if (json_album == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("fromdecrypter", true);
+            final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.HASHMAP);
+            String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
+            if (artist == null) {
+                artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
+            }
+            String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+            if (album == null) {
+                album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+            }
             link.setProperty("directdate", Encoding.htmlDecode(date.trim()));
             link.setProperty("directartist", Encoding.htmlDecode(artist.trim()));
-            link.setProperty("directalbum", Encoding.htmlDecode(albumname.trim()));
+            link.setProperty("directalbum", Encoding.htmlDecode(album.trim()));
             link.setProperty("directname", Encoding.htmlDecode(filename.trim()));
             link.setProperty("type", "mp3");
             link.setProperty("directtracknumber", df.format(trackNum));
+            link.setProperty("fromdecrypter", true);
         }
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         // In case the link redirects to the finallink
-        br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
         try {
+            br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
             /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(DLLINK);
-            if (con.getResponseCode() == 200 && !con.getContentType().contains("text")) {
-                link.setVerifiedFileSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                return AvailableStatus.TRUE;
             } else {
-                br.followConnection(true);
+                try {
+                    br2.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 /*
                  * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
                  * errormessage or anything on their website.
                  */
                 throw new AccountRequiredException();
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
