@@ -232,14 +232,16 @@ public class PornHubCom extends PluginForDecrypt {
                 }
             }
             for (final String section : new String[] { "moreData", "mostRecentVideosSection", "pornstarsVideoSection" }) {
-                final String sectionContent = findVideoSection(br, section);// /videos/fanonly
-                final String[] vKeys = new Regex(sectionContent, "_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
-                if (vKeys != null) {
-                    viewKeys.addAll(Arrays.asList(vKeys));
+                final String sectionContent = findVideoSection(br, section);
+                if (sectionContent != null) {
+                    final String[] vKeys = new Regex(sectionContent, "(?:_|-)vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
+                    if (vKeys != null) {
+                        viewKeys.addAll(Arrays.asList(vKeys));
+                    }
                 }
             }
             if (viewKeys.size() == 0) {
-                final String[] vKeysAll = br.getRegex("_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
+                final String[] vKeysAll = br.getRegex("(?:_|-)_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
                 if (vKeysAll != null) {
                     viewKeys.addAll(Arrays.asList(vKeysAll));
                 }
@@ -407,7 +409,7 @@ public class PornHubCom extends PluginForDecrypt {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             logger.info("publicVideos: " + publicVideosHTMLSnippet); // For debugging
-            final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
+            final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
             if (viewkeys == null || viewkeys.length == 0) {
                 break;
             }
@@ -559,7 +561,7 @@ public class PornHubCom extends PluginForDecrypt {
             int numberofActuallyAddedItems = 0;
             int numberOfDupeItems = 0;
             final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
-            final String[] viewKeys = new Regex(publicVideosHTMLSnippet, "_vkey=\"([a-z0-9]+)\"").getColumn(0);
+            final String[] viewKeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
             if (viewKeys == null || viewKeys.length == 0) {
                 logger.info("no vKeys found!");
             } else {

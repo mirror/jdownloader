@@ -83,7 +83,9 @@ public class Free18Net extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -131,6 +133,7 @@ public class Free18Net extends PluginForHost {
             }
             decoded = p;
         } catch (Exception e) {
+            logger.log(e);
         }
         String finallink = null;
         if (decoded != null) {
