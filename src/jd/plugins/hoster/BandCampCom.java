@@ -103,10 +103,9 @@ public class BandCampCom extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(true);
-        Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(link.getDownloadURL());
+            con = br.openGetConnection(link.getDownloadURL());
             if (looksLikeDownloadableContent(con)) {
                 DLLINK = link.getDownloadURL();
                 if (con.getCompleteContentLength() > 0) {
@@ -116,7 +115,7 @@ public class BandCampCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             } else {
                 try {
-                    br2.followConnection(true);
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
@@ -194,7 +193,7 @@ public class BandCampCom extends PluginForHost {
         link.setFinalFileName(filename);
         // In case the link redirects to the finallink
         try {
-            br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(DLLINK);
