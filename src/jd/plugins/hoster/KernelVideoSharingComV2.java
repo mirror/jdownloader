@@ -187,7 +187,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         prepBR(this.br);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         final String fuidBeforeHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
-        final String titleURL = this.getURLTitle(link.getPluginPatternMatcher());
+        final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(titleURL + ".mp4");
@@ -794,36 +794,41 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return url_source;
     }
 
+    protected String getURLTitleCorrected(final String url) {
+        String urlTitle = getURLTitle(url);
+        if (!StringUtils.isEmpty(urlTitle)) {
+            /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
+            final String removeme = new Regex(urlTitle, "(-?[a-f0-9]{16})").getMatch(0);
+            if (removeme != null) {
+                urlTitle = urlTitle.replace(removeme, "");
+            }
+            /* Make the url-filenames look better by using spaces instead of '-'. */
+            urlTitle = urlTitle.replace("-", " ");
+            /* Remove eventually existing spaces at the end */
+            urlTitle = urlTitle.trim();
+        }
+        return urlTitle;
+    }
+
     /**
      * Finds title inside given URL. <br />
      */
-    protected String getURLTitle(final String url_source) {
-        if (url_source == null) {
+    protected String getURLTitle(final String url) {
+        if (url == null) {
             return null;
         }
-        String filename_url = null;
-        if (url_source.matches(type_normal)) {
-            filename_url = new Regex(url_source, type_normal).getMatch(1);
-        } else if (url_source.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url_source)) {
-            filename_url = new Regex(url_source, type_normal_fuid_at_end).getMatch(0);
-        } else if (url_source.matches(type_normal_without_fuid)) {
-            filename_url = new Regex(url_source, type_normal_without_fuid).getMatch(0);
+        String urlTitle = null;
+        if (url.matches(type_normal)) {
+            urlTitle = new Regex(url, type_normal).getMatch(1);
+        } else if (url.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url)) {
+            urlTitle = new Regex(url, type_normal_fuid_at_end).getMatch(0);
+        } else if (url.matches(type_normal_without_fuid)) {
+            urlTitle = new Regex(url, type_normal_without_fuid).getMatch(0);
         } else {
             /* We can only use fuid as filename */
-            filename_url = null;
+            urlTitle = null;
         }
-        if (!StringUtils.isEmpty(filename_url)) {
-            /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
-            final String removeme = new Regex(filename_url, "(-?[a-f0-9]{16})").getMatch(0);
-            if (removeme != null) {
-                filename_url = filename_url.replace(removeme, "");
-            }
-            /* Make the url-filenames look better by using spaces instead of '-'. */
-            filename_url = filename_url.replace("-", " ");
-            /* Remove eventually existing spaces at the end */
-            filename_url = filename_url.trim();
-        }
-        return filename_url;
+        return urlTitle;
     }
 
     /**
@@ -832,9 +837,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected String getFileTitle(final DownloadLink link) {
         String filename;
         final String fuid = this.getFUID(link.getPluginPatternMatcher());
-        String title_url = this.getURLTitle(br.getURL());
+        String title_url = this.getURLTitleCorrected(br.getURL());
         if (title_url == null) {
-            title_url = this.getURLTitle(link.getPluginPatternMatcher());
+            title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         }
         /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
         if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
@@ -847,7 +852,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Found real URL corresponding to current embed URL: " + realURL);
                 try {
                     realURL = br.getURL(realURL).toString();
-                    title_url = this.getURLTitle(realURL);
+                    title_url = this.getURLTitleCorrected(realURL);
                 } catch (final Throwable e) {
                     logger.log(e);
                     logger.info("URL parsing failure");
