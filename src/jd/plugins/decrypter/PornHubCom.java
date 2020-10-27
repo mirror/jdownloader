@@ -241,7 +241,7 @@ public class PornHubCom extends PluginForDecrypt {
                 }
             }
             if (viewKeys.size() == 0) {
-                final String[] vKeysAll = br.getRegex("(?:_|-)_vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
+                final String[] vKeysAll = br.getRegex("(?:_|-)vkey\\s*=\\s*\"(.+?)\"").getColumn(0);
                 if (vKeysAll != null) {
                     viewKeys.addAll(Arrays.asList(vKeysAll));
                 }
