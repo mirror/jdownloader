@@ -46,4 +46,9 @@ public class XbabeCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
     }
+
+    @Override
+    protected boolean hasFUIDAtEnd(String url) {
+        return false;
+    }
 }

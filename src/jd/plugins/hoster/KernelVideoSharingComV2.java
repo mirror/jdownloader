@@ -210,7 +210,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         try {
-            dllink = getDllink();
+            dllink = getDllink(this.br);
         } catch (final PluginException e) {
             if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                 logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
@@ -440,7 +440,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return workaroundURL;
     }
 
-    protected String getDllink() throws PluginException, IOException {
+    protected String getDllink(final Browser br) throws PluginException, IOException {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
@@ -794,6 +794,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return url_source;
     }
 
+    /** Returns "better human readable" file-title from URL. */
     protected String getURLTitleCorrected(final String url) {
         String urlTitle = getURLTitle(url);
         if (!StringUtils.isEmpty(urlTitle)) {
@@ -918,6 +919,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean hasFUIDAtEnd(final String url) {
+        /* TODO: Maybe return url title as fuid if no fuid is given inside URL? */
         return true;
     }
 
@@ -963,10 +965,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(filename)) {
             /* Fails e.g. for alphaporno.com */
             filename = br.getRegex("<h\\d+ class=\"title\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Working e.g. for pervclips.com, pornicom.com */
-            filename = br.getRegex("class=\"heading video-heading\">[\t\n\r ]+<(h\\d+)>([^<>\"]*?)</h\\1>").getMatch(1);
         }
         return filename;
     }

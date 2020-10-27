@@ -19,22 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
+import jd.parser.Regex;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XtitsCom extends KernelVideoSharingComV2 {
-    public XtitsCom(final PluginWrapper wrapper) {
+public class TubewolfCom extends KernelVideoSharingComV2 {
+    public TubewolfCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xtits.com" });
+        ret.add(new String[] { "tubewolf.com" });
         return ret;
     }
 
@@ -48,24 +46,25 @@ public class XtitsCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            /*
+             * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
+             * URL!
+             */
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/movies/([a-z0-9\\-]+)/?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
-    protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final String fuid = this.getFUID(link.getPluginPatternMatcher());
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String filetitle = getURLTitle(link.getPluginPatternMatcher());
-        link.setFinalFileName(filetitle + ".mp4");
-        final String urlOriginal = link.getPluginPatternMatcher();
-        /* 2020-10-13: Special workaround to prevent serverside issue of random infinite redirects */
-        link.setPluginPatternMatcher("https://www.xtits.com/popup-video/" + fuid + "/");
-        try {
-            return super.requestFileInformation(link, isDownload);
-        } finally {
-            link.setPluginPatternMatcher(urlOriginal);
-        }
+    protected String getFUID(final String url) {
+        /* No ID in filename --> Use URL title as FUID */
+        return getURLTitle(url);
+    }
+
+    @Override
+    protected String getURLTitle(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 }
