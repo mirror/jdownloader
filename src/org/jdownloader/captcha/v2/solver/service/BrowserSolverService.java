@@ -15,6 +15,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -44,12 +50,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.components.google.GoogleAccountConfig;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.config.AccountJsonConfig;
-
-import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Account;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class BrowserSolverService extends AbstractSolverService {
     public static final String                ID       = "browser";
@@ -134,12 +135,11 @@ public class BrowserSolverService extends AbstractSolverService {
     }
 
     public boolean isOpenBrowserSupported() {
-        final String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
-        if (!CrossSystem.isOpenBrowserSupported() && (browserCommandLine == null || browserCommandLine.length == 0)) {
-            return false;
-        } else {
-            return true;
+        String[] browserCommandLine = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+        if (browserCommandLine == null || browserCommandLine.length == 0) {
+            browserCommandLine = CFG_GENERAL.BROWSER_COMMAND_LINE.getValue();
         }
+        return CrossSystem.isOpenBrowserSupported() || CrossSystem.buildBrowserCommandline(browserCommandLine, "https://jdownloader.org") != null;
     }
 
     @Override
