@@ -35,14 +35,14 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
             return session;
         }
 
-        private final SessionInfoWrapper     session;
-        private final DeviceConnectionHelper connectionHelper;
+        private final SessionInfoWrapper                                                                  session;
+        private final org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper connectionHelper;
 
-        public final DeviceConnectionHelper getConnectionHelper() {
+        public final org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper getConnectionHelper() {
             return connectionHelper;
         }
 
-        protected MyJDownloaderConnectionRequest(SessionInfoWrapper session, DeviceConnectionHelper connectionHelper) {
+        protected MyJDownloaderConnectionRequest(SessionInfoWrapper session, org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.DeviceConnectionHelper connectionHelper) {
             this.session = session;
             this.connectionHelper = connectionHelper;
         }
@@ -85,6 +85,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
         }
 
         /**
+         *
          * @return the thread
          */
         public final MyJDownloaderWaitingConnectionThread getThread() {
