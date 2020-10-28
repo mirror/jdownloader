@@ -125,7 +125,6 @@ import org.jdownloader.plugins.components.youtube.YoutubeLinkGrabberExtender;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.components.youtube.choosevariantdialog.YoutubeVariantSelectionDialog;
 import org.jdownloader.plugins.components.youtube.configpanel.YoutubeDashConfigPanel;
-import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.keepForCompatibility.SubtitleVariantOld;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioVariant;
@@ -1737,9 +1736,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         }
     }
 
-    private void avoidRetryLoop(PluginException pluginException, final DownloadLink downloadLink, YoutubeITAG itag) throws PluginException {
+    private void avoidRetryLoop(PluginException pluginException, final DownloadLink downloadLink, AbstractVariant variant) throws PluginException {
         if (!isAbort() && pluginException.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
-            final String key = "incomplete_" + itag.getITAG();
+            final String key;
+            switch (variant.getType()) {
+            case VIDEO:
+                key = "incomplete_" + variant.getiTagAudioOrVideoItagEquivalent().getITAG();
+                break;
+            default:
+                key = "incomplete_" + variant.getType();
+                break;
+            }
             final int incomplete = downloadLink.getIntegerProperty(key, 0) + 1;
             if (incomplete > 5) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1787,7 +1794,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } catch (final PluginException e) {
-                avoidRetryLoop(e, downloadLink, variant.getiTagData());
+                avoidRetryLoop(e, downloadLink, variant);
             }
             break;
         case SUBTITLES:
@@ -1812,7 +1819,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } catch (final PluginException e) {
-                avoidRetryLoop(e, downloadLink, variant.getiTagData());
+                avoidRetryLoop(e, downloadLink, variant);
             }
             break;
         case VIDEO:
@@ -1850,7 +1857,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } catch (final PluginException e) {
-                avoidRetryLoop(e, downloadLink, variant.getiTagAudioOrVideoItagEquivalent());
+                avoidRetryLoop(e, downloadLink, variant);
             }
             break;
         case HLS_VIDEO:

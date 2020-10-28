@@ -47,7 +47,7 @@ public class Sxrcm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String host = Browser.getHost(param.toString());
-        String parameter = param.toString().replace(host, "sexuria.to");
+        String parameter = param.toString().replace(host, "sexuria.com");
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String downloadId;
@@ -87,7 +87,7 @@ public class Sxrcm extends PluginForDecrypt {
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
                 downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(2);
-                br.getPage("http://sexuria.to/v1/Pornos_Kostenlos_info_" + downloadId + ".html");
+                br.getPage("https://sexuria.com/v1/Pornos_Kostenlos_info_" + downloadId + ".html");
                 final String password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
                 if (password != null) {
                     param.setDecrypterPassword(password);
@@ -106,7 +106,7 @@ public class Sxrcm extends PluginForDecrypt {
                         logger.info("Decryption aborted by user: " + parameter);
                         return decryptedLinks;
                     }
-                    link = link.replace("http://sexuria.com/", "http://www.sexuria.com/");
+                    link = link.replace("http://sexuria.com/", "https://www.sexuria.com/");
                     Thread.sleep(1000);
                     br.getPage(link);
                     final String finallink = br.getRedirectLocation();
@@ -129,7 +129,7 @@ public class Sxrcm extends PluginForDecrypt {
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {
                 String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
-                decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
+                decryptedLinks.add(createDownloadlink("https://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
                 return decryptedLinks;
             }
             return null;
