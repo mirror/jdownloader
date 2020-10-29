@@ -21,7 +21,12 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.FacebookConfig;
@@ -498,6 +503,9 @@ public class FaceBookComVideos extends PluginForHost {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                /* 2020-10-9: Experimental login/test */
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                final boolean enforceCookieLogin = true;
                 if (cookies != null) {
                     br.setCookies(FACEBOOKMAINPAGE, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
@@ -512,18 +520,51 @@ public class FaceBookComVideos extends PluginForHost {
                     } finally {
                         br.setFollowRedirects(follow);
                     }
-                    if (br.containsHTML("id=\"logoutMenu\"")) {
+                    if (isLoggedinHTML()) {
                         /* Save cookies to save new valid cookie timestamp */
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        /* Get rid of old cookies / headers */
+                        br.clearAll();
+                        br.setCookiesExclusive(true);
+                        setHeaders(br);
                     }
-                    /* Get rid of old cookies / headers */
-                    br.clearAll();
-                    br.setCookiesExclusive(true);
-                    setHeaders(br);
                 }
                 logger.info("Performing full login");
+                if (userCookies != null) {
+                    logger.info("Trying to login via user-cookies");
+                    br.setCookies(userCookies);
+                    final boolean follow = br.isFollowingRedirects();
+                    try {
+                        br.setFollowRedirects(true);
+                        br.getPage(FACEBOOKMAINPAGE);
+                    } finally {
+                        br.setFollowRedirects(follow);
+                    }
+                    if (isLoggedinHTML()) {
+                        /* Save cookies to save new valid cookie timestamp */
+                        logger.info("User-cookie login successful");
+                        account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
+                        /*
+                         * Make sure that username in JD is unique because via cookie login, user can enter whatever he wants into username
+                         * field!
+                         */
+                        final String username = PluginJSonUtils.getJson(br, "username");
+                        if (!StringUtils.isEmpty(username)) {
+                            account.setUser(username);
+                        }
+                        return;
+                    } else {
+                        logger.info("User-Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (enforceCookieLogin) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.setFollowRedirects(true);
                 final boolean prefer_mobile_login = true;
                 // better use the website login. else the error handling below might be broken.
@@ -532,11 +573,7 @@ public class FaceBookComVideos extends PluginForHost {
                     br.getPage("https://m.facebook.com/");
                     final Form loginForm = br.getForm(0);
                     if (loginForm == null) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     loginForm.remove(null);
                     loginForm.put("email", Encoding.urlEncode(account.getUser()));
@@ -677,8 +714,17 @@ public class FaceBookComVideos extends PluginForHost {
                     br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&submit%5BThis+is+Okay%5D=Das+ist+OK&nh=" + nh);
                     br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
                     br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
+                } else if (br.getURL().contains("/login/save-device")) {
+                    /* 2020-10-29: Challenge kinda like "Trust this device" */
+                    final Form continueForm = br.getFormbyActionRegex(".*/login/device-based/.*");
+                    if (continueForm == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    br.submitForm(continueForm);
+                    br.getPage(FACEBOOKMAINPAGE);
+                    br.followRedirect();
                 }
-                if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) {
+                if (!isLoggedinHTML()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -687,7 +733,6 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 /* Save cookies */
                 account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
-                account.setValid(true);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
                     account.removeProperty("");
@@ -695,6 +740,48 @@ public class FaceBookComVideos extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Facebook - Login";
+                        message += "Hallo liebe(r) Facebook NutzerIn\r\n";
+                        message += "Um deinen Facebook Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Facebook - Login";
+                        message += "Hello dear Facebook user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    private boolean isLoggedinHTML() {
+        final String username = PluginJSonUtils.getJson(br, "username");
+        final String logout_hash = PluginJSonUtils.getJson(br, "logout_hash");
+        return !StringUtils.isEmpty(username) && !StringUtils.isEmpty(logout_hash);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

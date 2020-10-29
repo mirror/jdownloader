@@ -114,16 +114,18 @@ public class DownloadGg extends PluginForHost {
             br.getPage(link.getPluginPatternMatcher());
         }
         String filename = br.getRegex("class=\"name\">([^<>\"]+)</div>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getFID(link);
-        }
         String filesize = br.getRegex("class=\"file-size\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            /* 2020-10-29: Hoster is tagging filenames --> Try to avoid this */
+            link.setFinalFileName(filename);
+        } else if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link));
+        }
         if (filesize != null) {
             /*
              * 2020-10-12: Even the English version of this website will show filesizes in a different language sometimes e.g. "Ko" instead
