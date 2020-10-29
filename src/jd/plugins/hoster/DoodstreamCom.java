@@ -20,10 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -33,6 +29,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -203,9 +203,9 @@ public class DoodstreamCom extends XFileSharingProBasic {
         setFUID(link);
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
             /* First try to get filename from Chromecast json */
-            String filename = new Regex(correctedBR, "title:\"([^\"]+)\"").getMatch(0);
+            String filename = new Regex(correctedBR, "title\\s*:\\s*\"([^\"]+)\"").getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<meta name=\"og:title\"[^>]*content=\"([^<>\"\\']+)\">").getMatch(0);
+                filename = new Regex(correctedBR, "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
             }
             if (StringUtils.isEmpty(filename)) {
                 link.setName(this.getFallbackFilename(link));
@@ -216,7 +216,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 link.setFinalFileName(filename);
             }
         } else {
-            String filename = br.getRegex("<meta name=\"og:title\"[^>]*content=\"([^<>\"\\']+)\">").getMatch(0);
+            String filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
                 link.setName(this.getFallbackFilename(link));
             } else {
@@ -225,7 +225,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 }
                 link.setFinalFileName(filename);
             }
-            final String filesize = br.getRegex("class=\"size\">.*?</i>([^<>\"]+)<").getMatch(0);
+            final String filesize = br.getRegex("class\\s*=\\s*\"size\">.*?</i>\\s*([^<>\"]+)\\s*<").getMatch(0);
             if (!StringUtils.isEmpty(filesize)) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
@@ -269,8 +269,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
         }
         handleDownload(link, account, dllink, null);
     }
-    /* *************************** PUT API RELATED METHODS HERE *************************** */
 
+    /* *************************** PUT API RELATED METHODS HERE *************************** */
     @Override
     protected String getAPIBase() {
         /* 2020-08-31: See here: https://doodstream.com/api-docs */
