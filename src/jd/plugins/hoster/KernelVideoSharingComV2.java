@@ -1026,9 +1026,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
             /* 2019-08-28 */
             filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("ok.xxx")) {
-            /* 2020-09-30: Special because their title contains an unicode smiley which we do not want to have */
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         } else {
             filename = null;
         }
