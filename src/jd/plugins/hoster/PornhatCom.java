@@ -58,7 +58,7 @@ public class PornhatCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFUID(final String url) {
+    protected String getFUIDFromURL(final String url) {
         if (url == null) {
             return null;
         }

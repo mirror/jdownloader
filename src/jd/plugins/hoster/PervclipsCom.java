@@ -62,7 +62,7 @@ public class PervclipsCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFUID(final String url) {
+    protected String getFUIDFromURL(final String url) {
         /* No ID in filename --> Use URL title */
         return getURLTitle(url);
     }

@@ -53,7 +53,7 @@ public class XtitsCom extends KernelVideoSharingComV2 {
 
     @Override
     protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final String fuid = this.getFUID(link.getPluginPatternMatcher());
+        final String fuid = this.getFUIDFromURL(link.getPluginPatternMatcher());
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
