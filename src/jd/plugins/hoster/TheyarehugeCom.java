@@ -56,7 +56,7 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
              * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
              * URL!
              */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(v/([a-z0-9\\-]+)/|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(v/([a-z0-9\\-]+)/?|embed/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -78,7 +78,14 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         }
-        return new Regex(url, this.getSupportedLinks()).getMatch(1);
+        String urltitle = new Regex(url, this.getSupportedLinks()).getMatch(1);
+        if (urltitle != null) {
+            final String removeme = new Regex(urltitle, "(-?\\d{12}-?)").getMatch(0);
+            if (removeme != null) {
+                urltitle = urltitle.replace(removeme, "");
+            }
+        }
+        return urltitle;
     }
 
     @Override
