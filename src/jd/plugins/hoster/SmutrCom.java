@@ -20,19 +20,19 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TubewolfCom extends KernelVideoSharingComV2 {
-    public TubewolfCom(final PluginWrapper wrapper) {
+public class SmutrCom extends KernelVideoSharingComV2 {
+    public SmutrCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tubewolf.com" });
+        ret.add(new String[] { "smutr.com" });
         return ret;
     }
 
@@ -48,23 +48,24 @@ public class TubewolfCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            /*
-             * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
-             * URL!
-             */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/movies/([a-z0-9\\-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:v/\\d+/?|embed/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    protected String getFUIDFromURL(final String url) {
-        /* No ID in filename --> Use URL title as FUID */
-        return getURLTitle(url);
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+            link.setPluginPatternMatcher("https://" + this.getHost() + "/v/" + new Regex(link.getPluginPatternMatcher(), type_embedded).getMatch(0) + "/");
+        }
     }
 
     @Override
-    protected String getURLTitle(final String url) {
-        return new Regex(url, this.getSupportedLinks()).getMatch(0);
+    protected String getFileTitle(final DownloadLink link) {
+        String filetitle = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        if (filetitle == null) {
+            filetitle = br.getRegex("<title>([^<>\"]+) Porn Video</title>").getMatch(0);
+        }
+        return filetitle;
     }
 }

@@ -48,6 +48,7 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -90,6 +91,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     private String                dllink                   = null;
     private boolean               server_issues            = false;
     private boolean               private_video            = false;
+    private static final String   PROPERTY_FUID            = "fuid";
 
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -145,7 +147,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = this.getFUID(link.getPluginPatternMatcher());
+        final String fid = this.getFUID(link);
         if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
@@ -192,7 +194,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         server_issues = false;
         prepBR(this.br);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        final String fuidBeforeHTTPRequest = this.getFUID(link.getPluginPatternMatcher());
+        final String fuidBeforeHTTPRequest = this.getFUID(link);
         final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
@@ -206,12 +208,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             if (fuidAfterHTTPRequest != null) {
                 logger.info("Successfully found fuid in html: " + fuidAfterHTTPRequest);
                 link.setLinkID(this.getHost() + "://" + fuidAfterHTTPRequest);
+                link.getStringProperty(PROPERTY_FUID, fuidAfterHTTPRequest);
             } else {
                 logger.info("Failed to find fuid in html");
             }
         }
         setSpecialFlags();
-        String filename = getFileTitle(link);
+        String finalFilename = getFileTitle(link);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -231,13 +234,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Fallback */
             ext = ".mp4";
         }
-        if (!StringUtils.isEmpty(filename) && !filename.endsWith(ext)) {
-            filename += ext;
+        if (!StringUtils.isEmpty(finalFilename) && !finalFilename.endsWith(ext)) {
+            finalFilename += ext;
         }
-        if (!StringUtils.isEmpty(filename)) {
-            link.setFinalFileName(filename);
-        } else {
-            /* TODO: Maybe set "<fuid>.mp4" as fallback? */
+        if (!StringUtils.isEmpty(finalFilename)) {
+            link.setFinalFileName(finalFilename);
         }
         // this prevents another check when download is about to happen! -raztoki
         if (isDownload) {
@@ -271,6 +272,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         dllink = redirect_url;
                         logger.info("dllink: " + dllink);
                     }
+                    if (StringUtils.isEmpty(finalFilename)) {
+                        /* Fallback - attempt to find final filename */
+                        final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
+                        if (con.isContentDisposition()) {
+                            logger.info("Using final filename from content disposition header");
+                            finalFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+                            link.setFinalFileName(finalFilename);
+                        } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
+                            logger.info("Using final filename from inside final downloadurl");
+                            finalFilename = filenameFromFinalDownloadurl;
+                            link.setFinalFileName(finalFilename);
+                        } else {
+                            logger.info("Failed to find any final filename so far");
+                        }
+                    }
                 } else {
                     try {
                         brc.followConnection(true);
@@ -288,6 +304,17 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else {
             logger.info("Unable to find filesize because failed to find final downloadurl");
         }
+        if (StringUtils.isEmpty(finalFilename)) {
+            /* Last chance fallback */
+            logger.info("Looking for last chance filename");
+            if (this.getFUID(link) != null) {
+                logger.info("Using fuid as filename");
+                finalFilename = this.getFUID(link) + ".mp4";
+                link.setFinalFileName(finalFilename);
+            } else {
+                logger.warning("Failed to find any filename!");
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -298,6 +325,55 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else {
             this.private_video = false;
         }
+    }
+
+    /**
+     * Tries everything possible to find a nice file-title for KVS websites. <br />
+     */
+    protected String getFileTitle(final DownloadLink link) {
+        String filename;
+        String title_url = this.getURLTitleCorrected(br.getURL());
+        if (title_url == null) {
+            title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
+        }
+        /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
+        final String fuid = this.getFUID(link);
+        if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
+            String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+            if (realURL == null) {
+                realURL = br.getRegex("(/videos/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+            }
+            if (realURL != null) {
+                logger.info("Found real URL corresponding to current embed URL: " + realURL);
+                try {
+                    realURL = br.getURL(realURL).toString();
+                    title_url = this.getURLTitleCorrected(realURL);
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("URL parsing failure");
+                }
+            }
+        }
+        final String url_source = getURL_source(br, link);
+        /* Find 'real' filename and the one inside our URL. */
+        if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
+            /* Nice title is inside URL --> Prefer that! */
+            filename = title_url;
+        } else if (url_source.matches(type_embedded)) {
+            filename = this.getFUIDFromURL(url_source);
+        } else {
+            filename = regexStandardTitleWithHost(br, br.getHost());
+        }
+        /* Now decide which filename we want to use */
+        if (StringUtils.isEmpty(filename)) {
+            filename = title_url;
+        } else {
+            /* Remove html crap and spaces at the beginning and end. */
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = cleanupFilename(br, filename);
+        }
+        return filename;
     }
 
     @Override
@@ -462,7 +538,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // br.postPage("/sn4diyux.php", "param=" + videoID + "," + pc3_vars);
         // String crypted_url = getDllinkCrypted(br);
         // }
-        final String fuid = this.getFUID(br.getURL());
+        final String fuid = this.getFUID(this.getDownloadLink());
         String dllink = null;
         final String json_playlist_source = br.getRegex("sources\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         String httpurl_temp = null;
@@ -880,57 +956,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return urlTitle;
     }
 
-    /**
-     * Tries everything possible to find a nice file-title for KVS websites. <br />
-     */
-    protected String getFileTitle(final DownloadLink link) {
-        String filename;
-        String title_url = this.getURLTitleCorrected(br.getURL());
-        if (title_url == null) {
-            title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
+    protected String getFUID(final DownloadLink link) {
+        String fuid = link.getStringProperty(PROPERTY_FUID, null);
+        if (fuid == null) {
+            fuid = this.getFUIDFromURL(link.getPluginPatternMatcher());
         }
-        /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
-        final String fuid = this.getFUID(link.getPluginPatternMatcher());
-        if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
-            String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
-            if (realURL == null) {
-                realURL = br.getRegex("(/videos/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
-            }
-            if (realURL != null) {
-                logger.info("Found real URL corresponding to current embed URL: " + realURL);
-                try {
-                    realURL = br.getURL(realURL).toString();
-                    title_url = this.getURLTitleCorrected(realURL);
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.info("URL parsing failure");
-                }
-            }
-        }
-        final String url_source = getURL_source(br, link);
-        /* Find 'real' filename and the one inside our URL. */
-        if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
-            /* Nice title is inside URL --> Prefer that! */
-            filename = title_url;
-        } else if (url_source.matches(type_embedded)) {
-            filename = this.getFUID(url_source);
-        } else {
-            filename = regexStandardTitleWithHost(br, br.getHost());
-        }
-        /* Now decide which filename we want to use */
-        if (StringUtils.isEmpty(filename)) {
-            filename = title_url;
-        } else {
-            /* Remove html crap and spaces at the beginning and end. */
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = cleanupFilename(br, filename);
-        }
-        return filename;
+        return fuid;
     }
 
     /** Tries to return unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
-    protected String getFUID(final String url) {
+    protected String getFUIDFromURL(final String url) {
         String fuid = null;
         if (url != null) {
             if (url.matches(type_only_numbers)) {
