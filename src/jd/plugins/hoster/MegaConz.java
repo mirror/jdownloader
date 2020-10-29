@@ -1357,8 +1357,9 @@ public class MegaConz extends PluginForHost {
     }
 
     public static byte[] b64decode(String data) {
+        data = data.replace(",", "");
         data += "==".substring((2 - data.length() * 3) & 3);
-        data = data.replace("-", "+").replace("_", "/").replace(",", "");
+        data = data.replace("-", "+").replace("_", "/");
         return Base64.decode(data);
     }
 
