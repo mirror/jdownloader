@@ -21,16 +21,16 @@ import java.util.Locale;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -39,13 +39,13 @@ import jd.plugins.PluginException;
 /**
  *
  * @version raz_Template
- * @author raztoki
+ * @author raztoki, psp
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|(zone-warez|zone-telechargement|tirexo)\\.(?:.*)/link)(-|/)\\S+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dl-protecte.com" }, urls = { "https?://(?:www(|[0-9])\\.)?(?:dl-protecte\\.(?:com|org)|protect-lien\\.com|protect-zt\\.com|zt-protect\\.com|protecte-link\\.com|liens-telechargement\\.com|dl-protect1\\.com?|dl-protect\\.top|dl\\-protect\\.net|dl-protect\\.best|(zone-warez|zone-telechargement|tirexo)\\.(?:.*)/link)(-|/)\\S+" })
 public class DlPrteCom extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net", "zone-warez.com" };
+        return new String[] { "dl-protect.top", "dl-protecte.com", "dl-protecte.org", "protect-lien.com", "protect-zt.com", "zt-protect.com", "protecte-link.com", "liens-telechargement.com", "dl-protect1.com", "dl-protect1.co", "dl-protect.net", "zone-warez.com", "dl-protect.best" };
     }
 
     public DlPrteCom(PluginWrapper wrapper) {
@@ -151,6 +151,10 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML(">\\s*Lien introuvable")) {
+            /* 2020-10-29 */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         {
             // additional form
@@ -193,51 +197,34 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("captcha\\.php")) {
-            /* 2018-08-02: New */
-            boolean failed = true;
-            for (int i = 0; i <= 2; i++) {
-                final String code = this.getCaptchaCode("https://www.dl-protect1.com/captcha.php?rand=%3C?php%20echo%20rand();%20?%3E", param);
-                final PostFormDataRequest authReq = br.createPostFormDataRequest(br.getURL());
-                authReq.addFormData(new FormData("submit", ""));
-                authReq.addFormData(new FormData("captchaCode", code));
-                super.sendRequest(authReq);
-                // final Form captchaForm = br.getFormbyKey("captchaCode");
-                // if (captchaForm == null) {
-                // return null;
-                // }
-                if (!br.containsHTML("captcha\\.php")) {
-                    failed = false;
-                    break;
-                }
-            }
-            if (failed) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-        } else {
-            // some weird form that does jack
-            final Form f = br.getFormbyProperty("class", "magic");
-            if (f == null) {
-                if (decryptedLinks.size() > 0) {
-                    return decryptedLinks;
-                }
-                return null;
-            }
-            // insert some magic
-            final String magic = getSoup();
-            f.put(magic, "");
-            // ajax stuff
-            {
-                final Browser ajax = br.cloneBrowser();
-                ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                postPage(ajax, "/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + magic);
-                // should say error false.
-            }
-            submitForm(f);
+        /* 2020-10-29: Possible "protections": Without protection, reCaptchaV2, Password (only one can be active) */
+        Form continueForm = br.getFormByInputFieldKeyValue("subform", "unlock");
+        if (continueForm == null) {
+            /* Fallback */
+            continueForm = br.getForm(0);
         }
-        // link
-        final String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
+        if (continueForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String passCode = null;
+        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        } else if (continueForm.hasInputFieldByName("password")) {
+            passCode = getUserInput("Password?", param);
+            continueForm.put("password", Encoding.urlEncode(passCode));
+        }
+        this.submitForm(continueForm);
+        String link = br.getRegex("<div class=\"lienet\"><a href=\"(.*?)\">").getMatch(0);
         if (link == null) {
+            /* 2020-10-29 */
+            link = br.getRegex("<a href=\"(https?://[^\"]+)\" rel=\"external nofollow\">").getMatch(0);
+        }
+        if (link == null) {
+            if (passCode != null) {
+                /* Assume that user entered wrong password */
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             return null;
         }
         decryptedLinks.add(createDownloadlink(link));

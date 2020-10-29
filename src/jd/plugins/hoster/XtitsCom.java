@@ -58,7 +58,6 @@ public class XtitsCom extends KernelVideoSharingComV2 {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String filetitle = getURLTitle(link.getPluginPatternMatcher());
-        link.setFinalFileName(filetitle + ".mp4");
         final String urlOriginal = link.getPluginPatternMatcher();
         /* 2020-10-13: Special workaround to prevent serverside issue of random infinite redirects */
         link.setPluginPatternMatcher("https://www.xtits.com/popup-video/" + fuid + "/");
@@ -66,6 +65,7 @@ public class XtitsCom extends KernelVideoSharingComV2 {
             return super.requestFileInformation(link, isDownload);
         } finally {
             link.setPluginPatternMatcher(urlOriginal);
+            link.setFinalFileName(filetitle + ".mp4");
         }
     }
 }
