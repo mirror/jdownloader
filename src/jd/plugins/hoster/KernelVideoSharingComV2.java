@@ -122,6 +122,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    public static String[] buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed/)?\\d+/?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.kvs-demo.com/terms.php";
@@ -228,6 +236,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
+        } else {
+            /* TODO: Maybe set "<fuid>.mp4" as fallback? */
         }
         // this prevents another check when download is about to happen! -raztoki
         if (isDownload) {
@@ -452,6 +462,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // br.postPage("/sn4diyux.php", "param=" + videoID + "," + pc3_vars);
         // String crypted_url = getDllinkCrypted(br);
         // }
+        final String fuid = this.getFUID(br.getURL());
         String dllink = null;
         final String json_playlist_source = br.getRegex("sources\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         String httpurl_temp = null;
@@ -513,17 +524,23 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             logger.info("Trying to find highest quality available");
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             int maxQuality = 0;
+            String urlWithoutQualityIndicator = null;
             for (final String dlURLTmp : dlURLs) {
                 if (StringUtils.endsWithCaseInsensitive(dlURLTmp, "jpg/")) {
                     /* Skip invalid items */
                     logger.info("Skipping invalid URL: " + dlURLTmp);
                     continue;
                 }
-                final String qualityTmpStr = new Regex(dlURLTmp, "(\\d+)p\\.mp4").getMatch(0);
+                String qualityTmpStr = new Regex(dlURLTmp, "(\\d+)p\\.mp4").getMatch(0);
                 if (qualityTmpStr == null) {
+                    /* Wider approach */
+                    qualityTmpStr = new Regex(dlURLTmp, "(\\d+)\\.mp4").getMatch(0);
+                }
+                /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
+                if (qualityTmpStr == null || (qualityTmpStr != null && StringUtils.equals(qualityTmpStr, fuid))) {
                     logger.info("Failed to find quality identifier: Selecting first URL");
-                    dllink = dlURLTmp;
-                    break;
+                    urlWithoutQualityIndicator = dlURLTmp;
+                    continue;
                 }
                 final int qualityTmp = Integer.parseInt(qualityTmpStr);
                 if (qualityTmp > maxQuality) {
@@ -533,6 +550,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             if (!StringUtils.isEmpty(dllink)) {
                 logger.info("Selected quality: " + maxQuality + "p");
+            } else if (urlWithoutQualityIndicator != null) {
+                /* Rare case */
+                logger.info("Selected URL without quality indicator: " + urlWithoutQualityIndicator);
+                dllink = urlWithoutQualityIndicator;
+            } else {
+                // logger.info("Failed to find any quality");
             }
             /* 2020-10-27: Old version of this */
             // dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getMatch(0);
@@ -862,12 +885,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected String getFileTitle(final DownloadLink link) {
         String filename;
-        final String fuid = this.getFUID(link.getPluginPatternMatcher());
         String title_url = this.getURLTitleCorrected(br.getURL());
         if (title_url == null) {
             title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         }
         /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
+        final String fuid = this.getFUID(link.getPluginPatternMatcher());
         if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
             String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
             if (realURL == null) {
