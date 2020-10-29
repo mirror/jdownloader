@@ -86,7 +86,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     private static final String   type_normal_without_fuid = "^https?://[^/]+/videos/([a-z0-9\\-]+)/?$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
-    protected static final String type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";
+    protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/$";
     protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
     private String                dllink                   = null;
     private boolean               server_issues            = false;
@@ -598,6 +598,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-10-27: Find the best between possibly multiple uncrypted streaming URLs */
             logger.info("Trying to find highest quality available");
+            /* 2020-10-29: TODO: Test/Improve case when single URL without quality modifier is BEST quality (e.g. fapality.com) */
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             int maxQuality = 0;
             String urlWithoutQualityIndicator = null;
@@ -614,7 +615,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
                 if (qualityTmpStr == null || (qualityTmpStr != null && StringUtils.equals(qualityTmpStr, fuid))) {
-                    logger.info("Failed to find quality identifier: Selecting first URL");
+                    logger.info("Failed to find quality identifier for URL: " + dlURLTmp);
                     urlWithoutQualityIndicator = dlURLTmp;
                     continue;
                 }
@@ -949,9 +950,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             urlTitle = new Regex(url, type_normal_fuid_at_end).getMatch(0);
         } else if (url.matches(type_normal_without_fuid)) {
             urlTitle = new Regex(url, type_normal_without_fuid).getMatch(0);
-        } else {
-            /* We can only use fuid as filename */
-            urlTitle = null;
         }
         return urlTitle;
     }
@@ -1006,30 +1004,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             return filename_normal;
         }
         return filename_clean;
-    }
-
-    /**
-     * Uses site-specific RegExes to find the filename (if one is available for current website). <br />
-     * Use this first to find the filename for KVS websites! TODO: Remove this
-     */
-    protected String regexFilenameSiteSpecific(final Browser br) {
-        String filename;
-        if (br.getHost().equalsIgnoreCase("yourlust.com")) {
-            /* 2016-12-21 */
-            filename = br.getRegex("<h\\d+ class=\"[^<>]+>([^<>]*?)<").getMatch(0);
-        } else if (br.getHost().equalsIgnoreCase("alphaporno.com")) {
-            /* 2017-08-03 */
-            filename = br.getRegex("<h1 class=\"title\" itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
-                filename = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
-            }
-        } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
-            /* 2019-08-28 */
-            filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
-        } else {
-            filename = null;
-        }
-        return filename;
     }
 
     /** Many websites in general use this format - title plus their own hostname as ending. */
