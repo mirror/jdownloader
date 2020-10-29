@@ -52,9 +52,8 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphaporno.com", "yourlust.com", "pornicom.com", "tubecup.com", "tubepornclassic.com", "sex3.com", "xcafe.com", "vjav.com", "pornyeah.com", "javbangers.com", "bravoporn.com", "videocelebs.net", "anyporn.com", "fapality.com", "xcum.com", "porngem.com", "camvideos.tv", "cambro.tv", "camvideos.org", "webcamsbabe.com", "privat-zapisi.biz", "sexvid.xxx", "pornbimbo.com" }, urls = { "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://xcafe\\.com/\\d+/?",
-        "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?bravoporn\\.com/videos/\\d+/(?:[a-z0-9\\-]+/)?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?anyporn\\.com/\\d+/", "https?://(?:www\\.)?fapality\\.com/(\\d+/?|embed/\\d+)$", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html",
-        "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphaporno.com", "yourlust.com", "pornicom.com", "tubecup.com", "tubepornclassic.com", "sex3.com", "xcafe.com", "vjav.com", "pornyeah.com", "javbangers.com", "videocelebs.net", "xcum.com", "porngem.com", "camvideos.tv", "cambro.tv", "camvideos.org", "webcamsbabe.com", "privat-zapisi.biz", "sexvid.xxx", "pornbimbo.com" }, urls = { "https?://(?:www\\.)?alphaporno\\.com/videos/[a-z0-9\\-]+/?", "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornicom\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?tubecup\\.com/(?:videos/\\d+/[a-z0-9\\-_]+/|embed/\\d+)", "https?://(?:\\w+\\.)?tubepornclassic\\.com/videos/\\d+/[a-z0-9\\-]+/?", "https?://(www\\.)?sex3\\.com/\\d+/?", "https?://xcafe\\.com/\\d+/?", "https?://([a-z]{2,3}\\.)?vjav\\.com/videos/\\d+/[a-z0-9\\-]+/?",
+        "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?(?:javwhores|javbangers)\\.com/video/\\d+/[a-z0-9\\-]+/?", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?xcum\\.com/v/\\d+/?", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.tv/(?:\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?cambro\\.tv/(\\d+/[a-z0-9\\-]+/?|embed/\\d+)", "https?://(?:www\\.)?camvideos\\.org/(videos/\\d+/[a-z0-9\\-]+/|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:[a-z]+\\.)?sexvid\\.xxx/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornbimbo\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|embed/\\d+)" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -92,7 +91,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     private static final String type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /* Rare case. Example: xbabe.com */
     private static final String type_normal_without_fuid = ".+/videos/([a-z0-9\\-]+)/?$";
-    private static final String type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
+    private static final String type_normal_mobile       = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /* E.g. sex3.com */
     public static final String  type_only_numbers        = "^https?://[^/]+/(?:video/)?(\\d+)/$";
     public static final String  type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
@@ -106,7 +105,7 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_mobile)) {
+        if (link.getPluginPatternMatcher().matches(type_normal_mobile)) {
             /* Correct mobile urls --> Normal URLs */
             final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
@@ -950,9 +949,6 @@ public class KernelVideoSharingCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(filename)) {
                 filename = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
             }
-        } else if (br.getHost().equalsIgnoreCase("bravoporn.com")) {
-            /* 2019-08-28 */
-            filename = br.getRegex("<h1>([^<>]+)</h1>").getMatch(0);
         } else {
             filename = null;
         }

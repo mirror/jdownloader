@@ -24,15 +24,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class OkXxx extends KernelVideoSharingComV2 {
-    public OkXxx(final PluginWrapper wrapper) {
+public class BravopornCom extends KernelVideoSharingComV2 {
+    public BravopornCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ok.xxx" });
+        ret.add(new String[] { "bravoporn.com" });
         return ret;
     }
 
@@ -48,29 +49,22 @@ public class OkXxx extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(\\d+)/");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/video/" + new Regex(link.getPluginPatternMatcher(), type_embedded).getMatch(0) + "/");
-        }
-    }
-
-    @Override
     public String getFUID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     protected String getFileTitle(final DownloadLink link) {
-        String filetitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (filetitle == null) {
-            filetitle = br.getRegex("<title>([^<>\"]+) - OK\\.XXX</title>").getMatch(0);
+        String fileTitle = br.getRegex("class=\"headline\"><h1>([^<>\"]+)<").getMatch(0);
+        if (fileTitle == null) {
+            fileTitle = br.getRegex("<title>([^<>\"]+) \\| BravoPorn</title>").getMatch(0);
         }
-        return filetitle;
+        return fileTitle;
     }
 }
