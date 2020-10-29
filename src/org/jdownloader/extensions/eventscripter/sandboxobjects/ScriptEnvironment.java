@@ -399,9 +399,16 @@ public class ScriptEnvironment {
         sb.append("/* =========  Methods =========*/\r\n");
         for (Method m : Utils.sort(cl.getDeclaredMethods())) {
             if (!Modifier.isPublic(m.getModifiers())) {
+                // do not list non public methods
+                continue;
+            } else if ("hashCode".equals(m.getName()) && m.getParameterTypes().length == 0) {
+                // do not list hashCode() method
+                continue;
+            } else if ("equals".equals(m.getName()) && m.getParameterTypes().length == 1 && m.getParameterTypes()[0] == Object.class) {
+                // do not list equals(Object) method
                 continue;
             }
-            ScriptAPI ann = m.getAnnotation(ScriptAPI.class);
+            final ScriptAPI ann = m.getAnnotation(ScriptAPI.class);
             if (cl == ScriptEnvironment.class && ann == null) {
                 continue;
             }

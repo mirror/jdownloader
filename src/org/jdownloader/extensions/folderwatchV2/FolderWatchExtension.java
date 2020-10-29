@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.WeakHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
@@ -463,9 +463,23 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     });
                 }
             }
-            final String jobIDentifier = "[folderwatch:" + UniqueAlltimeID.next() + "]";
+            final WeakHashMap<CrawledLink, Object> links = new WeakHashMap<CrawledLink, Object>();
             final CrawledLink currentLink = getCurrentLink();
             final LinkCollectingJob job = currentLink.getSourceJob();
+            final CrawledLinkModifier dummyCrawedLinkModifier = new CrawledLinkModifier() {
+                @Override
+                public boolean modifyCrawledLink(CrawledLink link) {
+                    synchronized (links) {
+                        links.put(link, crawlJob);
+                    }
+                    return true;
+                }
+
+                @Override
+                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
+                    return null;
+                }
+            };
             final CrawledLinkModifier jobModifier;
             if (modifiers.size() > 0) {
                 jobModifier = new CrawledLinkModifier() {
@@ -481,11 +495,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     private final boolean modify(CrawledLink link) {
                         CrawledLink source = link;
                         while (source != null) {
-                            if (StringUtils.endsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
-                                return true;
-                            } else {
-                                source = source.getSourceLink();
+                            synchronized (links) {
+                                if (links.containsKey(source)) {
+                                    return true;
+                                }
                             }
+                            source = source.getSourceLink();
                         }
                         return false;
                     }
@@ -532,11 +547,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                                         private final boolean modify(CrawledLink link) {
                                             CrawledLink source = link;
                                             while (source != null) {
-                                                if (StringUtils.endsWithCaseInsensitive(source.getURL(), jobIDentifier)) {
-                                                    return true;
-                                                } else {
-                                                    source = source.getSourceLink();
+                                                synchronized (links) {
+                                                    if (links.containsKey(source)) {
+                                                        return true;
+                                                    }
                                                 }
+                                                source = source.getSourceLink();
                                             }
                                             return false;
                                         }
@@ -559,7 +575,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             } else {
                                 job.addPrePackagizerModifier(jobModifier);
                             }
-                            crawledLinkModifier = null;
+                            crawledLinkModifier = dummyCrawedLinkModifier;
                         } else {
                             crawledLinkModifier = jobModifier;
                         }
@@ -567,12 +583,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                     @Override
                     protected CrawledLink crawledLinkFactorybyURL(CharSequence url) {
-                        final CrawledLink ret = super.crawledLinkFactorybyURL(url.toString() + "#" + jobIDentifier);
+                        final CrawledLink ret = super.crawledLinkFactorybyURL(url);
                         ret.setCustomCrawledLinkModifier(crawledLinkModifier);
                         return ret;
                     }
                 };
-                final List<CrawledLink> ret = lc.find(null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
+                final List<CrawledLink> ret = lc.find(null, null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
                 if (ret != null) {
                     results.addAll(ret);
                 }
