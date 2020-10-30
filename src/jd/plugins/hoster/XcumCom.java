@@ -19,21 +19,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CamwhoresTv extends KernelVideoSharingComV2 {
-    public CamwhoresTv(final PluginWrapper wrapper) {
+public class XcumCom extends KernelVideoSharingComV2 {
+    public XcumCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.camwhores.tv/");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "camwhores.tv", "camwhores.video", "camwhores.biz", "camwhores.sc", "camwhores.io", "camwhores.adult", "camwhores.cc", "camwhores.co", "camwhores.org" });
+        ret.add(new String[] { "xcum.com" });
         return ret;
     }
 
@@ -47,21 +47,35 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:v|embed)/(\\d+)/?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            return br.getRegex("<title>([^<>\"]+) / Embed Player</title>").getMatch(0);
-        } else {
-            return super.getFileTitle(link);
+            /*
+             * 2020-10-30: Embedded content can only be viewed in 360p while using their main URLs, the same content may be available in up
+             * to 1080p!
+             */
+            link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/embed/", "/v/"));
         }
     }
 
     @Override
-    protected boolean enableFastLinkcheck() {
-        /* 2020-10-30 */
-        return true;
+    public String getFUID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    protected String getFileTitle(final DownloadLink link) {
+        String fileTitle = br.getRegex("class=\"video\"><h2>([^<>\"]+)<").getMatch(0);
+        if (fileTitle == null) {
+            fileTitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        }
+        return fileTitle;
     }
 }

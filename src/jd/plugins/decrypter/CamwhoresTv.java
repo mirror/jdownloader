@@ -40,7 +40,7 @@ public class CamwhoresTv extends PornEmbedParser {
         this.br.setCookiesExclusive(true);
         String parameter = param.toString();
         getPage(parameter);
-        if (jd.plugins.hoster.CamwhoresTv.isOffline(this.br)) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (StringUtils.containsIgnoreCase(br.getRedirectLocation(), "cwcams.com/landing")) {
@@ -62,22 +62,15 @@ public class CamwhoresTv extends PornEmbedParser {
                 id = br.getRegex("https?://[^/]+/videos/(\\d+)/" + Pattern.compile(filename_url) + "\"").getMatch(0);
                 if (id != null) {
                     logger.info("Found videoid");
-                    parameter = "http://www.camwhores.tv/videos/" + id + "/" + filename_url;
+                    parameter = "https://www.camwhores.tv/videos/" + id + "/" + filename_url;
                 } else {
                     logger.info("Found no videoid at all");
                 }
             }
             /* Probably a selfhosted video. */
-            final DownloadLink dl = createDownloadlink(createDownloadUrlForHostPlugin(parameter));
-            if (id != null) {
-                dl.setLinkID(getHost() + "://" + id);
-            }
+            final DownloadLink dl = createDownloadlink(parameter);
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
-    }
-
-    public static String createDownloadUrlForHostPlugin(final String dl) {
-        return dl.replaceFirst("camwhores.+?/", "camwhoresdecrypted.tv/");
     }
 }
