@@ -19,11 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault2(final PluginWrapper wrapper) {
+public class Sex3Com extends KernelVideoSharingComV2 {
+    public Sex3Com(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -31,11 +32,7 @@ public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shameless.com" });
-        ret.add(new String[] { "xbabe.com" });
-        ret.add(new String[] { "bravotube.net" });
-        ret.add(new String[] { "hellporno.com" });
-        ret.add(new String[] { "alphaporno.com" });
+        ret.add(new String[] { "sex3.com" });
         return ret;
     }
 
@@ -49,11 +46,17 @@ public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(getPluginDomains());
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(String url) {
-        return false;
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("/embed/", "/"));
+    }
+
+    @Override
+    protected String getFileTitle(final DownloadLink link) {
+        String fileTitle = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        return fileTitle;
     }
 }
