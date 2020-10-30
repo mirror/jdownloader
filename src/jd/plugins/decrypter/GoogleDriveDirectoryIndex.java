@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -28,6 +29,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -90,6 +93,8 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML("\"rateLimitExceeded\"")) {
+            throw new DecrypterRetryException(RetryReason.HOST, "Rate Limit Exceeded");
         }
         doThis(decryptedLinks, parameter);
         return decryptedLinks;
@@ -122,22 +127,25 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         } else {
             baseUrl = parameter;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Object filesO = entries.get("files");
-        final ArrayList<Object> ressourcelist;
-        if (filesO != null) {
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> ressourcelist;
+        Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
+        if (filesArray == null) {
+            filesArray = JavaScriptEngineFactory.walkJson(entries, "files");
+        }
+        if (filesArray != null) {
             /* Multiple files */
-            ressourcelist = (ArrayList<Object>) entries.get("files");
+            ressourcelist = (List<Object>) filesArray;
         } else {
             /* Probably single file */
             ressourcelist = new ArrayList<Object>();
             ressourcelist.add(entries);
         }
         for (final Object fileO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) fileO;
-            final String name = (String) entries.get("name");
-            final String type = (String) entries.get("mimeType");
-            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
+            final Map<String, Object> entry = (Map<String, Object>) fileO;
+            final String name = (String) entry.get("name");
+            final String type = (String) entry.get("mimeType");
+            final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
             if (StringUtils.isEmpty(name) || StringUtils.isEmpty(type)) {
                 /* Skip invalid objects */
                 continue;
