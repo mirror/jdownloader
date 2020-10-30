@@ -107,15 +107,18 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
                     logger.log(e);
                 }
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
+                return AvailableStatus.TRUE;
             }
-            link.setDownloadSize(con.getCompleteContentLength());
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override

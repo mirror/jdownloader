@@ -20,7 +20,6 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -36,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -161,13 +161,6 @@ public class BandCampCom extends PluginForHost {
                 df = new DecimalFormat("00");
             }
             final String filename = br.getRegex("\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
-            String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
-            if (date == null) {
-                date = br.getRegex("\"publish_date\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
-                if (date != null) {
-                    date = Long.toString(TimeFormatter.getMilliSeconds(date, "dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH));
-                }
-            }
             final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
             if (json_album == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -177,9 +170,16 @@ public class BandCampCom extends PluginForHost {
             if (artist == null) {
                 artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
             }
-            String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+            String date = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
+            if (date == null) {
+                date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+            }
+            String album = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
             if (album == null) {
-                album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+                album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+                if (album == null) {
+                    album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+                }
             }
             link.setProperty("directdate", Encoding.htmlDecode(date.trim()));
             link.setProperty("directartist", Encoding.htmlDecode(artist.trim()));
@@ -189,7 +189,7 @@ public class BandCampCom extends PluginForHost {
             link.setProperty("directtracknumber", df.format(trackNum));
             link.setProperty("fromdecrypter", true);
         }
-        final String filename = getFormattedFilename(link);
+        final String filename = getFormattedFilename(this, link);
         link.setFinalFileName(filename);
         // In case the link redirects to the finallink
         try {
@@ -222,12 +222,12 @@ public class BandCampCom extends PluginForHost {
         }
     }
 
-    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+    public static String getFormattedFilename(Plugin plugin, final DownloadLink downloadLink) throws ParseException {
         final String songTitle = downloadLink.getStringProperty("directname", null);
         final String tracknumber = downloadLink.getStringProperty("directtracknumber", null);
         final String artist = downloadLink.getStringProperty("directartist", null);
         final String album = downloadLink.getStringProperty("directalbum", null);
-        final String date = downloadLink.getStringProperty("directdate", null);
+        final String dateString = downloadLink.getStringProperty("directdate", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) {
@@ -242,26 +242,37 @@ public class BandCampCom extends PluginForHost {
         } else {
             ext = ".mp3";
         }
-        String formattedDate = null;
-        if (date != null && formattedFilename.contains("*date*")) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-            Date dateStr = formatter.parse(date);
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
-            if (userDefinedDateFormat != null) {
+        if (dateString != null && formattedFilename.contains("*date*")) {
+            Date date = TimeFormatter.parseDateString(dateString);
+            if (date == null) {
                 try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
+                    final SimpleDateFormat oldFormat = new SimpleDateFormat("yyyyMMdd");
+                    date = oldFormat.parse(dateString);
                 } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = "";
+                    plugin.getLogger().log(e);
                 }
             }
-            if (formattedDate != null) {
-                formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            } else {
-                formattedFilename = formattedFilename.replace("*date*", "");
+            if (date != null) {
+                final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy_HH-mm-ss");
+                String formattedDate = null;
+                for (final String format : new String[] { userDefinedDateFormat, "yyyyMMdd" }) {
+                    if (format != null) {
+                        try {
+                            final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                            formattedDate = formatter.format(date);
+                            if (formattedDate != null) {
+                                break;
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().log(e);
+                        }
+                    }
+                }
+                if (formattedDate != null) {
+                    formattedFilename = formattedFilename.replace("*date*", formattedDate);
+                } else {
+                    formattedFilename = formattedFilename.replace("*date*", "");
+                }
             }
         }
         if (formattedFilename.contains("*tracknumber*") && tracknumber != null) {

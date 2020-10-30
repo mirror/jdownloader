@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -44,6 +44,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -91,11 +92,17 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (artist == null) {
             artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
         }
-        String album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+        String album = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (album == null) {
-            album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+            album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+            if (album == null) {
+                album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+            }
         }
-        final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+        String date = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
+        if (date == null) {
+            date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+        }
         // if (links == null || links.length == 0 || artist == null || album == null || date == null) {
         // if (br.getURL().endsWith("bandcamp.com/")) {
         // return decryptedLinks;
@@ -107,7 +114,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         // logger.warning("Decrypter broken for link: " + parameter);
         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // }
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         artist = Encoding.htmlDecode(artist.trim());
         album = Encoding.htmlDecode(album.trim());
         final DecimalFormat df;
@@ -120,7 +127,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         int trackcounter = 1;
         for (final Object audioO : ressourcelist) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) audioO;
+            final Map<String, Object> entries = (Map<String, Object>) audioO;
             String dllink = (String) entries.get("title_link");
             final String title = (String) entries.get("title");
             final long duration = JavaScriptEngineFactory.toLong(entries.get("duration"), 0);
@@ -139,7 +146,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("directname", title);
             dl.setProperty("type", "mp3");
             dl.setProperty("directtracknumber", df.format(trackcounter));
-            final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(dl);
+            final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(this, dl);
             dl.setName(formattedFilename);
             if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.FASTLINKCHECK, true)) {
                 dl.setAvailable(true);
@@ -165,7 +172,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 thumb.setProperty("directname", "thumbnail");
                 thumb.setProperty("type", "jpg");
                 thumb.setProperty("directtracknumber", df.format(0));
-                final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(thumb);
+                final String formattedFilename = jd.plugins.hoster.BandCampCom.getFormattedFilename(this, thumb);
                 thumb.setFinalFileName(formattedFilename);
                 decryptedLinks.add(thumb);
             }
@@ -219,7 +226,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        final String formattedpackagename = getFormattedPackagename(CFG, artist, album, date);
+        final String formattedpackagename = getFormattedPackagename(this, CFG, artist, album, date);
         if (!CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.CLEANPACKAGENAME, false)) {
             fp.setProperty("CLEANUP_NAME", false);
         }
@@ -233,34 +240,45 @@ public class BandCampComDecrypter extends PluginForDecrypt {
 
     private final static String defaultCustomPackagename = "*artist* - *album*";
 
-    public static String getFormattedPackagename(SubConfiguration CFG, final String artist, final String album, final String date) throws ParseException {
-        String formattedpackagename = CFG.getStringProperty(jd.plugins.hoster.BandCampCom.CUSTOM_PACKAGENAME, defaultCustomPackagename);
+    public static String getFormattedPackagename(PluginForDecrypt plugin, SubConfiguration cfg, final String artist, final String album, final String dateString) throws ParseException {
+        String formattedpackagename = cfg.getStringProperty(jd.plugins.hoster.BandCampCom.CUSTOM_PACKAGENAME, defaultCustomPackagename);
         if (formattedpackagename == null || formattedpackagename.equals("")) {
             formattedpackagename = defaultCustomPackagename;
         }
         if (!formattedpackagename.contains("*artist*") && !formattedpackagename.contains("*album*")) {
             formattedpackagename = defaultCustomPackagename;
         }
-        String formattedDate = null;
-        if (date != null && formattedpackagename.contains("*date*")) {
-            final String userDefinedDateFormat = CFG.getStringProperty(jd.plugins.hoster.BandCampCom.CUSTOM_DATE);
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-            Date dateStr = formatter.parse(date);
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
-            if (userDefinedDateFormat != null) {
+        if (dateString != null && formattedpackagename.contains("*date*")) {
+            Date date = TimeFormatter.parseDateString(dateString);
+            if (date == null) {
                 try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
+                    final SimpleDateFormat oldFormat = new SimpleDateFormat("yyyyMMdd");
+                    date = oldFormat.parse(dateString);
                 } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = "";
+                    plugin.getLogger().log(e);
                 }
             }
-            if (formattedDate != null) {
-                formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
-            } else {
-                formattedpackagename = formattedpackagename.replace("*date*", "");
+            if (date != null) {
+                final String userDefinedDateFormat = cfg.getStringProperty("CUSTOM_DATE", "dd.MM.yyyy_HH-mm-ss");
+                String formattedDate = null;
+                for (final String format : new String[] { userDefinedDateFormat, "yyyyMMdd" }) {
+                    if (format != null) {
+                        try {
+                            final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                            formattedDate = formatter.format(date);
+                            if (formattedDate != null) {
+                                break;
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().log(e);
+                        }
+                    }
+                }
+                if (formattedDate != null) {
+                    formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
+                } else {
+                    formattedpackagename = formattedpackagename.replace("*date*", "");
+                }
             }
         }
         if (formattedpackagename.contains("*artist*")) {
@@ -268,10 +286,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         // Insert albumname at the end to prevent errors with tags
         formattedpackagename = formattedpackagename.replace("*album*", album);
-        if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMELOWERCASE, false)) {
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMELOWERCASE, false)) {
             formattedpackagename = formattedpackagename.toLowerCase();
         }
-        if (CFG.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMESPACE, false)) {
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.PACKAGENAMESPACE, false)) {
             formattedpackagename = formattedpackagename.replace(" ", "_");
         }
         return formattedpackagename;
