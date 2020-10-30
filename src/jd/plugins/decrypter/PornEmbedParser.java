@@ -651,14 +651,8 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("(?:\"|')((?:https?:)?//(?:www\\.)?tubecup\\.com/embed/\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?txxx\\.com/embed/\\d+)\"").getMatch(0);
+        /* txxx.com (former tubecup.com) */
+        externID = br.getRegex("\"((?:https?:)?//(?:www\\.)?(txxx|tubecup)\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(externID);
             if (!processAll) {

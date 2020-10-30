@@ -67,8 +67,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // Tags:
     // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
-    // other #2: Special websites that have their own plugins (examples): pornktube.com, alotporn.com, , clipcake.com
-    // TODO: Check if it is possible to get nice filenames for embed-urls as well
+    // other #2: Special websites that have their own plugins (examples): alotporn.com
     /**
      * specifications that have to be met for hosts to be added here:
      *
@@ -142,7 +141,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getPluginPatternMatcher().matches(type_mobile)) {
-            /* Correct mobile urls --> Normal URLs TODO: check this */
+            /* Correct mobile urls --> Normal URLs | 2020-10-30: This is old but still needed for some sites! */
             final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
@@ -546,7 +545,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String httpurl_temp = null;
         if (json_playlist_source != null) {
             /* 2017-03-16: E.g. txxx.com */
-            /* TODO: Eventually improve this */
             // see if there are non hls streams first. since regex does this based on first in entry of source == =[ raztoki20170507
             dllink = new Regex(json_playlist_source, "'file'\\s*:\\s*'((?!.*\\.m3u8)http[^<>\"']*?(mp4|flv)[^<>\"']*?)'").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
