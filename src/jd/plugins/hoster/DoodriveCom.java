@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -126,7 +127,7 @@ public class DoodriveCom extends PluginForHost {
             if (dlform0 != null && !CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform0)) {
                 br.submitForm(dlform0);
             }
-            /* Step 2 - Captcha & Pre-download-waittime (10 seconds) */
+            /* Step 2 - Captcha & Pre-download-waittime (10 seconds - unsure if those are skippable) */
             Form dlform = br.getFormbyActionRegex(".*file-download");
             if (dlform == null) {
                 dlform = br.getForm(0);
@@ -134,13 +135,14 @@ public class DoodriveCom extends PluginForHost {
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final boolean pluginUnfinished = true;
+            final boolean pluginUnfinished = !DebugMode.TRUE_IN_IDE_ELSE_FALSE;
             if (pluginUnfinished) {
                 /* 2020-10-31 */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            /* Should redirect to "/f/<fuid>?f=blabla" */
             br.submitForm(dlform);
             /* Step 3 - Download */
             final Form dlform2 = br.getFormbyActionRegex(".*/f/" + this.getFID(link));
