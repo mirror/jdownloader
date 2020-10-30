@@ -31,6 +31,25 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.DownloadLink;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -73,25 +92,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkModifiers;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.DownloadLink;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private ExtTextArea                         input;
@@ -141,7 +141,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private JComboBox              priority;
     private final HashSet<String>  autoPasswords = new HashSet<String>();
     private ExtTextField           comment;
-    private JCheckBox              overwritePackagizer;;
+    private JCheckBox              overwritePackagizer;                              ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -276,11 +276,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             job.setCrawlerPassword(finalDownloadPassword);
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     final DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
@@ -297,11 +292,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (finalPriority != null && !Priority.DEFAULT.equals(finalPriority)) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setPriority(finalPriority);
                     return true;
@@ -313,11 +303,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         if (ac != null && ac != EnableDisableUnchanged.UNCHANGED) {
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setAutoConfirmEnabled(ac == EnableDisableUnchanged.ENABLED);
                     return true;
@@ -328,11 +313,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final EnableDisableUnchanged as = getAutoStart();
         if (as != null && as != EnableDisableUnchanged.UNCHANGED) {
             modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setAutoStartEnabled(as == EnableDisableUnchanged.ENABLED);
@@ -352,11 +332,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
             job.setArchivPasswords(new ArrayList<String>(passwords));
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalPasswords);
                     return true;
@@ -366,11 +341,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final BooleanStatus extractAfterDownload = this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
         if (BooleanStatus.isSet(extractAfterDownload)) {
             modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().setAutoExtract(extractAfterDownload);

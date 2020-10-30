@@ -18,7 +18,6 @@ package org.jdownloader.extensions.folderwatchV2;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -313,11 +312,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             if (crawlJob.getPriority() != null) {
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
-                    @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setPriority(crawlJob.getPriority());
                         return true;
@@ -327,11 +321,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             if (BooleanStatus.isSet(crawlJob.getExtractAfterDownload())) {
                 final BooleanStatus autoextract = crawlJob.getExtractAfterDownload();
                 modifiers.add(new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
                     @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.getArchiveInfo().setAutoExtract(autoextract);
@@ -344,11 +333,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             }
             if (StringUtils.isNotEmpty(crawlJob.getDownloadPassword())) {
                 modifiers.add(new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
                     @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         final DownloadLink dlLink = link.getDownloadLink();
@@ -364,11 +348,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 final boolean autoconfirm = Boolean.TRUE.equals(crawlJob.getAutoConfirm().getBoolean());
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
-                    @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setAutoConfirmEnabled(autoconfirm);
                         return true;
@@ -379,11 +358,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 final boolean autostart = Boolean.TRUE.equals(crawlJob.getAutoStart().getBoolean());
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
-                    @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setAutoStartEnabled(autostart);
                         return true;
@@ -392,11 +366,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             }
             if (crawlJob.getChunks() > 0) {
                 modifiers.add(new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
                     @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setChunks(crawlJob.getChunks());
@@ -413,11 +382,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 final boolean enabled = Boolean.TRUE.equals(crawlJob.getEnabled().getBoolean());
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
-                    @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setEnabled(enabled);
                         return true;
@@ -429,11 +393,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             }
             if (BooleanStatus.isSet(crawlJob.getForcedStart())) {
                 modifiers.add(new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
                     @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setForcedAutoStartEnabled(crawlJob.getForcedStart().getBoolean());
@@ -450,11 +409,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                 }
                 if (list.size() > 0) {
                     modifiers.add(new CrawledLinkModifier() {
-                        @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
                         @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(list);
@@ -474,24 +428,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     }
                     return true;
                 }
-
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
             };
             final CrawledLinkModifier jobModifier;
             if (modifiers.size() > 0) {
                 jobModifier = new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        if (modify(link)) {
-                            return Collections.unmodifiableList(modifiers);
-                        } else {
-                            return null;
-                        }
-                    }
-
                     private final boolean modify(CrawledLink link) {
                         CrawledLink source = link;
                         while (source != null) {
@@ -507,16 +447,15 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                     @Override
                     public boolean modifyCrawledLink(final CrawledLink link) {
+                        boolean ret = false;
                         if (modify(link)) {
-                            boolean ret = false;
-                            for (CrawledLinkModifier mod : modifiers) {
+                            for (final CrawledLinkModifier mod : modifiers) {
                                 if (mod.modifyCrawledLink(link)) {
                                     ret = true;
                                 }
                             }
-                            return ret;
                         }
-                        return false;
+                        return ret;
                     }
                 };
             } else {
@@ -535,15 +474,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                                     job.addPrePackagizerModifier(jobModifier);
                                 } else if (requiredPreModifiers.size() > 0) {
                                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
-                                        @Override
-                                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                                            if (modify(link)) {
-                                                return Collections.unmodifiableList(requiredPreModifiers);
-                                            } else {
-                                                return null;
-                                            }
-                                        }
-
                                         private final boolean modify(CrawledLink link) {
                                             CrawledLink source = link;
                                             while (source != null) {
@@ -559,16 +489,15 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
                                         @Override
                                         public boolean modifyCrawledLink(final CrawledLink link) {
+                                            boolean ret = false;
                                             if (modify(link)) {
-                                                boolean ret = false;
                                                 for (CrawledLinkModifier mod : requiredPreModifiers) {
                                                     if (mod.modifyCrawledLink(link)) {
                                                         ret = true;
                                                     }
                                                 }
-                                                return ret;
                                             }
-                                            return false;
+                                            return ret;
                                         }
                                     });
                                 }

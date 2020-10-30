@@ -1,7 +1,5 @@
 package jd.controlling.linkcrawler.modifier;
 
-import java.util.List;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -42,10 +40,5 @@ public class PackageNameModifier implements CrawledLinkModifier {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-        return null;
     }
 }
