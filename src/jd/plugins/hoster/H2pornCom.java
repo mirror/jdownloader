@@ -19,11 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault2(final PluginWrapper wrapper) {
+public class H2pornCom extends KernelVideoSharingComV2 {
+    public H2pornCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -31,10 +33,7 @@ public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shameless.com" });
-        ret.add(new String[] { "xbabe.com" });
-        ret.add(new String[] { "bravotube.net" });
-        ret.add(new String[] { "hellporno.com" });
+        ret.add(new String[] { "h2porn.com" });
         return ret;
     }
 
@@ -48,11 +47,37 @@ public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:videos/|player/iframe_embed\\.php\\?dir=)[a-z0-9\\-]+/?|https?://embed\\." + buildHostsPatternPart(domains) + "/[a-z0-9\\-]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(String url) {
-        return false;
+    protected String getURLTitle(final String url) {
+        if (url == null) {
+            return null;
+        }
+        return new Regex(url, "([a-z0-9\\-]+)/?$").getMatch(0);
     }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setPluginPatternMatcher("http://h2porn.com/videos/" + getURLTitle(link.getPluginPatternMatcher()) + "/");
+    }
+    // @Override
+    // protected boolean hasFUIDAtEnd(String url) {
+    // return false;
+    // }
+
+    @Override
+    protected String getFUID(final DownloadLink link) {
+        /* No specific ID given --> Use title inside URL as unique ID. */
+        return this.getURLTitle(link.getPluginPatternMatcher());
+    }
+    // @Override
+    // protected boolean hasFUIDAtEnd(String url) {
+    // return false;
+    // }
 }
