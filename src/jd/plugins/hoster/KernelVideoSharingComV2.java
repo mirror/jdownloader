@@ -215,7 +215,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         setSpecialFlags();
         String finalFilename = getFileTitle(link);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php")) {
+        if (isOffline()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         try {
@@ -316,6 +316,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    protected boolean isOffline() {
+        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
     }
 
     protected void setSpecialFlags() {
@@ -921,19 +925,19 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /** Returns "better human readable" file-title from URL. */
     protected String getURLTitleCorrected(final String url) {
-        String urlTitle = getURLTitle(url);
-        if (!StringUtils.isEmpty(urlTitle)) {
+        String urltitle = getURLTitle(url);
+        if (!StringUtils.isEmpty(urltitle)) {
             /* Special: Remove unwanted stuff e.g.: private-shows.net, anon-v.com */
-            final String removeme = new Regex(urlTitle, "(-?[a-f0-9]{16})").getMatch(0);
+            final String removeme = new Regex(urltitle, "(-?[a-f0-9]{16})").getMatch(0);
             if (removeme != null) {
-                urlTitle = urlTitle.replace(removeme, "");
+                urltitle = urltitle.replace(removeme, "");
             }
             /* Make the url-filenames look better by using spaces instead of '-'. */
-            urlTitle = urlTitle.replace("-", " ");
+            urltitle = urltitle.replace("-", " ");
             /* Remove eventually existing spaces at the end */
-            urlTitle = urlTitle.trim();
+            urltitle = urltitle.trim();
         }
-        return urlTitle;
+        return urltitle;
     }
 
     /**
