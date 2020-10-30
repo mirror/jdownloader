@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -28,10 +27,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "http://(www\\.)?yourfreeporn\\.(?:us|tv)/video/\\d+(/[a-z0-9\\-_]+)?" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "https?://(?:www\\.)?yourfreeporn\\.(?:us|tv)/video/\\d+(/[a-z0-9\\-_]+)?" })
 public class YourFreePornUs extends PluginForHost {
-
-    private String DLLINK = null;
+    private String dllink = null;
 
     public YourFreePornUs(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +51,7 @@ public class YourFreePornUs extends PluginForHost {
     }
 
     private static final String HTML_LIMITREACHED = ">You have reached your free daily limit";
-    private static final String HTML_PREMIUMONLY       = "class=\"goPremiumPitch\"";
+    private static final String HTML_PREMIUMONLY  = "class=\"goPremiumPitch\"";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -89,10 +87,9 @@ public class YourFreePornUs extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (br.containsHTML(HTML_LIMITREACHED)) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         } else if (br.containsHTML(HTML_PREMIUMONLY)) {
@@ -105,15 +102,23 @@ public class YourFreePornUs extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        br.getPage("http://www.yourfreeporn.tv/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0));
-        DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
-        if (DLLINK == null) {
+        final String key = br.getRegex("\\?key=([a-f0-9]+)").getMatch(0);
+        if (key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -3);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        br.getPage("/media/nuevo/play.php?key=" + key);
+        dllink = br.getRegex("<file>(http[^<>\"]+)</file>").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML(">403 \\- Forbidden<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }

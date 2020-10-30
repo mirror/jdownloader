@@ -82,7 +82,7 @@ public class WhatBoysWantCom extends PluginForHost {
         if (aa != null) {
             this.login(aa, false);
             br.getPage("https://whatboyswant.com/" + type + "/properties/" + fid + "/");
-            if (br.getURL().contains("/error404")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filesize = br.getRegex("<th>Filesize:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
@@ -94,7 +94,7 @@ public class WhatBoysWantCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             br.getPage(link.getDownloadURL());
-            if (br.getURL().contains("/error404")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -112,17 +112,17 @@ public class WhatBoysWantCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = getFID(downloadLink);
-        if (downloadLink.getDownloadURL().matches(TYPE_MOVIE)) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String fid = getFID(link);
+        if (link.getDownloadURL().matches(TYPE_MOVIE)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             dllink = br.getRegex("\"(/picture/(?:babe|car)/" + fid + "/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -130,13 +130,13 @@ public class WhatBoysWantCom extends PluginForHost {
             }
             dllink = "https://whatboyswant.com" + dllink;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 

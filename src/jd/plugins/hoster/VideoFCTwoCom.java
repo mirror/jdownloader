@@ -438,7 +438,7 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private boolean isOffline(final String linkid) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("err.php") || !br.getURL().contains(linkid);
+        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("err.php") || !br.getURL().contains(linkid) || br.toString().contains("(Removed) **************");
     }
 
     private String getMimi(String s) {
