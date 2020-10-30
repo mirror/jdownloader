@@ -63,17 +63,6 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
         }
         return ret.toArray(new String[0]);
     }
-    // @Override
-    // protected String getFUIDFromURL(final String url) {
-    // /* No ID in filename --> Use URL title */
-    // final String fuidSpecial = new Regex(url, "https?://[^/]+/v/(\\d+)").getMatch(0);
-    // if (fuidSpecial != null) {
-    // return fuidSpecial;
-    // } else {
-    // /* E.g. embed URL or no fuid in URL at all! */
-    // return super.getFUIDFromURL(url);
-    // }
-    // }
 
     @Override
     protected String getFileTitle(final DownloadLink link) {
