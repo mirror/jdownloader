@@ -129,6 +129,10 @@ public class OnlystreamTv extends XFileSharingProBasic {
         boolean offline = super.isOffline(link);
         if (!offline) {
             offline = correctedBR.contains(">File you are looking for is not found");
+            if (!offline) {
+                /* 2020-10-30: Website displays sample video hosted on google and not a "real" filename --> Another offline trait */
+                offline = new Regex(correctedBR, "<title>\\s*Video\\.mp4 - Onlystream\\.tv</title>").matches();
+            }
         }
         return offline;
     }
