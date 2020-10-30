@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import javax.script.Invocable;
@@ -174,9 +177,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return -1;
     }
 
-    /** Disable this for hosts which e.g. have really slow fileservers as this would otherwise slow down linkchecking! */
-    protected boolean checkDirecturlForFilesize() {
-        return true;
+    /** Enable this for hosts which e.g. have really slow fileservers as this would otherwise slow down linkchecking e.g. camwhores.tv. */
+    protected boolean enableFastLinkcheck() {
+        return false;
     }
 
     protected Browser prepBR(final Browser br) {
@@ -204,11 +207,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (fuidBeforeHTTPRequest == null) {
             /* Most likely required/useful for URLs matching pattern: type_normal_without_fuid */
             logger.info("Failed to find fuid in URL --> Looking for fuid in html");
-            final String fuidAfterHTTPRequest = br.getRegex("\"https?://[^/]+/embed/(\\d+)/?\"").getMatch(0);
+            final String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
             if (fuidAfterHTTPRequest != null) {
                 logger.info("Successfully found fuid in html: " + fuidAfterHTTPRequest);
                 link.setLinkID(this.getHost() + "://" + fuidAfterHTTPRequest);
-                link.getStringProperty(PROPERTY_FUID, fuidAfterHTTPRequest);
+                link.setProperty(PROPERTY_FUID, fuidAfterHTTPRequest);
             } else {
                 logger.info("Failed to find fuid in html");
             }
@@ -243,7 +246,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // this prevents another check when download is about to happen! -raztoki
         if (isDownload) {
             return AvailableStatus.TRUE;
-        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && checkDirecturlForFilesize()) {
+        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && !enableFastLinkcheck()) {
             URLConnectionAdapter con = null;
             try {
                 // if you don't do this then referrer is fked for the download! -raztoki
@@ -277,7 +280,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
                         if (con.isContentDisposition()) {
                             logger.info("Using final filename from content disposition header");
-                            finalFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+                            finalFilename = Plugin.getFileNameFromHeader(con);
                             link.setFinalFileName(finalFilename);
                         } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
                             logger.info("Using final filename from inside final downloadurl");
@@ -331,9 +334,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    /**
-     * Tries everything possible to find a nice file-title for KVS websites. <br />
-     */
     protected String getFileTitle(final DownloadLink link) {
         String filename;
         String title_url = this.getURLTitleCorrected(br.getURL());
@@ -342,6 +342,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
         final String fuid = this.getFUID(link);
+        /* Try to find URL-title */
         if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
             String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
             if (realURL == null) {
@@ -358,15 +359,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        final String url_source = getURL_source(br, link);
-        /* Find 'real' filename and the one inside our URL. */
         if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
             /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
-        } else if (url_source.matches(type_embedded)) {
-            filename = this.getFUIDFromURL(url_source);
         } else {
-            filename = regexStandardTitleWithHost(br, br.getHost());
+            /* Try default trait --> Very unsafe but may sometimes work */
+            filename = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + br.getHost() + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         /* Now decide which filename we want to use */
         if (StringUtils.isEmpty(filename)) {
@@ -563,6 +561,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = br.getRegex("flashvars\\.video_html5_url\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
+            /* TODO: 2020-10-30 This is also supposed to find the BEST quality available --> Check if this still works as it should */
             // function/0/http camwheres, pornyeah - find best quality
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
             final String crypted;
@@ -594,18 +593,19 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         }
-        /* Old */
-        // if (StringUtils.isEmpty(dllink)) {
-        // // E.g. xxxymovies.com, javbangers.com
-        // dllink = br.getRegex("video_url\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
-        // }
         if (StringUtils.isEmpty(dllink)) {
-            /* 2020-10-27: Find the best between possibly multiple uncrypted streaming URLs */
-            logger.info("Trying to find highest quality available");
-            /* 2020-10-29: TODO: Test/Improve case when single URL without quality modifier is BEST quality (e.g. fapality.com) */
+            /* Find the best between possibly multiple uncrypted streaming URLs */
+            /* Stage 1 */
+            HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
+            logger.info("Crawling available qualities");
+            /* Example multiple qualities available: xbabe.com */
+            /*
+             * Example multiple qualities available but "get_file" URL with highest quality has no quality modifier in URL (= Stage 3
+             * required): fapality.com, xcum.com
+             */
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
-            int maxQuality = 0;
             String urlWithoutQualityIndicator = null;
+            int foundQualities = 0;
             for (final String dlURLTmp : dlURLs) {
                 if (StringUtils.endsWithCaseInsensitive(dlURLTmp, "jpg/")) {
                     /* Skip invalid items */
@@ -624,9 +624,58 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     continue;
                 }
                 final int qualityTmp = Integer.parseInt(qualityTmpStr);
-                if (qualityTmp > maxQuality) {
-                    maxQuality = qualityTmp;
-                    dllink = dlURLTmp;
+                qualityMap.put(qualityTmp, dlURLTmp);
+                foundQualities++;
+            }
+            logger.info("Found " + foundQualities + " qualities in stage 1");
+            /* Stage 2 */
+            foundQualities = 0;
+            /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
+            /*
+             * This will NOT e.g. work for: video_url_text: 'High Definition' --> E.g. xxxymovies.com --> But this one only has a single
+             * quality available
+             */
+            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+)p'").getMatches();
+            for (final String[] vidInfo : videoInfos) {
+                final String varNameText = vidInfo[0];
+                final String videoQualityStr = vidInfo[1];
+                final int videoQuality = Integer.parseInt(videoQualityStr);
+                final String varNameVideoURL = varNameText.replace("_text", "");
+                final String dllinkTmp = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
+                if (dllinkTmp != null) {
+                    qualityMap.put(videoQuality, dllinkTmp);
+                    foundQualities++;
+                }
+            }
+            logger.info("Found " + foundQualities + " qualities in stage 2");
+            /* Stage 3 */
+            foundQualities = 0;
+            /* This can fix mistakes/detect qualities missed in stage 1 */
+            final String[] sources = br.getRegex("<source[^>]*?src=\"(https?://[^<>\"]*?)\"[^>]*?type=(\"|')video/[a-z0-9]+\\2[^>]+>").getColumn(-1);
+            for (final String source : sources) {
+                final String dllinkTemp = new Regex(source, "src=\"(https?://[^<>\"]+)\"").getMatch(0);
+                String qualityTempStr = new Regex(source, "title=\"(\\d+)p\"").getMatch(0);
+                if (qualityTempStr == null) {
+                    /* 2020-01-29: More open RegEx e.g. pornhat.com */
+                    qualityTempStr = new Regex(source, "(\\d+)p").getMatch(0);
+                }
+                if (dllinkTemp == null || qualityTempStr == null) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final int qualityTmp = Integer.parseInt(qualityTempStr);
+                qualityMap.put(qualityTmp, dllinkTemp);
+                foundQualities++;
+            }
+            logger.info("Found " + foundQualities + " qualities in stage 3");
+            logger.info("Total found qualities: " + qualityMap.size());
+            final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
+            int maxQuality = 0;
+            while (iterator.hasNext()) {
+                final Entry<Integer, String> entry = iterator.next();
+                if (entry.getKey() > maxQuality) {
+                    maxQuality = entry.getKey();
+                    dllink = entry.getValue();
                 }
             }
             if (!StringUtils.isEmpty(dllink)) {
@@ -636,74 +685,23 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Selected URL without quality indicator: " + urlWithoutQualityIndicator);
                 dllink = urlWithoutQualityIndicator;
             } else {
-                // logger.info("Failed to find any quality");
-            }
-            /* 2020-10-27: Old version of this */
-            // dllink = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getMatch(0);
-            // if (StringUtils.endsWithCaseInsensitive(dllink, "jpg/")) {
-            // dllink = null;
-            // }
-        }
-        /* Similar to the above but not as precise / older attempt */
-        if (StringUtils.isEmpty(dllink)) {
-            /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
-            /*
-             * This will NOT e.g. work for: video_url_text: 'High Definition' --> E.g. xxxymovies.com --> But this one only has one quality
-             * available
-             */
-            /* Example website wi */
-            int maxQuality = 0;
-            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+)p'").getMatches();
-            for (final String[] vidInfo : videoInfos) {
-                final String varNameText = vidInfo[0];
-                final String videoQualityStr = vidInfo[1];
-                final int videoQuality = Integer.parseInt(videoQualityStr);
-                if (videoQuality > maxQuality) {
-                    final String varNameVideoURL = varNameText.replace("_text", "");
-                    maxQuality = videoQuality;
-                    dllink = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
-                }
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                logger.info("Selected quality: " + maxQuality + "p");
+                logger.info("Failed to find any quality so far");
             }
         }
         if (StringUtils.isEmpty(dllink)) {
-            /* 2019-07-24: E.g. pick best of multiple sources e.g. multiple sources available: xbabe.com */
-            int qualityMax = 0;
-            int qualityTmp = 0;
-            final String[] sources = br.getRegex("<source[^>]*?src=\"(https?://[^<>\"]*?)\"[^>]*?type=(\"|')video/[a-z0-9]+\\2[^>]*?").getColumn(-1);
-            for (final String source : sources) {
-                final String dllinkTemp = new Regex(source, "src=\"(https?://[^<>\"]+)\"").getMatch(0);
-                String qualityTempStr = new Regex(source, "title=\"(\\d+)p\"").getMatch(0);
-                if (qualityTempStr == null) {
-                    /* 2020-01-29: More open RegEx e.g. pornhat.com */
-                    qualityTempStr = new Regex(source, "(\\d+)p").getMatch(0);
-                }
-                if (dllinkTemp == null || qualityTempStr == null) {
-                    continue;
-                }
-                qualityTmp = Integer.parseInt(qualityTempStr);
-                if (qualityTmp > qualityMax) {
-                    qualityMax = qualityTmp;
-                    dllink = dllinkTemp;
-                }
+            /* 2020-10-30: Older fallbacks */
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = br.getRegex("(?:file|video)\\s*?:\\s*?(?:\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)(?:\"|')").getMatch(0);
             }
-            if (!StringUtils.isEmpty(dllink)) {
-                logger.info("Selected quality: " + qualityMax + "p");
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
             }
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("(?:file|video)\\s*?:\\s*?(?:\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)(?:\"|')").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(\"|')(http[^<>\"\\']*?\\.(?:m3u8|mp4|flv)[^<>\"]*?)\\1").getMatch(1);
-        }
-        if (StringUtils.isEmpty(dllink)) { // tryboobs.com
-            dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) { // tryboobs.com
+                dllink = br.getRegex("<video src=\"(https?://[^<>\"]*?)\" controls").getMatch(0);
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (dllink != null && dllink.contains(".m3u8")) {
             /* 2016-12-02 - txxx.com, tubecup.com, hdzog.com */
@@ -905,24 +903,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return m.toString();
     }
 
-    /**
-     * Returns either current browser URL or PluginPatternMatcher depending on which is 'better' in terms of which information we may find
-     * inside that URL.
-     */
-    public static String getURL_source(final Browser br, final DownloadLink dl) {
-        if (br == null && dl == null) {
-            return null;
-        }
-        final String url_source;
-        final String current_browser_url = br != null ? br.getURL() : null;
-        if (current_browser_url != null && current_browser_url.length() > dl.getPluginPatternMatcher().length() && current_browser_url.matches(type_normal)) {
-            url_source = current_browser_url;
-        } else {
-            url_source = dl.getContentUrlOrPatternMatcher();
-        }
-        return url_source;
-    }
-
     /** Returns "better human readable" file-title from URL. */
     protected String getURLTitleCorrected(final String url) {
         String urltitle = getURLTitle(url);
@@ -959,6 +939,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected String getFUID(final DownloadLink link) {
+        /* Prefer stored unique ID over ID inside URL because sometimes none is given inside URL. */
         String fuid = link.getStringProperty(PROPERTY_FUID, null);
         if (fuid == null) {
             fuid = this.getFUIDFromURL(link.getPluginPatternMatcher());
@@ -983,6 +964,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return fuid;
     }
 
+    /** Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! */
     protected boolean hasFUIDAtEnd(final String url) {
         return true;
     }
@@ -1008,11 +990,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             return filename_normal;
         }
         return filename_clean;
-    }
-
-    /** Many websites in general use this format - title plus their own hostname as ending. */
-    public static String regexStandardTitleWithHost(final Browser br, final String host) {
-        return br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + host + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
     }
 
     @Override

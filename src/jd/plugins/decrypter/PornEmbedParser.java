@@ -700,7 +700,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         }
         externID = br.getRegex("(?:'|\")((?:https?:)?//(?:www\\.)?camwhores\\.tv/embed/\\d+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(jd.plugins.decrypter.CamwhoresTv.createDownloadUrlForHostPlugin(externID));
+            decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;
             }
