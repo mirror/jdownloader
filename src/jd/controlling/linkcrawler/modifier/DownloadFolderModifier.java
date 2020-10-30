@@ -1,7 +1,6 @@
 package jd.controlling.linkcrawler.modifier;
 
 import java.io.File;
-import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
@@ -44,10 +43,5 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-        return null;
     }
 }

@@ -1,7 +1,5 @@
 package jd.controlling.linkcrawler.modifier;
 
-import java.util.List;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.plugins.DownloadLink;
@@ -17,11 +15,6 @@ public class CommentModifier implements CrawledLinkModifier {
 
     public CommentModifier(final String comment) {
         this.comment = comment;
-    }
-
-    @Override
-    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-        return null;
     }
 
     @Override

@@ -397,11 +397,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final String downloadPassword = query.getDownloadPassword();
 
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     final DownloadLink dlLink = link.getDownloadLink();
                     if (dlLink != null) {
@@ -416,11 +411,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             final boolean autostart = Boolean.TRUE.equals(query.isAutostart());
             modifiers.add(new CrawledLinkModifier() {
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setAutoConfirmEnabled(autostart);
                     link.setAutoStartEnabled(autostart);
@@ -431,11 +421,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (finalExtPws != null && finalExtPws.size() > 0) {
             job.setArchivPasswords(finalExtPws);
             modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
@@ -448,11 +433,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final BooleanStatus autoExtract = BooleanStatus.convert(query.isAutoExtract());
 
                 @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
-                @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().setAutoExtract(autoExtract);
                     return true;
@@ -461,11 +441,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         if (!Priority.DEFAULT.equals(fp)) {
             modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.setPriority(fp);

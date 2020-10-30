@@ -561,11 +561,6 @@ public class ClipboardMonitoring {
                                                 if (pws != null && pws.size() > 0) {
                                                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
                                                         @Override
-                                                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                                                            return null;
-                                                        }
-
-                                                        @Override
                                                         public boolean modifyCrawledLink(CrawledLink link) {
                                                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);
                                                             return true;
@@ -942,11 +937,6 @@ public class ClipboardMonitoring {
                 if (pws != null && pws.size() > 0) {
                     job.setArchivPasswords(new ArrayList<String>(pws));
                     job.addPrePackagizerModifier(new CrawledLinkModifier() {
-                        @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
                         @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);

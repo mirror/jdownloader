@@ -196,11 +196,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 if (cnl.getAutostart() != null) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
-                        @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             link.setAutoConfirmEnabled(cnl.getAutostart());
                             link.setAutoStartEnabled(cnl.getAutostart());
@@ -213,11 +208,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         job.setArchivPasswords(cnl.getPasswords());
                     }
                     modifiers.add(new CrawledLinkModifier() {
-                        @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
                         @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(cnl.getPasswords());
@@ -238,36 +228,28 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 if (StringUtils.isNotEmpty(cnl.getReferrer())) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
-                        @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             final DownloadLink downloadLink = link.getDownloadLink();
                             if (downloadLink != null) {
                                 downloadLink.setReferrerUrl(cnl.getReferrer());
                                 return true;
+                            } else {
+                                return false;
                             }
-                            return false;
                         }
                     });
                 }
                 if (StringUtils.isNotEmpty(cnl.getSource())) {
                     modifiers.add(new CrawledLinkModifier() {
                         @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
-                        @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             final DownloadLink downloadLink = link.getDownloadLink();
                             if (downloadLink != null) {
                                 downloadLink.setOriginUrl(cnl.getSource());
                                 return true;
+                            } else {
+                                return false;
                             }
-                            return false;
                         }
                     });
                 }
@@ -336,11 +318,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             pws.add(finalPasswords);
             job.setArchivPasswords(pws);
             modifiers.add(new CrawledLinkModifier() {
-                @Override
-                public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                    return null;
-                }
-
                 @Override
                 public boolean modifyCrawledLink(CrawledLink link) {
                     link.getArchiveInfo().getExtractionPasswords().addAll(pws);
@@ -459,11 +436,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final Boolean finalAutostart = "true".equals(request.getParameterbyKey("autostart"));
                 modifiers.add(new CrawledLinkModifier() {
                     @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
-                    @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.setAutoConfirmEnabled(finalAutostart);
                         link.setAutoStartEnabled(finalAutostart);
@@ -476,11 +448,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 pws.add(finalPasswords);
                 job.setArchivPasswords(pws);
                 modifiers.add(new CrawledLinkModifier() {
-                    @Override
-                    public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                        return null;
-                    }
-
                     @Override
                     public boolean modifyCrawledLink(CrawledLink link) {
                         link.getArchiveInfo().getExtractionPasswords().addAll(pws);
@@ -663,11 +630,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         job.setArchivPasswords(new ArrayList<String>(pws));
                         modifiers.add(new CrawledLinkModifier() {
                             @Override
-                            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                                return null;
-                            }
-
-                            @Override
                             public boolean modifyCrawledLink(CrawledLink link) {
                                 link.getArchiveInfo().getExtractionPasswords().addAll(pws);
                                 return true;
@@ -677,11 +639,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 }
                 if (finalAutostart != null) {
                     modifiers.add(new CrawledLinkModifier() {
-                        @Override
-                        public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                            return null;
-                        }
-
                         @Override
                         public boolean modifyCrawledLink(CrawledLink link) {
                             link.setAutoConfirmEnabled(finalAutostart);
@@ -730,11 +687,6 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     crawledLink.setSourceJob(job);
                     if (StringUtils.isNotEmpty(referer)) {
                         crawledLink.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-                            @Override
-                            public List<CrawledLinkModifier> getSubCrawledLinkModifier(CrawledLink link) {
-                                return null;
-                            }
-
                             public boolean modifyCrawledLink(CrawledLink link) {
                                 final DownloadLink dl = link.getDownloadLink();
                                 if (dl != null) {
