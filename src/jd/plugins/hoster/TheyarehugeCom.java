@@ -19,10 +19,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
@@ -56,21 +59,44 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
              * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
              * URL!
              */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(v/([a-z0-9\\-]+)/?|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(v/([^/]+)/?|embed/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
+    // @Override
+    // protected String getFUIDFromURL(final String url) {
+    // /* No ID in filename --> Use URL title */
+    // final String fuidSpecial = new Regex(url, "https?://[^/]+/v/(\\d+)").getMatch(0);
+    // if (fuidSpecial != null) {
+    // return fuidSpecial;
+    // } else {
+    // /* E.g. embed URL or no fuid in URL at all! */
+    // return super.getFUIDFromURL(url);
+    // }
+    // }
 
     @Override
-    protected String getFUIDFromURL(final String url) {
-        /* No ID in filename --> Use URL title */
-        final String fuidSpecial = new Regex(url, "https?://[^/]+/v/(\\d+)").getMatch(0);
-        if (fuidSpecial != null) {
-            return fuidSpecial;
+    protected String getFileTitle(final DownloadLink link) {
+        String filename = br.getRegex("class=\"cs_headline\">([^<>\"]+)<").getMatch(0);
+        String title_url = null;
+        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+            /* Filenames for embed URLs */
+            final String originalURL = br.getRegex("(https?://[^/]+/v/[^/]+)").getMatch(0);
+            if (originalURL != null) {
+                title_url = this.getURLTitleCorrected(originalURL);
+            }
         } else {
-            /* E.g. embed URL or no fuid in URL at all! */
-            return super.getFUIDFromURL(url);
+            title_url = this.getURLTitleCorrected(br.getURL());
+            if (title_url == null) {
+                title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
+            }
         }
+        /* Now decide which filename we want to use */
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = title_url;
+        }
+        return filename;
     }
 
     @Override
@@ -78,12 +104,21 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         }
-        String urltitle = new Regex(url, this.getSupportedLinks()).getMatch(1);
-        if (urltitle != null) {
-            final String removeme = new Regex(urltitle, "(-?\\d{12}-?)").getMatch(0);
+        return new Regex(url, this.getSupportedLinks()).getMatch(1);
+    }
+
+    @Override
+    protected String getURLTitleCorrected(final String url) {
+        String urltitle = getURLTitle(url);
+        if (!StringUtils.isEmpty(urltitle)) {
+            final String removeme = new Regex(urltitle, "(-?\\d{10,}-?)").getMatch(0);
             if (removeme != null) {
                 urltitle = urltitle.replace(removeme, "");
             }
+            /* Make the url-filenames look better by using spaces instead of '-'. */
+            urltitle = urltitle.replace("-", " ");
+            /* Remove eventually existing spaces at the end */
+            urltitle = urltitle.trim();
         }
         return urltitle;
     }
@@ -106,5 +141,16 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
             }
             return streamURL;
         }
+    }
+
+    @Override
+    protected boolean isOffline() {
+        boolean offline = super.isOffline();
+        final String urltitle = getURLTitle(this.getDownloadLink().getPluginPatternMatcher());
+        /* 2020-10-30: Website redirects to random other video if originally requested content is offline. */
+        if (!offline && urltitle != null) {
+            offline = !br.getURL().contains(urltitle);
+        }
+        return offline;
     }
 }
