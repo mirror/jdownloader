@@ -9,17 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,6 +32,17 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -102,9 +102,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -171,12 +171,14 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.log(e);
             return false;
         } finally {
             for (final DownloadLink deepCheck : deepChecks) {
                 try {
                     requestFileInformation_Web(deepCheck);
                 } catch (final Throwable e) {
+                    logger.log(e);
                 }
             }
         }
@@ -218,18 +220,31 @@ public class TurbobitCore extends antiDDoSForHost {
         if (isFileOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
-        String filename = br.getRegex(filenameSize).getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<span class\\s*=\\s*(\"|')file\\-title\\1[^>]*>\\s*(.*?)\\s*</span>").getMatch(1);
+        final String titlePattern = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden|Descargar\\s+el\\s+archivo|Télécharger\\s+un\\s+fichier|Scarica\\s+il\\s+file|Pobierz\\s+plik|Baixar\\s+arquivo|İndirilecek\\s+dosya|ファイルのダウンロード)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
+        String fileName = br.getRegex(titlePattern).getMatch(0);
+        String fileSize = br.getRegex(titlePattern).getMatch(1);
+        if (fileName == null) {
+            fileName = br.getRegex("<span class\\s*=\\s*(\"|')file\\-title\\1[^>]*>\\s*(.*?)\\s*</span>").getMatch(1);
+            if (StringUtils.contains(fileName, "...")) {
+                final String[] split = fileName.split("\\.\\.\\.");
+                if (split.length == 2) {
+                    final String customTitlePattern = "<title>\\s*[^<]*\\s*(" + Pattern.quote(split[0]) + ".*?" + Pattern.quote(split[1]) + ")\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2}\\s*)\\)";
+                    final String fromTitle = br.getRegex(customTitlePattern).getMatch(0);
+                    if (fromTitle != null && fromTitle.length() > fileName.length()) {
+                        fileName = fromTitle;
+                    }
+                    if (fileSize == null) {
+                        fileSize = br.getRegex(customTitlePattern).getMatch(1);
+                    }
+                }
+            }
         }
-        String fileSize = br.getRegex(filenameSize).getMatch(1);
         if (fileSize == null) {
             /* E.g. for hitfile.net, filesize is in brakets '(")(")' */
             fileSize = br.getRegex("class\\s*=\\s*\"file-size\"\\s*>\\s*\\(([^<>\"]*?\\))\\s*<").getMatch(0);
         }
-        if (filename != null) {
-            link.setName(filename);
+        if (fileName != null) {
+            link.setName(fileName);
         }
         if (fileSize != null) {
             link.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
@@ -283,7 +298,7 @@ public class TurbobitCore extends antiDDoSForHost {
             login(account, true);
         } catch (final PluginException e) {
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWebsite is currently unavailable in your country!\r\nDiese webseite ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWebsite is currently unavailable in your country!\r\nDiese webseite ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE, e);
             }
             throw e;
         }
@@ -818,8 +833,7 @@ public class TurbobitCore extends antiDDoSForHost {
             // we require error handling here
             if (dl.getConnection().getURL().getPath().startsWith("/error/download/ip")) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
@@ -833,11 +847,15 @@ public class TurbobitCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You cannot download this file with your current IP", 60 * 60 * 1000l);
                 }
             } else if (dl.getConnection().getResponseCode() == 403) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
             } else if (dl.getConnection().getResponseCode() == 404) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
@@ -849,8 +867,7 @@ public class TurbobitCore extends antiDDoSForHost {
             }
             if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
                 try {
-                    dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                    br.followConnection();
+                    br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }

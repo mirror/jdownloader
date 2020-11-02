@@ -221,6 +221,9 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             if (clientExtensions != null) {
                 // only possible with TLS1.3/block ciphers, see TlsClientProtocol.processServerHelloMessage
                 clientExtensions.remove(TlsExtensionsUtils.EXT_encrypt_then_mac);
+                // do not request OCP
+                clientExtensions.remove(TlsExtensionsUtils.EXT_status_request);
+                clientExtensions.remove(TlsExtensionsUtils.EXT_status_request_v2);
             }
             return clientExtensions;
         }

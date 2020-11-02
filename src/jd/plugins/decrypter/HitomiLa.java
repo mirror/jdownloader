@@ -23,9 +23,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,6 +36,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -125,10 +125,10 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 ++i;
                 final Map<String, String> picInfo = (HashMap<String, String>) picO;
                 boolean use_new_way = true;
-                String url = null;
-                String ext = null;
+                final String ext;
+                final String url;
                 if (use_new_way) {
-                    url = "https:" + url_from_url_from_hash(gallery_id, picInfo, null, null, null);
+                    url = url_from_url_from_hash(gallery_id, picInfo, null, null, null);
                     ext = Plugin.getFileNameExtensionFromURL(url);
                 } else {
                     entries = (LinkedHashMap<String, Object>) picO;
@@ -168,7 +168,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 // con.disconnect();
                 // }
                 // }
-                final DownloadLink dl = createDownloadlink(url);
+                final DownloadLink dl = createDownloadlink("directhttp://" + url);
                 dl.setProperty("Referer", br.getURL());
                 dl.setProperty("requestType", "GET");
                 dl.setAvailable(true);
