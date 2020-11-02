@@ -47,6 +47,11 @@ public class SaikoanimesNet extends YetiShareCore {
         ret.add(new String[] { "cloud.saikoanimes.net", "saikoanimes.net", "saikocloud.ml" });
         /* 2020-10-26: This is a different portal than cloud.saikoanimes.net!! */
         ret.add(new String[] { "drive.saikoanimes.net" });
+        /*
+         * 2020-11-02: Another subdomain but also not related to the rest though it looks the same and probably kinda uses the same backend
+         * ...
+         */
+        ret.add(new String[] { "direct.saikoanimes.net" });
         return ret;
     }
 
