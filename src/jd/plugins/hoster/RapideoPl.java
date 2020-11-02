@@ -15,22 +15,22 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Random;
 
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,15 +40,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapideo.pl" }, urls = { "" })
 public class RapideoPl extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            MAINPAGE           = "https://rapideo.pl";
-    private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
-    private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String          NOCHUNKS = "NOCHUNKS";
+    private static MultiHosterManagement mhm      = new MultiHosterManagement("rapideo.pl");
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,16 +73,9 @@ public class RapideoPl extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         // check if account is valid
-        if (!login(account, true)) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        login(account, true);
         /* API used in their browser addons */
-        br.postPage("https://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
+        br.postPage("https://enc." + this.getHost() + "/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
         final String traffic_left_str = PluginJSonUtils.getJson(br, "balance");
         long traffic_left = 0;
         if (traffic_left_str != null && traffic_left_str.matches("\\d+")) {
@@ -103,7 +94,10 @@ public class RapideoPl extends PluginForHost {
                 supportedHosts.add(crippledHost);
             }
         }
-        /* They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE */
+        /*
+         * They only have accounts with traffic, no free/premium difference (other than no traffic) - we treat no-traffic as FREE --> Cannot
+         * download anything
+         */
         if (traffic_left > 0) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
@@ -155,21 +149,7 @@ public class RapideoPl extends PluginForHost {
      * downloadprogress=1, see loop below)
      */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         login(account, false);
         int maxChunks = 0;
         if (link.getBooleanProperty(RapideoPl.NOCHUNKS, false)) {
@@ -196,7 +176,7 @@ public class RapideoPl extends PluginForHost {
             }
             id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
-                handleErrors(account, link, "id_null", 10);
+                mhm.handleErrorGeneric(account, link, "id_null", 20);
             }
             br.postPage("https://www.rapideo.pl/twoje_pliki", "downloadprogress=1");
             br.postPage("https://www.rapideo.pl/progress", "session=" + random_session + "&total=1");
@@ -229,15 +209,18 @@ public class RapideoPl extends PluginForHost {
                 break;
             }
             if (dllink == null) {
-                handleErrors(account, link, "dllink_null", 10);
+                mhm.handleErrorGeneric(account, link, "dllink_null", 20);
             }
             dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            logger.info("Unhandled download error on rapideo.pl: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to downloadable content", 20);
         }
         link.setProperty("rapideopldirectlink", dllink);
         try {
@@ -265,101 +248,87 @@ public class RapideoPl extends PluginForHost {
         }
     }
 
-    /**
-     * Is intended to handle errors which might occur seldom by re-tring a couple of times before we temporarily remove the host from the
-     * host list.
-     *
-     * @param dl
-     *            : The DownloadLink
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handleErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, error);
-        } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
-        }
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private static Object LOCK = new Object();
-
-    private boolean login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    private void login(final Account account, final boolean verifyCookies) throws Exception {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
-                    return true;
-                }
                 br.setFollowRedirects(true);
-                br.postPage("https://www.rapideo.pl/logowanie", "remember=on&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("Logged in as:|Zalogowany jako:")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    if (!verifyCookies) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    logger.info("Checking login cookies");
+                    br.getPage("https://www." + this.getHost() + "/");
+                    if (loggedIN()) {
+                        logger.info("Successfully loggedin via cookies");
+                        return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        logger.info("Failed to login via cookies");
+                        br.clearAll();
                     }
                 }
+                logger.info("Attempting full login");
+                br.getPage("https://www." + this.getHost() + "/");
+                /*
+                 * 2020-11-02: There are two Forms matching this but the first one is the one we want - the 2nd one is the
+                 * "register new account" Form.
+                 */
+                final Form loginform = br.getFormbyKey("remember");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember", "on");
+                br.submitForm(loginform);
+                final String geoLoginFailure = br.getRegex(">\\s*(You login from a different location than usual[^<]*)<").getMatch(0);
+                if (geoLoginFailure != null) {
+                    /* 2020-11-02: Login from unusual location -> User has to confirm via URL send by mail and then try again in JD (?!). */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, geoLoginFailure + "\r\nOnce done, refresh your account in JDownloader.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (!loggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 account.saveCookies(br.getCookies(this.getHost()), "");
-                return true;
+                return;
             } catch (final PluginException e) {
-                account.clearCookies("");
-                return false;
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
             }
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private boolean loggedIN() {
+        return br.containsHTML("Logged in as:|Zalogowany jako:");
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                final URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
                 con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             }
         }
-        return dllink;
-    }
-
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+        return null;
     }
 
     @Override
