@@ -28,6 +28,7 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -666,6 +667,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 foundQualities++;
             }
             logger.info("Found " + foundQualities + " qualities in stage 3");
+            /* TODO: Implement "preferred quality"" quality selection. */
             logger.info("Total found qualities: " + qualityMap.size());
             final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
             int maxQuality = 0;
@@ -678,6 +680,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             if (!StringUtils.isEmpty(dllink)) {
                 logger.info("Selected quality: " + maxQuality + "p");
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    this.getDownloadLink().setComment("SelectedQuality: " + maxQuality + "p");
+                }
             } else if (urlWithoutQualityIndicator != null) {
                 /* Rare case */
                 logger.info("Selected URL without quality indicator: " + urlWithoutQualityIndicator);
@@ -685,6 +690,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             } else {
                 logger.info("Failed to find any quality so far");
             }
+            /*
+             * TODO: Find/Implement/prefer download of "official" downloadlinks e.g. xcafe.com - in this case, "get_file" URLs won't contain
+             * a quality identifier (??) at least not in the format "xxxp" and they will contain either "download=true" or "download=1".
+             */
         }
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-10-30: Older fallbacks */
