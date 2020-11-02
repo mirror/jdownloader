@@ -34,8 +34,11 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.KVSConfig;
+import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -390,12 +393,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         final String fuid = this.getFUID(link);
         /* Try to find URL-title */
         if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
+            /*
+             * TODO: Maybe try to auto-switch to new main URL because a lot of websites will provide lower qualiy in embed mode (e.g.
+             * porntrex.com)!
+             */
             /** Tries to find original URL based on different default patterns. */
             /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
-            String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+            String realURL = br.getRegex("(/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
-                realURL = br.getRegex("(/videos/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                realURL = br.getRegex("(/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
             }
             if (realURL == null) {
                 /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
@@ -613,7 +620,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = br.getRegex("flashvars\\.video_html5_url\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
-            /* TODO: 2020-10-30 This is also supposed to find the BEST quality available --> Check if this still works as it should */
+            /*
+             * TODO: 2020-10-30 This is also supposed to find the BEST quality available --> Check if this still works as it should -->
+             * Implement "preferred quality selection" here too!
+             */
             // function/0/http camwheres, pornyeah - find best quality
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
             final String crypted;
@@ -659,27 +669,24 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             String urlWithoutQualityIndicator = null;
             int foundQualities = 0;
-            for (final String dlURLTmp : dlURLs) {
-                if (StringUtils.endsWithCaseInsensitive(dlURLTmp, "jpg/")) {
-                    logger.info("Skipping invalid video URL (= picture): " + dlURLTmp);
-                    continue;
-                } else if (dlURLTmp.contains("_preview.mp4")) {
-                    logger.info("Skipping invalid video URL (= preview): " + dlURLTmp);
+            for (final String dllinkTmp : dlURLs) {
+                if (!isValidDirectURL(dllinkTmp)) {
+                    logger.info("Skipping invalid video URL: " + dllinkTmp);
                     continue;
                 }
-                String qualityTmpStr = new Regex(dlURLTmp, "(\\d+)p\\.mp4").getMatch(0);
+                String qualityTmpStr = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
                 if (qualityTmpStr == null) {
                     /* Wider approach */
-                    qualityTmpStr = new Regex(dlURLTmp, "(\\d+)\\.mp4").getMatch(0);
+                    qualityTmpStr = new Regex(dllinkTmp, "(\\d+)\\.mp4").getMatch(0);
                 }
                 /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
                 if (qualityTmpStr == null || (qualityTmpStr != null && StringUtils.equals(qualityTmpStr, fuid))) {
-                    logger.info("Failed to find quality identifier for URL: " + dlURLTmp);
-                    urlWithoutQualityIndicator = dlURLTmp;
+                    logger.info("Failed to find quality identifier for URL: " + dllinkTmp);
+                    urlWithoutQualityIndicator = dllinkTmp;
                     continue;
                 }
                 final int qualityTmp = Integer.parseInt(qualityTmpStr);
-                qualityMap.put(qualityTmp, dlURLTmp);
+                qualityMap.put(qualityTmp, dllinkTmp);
                 foundQualities++;
             }
             logger.info("Found " + foundQualities + " qualities in stage 1");
@@ -697,7 +704,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 final int videoQuality = Integer.parseInt(videoQualityStr);
                 final String varNameVideoURL = varNameText.replace("_text", "");
                 final String dllinkTmp = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
-                if (dllinkTmp != null) {
+                if (isValidDirectURL(dllinkTmp)) {
                     qualityMap.put(videoQuality, dllinkTmp);
                     foundQualities++;
                 }
@@ -723,16 +730,25 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 foundQualities++;
             }
             logger.info("Found " + foundQualities + " qualities in stage 3");
-            /* TODO: Implement "preferred quality"" quality selection. */
             logger.info("Total found qualities: " + qualityMap.size());
             final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
             int maxQuality = 0;
+            final int userSelectedQuality = this.getPreferredStreamQuality();
             while (iterator.hasNext()) {
                 final Entry<Integer, String> entry = iterator.next();
-                if (entry.getKey() > maxQuality) {
+                final int qualityTmp = entry.getKey();
+                if (qualityTmp == userSelectedQuality) {
+                    logger.info("Found user selected quality: " + userSelectedQuality + "p");
+                    maxQuality = entry.getKey();
+                    dllink = entry.getValue();
+                    break;
+                } else if (entry.getKey() > maxQuality) {
                     maxQuality = entry.getKey();
                     dllink = entry.getValue();
                 }
+            }
+            if (userSelectedQuality > 0 && maxQuality != userSelectedQuality) {
+                logger.info("Failed to find user selected quality (or user wants BEST quality) -> Trying to get BEST quality instead");
             }
             if (!StringUtils.isEmpty(dllink)) {
                 logger.info("Selected quality: " + maxQuality + "p");
@@ -748,7 +764,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
             /*
              * TODO: Find/Implement/prefer download of "official" downloadlinks e.g. xcafe.com - in this case, "get_file" URLs won't contain
-             * a quality identifier (??) at least not in the format "xxxp" and they will contain either "download=true" or "download=1".
+             * a quality identifier (??) at least not in the format "720p" and they will contain either "download=true" or "download=1".
              */
         }
         if (StringUtils.isEmpty(dllink)) {
@@ -846,6 +862,24 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
         }
         return dllink;
+    }
+
+    /** Checks "/get_file/"-style URLs for validity by "blacklist"-style behavior. */
+    protected boolean isValidDirectURL(final String url) {
+        if (url == null) {
+            return false;
+        } else if (!url.matches("https?://.+get_file.+\\.mp4.*")) {
+            // logger.info("Skipping invalid video URL (= doesn't match expected pattern): " + url);
+            return false;
+        } else if (StringUtils.endsWithCaseInsensitive(url, "jpg/")) {
+            // logger.info("Skipping invalid video URL (= picture): " + url);
+            return false;
+        } else if (url.contains("_preview.mp4")) {
+            // logger.info("Skipping invalid video URL (= preview): " + url);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static String getDllinkCrypted(final Browser br) {
@@ -1032,6 +1066,33 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return true;
     }
 
+    /** Returns user selected stream quality. -1 = BEST/no selection */
+    private final int getPreferredStreamQuality() {
+        final Class<? extends KVSConfig> cfgO = this.getConfigInterface();
+        if (cfgO != null) {
+            final KVSConfig cfg = PluginJsonConfig.get(cfgO);
+            final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
+            switch (quality) {
+            default:
+                return -1;
+            case BEST:
+                return -1;
+            case Q2160P:
+                return 2160;
+            case Q1080P:
+                return 1080;
+            case Q720P:
+                return 720;
+            case Q480P:
+                return 480;
+            case Q360P:
+                return 360;
+            }
+        } else {
+            return -1;
+        }
+    }
+
     /**
      * Removes parts of hostname from filename e.g. if host is "testhost.com", it will remove things such as " - TestHost", "testhost.com"
      * and so on.
@@ -1053,6 +1114,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             return filename_normal;
         }
         return filename_clean;
+    }
+
+    @Override
+    public Class<? extends KVSConfig> getConfigInterface() {
+        return null;
     }
 
     @Override
