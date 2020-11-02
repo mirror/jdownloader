@@ -270,6 +270,7 @@ public class RapideoPl extends PluginForHost {
                     br.getPage("https://www." + this.getHost() + "/");
                     if (loggedIN()) {
                         logger.info("Successfully loggedin via cookies");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     } else {
                         logger.info("Failed to login via cookies");

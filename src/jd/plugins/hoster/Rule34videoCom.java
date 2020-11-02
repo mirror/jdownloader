@@ -19,23 +19,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.KVSConfig;
-import org.jdownloader.plugins.components.config.KVSConfigPorntrexCom;
+import org.jdownloader.plugins.components.config.KVSConfigRule34videoCom;
 
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PorntrexCom extends KernelVideoSharingComV2 {
-    public PorntrexCom(final PluginWrapper wrapper) {
+public class Rule34videoCom extends KernelVideoSharingComV2 {
+    public Rule34videoCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.porntrex.com/signup/");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "porntrex.com" });
+        ret.add(new String[] { "rule34video.com" });
         return ret;
     }
 
@@ -49,15 +48,11 @@ public class PorntrexCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
-        }
-        return ret.toArray(new String[0]);
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
 
     @Override
     public Class<? extends KVSConfig> getConfigInterface() {
-        return KVSConfigPorntrexCom.class;
+        return KVSConfigRule34videoCom.class;
     }
 }
