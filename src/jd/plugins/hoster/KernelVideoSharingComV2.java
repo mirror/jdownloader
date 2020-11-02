@@ -61,34 +61,33 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     /* Porn_plugin */
     // Version 2.0
     // Tags:
     // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
-    // other #2: Special websites that have their own plugins (examples): alotporn.com
+
     /**
-     * specifications that have to be met for hosts to be added here:
-     *
-     * -404 error response on file not found
-     *
-     * -Possible filename inside URL
-     *
-     *
-     * -Final downloadlink that fits the RegExes
-     *
-     * -Website should NOT link to external sources (needs decrypter)
-     *
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPattern(List)} AND
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs).
      */
-    /* E.g. normal kernel-video-sharing.com video urls */
     private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
+    /**
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
+     * "embed" URLs).
+     */
     private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
-    /* Rare case. Example: xbabe.com */
+    /**
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} (excluding
+     * "embed" URLs).
+     */
     private static final String   type_normal_without_fuid = "^https?://[^/]+/videos/([a-z0-9\\-]+)/?$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
-    /* E.g. sex3.com */
+    /**
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
+     * "embed" URLs).
+     */
     protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/$";
     protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
     private String                dllink                   = null;
@@ -96,6 +95,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     private boolean               private_video            = false;
     private static final String   PROPERTY_FUID            = "fuid";
 
+    /**
+     * Use this e.g. for: </br>
+     * example.com/(de/)?videos/1234/title-inside-url OR: </br>
+     * example.com/embed/1234 OR </br>
+     * OR(rare/older case):</br>
+     * m.example.com/videos/1234/title-inside-url | m.example.com/embed/1234 </br>
+     * Example: <a href="https://kvs-demo.com/">kvs-demo.com</a> More example hosts in generic class:
+     * {@link #KernelVideoSharingComV2HostsDefault}
+     */
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
@@ -103,22 +111,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         return ret.toArray(new String[0]);
     }
-    // public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashAtTheEnd(final List<String[]> pluginDomains) {
-    // final List<String> ret = new ArrayList<String>();
-    // for (final String[] domains : pluginDomains) {
-    // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/\\d+/[a-z0-9\\-]+|embed/\\d+)");
-    // }
-    // return ret.toArray(new String[0]);
-    // }
 
-    public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
-        }
-        return ret.toArray(new String[0]);
-    }
-
+    /**
+     * Use this e.g. for:</br>
+     * example.com/title-inside-url</br>
+     * OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://alphaporno.com/">alphaporno.com</a> </br>
+     * Special: You need to override {@link #hasFUIDAtEnd(String)} to return false when using this pattern! </br>
+     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault2}
+     */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
@@ -127,6 +129,46 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ret.toArray(new String[0]);
     }
 
+    /**
+     * Use this e.g. for: </br>
+     * example.com/1234/title-inside-url</br>
+     * OR: </br>
+     * example.com/embed/1234 </br>
+     * OR </br>
+     * Example: <a href="https://alotporn.com/">alotporn.com</a> </br>
+     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
+     */
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /**
+     * Use this e.g. for:</br>
+     * example.com/videos/title-inside-url-1234 OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://uiporn.com/">uiporn.com</a> </br>
+     * Example class: {@link #UipornCom}
+     */
+    public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+-\\d+/|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /**
+     * Use this e.g. for:</br>
+     * example.com/1234</br>
+     * OR:</br>
+     * example.com/embed/1234 </br>
+     * Example: <a href="https://anyporn.com/">anyporn.com</a> </br>
+     * Example class: {@link #AnypornCom}
+     */
     public static String[] buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
@@ -146,6 +188,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
+        /*
+         * TODO: Maybe add auto correction for hosts with pattern buildAnnotationUrlsDefaultVideosPatternOnlyNumbers: --> Replace "/embed/"
+         * with "/".
+         */
     }
 
     @Override
@@ -344,9 +390,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         final String fuid = this.getFUID(link);
         /* Try to find URL-title */
         if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
+            /** Tries to find original URL based on different default patterns. */
+            /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
             String realURL = br.getRegex("(/videos/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
             if (realURL == null) {
+                /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
                 realURL = br.getRegex("(/videos/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+            }
+            if (realURL == null) {
+                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
+                realURL = br.getRegex("(/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
             }
             if (realURL != null) {
                 logger.info("Found real URL corresponding to current embed URL: " + realURL);
@@ -602,13 +655,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * Example multiple qualities available but "get_file" URL with highest quality has no quality modifier in URL (= Stage 3
              * required): fapality.com, xcum.com
              */
+            /* TODO: Skip "preview" URLs e.g.: alotporn.com (and many others) */
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             String urlWithoutQualityIndicator = null;
             int foundQualities = 0;
             for (final String dlURLTmp : dlURLs) {
                 if (StringUtils.endsWithCaseInsensitive(dlURLTmp, "jpg/")) {
-                    /* Skip invalid items */
-                    logger.info("Skipping invalid URL: " + dlURLTmp);
+                    logger.info("Skipping invalid video URL (= picture): " + dlURLTmp);
+                    continue;
+                } else if (dlURLTmp.contains("_preview.mp4")) {
+                    logger.info("Skipping invalid video URL (= preview): " + dlURLTmp);
                     continue;
                 }
                 String qualityTmpStr = new Regex(dlURLTmp, "(\\d+)p\\.mp4").getMatch(0);
