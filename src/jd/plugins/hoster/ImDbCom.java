@@ -20,6 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -104,36 +106,21 @@ public class ImDbCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            boolean newWay = false;
-            String json = this.br.getRegex("(\\{\"mediaViewerModel.+\\})").getMatch(0);
-            if (json == null) {
-                /* 2017-07-18 */
-                json = this.br.getRegex("IMDbReactInitialState\\.push\\((\\{.*?\\})\\);\\s+").getMatch(0);
-                if (json == null) {
-                    json = this.br.getRegex("window\\.IMDbMediaViewerInitialState\\s*=\\s*(\\{.*?\\});").getMatch(0);
-                }
-                newWay = true;
-            }
-            /* 2020-05-06: Fix start of json e.g.https://www.imdb.com/title/tt1843230/mediaviewer/rm1938049536 */
-            json = json.replace("'mediaviewer'", "\"mediaviewer\"");
-            Map<String, Object> entries = getJsonMap(JavaScriptEngineFactory.jsonToJavaMap(json));
-            if (newWay) {
-                /* 2017-07-18 */
-                final String id_main = new Regex(link.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
-                entries = getJsonMap(JavaScriptEngineFactory.walkJson(entries, "mediaviewer/galleries/" + id_main));
-            } else {
-                entries = getJsonMap(entries.get("mediaViewerModel"));
-            }
+            /* 2020-11-03 */
+            final String json = br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
+            // final String id_main = new Regex(link.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             /* Now let's find the specific object ... */
             final String idright = new Regex(link.getDownloadURL(), "(rm\\d+)").getMatch(0);
             String idtemp = null;
-            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("allImages");
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/urqlState/{0}/data/title/images/edges");
             for (final Object imageo : ressourcelist) {
                 entries = getJsonMap(imageo);
+                entries = getJsonMap(entries.get("node"));
                 idtemp = (String) entries.get("id");
                 if (idtemp != null && idtemp.equalsIgnoreCase(idright)) {
-                    filename = (String) entries.get("altText");
-                    dllink = (String) entries.get("src");
+                    filename = (String) JavaScriptEngineFactory.walkJson(entries, "titles/{0}/titleText/text");
+                    dllink = (String) entries.get("url");
                     break;
                 }
             }
@@ -164,6 +151,7 @@ public class ImDbCom extends PluginForHost {
             }
             ending = getFileNameExtensionFromString(dllink, ".jpg");
         } else {
+            /* Video */
             /*
              * get the fileName from main download link page because fileName on the /player subpage may be wrong
              */
@@ -189,7 +177,7 @@ public class ImDbCom extends PluginForHost {
             } else {
                 filename = this.getFID(link) + "_" + filename;
             }
-            if (br.containsHTML(">\\s*This video is not available")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*This video is not available")) {
                 /* 2020-05-06 */
                 /* <div class="notavailable">This video is not available.</div> */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

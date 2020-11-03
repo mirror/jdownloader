@@ -30,9 +30,11 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "alotporn.com" });
-        ret.add(new String[] { "camvideos.tv" });
-        ret.add(new String[] { "cambro.tv" });
+        ret.add(new String[] { "shameless.com" });
+        ret.add(new String[] { "xbabe.com" });
+        ret.add(new String[] { "bravotube.net" });
+        ret.add(new String[] { "hellporno.com" });
+        ret.add(new String[] { "alphaporno.com" });
         return ret;
     }
 
@@ -46,6 +48,11 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(getPluginDomains());
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutFileID(getPluginDomains());
+    }
+
+    @Override
+    protected boolean hasFUIDAtEnd(String url) {
+        return false;
     }
 }

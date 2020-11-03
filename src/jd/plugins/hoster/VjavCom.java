@@ -19,20 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV2 {
-    public KernelVideoSharingComV2HostsDefault2(final PluginWrapper wrapper) {
+public class VjavCom extends KernelVideoSharingComV2 {
+    public VjavCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "alotporn.com" });
-        ret.add(new String[] { "camvideos.tv" });
-        ret.add(new String[] { "cambro.tv" });
+        ret.add(new String[] { "vjav.com" });
         return ret;
     }
 
@@ -46,6 +46,25 @@ public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(getPluginDomains());
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    protected String getFileTitle(final DownloadLink link) {
+        /* 2020-11-02: Special: Do not trust titles inside URLs - only use them as a fallback. */
+        String filename = null;
+        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+            filename = br.getRegex("title\\s*:\\s*\"([^<>\"]+)\"").getMatch(0);
+        } else {
+            filename = br.getRegex("<title>([^<>\"]+) - VJAV\\.com</title>").getMatch(0);
+        }
+        String title_url = this.getURLTitleCorrected(br.getURL());
+        if (title_url == null) {
+            title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
+        }
+        if (filename == null) {
+            filename = title_url;
+        }
+        return filename;
     }
 }
