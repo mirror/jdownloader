@@ -57,7 +57,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 public class KernelVideoSharingComV2 extends antiDDoSForHost {
@@ -82,10 +81,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /**
-     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} (excluding
-     * "embed" URLs).
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs).
      */
-    private static final String   type_normal_without_fuid = "^https?://[^/]+/videos/([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal_without_fuid = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} and
@@ -263,14 +262,24 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         server_issues = false;
         prepBR(this.br);
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        final String fuidBeforeHTTPRequest = this.getFUID(link);
         final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(titleURL + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
-        if (fuidBeforeHTTPRequest == null) {
+        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+            if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
+                /**
+                 * Some websites have embedding videos disabled but nevertheless it is possible to generate- and add such URLs. It may also
+                 * happen that a website owner disabled embedding after first allowing it. Theoretically we could get the title -> Lowercase
+                 * -> Replace spaces with "-" -> Try to create the original URL to be able to download it. </br>
+                 * --> Complicated process/edge-case --> Let's not do it ;)
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be embedded - try to find- and add the original URL");
+            }
+        }
+        if (this.getFUID(link) == null) {
             /* Most likely required/useful for URLs matching pattern: type_normal_without_fuid */
             logger.info("Failed to find fuid in URL --> Looking for fuid in html");
             final String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
@@ -583,6 +592,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
+        /* 2020-11-03: TODO: Check if this is still needed. */
         String workaroundURL = null;
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
             /*
@@ -657,14 +667,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         qualityMap.put(qualityTmp, dllinkTmp);
                     }
                     logger.info("Found " + qualityMap.size() + " crypted downloadurls");
+                    dllink = handleQualitySelection(qualityMap);
                 }
             } else {
                 logger.info("Failed to find any crypted downloadurls");
             }
         }
         /* Only try to crawl uncrypted URLs if we failed to find crypted URLs. */
-        String uncryptedUrlWithoutQualityIndicator = null;
-        if (StringUtils.isEmpty(dllink) && qualityMap.isEmpty()) {
+        if (StringUtils.isEmpty(dllink)) {
+            String uncryptedUrlWithoutQualityIndicator = null;
             /* Find the best between possibly multiple uncrypted streaming URLs */
             /* Stage 1 */
             logger.info("Crawling uncrypted qualities");
@@ -673,7 +684,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * Example multiple qualities available but "get_file" URL with highest quality has no quality modifier in URL (= Stage 3
              * required): fapality.com, xcum.com
              */
-            /* TODO: Skip "preview" URLs e.g.: alotporn.com (and many others) */
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             int foundQualities = 0;
             for (final String dllinkTmp : dlURLs) {
@@ -737,38 +747,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 foundQualities++;
             }
             logger.info("Found " + foundQualities + " qualities in stage 3");
-        }
-        if (StringUtils.isEmpty(dllink) && !qualityMap.isEmpty()) {
-            logger.info("Total found qualities: " + qualityMap.size());
-            final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
-            int maxQuality = 0;
-            final int userSelectedQuality = this.getPreferredStreamQuality();
-            while (iterator.hasNext()) {
-                final Entry<Integer, String> entry = iterator.next();
-                final int qualityTmp = entry.getKey();
-                if (qualityTmp == userSelectedQuality) {
-                    logger.info("Found user selected quality: " + userSelectedQuality + "p");
-                    maxQuality = entry.getKey();
-                    dllink = entry.getValue();
-                    break;
-                } else if (entry.getKey() > maxQuality) {
-                    maxQuality = entry.getKey();
-                    dllink = entry.getValue();
-                }
-            }
-            if (userSelectedQuality > 0 && maxQuality != userSelectedQuality) {
-                logger.info("Failed to find user selected quality (or user wants BEST quality) -> Trying to get BEST quality instead");
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                logger.info("Selected quality: " + maxQuality + "p");
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    this.getDownloadLink().setComment("SelectedQuality: " + maxQuality + "p");
-                }
+            if (!qualityMap.isEmpty()) {
+                dllink = handleQualitySelection(qualityMap);
             } else if (uncryptedUrlWithoutQualityIndicator != null) {
                 /* Rare case */
                 logger.info("Selected URL without quality indicator: " + uncryptedUrlWithoutQualityIndicator);
                 dllink = uncryptedUrlWithoutQualityIndicator;
             } else {
+                /* Rare case */
                 logger.info("Failed to find any quality so far");
             }
             /*
@@ -776,7 +762,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * a quality identifier (??) at least not in the format "720p" and they will contain either "download=true" or "download=1".
              */
         }
-        /* TODO: Check if this is still needed! */
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-10-30: Older fallbacks */
             if (StringUtils.isEmpty(dllink)) {
@@ -874,6 +859,36 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return dllink;
     }
 
+    /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
+    private String handleQualitySelection(final HashMap<Integer, String> qualityMap) {
+        if (qualityMap.isEmpty()) {
+            return null;
+        }
+        String downloadurl = null;
+        logger.info("Total found qualities: " + qualityMap.size());
+        final Iterator<Entry<Integer, String>> iterator = qualityMap.entrySet().iterator();
+        int maxQuality = 0;
+        final int userSelectedQuality = this.getPreferredStreamQuality();
+        while (iterator.hasNext()) {
+            final Entry<Integer, String> entry = iterator.next();
+            final int qualityTmp = entry.getKey();
+            if (qualityTmp == userSelectedQuality) {
+                logger.info("Found user selected quality: " + userSelectedQuality + "p");
+                maxQuality = entry.getKey();
+                downloadurl = entry.getValue();
+                break;
+            } else if (entry.getKey() > maxQuality) {
+                maxQuality = entry.getKey();
+                downloadurl = entry.getValue();
+            }
+        }
+        logger.info("Selected quality: " + maxQuality + "p");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.getDownloadLink().setComment("SelectedQuality: " + maxQuality + "p");
+        }
+        return downloadurl;
+    }
+
     /** Checks "/get_file/"-style URLs for validity by "blacklist"-style behavior. */
     protected boolean isValidDirectURL(final String url) {
         if (url == null) {
@@ -892,19 +907,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    public static String getDllinkCrypted(final Browser br) {
-        String videoUrl = br.getRegex("video_url\\s*:\\s*'(.+?)'").getMatch(0);
-        if (videoUrl == null) {
-            /* 2019-11-26: Nested in js brackets */
-            videoUrl = PluginJSonUtils.getJson(br, "video_url");
-        }
-        if (StringUtils.isEmpty(videoUrl)) {
-            return null;
-        }
-        return getDllinkCrypted(br, videoUrl);
-    }
-
-    public static String getDllinkCrypted(final Browser br, final String videoUrl) {
+    private static String getDllinkCrypted(final Browser br, final String videoUrl) {
         String dllink = null;
         // final String scriptUrl = br.getRegex("src=\"([^\"]+kt_player\\.js.*?)\"").getMatch(0);
         final String licenseCode = br.getRegex("license_code\\s*?:\\s*?\\'(.+?)\\'").getMatch(0);
@@ -1054,7 +1057,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return fuid;
     }
 
-    /** Tries to return unique (video-)ID inside URL. It is not guaranteed to return anything but it should in most of all cases! */
+    /**
+     * Tries to return unique contentID found inside URL. It is not guaranteed to return anything (depends on source URL/website) but it
+     * should in most of all cases!
+     */
     protected String getFUIDFromURL(final String url) {
         String fuid = null;
         if (url != null) {
@@ -1071,12 +1077,15 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return fuid;
     }
 
-    /** Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! */
+    /**
+     * Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! </br>
+     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} .
+     */
     protected boolean hasFUIDAtEnd(final String url) {
         return true;
     }
 
-    /** Returns user selected stream quality. -1 = BEST/no selection */
+    /** Returns user selected stream quality. -1 = BEST/default */
     private final int getPreferredStreamQuality() {
         final Class<? extends KVSConfig> cfgO = this.getConfigInterface();
         if (cfgO != null) {
