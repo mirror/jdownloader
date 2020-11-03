@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -48,15 +47,6 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
-    }
-
-    @Override
-    protected String getFileTitle(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            return br.getRegex("<title>([^<>\"]+) / Embed Player</title>").getMatch(0);
-        } else {
-            return super.getFileTitle(link);
-        }
     }
 
     @Override

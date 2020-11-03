@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,10 +88,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     private static final String   type_normal_without_fuid = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
     /**
-     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} and
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs).
+     * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
+     * "embed" URLs).
      */
-    protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/$";
+    protected static final String type_only_numbers        = "^https?://[^/]+/(\\d+)/?$";
     protected static final String type_embedded            = "^https?://[^/]+/embed/(\\d+)/?$";
     private String                dllink                   = null;
     private boolean               server_issues            = false;
@@ -268,6 +269,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setName(titleURL + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
+        if (isOffline()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
             if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
                 /**
@@ -278,9 +282,51 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This content cannot be embedded - try to find- and add the original URL");
             }
-        }
-        if (this.getFUID(link) == null) {
-            /* Most likely required/useful for URLs matching pattern: type_normal_without_fuid */
+            /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
+            final String fuid = this.getFUID(link);
+            /* Try to find URL-title */
+            if (new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
+                /*
+                 * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is
+                 * typically stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" </br>
+                 * Example websites: porntrex.com, javbangers.com
+                 */
+                /* Tries to find original URL based on different default patterns. */
+                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
+                String realURL = br.getRegex("(/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
+                    realURL = br.getRegex("(/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                }
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
+                    realURL = br.getRegex("(/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                }
+                if (realURL != null) {
+                    logger.info("Found real URL corresponding to current embed URL: " + realURL);
+                    try {
+                        realURL = br.getURL(realURL).toString();
+                        final Browser brc = this.prepBR(new Browser());
+                        brc.getPage(realURL);
+                        /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
+                        if (brc.getURL().contains(fuid) && brc.getURL().matches(type_normal)) {
+                            logger.info("Successfully found real URL: " + realURL);
+                            link.setPluginPatternMatcher(brc.getURL());
+                            br.setRequest(brc.getRequest());
+                        } else {
+                            /* This should never happen */
+                            logger.warning("Cannot trust 'real' URL: " + realURL);
+                        }
+                    } catch (final MalformedURLException e) {
+                        logger.log(e);
+                        logger.info("URL parsing failure");
+                    }
+                } else {
+                    logger.info("Unable to convert embedded URL --> Real URL");
+                }
+            }
+        } else if (this.getFUID(link) == null) {
+            /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
             logger.info("Failed to find fuid in URL --> Looking for fuid in html");
             final String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
             if (fuidAfterHTTPRequest != null) {
@@ -296,23 +342,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setFinalFileName(finalFilename + ".mp4");
         }
         setSpecialFlags();
-        if (isOffline()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         try {
             dllink = getDllink(this.br);
         } catch (final PluginException e) {
             if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                 logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
-                return AvailableStatus.TRUE;
             } else {
                 throw e;
             }
         }
-        // this prevents another check when download is about to happen! -raztoki
-        if (isDownload) {
-            return AvailableStatus.TRUE;
-        } else if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && !enableFastLinkcheck()) {
+        if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && !isDownload && !enableFastLinkcheck()) {
             URLConnectionAdapter con = null;
             try {
                 // if you don't do this then referrer is fked for the download! -raztoki
@@ -370,8 +409,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            logger.info("Unable to find filesize because failed to find final downloadurl");
         }
         if (StringUtils.isEmpty(finalFilename)) {
             /* Last chance fallback */
@@ -406,42 +443,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (title_url == null) {
             title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         }
-        /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
-        final String fuid = this.getFUID(link);
-        /* Try to find URL-title */
-        if (StringUtils.isEmpty(title_url) && new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
-            /*
-             * TODO: Maybe try to auto-switch to new main URL because a lot of websites will provide lower qualiy in embed mode (e.g.
-             * porntrex.com)!
-             */
-            /** Tries to find original URL based on different default patterns. */
-            /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
-            String realURL = br.getRegex("(/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
-                realURL = br.getRegex("(/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
-            }
-            if (realURL == null) {
-                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
-                realURL = br.getRegex("(/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
-            }
-            if (realURL != null) {
-                logger.info("Found real URL corresponding to current embed URL: " + realURL);
-                try {
-                    realURL = br.getURL(realURL).toString();
-                    title_url = this.getURLTitleCorrected(realURL);
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.info("URL parsing failure");
-                }
-            }
-        }
         if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
             /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
         } else {
-            /* Try default trait --> Very unsafe but may sometimes work */
-            filename = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + br.getHost() + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            /* Try default traits --> Very unsafe but may sometimes work */
+            if (link.getPluginPatternMatcher().matches(type_embedded)) {
+                filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(/|-)\\s*Embed\\s*(Player|Video)</title>").getMatch(0);
+            } else {
+                filename = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + br.getHost() + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            }
         }
         /* Now decide which filename we want to use */
         if (StringUtils.isEmpty(filename)) {

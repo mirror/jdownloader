@@ -61,11 +61,6 @@ public class OkXxx extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public String getFUID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
-    }
-
-    @Override
     protected String getFileTitle(final DownloadLink link) {
         String filetitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (filetitle == null) {
