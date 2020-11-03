@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,17 +25,18 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "http://(www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abload.de" }, urls = { "https?://(?:www\\.)?abload\\.de/(gallery\\.php\\?key=[A-Za-z0-9]+|browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&img=.+|image.php\\?img=[\\w\\.]+)" })
 public class AbloadDeGallery extends PluginForDecrypt {
-
     public AbloadDeGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DIRECTLINKREGEX  = "um die Originalgröße anzuzeigen\\.</div><img src=\"(http://.*?)\"";
-    private static final String DIRECTLINKREGEX2 = "\"(http://(www\\.)?abload\\.de/img/.*?)\"";
+    private static final String DIRECTLINKREGEX  = "um die Originalgröße anzuzeigen\\.</div><img src=\"(/img/[^\"]+)\"";
+    private static final String DIRECTLINKREGEX2 = "(/img/[^\"]+)\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,6 +46,9 @@ public class AbloadDeGallery extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -59,7 +62,7 @@ public class AbloadDeGallery extends PluginForDecrypt {
             }
             if (links == null || links.length == 0 || galID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String fpName = br.getRegex("<title>Galerie:([^<>\"]*?)\\- abload\\.de</title>").getMatch(0);
             if (fpName == null) {
@@ -67,16 +70,16 @@ public class AbloadDeGallery extends PluginForDecrypt {
             }
             fpName = Encoding.htmlDecode(fpName.trim());
             for (String singlePictureLink : links) {
-                singlePictureLink = "http://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
+                singlePictureLink = "https://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
                 br.getPage(singlePictureLink);
                 String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
                 if (finallink == null) {
                     finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
                 }
                 if (finallink == null) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+                decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL(finallink)));
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -87,9 +90,9 @@ public class AbloadDeGallery extends PluginForDecrypt {
                 finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
             }
             if (finallink == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL(finallink)));
         }
         return decryptedLinks;
     }
@@ -98,5 +101,4 @@ public class AbloadDeGallery extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

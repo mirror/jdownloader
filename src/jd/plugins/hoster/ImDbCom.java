@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,15 +93,14 @@ public class ImDbCom extends PluginForHost {
         this.mature_content = false;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String downloadURL = link.getDownloadURL();
         this.br.setLoadLimit(this.br.getLoadLimit() * 3);
-        br.getPage(downloadURL);
+        br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String ending = null;
         String filename = null;
-        if (downloadURL.matches(TYPE_PHOTO)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_PHOTO)) {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -155,58 +153,50 @@ public class ImDbCom extends PluginForHost {
             /*
              * get the fileName from main download link page because fileName on the /player subpage may be wrong
              */
-            filename = br.getRegex("<title>(.*?) \\- IMDb</title>").getMatch(0);
             // br.getPage(downloadURL + "/player");
-            if (br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (filename == null) {
-                filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            final String json = br.getRegex("\\.querySelector\\(\\'#imdb-video-root-[^\\']+'\\),\\s*(\\{.+\\})\\];").getMatch(0);
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            /* json inside json */
+            final String json2 = (String) JavaScriptEngineFactory.walkJson(entries, "playbackData/{0}");
+            final List<Object> videoObjects = JSonStorage.restoreFromString(json2, TypeRef.LIST);
+            String dllink_http = null;
+            String dllink_hls_master = null;
+            for (final Object videoO : videoObjects) {
+                entries = (Map<String, Object>) videoO;
+                final List<Object> qualitiesO = (List<Object>) entries.get("videoLegacyEncodings");
+                for (final Object qualityO : qualitiesO) {
+                    entries = (Map<String, Object>) qualityO;
+                    final String mimeType = (String) entries.get("mimeType");
+                    final String url = (String) entries.get("url");
+                    // final String definition = (String) entries.get("definition"); // E.g. AUTO, 480p, SD
+                    if (StringUtils.isEmpty(mimeType) || StringUtils.isEmpty(url)) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    if (mimeType.equalsIgnoreCase("video/mp4")) {
+                        dllink_http = url;
+                    } else if (mimeType.equalsIgnoreCase("application/x-mpegurl")) {
+                        dllink_hls_master = url;
+                    } else {
+                        logger.info("Unsupported mimeType: " + mimeType);
+                    }
+                }
+                /* 2020-11-03: Stop after first element - we expect this to contain only one element anyways! */
+                break;
             }
-            // br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) +
-            // "/player?uff=3");
-            br.getPage("http://www.imdb.com/video/user/" + new Regex(link.getDownloadURL(), IDREGEX).getMatch(0) + "/imdb/single?vPage=1");
-            final String title = br.getRegex("<a href=\"/title/tt\\d+[^\"]+\"\\s*target=\"_top\">([^<>\"]+)</a>").getMatch(0);
-            final String subtitle = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\"/>").getMatch(0);
-            if (filename == null && title != null && subtitle != null) {
-                filename = title + " - " + subtitle;
-            }
             if (filename == null) {
-                /* Fallback to fid */
                 filename = this.getFID(link);
             } else {
                 filename = this.getFID(link) + "_" + filename;
             }
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*This video is not available")) {
-                /* 2020-05-06 */
-                /* <div class="notavailable">This video is not available.</div> */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            this.mature_content = this.br.containsHTML("why=maturevideo");
-            if (!this.mature_content) {
-                final String json = this.br.getRegex("<script class=\"imdb\\-player\\-data\" type=\"text/imdb\\-video\\-player\\-json\">([^<>]+)<").getMatch(0);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "videoPlayerObject/video/videoInfoList");
-                String dllink_http = null;
-                String dllink_hls_master = null;
-                for (final Object videoo : ressourcelist) {
-                    entries = (LinkedHashMap<String, Object>) videoo;
-                    final String dllink_temp = (String) entries.get("videoUrl");
-                    if (dllink_temp == null || !dllink_temp.startsWith("http")) {
-                        continue;
-                    }
-                    if (dllink_temp.contains(".m3u8")) {
-                        dllink_hls_master = dllink_temp;
-                    } else {
-                        dllink_http = dllink_temp;
-                    }
-                }
-                /* 2017-07-18: Prefer hls as it contains higher qualities */
-                if (!StringUtils.isEmpty(dllink_hls_master)) {
-                    dllink = dllink_hls_master;
-                } else {
-                    dllink = dllink_http;
-                }
+            if (!StringUtils.isEmpty(dllink_hls_master)) {
+                dllink = dllink_hls_master;
+            } else {
+                dllink = dllink_http;
             }
             filename = filename.trim();
             ending = ".mp4";

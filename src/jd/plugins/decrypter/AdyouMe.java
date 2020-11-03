@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adyou.me" }, urls = { "https?://(?:\\w+\\.)?adyou\\.me/[a-zA-Z0-9]{4,}$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adyou.me" }, urls = { "https?://(?:\\w+\\.)?adyou\\.me/([a-zA-Z0-9]{4,})$" })
 public class AdyouMe extends PluginForDecrypt {
     public AdyouMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,8 +36,10 @@ public class AdyouMe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(contentID)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

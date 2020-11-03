@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ally.sh" }, urls = { "https?://(?:www\\.)?(?:al\\.ly|ally\\.sh)/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ally.sh" }, urls = { "https?://(?:www\\.)?(?:al\\.ly|ally\\.sh|dausel\\.co)/[A-Za-z0-9]+" })
 public class AllySh extends PluginForDecrypt {
     public AllySh(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,11 +38,22 @@ public class AllySh extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (!new Regex(redirect, this.getSupportedLinks()).matches()) {
+                /* Direct-redirect */
+                decryptedLinks.add(this.createDownloadlink(redirect));
+                return decryptedLinks;
+            } else {
+                br.setFollowRedirects(true);
+                br.followRedirect();
+            }
         }
         br.setFollowRedirects(false);
         Form continueform = br.getFormbyProperty("id", "form-captcha");
