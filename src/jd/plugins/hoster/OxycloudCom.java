@@ -182,6 +182,7 @@ public class OxycloudCom extends YetiShareCore {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
+            /* Daily traffic (with expiredate?) > package traffic --> See possible packages here: https://oxycloud.com/upgrade */
             final String premiumAccountPackagesText = br.getRegex("<td class=\"text-right\"><strong>Reverts To Free Account</strong></td>\\s*<td>(.*?)</td>").getMatch(0);
             final Regex dailyTrafficRegex = br.getRegex("Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
             final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
@@ -191,17 +192,17 @@ public class OxycloudCom extends YetiShareCore {
             // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
             // .getMatch(0); /* Fits for: /account/edit */
             final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
-            if (trafficStr != null) {
-                /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic is left?! */
-                ai.setStatus("Premium traffic package");
-                setAccountLimitsByType(account, AccountType.PREMIUM);
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficStr));
-            } else if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
+            if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
                 logger.info("Premium with daily trafficlimit");
                 setAccountLimitsByType(account, AccountType.PREMIUM);
                 ai.setTrafficLeft(SizeFormatter.getSize(dailyTrafficLeftStr));
                 ai.setTrafficMax(SizeFormatter.getSize(dailyTrafficMaxStr));
                 ai.setStatus("Premium time with daily traffic limit");
+            } else if (trafficStr != null) {
+                /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic is left?! */
+                ai.setStatus("Premium traffic package");
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficStr));
             } else {
                 foundPremiumTrait = false;
             }
@@ -219,7 +220,6 @@ public class OxycloudCom extends YetiShareCore {
                     ai.setValidUntil(expire_milliseconds, this.br);
                     setAccountLimitsByType(account, AccountType.PREMIUM);
                 }
-                ai.setUnlimitedTraffic();
             }
             if (!foundPremiumTrait) {
                 /* This should never happen */
