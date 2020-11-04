@@ -623,21 +623,31 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public void append(StringBuilder sb) {
+        boolean hwDebug = false;
         if (Boolean.FALSE.equals(getExtractionLibrary())) {
             try {
                 sb.append("&7zjb=false");
+                final HardwareTypeInterface hardware = HardwareType.getHardware();
+                if (hardware != null) {
+                    // verbose hardware details
+                    sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
+                    hwDebug = true;
+                }
             } catch (Throwable e) {
                 logger.log(e);
             }
         }
-        try {
-            final HardwareTypeInterface hardware = HardwareType.getHardware();
-            if (hardware != null) {
-                sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
+        if (hwDebug == false) {
+            try {
+                final HardwareTypeInterface hardware = HardwareType.getHardware();
+                if (hardware != null) {
+                    // hardware type only
+                    sb.append("&hw=" + hardware.getHardwareType());
+                }
+            } catch (Throwable e) {
+                logger.log(e);
+                sb.append("&hw=error");
             }
-        } catch (Throwable e) {
-            logger.log(e);
-            sb.append("&hw=error");
         }
     }
 }
