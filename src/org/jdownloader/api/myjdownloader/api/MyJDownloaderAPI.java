@@ -169,15 +169,15 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 if (hardwareType != null) {
                     sb.append("|HW:" + hardwareType.getHardwareType());
                 }
-            } catch (final Throwable ignore) {
-                LoggerFactory.getDefaultLogger().log(ignore);
+            } catch (final Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
             }
             try {
                 if (Docker.isInsideDocker()) {
                     sb.append("|Docker");
                 }
-            } catch (final Throwable ignore) {
-                LoggerFactory.getDefaultLogger().log(ignore);
+            } catch (final Throwable e) {
+                LoggerFactory.getDefaultLogger().log(e);
             }
         } catch (final Throwable e) {
         }
@@ -191,6 +191,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                 }
             }
         } catch (final Throwable e) {
+            LoggerFactory.getDefaultLogger().log(e);
         }
         final String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
         if (revision == null) {
