@@ -71,19 +71,23 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
 
-    /**
+    /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPattern(List)} AND
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs).
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br>
+     * Examples: example.com/videos/1234/title/ </br>
+     * example.com/videos/1234-title.html </br>
+     * example.com/videos/
      */
-    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)/([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
      * "embed" URLs).
      */
     private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
-    /**
+    /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs).
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
+     * You need to override {@link #hasFUIDAtEnd(String)} to return false when using such a pattern!
      */
     private static final String   type_normal_without_fuid = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
     private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
@@ -145,23 +149,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+/?|embed/\\d+/?)");
-        }
-        return ret.toArray(new String[0]);
-    }
-
-    /**
-     * Similar to {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID} but URLs have to end with ".html". </br>
-     * Use this e.g. for:</br>
-     * example.com/video/title-inside-url.html</br>
-     * OR:</br>
-     * example.com/embed/1234 </br>
-     * Example: <a href="https://yourlust.com/">yourlust.com</a> </br>
-     * Special: You need to override {@link #hasFUIDAtEnd(String)} to return false when using this pattern! </br>
-     */
-    public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+\\.html|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -710,6 +697,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     logger.info("Skipping invalid video URL: " + dllinkTmp);
                     continue;
                 }
+                /* TODO: Maybe skip URLs that do not contain current FUID (if FUID exists). E.g. failure: privat-zapisi.biz */
+                // if (!dllinkTmp.contains(this.getFUID(this.getDownloadLink()))) {
+                // logger.info("Skipping URL because it doesn't contain FUID: " + dllinkTmp);
+                // continue;
+                // }
                 if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
                     uncryptedUrlWithoutQualityIndicator = dllinkTmp;
                     continue;
