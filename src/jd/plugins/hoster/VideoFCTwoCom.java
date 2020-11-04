@@ -15,25 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.io.IOException;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -49,6 +43,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -63,11 +62,10 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private String        finalURL              = null;
+    private long          finalURLType          = -1;
     private boolean       server_issues         = false;
     private final boolean fastLinkCheck_default = true;
     private final String  fastLinkCheck         = "fastLinkCheck";
-    private Account       account               = null;
-    private static Object LOCK                  = new Object();
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, "Enable fast linkcheck, doesn't perform filesize checks! Filesize will be updated when download starts.").setDefaultValue(fastLinkCheck_default));
@@ -119,8 +117,7 @@ public class VideoFCTwoCom extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     private AccountInfo login(Account account, boolean force, final AccountInfo iai) throws Exception {
-        synchronized (LOCK) {
-            this.account = account;
+        synchronized (account) {
             final AccountInfo ai = iai != null ? iai : account.getAccountInfo();
             try {
                 // Load cookies
@@ -167,7 +164,9 @@ public class VideoFCTwoCom extends PluginForHost {
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
                 br.setFollowRedirects(ifr);
             } catch (PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
             return ai;
@@ -179,12 +178,9 @@ public class VideoFCTwoCom extends PluginForHost {
         return login(account, true, new AccountInfo());
     }
 
-    private void dofree(final DownloadLink downloadLink) throws Exception {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        }
+    private void doDownload(final Account account, final DownloadLink downloadLink) throws Exception {
         /* OLD-API handling */
-        String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
+        final String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (error != null) {
             switch (Integer.parseInt(error)) {
             case 503:
@@ -205,7 +201,9 @@ public class VideoFCTwoCom extends PluginForHost {
                 logger.info("video.fc2.com: Unknown error code: " + error);
             }
         }
-        if (finalURL == null) {
+        if (server_issues) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        } else if (finalURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (onlyForPremiumUsers(downloadLink)) {
@@ -217,24 +215,41 @@ public class VideoFCTwoCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, -4);
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
-        } else if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("not found")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        if (finalURLType == 2) {
+            br.getPage(finalURL);
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, finalURL);
+            dl.startDownload();
+        } else {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, -4);
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
+            } else if (!looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                if (br.containsHTML("not found")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dofree(downloadLink);
+        doDownload(null, downloadLink);
     }
 
     @Override
@@ -242,45 +257,28 @@ public class VideoFCTwoCom extends PluginForHost {
         br = new Browser();
         login(account, true, null);
         requestFileInformation(downloadLink);
-        dofree(downloadLink);
+        doDownload(account, downloadLink);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.finalURL = null;
+        this.finalURLType = -1;
         this.server_issues = false;
         correctDownloadLink(downloadLink);
         String dllink = downloadLink.getDownloadURL();
         final String linkid = getLinkID(downloadLink);
         // this comes first, due to subdoman issues and cached cookie etc.
+        Account account = AccountController.getInstance().getValidAccount(this);
         if (account == null) {
-            // check for accounts
-            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
-            if (accounts != null && accounts.size() != 0) {
-                // lets sort, premium over non premium
-                Collections.sort(accounts, new Comparator<Account>() {
-                    @Override
-                    public int compare(final Account o1, final Account o2) {
-                        final int io1 = o1.getBooleanProperty("free", false) ? 0 : 1;
-                        final int io2 = o2.getBooleanProperty("free", false) ? 0 : 1;
-                        return io1 <= io2 ? io1 : io2;
-                    }
-                });
-                final Iterator<Account> it = accounts.iterator();
-                while (it.hasNext()) {
-                    Account n = it.next();
-                    if (n.isEnabled() && n.isValid()) {
-                        try {
-                            login(n, true, null);
-                            account = n;
-                            break;
-                        } catch (final PluginException p) {
-                            if (it.hasNext()) {
-                                br = new Browser();
-                                continue;
-                            }
-                        }
-                    }
+            try {
+                login(account, true, null);
+            } catch (final PluginException e) {
+                account = null;
+                if (Thread.currentThread() instanceof SingleDownloadController) {
+                    throw e;
+                } else {
+                    handleAccountException(account, getLogger(), e);
                 }
             }
         }
@@ -300,7 +298,7 @@ public class VideoFCTwoCom extends PluginForHost {
         final boolean useNewAPI = account == null && newAPIVideotoken != null;
         if (useNewAPI) {
             /* 2019-01-28: New way, does not yet have (premium) account support! */
-            LinkedHashMap<String, Object> entries;
+            Map<String, Object> entries;
             if (newAPIVideotoken == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -309,7 +307,7 @@ public class VideoFCTwoCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             filename = (String) entries.get("title");
             uploadername = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
             if (StringUtils.isEmpty(filename)) {
@@ -317,10 +315,14 @@ public class VideoFCTwoCom extends PluginForHost {
                 filename = linkid;
             }
             br.getPage("http://video.fc2.com/api/v3/videoplaylist/" + linkid + "?sh=1&fs=0");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
             finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
+            if (finalURL == null) {
+                finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/nq");
+            }
             if (!StringUtils.isEmpty(finalURL) && finalURL.startsWith("/")) {
-                finalURL = "http://video.fc2.com" + finalURL;
+                finalURL = br.getURL(finalURL).toString();
             }
         } else {
             // capturing the title in this manner reduces lazy regex scope to just this found string vs entire document.
@@ -417,13 +419,15 @@ public class VideoFCTwoCom extends PluginForHost {
             filename += ".mp4";
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         }
-        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null) {
+        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null && finalURLType != 2) {
             br.getHeaders().put("Referer", null);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(finalURL);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
                     server_issues = true;
                 }

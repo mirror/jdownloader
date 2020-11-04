@@ -618,13 +618,11 @@ public class PornHubCom extends PluginForDecrypt {
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String siteTitle = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
-        if (this.br.containsHTML("<span>Purchase</span>")) {
-            /* 2020-02-19: Some videos have to be purchased separately even if the user owns a premium account */
-            logger.info("This video has to be purchased separately");
-            final DownloadLink dl = createOfflinelink(parameter);
-            dl.setFinalFileName("This video has to be purchased separately_viewkey=" + viewkey);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+        final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
+        logger.info("Debug info: foundLinks_all: " + qualities);
+        if ((qualities == null || qualities.isEmpty()) && br.containsHTML(jd.plugins.hoster.PornHubCom.html_purchase_only)) {
+            logger.info("Debug info: This video has to be purchased separately: " + parameter);
+            throw new AccountRequiredException();
         } else if (isOfflineVideo(br)) {
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
@@ -643,8 +641,6 @@ public class PornHubCom extends PluginForDecrypt {
         if (better_date != null) {
             uploadDate = better_date;
         }
-        final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
-        logger.info("Debug info: foundLinks_all: " + qualities);
         if (qualities != null) {
             if (qualities.isEmpty()) {
                 final DownloadLink dl = createOfflinelink(parameter);
