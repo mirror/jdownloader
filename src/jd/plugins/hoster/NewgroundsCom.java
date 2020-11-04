@@ -223,6 +223,7 @@ public class NewgroundsCom extends antiDDoSForHost {
     }
 
     private void errorRateLimited() throws PluginException {
+        /* 2020-11-04: This serverside limit/block will usually last for 60 seconds. */
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 120 * 1000l);
     }
 
@@ -251,7 +252,6 @@ public class NewgroundsCom extends antiDDoSForHost {
             } catch (final IOException ignore) {
                 logger.log(ignore);
             }
-            /* 2017-11-16: E.g. happens for audio files */
             errorRateLimited();
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {

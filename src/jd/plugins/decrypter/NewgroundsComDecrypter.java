@@ -24,7 +24,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -44,14 +43,14 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        return 1;
+        return 20;
     }
 
     @Override
     public void init() {
         try {
             /* 2020-10-26: They have quite strict rate-limits ... */
-            Browser.setRequestIntervalLimitGlobal(getHost(), 1000);
+            // Browser.setRequestIntervalLimitGlobal(getHost(), 1000);
         } catch (final Throwable e) {
         }
     }

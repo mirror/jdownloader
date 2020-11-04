@@ -67,8 +67,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /* DEV NOTES */
     /* Porn_plugin */
     // Version 2.0
-    // Tags:
-    // protocol: no https
     // other: URL to a live demo: http://www.kvs-demo.com/
 
     /***
@@ -203,10 +201,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             final Regex info = new Regex(link.getPluginPatternMatcher(), "^(https?://)m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)");
             link.setPluginPatternMatcher(String.format("%swww.%s", info.getMatch(0), info.getMatch(1)));
         }
-        /*
-         * TODO: Maybe add auto correction for hosts with pattern buildAnnotationUrlsDefaultVideosPatternOnlyNumbers: --> Replace "/embed/"
-         * with "/".
-         */
     }
 
     @Override
@@ -253,6 +247,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return requestFileInformation(link, false);
     }
 
+    /**
+     * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml | Als working
+     * for: webcamsbabe.com
+     */
     protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
@@ -306,6 +304,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
                     realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
                 }
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} */
+                    realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/?)").getMatch(0);
+                }
                 if (realURL != null) {
                     logger.info("Found real URL corresponding to current embed URL: " + realURL);
                     try {
@@ -332,7 +334,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else if (this.getFUID(link) == null) {
             /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
             logger.info("Failed to find fuid in URL --> Looking for fuid in html");
-            final String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
+            String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
+            if (fuidAfterHTTPRequest == null) {
+                /* E.g. for hosts which have embed support disabled. */
+                fuidAfterHTTPRequest = br.getRegex("video_id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
+            }
+            /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
+            /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
             if (fuidAfterHTTPRequest != null) {
                 logger.info("Successfully found fuid in html: " + fuidAfterHTTPRequest);
                 link.setLinkID(this.getHost() + "://" + fuidAfterHTTPRequest);
@@ -450,8 +458,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (title_url == null) {
             title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         }
+        /* Prefer title from inside URL whenever possible. */
         if (!StringUtils.isEmpty(title_url) && !title_url.matches("\\d+")) {
-            /* Nice title is inside URL --> Prefer that! */
             filename = title_url;
         } else {
             /* Try default traits --> Very unsafe but may sometimes work */
@@ -460,15 +468,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             } else {
                 filename = br.getRegex(Pattern.compile("<title>([^<>\"]*?) \\- " + br.getHost() + "</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             }
-        }
-        /* Now decide which filename we want to use */
-        if (StringUtils.isEmpty(filename)) {
-            filename = title_url;
-        } else {
-            /* Remove html crap and spaces at the beginning and end. */
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = cleanupFilename(br, filename);
+            if (filename != null) {
+                /* Remove html crap and spaces at the beginning and end. */
+                filename = Encoding.htmlDecode(filename);
+                filename = filename.trim();
+                filename = cleanupFilename(br, filename);
+            }
         }
         return filename;
     }
@@ -546,6 +551,19 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
+        /* 2020-11-03: TODO: Check if this is still needed. */
+        String workaroundURL = null;
+        if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
+            /*
+             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
+             * first attempt (e.g. clipcake.com). Examples: hdzog.com (404), txxx.com (403)
+             */
+            workaroundURL = con.getRequest().getUrl();
+        }
+        return workaroundURL;
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -583,9 +601,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
-                br.clearCookies(this.getHost());
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
                 getPage("https://www." + this.getHost() + "/login/");
                 /*
@@ -608,19 +626,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected boolean isLoggedIN() {
         return br.getCookie(br.getHost(), "kt_member", Cookies.NOTDELETEDPATTERN) != null;
-    }
-
-    public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
-        /* 2020-11-03: TODO: Check if this is still needed. */
-        String workaroundURL = null;
-        if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
-            /*
-             * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
-             * first attempt (e.g. clipcake.com). Examples: hdzog.com (404), txxx.com (403)
-             */
-            workaroundURL = con.getRequest().getUrl();
-        }
-        return workaroundURL;
     }
 
     protected String getDllink(final Browser br) throws PluginException, IOException {
@@ -649,32 +654,33 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
+        /* Assume there always only exists 1 video quality without quality identifier. */
+        String uncryptedUrlWithoutQualityIndicator = null;
         if (StringUtils.isEmpty(dllink)) {
             // function/0/http camwheres.tv, pornyeah, rule34video.com, videocelebs.net
             logger.info("Crawling crypted qualities");
             final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
             if (functions.length > 0) {
                 logger.info("Found " + functions.length + " possible crypted downloadurls");
-                if (functions.length == 1) {
-                    /* Only one available? Use that! */
-                    dllink = getDllinkCrypted(br, functions[0]);
-                } else {
-                    for (final String crypted1 : functions) {
-                        final String dllinkTmp = getDllinkCrypted(br, crypted1);
-                        if (!isValidDirectURL(dllinkTmp)) {
-                            continue;
-                        }
-                        if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
-                            /*
-                             * TODO: Check whether or not it would make sense to save this. As long as there are multiple qualities
-                             * available, we should always have at least one with quality identifier!
-                             */
-                            // uncryptedUrlWithoutQualityIndicator = dllinkTmp;
-                            continue;
-                        }
+                for (final String crypted1 : functions) {
+                    final String dllinkTmp = getDllinkCrypted(br, crypted1);
+                    if (!isValidDirectURL(dllinkTmp)) {
+                        continue;
                     }
+                    if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
+                        uncryptedUrlWithoutQualityIndicator = dllinkTmp;
+                        continue;
+                    }
+                }
+                if (qualityMap.size() > 1) {
                     logger.info("Found " + qualityMap.size() + " crypted downloadurls");
                     dllink = handleQualitySelection(qualityMap);
+                } else if (uncryptedUrlWithoutQualityIndicator != null) {
+                    logger.info("Seems like there is only a single quality available --> Using that one");
+                    dllink = uncryptedUrlWithoutQualityIndicator;
+                } else {
+                    /* This should never happen */
+                    logger.warning("Failed to decrypt any of the encrypted downloadurls");
                 }
             } else {
                 logger.info("Failed to find any crypted downloadurls");
@@ -682,8 +688,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         /* Only try to crawl uncrypted URLs if we failed to find crypted URLs. */
         if (StringUtils.isEmpty(dllink)) {
-            /* Assume there always only exists 1 video quality without quality identifier */
-            String uncryptedUrlWithoutQualityIndicator = null;
             /* Find the best between possibly multiple uncrypted streaming URLs */
             /* Stage 1 */
             logger.info("Crawling uncrypted qualities");
@@ -933,7 +937,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             // logger.info("Skipping invalid video URL (= picture): " + url);
             return false;
         } else if (url.contains("_preview.mp4")) {
+            /* E.g. a lot of websites! */
             // logger.info("Skipping invalid video URL (= preview): " + url);
+            return false;
+        } else if (url.contains("_trailer.mp4")) {
+            /* 2020-11-04: E.g. privat-zapisi.biz! */
+            // logger.info("Skipping invalid video URL (= trailer): " + url);
             return false;
         } else {
             return true;
