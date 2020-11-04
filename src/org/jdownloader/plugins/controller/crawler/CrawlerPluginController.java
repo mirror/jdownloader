@@ -96,10 +96,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public List<LazyCrawlerPlugin> init() {
-        return new NonInterruptibleRunnable<List<LazyCrawlerPlugin>, RuntimeException>() {
-            @Override
-            public List<LazyCrawlerPlugin> run() throws RuntimeException, InterruptedException {
-                synchronized (INSTANCELOCK) {
+        synchronized (INSTANCELOCK) {
+            return new NonInterruptibleRunnable<List<LazyCrawlerPlugin>, RuntimeException>() {
+                @Override
+                public List<LazyCrawlerPlugin> run() throws RuntimeException, InterruptedException {
                     final LogSource logger = LogController.CL(false);
                     logger.info("CrawlerPluginController: init");
                     logger.setAllowTimeoutFlush(false);
@@ -170,8 +170,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     System.gc();
                     return list;
                 }
-            }
-        }.startAndWait();
+            }.startAndWait();
+        }
     }
 
     private List<LazyCrawlerPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
@@ -317,7 +317,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
