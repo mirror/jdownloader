@@ -1,11 +1,12 @@
 package org.jdownloader.api.myjdownloader.api;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import jd.http.Browser;
@@ -22,13 +23,19 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.Docker;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
@@ -152,19 +159,44 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
     protected volatile String connectToken = null;
 
     private static String getRevision() {
+        final StringBuilder sb = new StringBuilder();
         try {
-            final HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-            final Object ret = map.get("JDownloaderRevision");
-            if (ret != null) {
-                return "core_" + ret.toString();
+            sb.append("|OS:" + CrossSystem.getOSFamily() + "|" + CrossSystem.getOS() + "|" + CrossSystem.is64BitOperatingSystem());
+            sb.append("|CPU:" + CrossSystem.getARCHFamily() + "|" + CrossSystem.is64BitArch());
+            sb.append("|JVM:" + JVMVersion.get() + "|" + Application.is64BitJvm());
+            try {
+                final HardwareTypeInterface hardwareType = HardwareType.getHardware();
+                if (hardwareType != null) {
+                    sb.append("|HW:" + hardwareType.getHardwareType());
+                }
+            } catch (final Throwable ignore) {
+                LoggerFactory.getDefaultLogger().log(ignore);
+            }
+            try {
+                if (Docker.isInsideDocker()) {
+                    sb.append("|Docker");
+                }
+            } catch (final Throwable ignore) {
+                LoggerFactory.getDefaultLogger().log(ignore);
+            }
+        } catch (final Throwable e) {
+        }
+        try {
+            final File file = Application.getResource("build.json");
+            if (file.isFile()) {
+                final Map<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(file), TypeRef.HASHMAP);
+                final Object ret = map.get("JDownloaderRevision");
+                if (ret != null) {
+                    return "core_" + ret.toString() + sb.toString();
+                }
             }
         } catch (final Throwable e) {
         }
         final String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
         if (revision == null) {
-            return "api_0";
+            return "api_0" + sb.toString();
         } else {
-            return "api_" + revision;
+            return "api_" + revision + sb.toString();
         }
     }
 
