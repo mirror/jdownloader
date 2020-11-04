@@ -47,4 +47,6 @@ public interface UpdateCallbackInterface {
     HTTPProxy updateProxyAuth(int retries, HTTPProxy usedProxy, List<String> proxyAuths, URL url);
 
     List<HTTPProxy> selectProxy(URL url);
+
+    void append(final StringBuilder sb);
 }

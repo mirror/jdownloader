@@ -55,6 +55,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.RaspberryPi;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
@@ -77,6 +78,7 @@ import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.updatev2.UpdateController;
 
 public class Multi extends IExtraction {
     private volatile int               crack = 0;
@@ -427,10 +429,12 @@ public class Multi extends IExtraction {
     public boolean isAvailable(ExtractionExtension extractionExtension) {
         final String libID = hasLibrarySupport(extractionExtension);
         if (libID == null) {
-            logger.info("Unsupported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Unsupported SevenZipJBinding|Version=" + getSevenZipJBindingVersion() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch() + "|HW:" + HardwareType.getHardware());
+            UpdateController.getInstance().setExtractionLibrary(false);
             return false;
         } else {
-            logger.info("Supported SevenZipJBinding|LibID=" + libID + "|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+            logger.info("Supported SevenZipJBinding|LibID=" + libID + "|Version=" + getSevenZipJBindingVersion() + "|RAR5=" + isRAR5Supported() + "|CPU_ARCH=" + CrossSystem.getARCHFamily() + "|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch() + "|HW:" + HardwareType.getHardware());
+            UpdateController.getInstance().setExtractionLibrary(true);
             return true;
         }
     }

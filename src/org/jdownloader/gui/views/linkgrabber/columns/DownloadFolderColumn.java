@@ -42,18 +42,14 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public DownloadFolderColumn() {
         super(_GUI.T.LinkGrabberTableModel_initColumns_folder());
         setClickcount(0);
-
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     @Override
     public void focusGained(final FocusEvent e) {
-
     }
 
     @Override
@@ -72,7 +68,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode value) {
         if (CrossSystem.isOpenFileSupported() && value != null) {
-
             final File ret = LinkTreeUtils.getDownloadDirectory(value);
             if (ret != null && ret.exists() && ret.isDirectory()) {
                 CrossSystem.openFile(ret);
@@ -132,7 +127,6 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             } catch (DialogCanceledException e) {
                 /* user clicked no */
             }
-
             final CrawledPackage pkg = new CrawledPackage();
             pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
             if (TYPE.NORMAL != p.getType()) {
@@ -148,17 +142,14 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             }
             pkg.setComment(p.getComment());
             pkg.setDownloadFolder(value);
-
             final java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
             links.add((CrawledLink) object);
             LinkCollector.getInstance().getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
-
                 @Override
                 protected Object run() {
                     LinkCollector.getInstance().moveOrAddAt(pkg, links, -1);
                     return null;
                 }
-
             });
         }
     }
@@ -179,5 +170,4 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         }
         return null;
     }
-
 }

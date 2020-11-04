@@ -28,11 +28,14 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -46,6 +49,16 @@ import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class UpdateController implements UpdateCallbackInterface {
+    private volatile Boolean extractionLibrary = null;
+
+    public Boolean getExtractionLibrary() {
+        return extractionLibrary;
+    }
+
+    public void setExtractionLibrary(Boolean extractionLibrary) {
+        this.extractionLibrary = extractionLibrary;
+    }
+
     private static final UpdateController INSTANCE = new UpdateController();
 
     /**
@@ -606,5 +619,25 @@ public class UpdateController implements UpdateCallbackInterface {
         }
         handler.requestFullExtensionUpdate(list.toArray(new String[] {}));
         runUpdateChecker(false);
+    }
+
+    @Override
+    public void append(StringBuilder sb) {
+        if (Boolean.FALSE.equals(getExtractionLibrary())) {
+            try {
+                sb.append("&7zjb=false");
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+        }
+        try {
+            final HardwareTypeInterface hardware = HardwareType.getHardware();
+            if (hardware != null) {
+                sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
+            }
+        } catch (Throwable e) {
+            logger.log(e);
+            sb.append("&hw=error");
+        }
     }
 }

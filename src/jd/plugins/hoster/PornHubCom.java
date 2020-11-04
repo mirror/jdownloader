@@ -85,7 +85,8 @@ public class PornHubCom extends PluginForHost {
     private static final String                   type_gif_webm                         = "(?i).+/(embed)?gif/\\d+";
     public static final String                    html_privatevideo                     = "id=\"iconLocked\"";
     public static final String                    html_privateimage                     = "profile/private-lock\\.png";
-    public static final String                    html_premium_only                     = "<h2>Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
+    public static final String                    html_purchase_only                    = "'Buy on video player'";
+    public static final String                    html_premium_only                     = "<h2>\\s*Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                                 = null;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
@@ -348,6 +349,8 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium only File", PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (br.containsHTML(REMOVED_VIDEO)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(html_purchase_only)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium/Purchase only File", PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (source_url == null || html_filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -489,7 +492,7 @@ public class PornHubCom extends PluginForHost {
             }
             if (flashVars == null) {
                 /* Wide open - risky */
-                flashVars = br.getRegex("(var\\s*flashvars_\\d+.*)(loadScriptUniqueId|</script)").getMatch(0);
+                flashVars = br.getRegex("(var\\s*flashvars_\\d+.*?)(loadScriptUniqueId|</script)").getMatch(0);
             }
             final String flashVarsID = new Regex(flashVars, "flashvars_(\\d+)").getMatch(0);
             if (flashVarsID != null) {
@@ -504,60 +507,63 @@ public class PornHubCom extends PluginForHost {
             }
         }
         if (flashVars != null) {
-            final LinkedHashMap<String, Object> values = flashVars == null ? null : (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(flashVars);
-            if (values == null || values.size() < 1) {
-                return null;
-            }
-            String dllink_temp = null;
-            // dllink_temp = (String) values.get("video_url");
-            final ArrayList<Object> entries = (ArrayList<Object>) values.get("mediaDefinitions");
-            if (entries.size() == 0) {
-                /*
-                 * 2019-04-30: Very rare case - video is supposed to be online but ZERO qualities are available --> Video won't load in
-                 * browser either --> Offline
-                 */
-                return qualities;
-            }
-            for (Object entry : entries) {
-                final LinkedHashMap<String, Object> e = (LinkedHashMap<String, Object>) entry;
-                String format = (String) e.get("format");
-                if (StringUtils.equalsIgnoreCase(format, "dash")) {
-                    plugin.getLogger().info("Dash not yet supported");
-                    continue;
+            final Object obj = flashVars == null ? null : JavaScriptEngineFactory.jsonToJavaObject(flashVars);
+            if (obj instanceof Map) {
+                final Map<String, Object> values = (Map<String, Object>) obj;
+                if (values == null || values.size() < 1) {
+                    return null;
                 }
-                format = format.toLowerCase(Locale.ENGLISH);
-                final Object qualityInfo = e.get("quality");
-                if (qualityInfo == null) {
-                    continue;
-                } else if (qualityInfo instanceof List) {
-                    // HLS with auto quality
-                    continue;
+                String dllink_temp = null;
+                // dllink_temp = (String) values.get("video_url");
+                final ArrayList<Object> entries = (ArrayList<Object>) values.get("mediaDefinitions");
+                if (entries.size() == 0) {
+                    /*
+                     * 2019-04-30: Very rare case - video is supposed to be online but ZERO qualities are available --> Video won't load in
+                     * browser either --> Offline
+                     */
+                    return qualities;
                 }
-                dllink_temp = (String) e.get("videoUrl");
-                final Boolean encrypted = e.get("encrypted") == null ? null : ((Boolean) e.get("encrypted")).booleanValue();
-                if (encrypted == Boolean.TRUE) {
-                    final String decryptkey = (String) values.get("video_title");
-                    try {
-                        dllink_temp = new BouncyCastleAESCounterModeDecrypt().decrypt(dllink_temp, decryptkey, 256);
-                    } catch (Throwable t) {
-                        /* Fallback for stable version */
-                        dllink_temp = AESCounterModeDecrypt(dllink_temp, decryptkey, 256);
+                for (Object entry : entries) {
+                    final LinkedHashMap<String, Object> e = (LinkedHashMap<String, Object>) entry;
+                    String format = (String) e.get("format");
+                    if (StringUtils.equalsIgnoreCase(format, "dash")) {
+                        plugin.getLogger().info("Dash not yet supported");
+                        continue;
                     }
-                    if (dllink_temp != null && (dllink_temp.startsWith("Error:") || !dllink_temp.startsWith("http"))) {
-                        success = false;
+                    format = format.toLowerCase(Locale.ENGLISH);
+                    final Object qualityInfo = e.get("quality");
+                    if (qualityInfo == null) {
+                        continue;
+                    } else if (qualityInfo instanceof List) {
+                        // HLS with auto quality
+                        continue;
+                    }
+                    dllink_temp = (String) e.get("videoUrl");
+                    final Boolean encrypted = e.get("encrypted") == null ? null : ((Boolean) e.get("encrypted")).booleanValue();
+                    if (encrypted == Boolean.TRUE) {
+                        final String decryptkey = (String) values.get("video_title");
+                        try {
+                            dllink_temp = new BouncyCastleAESCounterModeDecrypt().decrypt(dllink_temp, decryptkey, 256);
+                        } catch (Throwable t) {
+                            /* Fallback for stable version */
+                            dllink_temp = AESCounterModeDecrypt(dllink_temp, decryptkey, 256);
+                        }
+                        if (dllink_temp != null && (dllink_temp.startsWith("Error:") || !dllink_temp.startsWith("http"))) {
+                            success = false;
+                        } else {
+                            success = true;
+                        }
                     } else {
                         success = true;
                     }
-                } else {
-                    success = true;
+                    final String quality = new Regex(qualityInfo.toString(), "(\\d+)").getMatch(0);
+                    Map<String, String> formatMap = qualities.get(quality);
+                    if (formatMap == null) {
+                        formatMap = new HashMap<String, String>();
+                        qualities.put(quality, formatMap);
+                    }
+                    formatMap.put(format, dllink_temp);
                 }
-                final String quality = new Regex(qualityInfo.toString(), "(\\d+)").getMatch(0);
-                Map<String, String> formatMap = qualities.get(quality);
-                if (formatMap == null) {
-                    formatMap = new HashMap<String, String>();
-                    qualities.put(quality, formatMap);
-                }
-                formatMap.put(format, dllink_temp);
             }
         }
         if (!success) {
@@ -618,8 +624,9 @@ public class PornHubCom extends PluginForHost {
                 /* viewkey should never be null! */
                 final String viewkey = getViewkeyFromURL(br.getURL());
                 if (viewkey != null) {
-                    getPage(br, createPornhubVideoLinkEmbedFree(br, viewkey));
-                    var_player_quality_dp = br.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
+                    final Browser brc = br.cloneBrowser();
+                    getPage(brc, createPornhubVideoLinkEmbedFree(brc, viewkey));
+                    var_player_quality_dp = brc.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
                     matchPlaces = new int[] { 0, 1 };
                 }
             }
