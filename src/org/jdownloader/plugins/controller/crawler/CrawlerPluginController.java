@@ -19,6 +19,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.NonInterruptibleRunnable;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
@@ -95,77 +96,82 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public List<LazyCrawlerPlugin> init() {
-        synchronized (INSTANCELOCK) {
-            final LogSource logger = LogController.CL(false);
-            logger.info("CrawlerPluginController: init");
-            logger.setAllowTimeoutFlush(false);
-            logger.setAutoFlushOnThrowable(true);
-            LogController.setRebirthLogger(logger);
-            final long completeTimeStamp = System.currentTimeMillis();
-            try {
-                List<LazyCrawlerPlugin> updateCache = null;
-                /* try to load from cache */
-                long timeStamp = System.currentTimeMillis();
-                try {
-                    updateCache = loadFromCache(lastModification);
-                } catch (Throwable e) {
-                    lastModification.set(-1l);
-                    logger.log(e);
-                    logger.severe("@CrawlerPluginController: cache failed!");
-                } finally {
-                    if (updateCache != null && updateCache.size() > 0) {
-                        logger.info("@CrawlerPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + updateCache.size() + "|LastModified:" + lastModification.get());
+        return new NonInterruptibleRunnable<List<LazyCrawlerPlugin>, RuntimeException>() {
+            @Override
+            public List<LazyCrawlerPlugin> run() throws RuntimeException, InterruptedException {
+                synchronized (INSTANCELOCK) {
+                    final LogSource logger = LogController.CL(false);
+                    logger.info("CrawlerPluginController: init");
+                    logger.setAllowTimeoutFlush(false);
+                    logger.setAutoFlushOnThrowable(true);
+                    LogController.setRebirthLogger(logger);
+                    final long completeTimeStamp = System.currentTimeMillis();
+                    try {
+                        List<LazyCrawlerPlugin> updateCache = null;
+                        /* try to load from cache */
+                        long timeStamp = System.currentTimeMillis();
+                        try {
+                            updateCache = loadFromCache(lastModification);
+                        } catch (Throwable e) {
+                            lastModification.set(-1l);
+                            logger.log(e);
+                            logger.severe("@CrawlerPluginController: cache failed!");
+                        } finally {
+                            if (updateCache != null && updateCache.size() > 0) {
+                                logger.info("@CrawlerPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + updateCache.size() + "|LastModified:" + lastModification.get());
+                            }
+                        }
+                        List<LazyCrawlerPlugin> plugins = null;
+                        timeStamp = System.currentTimeMillis();
+                        try {
+                            /* do a fresh scan */
+                            plugins = update(logger, updateCache, lastModification);
+                        } catch (Throwable e) {
+                            lastModification.set(-1l);
+                            logger.log(e);
+                            logger.severe("@CrawlerPluginController: update failed!");
+                        } finally {
+                            if (plugins != null && plugins.size() > 0) {
+                                logger.info("@CrawlerPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
+                            }
+                        }
+                        if (plugins == null || plugins.size() == 0) {
+                            if (plugins == null) {
+                                plugins = new ArrayList<LazyCrawlerPlugin>();
+                            }
+                            logger.severe("@CrawlerPluginController: WTF, no plugins!");
+                        }
+                        for (LazyCrawlerPlugin plugin : plugins) {
+                            plugin.setPluginClass(null);
+                            plugin.setClassLoader(null);
+                        }
+                        list = plugins;
+                    } finally {
+                        validateCache();
+                        LogController.setRebirthLogger(null);
+                        final List<LazyCrawlerPlugin> llist = list;
+                        if (llist != null) {
+                            logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
+                        } else {
+                            logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
+                        }
+                        logger.close();
+                        if (llist != null) {
+                            final AtomicLong lastModification = new AtomicLong(CrawlerPluginController.this.lastModification.get());
+                            Thread saveThread = new Thread("@CrawlerPluginController:save") {
+                                public void run() {
+                                    save(llist, lastModification);
+                                };
+                            };
+                            saveThread.setDaemon(true);
+                            saveThread.start();
+                        }
                     }
-                }
-                List<LazyCrawlerPlugin> plugins = null;
-                timeStamp = System.currentTimeMillis();
-                try {
-                    /* do a fresh scan */
-                    plugins = update(logger, updateCache, lastModification);
-                } catch (Throwable e) {
-                    lastModification.set(-1l);
-                    logger.log(e);
-                    logger.severe("@CrawlerPluginController: update failed!");
-                } finally {
-                    if (plugins != null && plugins.size() > 0) {
-                        logger.info("@CrawlerPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
-                    }
-                }
-                if (plugins == null || plugins.size() == 0) {
-                    if (plugins == null) {
-                        plugins = new ArrayList<LazyCrawlerPlugin>();
-                    }
-                    logger.severe("@CrawlerPluginController: WTF, no plugins!");
-                }
-                for (LazyCrawlerPlugin plugin : plugins) {
-                    plugin.setPluginClass(null);
-                    plugin.setClassLoader(null);
-                }
-                list = plugins;
-            } finally {
-                validateCache();
-                LogController.setRebirthLogger(null);
-                final List<LazyCrawlerPlugin> llist = list;
-                if (llist != null) {
-                    logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
-                } else {
-                    logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
-                }
-                logger.close();
-                if (llist != null) {
-                    final AtomicLong lastModification = new AtomicLong(this.lastModification.get());
-                    Thread saveThread = new Thread("@CrawlerPluginController:save") {
-                        public void run() {
-                            save(llist, lastModification);
-                        };
-                    };
-                    saveThread.setDaemon(true);
-                    saveThread.start();
+                    System.gc();
+                    return list;
                 }
             }
-            System.gc();
-            return list;
-        }
+        }.startAndWait();
     }
 
     private List<LazyCrawlerPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {

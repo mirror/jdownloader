@@ -30,6 +30,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.ModifyLock;
+import org.appwork.utils.NonInterruptibleRunnable;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
@@ -96,144 +97,149 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public synchronized Map<String, LazyHostPlugin> init() {
-        final LogSource logger = LogController.CL(false);
-        logger.info("HostPluginController: init");
-        logger.setAllowTimeoutFlush(false);
-        logger.setAutoFlushOnThrowable(true);
-        LogController.setRebirthLogger(logger);
-        final long completeTimeStamp = System.currentTimeMillis();
-        try {
-            /* try to load from cache */
-            long timeStamp = System.currentTimeMillis();
-            if (lastKnownPlugins == null || lastModification.get() <= 0) {
+        return new NonInterruptibleRunnable<Map<String, LazyHostPlugin>, RuntimeException>() {
+            @Override
+            public Map<String, LazyHostPlugin> run() throws RuntimeException, InterruptedException {
+                final LogSource logger = LogController.CL(false);
+                logger.info("HostPluginController: init");
+                logger.setAllowTimeoutFlush(false);
+                logger.setAutoFlushOnThrowable(true);
+                LogController.setRebirthLogger(logger);
+                final long completeTimeStamp = System.currentTimeMillis();
                 try {
-                    lastKnownPlugins = loadFromCache(lastModification);
-                } catch (Throwable e) {
-                    lastModification.set(-1l);
-                    logger.log(e);
-                    logger.severe("@HostPluginController: cache failed!");
-                } finally {
-                    if (lastKnownPlugins != null && lastKnownPlugins.size() > 0) {
-                        logger.info("@HostPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + lastKnownPlugins.size() + "|LastModified:" + lastModification.get());
-                    }
-                }
-            }
-            List<LazyHostPlugin> plugins = null;
-            timeStamp = System.currentTimeMillis();
-            try {
-                /* do a fresh scan */
-                plugins = update(logger, lastKnownPlugins, lastModification);
-            } catch (Throwable e) {
-                lastModification.set(-1l);
-                logger.log(e);
-                logger.severe("@HostPluginController: update failed!");
-            } finally {
-                if (plugins != null && plugins.size() > 0) {
-                    logger.info("@HostPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
-                }
-            }
-            if (plugins == null || plugins.size() == 0) {
-                if (plugins == null) {
-                    plugins = new ArrayList<LazyHostPlugin>();
-                }
-                logger.severe("@HostPluginController: WTF, no plugins!");
-            }
-            lastKnownPlugins = new ArrayList<LazyHostPlugin>(plugins);
-            timeStamp = System.currentTimeMillis();
-            try {
-                if (false) {
-                    Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-                        public final boolean smallestCharacter(char a, char b) {
-                            return Character.toLowerCase(a) < Character.toLowerCase(b);
-                        }
-
-                        public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                            char a = o1.getDisplayName().charAt(0);
-                            char b = o2.getDisplayName().charAt(0);
-                            if (a == b) {
-                                return 0;
+                    /* try to load from cache */
+                    long timeStamp = System.currentTimeMillis();
+                    if (lastKnownPlugins == null || lastModification.get() <= 0) {
+                        try {
+                            lastKnownPlugins = loadFromCache(lastModification);
+                        } catch (Throwable e) {
+                            lastModification.set(-1l);
+                            logger.log(e);
+                            logger.severe("@HostPluginController: cache failed!");
+                        } finally {
+                            if (lastKnownPlugins != null && lastKnownPlugins.size() > 0) {
+                                logger.info("@HostPluginController: loadFromCache took " + (System.currentTimeMillis() - timeStamp) + "ms for " + lastKnownPlugins.size() + "|LastModified:" + lastModification.get());
                             }
-                            return smallestCharacter(a, b) ? -1 : 1;
                         }
-                    });
-                } else {
-                    Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-                        public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                            return o1.getDisplayName().compareTo(o2.getDisplayName());
-                        }
-                    });
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                logger.severe("@HostPluginController: sort failed!");
-            } finally {
-                logger.info("@HostPluginController: sort took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
-            }
-            timeStamp = System.currentTimeMillis();
-            final LinkedHashMap<String, LazyHostPlugin> retMap = new LinkedHashMap<String, LazyHostPlugin>();
-            LazyHostPlugin fallBackPlugin = null;
-            for (final LazyHostPlugin plugin : plugins) {
-                plugin.setPluginClass(null);
-                plugin.setClassLoader(null);
-                if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
-                    fallBackPlugin = plugin;
-                    this.fallBackPlugin = plugin;
-                    continue;
-                }
-                final String pluginID = plugin.getDisplayName().toLowerCase(Locale.ENGLISH);
-                final LazyHostPlugin existingPlugin = retMap.put(pluginID, plugin);
-                if (existingPlugin != null) {
-                    if (existingPlugin.getLazyPluginClass().getInterfaceVersion() > plugin.getLazyPluginClass().getInterfaceVersion()) {
-                        retMap.put(pluginID, existingPlugin);
-                        logger.finest("@HostPlugin keep:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " instead " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
-                    } else {
-                        logger.finest("@HostPlugin replaced:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " with " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
                     }
+                    List<LazyHostPlugin> plugins = null;
+                    timeStamp = System.currentTimeMillis();
+                    try {
+                        /* do a fresh scan */
+                        plugins = update(logger, lastKnownPlugins, lastModification);
+                    } catch (Throwable e) {
+                        lastModification.set(-1l);
+                        logger.log(e);
+                        logger.severe("@HostPluginController: update failed!");
+                    } finally {
+                        if (plugins != null && plugins.size() > 0) {
+                            logger.info("@HostPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
+                        }
+                    }
+                    if (plugins == null || plugins.size() == 0) {
+                        if (plugins == null) {
+                            plugins = new ArrayList<LazyHostPlugin>();
+                        }
+                        logger.severe("@HostPluginController: WTF, no plugins!");
+                    }
+                    lastKnownPlugins = new ArrayList<LazyHostPlugin>(plugins);
+                    timeStamp = System.currentTimeMillis();
+                    try {
+                        if (false) {
+                            Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+                                public final boolean smallestCharacter(char a, char b) {
+                                    return Character.toLowerCase(a) < Character.toLowerCase(b);
+                                }
+
+                                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                                    char a = o1.getDisplayName().charAt(0);
+                                    char b = o2.getDisplayName().charAt(0);
+                                    if (a == b) {
+                                        return 0;
+                                    }
+                                    return smallestCharacter(a, b) ? -1 : 1;
+                                }
+                            });
+                        } else {
+                            Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+                                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                                    return o1.getDisplayName().compareTo(o2.getDisplayName());
+                                }
+                            });
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        logger.severe("@HostPluginController: sort failed!");
+                    } finally {
+                        logger.info("@HostPluginController: sort took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
+                    }
+                    timeStamp = System.currentTimeMillis();
+                    final LinkedHashMap<String, LazyHostPlugin> retMap = new LinkedHashMap<String, LazyHostPlugin>();
+                    LazyHostPlugin fallBackPlugin = null;
+                    for (final LazyHostPlugin plugin : plugins) {
+                        plugin.setPluginClass(null);
+                        plugin.setClassLoader(null);
+                        if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
+                            fallBackPlugin = plugin;
+                            HostPluginController.this.fallBackPlugin = plugin;
+                            continue;
+                        }
+                        final String pluginID = plugin.getDisplayName().toLowerCase(Locale.ENGLISH);
+                        final LazyHostPlugin existingPlugin = retMap.put(pluginID, plugin);
+                        if (existingPlugin != null) {
+                            if (existingPlugin.getLazyPluginClass().getInterfaceVersion() > plugin.getLazyPluginClass().getInterfaceVersion()) {
+                                retMap.put(pluginID, existingPlugin);
+                                logger.finest("@HostPlugin keep:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " instead " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
+                            } else {
+                                logger.finest("@HostPlugin replaced:" + existingPlugin.getLazyPluginClass() + ":" + existingPlugin.getVersion() + " with " + plugin.getLazyPluginClass() + ":" + plugin.getVersion());
+                            }
+                        }
+                    }
+                    logger.info("@HostPluginController: mapping took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
+                    list = retMap;
+                } finally {
+                    final Map<String, LazyHostPlugin> llist = list;
+                    if (llist != null) {
+                        logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
+                    } else {
+                        logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
+                    }
+                    LogController.setRebirthLogger(null);
+                    validateCache();
+                    final List<LazyHostPlugin> lLastKnownPlugins = lastKnownPlugins;
+                    if (lLastKnownPlugins != null) {
+                        final AtomicLong lastModification = new AtomicLong(HostPluginController.this.lastModification.get());
+                        final Thread saveThread = new Thread("@HostPluginController:save") {
+                            public void run() {
+                                save(lLastKnownPlugins, lastModification);
+                            };
+                        };
+                        saveThread.setDaemon(true);
+                        saveThread.start();
+                    }
+                    logger.close();
+                    System.gc();
                 }
-            }
-            logger.info("@HostPluginController: mapping took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size());
-            list = retMap;
-        } finally {
-            final Map<String, LazyHostPlugin> llist = list;
-            if (llist != null) {
-                logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp) + "ms for " + llist.size());
-            } else {
-                logger.info("@HostPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
-            }
-            LogController.setRebirthLogger(null);
-            validateCache();
-            final List<LazyHostPlugin> lLastKnownPlugins = lastKnownPlugins;
-            if (lLastKnownPlugins != null) {
-                final AtomicLong lastModification = new AtomicLong(this.lastModification.get());
-                final Thread saveThread = new Thread("@HostPluginController:save") {
-                    public void run() {
-                        save(lLastKnownPlugins, lastModification);
-                    };
-                };
-                saveThread.setDaemon(true);
-                saveThread.start();
-            }
-            logger.close();
-            System.gc();
-        }
-        if (SecondLevelLaunch.HOST_PLUGINS_COMPLETE.isReached()) {
-            SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-                @Override
-                public void run() {
-                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                if (SecondLevelLaunch.HOST_PLUGINS_COMPLETE.isReached()) {
+                    SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
                         @Override
-                        protected Void run() throws RuntimeException {
-                            LinkCollector.getInstance().checkPluginUpdates();
-                            DownloadController.getInstance().checkPluginUpdates();
-                            AccountController.getInstance().checkPluginUpdates();
-                            HosterRuleController.getInstance().checkPluginUpdates();
-                            return null;
+                        public void run() {
+                            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                @Override
+                                protected Void run() throws RuntimeException {
+                                    LinkCollector.getInstance().checkPluginUpdates();
+                                    DownloadController.getInstance().checkPluginUpdates();
+                                    AccountController.getInstance().checkPluginUpdates();
+                                    HosterRuleController.getInstance().checkPluginUpdates();
+                                    return null;
+                                }
+                            });
                         }
                     });
                 }
-            });
-        }
-        return list;
+                return list;
+            }
+        }.startAndWait();
     }
 
     private List<LazyHostPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
