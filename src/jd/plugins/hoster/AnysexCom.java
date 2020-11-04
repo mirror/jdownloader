@@ -60,6 +60,10 @@ public class AnysexCom extends KernelVideoSharingComV2 {
         if (fileTitle == null) {
             fileTitle = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
         }
+        if (fileTitle == null) {
+            /* Fallback to template */
+            fileTitle = super.getFileTitle(link);
+        }
         return fileTitle;
     }
 }

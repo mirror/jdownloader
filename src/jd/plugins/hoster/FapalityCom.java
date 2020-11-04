@@ -60,6 +60,10 @@ public class FapalityCom extends KernelVideoSharingComV2 {
         if (fileTitle == null) {
             fileTitle = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         }
+        if (fileTitle == null) {
+            /* Fallback to template */
+            fileTitle = super.getFileTitle(link);
+        }
         return fileTitle;
     }
 }

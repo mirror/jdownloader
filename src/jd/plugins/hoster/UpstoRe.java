@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +26,12 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,12 +51,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upstore.net", "upsto.re" }, urls = { "https?://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" })
 public class UpstoRe extends antiDDoSForHost {
@@ -119,7 +120,7 @@ public class UpstoRe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by")) {
+        if (isOffline1()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.br.containsHTML("name=\"hash\"") && !this.br.containsHTML("class=\"features (minus|plus)\"")) {
             /* Probably not a file url. */
@@ -134,17 +135,23 @@ public class UpstoRe extends antiDDoSForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
+    private boolean isOffline1() {
+        return br.containsHTML(">File not found<|>File was deleted by owner or due to a violation of service rules\\.|not found|>SmartErrors powered by");
+    }
+
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         handleErrorsHTML();
         currentIP.set(this.getIP());
         synchronized (CTRLLOCK) {
@@ -154,7 +161,7 @@ public class UpstoRe extends antiDDoSForHost {
                 blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
             }
         }
-        String dllink = checkDirectLink(downloadLink, "freelink");
+        String dllink = checkDirectLink(link, "freelink");
         if (dllink == null) {
             {
                 final Form f = br.getFormBySubmitvalue("Slow+download");
@@ -193,7 +200,7 @@ public class UpstoRe extends antiDDoSForHost {
                 int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                 wait -= passedTime;
                 if (wait > 0) {
-                    sleep(wait * 1000l, downloadLink);
+                    sleep(wait * 1000l, link);
                 }
                 // final String kpw = br.getRegex("\\(\\{'type':'hidden','name':'(\\w+)'\\}\\).val\\(window\\.antispam").getMatch(0);
                 // some javascript crapola
@@ -203,7 +210,7 @@ public class UpstoRe extends antiDDoSForHost {
                 captcha.put("kpw", "spam");
                 submitForm(captcha);
                 if (br.containsHTML("limit for today|several files recently")) {
-                    setDownloadStarted(downloadLink, 0);
+                    setDownloadStarted(link, 0);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
                 }
             }
@@ -215,7 +222,7 @@ public class UpstoRe extends antiDDoSForHost {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
                 if (reconnectWait != null) {
                     final long waitmillis = Long.parseLong(reconnectWait) * 60 * 1000l;
-                    setDownloadStarted(downloadLink, waitmillis);
+                    setDownloadStarted(link, waitmillis);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitmillis + FREE_RECONNECTWAIT_ADDITIONAL);
                 }
                 if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
@@ -225,17 +232,22 @@ public class UpstoRe extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            sleep(3000l, downloadLink);
+            sleep(3000l, link);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
-        setDownloadStarted(downloadLink, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        setDownloadStarted(link, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            handleErrorsHTML();
             handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("freelink", dllink);
+        link.setProperty("freelink", dllink);
         dl.startDownload();
     }
 
@@ -257,7 +269,9 @@ public class UpstoRe extends antiDDoSForHost {
 
     private void handleErrorsHTML() throws PluginException {
         /* Example: "<span class="error">File size is larger than 2 GB. Unfortunately, it can be downloaded only with premium</span>" */
-        if (this.br.containsHTML("File size is larger than|it can be downloaded only with premium")) {
+        if (isOffline1()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("File size is larger than|it can be downloaded only with premium")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (br.containsHTML(">This file is available only for Premium users<")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -282,7 +296,6 @@ public class UpstoRe extends antiDDoSForHost {
         return v;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -552,9 +565,14 @@ public class UpstoRe extends antiDDoSForHost {
         }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink).replace("\\", ""), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            handleErrorsHTML();
             this.handleServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

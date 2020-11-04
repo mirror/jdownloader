@@ -57,6 +57,10 @@ public class XcafeCom extends KernelVideoSharingComV2 {
     @Override
     protected String getFileTitle(final DownloadLink link) {
         String fileTitle = br.getRegex("addthis:title=\"([^<>\"]+)\"").getMatch(0);
+        if (fileTitle == null) {
+            /* Fallback to template */
+            fileTitle = super.getFileTitle(link);
+        }
         return fileTitle;
     }
 }
