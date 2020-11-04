@@ -361,7 +361,7 @@ public class SecondLevelLaunch {
         }
         LoggerFactory.getDefaultLogger().info("OS:" + CrossSystem.getOSFamily() + "|" + CrossSystem.getOS() + "|64bit:" + CrossSystem.is64BitOperatingSystem());
         LoggerFactory.getDefaultLogger().info("CPU:" + CrossSystem.getARCHFamily() + "|64bit:" + CrossSystem.is64BitArch());
-        LoggerFactory.getDefaultLogger().info("JavaVersion:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
+        LoggerFactory.getDefaultLogger().info("JVM:" + JVMVersion.get() + "|" + JVMVersion.getJVMVersion() + "|64bit:" + Application.is64BitJvm());
         try {
             final HardwareTypeInterface hardwareType = HardwareType.getHardware();
             if (hardwareType != null) {
