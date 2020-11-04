@@ -290,7 +290,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 boolean trustURL = true;
                 String realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
                 trustURL = realURL != null && br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'");
-                /* Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com */
+                /*
+                 * Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com, nudogram.com
+                 */
                 if (realURL == null) {
                     /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
                     trustURL = false;
