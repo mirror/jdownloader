@@ -182,25 +182,31 @@ public class OxycloudCom extends YetiShareCore {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
+            final String premiumAccountPackagesText = br.getRegex("<td class=\"text-right\"><strong>Reverts To Free Account</strong></td>\\s*<td>(.*?)</td>").getMatch(0);
             final Regex dailyTrafficRegex = br.getRegex("Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
             final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
             final String dailyTrafficMaxStr = dailyTrafficRegex.getMatch(1);
+            boolean foundPremiumTrait = true;
             String expireStr = br.getRegex("Reverts To Free Account.*?(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
             // .getMatch(0); /* Fits for: /account/edit */
             final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
             if (trafficStr != null) {
                 /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic is left?! */
+                ai.setStatus("Premium traffic package");
                 setAccountLimitsByType(account, AccountType.PREMIUM);
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficStr));
-                ai.setStatus("Premium traffic package");
             } else if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
                 logger.info("Premium with daily trafficlimit");
                 setAccountLimitsByType(account, AccountType.PREMIUM);
                 ai.setTrafficLeft(SizeFormatter.getSize(dailyTrafficLeftStr));
                 ai.setTrafficMax(SizeFormatter.getSize(dailyTrafficMaxStr));
                 ai.setStatus("Premium time with daily traffic limit");
-            } else if (expireStr != null) {
+            } else {
+                foundPremiumTrait = false;
+            }
+            /* User can have multiple packages. User can e.g. have daily traffic, extra traffic and expire date. */
+            if (expireStr != null) {
                 logger.info("Found premium expiredate");
                 long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
                 /* If the premium account is expired we'll simply accept it as a free account. */
@@ -208,16 +214,27 @@ public class OxycloudCom extends YetiShareCore {
                     /* Expired premium -> FREE --> This should never happen! */
                     setAccountLimitsByType(account, AccountType.FREE);
                 } else {
+                    ai.setStatus("Premium time with no data limit");
+                    foundPremiumTrait = true;
                     ai.setValidUntil(expire_milliseconds, this.br);
                     setAccountLimitsByType(account, AccountType.PREMIUM);
-                    ai.setStatus("Premium time with no data limit");
                 }
                 ai.setUnlimitedTraffic();
-            } else {
+            }
+            if (!foundPremiumTrait) {
+                /* This should never happen */
                 logger.info("WTF unknown premium account type??");
                 setAccountLimitsByType(account, AccountType.PREMIUM);
                 ai.setUnlimitedTraffic();
                 ai.setStatus("Premium time with unknown limits (possible JD plugin failure)");
+            } else {
+                /* This is cosmetic only: Try to display users' bought packages in account status */
+                if (premiumAccountPackagesText != null) {
+                    final String[] premiumPackages = premiumAccountPackagesText.split("<br>");
+                    if (premiumPackages.length > 1) {
+                        ai.setStatus(premiumPackages.length + " premium packages:\r\n" + premiumAccountPackagesText.replace("<br>", "\r\n"));
+                    }
+                }
             }
         }
         return ai;
