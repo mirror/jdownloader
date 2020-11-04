@@ -152,7 +152,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /**
      * Similar to {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID} but URLs have to end with ".html". </br>
      * Use this e.g. for:</br>
-     * example.com/title-inside-url.html</br>
+     * example.com/video/title-inside-url.html</br>
      * OR:</br>
      * example.com/embed/1234 </br>
      * Example: <a href="https://yourlust.com/">yourlust.com</a> </br>
@@ -171,7 +171,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      * example.com/videos/title-inside-url-1234 OR:</br>
      * example.com/embed/1234 </br>
      * Example: <a href="https://uiporn.com/">uiporn.com</a> </br>
-     * Example class: {@link #UipornCom}
+     * Example classses: {@link #UipornCom}, {@link #PorngemCom}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -195,6 +195,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed/)?\\d+/?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    /**
+     * Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! </br>
+     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} .
+     */
+    protected boolean hasFUIDAtEnd(final String url) {
+        return true;
     }
 
     @Override
@@ -288,19 +296,26 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             if (new Regex(link.getPluginPatternMatcher(), type_embedded).matches() && !StringUtils.isEmpty(fuid)) {
                 /*
                  * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is
-                 * typically stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" </br>
-                 * Example websites: porntrex.com, javbangers.com
+                 * typically stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" (=
+                 * "safe place") </br>
                  */
-                /* Tries to find original URL based on different default patterns. */
-                /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
-                String realURL = br.getRegex("(/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+                /* First, try to get original URL from a "safe place". Examples: porntrex.com, javbangers.com */
+                boolean trustURL = true;
+                String realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+                trustURL = realURL != null && br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'");
+                /* Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com */
+                if (realURL == null) {
+                    /** {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} */
+                    trustURL = false;
+                    realURL = br.getRegex("(https?://[^/\"\\']+/videos?/[a-z0-9\\-]+-" + fuid + ")").getMatch(0);
+                }
                 if (realURL == null) {
                     /** {@link #buildAnnotationUrlsDefaultVideosPattern(List)} */
-                    realURL = br.getRegex("(/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                    realURL = br.getRegex("(https?://[^/\"\\']+/videos?/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
                 }
                 if (realURL == null) {
                     /** {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} */
-                    realURL = br.getRegex("(/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
+                    realURL = br.getRegex("(https?://[^/\"\\']+/" + fuid + "/[a-z0-9\\-]+/?)").getMatch(0);
                 }
                 if (realURL != null) {
                     logger.info("Found real URL corresponding to current embed URL: " + realURL);
@@ -309,7 +324,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         final Browser brc = this.prepBR(new Browser());
                         brc.getPage(realURL);
                         /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
-                        if (brc.getURL().contains(fuid) && brc.getURL().matches(type_normal)) {
+                        if ((trustURL || brc.getURL().contains(fuid)) && new Regex(brc.getURL(), this.getSupportedLinks()).matches()) {
                             logger.info("Successfully found real URL: " + realURL);
                             link.setPluginPatternMatcher(brc.getURL());
                             br.setRequest(brc.getRequest());
@@ -342,13 +357,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setFinalFileName(finalFilename + ".mp4");
         }
         setSpecialFlags();
-        try {
-            dllink = getDllink(this.br);
-        } catch (final PluginException e) {
-            if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
-            } else {
-                throw e;
+        /* Only look for downloadurl if we need it! */
+        if (isDownload || !this.enableFastLinkcheck()) {
+            try {
+                dllink = getDllink(this.br);
+            } catch (final PluginException e) {
+                if (this.private_video && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
+                } else {
+                    throw e;
+                }
             }
         }
         if (!StringUtils.isEmpty(this.dllink) && !dllink.contains(".m3u8") && !isDownload && !enableFastLinkcheck()) {
@@ -579,6 +597,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     }
                 }
                 br.clearCookies(this.getHost());
+                /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
                 getPage("https://www." + this.getHost() + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account. Until now there are no
@@ -629,7 +648,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         // br.postPage("/sn4diyux.php", "param=" + videoID + "," + pc3_vars);
         // String crypted_url = getDllinkCrypted(br);
         // }
-        final String fuid = this.getFUID(this.getDownloadLink());
         String dllink = null;
         final String json_playlist_source = br.getRegex("sources\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         String httpurl_temp = null;
@@ -640,13 +658,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             if (StringUtils.isEmpty(dllink)) {
                 dllink = new Regex(json_playlist_source, "'file'\\s*:\\s*'(http[^<>\"']*?(mp4|flv|m3u8)[^<>\"']*?)'").getMatch(0);
             }
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("flashvars\\['video_html5_url'\\]='(http[^<>\"]*?)'").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /* E.g. yourlust.com */
-            dllink = br.getRegex("flashvars\\.video_html5_url\\s*=\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
         final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
         if (StringUtils.isEmpty(dllink)) {
@@ -664,18 +675,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         if (!isValidDirectURL(dllinkTmp)) {
                             continue;
                         }
-                        String qualityTmpStr = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
-                        if (qualityTmpStr == null) {
-                            /* Wider approach */
-                            qualityTmpStr = new Regex(dllinkTmp, "(\\d+)\\.mp4").getMatch(0);
-                        }
-                        /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
-                        if (qualityTmpStr == null) {
-                            logger.info("Failed to find quality identifier for URL: " + dllinkTmp);
+                        if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
+                            /*
+                             * TODO: Check whether or not it would make sense to save this. As long as there are multiple qualities
+                             * available, we should always have at least one with quality identifier!
+                             */
+                            // uncryptedUrlWithoutQualityIndicator = dllinkTmp;
                             continue;
                         }
-                        final int qualityTmp = Integer.parseInt(qualityTmpStr);
-                        qualityMap.put(qualityTmp, dllinkTmp);
                     }
                     logger.info("Found " + qualityMap.size() + " crypted downloadurls");
                     dllink = handleQualitySelection(qualityMap);
@@ -686,6 +693,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         /* Only try to crawl uncrypted URLs if we failed to find crypted URLs. */
         if (StringUtils.isEmpty(dllink)) {
+            /* Assume there always only exists 1 video quality without quality identifier */
             String uncryptedUrlWithoutQualityIndicator = null;
             /* Find the best between possibly multiple uncrypted streaming URLs */
             /* Stage 1 */
@@ -702,20 +710,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     logger.info("Skipping invalid video URL: " + dllinkTmp);
                     continue;
                 }
-                String qualityTmpStr = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
-                if (qualityTmpStr == null) {
-                    /* Wider approach */
-                    qualityTmpStr = new Regex(dllinkTmp, "(\\d+)\\.mp4").getMatch(0);
-                }
-                /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
-                if (qualityTmpStr == null || (qualityTmpStr != null && StringUtils.equals(qualityTmpStr, fuid))) {
-                    logger.info("Failed to find quality identifier for URL: " + dllinkTmp);
+                if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
                     uncryptedUrlWithoutQualityIndicator = dllinkTmp;
                     continue;
+                } else {
+                    foundQualities++;
                 }
-                final int qualityTmp = Integer.parseInt(qualityTmpStr);
-                qualityMap.put(qualityTmp, dllinkTmp);
-                foundQualities++;
             }
             logger.info("Found " + foundQualities + " qualities in stage 1");
             /* Stage 2 */
@@ -749,8 +749,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     /* 2020-01-29: More open RegEx e.g. pornhat.com */
                     qualityTempStr = new Regex(source, "(\\d+)p").getMatch(0);
                 }
-                if (dllinkTemp == null || qualityTempStr == null) {
+                if (dllinkTemp == null && qualityTempStr == null) {
                     /* Skip invalid items */
+                    continue;
+                } else if (qualityTempStr == null) {
+                    logger.info("Found item without qlaity indicator: " + dllinkTemp);
+                    if (uncryptedUrlWithoutQualityIndicator == null) {
+                        uncryptedUrlWithoutQualityIndicator = dllinkTemp;
+                    }
                     continue;
                 }
                 final int qualityTmp = Integer.parseInt(qualityTempStr);
@@ -868,6 +874,28 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             dllink = Encoding.htmlDecode(dllink);
         }
         return dllink;
+    }
+
+    private boolean addQualityURL(final DownloadLink link, final HashMap<Integer, String> qualityMap, final String url) {
+        String qualityTmpStr = new Regex(url, "(\\d+)p\\.mp4").getMatch(0);
+        if (qualityTmpStr == null) {
+            /* Wider approach */
+            qualityTmpStr = new Regex(url, "(\\d+)\\.mp4").getMatch(0);
+        }
+        /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
+        final String fuid = this.getFUID(link);
+        if (qualityTmpStr == null) {
+            logger.info("Failed to find quality identifier for URL: " + url);
+            return false;
+        } else if (qualityTmpStr == null || (qualityTmpStr != null && StringUtils.equals(qualityTmpStr, fuid))) {
+            /* Sometimes, found "quality" == fuid --> == no quality indicator at all */
+            logger.info("Failed to find quality identifier for URL: " + url);
+            return false;
+        } else {
+            final int qualityTmp = Integer.parseInt(qualityTmpStr);
+            qualityMap.put(qualityTmp, url);
+            return true;
+        }
     }
 
     /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
@@ -1086,14 +1114,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         return fuid;
-    }
-
-    /**
-     * Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! </br>
-     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} .
-     */
-    protected boolean hasFUIDAtEnd(final String url) {
-        return true;
     }
 
     /** Returns user selected stream quality. -1 = BEST/default */

@@ -52,7 +52,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yourlust.com", "pornyeah.com", "videocelebs.net", "porngem.com", "webcamsbabe.com", "privat-zapisi.biz" }, urls = { "https?://(?:www\\.)?yourlust\\.com/videos/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?pornyeah\\.com/(?:videos/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)", "https?://(?:www\\.)?videocelebs\\.net/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?porngem\\.com/(videos/[a-z0-9\\-]+-\\d+/?|embed/\\d+)", "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webcamsbabe.com", "privat-zapisi.biz" }, urls = { "https?://(?:www\\.)?webcamsbabe\\.com/videos/\\d+\\-[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?privat-zapisi\\.biz/videos/\\d+\\-[a-z0-9\\-]+\\.html" })
 public class KernelVideoSharingCom extends antiDDoSForHost {
     public KernelVideoSharingCom(PluginWrapper wrapper) {
         super(wrapper);
