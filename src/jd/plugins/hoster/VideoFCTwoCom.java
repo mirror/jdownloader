@@ -23,6 +23,11 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,11 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -270,7 +270,7 @@ public class VideoFCTwoCom extends PluginForHost {
         final String linkid = getLinkID(downloadLink);
         // this comes first, due to subdoman issues and cached cookie etc.
         Account account = AccountController.getInstance().getValidAccount(this);
-        if (account == null) {
+        if (account != null) {
             try {
                 login(account, true, null);
             } catch (final PluginException e) {

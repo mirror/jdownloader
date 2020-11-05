@@ -19,6 +19,7 @@ import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -46,47 +47,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
-
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -176,6 +136,47 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -184,11 +185,10 @@ import org.jdownloader.updatev2.UpdateController;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
+            /**
+             * these patterns should split filename and fileextension (extension must include the point)
+             */
+            // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
@@ -483,14 +483,59 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws Exception {
         if (captchaAddress == null) {
-            logger.severe("Captcha Address nicht definiert");
+            logger.severe("No captcha url given");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final File captchaFile = getLocalCaptchaFile();
         final Browser brc = getCaptchaBrowser(br);
         brc.getDownload(captchaFile, captchaAddress);
-        final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
-        return captchaCode;
+        return getCaptchaCode(method, captchaFile, downloadLink);
+    }
+
+    /**
+     * @param captchaImageBase64
+     *            Base64 encoded String containing image.
+     */
+    protected String getCaptchaCodeBase64ImageString(final String captchaImageBase64, final DownloadLink downloadLink) throws Exception {
+        if (captchaImageBase64 == null) {
+            logger.severe("No captcha base64 string given");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final byte[] pic = org.appwork.utils.encoding.Base64.decode(captchaImageBase64);
+        if (pic == null) {
+            logger.severe("Given String is not a base64 encoded String!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final File captchaFile = getLocalCaptchaFile();
+        if (captchaFile.isFile()) {
+            if (captchaFile.exists() && !captchaFile.delete()) {
+                throw new IOException("Could not overwrite file: " + captchaFile);
+            }
+        }
+        final File parentFile = captchaFile.getParentFile();
+        if (parentFile != null && !parentFile.exists()) {
+            parentFile.mkdirs();
+        }
+        FileOutputStream fos = null;
+        boolean okay = false;
+        try {
+            captchaFile.createNewFile();
+            fos = new FileOutputStream(captchaFile, false);
+            final int length = pic.length;
+            fos.write(pic, 0, pic.length);
+            okay = length > 0;
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
+            if (okay == false) {
+                captchaFile.delete();
+                logger.warning("Failed to write captchafile");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return getCaptchaCode(captchaFile, downloadLink);
     }
 
     protected Browser getCaptchaBrowser(Browser br) {
@@ -1561,9 +1606,10 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Determines whether or not mass- linkchecking is allowed. </br> If it is always possible, simply override
-     * PluginForHost.checkLinks(final DownloadLink[] urls). </br> If it is generally possible but not always e.g. depending whether an
-     * apikey is given or not, override this method. Example: </br> org.jdownloader.plugins.components.XFileSharingProBasic
+     * Determines whether or not mass- linkchecking is allowed. </br>
+     * If it is always possible, simply override PluginForHost.checkLinks(final DownloadLink[] urls). </br>
+     * If it is generally possible but not always e.g. depending whether an apikey is given or not, override this method. Example: </br>
+     * org.jdownloader.plugins.components.XFileSharingProBasic
      */
     public boolean internal_supportsMassLinkcheck() {
         return implementsCheckLinks(this);
