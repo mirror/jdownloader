@@ -186,55 +186,53 @@ public class OxycloudCom extends YetiShareCore {
             final String premiumAccountPackagesText = br.getRegex("<td class=\"text-right\"><strong>Reverts To Free Account</strong></td>\\s*<td>(.*?)</td>").getMatch(0);
             if (premiumAccountPackagesText != null) {
                 final String[] premiumPackages = premiumAccountPackagesText.split("<br>");
-                if (premiumPackages.length > 1) {
-                    long summedTrafficLeft = 0;
-                    long highestTrafficMax = 0;
-                    long highestExpireTimestamp = 0;
-                    for (final String premiumPackage : premiumPackages) {
-                        final Regex dailyTrafficRegex = new Regex(premiumPackage, "Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
-                        final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
-                        final String dailyTrafficMaxStr = dailyTrafficRegex.getMatch(1);
-                        long trafficLeftTmp;
-                        long trafficMaxTmp;
-                        String packageExpireStr = new Regex(premiumPackage, "(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-                        // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
-                        // .getMatch(0); /* Fits for: /account/edit */
-                        final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
-                        if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
-                            /* Daily traffic package ... usually also comes with an expire-date */
-                            trafficLeftTmp = SizeFormatter.getSize(dailyTrafficLeftStr);
-                            trafficMaxTmp = SizeFormatter.getSize(dailyTrafficMaxStr);
-                            summedTrafficLeft += trafficLeftTmp;
-                            if (trafficMaxTmp > highestTrafficMax) {
-                                highestTrafficMax = trafficMaxTmp;
-                            }
-                        } else if (trafficStr != null) {
-                            /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic of that package is left?! */
-                            trafficLeftTmp = SizeFormatter.getSize(trafficStr);
-                            summedTrafficLeft += trafficLeftTmp;
-                        } else {
-                            logger.warning("WTF cannot parse package: " + premiumPackage);
+                long summedTrafficLeft = 0;
+                long highestTrafficMax = 0;
+                long highestExpireTimestamp = 0;
+                for (final String premiumPackage : premiumPackages) {
+                    final Regex dailyTrafficRegex = new Regex(premiumPackage, "Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
+                    final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
+                    final String dailyTrafficMaxStr = dailyTrafficRegex.getMatch(1);
+                    long trafficLeftTmp;
+                    long trafficMaxTmp;
+                    String packageExpireStr = new Regex(premiumPackage, "(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+                    // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
+                    // .getMatch(0); /* Fits for: /account/edit */
+                    final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
+                    if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
+                        /* Daily traffic package ... usually also comes with an expire-date */
+                        trafficLeftTmp = SizeFormatter.getSize(dailyTrafficLeftStr);
+                        trafficMaxTmp = SizeFormatter.getSize(dailyTrafficMaxStr);
+                        summedTrafficLeft += trafficLeftTmp;
+                        if (trafficMaxTmp > highestTrafficMax) {
+                            highestTrafficMax = trafficMaxTmp;
                         }
-                        /* User can have multiple packages. User can e.g. have daily traffic, extra traffic and expire date. */
-                        if (packageExpireStr != null) {
-                            logger.info("Found premium expiredate");
-                            long packageExpire = parseExpireTimeStamp(account, packageExpireStr);
-                            if (packageExpire > highestExpireTimestamp) {
-                                highestExpireTimestamp = packageExpire;
-                            }
+                    } else if (trafficStr != null) {
+                        /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic of that package is left?! */
+                        trafficLeftTmp = SizeFormatter.getSize(trafficStr);
+                        summedTrafficLeft += trafficLeftTmp;
+                    } else {
+                        logger.warning("WTF cannot parse package: " + premiumPackage);
+                    }
+                    /* User can have multiple packages. User can e.g. have daily traffic, extra traffic and expire date. */
+                    if (packageExpireStr != null) {
+                        logger.info("Found premium expiredate");
+                        long packageExpire = parseExpireTimeStamp(account, packageExpireStr);
+                        if (packageExpire > highestExpireTimestamp) {
+                            highestExpireTimestamp = packageExpire;
                         }
                     }
-                    if (summedTrafficLeft > 0) {
-                        ai.setTrafficLeft(summedTrafficLeft);
-                    }
-                    if (highestTrafficMax > summedTrafficLeft) {
-                        ai.setTrafficMax(highestTrafficMax);
-                    }
-                    if (highestExpireTimestamp > System.currentTimeMillis()) {
-                        ai.setValidUntil(highestExpireTimestamp, br);
-                    }
-                    ai.setStatus(premiumPackages.length + " premium packages:\r\n" + premiumAccountPackagesText.replace("<br>", "\r\n"));
                 }
+                if (summedTrafficLeft > 0) {
+                    ai.setTrafficLeft(summedTrafficLeft);
+                }
+                if (highestTrafficMax > summedTrafficLeft) {
+                    ai.setTrafficMax(highestTrafficMax);
+                }
+                if (highestExpireTimestamp > System.currentTimeMillis()) {
+                    ai.setValidUntil(highestExpireTimestamp, br);
+                }
+                ai.setStatus(premiumPackages.length + " premium packages:\r\n" + premiumAccountPackagesText.replace("<br>", "\r\n"));
             } else {
                 logger.info("WTF unknown premium account type??");
                 setAccountLimitsByType(account, AccountType.PREMIUM);
