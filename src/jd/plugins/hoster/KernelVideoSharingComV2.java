@@ -190,6 +190,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return true;
     }
 
+    /**
+     * Set this to false if URLs do not contain a FUID at all! </br>
+     * Especially important for e.g.: example.com/1random-title/ (1 != FUID!)
+     */
+    protected boolean hasFUID(final String url) {
+        return true;
+    }
+
     @Override
     public String getAGBLink() {
         return "http://www.kvs-demo.com/terms.php";
@@ -672,6 +680,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                         continue;
                     }
                 }
+                /*
+                 * Assumes, that, if only one url with quality indicator has been found, one without has also been found and that that is
+                 * the highest quality (= uncryptedUrlWithoutQualityIndicator).
+                 */
                 if (qualityMap.size() > 1) {
                     logger.info("Found " + qualityMap.size() + " crypted downloadurls");
                     dllink = handleQualitySelection(qualityMap);
@@ -1112,7 +1124,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 fuid = new Regex(url, type_embedded).getMatch(0);
             } else if (url.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url)) {
                 fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
-            } else if (url.matches(type_normal)) {
+            } else if (url.matches(type_normal) && hasFUID(url)) {
                 fuid = new Regex(url, type_normal).getMatch(0);
             }
         }

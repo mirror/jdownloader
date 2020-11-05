@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2020  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -22,18 +22,16 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class SexvidXxx extends KernelVideoSharingComV2 {
-    public SexvidXxx(final PluginWrapper wrapper) {
+public class HdtubePorn extends KernelVideoSharingComV2 {
+    public HdtubePorn(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** 2020-11-05: Sister-sites: zbporn.com, hdtube.porn */
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sexvid.xxx" });
-        /* Belongs to the same network. */
-        ret.add(new String[] { "pornid.xxx" });
+        ret.add(new String[] { "hdtube.porn" });
         return ret;
     }
 
@@ -49,14 +47,18 @@ public class SexvidXxx extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            /* Special: Also allow e.g. de.sexvid.xxx */
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+\\.html|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[a-z0-9\\-]+/|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     protected boolean hasFUIDAtEnd(final String url) {
+        return false;
+    }
+
+    @Override
+    protected boolean hasFUID(final String url) {
         return false;
     }
 }
