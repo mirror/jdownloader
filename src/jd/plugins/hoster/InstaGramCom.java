@@ -84,6 +84,7 @@ public class InstaGramCom extends PluginForHost {
     private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY        = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
     public static final String   ONLY_GRAB_X_ITEMS                           = "ONLY_GRAB_X_ITEMS";
     public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
+    public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER    = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
     /* DownloadLink properties */
     private static final String  PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
@@ -634,6 +635,7 @@ public class InstaGramCom extends PluginForHost {
         final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
         getConfig().addEntry(grabXitems);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "How many items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
     }
 
     @Override

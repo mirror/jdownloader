@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -48,10 +49,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(?!explore/)(stories/[^/]+|((?:p|tv)/[A-Za-z0-9_-]+|[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,6 +62,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private static final String           TYPE_GALLERY           = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
     private static final String           TYPE_STORY             = "https?://[^/]+/stories/.+";
     private static final String           TYPE_SAVED_OBJECTS     = "https?://[^/]+/[^/]+/saved/?$";
+    private static final String           TYPE_TAGS              = "https?://[^/]+/explore/tags/([^/]+)/?$";
     private String                        username_url           = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
@@ -67,6 +70,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                   fp                     = null;
     private String                        parameter              = null;
 
+    /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
         for (String path : paths) {
             final Object ret = JavaScriptEngineFactory.walkJson(entries, path);
@@ -176,6 +180,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    /** Do we have to be logged in to crawl this URL? */
+    private boolean requiresLogin(final String url) {
+        return url.matches(TYPE_SAVED_OBJECTS);
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.clearAll();
@@ -216,7 +225,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (isPrivate && !logged_in) {
             logger.info("Account required to crawl this url");
             return decryptedLinks;
-        } else if (parameter.matches(TYPE_SAVED_OBJECTS) && !logged_in) {
+        } else if (this.requiresLogin(this.parameter) && !logged_in) {
             /* Saved users own objects can only be crawled when he's logged in ;) */
             logger.info("Account required to crawl your own saved items");
             return decryptedLinks;
@@ -229,7 +238,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String rhxGis = br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+        final String rhxGis = getVarRhxGis(this.br);
         getByUserIDQueryHash(br);
         final String json = br.getRegex(">window\\._sharedData\\s*?=\\s*?(\\{.*?);</script>").getMatch(0);
         if (json == null) {
@@ -333,6 +342,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.warning("WTF");
             }
             return decryptedLinks;
+        } else if (parameter.matches(TYPE_TAGS)) {
+            this.crawlHashtag(entries, param);
         } else if (parameter.matches(TYPE_STORY)) {
             if (!logged_in) {
                 logger.info("Account required to download stories");
@@ -364,8 +375,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.info("Cannot parse url as profile is private");
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
-            }
-            if (id_owner == null) {
+            } else if (id_owner == null) {
                 // this isn't a error persay! check https://www.instagram.com/israbox/
                 logger.info("Failed to find id_owner");
                 return decryptedLinks;
@@ -424,9 +434,92 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
             if (decryptedLinks.size() == 0) {
-                System.out.println("WTF");
+                logger.warning("WTF");
             }
-            return decryptedLinks;
+        }
+        return decryptedLinks;
+    }
+
+    private String getVarRhxGis(final Browser br) {
+        return br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+    }
+
+    private void crawlHashtag(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
+        /* Jump to a point that is the same for our first page and all following ones */
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/TagPage/{0}/graphql/hashtag");
+        final String tagName = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
+        if (tagName == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String rhxGis = this.getVarRhxGis(this.br);
+        String nextid = null;
+        int count = 0;
+        int page = 0;
+        int decryptedLinksLastSize = 0;
+        int decryptedLinksCurrentSize = 0;
+        final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
+        do {
+            if (page > 0) {
+                /* 2020-11-05: TODO: Fix pagination handling - returns error 400 */
+                final Browser br = this.br.cloneBrowser();
+                prepBrAjax(br);
+                final Map<String, Object> vars = new LinkedHashMap<String, Object>();
+                vars.put("tag_name", tagName);
+                vars.put("first", 1);
+                vars.put("after", nextid);
+                if (qHash == null) {
+                    logger.warning("Pagination failed because qHash is not given");
+                    break;
+                }
+                final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
+                getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                /* TODO: Move all of this errorhandling to one place */
+                final int responsecode = br.getHttpConnection().getResponseCode();
+                if (responsecode == 404) {
+                    logger.warning("Error occurred: 404");
+                    return;
+                } else if (responsecode == 403 || responsecode == 429) {
+                    /* Stop on too many 403s as 403 is not a rate limit issue! */
+                    logger.warning("Failed to bypass rate-limit!");
+                    return;
+                } else if (responsecode == 439) {
+                    logger.info("Seems like user is using an unverified account - cannot grab more items");
+                    break;
+                }
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hashtag");
+            }
+            entries = (LinkedHashMap<String, Object>) entries.get("edge_hashtag_to_media");
+            nextid = (String) JavaScriptEngineFactory.walkJson(entries, "page_info/end_cursor");
+            if (page == 0) {
+                count = (int) JavaScriptEngineFactory.toLong(entries.get("count"), 0);
+                if (count == 0) {
+                    /* Rare case */
+                    logger.info("Stopping, 0 items available ...");
+                    return;
+                } else {
+                    logger.info("Crawling items: " + count);
+                }
+            }
+            ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("edges");
+            if (resource_data_list == null || resource_data_list.size() == 0) {
+                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                break;
+            }
+            decryptedLinksLastSize = decryptedLinks.size();
+            for (final Object o : resource_data_list) {
+                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
+            }
+            if (decryptedLinks.size() >= maX_items) {
+                logger.info("Number of items selected in plugin setting has been crawled --> Done");
+                break;
+            }
+            decryptedLinksCurrentSize = decryptedLinks.size();
+            page++;
+        } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
+        if (decryptedLinks.size() == 0) {
+            logger.warning("WTF");
         }
     }
 
@@ -690,8 +783,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private void prepBrAjax(final Browser br) {
         br.getHeaders().put("Accept", "*/*");
-        final String csrftoken = br.getCookie("instagram.com", "csrftoken");
-        if (csrftoken != null) {
+        String csrftoken = br.getCookie("instagram.com", "csrftoken");
+        if (csrftoken == null) {
+            /* 2020-11-05 */
+            csrftoken = PluginJSonUtils.getJson(br, "csrf_token");
+        }
+        if (!StringUtils.isEmpty(csrftoken)) {
             br.getHeaders().put("X-CSRFToken", csrftoken);
         }
         if (fbAppId != null) {
