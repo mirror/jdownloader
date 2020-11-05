@@ -22,15 +22,16 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class SexvidXxx extends KernelVideoSharingComV2 {
-    public SexvidXxx(final PluginWrapper wrapper) {
+public class PornktuBe extends KernelVideoSharingComV2 {
+    public PornktuBe(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sexvid.xxx" });
+        ret.add(new String[] { "pornktube.com", "pornktu.be" });
         return ret;
     }
 
@@ -44,16 +45,16 @@ public class SexvidXxx extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            /* Special: Also allow e.g. de.sexvid.xxx */
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9\\-]+\\.html|embed/\\d+/?)");
-        }
-        return ret.toArray(new String[0]);
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(final String url) {
-        return false;
+    protected void getPage(final String page) throws Exception {
+        /** 2020-11-05: Special: Website may answer with 404 along with a redirect on first request. */
+        getPage(br, page);
+        final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"0; URL=(http[^<>\"]+)").getMatch(0);
+        if (redirect != null) {
+            this.getPage(redirect);
+        }
     }
 }

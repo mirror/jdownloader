@@ -41,6 +41,7 @@ public class AbloadDeGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -55,7 +56,7 @@ public class AbloadDeGallery extends PluginForDecrypt {
         if (!parameter.contains("browseGallery.php?gal=") && !parameter.contains("image.php")) {
             final String galID = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             // Needed for galleries with ajax-picture-reloac function
-            String[] links = br.getRegex("imageurls\\[\\d+\\] = \"([^<>\"]*?)\"").getColumn(0);
+            String[] links = br.getRegex("\"filename\":\"([^<>\"]+)\"").getColumn(0);
             // For "normal" galleries
             if (links == null || links.length == 0) {
                 links = br.getRegex("\"/browseGallery\\.php\\?gal=[A-Za-z0-9]+\\&amp;img=([^<>\"/]*?)\"").getColumn(0);
@@ -66,24 +67,30 @@ public class AbloadDeGallery extends PluginForDecrypt {
             }
             String fpName = br.getRegex("<title>Galerie:([^<>\"]*?)\\- abload\\.de</title>").getMatch(0);
             if (fpName == null) {
+                /* Fallback */
                 fpName = galID;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            for (String singlePictureLink : links) {
-                singlePictureLink = "https://www.abload.de/browseGallery.php?gal=" + galID + "&img=" + Encoding.htmlDecode(singlePictureLink);
-                br.getPage(singlePictureLink);
-                String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
-                if (finallink == null) {
-                    finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
-                }
-                if (finallink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL(finallink)));
-            }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(fpName);
+            for (String singlePictureLink : links) {
+                // singlePictureLink = "https://www.abload.de/browseGallery.php?gal=" + galID + "&img=" +
+                // Encoding.htmlDecode(singlePictureLink);
+                // br.getPage(singlePictureLink);
+                // String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
+                // if (finallink == null) {
+                // finallink = br.getRegex(DIRECTLINKREGEX2).getMatch(0);
+                // }
+                // if (finallink == null) {
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // }
+                final String finallink = "https://abload.de/img/" + singlePictureLink;
+                final DownloadLink dl = this.createDownloadlink(finallink);
+                dl.setFinalFileName(singlePictureLink);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+            }
         } else {
             String finallink = br.getRegex(DIRECTLINKREGEX).getMatch(0);
             if (finallink == null) {

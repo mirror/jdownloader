@@ -190,7 +190,8 @@ public class OxycloudCom extends YetiShareCore {
                 long highestTrafficMax = 0;
                 long highestExpireTimestamp = 0;
                 for (final String premiumPackage : premiumPackages) {
-                    final Regex dailyTrafficRegex = new Regex(premiumPackage, "Codzienny transfer odnawialny\\s*:\\s*(\\d+\\.\\d{2} [A-Za-z]+)/(\\d+\\.\\d{2} [A-Za-z]+)");
+                    /* E.g. Transfer odnawialny 1 miesiąc: 50 GB/50 GB - 31/12/2020 00:00:00 */
+                    final Regex dailyTrafficRegex = new Regex(premiumPackage, "(\\d+(?:.\\d{2})? [A-Za-z]+)/(\\d+(?:\\.\\d{2})? [A-Za-z]+)");
                     final String dailyTrafficLeftStr = dailyTrafficRegex.getMatch(0);
                     final String dailyTrafficMaxStr = dailyTrafficRegex.getMatch(1);
                     long trafficLeftTmp;

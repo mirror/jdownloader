@@ -34,6 +34,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
@@ -106,6 +108,10 @@ public class ShorteSt extends antiDDoSForDecrypt {
             }
             getPage(parameter);
         }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         handleSiteVerification(parameter);
         String finallink = null;
@@ -158,7 +164,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
                 finallink = br.getRegex("destinationUrl\\s*:\\s*'(https?://.*?)'").getMatch(0);
                 // destinationURL = PluginJSonUtils.getJson(br, "destinationUrl");
                 if (StringUtils.isEmpty(finallink)) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 finallink = finallink.replaceAll(" ", "%20");
                 decryptedLinks.add(createDownloadlink(finallink));
@@ -177,7 +183,7 @@ public class ShorteSt extends antiDDoSForDecrypt {
             finallink = PluginJSonUtils.getJsonValue(br2, "destinationUrl");
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             finallink = finallink.replaceAll(" ", "%20");
         }
