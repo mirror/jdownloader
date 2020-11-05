@@ -209,12 +209,12 @@ public class HitomiLa extends antiDDoSForDecrypt {
     public static final Pattern URL_FROM_URL_PATTERN        = Pattern.compile("//..?\\.hitomi\\.la/");
     public static final Pattern FULL_PATH_FROM_HASH_PATTERN = Pattern.compile("^.*(..)(.)$");
 
-    String subdomain_from_galleryid(int g, int number_of_frontends) {
+    private String subdomain_from_galleryid(int g, int number_of_frontends) {
         int o = g % number_of_frontends;
         return String.valueOf((char) (97 + o));
     }
 
-    String subdomain_from_url(String url, String base) {
+    private String subdomain_from_url(String url, String base) {
         String retval = "b";
         if (base != null) {
             retval = base;
@@ -238,24 +238,29 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return retval;
     }
 
-    String url_from_url(String url, String base) {
+    private String url_from_url(String url, String base) {
         return URL_FROM_URL_PATTERN.matcher(url).replaceAll("//" + subdomain_from_url(url, base) + ".hitomi.la/");
     }
 
-    String full_path_from_hash(String hash) {
+    private String full_path_from_hash(String hash) {
         if (hash.length() < 3) {
             return hash;
+        } else {
+            return FULL_PATH_FROM_HASH_PATTERN.matcher(hash).replaceAll("$2/$1/" + hash);
         }
-        return FULL_PATH_FROM_HASH_PATTERN.matcher(hash).replaceAll("$2/$1/" + hash);
     }
 
-    String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) {
-        ext = isNotBlank(ext) ? ext : (isNotBlank(dir) ? dir : image.get("name").split("\\.")[1]);
+    private String last(String[] array) {
+        return array[array.length - 1];
+    }
+
+    private String url_from_hash(String galleryid, Map<String, String> image, String dir, String ext) {
+        ext = isNotBlank(ext) ? ext : (isNotBlank(dir) ? dir : last(image.get("name").split("\\.")));
         dir = isNotBlank(dir) ? dir : "images";
         return "https://a.hitomi.la/" + dir + '/' + full_path_from_hash(image.get("hash")) + '.' + ext;
     }
 
-    String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) {
+    private String url_from_url_from_hash(String galleryid, Map<String, String> image, String dir, String ext, String base) {
         return url_from_url(url_from_hash(galleryid, image, dir, ext), base);
     }
 

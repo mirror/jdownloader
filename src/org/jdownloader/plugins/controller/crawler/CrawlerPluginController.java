@@ -97,13 +97,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     public List<LazyCrawlerPlugin> init() {
         synchronized (INSTANCELOCK) {
+            final LogSource logger = LogController.CL(false);
+            logger.info("CrawlerPluginController: init");
+            logger.setAllowTimeoutFlush(false);
+            logger.setAutoFlushOnThrowable(true);
             return new NonInterruptibleRunnable<List<LazyCrawlerPlugin>, RuntimeException>() {
                 @Override
                 public List<LazyCrawlerPlugin> run() throws RuntimeException, InterruptedException {
-                    final LogSource logger = LogController.CL(false);
-                    logger.info("CrawlerPluginController: init");
-                    logger.setAllowTimeoutFlush(false);
-                    logger.setAutoFlushOnThrowable(true);
                     LogController.setRebirthLogger(logger);
                     final long completeTimeStamp = System.currentTimeMillis();
                     try {
