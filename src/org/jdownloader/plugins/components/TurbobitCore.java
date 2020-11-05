@@ -31,7 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -1221,10 +1220,6 @@ public class TurbobitCore extends antiDDoSForHost {
         s[9] = "ff88";
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
-        /*
-         * we have to load the plugin first! we must not reference a plugin class without loading it before
-         */
-        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(IMAGEREGEX(s[i]));
     }
 

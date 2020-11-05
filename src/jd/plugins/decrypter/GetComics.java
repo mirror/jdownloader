@@ -32,14 +32,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://getcomics\\.info/(?!share/|page/)[^/]+/.+" })
-public class GetComics extends PluginForDecrypt {
+public class GetComics extends antiDDoSForDecrypt {
     public GetComics(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -50,7 +50,7 @@ public class GetComics extends PluginForDecrypt {
         final String parameter = param.toString();
         // Load page
         br.setFollowRedirects(true);
-        final URLConnectionAdapter con = br.openGetConnection(parameter);
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createGetRequest(parameter));
         try {
             final LinkCrawler crawler = getCrawler();
             if (crawler.getDeepInspector().looksLikeDownloadableContent(con)) {
@@ -101,12 +101,12 @@ public class GetComics extends PluginForDecrypt {
                     // checks for correct referer!
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(false);
-                    brc.getPage(link);
+                    getPage(brc, link);
                     String redirect = brc.getRedirectLocation();
                     if (redirect == null) {
                         sleep(1000, param);
-                        brc.getPage(parameter);
-                        brc.getPage(link);
+                        getPage(brc, parameter);
+                        getPage(brc, link);
                         redirect = brc.getRedirectLocation();
                     }
                     if (redirect != null) {

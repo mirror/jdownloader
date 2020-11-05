@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -47,9 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
@@ -221,13 +220,13 @@ public class PornHubCom extends PluginForDecrypt {
                     // /videos/premium contains paid/available premium videos while
                     // /videos/paid contains all un-paid videos
                     final Browser brc = br.cloneBrowser();
-                    brc.getPage(br.getURL() + "/premium");
+                    jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/premium"));
                     decryptAllVideosOfAPornstar(brc, account, dupes);
                 }
                 final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
                 if (false && fanVideosSection != null) {
                     final Browser brc = br.cloneBrowser();
-                    brc.getPage(br.getURL() + "/fanonly");
+                    jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/fanonly"));
                     decryptAllVideosOfAPornstar(brc.cloneBrowser(), account, dupes);
                 }
             }
@@ -257,7 +256,9 @@ public class PornHubCom extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
                         dl.setContainerUrl(containerURL);
                         decryptedLinks.add(dl);
-                        distribute(dl);
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            distribute(dl);
+                        }
                         numberofActuallyAddedItems++;
                         addedItems++;
                     } else {
@@ -290,13 +291,13 @@ public class PornHubCom extends PluginForDecrypt {
                 return true;
             } else if (next != null && pages.add(next)) {
                 logger.info("HTML pagination handling - parsing page: " + next);
-                br.getPage(next);
+                jd.plugins.hoster.PornHubCom.getPage(br, br.createGetRequest(next));
             } else if (ajaxPaginationURL != null && page < maxPage) {
                 /* E.g. max page given = 4 --> Stop AFTER counter == 3 as 3+1 == 4 */
                 logger.info("Ajax pagination handling");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 final int postPage = page + 1;
-                br.postPageRaw(ajaxPaginationURL + "&page=" + postPage, "o=best&page=" + postPage);
+                jd.plugins.hoster.PornHubCom.getPage(br, br.createPostRequest(ajaxPaginationURL + "&page=" + postPage, "o=best&page=" + postPage));
             } else {
                 logger.info("no next page! page=" + page + "|max_page=" + maxPage);
                 break;
@@ -422,7 +423,9 @@ public class PornHubCom extends PluginForDecrypt {
                     }
                     ret = true;
                     decryptedLinks.add(dl);
-                    distribute(dl);
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        distribute(dl);
+                    }
                 }
             }
             logger.info("Links found in page " + page + ": " + viewkeys.length);
@@ -525,7 +528,9 @@ public class PornHubCom extends PluginForDecrypt {
                         fp.add(dl);
                     }
                     decryptedLinks.add(dl);
-                    distribute(dl);
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        distribute(dl);
+                    }
                 }
             }
             logger.info("Links found in page " + page + ": " + items.length);
@@ -536,32 +541,20 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     private boolean decryptAllVideosOfAPlaylist() throws Exception {
-        final URL base_url = br._getURL();
         int page = 1;
         int addedItems = 0;
         int foundItems = 0;
         final Set<String> dupes = new HashSet<String>();
+        Browser brc = br.cloneBrowser();
         do {
             logger.info("Crawling page: " + page);
-            if (page > 1) {
-                final String nextpage_url = URLHelper.parseLocation(base_url, "?page=" + page);
-                jd.plugins.hoster.PornHubCom.getPage(br, br.createGetRequest(nextpage_url));
-            }
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                /*
-                 * Error 404 can also happen on pages > 0 in which case we've probably tried to crawl one page too much --> Only add offline
-                 * item if nothing has been found before.
-                 */
-                if (dupes.size() == 0) {
-                    decryptedLinks.add(createOfflinelink(parameter));
-                }
-                logger.info("Stopping because of 404: page=" + page + "|all_found=" + foundItems + "|all_added=" + addedItems);
-                return true;
-            }
             int numberofActuallyAddedItems = 0;
             int numberOfDupeItems = 0;
-            final String publicVideosHTMLSnippet = br.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
-            final String[] viewKeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
+            final String publicVideosHTMLSnippet = brc.getRegex("(id=\"videoPlaylist\".*?</section>)").getMatch(0);
+            String[] viewKeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
+            if (viewKeys == null || viewKeys.length == 0) {
+                viewKeys = brc.getRegex("(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
+            }
             if (viewKeys == null || viewKeys.length == 0) {
                 logger.info("no vKeys found!");
             } else {
@@ -572,7 +565,9 @@ public class PornHubCom extends PluginForDecrypt {
                     } else if (dupes.add(viewKey)) {
                         final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewKey);
                         decryptedLinks.add(dl);
-                        distribute(dl);
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            distribute(dl);
+                        }
                         numberofActuallyAddedItems++;
                         addedItems++;
                     } else {
@@ -590,7 +585,17 @@ public class PornHubCom extends PluginForDecrypt {
             } else {
                 logger.info("found NEW content: page=" + page + "|all_found=" + foundItems + "|all_added=" + addedItems + "|page_found:" + (viewKeys != null ? viewKeys.length : -1) + "|page_added=" + numberofActuallyAddedItems + "|page_dupes=" + numberOfDupeItems);
             }
-            page++;
+            final String next = br.getRegex("lazyloadUrl\\s*=\\s*\"(/playlist/.*?)\"").getMatch(0);
+            if (isAbort()) {
+                return true;
+            } else if (next != null) {
+                logger.info("HTML pagination handling - parsing page: " + next);
+                brc = br.cloneBrowser();
+                jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(next + "&page=" + ++page));
+            } else {
+                logger.info("no next page! page=" + page);
+                break;
+            }
         } while (!this.isAbort());
         return true;
     }
