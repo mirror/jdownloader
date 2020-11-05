@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "https?://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojevideo.sk" }, urls = { "https?://[\\w\\.]*?mojevideo\\.sk/video/[a-z0-9]+/[_a-z]+\\.html" })
 public class MojeVideoSk extends PluginForHost {
     private String dlink = null;
 
@@ -59,7 +59,7 @@ public class MojeVideoSk extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (null == filename || filename.trim().length() == 0) {
@@ -70,8 +70,17 @@ public class MojeVideoSk extends PluginForHost {
         if (null == dlinkPart || dlinkPart.trim().length() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* If a video is available in multiple qualities, there can be multiple hashes. */
+        final String hash = br.getRegex("vHash=\\['([^\\']+)'").getMatch(0);
+        final String expires = br.getRegex("vEx='(\\d+)'").getMatch(0);
+        if (hash == null || expires == null) {
+            /* 2020-11-05: New */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         linkSB.append(dlinkPart);
         linkSB.append(".mp4");
+        linkSB.append("?md5=" + hash);
+        linkSB.append("&expires=" + expires);
         dlink = linkSB.toString();
         if (dlink == null || dlink.trim().length() == 0) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -80,7 +89,7 @@ public class MojeVideoSk extends PluginForHost {
         link.setFinalFileName(filename + ".mp4");
         br.setFollowRedirects(true);
         try {
-            if (!br.openGetConnection(dlink).getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(br.openHeadConnection(dlink))) {
                 link.setDownloadSize(br.getHttpConnection().getLongContentLength());
                 br.getHttpConnection().disconnect();
                 return AvailableStatus.TRUE;

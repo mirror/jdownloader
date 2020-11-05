@@ -14,10 +14,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -36,7 +33,6 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -292,36 +288,6 @@ public class FileSharkPl extends PluginForHost {
         }
     }
 
-    public static void saveCaptchaImage(final File file, final byte[] data) throws IOException {
-        if (file.isFile()) {
-            if (file.exists() && !file.delete()) {
-                throw new IOException("Could not overwrite file: " + file);
-            }
-        }
-        final File parentFile = file.getParentFile();
-        if (parentFile != null && !parentFile.exists()) {
-            parentFile.mkdirs();
-        }
-        file.createNewFile();
-        FileOutputStream fos = null;
-        InputStream input = null;
-        boolean okay = false;
-        try {
-            fos = new FileOutputStream(file, false);
-            final int length = data.length;
-            fos.write(data, 0, length);
-            okay = length > 0;
-        } finally {
-            try {
-                fos.close();
-            } catch (final Throwable e) {
-            }
-            if (okay == false) {
-                file.delete();
-            }
-        }
-    }
-
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = "";
         final Account account = getCurrentAccount();
@@ -386,11 +352,8 @@ public class FileSharkPl extends PluginForHost {
                     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String token = dlForm.getInputFieldByName("form%5B_token%5D").getValue();
-                File cf = getLocalCaptchaFile();
-                String imageDataEncoded = new Regex(dlForm.getHtmlCode(), "<img src=\"data:image/jpeg;base64,(.*)\" title=\"").getMatch(0);
-                byte[] imageData = Base64.decode(imageDataEncoded);
-                saveCaptchaImage(cf, imageData);
-                String c = getCaptchaCode(cf, downloadLink);
+                final String imageDataEncoded = new Regex(dlForm.getHtmlCode(), "<img src=\"data:image/jpeg;base64,(.*)\" title=\"").getMatch(0);
+                final String c = getCaptchaCodeBase64ImageString(imageDataEncoded, downloadLink);
                 br.postPage(MAINPAGE + "pobierz/normal/" + fileId, "&form%5Bcaptcha%5D=" + c + "&form%5Bstart%5D=&form%5B_token%5D=" + token);
                 logger.info("Submitted DLForm");
                 if (br.containsHTML("class=\"error\">Błędny kod")) {
