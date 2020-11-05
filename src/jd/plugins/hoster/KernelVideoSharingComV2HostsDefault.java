@@ -43,6 +43,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "momvids.com" });
         ret.add(new String[] { "wankoz.com" });
         ret.add(new String[] { "clipcake.com" });
+        /* zbporn.com belongs to the same "porn network" as sexvid.xxx. */
         ret.add(new String[] { "zbporn.com" });
         ret.add(new String[] { "xozilla.com" });
         ret.add(new String[] { "femdomtb.com" });
