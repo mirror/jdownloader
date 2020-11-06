@@ -667,36 +667,67 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String uncryptedUrlWithoutQualityIndicator = null;
         if (StringUtils.isEmpty(dllink)) {
             // function/0/http camwheres.tv, pornyeah, rule34video.com, videocelebs.net
-            logger.info("Crawling crypted qualities");
-            final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
-            if (functions.length > 0) {
-                logger.info("Found " + functions.length + " possible crypted downloadurls");
-                for (final String crypted1 : functions) {
-                    final String dllinkTmp = getDllinkCrypted(br, crypted1);
-                    if (!isValidDirectURL(dllinkTmp)) {
+            logger.info("Crawling qualities 1");
+            int foundQualities = 0;
+            /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
+            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+)p'").getMatches();
+            for (final String[] vidInfo : videoInfos) {
+                final String varNameText = vidInfo[0];
+                final String videoQualityStr = vidInfo[1];
+                final int videoQuality = Integer.parseInt(videoQualityStr);
+                final String varNameVideoURL = varNameText.replace("_text", "");
+                String dllinkTmp = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/|function/0/)[^<>\"']*?)'").getMatch(0);
+                if (this.isCryptedDirectURL(dllinkTmp)) {
+                    final String decryptedDllinkTmp = getDllinkCrypted(br, dllinkTmp);
+                    if (decryptedDllinkTmp == null) {
+                        logger.warning("Failed to decrypt URL: " + dllinkTmp);
                         continue;
+                    } else {
+                        dllinkTmp = decryptedDllinkTmp;
                     }
-                    if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
-                        uncryptedUrlWithoutQualityIndicator = dllinkTmp;
-                        continue;
+                } else if (!this.isValidDirectURL(dllinkTmp)) {
+                    logger.info("Skipping invalid directurl: " + dllinkTmp);
+                    continue;
+                }
+                qualityMap.put(videoQuality, dllinkTmp);
+                foundQualities++;
+            }
+            logger.info("Found " + foundQualities + " crypted qualities 1");
+            /**
+             * TODO: Check if it is a good idea to only go into the wider attempt if no URLs with quality information have been found. </br>
+             * In this case, uncryptedUrlWithoutQualityIndicator is always null!
+             */
+            if (qualityMap.isEmpty()) {
+                /* Wider attempt */
+                foundQualities = 0;
+                logger.info("Crawling crypted qualities 2");
+                final String functions[] = br.getRegex("(function/0/https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:\\&amp|'|\")").getColumn(0);
+                if (functions.length > 0) {
+                    logger.info("Found " + functions.length + " possible crypted downloadurls");
+                    for (final String cryptedDllinkTmp : functions) {
+                        final String dllinkTmp = getDllinkCrypted(br, cryptedDllinkTmp);
+                        if (!isValidDirectURL(dllinkTmp)) {
+                            logger.warning("Failed to decrypt URL: " + cryptedDllinkTmp);
+                            continue;
+                        }
+                        if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
+                            uncryptedUrlWithoutQualityIndicator = dllinkTmp;
+                            continue;
+                        }
                     }
                 }
-                /*
-                 * Assumes, that, if only one url with quality indicator has been found, one without has also been found and that that is
-                 * the highest quality (= uncryptedUrlWithoutQualityIndicator).
-                 */
-                if (qualityMap.size() > 1) {
-                    logger.info("Found " + qualityMap.size() + " crypted downloadurls");
-                    dllink = handleQualitySelection(qualityMap);
-                } else if (uncryptedUrlWithoutQualityIndicator != null) {
-                    logger.info("Seems like there is only a single quality available --> Using that one");
-                    dllink = uncryptedUrlWithoutQualityIndicator;
-                } else {
-                    /* This should never happen */
-                    logger.warning("Failed to decrypt any of the encrypted downloadurls");
-                }
+                logger.info("Found " + foundQualities + " qualities 2 (crypted only)");
+            }
+            /* Prefer known qualities over those where we do not know the quality. */
+            if (qualityMap.size() > 0) {
+                logger.info("Found " + qualityMap.size() + " total crypted downloadurls");
+                dllink = handleQualitySelection(qualityMap);
+            } else if (uncryptedUrlWithoutQualityIndicator != null) {
+                logger.info("Seems like there is only a single quality available --> Using that one");
+                dllink = uncryptedUrlWithoutQualityIndicator;
             } else {
-                logger.info("Failed to find any crypted downloadurls");
+                /* This should never happen */
+                logger.warning("Failed to find any (encrypted) downloadurls");
             }
         }
         /* Only try to crawl uncrypted URLs if we failed to find crypted URLs. */
@@ -707,7 +738,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Example multiple qualities available: xbabe.com */
             /*
              * Example multiple qualities available but "get_file" URL with highest quality has no quality modifier in URL (= Stage 3
-             * required): fapality.com, xcum.com
+             * required): fapality.com, xcum.com, camwhoresbay.com
              */
             final String[] dlURLs = br.getRegex("(https?://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"]*?)(?:'|\")").getColumn(0);
             int foundQualities = 0;
@@ -731,48 +762,59 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             logger.info("Found " + foundQualities + " qualities in stage 1");
             /* Stage 2 */
             foundQualities = 0;
-            /* Try to find the highest quality possible --> Example website that has multiple qualities available: camwhoresbay.com */
-            /*
-             * This will NOT e.g. work for: video_url_text: 'High Definition' --> E.g. xxxymovies.com --> But this one only has a single
-             * quality available
-             */
-            final String[][] videoInfos = br.getRegex("([a-z0-9_]+_text)\\s*:\\s*'(\\d+)p'").getMatches();
-            for (final String[] vidInfo : videoInfos) {
-                final String varNameText = vidInfo[0];
-                final String videoQualityStr = vidInfo[1];
-                final int videoQuality = Integer.parseInt(videoQualityStr);
-                final String varNameVideoURL = varNameText.replace("_text", "");
-                final String dllinkTmp = br.getRegex(varNameVideoURL + "\\s*:\\s*'((?:http|/)[^<>\"']*?)'").getMatch(0);
-                if (isValidDirectURL(dllinkTmp)) {
-                    qualityMap.put(videoQuality, dllinkTmp);
-                    foundQualities++;
-                }
-            }
-            logger.info("Found " + foundQualities + " qualities in stage 2");
-            /* Stage 3 */
-            foundQualities = 0;
             /* This can fix mistakes/detect qualities missed in stage 1 */
             final String[] sources = br.getRegex("<source[^>]*?src=\"(https?://[^<>\"]*?)\"[^>]*?type=(\"|')video/[a-z0-9]+\\2[^>]+>").getColumn(-1);
             for (final String source : sources) {
-                final String dllinkTemp = new Regex(source, "src=\"(https?://[^<>\"]+)\"").getMatch(0);
+                final String dllinkTmp = new Regex(source, "src=\"(https?://[^<>\"]+)\"").getMatch(0);
                 String qualityTempStr = new Regex(source, "title=\"(\\d+)p\"").getMatch(0);
                 if (qualityTempStr == null) {
                     /* 2020-01-29: More open RegEx e.g. pornhat.com */
                     qualityTempStr = new Regex(source, "(\\d+)p").getMatch(0);
                 }
-                if (dllinkTemp == null && qualityTempStr == null) {
+                if (dllinkTmp == null && qualityTempStr == null) {
                     /* Skip invalid items */
                     continue;
                 } else if (qualityTempStr == null) {
-                    logger.info("Found item without qlaity indicator: " + dllinkTemp);
+                    logger.info("Found item without qlaity indicator: " + dllinkTmp);
                     if (uncryptedUrlWithoutQualityIndicator == null) {
-                        uncryptedUrlWithoutQualityIndicator = dllinkTemp;
+                        uncryptedUrlWithoutQualityIndicator = dllinkTmp;
                     }
                     continue;
                 }
                 final int qualityTmp = Integer.parseInt(qualityTempStr);
-                qualityMap.put(qualityTmp, dllinkTemp);
+                qualityMap.put(qualityTmp, dllinkTmp);
                 foundQualities++;
+            }
+            logger.info("Found " + foundQualities + " qualities in stage 2");
+            /* Stage 3 - wider attempt of "stage 1" in "crypted" handling. Aso allows URLs without the typical "get_file" KVS pattern. */
+            foundQualities = 0;
+            /* E.g. good for websites like: gottanut.com */
+            final String[][] videoInfos = br.getRegex("(video_url[a-z0-9_]*)\\s*:\\s*(?:\"|\\')(https?://[^<>\"\\']+\\.mp4[^<>\"\\']*)(?:\"|\\')").getMatches();
+            for (final String[] vidInfo : videoInfos) {
+                final String urlVarName = vidInfo[0];
+                final String dllinkTmp = vidInfo[1];
+                String possibleQualityIndicator = br.getRegex(urlVarName + "_text" + "\\s*:\\s*(?:\"|\\')([^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                int videoQuality = -1;
+                if (possibleQualityIndicator != null && possibleQualityIndicator.matches("\\d+p")) {
+                    videoQuality = Integer.parseInt(possibleQualityIndicator.replace("p", ""));
+                } else {
+                    /* Look for quality indicator inside URL. */
+                    /*
+                     * Just a logger. Some call their (mostly 720p) quality "High Definition" but usually there will only be one quality
+                     * available then anyways (e.g. xxxymovies.com)!
+                     */
+                    logger.info("Found unidentifyable (text-) quality indicator: " + possibleQualityIndicator);
+                    possibleQualityIndicator = new Regex(dllinkTmp, "(\\d+)p\\.mp4").getMatch(0);
+                    if (possibleQualityIndicator != null) {
+                        videoQuality = Integer.parseInt(possibleQualityIndicator);
+                    }
+                }
+                if (videoQuality > 0) {
+                    qualityMap.put(videoQuality, dllinkTmp);
+                    foundQualities++;
+                } else {
+                    uncryptedUrlWithoutQualityIndicator = dllinkTmp;
+                }
             }
             logger.info("Found " + foundQualities + " qualities in stage 3");
             if (!qualityMap.isEmpty()) {
@@ -790,6 +832,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * a quality identifier (??) at least not in the format "720p" and they will contain either "download=true" or "download=1".
              */
         }
+        /* For most of all website, we should have found a result by now! */
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-10-30: Older fallbacks */
             if (StringUtils.isEmpty(dllink)) {
@@ -959,6 +1002,16 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             return false;
         } else {
             return true;
+        }
+    }
+
+    protected boolean isCryptedDirectURL(final String url) {
+        if (url == null) {
+            return false;
+        } else if (url.startsWith("function/0/http") && this.isValidDirectURL(url.replace("function/0/", ""))) {
+            return true;
+        } else {
+            return false;
         }
     }
 
