@@ -81,6 +81,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "tubepornclassic.com" });
         ret.add(new String[] { "camvideos.org" });
         ret.add(new String[] { "nudogram.com" });
+        ret.add(new String[] { "deviants.com" });
         return ret;
     }
 
