@@ -50,7 +50,7 @@ import jd.utils.JDUtilities;
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
             /** file-up.org domains */
-            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info" };
+            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com" };
 
@@ -273,6 +273,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                     if (!StringUtils.isEmpty(html_filesize)) {
                         dl.setDownloadSize(SizeFormatter.getSize(html_filesize));
                     }
+                    /*
+                     * 2020-11-06: Debug test for faster crawling in IDE. I'm unsure whether or not an entry within a folder/user can be
+                     * trusted. It is probably a bad idea to do so as different websites could also handle this differently.
+                     */
                     if (fast_linkcheck || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         dl.setAvailable(true);
                     }
