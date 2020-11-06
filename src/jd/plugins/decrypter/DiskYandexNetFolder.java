@@ -27,7 +27,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -63,20 +62,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        CrawledLink current = getCurrentLink();
-        String subFolderBase = "";
-        while (current != null) {
-            if (current.getDownloadLink() != null && getSupportedLinks().matcher(current.getURL()).matches()) {
-                final String path = current.getDownloadLink().getStringProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, null);
-                if (path != null) {
-                    subFolderBase = path;
-                }
-                break;
-            }
-            current = current.getSourceLink();
-        }
+        String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
         String fname_url = null;
+        String baseFolderName = null;
         String fpName = null;
         final String parameter = param.toString();
         String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
@@ -158,10 +147,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             long numberof_entries = 0;
             final FilePackage fp = FilePackage.getInstance();
             do {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
-                    return decryptedLinks;
-                }
                 getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(rawHash) + "&path=" + URLEncode.encodeURIComponent(path_main));
                 if (PluginJSonUtils.getJsonValue(br, "error") != null) {
                     decryptedLinks.add(this.createOfflinelink(addedLink));
@@ -186,8 +171,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     dl.setLinkID(rawHash + path_main);
                     /* Required by hoster plugin to get filepath (filename) */
                     dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
-                    if (StringUtils.isNotEmpty(subFolderBase)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                    if (StringUtils.isNotEmpty(relativeDownloadPath)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                     }
                     decryptedLinks.add(dl);
                     return decryptedLinks;
@@ -196,10 +181,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
                 if (offset == 0) {
                     /* Set total number of entries on first loop. */
-                    numberof_entries = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "_embedded/total"), 0);
-                    fpName = (String) entries.get("name");
-                    if (inValidate(fpName)) {
-                        /* Maybe our folder has no name. */
+                    final LinkedHashMap<String, Object> itemInfo = (LinkedHashMap<String, Object>) entries.get("_embedded");
+                    numberof_entries = JavaScriptEngineFactory.toLong(itemInfo.get("total"), 0);
+                    if (numberof_entries == 0) {
+                        logger.info("Empty folder");
+                        return decryptedLinks;
+                    }
+                    baseFolderName = (String) entries.get("name");
+                    if (!StringUtils.isEmpty(baseFolderName)) {
+                        fpName = baseFolderName;
+                    } else {
                         fpName = hash_long_decoded;
                     }
                     fp.setName(fpName);
@@ -213,7 +204,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     final String path = (String) entries.get("path");
                     final String md5 = (String) entries.get("md5");
                     final String url_preview = (String) entries.get("preview");
-                    if (type == null || path == null) {
+                    if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path)) {
                         return null;
                     }
                     String name = (String) entries.get("name");
@@ -222,7 +213,21 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
                         final DownloadLink dl = createDownloadlink(folderlink);
                         if (StringUtils.isNotEmpty(path) && !StringUtils.equals(path, "/")) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                            final String realPath;
+                            /*
+                             * Path starts from current folder but if that folder is path of another one this "root dir name" is not in it
+                             * --> Fix that so JD users get the expected folder structure.
+                             */
+                            if (!StringUtils.isEmpty(baseFolderName)) {
+                                if (path.startsWith("/")) {
+                                    realPath = baseFolderName + path;
+                                } else {
+                                    realPath = baseFolderName + "/" + path;
+                                }
+                            } else {
+                                realPath = path;
+                            }
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realPath);
                         }
                         decryptedLinks.add(dl);
                     } else {
@@ -261,8 +266,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         /* All items decrypted here are part of a folder! */
                         dl.setProperty("is_part_of_a_folder", true);
-                        if (StringUtils.isNotEmpty(subFolderBase)) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolderBase);
+                        if (StringUtils.isNotEmpty(relativeDownloadPath)) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                         }
                         dl.setContentUrl(url_content);
                         dl.setLinkID(hash + path);
@@ -274,6 +279,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 if (resource_data_list.size() < entries_per_request) {
                     /* Fail safe */
+                    logger.info("Stopping because current page contains less items than max. items allowed --> Should be the last page");
+                    break;
+                } else if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
                     break;
                 }
             } while (offset < numberof_entries);
@@ -431,21 +440,5 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private void getPage(final String url) throws IOException {
         jd.plugins.hoster.DiskYandexNet.getPage(this.br, url);
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    private boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 }

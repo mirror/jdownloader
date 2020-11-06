@@ -68,12 +68,12 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        correctDownloadLink(downloadLink);
-        String filename = downloadLink.isNameSet() ? downloadLink.getName() : new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
-        if (!downloadLink.isNameSet() && filename != null) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
+        String filename = link.isNameSet() ? link.getName() : new Regex(dllink, "[\\?&](?:file|vid(?:eo)?)=(?:[^/]*/){0,}([^&]+)").getMatch(0);
+        if (!link.isNameSet() && filename != null) {
             // Offline links should also have nice filenames
-            downloadLink.setName(filename);
+            link.setName(filename);
         }
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
@@ -81,11 +81,11 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             // In case the link are directlinks! current cloudflare implementation will actually open them!
             br.setFollowRedirects(true);
             try {
-                con = getConnection(br, downloadLink);
+                con = getConnection(br, link);
                 if (!con.getContentType().contains("html")) {
                     // is file
-                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    link.setDownloadSize(con.getLongContentLength());
                     return AvailableStatus.TRUE;
                 } else {
                     // is html
@@ -104,7 +104,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             getPage(dllink);
         }
         // only way to check for made up links... or offline is here
-        final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
+        int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
         if (rc == 403 || rc == 404 || rc == -1) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Content has been removed due to copyright or from users") || "Not found".equals(br.toString())) {
@@ -117,6 +117,10 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             /* 2019-02-20: Special handling for videozoo URLs */
             br.setFollowRedirects(true);
             br.getPage(dllink);
+            rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
+            if (rc == 403 || rc == 404 || rc == -1) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dllink = null;
         }
         if (dllink == null) {
@@ -132,16 +136,16 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         }
         con = null;
         try {
-            con = getConnection(br, downloadLink);
+            con = getConnection(br, link);
             if (!con.getContentType().contains("html")) {
                 // is file
                 // setname from google video will be shit, use the downloadlink file reference
                 if ((dllink.contains("googlevideo.com/") || dllink.contains("googleusercontent.com/")) && filename != null) {
-                    downloadLink.setFinalFileName(filename);
+                    link.setFinalFileName(filename);
                 } else {
-                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    link.setFinalFileName(getFileNameFromHeader(con));
                 }
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
                 return AvailableStatus.TRUE;
             } else {
                 // is html
