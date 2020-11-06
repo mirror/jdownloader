@@ -184,7 +184,8 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! </br>
-     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} .
+     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} . </br>
+     * Example: example.com/url-title.html
      */
     protected boolean hasFUIDAtEnd(final String url) {
         return true;

@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -60,6 +62,9 @@ public class MojeVideoSk extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Website is hosting video content only! */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (null == filename || filename.trim().length() == 0) {
