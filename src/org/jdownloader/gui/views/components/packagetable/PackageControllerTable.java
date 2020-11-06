@@ -213,7 +213,12 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 final int row = this.rowAtPoint(e.getPoint());
                 final AbstractNode node = this.getModel().getObjectbyRow(row);
                 if (node instanceof AbstractPackageNode) {
-                    return true;
+                    if (e.getID() == MouseEvent.MOUSE_RELEASED && e.getPoint().x - bounds.x > (FileColumn.EXPAND_COLLAPSE_AREA - 16 - 5) && CrossSystem.isContextMenuTrigger(e)) {
+                        // allow rightclick context menu on filepackage icon
+                        return false;
+                    } else {
+                        return true;
+                    }
                 }
             }
         }

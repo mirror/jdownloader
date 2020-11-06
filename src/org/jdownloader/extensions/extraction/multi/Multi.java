@@ -182,54 +182,28 @@ public class Multi extends IExtraction {
         } else {
             logger.finer("LibID found: " + libID);
         }
-        File tmp = null;
-        try {
-            tmp = Application.getTempResource("7zip");
+        final List<File> directories = new ArrayList<File>();
+        directories.add(Application.getTempResource("7zip"));
+        final String tmpdir = System.getProperty("java.io.tmpdir");
+        if (StringUtils.isNotEmpty(tmpdir) && new File(tmpdir).isDirectory()) {
+            directories.add(new File(tmpdir, "7zip"));
+        }
+        for (final File directory : directories) {
             try {
-                org.appwork.utils.Files.deleteRecursiv(tmp);
-            } catch (final Throwable e) {
-            }
-            logger.finer("Try LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
-            SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
-            if (SevenZip.isInitializedSuccessfully()) {
-                return true;
-            }
-        } catch (Throwable e) {
-            if (e instanceof UnsatisfiedLinkError && CrossSystem.isWindows()) {
                 try {
-                    /* workaround for sevenzipjbinding, missing dll imports */
-                    String path = new Regex(e.getMessage(), "(.:.*?\\.dll)").getMatch(0);
-                    logger.severe("Unsatisfied path " + path);
-                    File root = new File(path).getParentFile();
-                    System.load(new File(root, "mingwm10.dll").toString());
-                    System.load(new File(root, "libgcc_s_dw2-1.dll").toString());
-                    System.load(new File(root, "libstdc++-6.dll").toString());
-                    logger.finer("ReTry LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
-                    SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
-                    if (SevenZip.isInitializedSuccessfully()) {
-                        return true;
+                    if (directory.isDirectory()) {
+                        org.appwork.utils.Files.deleteRecursiv(directory);
                     }
-                } catch (final Throwable e2) {
-                    logger.log(e2);
+                } catch (final Throwable e) {
+                    logger.log(e);
                 }
-            }
-            try {
-                org.appwork.utils.Files.deleteRecursiv(tmp);
-            } catch (final Throwable e1) {
-            }
-            logger.warning("Could not initialize Multiunpacker:#1");
-            logger.log(e);
-            try {
-                final String s2 = System.getProperty("java.io.tmpdir");
-                tmp = new File(s2);
-                logger.finer("Try LibID(" + libID + ") Path: " + tmp + "->" + (tmp.exists() || tmp.mkdirs()));
-                SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
+                logger.finer("Try LibID(" + libID + ") Path: " + directory + "->" + (directory.isDirectory() || directory.mkdirs()));
+                SevenZip.initSevenZipFromPlatformJAR(libID, directory);
                 if (SevenZip.isInitializedSuccessfully()) {
                     return true;
                 }
-            } catch (Throwable e2) {
-                logger.warning("Could not initialize Multiunpacker:#2");
-                logger.log(e2);
+            } catch (Throwable e) {
+                logger.log(e);
             }
         }
         return false;
