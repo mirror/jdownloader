@@ -55,7 +55,8 @@ public class GottanutCom extends KernelVideoSharingComV2 {
 
     @Override
     protected int getMaxChunks(final Account account) {
-        return -2;
+        /* 2020-11-06: 2 chunks are working fine but we'll limit it to 1 anyways to avoid issues. */
+        return 1;
     }
 
     @Override

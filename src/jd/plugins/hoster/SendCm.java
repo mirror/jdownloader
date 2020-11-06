@@ -21,10 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.Plugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SendCm extends XFileSharingProBasic {
@@ -103,5 +106,34 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
+        URLConnectionAdapter con = null;
+        try {
+            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getPluginPatternMatcher()));
+            /* 2020-11-06: Special: Host sometimes provides direct-downloads */
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
+                link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+                this.storeDirecturl(link, account, con.getURL().toString());
+                return AvailableStatus.TRUE;
+            } else {
+                /* Fallback to template handling */
+                return super.requestFileInformationWebsite(link, account, downloadsStarted);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-11-06 */
+        return false;
     }
 }
