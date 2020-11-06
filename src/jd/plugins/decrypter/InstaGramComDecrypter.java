@@ -254,38 +254,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
             fp.setName("saved_" + username_url);
             final String id_owner = br.getRegex("profilePage_(\\d+)").getMatch(0);
-            final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
-            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
-            final long count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/count"), -1);
+            // final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
+            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql");
+            String nextid = null;
+            long count = 0;
             int page = 0;
             int decryptedLinksLastSize = 0;
             int decryptedLinksCurrentSize = 0;
-            resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/edges");
             do {
-                decryptedLinksLastSize = decryptedLinks.size();
-                for (final Object o : resource_data_list) {
-                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
-                    // pages > 0, have a additional nodes entry
-                    if (result.size() == 1 && result.containsKey("node")) {
-                        crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
-                    } else {
-                        crawlAlbum(result);
-                    }
-                }
-                decryptedLinksCurrentSize = decryptedLinks.size();
-                if (decryptedLinks.size() == 0) {
-                    logger.info("User doesn't have any saved objects(?)");
-                    return decryptedLinks;
-                }
                 if (page > 0) {
                     if (id_owner == null) {
                         /* This should never happen */
                         logger.warning("Pagination failed because required param 'id_owner' is missing");
                         break;
                     }
-                    final Browser br = this.br.cloneBrowser();
-                    prepBrAjax(br);
+                    final Browser br2 = this.br.cloneBrowser();
+                    prepBrAjax(br2);
                     final Map<String, Object> vars = new LinkedHashMap<String, Object>();
                     vars.put("id", id_owner);
                     vars.put("first", 12);
@@ -294,8 +278,12 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
-                    getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
-                    final int responsecode = br.getHttpConnection().getResponseCode();
+                    getPage(param, br2, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                    /*
+                     * 2020-11-06: TODO: Fix broken response: edge_owner_to_timeline_media instead of edge_saved_media ... Possibe reasons:
+                     * Wrong "end_cursor" String and/or wrong "query_hash".
+                     */
+                    final int responsecode = br2.getHttpConnection().getResponseCode();
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
                         return decryptedLinks;
@@ -307,14 +295,35 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         logger.info("Seems like user is using an unverified account - cannot grab more items");
                         break;
                     }
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
-                    resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
-                    if (resource_data_list == null || resource_data_list.size() == 0) {
-                        logger.info("Found no new links on page " + page + " --> Stopping decryption");
-                        break;
+                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+                    entries = (LinkedHashMap<String, Object>) entries.get("data");
+                }
+                if (page == 0) {
+                    count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/count"), 0);
+                    if (count == 0) {
+                        logger.info("User doesn't have any saved objects (?)");
+                        return decryptedLinks;
+                    } else {
+                        logger.info("Expecting saved objects: " + count);
                     }
                 }
+                nextid = (String) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/page_info/end_cursor");
+                resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/edges");
+                if (resource_data_list == null || resource_data_list.size() == 0) {
+                    logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                    break;
+                }
+                decryptedLinksLastSize = decryptedLinks.size();
+                for (final Object o : resource_data_list) {
+                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                    // pages > 0, have a additional nodes entry
+                    if (result.size() == 1 && result.containsKey("node")) {
+                        crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
+                    } else {
+                        crawlAlbum(result);
+                    }
+                }
+                decryptedLinksCurrentSize = decryptedLinks.size();
                 page++;
             } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
             return decryptedLinks;
@@ -368,9 +377,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
             final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
-            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
-            resource_data_list = (ArrayList) get(entries, "entry_data/ProfilePage/{0}/user/media/nodes", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/edges");
-            final long count = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/user/media/count", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/count"), -1);
+            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/page_info/end_cursor");
+            resource_data_list = (ArrayList) get(entries, "entry_data/ProfilePage/{0}/user/media/nodes", "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/edges");
+            final long count = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/user/media/count", "entry_data/ProfilePage/{0}/graphql/user/edge_saved_media/count"), -1);
             if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
                 logger.info("Cannot parse url as profile is private");
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -396,6 +405,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     }
                     final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
                     getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                    /* TODO: Move all of this errorhandling to one place */
                     final int responsecode = br.getHttpConnection().getResponseCode();
                     if (responsecode == 404) {
                         logger.warning("Error occurred: 404");
@@ -409,8 +419,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         break;
                     }
                     entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
-                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
+                    resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_saved_media/edges");
+                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_saved_media/page_info/end_cursor");
                 }
                 if (resource_data_list == null || resource_data_list.size() == 0) {
                     logger.info("Found no new links on page " + page + " --> Stopping decryption");
@@ -434,7 +444,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
             if (decryptedLinks.size() == 0) {
-                logger.warning("WTF");
+                logger.warning("WTF found no content at all");
             }
         }
         return decryptedLinks;
