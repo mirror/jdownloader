@@ -28,14 +28,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "https?://(?:www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.*?_(\\d+)\\.html|https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_\\d+\\.html|https?://(www\\.)?sexuria\\.(com|to)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "https?://(?:www\\.)?sexuria\\.(com|to|net)/(v1/)?Pornos_Kostenlos_.*?_(\\d+)\\.html|https?://(www\\.)?sexuria\\.(com|to|net)/(v1/)?dl_links_\\d+_\\d+\\.html|https?://(www\\.)?sexuria\\.(com|to|net)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" })
 public class Sxrcm extends PluginForDecrypt {
-    private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("https?://(www\\.)?sexuria\\.(com|to)/(v1/)?Pornos_Kostenlos_.*?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("https?://(www\\.)?sexuria\\.(com|to)/(v1/)?dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("https?://(www\\.)?sexuria\\.(com|to)/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("https?://[^/]+/(v1/)?Pornos_Kostenlos_.*?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("https?://[^/]+/(v1/)?dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("https?://[^/]+/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_PASSWORD           = Pattern.compile("<strong>Passwort?:?\\s*</strong></td>.*?<td\\s*>\\s*(.*?)\\s*</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern PATTERN_DL_LINK_PAGE       = Pattern.compile("\"(dl_links_\\d+_\\d+\\.html)\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_REDIRECT_LINKS     = Pattern.compile("value=\"(https?://sexuria\\.(com|to)/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_REDIRECT_LINKS     = Pattern.compile("value=\"(https?://[^/]+/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
     private static Object        LOCK                       = new Object();
 
     public Sxrcm(PluginWrapper wrapper) {
