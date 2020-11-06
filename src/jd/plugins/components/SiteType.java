@@ -143,13 +143,6 @@ public class SiteType {
          */
         Unknown_ChineseFileHosting,
         /**
-         * Script used by some video-hosting sites.Not sure what's the name of this script but the URLs look similar to those of
-         * xfilesharing/xvideosharing websites.<br />
-         * <b>Examples:</b> <a href="https://vidup.io/">vidup.io</a>, <a href="https://vev.io/">vev.io</a><br />
-         * <b>Superclass:</b> UnknownVideohostingCore <br />
-         */
-        Unknown_Videohosting,
-        /**
          * Script used by some (mostly free) file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what's the name of this
          * script.<br />
          * Usually hosts using this script will provide an public upload- & filecheck API under '/docs/api'.<br />
