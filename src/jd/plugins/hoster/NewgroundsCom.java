@@ -39,7 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://www\\.newgrounds\\.com/(portal/view/|audio/listen/)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:www\\.)?newgrounds\\.com/(?:portal/view/|audio/listen/)(\\d+)" })
 public class NewgroundsCom extends antiDDoSForHost {
     public NewgroundsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -122,6 +122,7 @@ public class NewgroundsCom extends antiDDoSForHost {
             final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
             url_filename = fid;
             // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            final String embedController = br.getRegex("embedController\\s*\\(\\s*\\[\\s*\\{\\s*\"url\"\\s*:\\s*\"(https?:.*?)\"").getMatch(0);
             if (link.getDownloadURL().contains("/audio/listen/")) {
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename).trim();
@@ -131,18 +132,13 @@ public class NewgroundsCom extends antiDDoSForHost {
                 }
                 // var embed_controller = new
                 // embedController([{"url":"https:\/\/audio.ngfiles.com\/843000\/843897_Starbarians-3-Suite.mp3?f1548006356"
-                if (br.containsHTML("/audio/download/" + fid)) {
-                    dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
-                } else {
-                    final String embedController = br.getRegex("embedController\\s*\\(\\s*\\[\\s*\\{\\s*\"url\"\\s*:\\s*\"(https?:.*?)\"").getMatch(0);
-                    if (embedController != null) {
-                        dllink = embedController.replaceAll("\\\\", "");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
+                dllink = "https://www." + this.getHost() + "/audio/download/" + fid;
                 ext = ".mp3";
+            } else if (embedController != null) {
+                /* Older flash content */
+                dllink = embedController.replaceAll("\\\\", "");
             } else {
+                /* Assume it's a video */
                 if (br.containsHTML("requires a Newgrounds account to play\\.\\s*<")) {
                     accountneeded = true;
                     return AvailableStatus.TRUE;
