@@ -18,18 +18,23 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\\\.)?animefrenzy\\.(?:eu|net)/(?:anime|cartoon|watch)/(?:watch/)?\\d+-[\\w-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animefrenzy.eu" }, urls = { "https?://(www\\.)?animefrenzy\\.(?:eu|net|org)/(?:anime|cartoon|watch|stream)/[^/]+" })
 public class AnimeFrenzy extends antiDDoSForDecrypt {
     public AnimeFrenzy(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +53,46 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         for (String[] hostLink : hostLinks) {
             links.add(buildEmbedURL(hostLink[0], hostLink[1]));
             links.add(buildEmbedURL(hostLink[1], hostLink[0]));
+        }
+        String showSlug = new Regex(parameter, "(?:watch|anime)/([\\w-]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(showSlug)) {
+            Browser br2 = br.cloneBrowser();
+            getPage(br2, "https://ani.api-web.site/anime/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
+            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+            if (jsonEntries.get("data") != null) {
+                LinkedHashMap<String, Object> jsonData = (LinkedHashMap<String, Object>) jsonEntries.get("data");
+                if (jsonData.get("episodes") != null) {
+                    ArrayList<LinkedHashMap<String, Object>> jsonEpisodes = (ArrayList<LinkedHashMap<String, Object>>) jsonData.get("episodes");
+                    if (jsonEpisodes.size() > 0) {
+                        for (LinkedHashMap<String, Object> jsonEpisode : jsonEpisodes) {
+                            if (StringUtils.isNotEmpty((String) jsonEpisode.get("slug"))) {
+                                links.add(br.getURL("/anime/" + (String) jsonEpisode.get("slug")).toString());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        showSlug = new Regex(parameter, "(?:stream|anime)/([\\w-]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(showSlug)) {
+            Browser br2 = br.cloneBrowser();
+            getPage(br2, "https://ani.api-web.site/anime-episode/slug/" + showSlug + "?token=Yopgjtcustomer7NX1Oe");
+            LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+            if (jsonEntries.get("data") != null) {
+                LinkedHashMap<String, Object> jsonData = (LinkedHashMap<String, Object>) jsonEntries.get("data");
+                if (jsonData.get("videos") != null) {
+                    ArrayList<LinkedHashMap<String, Object>> jsonEpisodes = (ArrayList<LinkedHashMap<String, Object>>) jsonData.get("videos");
+                    if (jsonEpisodes.size() > 0) {
+                        for (LinkedHashMap<String, Object> jsonEpisode : jsonEpisodes) {
+                            if (StringUtils.isNotEmpty((String) jsonEpisode.get("host")) && StringUtils.isNotEmpty((String) jsonEpisode.get("video_id"))) {
+                                String host = (String) jsonEpisode.get("host");
+                                String video_id = (String) jsonEpisode.get("video_id");
+                                links.add(buildEmbedURL(host, video_id));
+                            }
+                        }
+                    }
+                }
+            }
         }
         for (String link : links) {
             if (link != null) {
@@ -83,6 +128,10 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             result = "https://www.xstreamcdn.com/v/" + id;
         } else if (host.equals("vidstreaming")) {
             result = "https://vidstreaming.io/streaming.php?id=" + id;
+        } else if (host.equals("vidstream")) {
+            result = "https://vidstreaming.io/download?id=" + id;
+        } else if (host.equals("yare.wtf")) {
+            result = "https://yare.wtf/vidstreaming/download/" + id;
         } else if (host.equals("facebook")) {
             result = "https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Flayfon.alseif.16%2Fvideos%2F" + id + "%2F";
         } else if (host.equals("upload2")) {
