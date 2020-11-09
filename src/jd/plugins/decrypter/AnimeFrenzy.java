@@ -128,7 +128,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             result = "https://www.xstreamcdn.com/v/" + id;
         } else if (host.equals("vidstreaming")) {
             result = "https://vidstreaming.io/streaming.php?id=" + id;
-        } else if (host.equals("vidstream")) {
+        } else if (host.equalsIgnoreCase("vidstream") || host.equalsIgnoreCase("vidstream")) {
             result = "https://vidstreaming.io/download?id=" + id;
         } else if (host.equals("yare.wtf")) {
             result = "https://yare.wtf/vidstreaming/download/" + id;
