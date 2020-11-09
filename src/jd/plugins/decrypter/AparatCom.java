@@ -68,7 +68,7 @@ public class AparatCom extends PluginForDecrypt {
         }
         //
         if (decryptedLinks.isEmpty()) {
-            /* 2020-11-09: Assume it's a single video */
+            /* 2020-11-09: Fallback to HLS */
             decryptedLinks.add(this.createDownloadlink("https://www.aparat.com/video/hls/manifest/visittype/site/videohash/" + itemID + "/f/" + itemID + ".m3u8"));
         }
         if (!title.isEmpty()) {
