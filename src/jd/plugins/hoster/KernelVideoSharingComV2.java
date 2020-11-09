@@ -340,20 +340,27 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     logger.info("Unable to convert embedded URL --> Real URL");
                 }
             }
-        } else if (this.getFUID(link) == null) {
-            /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
-            logger.info("Failed to find fuid in URL --> Looking for fuid in html");
-            String fuidAfterHTTPRequest = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
-            if (fuidAfterHTTPRequest == null) {
+        } else {
+            String fuidInsideHTML = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
+            if (fuidInsideHTML == null) {
                 /* E.g. for hosts which have embed support disabled. */
-                fuidAfterHTTPRequest = br.getRegex("video_id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
+                fuidInsideHTML = br.getRegex("video_id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
             }
             /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
             /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
-            if (fuidAfterHTTPRequest != null) {
-                logger.info("Successfully found fuid in html: " + fuidAfterHTTPRequest);
-                link.setLinkID(this.getHost() + "://" + fuidAfterHTTPRequest);
-                link.setProperty(PROPERTY_FUID, fuidAfterHTTPRequest);
+            if (fuidInsideHTML != null) {
+                logger.info("Successfully found fuid in html: " + fuidInsideHTML);
+                if (this.getFUID(link) == null) {
+                    /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
+                    logger.info("Setting FUID found inside URL as DownloadLink FUID");
+                    link.setLinkID(this.getHost() + "://" + fuidInsideHTML);
+                    link.setProperty(PROPERTY_FUID, fuidInsideHTML);
+                } else if (!StringUtils.equals(this.getFUID(link), fuidInsideHTML)) {
+                    /* More or less helpful for debugging: This should never happen! */
+                    logger.warning("FUID inside URL doesn't match FUID found in HTML: " + this.getFUID(link) + " vs. " + fuidInsideHTML);
+                } else {
+                    /* Everything alright - FUID of inside URL equals FUID found in HTML! */
+                }
             } else {
                 logger.info("Failed to find fuid in html");
             }

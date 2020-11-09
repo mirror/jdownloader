@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "anime.thehylia.com" }, urls = { "https?://(?:www\\.)?anime\\.thehylia\\.com/(downloads/series/|download_file/|soundtracks/album/)[a-z0-9\\-_]+" })
@@ -36,8 +38,8 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String type_series = "https?://(www\\.)?anime\\.thehylia\\.com/downloads/series/[a-z0-9\\-_]+";
-    private static final String type_music  = "https?://(www\\.)?anime\\.thehylia\\.com/soundtracks/album/[a-z0-9\\-_]+";
+    private static final String type_series = "https?://(www\\.)?anime\\.thehylia\\.com/downloads/series/([A-Za-z0-9\\-_]+)";
+    private static final String type_music  = "https?://(www\\.)?anime\\.thehylia\\.com/soundtracks/album/([A-Za-z0-9\\-_]+)";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -67,10 +69,10 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
             if (fpName == null) {
                 fpName = br.getRegex("<div><h2>([^<>\"]*?)</h2>").getMatch(0);
             }
-            links = br.getRegex("<td class=\"episode_name\">(.*?)<.*?<a href=\"(https?://anime\\.thehylia\\.com/download_file/\\d+)\".*?\"episode_size\">\\((.*?)\\)</td>").getMatches();
+            links = br.getRegex("<td class=\"episode_name\">(.*?)<.*?<a href=\"(https?://anime\\.thehylia\\.com/download_file/\\d+[^\"]*)\".*?\"episode_size\">\\((.*?)\\)</td>").getMatches();
             if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             fpName = Encoding.htmlDecode(fpName);
             for (final String singleLinkInfo[] : links) {
@@ -92,7 +94,7 @@ public class AnimeTheHyliaCom extends PluginForDecrypt {
             links = br.getRegex("\"(https?://anime\\.thehylia\\.com/soundtracks/album/[a-z0-9\\-]+/[^<>\"/]+)\">(.*?)</a></td>\\s+<td.*?>.*?</td>\\s+<td.*?>(.*?)</td>").getMatches();
             if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             fpName = Encoding.htmlDecode(fpName);
             for (final String singleLinkInfo[] : links) {
