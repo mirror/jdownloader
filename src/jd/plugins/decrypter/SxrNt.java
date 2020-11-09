@@ -27,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexuria.net" }, urls = { "https?://(?:www\\.)?sexuria\\.net/(\\d+)-([a-z0-9\\-]+)\\.html" })
@@ -44,13 +46,12 @@ public class SxrNt extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String url_name = new Regex(parameter, "").getMatch(0);
+        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         String fpName = url_name.replace("-", " ");
         final String[] links = br.getRegex("target=\"_blank\" href=\"(https?://[^\"]+)\" class=\"btn vertab\"").getColumn(0);
         final String password = br.getRegex("<strong>Password file</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!StringUtils.isEmpty(password)) {
             param.setDecrypterPassword(password);
