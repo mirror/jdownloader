@@ -130,11 +130,11 @@ public class NinjastreamTo extends PluginForHost {
         String filename = (String) entries.get("name");
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         final String md5 = (String) entries.get("hash");
-        if (StringUtils.isEmpty(filename)) {
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        } else if (!link.isNameSet()) {
             /* Fallback */
             link.setName(this.getFallbackFilename(link));
-        } else {
-            link.setFinalFileName(filename);
         }
         link.setDownloadSize(filesize);
         if (md5 != null) {
