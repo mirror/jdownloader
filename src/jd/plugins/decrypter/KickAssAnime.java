@@ -17,19 +17,17 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kickassanime.io" }, urls = { "https?://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+/episode\\-[0-9\\-/]+" })
 public class KickAssAnime extends PluginForDecrypt {
@@ -45,44 +43,6 @@ public class KickAssAnime extends PluginForDecrypt {
         final String page = br.getPage(parameter);
         String showTitle = br.getRegex("<a href=\"https?://www\\d*.kickassanime.io/(?:anime)/[A-Za-z0-9\\-]+\\-\\d+\" title=\"(.+?)\">").getMatch(0);
         String episodeTitle = br.getRegex(">([^>]+)</h1>").getMatch(0);
-        String[][] iframeURLMatches = br.getRegex("https://animo-pace-stream.io/[a-zA-Z0-9]+/player.php[^\"]+").getMatches();
-        // Get the IFrame details, which might contain our target URLs
-        for (String[] iframeURLMatch : iframeURLMatches) {
-            String iframeURL = iframeURLMatch[0];
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(iframeURL)));
-            if (iframeURL != null) {
-                final Browser brIframe = br.cloneBrowser();
-                brIframe.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                String iframePage = brIframe.getPage(iframeURL);
-                if (brIframe.getHttpConnection().getResponseCode() == 403) {
-                    brIframe.getPage(Encoding.htmlDecode(iframeURL));
-                    if (brIframe.getHttpConnection().getResponseCode() == 403) {
-                        throw new DecrypterException("Decrypter broken for link: " + parameter);
-                    }
-                }
-                final Browser br2 = br.cloneBrowser();
-                String videoURL = brIframe.getRegex("window.location = '(.+?)'").getMatch(0); // Fed to the IFrame's JWPlayer plugin
-                if (videoURL != null) {
-                    br2.getPage(videoURL);
-                    String dc = Encoding.Base64Decode(br2.getRegex("Base64.decode\\(\"([^>\"]+)\"").getMatch(0));
-                    videoURL = new Regex(dc, "src=([^<>\"]+) allowfullscreen").getMatch(0);
-                    if (videoURL == null) {
-                        videoURL = new Regex(dc, "file:\"([^<>\"]+)\"").getMatch(0);
-                    }
-                    if (videoURL != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(videoURL)));
-                    }
-                }
-                String dataURL = brIframe.getRegex("data=(.+?)&").getMatch(0);
-                if (dataURL != null) {
-                    br2.getPage(dataURL);
-                    String dc = Encoding.Base64Decode(br2.getRegex("Base64.decode\\(\"([^>\"]+)\"").getMatch(0));
-                    if (dc != null) {
-                        decryptedLinks.add(createDownloadlink(dc));
-                    }
-                }
-            }
-        }
         // In some cases we have player HTML with a dropdown list to switch between different hoster implementations.
         String[][] selectOptionMatches = br.getRegex("<option value=\"https?://animo-pace-stream\\.io/axplayer/player\\.php\\?[^>]+").getMatches();
         if (selectOptionMatches.length > 0) {

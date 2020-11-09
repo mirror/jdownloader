@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(?:www\\.)?aparat.com/v/[./]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aparat.com" }, urls = { "https?://(?:www\\.)?aparat.com/v/([A-Za-z0-9]+)" })
 public class AparatCom extends PluginForDecrypt {
     public AparatCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +41,12 @@ public class AparatCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String page = br.getPage(parameter);
+        final String itemID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         //
         String[][] videoMatches = br.getRegex("contentUrl\":\"(.+?)\"").getMatches();
@@ -56,16 +61,16 @@ public class AparatCom extends PluginForDecrypt {
             String videoName = jsonEntries.get("name").toString();
             String videoURL = jsonEntries.get("contentUrl").toString();
             if (videoName != null && videoURL != null) {
-                DownloadLink dl = createDownloadlink(videoURL);
-                String videoExtension = new Regex(videoURL, ".([a-zA-Z0-9]*?)$").getMatch(0);
-                if (videoExtension != null) {
-                    String fileName = videoName + "." + videoExtension;
-                    dl.setForcedFileName(fileName);
-                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + videoURL);
+                dl.setForcedFileName(videoName = videoName + ".mp4");
                 decryptedLinks.add(dl);
             }
         }
         //
+        if (decryptedLinks.isEmpty()) {
+            /* 2020-11-09: Assume it's a single video */
+            decryptedLinks.add(this.createDownloadlink("https://www.aparat.com/video/hls/manifest/visittype/site/videohash/" + itemID + "/f/" + itemID + ".m3u8"));
+        }
         if (!title.isEmpty()) {
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(Encoding.htmlDecode(title));
