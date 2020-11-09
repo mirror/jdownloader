@@ -15,11 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,13 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(?:s/[a-f0-9]{10}/\\d+-\\d+|mpv/\\d+/[a-f0-9]{10}/#page\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends antiDDoSForHost {
@@ -251,7 +252,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = this.openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    if (!con.getContentType().contains("html")) {
+                    if (this.looksLikeDownloadableContent(con)) {
                         link.setDownloadSize(con.getCompleteContentLength());
                     }
                 } finally {
@@ -404,7 +405,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                             }
                         }
                         final long conlength = con.getLongContentLength();
-                        if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
+                        if (this.looksLikeDownloadableContent(con)) {
                             link.setDownloadSize(conlength);
                             link.setProperty("directlink", dllink);
                             return AvailableStatus.TRUE;
@@ -536,24 +537,24 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void doFree(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (downloadLink.getDownloadSize() < minimal_filesize) {
+        } else if (link.getDownloadSize() < minimal_filesize) {
             /* Rare error: E.g. "403 picture" is smaller than 1 KB */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
         } catch (final BrowserException ebr) {
             logger.log(ebr);
             /* Whatever happens - its most likely a server problem for this host! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l, ebr);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -561,7 +562,11 @@ public class EHentaiOrg extends antiDDoSForHost {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("¿You have exceeded your image viewing limits\\. Note that you can reset these limits by going")) {
                 limitReached(account);
             } else if (br.getURL().contains("bounce_login.php")) {
@@ -589,6 +594,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             try {
                 br.setCookiesExclusive(true);
                 Cookies cookies = account.loadCookies("");
+                // final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
                     br.setCookies("http://exhentai.org/", cookies);
@@ -607,9 +613,31 @@ public class EHentaiOrg extends antiDDoSForHost {
                         logger.info("Failed to login via cookies");
                     }
                 }
+                /* 2020-11-09: Debug test */
+                // if (userCookies != null) {
+                // logger.info("Attempting user cookie login");
+                // br.setCookies(MAINPAGE, userCookies);
+                // br.setCookies("http://exhentai.org/", userCookies);
+                // if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
+                // /* We trust these cookies --> Do not check them */
+                // logger.info("Trust login cookies as they're not yet that old");
+                // return;
+                // }
+                // // getPage(br, "https://forums.e-hentai.org/index.php?");
+                // getPage(br, "https://e-hentai.org/hathperks.php");
+                // if (this.isLoggedIn(br)) {
+                // logger.info("Successfully logged in via cookies");
+                // account.saveCookies(br.getCookies(MAINPAGE), "");
+                // return;
+                // } else {
+                // logger.info("Failed to login via cookies");
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // }
+                // }
                 boolean failed = true;
                 br.setFollowRedirects(true);
-                getPage(br, "https://e-hentai.org/bounce_login.php");
+                /* Login page with params to redirect to /home.php */
+                getPage(br, "https://e-hentai.org/bounce_login.php?b=d&bt=1-1");
                 /* 2020-03-04: --> Will redirect to forums.* */
                 // br.getPage("https://forums.e-hentai.org/index.php?act=Login");
                 for (int i = 0; i <= 1; i++) {
