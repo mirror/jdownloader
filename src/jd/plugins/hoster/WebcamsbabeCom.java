@@ -53,9 +53,4 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
         }
         return ret.toArray(new String[0]);
     }
-
-    @Override
-    protected boolean hasFUIDAtEnd(final String url) {
-        return false;
-    }
 }

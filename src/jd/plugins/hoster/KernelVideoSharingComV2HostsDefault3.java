@@ -52,7 +52,7 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(String url) {
+    protected boolean hasFUIDInsideURL(final String url) {
         return false;
     }
 }

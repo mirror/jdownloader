@@ -76,19 +76,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      * example.com/videos/1234-title.html </br>
      * example.com/videos/
      */
-    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/?)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
+    private static final String   type_normal              = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([a-z0-9\\-]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
-     * "embed" URLs).
+     * "embed" URLs). </br>
+     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
+     * TODO: Consider removing support for this from this main class.
      */
-    private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
+    private static final String   type_normal_fuid_at_end  = "^https?://[^/]+/videos?/([a-z0-9\\-]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
-     * You need to override {@link #hasFUIDAtEnd(String)} to return false when using such a pattern!
+     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
     private static final String   type_normal_without_fuid = "^https?://[^/]+/(?:videos?/)?([a-z0-9\\-]+)(?:/?|\\.html)$";
-    private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos/)?\\d+/[a-z0-9\\-]+/$)";
+    private static final String   type_mobile              = "^https?://m\\.([^/]+/(videos?/)?\\d+/[a-z0-9\\-]+/$)";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
      * "embed" URLs).
@@ -140,7 +142,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
      * OR:</br>
      * example.com/embed/1234 </br>
      * Example: <a href="https://alphaporno.com/">alphaporno.com</a> </br>
-     * Special: You need to override {@link #hasFUIDAtEnd(String)} to return false when using this pattern! </br>
+     * Special: You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using this pattern! </br>
      * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
@@ -183,19 +185,21 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Override this if URLs can end with digits but these digits are not always there and cannot be used as an unique identifier! </br>
-     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_without_fuid} . </br>
-     * Example: example.com/url-title.html
+     * Override this if URLs can end with digits but these are not your FUID! </br>
+     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_fuid_at_end} . </br>
+     * Example: example.com/url-title.html TODO: Rename this accordingly </br>
+     * Override {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in
+     * this case, FUID will always get detected).
      */
-    protected boolean hasFUIDAtEnd(final String url) {
-        return true;
+    protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
+        return false;
     }
 
     /**
      * Set this to false if URLs do not contain a FUID at all! </br>
-     * Especially important for e.g.: example.com/1random-title/ (1 != FUID!)
+     * Especially important for e.g.: example.com/1random-title/ ('1' != FUID!)
      */
-    protected boolean hasFUID(final String url) {
+    protected boolean hasFUIDInsideURL(final String url) {
         return true;
     }
 
@@ -343,8 +347,12 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         } else {
             String fuidInsideHTML = br.getRegex("\"https?://" + Pattern.quote(br.getHost()) + "/embed/(\\d+)/?\"").getMatch(0);
             if (fuidInsideHTML == null) {
-                /* E.g. for hosts which have embed support disabled. */
+                /* E.g. for hosts which have embed support disabled or are using other embed URLs than default e.g. h2porn.com. */
                 fuidInsideHTML = br.getRegex("video_id\\s*:\\s*\\'(\\d+)\\'").getMatch(0);
+            }
+            if (fuidInsideHTML == null) {
+                /* Common Trait 3. E.g. tubewolf.com */
+                fuidInsideHTML = br.getRegex("\\['video_id'\\]\\s*=\\s*(\\d+)").getMatch(0);
             }
             /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
             /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
@@ -362,6 +370,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     /* Everything alright - FUID of inside URL equals FUID found in HTML! */
                 }
             } else {
+                /* This can happen but most of all times, a FUID should be present inside HTML. */
                 logger.info("Failed to find fuid in html");
             }
         }
@@ -1155,7 +1164,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         String urlTitle = null;
         if (url.matches(type_normal)) {
             urlTitle = new Regex(url, type_normal).getMatch(1);
-        } else if (url.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url)) {
+        } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURLAtTheEnd(url)) {
             urlTitle = new Regex(url, type_normal_fuid_at_end).getMatch(0);
         } else if (url.matches(type_normal_without_fuid)) {
             urlTitle = new Regex(url, type_normal_without_fuid).getMatch(0);
@@ -1163,6 +1172,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return urlTitle;
     }
 
+    /**
+     * This is supposed to return a numeric ID. Rather return null than anything else here! </br>
+     * Override {@link #hasFUIDInsideURL(String)} to return false if you know that your URLs do not contain a FUID for sure.
+     */
     protected String getFUID(final DownloadLink link) {
         /* Prefer stored unique ID over ID inside URL because sometimes none is given inside URL. */
         String fuid = link.getStringProperty(PROPERTY_FUID, null);
@@ -1183,9 +1196,9 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 fuid = new Regex(url, type_only_numbers).getMatch(0);
             } else if (url.matches(type_embedded)) {
                 fuid = new Regex(url, type_embedded).getMatch(0);
-            } else if (url.matches(type_normal_fuid_at_end) && hasFUIDAtEnd(url)) {
+            } else if (url.matches(type_normal_fuid_at_end) && hasFUIDInsideURL(url) && hasFUIDInsideURLAtTheEnd(url)) {
                 fuid = new Regex(url, type_normal_fuid_at_end).getMatch(1);
-            } else if (url.matches(type_normal) && hasFUID(url)) {
+            } else if (url.matches(type_normal) && hasFUIDInsideURL(url)) {
                 fuid = new Regex(url, type_normal).getMatch(0);
             }
         }

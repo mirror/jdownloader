@@ -66,15 +66,9 @@ public class H2pornCom extends KernelVideoSharingComV2 {
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher("http://h2porn.com/videos/" + getURLTitle(link.getPluginPatternMatcher()) + "/");
     }
-    /* 2020-10-30: Not required as we override getFUID. */
-    // @Override
-    // protected boolean hasFUIDAtEnd(String url) {
-    // return false;
-    // }
 
     @Override
-    protected String getFUID(final DownloadLink link) {
-        /* No specific ID given --> Use title inside URL as unique ID. */
-        return this.getURLTitle(link.getPluginPatternMatcher());
+    protected boolean hasFUIDInsideURL(final String url) {
+        return false;
     }
 }

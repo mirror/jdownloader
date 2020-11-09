@@ -53,12 +53,7 @@ public class HdtubePorn extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(final String url) {
-        return false;
-    }
-
-    @Override
-    protected boolean hasFUID(final String url) {
+    protected boolean hasFUIDInsideURL(final String url) {
         return false;
     }
 }

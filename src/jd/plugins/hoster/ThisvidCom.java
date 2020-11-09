@@ -52,7 +52,7 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(String url) {
+    protected boolean hasFUIDInsideURL(final String url) {
         return false;
     }
 

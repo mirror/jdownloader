@@ -64,41 +64,40 @@ public class HentaiDude extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (getPluginConfig().getBooleanProperty(SLOW_ALLPAGES, true) == true) {
-            String nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
-            if (nextpage != null) {
-                int highest = 0;
-                int minsize = 1;
-                String newnextpage = "";
-                Matcher nextpage2 = br.getRegex("<a href=\"([^\"]+)\">([0-9]+)").getMatcher();
-                while (nextpage2.find()) {
-                    if (Integer.parseInt(nextpage2.group(2)) > highest) {
-                        highest = Integer.parseInt(nextpage2.group(2));
-                        newnextpage = nextpage2.group(1);
-                    }
+        String nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
+        /* Grab all pages if possible and enabled by user. */
+        if (getPluginConfig().getBooleanProperty(SLOW_ALLPAGES, true) && nextpage != null) {
+            int highest = 0;
+            int minsize = 1;
+            String newnextpage = "";
+            Matcher nextpage2 = br.getRegex("<a href=\"([^\"]+)\">([0-9]+)").getMatcher();
+            while (nextpage2.find()) {
+                if (Integer.parseInt(nextpage2.group(2)) > highest) {
+                    highest = Integer.parseInt(nextpage2.group(2));
+                    newnextpage = nextpage2.group(1);
                 }
-                newnextpage.replace("/" + highest + "/", "/1/");
-                if (new Regex(parameter, "page/([0-9]+)/").getMatch(0) != null) {
-                    minsize = Integer.parseInt(new Regex(parameter, "page/([0-9]+)/").getMatch(0));
+            }
+            newnextpage.replace("/" + highest + "/", "/1/");
+            if (new Regex(parameter, "page/([0-9]+)/").getMatch(0) != null) {
+                minsize = Integer.parseInt(new Regex(parameter, "page/([0-9]+)/").getMatch(0));
+            }
+            for (int i = minsize; i <= highest; i++) {
+                if (i > minsize) {
+                    getPage(nextpage);
+                    page = br.toString();
                 }
-                for (int i = minsize; i <= highest; i++) {
-                    if (i > minsize) {
-                        getPage(nextpage);
-                        page = br.toString();
-                    }
-                    final String[] results = HTMLParser.getHttpLinks(page, null);
-                    for (String result : results) {
-                        if (result.matches("https?://hentaidude.com/.*([0-9]+|ova)/")) {
-                            String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
-                            if (fpName != null) {
-                                if (fpName.length() > 4) {
-                                    decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
-                                }
+                final String[] results = HTMLParser.getHttpLinks(page, null);
+                for (String result : results) {
+                    if (result.matches("https?://hentaidude.com/.*([0-9]+|ova)/")) {
+                        String fpName = br.getRegex("title=\"([^\"]+)\" href=\"" + result + "\"").getMatch(0);
+                        if (fpName != null) {
+                            if (fpName.length() > 4) {
+                                decryptedLinks.add(this.createDownloadlink(Encoding.htmlOnlyDecode(result), Encoding.htmlOnlyDecode(fpName)));
                             }
                         }
                     }
-                    nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
                 }
+                nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
             }
         } else {
             final String[] results = HTMLParser.getHttpLinks(page, null);

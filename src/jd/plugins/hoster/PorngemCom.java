@@ -47,4 +47,9 @@ public class PorngemCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(getPluginDomains());
     }
+
+    @Override
+    protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
+        return true;
+    }
 }
