@@ -51,4 +51,9 @@ public class PornyeahCom extends KernelVideoSharingComV2 {
         }
         return ret.toArray(new String[0]);
     }
+
+    @Override
+    protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
+        return true;
+    }
 }

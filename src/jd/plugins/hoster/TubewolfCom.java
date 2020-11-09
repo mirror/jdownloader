@@ -45,6 +45,8 @@ public class TubewolfCom extends KernelVideoSharingComV2 {
         return buildSupportedNames(getPluginDomains());
     }
 
+    private static final String TYPE_CUSTOM = "https?://(?:www\\.)?[^/]+/movies/([a-z0-9\\-]+)/?";
+
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
@@ -52,19 +54,22 @@ public class TubewolfCom extends KernelVideoSharingComV2 {
              * 2020-10-27: They got embed URLs but they do not work and it is impossible to get the original URL if you only have the embed
              * URL!
              */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/movies/([a-z0-9\\-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:movies/([a-z0-9\\-]+)/?|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    protected String getFUIDFromURL(final String url) {
-        /* No ID in filename --> Use URL title as FUID */
-        return getURLTitle(url);
+    protected boolean hasFUIDInsideURL(final String url) {
+        return false;
     }
 
     @Override
     protected String getURLTitle(final String url) {
-        return new Regex(url, this.getSupportedLinks()).getMatch(0);
+        if (url.matches(TYPE_CUSTOM)) {
+            return new Regex(url, TYPE_CUSTOM).getMatch(0);
+        } else {
+            return null;
+        }
     }
 }

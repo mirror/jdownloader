@@ -53,7 +53,7 @@ public class YourlustCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean hasFUIDAtEnd(final String url) {
+    protected boolean hasFUIDInsideURL(final String url) {
         return false;
     }
 }
