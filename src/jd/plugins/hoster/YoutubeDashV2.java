@@ -16,6 +16,7 @@ import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -32,6 +33,9 @@ import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -75,6 +79,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -636,7 +641,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return AvailableStatus.TRUE;
     }
 
-    private LinkVariant getAlternatives(YoutubeHelper helper, DownloadLink downloadLink, AbstractVariant variant, HashSet<LinkVariant> blacklisted) throws Exception {
+    private LinkVariant getAlternatives(YoutubeHelper helper, final DownloadLink downloadLink, final AbstractVariant variant, final HashSet<LinkVariant> blacklisted) throws Exception {
         if (helper == null) {
             helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger());
         }
@@ -645,7 +650,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         case DESCRIPTION:
             return null;
         case SUBTITLES:
-            List<VariantInfo> subtitles = clipData.findSubtitleVariants();
+            final List<VariantInfo> subtitles = clipData.findSubtitleVariants();
             if (subtitles != null) {
                 for (VariantInfo v : subtitles) {
                     if (StringUtils.equals(v.getVariant()._getUniqueId(), variant._getUniqueId())) {
@@ -668,7 +673,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         case AUDIO:
         case IMAGE:
         case VIDEO:
-            List<VariantInfo> variants = clipData.findVariants();
+            final List<VariantInfo> alternatives = new ArrayList<VariantInfo>();
+            final List<VariantInfo> variants = clipData.findVariants();
+            final Iterator<VariantInfo> it = variants.iterator();
+            while (it.hasNext()) {
+                final VariantInfo next = it.next();
+                if (next.getVariant().getGroup() != variant.getGroup()) {
+                    it.remove();
+                }
+            }
+            if (variants.size() == 0) {
+                return null;
+            }
             helper.extendedDataLoading(variants);
             // sorts the best matching variants first. (based on quality rating)
             Collections.sort(variants, new Comparator<VariantInfo>() {
@@ -680,7 +696,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             for (VariantInfo v : variants) {
                 if (StringUtils.equals(v.getVariant()._getUniqueId(), variant._getUniqueId())) {
                     if (!blacklisted.contains(v.getVariant())) {
-                        return v.getVariant();
+                        if (!alternatives.contains(v)) {
+                            alternatives.add(v);
+                        }
                     }
                 }
             }
@@ -691,16 +709,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 int comCur = variant.compareTo(vCur.getVariant());
                 if (comCur == 0) {
                     if (!blacklisted.contains(vCur.getVariant())) {
-                        return vCur.getVariant();
+                        if (!alternatives.contains(vCur)) {
+                            alternatives.add(vCur);
+                        }
                     }
                 } else if (comCur > 0) {
                     if (vLast != null) {
                         if (!blacklisted.contains(vLast.getVariant())) {
-                            return vLast.getVariant();
+                            if (!alternatives.contains(vLast)) {
+                                alternatives.add(vLast);
+                            }
                         }
                     } else {
                         if (!blacklisted.contains(vCur.getVariant())) {
-                            return vCur.getVariant();
+                            if (!alternatives.contains(vCur)) {
+                                alternatives.add(vCur);
+                            }
                         }
                     }
                 }
@@ -709,7 +733,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             for (VariantInfo v : variants) {
                 if (StringUtils.equals(v.getVariant().getTypeId(), variant.getTypeId())) {
                     if (!blacklisted.contains(v.getVariant())) {
-                        return v.getVariant();
+                        if (!alternatives.contains(v)) {
+                            alternatives.add(v);
+                        }
                     }
                 }
             }
@@ -720,7 +746,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             if (((VideoVariant) v.getVariant()).getVideoCodec() == ((VideoVariant) variant).getVideoCodec()) {
                                 if (((VideoVariant) v.getVariant()).getAudioCodec() == ((VideoVariant) variant).getAudioCodec()) {
                                     if (!blacklisted.contains(v.getVariant())) {
-                                        return v.getVariant();
+                                        if (!alternatives.contains(v)) {
+                                            alternatives.add(v);
+                                        }
                                     }
                                 }
                             }
@@ -728,7 +756,9 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                             if (v.getVariant().getContainer() == variant.getContainer()) {
                                 if (((AudioVariant) v.getVariant()).getAudioCodec() == ((AudioVariant) variant).getAudioCodec()) {
                                     if (!blacklisted.contains(v.getVariant())) {
-                                        return v.getVariant();
+                                        if (!alternatives.contains(v)) {
+                                            alternatives.add(v);
+                                        }
                                     }
                                 }
                             }
@@ -740,10 +770,37 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 if (v.getVariant().getGroup() == variant.getGroup()) {
                     if (v.getVariant().getContainer() == variant.getContainer()) {
                         if (!blacklisted.contains(v.getVariant())) {
-                            return v.getVariant();
+                            if (!alternatives.contains(v)) {
+                                alternatives.add(v);
+                            }
                         }
                     }
                 }
+            }
+            if (alternatives.size() > 0) {
+                if (variant instanceof VideoVariant) {
+                    VariantInfo best = null;
+                    final VideoVariant last = (VideoVariant) variant;
+                    for (VariantInfo alternative : alternatives) {
+                        if (alternative.getVariant() instanceof VideoVariant) {
+                            final VideoVariant a = (VideoVariant) alternative.getVariant();
+                            if (a.getVideoCodec() == last.getVideoCodec() && a.getAudioCodec() == last.getAudioCodec() && a.getContainer() == last.getContainer() && a.getVideoResolution() == last.getVideoResolution()) {
+                                if (best == null) {
+                                    best = alternative;
+                                } else {
+                                    best = null;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (best != null) {
+                        return best.getVariant();
+                    }
+                }
+                return alternatives.get(0).getVariant();
+            } else {
+                return null;
             }
         }
         return null;
@@ -1749,22 +1806,73 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         }
     }
 
-    private void avoidRetryLoop(PluginException pluginException, final DownloadLink downloadLink, AbstractVariant variant) throws PluginException {
-        if (!isAbort() && pluginException.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+    private void avoidRetryLoop(PluginException pluginException, final DownloadLink downloadLink, AbstractVariant variant) throws Exception {
+        if (!isAbort() && (pluginException.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE || pluginException.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
             final String key;
+            final int maxRetry;
             switch (variant.getType()) {
             case VIDEO:
                 key = "incomplete_" + variant.getiTagAudioOrVideoItagEquivalent().getITAG();
+                maxRetry = DebugMode.TRUE_IN_IDE_ELSE_FALSE ? 1 : 5;
                 break;
             default:
                 key = "incomplete_" + variant.getType();
+                maxRetry = DebugMode.TRUE_IN_IDE_ELSE_FALSE ? 1 : 5;
                 break;
             }
             final int incomplete = downloadLink.getIntegerProperty(key, 0) + 1;
-            if (incomplete > 5) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                downloadLink.setProperty(key, incomplete);
+            downloadLink.setProperty(key, incomplete);
+            if (incomplete > maxRetry) {
+                if (variant.getType().equals(DownloadType.VIDEO)) {
+                    final HashSet<LinkVariant> checkedAlternatives = new HashSet<LinkVariant>();
+                    checkedAlternatives.add(variant);
+                    final YoutubeHelper helper = new YoutubeHelper(br.cloneBrowser(), logger);
+                    LinkVariant alternative = getAlternatives(helper, downloadLink, variant, checkedAlternatives);
+                    while (alternative != null) {
+                        if (alternative instanceof AbstractVariant && downloadLink.hasProperty("incomplete_" + ((AbstractVariant) alternative).getiTagAudioOrVideoItagEquivalent().getITAG())) {
+                            logger.info("Variant:" + variant + " failed too often! Skip alternative variant:" + alternative);
+                            checkedAlternatives.add(alternative);
+                            alternative = getAlternatives(helper, downloadLink, variant, checkedAlternatives);
+                        } else {
+                            logger.info("Variant:" + variant + " failed too often! Auto try alternative variant:" + alternative);
+                            final LinkVariant finalAlternative = alternative;
+                            downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                                @Override
+                                public void interrupt() {
+                                }
+
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    /* now we can reset the link */
+                                    DownloadWatchDog.getInstance().reset(Arrays.asList(new DownloadLink[] { downloadLink }));
+                                }
+
+                                @Override
+                                public boolean isHighPriority() {
+                                    return false;
+                                }
+                            });
+                            downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                                @Override
+                                public void interrupt() {
+                                }
+
+                                @Override
+                                public void execute(DownloadSession currentSession) {
+                                    /* now we can reset the link */
+                                    setActiveVariantByLink(downloadLink, finalAlternative);
+                                }
+
+                                @Override
+                                public boolean isHighPriority() {
+                                    return false;
+                                }
+                            });
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l, pluginException);
+                        }
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, pluginException);
             }
         }
         throw pluginException;
@@ -1774,7 +1882,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     public void handlePremium(final DownloadLink downloadLink, Account account) throws Exception {
         isDownloading = true;
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
-        YoutubeHelper helper = new YoutubeHelper(br, getLogger());
+        final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
         AbstractVariant variant = getVariant(downloadLink);
         if (account != null) {
             helper.login(account, false);
@@ -1796,11 +1904,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 } catch (final IOException e) {
                     logger.log(e);
                 }
+                final PluginException e;
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
                 }
+                avoidRetryLoop(e, downloadLink, variant);
             }
             try {
                 if (!this.dl.startDownload()) {
@@ -1821,11 +1931,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 } catch (final IOException e) {
                     logger.log(e);
                 }
+                final PluginException e;
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
                 }
+                avoidRetryLoop(e, downloadLink, variant);
             }
             try {
                 if (!this.dl.startDownload()) {
@@ -1859,11 +1971,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 } catch (final IOException e) {
                     logger.log(e);
                 }
+                final PluginException e;
                 if (dl.getConnection().getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
+                    e = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI.T.hoster_servererror("Youtube"), 1 * 60 * 1000l);
                 }
+                avoidRetryLoop(e, downloadLink, variant);
             }
             try {
                 if (!this.dl.startDownload()) {

@@ -40,6 +40,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
+import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.ImageVariant;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
@@ -472,16 +473,19 @@ public class VariantsMapTableModel extends ExtTableModel<AbstractVariantWrapper>
             public String getStringValue(AbstractVariantWrapper value) {
                 final List<String> rawContainer = new ArrayList<String>();
                 if (value.variant instanceof VideoInterface) {
-                    rawContainer.add(value.variant.getiTagVideo().getRawContainer().name());
+                    final YoutubeITAG itag = value.variant.getiTagVideo();
+                    rawContainer.add(itag.getRawContainer().name() + "(" + itag.getITAG() + ")");
                 }
                 if (value.variant instanceof AudioInterface) {
-                    final String container = value.variant.getiTagAudioOrVideoItagEquivalent().getRawContainer().name();
+                    final YoutubeITAG itag = value.variant.getiTagAudioOrVideoItagEquivalent();
+                    final String container = itag.getRawContainer().name() + "(" + itag.getITAG() + ")";
                     if (!rawContainer.contains(container)) {
                         rawContainer.add(container);
                     }
                 }
                 if (value.variant.getBaseVariant().getiTagData() != null) {
-                    final String container = value.variant.getBaseVariant().getiTagData().getRawContainer().name();
+                    final YoutubeITAG itag = value.variant.getBaseVariant().getiTagData();
+                    final String container = itag.getRawContainer().name() + "(" + itag.getITAG() + ")";
                     if (!rawContainer.contains(container)) {
                         rawContainer.add(container);
                     }

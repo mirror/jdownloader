@@ -175,7 +175,28 @@ public class TurbobitCore extends antiDDoSForHost {
         } finally {
             for (final DownloadLink deepCheck : deepChecks) {
                 try {
-                    requestFileInformation_Web(deepCheck);
+                    final AvailableStatus availableStatus = requestFileInformation_Web(deepCheck);
+                    deepCheck.setAvailableStatus(availableStatus);
+                } catch (PluginException e) {
+                    final AvailableStatus availableStatus;
+                    switch (e.getLinkStatus()) {
+                    case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                    case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                        availableStatus = AvailableStatus.UNCHECKABLE;
+                        break;
+                    case LinkStatus.ERROR_FILE_NOT_FOUND:
+                        availableStatus = AvailableStatus.FALSE;
+                        break;
+                    case LinkStatus.ERROR_PREMIUM:
+                        if (e.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
+                            availableStatus = AvailableStatus.UNCHECKABLE;
+                            break;
+                        }
+                    default:
+                        availableStatus = AvailableStatus.UNCHECKABLE;
+                        break;
+                    }
+                    deepCheck.setAvailableStatus(availableStatus);
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
@@ -188,22 +209,23 @@ public class TurbobitCore extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (prefer_single_linkcheck_via_mass_linkchecker && supports_mass_linkcheck()) {
-            requestFileInformation_Mass_Linkchecker(link);
+            return requestFileInformation_Mass_Linkchecker(link);
         } else {
-            requestFileInformation_Web(link);
+            return requestFileInformation_Web(link);
         }
-        return AvailableStatus.TRUE;
     }
 
     public AvailableStatus requestFileInformation_Mass_Linkchecker(final DownloadLink link) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
+        } else {
+            if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                return AvailableStatus.TRUE;
+            }
         }
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return AvailableStatus.TRUE;
     }
 
     public AvailableStatus requestFileInformation_Web(final DownloadLink link) throws Exception {
@@ -214,9 +236,8 @@ public class TurbobitCore extends antiDDoSForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowserWebsite(br, userAgent.get());
-        final String fuid = this.getFUID(link);
-        getPage("https://" + getConfiguredDomain() + "/" + fuid + ".html");
-        if (isFileOfflineWebsite(this.br)) {
+        accessDownloadURL(br, link);
+        if (isFileOfflineWebsite(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String titlePattern = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden|Descargar\\s+el\\s+archivo|Télécharger\\s+un\\s+fichier|Scarica\\s+il\\s+file|Pobierz\\s+plik|Baixar\\s+arquivo|İndirilecek\\s+dosya|ファイルのダウンロード)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2})\\)\\s*\\|\\s*(?:TurboBit|Hitfile)\\.net";
@@ -252,7 +273,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     public static boolean isFileOfflineWebsite(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|(?:Document|File|Page)\\s*(was)?\\s*not found|It could possibly be deleted\\.)");
     }
 
     /** 2019-05-09: Seems like API can only be used to check self uploaded content - it is useless for us! */
@@ -389,7 +410,7 @@ public class TurbobitCore extends antiDDoSForHost {
         handleFree(link, null);
     }
 
-    private void accessDownloadURL(final Browser thisbr, final DownloadLink link) throws Exception {
+    protected void accessDownloadURL(final Browser thisbr, final DownloadLink link) throws Exception {
         final String fuid = getFUID(link);
         String downloadurl = "https://" + getConfiguredDomain() + "/" + fuid;
         if (downloadurls_need_html_ending()) {
@@ -648,7 +669,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.toString().matches("^The file is not avaliable now because of technical problems\\. <br> Try to download it once again after 10-15 minutes\\..*?")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File not avaiable due to technical problems.", 15 * 60 * 1001l);
-            } else if (br.containsHTML("<a href=\\'/" + this.getLinkID(link) + "\\.html\\'>new</a>")) {
+            } else if (br.containsHTML("<a href=\\'/" + this.getLinkID(link) + "(\\.html)?\\'>new</a>")) {
                 /* Expired downloadlink - rare issue. If user has added such a direct-URL, we're not able to retry. */
                 /**
                  * 2019-05-14: TODO: Even premium-directurls should contain the linkid so we should be able to use that to 'convert' such

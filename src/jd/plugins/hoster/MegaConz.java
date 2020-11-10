@@ -157,6 +157,7 @@ public class MegaConz extends PluginForHost {
                 final AccountInfo ai = new AccountInfo();
                 boolean isPro = false;
                 final String status;
+                // https://docs.mega.nz/sdk/api/classmega_1_1_mega_account_details.html
                 switch (getNumber(uq, "utype").intValue()) {
                 case 1:
                     status = "Pro I Account" + subscriptionCycle;
@@ -174,8 +175,12 @@ public class MegaConz extends PluginForHost {
                     status = "Pro Lite Account" + subscriptionCycle;
                     isPro = true;
                     break;
-                default:
+                case 100:
+                    status = "Business Account" + subscriptionCycle;
+                    isPro = true;
+                    break;
                 case 0:
+                default:
                     status = "Free Account";
                     isPro = false;
                     break;
