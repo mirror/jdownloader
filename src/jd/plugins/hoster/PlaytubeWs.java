@@ -174,6 +174,9 @@ public class PlaytubeWs extends XFileSharingProBasic {
         String dllink = super.getDllink(link, account, br, src);
         if (StringUtils.isEmpty(dllink)) {
             dllink = new Regex(src, "class=\"button-dl\"[^>]*onclick=\"location\\.href='(https?://[^<>\"\\']+)").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
+                dllink = new Regex(src, "'(https?://[^<>\"\\']+\\.mp4)").getMatch(0);
+            }
         }
         return dllink;
     }
