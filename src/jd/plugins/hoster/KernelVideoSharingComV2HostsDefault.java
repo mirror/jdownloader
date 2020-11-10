@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
@@ -96,5 +98,18 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    protected String generateContentURL(final String fuid, String title) {
+        if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(title)) {
+            return null;
+        }
+        title = title.trim().toLowerCase();
+        /* We cannot create a valid url-title if it contains other chars than we expect. */
+        if (!title.matches("[a-z0-9\\- ]+")) {
+            return null;
+        }
+        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + title.replace(" ", "-") + "/";
     }
 }

@@ -19,12 +19,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexvidXxx extends KernelVideoSharingComV2 {
     public SexvidXxx(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    protected Browser prepBR(final Browser br) {
+        super.prepBR(br);
+        /* Try to avoid unnecessary redirects to e.g. "de.sexvid.xxx". */
+        br.setCookie(this.getHost(), "redirect_to_lang", "www." + this.getHost());
+        return br;
     }
 
     /** 2020-11-05: Sister-sites: zbporn.com, hdtube.porn */
@@ -58,5 +67,17 @@ public class SexvidXxx extends KernelVideoSharingComV2 {
     @Override
     protected boolean hasFUIDInsideURL(final String url) {
         return false;
+    }
+
+    @Override
+    protected String generateContentURL(final String fuid, String title) {
+        if (title == null) {
+            return null;
+        }
+        title = title.trim().toLowerCase();
+        if (!title.matches("[a-z0-9\\- ]+")) {
+            return null;
+        }
+        return "https://www." + this.getHost() + "/" + title.replace(" ", "-") + ".html";
     }
 }
