@@ -59,15 +59,10 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
     }
 
     @Override
-    protected String generateContentURL(final String fuid, String title) {
-        if (StringUtils.isEmpty(title)) {
+    protected String generateContentURL(final String fuid, final String urlTitle) {
+        if (StringUtils.isEmpty(urlTitle)) {
             return null;
         }
-        title = title.trim().toLowerCase();
-        /* We cannot create a valid url-title if it contains other chars than we expect. */
-        if (!title.matches("[a-z0-9\\- ]+")) {
-            return null;
-        }
-        return "https://www." + this.getHost() + "/videos/" + title.replace(" ", "-") + "/";
+        return "https://www." + this.getHost() + "/videos/" + urlTitle + "/";
     }
 }

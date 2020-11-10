@@ -251,7 +251,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /** Override this to allow attempting to auto-fix broken embed URLs. */
-    protected String generateContentURL(final String fuid, final String title) {
+    protected String generateContentURL(final String fuid, final String urlTitle) {
         return null;
     }
 
@@ -316,7 +316,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 /* 2020-11-10: Experimental feature: This can fix "broken" embed URLs: https://svn.jdownloader.org/issues/89009 */
                 final String embedTitle = regexEmbedTitle();
                 if (!StringUtils.isEmpty(embedTitle)) {
-                    realURL = this.generateContentURL(fuid, embedTitle);
+                    /* "Convert" embed title to URL-title */
+                    /* TODO: Check if these ones can end with "-". */
+                    String urlTitle = embedTitle.trim().toLowerCase();
+                    urlTitle = urlTitle.replaceAll("[^a-z0-9]", "-");
+                    realURL = this.generateContentURL(fuid, urlTitle);
                 }
             }
             if (!StringUtils.isEmpty(realURL)) {
