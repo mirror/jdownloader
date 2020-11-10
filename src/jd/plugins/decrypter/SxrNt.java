@@ -49,20 +49,23 @@ public class SxrNt extends PluginForDecrypt {
         final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         String fpName = url_name.replace("-", " ");
         final String[] links = br.getRegex("target=\"_blank\" href=\"(https?://[^\"]+)\" class=\"btn vertab\"").getColumn(0);
-        final String password = br.getRegex("<strong>Password file</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
+        String extractionPassword = br.getRegex("<strong>Password file</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!StringUtils.isEmpty(password)) {
-            param.setDecrypterPassword(password);
+        ArrayList<String> extractionPassword_s = null;
+        if (!StringUtils.isEmpty(extractionPassword)) {
+            extractionPassword = extractionPassword.trim();
+            param.setDecrypterPassword(extractionPassword);
+            // extractionPassword_s = new ArrayList<String>(PasswordUtils.getPasswords(extractionPassword));
+            extractionPassword_s = new ArrayList<String>();
+            extractionPassword_s.add(extractionPassword);
         }
-        // final Set<String> pws = PasswordUtils.getPasswords(password);
         for (final String singleLink : links) {
             final DownloadLink dl = createDownloadlink(singleLink);
-            /* TODO */
-            // if (!StringUtils.isEmpty(password)) {
-            // dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
-            // }
+            if (extractionPassword_s != null) {
+                dl.setSourcePluginPasswordList(extractionPassword_s);
+            }
             decryptedLinks.add(dl);
         }
         if (fpName != null) {
