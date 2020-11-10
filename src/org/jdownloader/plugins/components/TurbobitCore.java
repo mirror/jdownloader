@@ -178,6 +178,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     final AvailableStatus availableStatus = requestFileInformation_Web(deepCheck);
                     deepCheck.setAvailableStatus(availableStatus);
                 } catch (PluginException e) {
+                    logger.log(e);
                     final AvailableStatus availableStatus;
                     switch (e.getLinkStatus()) {
                     case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
