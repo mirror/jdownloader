@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -38,7 +39,7 @@ public class PlaytubeWs extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2020-11-10: No limits at all <br />
      * captchatype-info: 2020-07-02: null<br />
      * other:<br />
      */
@@ -155,5 +156,25 @@ public class PlaytubeWs extends XFileSharingProBasic {
             fileInfo[0] = new Regex(correctedBR, "class=\"top\"><div class=\"title\">([^<>\"]+)<").getMatch(0);
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String regexWaittime() {
+        /* 2020-11-10: For officialVideoDownload */
+        String waitStr = super.regexWaittime();
+        if (waitStr == null) {
+            waitStr = new Regex(correctedBR, ">Please wait <span id=\"timer\">(\\d+)<").getMatch(0);
+        }
+        return waitStr;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /* 2020-11-10: For officialVideoDownload */
+        String dllink = super.getDllink(link, account, br, src);
+        if (StringUtils.isEmpty(dllink)) {
+            dllink = new Regex(src, "class=\"button-dl\"[^>]*onclick=\"location\\.href='(https?://[^<>\"\\']+)").getMatch(0);
+        }
+        return dllink;
     }
 }
