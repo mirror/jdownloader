@@ -35,6 +35,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -68,12 +69,16 @@ public class EHentaiOrg extends PluginForDecrypt {
         }
         final String galleryid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final String galleryhash = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(2);
-        final String parameter;
-        if (aa == null) {
-            parameter = "https://e-hentai.org/" + gallerytype + "/" + galleryid + "/" + galleryhash + "/";
-        } else {
-            parameter = "https://exhentai.org/" + gallerytype + "/" + galleryid + "/" + galleryhash + "/";
-        }
+        /*
+         * 2020-11-10: Do not modify URL based on account availability. Not all account owners have access to exhentai.org! Accessing the
+         * wrong domain will result in a blank page!
+         */
+        // if (aa == null) {
+        // parameter = "https://e-hentai.org/" + gallerytype + "/" + galleryid + "/" + galleryhash + "/";
+        // } else {
+        // parameter = "https://exhentai.org/" + gallerytype + "/" + galleryid + "/" + galleryhash + "/";
+        // }
+        final String parameter = param.getCryptedUrl();
         if (galleryid == null || galleryhash == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -84,6 +89,10 @@ public class EHentaiOrg extends PluginForDecrypt {
         if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.getRequest().getHttpConnection().getCompleteContentLength() == 0) {
+            /* 2020-11-10: Rare case */
+            logger.warning("Blank page --> Are you trying to access exhentai.org without the appropriate rights?");
+            throw new AccountRequiredException();
         }
         final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
         final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);

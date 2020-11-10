@@ -63,6 +63,10 @@ public class HentaiDude extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML(">\\s*404 - Sorry, nothing found")) {
+            /* 2020-11-10: Without http response 404 */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         String nextpage = br.getRegex("<a href=\"([^\"]+)\" class=\"styled-button\">Next").getMatch(0);
         /* Grab all pages if possible and enabled by user. */
