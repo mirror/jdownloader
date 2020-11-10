@@ -21,31 +21,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -70,6 +50,27 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -450,9 +451,13 @@ public class AllDebridCom extends antiDDoSForHost {
         br.getHeaders().put("Authorization", "Bearer " + auth);
     }
 
+    private String getDirectLinkProperty(final DownloadLink link, final Account account) {
+        return this.getHost() + "directurl";
+    }
+
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        final String directlinkproperty = this.getHost() + "directurl";
+        final String directlinkproperty = getDirectLinkProperty(link, account);
         /* Try to re-use previously generated directurl */
         String dllink = checkDirectLink(link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
@@ -503,8 +508,8 @@ public class AllDebridCom extends antiDDoSForHost {
             try {
                 /* We need the parser as some URLs may have streams available with multiple qualities and multiple downloadurls */
                 // dllink = PluginJSonUtils.getJsonValue(br, "link");
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = (Map<String, Object>) entries.get("data");
                 dllink = (String) entries.get("link");
             } catch (final Throwable e) {
                 logger.log(e);
@@ -599,8 +604,8 @@ public class AllDebridCom extends antiDDoSForHost {
                 this.submitForm(dlform);
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                    entries = (LinkedHashMap<String, Object>) entries.get("data");
+                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    entries = (Map<String, Object>) entries.get("data");
                     delayedStatus = (int) JavaScriptEngineFactory.toLong(entries.get("status"), 3);
                     final int tmpCurrentProgress = (int) ((Number) entries.get("progress")).doubleValue() * 100;
                     if (tmpCurrentProgress > currentProgress) {
@@ -615,6 +620,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     }
                 } catch (final Throwable e) {
                     logger.info("Error parsing json response");
+                    logger.log(e);
                     break;
                 }
                 waitSecondsLeft -= waitSecondsPerLoop;
@@ -636,8 +642,9 @@ public class AllDebridCom extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.isOK() && con.getCompleteContentLength() > 0 && (con.isContentDisposition() || StringUtils.equalsIgnoreCase(con.getContentType(), "application/octet-stream"))) {
+                // HEAD requests are causing issues serverside, headers are missing in combination with keepalive
+                con = br2.openGetConnection(dllink);
+                if (looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
                     throw new IOException();
@@ -645,14 +652,16 @@ public class AllDebridCom extends antiDDoSForHost {
             } catch (final Exception e) {
                 logger.log(e);
                 link.setProperty(property, Property.NULL);
+                link.setProperty(property + "_paws", Property.NULL);
                 return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     @SuppressWarnings("deprecation")
@@ -662,25 +671,43 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         showMessage(link, "Task 2: Download begins!");
         final boolean useVerifiedFileSize;
-        if (br != null && PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"))) {
+        final String directlinkpawsproperty = getDirectLinkProperty(link, account) + "_paws";
+        final Boolean paws;
+        if (br != null && PluginJSonUtils.getJsonValue(br, "paws") != null) {
+            paws = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "paws"));
+            link.setProperty(directlinkpawsproperty, paws.booleanValue());
+        } else if (link.hasProperty(directlinkpawsproperty)) {
+            paws = link.getBooleanProperty(directlinkpawsproperty, false);
+        } else {
+            paws = false;
+        }
+        if (Boolean.FALSE.equals(paws)) {
             logger.info("don't use verified filesize because 'paws'!");
             useVerifiedFileSize = false;
         } else if (link.getVerifiedFileSize() > 0) {
             final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
             final URLConnectionAdapter check = openAntiDDoSRequestConnection(brc, brc.createGetRequest(genlink));
             try {
-                if (check.getCompleteContentLength() < 0) {
-                    logger.info("don't use verified filesize because complete content length isn't available!");
+                if (!looksLikeDownloadableContent(check)) {
+                    try {
+                        brc.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (check.getCompleteContentLength() < 0) {
+                    logger.info("don't use verified filesize because complete content length isn't available:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
                     useVerifiedFileSize = false;
                 } else if (check.getCompleteContentLength() == link.getVerifiedFileSize()) {
-                    logger.info("use verified filesize because it matches complete content length");
+                    logger.info("use verified filesize because it matches complete content length:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
                     useVerifiedFileSize = true;
                 } else {
                     if (link.getDownloadCurrent() > 0) {
-                        logger.info("cannot resume different file!");
+                        logger.info("cannot resume different file:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        logger.info("don't use verified filesize because it doesn't match complete content length!");
+                        logger.info("don't use verified filesize because it doesn't match complete content length:" + check.getCompleteContentLength() + "!=" + link.getVerifiedFileSize());
                         useVerifiedFileSize = false;
                     }
                 }
@@ -734,28 +761,23 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         /* 2020-04-12: Chunks limited to 16 RE: admin */
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(genlink), true, -16);
-        if (dl.getConnection().getResponseCode() == 404) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             /* file offline */
             try {
                 br.followConnection(true);
             } catch (IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            if (br.containsHTML("range not ok")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("range not ok")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else {
+                /* unknown error */
+                logger.severe("Error: Unknown Error");
+                // disable hoster for 5min
+                mhm.putError(account, link, 5 * 60 * 1000l, "Final downloadurl does not lead to a file");
             }
-            /* unknown error */
-            logger.severe("Error: Unknown Error");
-            // disable hoster for 5min
-            mhm.putError(account, link, 5 * 60 * 1000l, "Final downloadurl does not lead to a file");
         }
         dl.startDownload();
     }

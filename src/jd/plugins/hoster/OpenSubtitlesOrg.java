@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opensubtitles.org" }, urls = { "https?://(?:www\\.)?opensubtitles\\.org/[a-z]{2}/subtitles/(\\d+)" })
 public class OpenSubtitlesOrg extends PluginForHost {
@@ -86,8 +86,12 @@ public class OpenSubtitlesOrg extends PluginForHost {
         // Resume and chunks disabled, not needed for such small files & can't
         // test
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, "https://dl.opensubtitles.org/en/download/sub/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
