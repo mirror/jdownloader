@@ -64,6 +64,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private static final String           TYPE_SAVED_OBJECTS     = "https?://[^/]+/[^/]+/saved/?$";
     private static final String           TYPE_TAGS              = "https?://[^/]+/explore/tags/([^/]+)/?$";
     private String                        username_url           = null;
+    /** For links matching pattern {@link #TYPE_TAGS} --> This will be set on created DownloadLink objects as a (packagizer-) property. */
+    private String                        hashtag                = null;
     private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
     private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
     private Boolean                       isPrivate              = false;
@@ -457,8 +459,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private void crawlHashtag(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
         /* Jump to a point that is the same for our first page and all following ones */
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/TagPage/{0}/graphql/hashtag");
-        final String tagName = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
-        if (tagName == null) {
+        this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
+        if (this.hashtag == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String rhxGis = this.getVarRhxGis(this.br);
@@ -474,7 +476,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 final Browser br = this.br.cloneBrowser();
                 prepBrAjax(br);
                 final Map<String, Object> vars = new LinkedHashMap<String, Object>();
-                vars.put("tag_name", tagName);
+                vars.put("tag_name", this.hashtag);
                 vars.put("first", 1);
                 vars.put("after", nextid);
                 if (qHash == null) {
@@ -719,8 +721,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             filename = server_filename;
         } else {
-            if (StringUtils.isNotEmpty(username_url)) {
-                filename = username_url + " - " + linkid_main;
+            /*
+             * 2020-11-11: At this moment, we will always either have username OR hashtag available. In a "hashtag overview", we can get the
+             * single userIDs of single items but we cannot easily get their Instagram usernames without having to do at least one
+             * additional http-request for each userID!
+             */
+            if (!StringUtils.isEmpty(this.username_url)) {
+                filename = this.username_url + " - " + linkid_main;
+            } else if (!StringUtils.isEmpty(this.hashtag)) {
+                filename = this.hashtag + " - " + linkid_main;
             } else {
                 filename = linkid_main;
             }
@@ -778,6 +787,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         if (!StringUtils.isEmpty(postID)) {
             dl.setProperty("postid", postID);
+        }
+        if (!StringUtils.isEmpty(this.hashtag)) {
+            /* Packagizer Property */
+            dl.setProperty("hashtag", this.hashtag);
+        }
+        if (!StringUtils.isEmpty(this.username_url)) {
+            /* Packagizer Property */
+            dl.setProperty("uploader", this.username_url);
         }
         dl.setProperty("isvideo", isVideo);
         if (taken_at_timestamp > 0) {
