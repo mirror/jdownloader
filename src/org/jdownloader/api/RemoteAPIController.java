@@ -13,10 +13,14 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+
+import jd.nutils.DiffMatchPatch;
+import jd.nutils.DiffMatchPatch.Diff;
+import jd.nutils.DiffMatchPatch.Patch;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -89,6 +93,7 @@ import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
 import org.jdownloader.api.linkcrawler.LinkCrawlerAPIImpl;
 import org.jdownloader.api.linkcrawler.LinkCrawlerEventPublisher;
 import org.jdownloader.api.logs.LogAPIImpl;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderPostRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.api.plugins.PluginsAPIImpl;
@@ -108,10 +113,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.myjdownloader.client.json.ObjectData;
 
-import jd.nutils.DiffMatchPatch;
-import jd.nutils.DiffMatchPatch.Diff;
-import jd.nutils.DiffMatchPatch.Patch;
-
 public class RemoteAPIController {
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
     private final boolean              isJared  = Application.isJared(RemoteAPIController.class);
@@ -129,7 +130,6 @@ public class RemoteAPIController {
     private DownloadsAPIV2Impl                       downloadsAPIV2;
     private LinkCollectorAPIImplV2                   linkcollector;
     private final UserAgentController                uaController;
-    private final HashMap<String, RIDArray>          rids;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -139,7 +139,6 @@ public class RemoteAPIController {
     private RemoteAPIController() {
         this.uaController = new UserAgentController();
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
-        rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
             @Override
             protected void _handleRemoteAPICall(RemoteAPIRequest request, RemoteAPIResponse response) throws BasicRemoteAPIException {
@@ -185,6 +184,13 @@ public class RemoteAPIController {
             @Override
             public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text) throws UnsupportedEncodingException, IOException {
                 try {
+                    final LogSource logger;
+                    if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
+                        final MyJDownloaderHttpConnection myJDownloaderConnection = ((MyJDownloaderRequestInterface) request.getHttpRequest()).getConnection();
+                        logger = myJDownloaderConnection.getLogger();
+                    } else {
+                        logger = RemoteAPIController.this.logger;
+                    }
                     if (!isJared) {
                         logger.info("\r\n===========API Call Result:==============\r\n" + request.toString() + "\r\nResponse:\r\n" + text + "\r\n" + "=========================================");
                     }
@@ -316,8 +322,9 @@ public class RemoteAPIController {
         try {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
-            if (JsonConfig.create(RemoteAPIConfig.class).isDeprecatedApiEnabled()) {
-                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(JsonConfig.create(RemoteAPIConfig.class).getDeprecatedApiPort(), true, sessionc);
+            final RemoteAPIConfig remoteAPIConfig = JsonConfig.create(RemoteAPIConfig.class);
+            if (remoteAPIConfig.isDeprecatedApiEnabled()) {
+                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(remoteAPIConfig.getDeprecatedApiPort(), remoteAPIConfig.isDeprecatedApiLocalhostOnly(), sessionc);
             }
         } catch (Throwable e) {
             logger.log(e);
@@ -503,45 +510,78 @@ public class RemoteAPIController {
         return advancedConfigAPI;
     }
 
-    /* TODO: add session support, currently all sessions share the same validateRID */
+    private class RidHistory {
+        private long[]             oldest  = null;
+        private final List<long[]> history = new ArrayList<long[]>();
+    }
+
+    private final Map<String, RidHistory> ridHistory = new HashMap<String, RidHistory>();
+
     public synchronized boolean validateRID(long rid, String sessionToken) {
         if (true) {
             return true;
-        }
-        // TODO CLeanup
-        RIDArray ridList = rids.get(sessionToken);
-        if (ridList == null) {
-            ridList = new RIDArray();
-            rids.put(sessionToken, ridList);
-        }
-        // lowest RID
-        System.out.println("RID " + rid + " " + sessionToken);
-        long lowestRid = Long.MIN_VALUE;
-        RIDEntry next;
-        for (Iterator<RIDEntry> it = ridList.iterator(); it.hasNext();) {
-            next = it.next();
-            if (next.getRid() == rid) {
-                // dupe rid is always bad
-                logger.warning("received an RID Dupe. Possible Replay Attack avoided");
-                return false;
-            }
-            if (System.currentTimeMillis() - next.getTimestamp() > 15000) {
-                it.remove();
-                if (next.getRid() > lowestRid) {
-                    lowestRid = next.getRid();
+        } else {
+            final RidHistory history;
+            synchronized (ridHistory) {
+                if (ridHistory.containsKey(sessionToken)) {
+                    history = ridHistory.get(sessionToken);
+                } else {
+                    history = new RidHistory();
+                    ridHistory.put(sessionToken, history);
                 }
             }
+            synchronized (history) {
+                long[] oldest = null;
+                long[] newest = null;
+                int dup = 0;
+                for (final long[] item : history.history) {
+                    if (item[0] == rid) {
+                        dup++;
+                    }
+                    if (oldest == null || item[0] < oldest[0]) {
+                        oldest = item;
+                    }
+                    if (newest == null || item[0] > newest[0]) {
+                        newest = item;
+                    }
+                }
+                history.history.add(new long[] { rid, System.currentTimeMillis() });
+            }
         }
-        if (lowestRid > ridList.getMinAcceptedRID()) {
-            ridList.setMinAcceptedRID(lowestRid);
-        }
-        if (rid <= ridList.getMinAcceptedRID()) {
-            // rid too low
-            logger.warning("received an outdated RID. Possible Replay Attack avoided");
-            return false;
-        }
-        RIDEntry ride = new RIDEntry(rid);
-        ridList.add(ride);
+        // // TODO CLeanup
+        // RIDArray ridList = rids.get(sessionToken);
+        // if (ridList == null) {
+        // ridList = new RIDArray();
+        // rids.put(sessionToken, ridList);
+        // }
+        // // lowest RID
+        // System.out.println("RID " + rid + " " + sessionToken);
+        // long lowestRid = Long.MIN_VALUE;
+        // RIDEntry next;
+        // for (Iterator<RIDEntry> it = ridList.iterator(); it.hasNext();) {
+        // next = it.next();
+        // if (next.getRid() == rid) {
+        // // dupe rid is always bad
+        // logger.warning("received an RID Dupe. Possible Replay Attack avoided");
+        // return false;
+        // }
+        // if (System.currentTimeMillis() - next.getTimestamp() > 15000) {
+        // it.remove();
+        // if (next.getRid() > lowestRid) {
+        // lowestRid = next.getRid();
+        // }
+        // }
+        // }
+        // if (lowestRid > ridList.getMinAcceptedRID()) {
+        // ridList.setMinAcceptedRID(lowestRid);
+        // }
+        // if (rid <= ridList.getMinAcceptedRID()) {
+        // // rid too low
+        // logger.warning("received an outdated RID. Possible Replay Attack avoided");
+        // return false;
+        // }
+        // RIDEntry ride = new RIDEntry(rid);
+        // ridList.add(ride);
         return true;
     }
 

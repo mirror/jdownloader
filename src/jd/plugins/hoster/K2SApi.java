@@ -23,16 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -58,6 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -2021,17 +2021,17 @@ public abstract class K2SApi extends PluginForHost {
         if (!prepBrSet) {
             prepBrowser(ibr);
         }
-        ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        final Request request = ibr.createPostRequest(page, postData);
+        request.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         URLConnectionAdapter con = null;
         try {
-            con = ibr.openPostConnection(page, postData);
+            con = ibr.openRequestConnection(request);
             readConnection(con, ibr);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            ibr.getHeaders().put("Content-Type", null);
         }
         antiDDoS(ibr);
     }
@@ -2053,23 +2053,27 @@ public abstract class K2SApi extends PluginForHost {
         if (!prepBrSet) {
             prepBrowser(ibr);
         }
+        boolean setContentType = false;
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
             if (form.getAction() == null || form.getAction().equals("")) {
                 form.setAction(ibr.getURL());
             }
-            ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+            setContentType = true;
+        }
+        final Request request = ibr.createFormRequest(form);
+        if (setContentType) {
+            request.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
         URLConnectionAdapter con = null;
         try {
-            con = ibr.openFormConnection(form);
+            con = ibr.openRequestConnection(request);
             readConnection(con, ibr);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            ibr.getHeaders().put("Content-Type", null);
         }
         antiDDoS(ibr);
     }
@@ -2097,7 +2101,6 @@ public abstract class K2SApi extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
-            ibr.getHeaders().put("Content-Type", null);
         }
         antiDDoS(ibr);
     }
