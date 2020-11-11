@@ -106,10 +106,10 @@ public class CryptedLink {
     }
 
     /**
-     * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     * must return getCryptedUrl !
      */
     // @Override
     public String toString() {
-        return "Plugin:" + getLazyC() + "|URL:" + getCryptedUrl();
+        return getCryptedUrl();
     }
 }
