@@ -84,6 +84,11 @@ public class OxyCloud extends antiDDoSForHost {
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML(fid)) {
+            /*
+             * 2020-11-11: E.g. " <h1>This file is locked </h1>"
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Language independant RegEx */
         String filename = br.getRegex("text_font_text text-block__text\" data\\-reactid=\"19\">[^<]+<b>([^<>\"]+)</b>").getMatch(0);

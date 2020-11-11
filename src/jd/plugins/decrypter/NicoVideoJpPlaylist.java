@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(www\\.)?nicovideo\\.jp/mylist/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "https?://(?:www\\.)?nicovideo\\.jp/(?:user/\\d+/)?mylist/\\d+" })
 public class NicoVideoJpPlaylist extends PluginForDecrypt {
     public NicoVideoJpPlaylist(PluginWrapper wrapper) {
         super(wrapper);
@@ -35,19 +35,17 @@ public class NicoVideoJpPlaylist extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">This My List is set as private")) {
             logger.info("Private playlist, cannot decrypt: " + parameter);
             return decryptedLinks;
         } else if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("MylistGroup\\.preloadSingle\\(\\d+, \\{.*?name: \"([^<>\"]*?)\"").getMatch(0);
-        final String[] videoids = br.getRegex("\"video_id\":\"(sm\\d+)\"").getColumn(0);
+        final String[] videoids = br.getRegex("nicovideo\\.jp..watch..(([a-z]{2})?\\d+)").getColumn(0);
         if (videoids == null || videoids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

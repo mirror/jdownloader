@@ -49,7 +49,7 @@ public class MangatownCom extends PluginForDecrypt {
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
-        final Regex downloadinfo = this.br.getRegex("([A-Za-z0-9\\-]+\\.mangatown\\.com/store/manga/[^<>\"\\']+[a-z])\\d+(\\.[A-Za-z0-9]+)");
+        final Regex downloadinfo = this.br.getRegex("\"[^\"]*([A-Za-z0-9\\-]+\\.[^/]+/store/manga/[^\"]+)\\d+(\\.[A-Za-z0-9]+)");
         final String server_urlpart = downloadinfo.getMatch(0);
         final String ext = downloadinfo.getMatch(1);
         if (server_urlpart == null || ext == null) {

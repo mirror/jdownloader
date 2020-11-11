@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,7 +46,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|user/[^/]+(?:/saved)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
     public RedditCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +73,7 @@ public class RedditCom extends PluginForDecrypt {
     private String                parameter               = null;
     private static final String   TYPE_SUBREDDIT          = "https?://[^/]+/r/([^/]+)";
     private static final String   TYPE_SUBREDDIT_COMMENTS = "https?://[^/]+/r/([^/]+)/comments/([a-z0-9]+)/([A-Za-z0-9\\-_]+)";
+    private static final String   TYPE_GALLERY            = "https?://[^/]+/gallery/([a-z0-9]+)";
     private static final String   TYPE_USER               = "https://[^/]+/user/([^/]+)";
     private static final String   TYPE_USER_SAVED_OBJECTS = "https://[^/]+/user/([^/]+)/saved";
 
@@ -83,7 +85,9 @@ public class RedditCom extends PluginForDecrypt {
         } else if (parameter.matches(TYPE_USER)) {
             crawlUser();
         } else if (parameter.matches(TYPE_SUBREDDIT_COMMENTS)) {
-            crawlComment();
+            crawlCommentURL();
+        } else if (parameter.matches(TYPE_GALLERY)) {
+            this.crawlGalleryURL();
         } else {
             crawlSubreddit();
         }
@@ -230,28 +234,27 @@ public class RedditCom extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
+    /** 2020-11-11: Currently does the same as {@link #crawlCommentURL()}} */
+    private void crawlGalleryURL() throws Exception {
+        final String commentID = new Regex(this.parameter, TYPE_GALLERY).getMatch(0);
+        crawlComments(commentID);
+    }
+
     /** According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
-    private void crawlComment() throws Exception {
+    private void crawlCommentURL() throws Exception {
         final String commentID = new Regex(this.parameter, TYPE_SUBREDDIT_COMMENTS).getMatch(1);
-        // final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        // if (acc == null) {
-        // throw new AccountRequiredException();
-        // }
-        // final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
-        // plugin.setBrowser(this.br);
-        // ((jd.plugins.hoster.RedditCom) plugin).login(acc, false);
-        /* According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
+        crawlComments(commentID);
+    }
+
+    private void crawlComments(final String commentID) throws Exception {
+        if (commentID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("https://www.reddit.com/comments/" + commentID + "/.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return;
         }
-        final String commentURLTitle = new Regex(this.parameter, TYPE_SUBREDDIT_COMMENTS).getMatch(2);
-        if (commentURLTitle == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        fp = FilePackage.getInstance();
-        fp.setName(commentURLTitle);
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         /* [0] = post/"first comment" */
         /* [1] = Comments */
@@ -264,6 +267,7 @@ public class RedditCom extends PluginForDecrypt {
 
     private void crawlListing(Map<String, Object> entries) throws Exception {
         /* https://www.reddit.com/dev/api/#fullnames */
+        final DecimalFormat df = new DecimalFormat("00");
         final ArrayList<Object> items = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/children");
         for (final Object itemO : items) {
             entries = (Map<String, Object>) itemO;
@@ -282,6 +286,11 @@ public class RedditCom extends PluginForDecrypt {
             } else if (StringUtils.isEmpty(title) || StringUtils.isEmpty(subredditTitle)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            if (this.fp == null) {
+                fp = FilePackage.getInstance();
+                fp.setName(title);
+            }
+            final ArrayList<Object> gallery = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "gallery_data/items");
             title = dateFormatted + "_" + subredditTitle + " - " + title;
             /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
@@ -311,6 +320,18 @@ public class RedditCom extends PluginForDecrypt {
                         final DownloadLink dl = this.createDownloadlink(url);
                         decryptedLinks.add(dl);
                     }
+                }
+            }
+            if (gallery != null) {
+                int counter = 0;
+                for (final Object galleryO : gallery) {
+                    counter++;
+                    final Map<String, Object> mediaInfo = (Map<String, Object>) galleryO;
+                    final String media_id = (String) mediaInfo.get("media_id");
+                    final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + media_id + ".jpg");
+                    image.setFinalFileName(title + "_" + df.format(counter) + ".jpg");
+                    image.setAvailable(true);
+                    decryptedLinks.add(image);
                 }
             }
             /* Look for selfhosted video content. Prefer content without https */
