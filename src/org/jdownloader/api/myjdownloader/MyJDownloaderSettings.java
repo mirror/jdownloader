@@ -112,7 +112,7 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     @DefaultIntValue(3129)
     @SpinnerValidator(min = 1025, max = 65000)
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Try to use given local port for DirectConnectMode=LAN_WAN_MANUAL")
+    @DescriptionForConfigEntry("Try to use given local port for DirectConnectMode=LAN,LAN_WAN_MANUAL,LAN_WAN_UPNP")
     public int getManualLocalPort();
 
     public void setManualLocalPort(int port);

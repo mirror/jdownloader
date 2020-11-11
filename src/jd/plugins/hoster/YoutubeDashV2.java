@@ -2292,7 +2292,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         if (variant == null) {
             return;
         }
@@ -2416,7 +2416,6 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             return ret;
         } catch (Throwable e) {
             logger.log(e);
-            ;
             return null;
         }
     }

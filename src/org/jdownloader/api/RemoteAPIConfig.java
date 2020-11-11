@@ -33,6 +33,14 @@ public interface RemoteAPIConfig extends ConfigInterface {
 
     void setExternInterfaceAuth(ArrayList<String> auth);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("DeprecatedAPI will listen on localhost only")
+    boolean isDeprecatedApiLocalhostOnly();
+
+    void setDeprecatedApiLocalhostOnly(boolean b);
+
     @AboutConfig
     @DefaultBooleanValue(false)
     boolean isDeprecatedApiEnabled();

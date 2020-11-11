@@ -46,7 +46,8 @@ import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
-    private static final String PATTERN_NAME             = "{name}";
+    private static final String PATTERN_NAME             = "{name}";            // depends on type
+    private static final String PATTERN_PACKAGE_NAME     = "{packagename}";     // always package name
     private static final String PATTERN_NAME_NOEXT       = "{name_noext}";
     private static final String PATTERN_NEWLINE          = "{newline}";
     private static final String PATTERN_COMMENT          = "{comment}";
@@ -251,6 +252,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));
             line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
             line = line.replace(PATTERN_EXTENSION, nulltoString(null));
@@ -267,6 +269,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = getPatternLinks();
             line = replaceDate(line);
             final DownloadLink link = (DownloadLink) pv;
+            final FilePackage fp = link.getFilePackage();
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
@@ -279,6 +282,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = link.getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(fp.getName()));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(Files.getFileNameWithoutExtension(name)));
             line = line.replace(PATTERN_EXTENSION, nulltoString(toUpperCase(Files.getExtension(name))));
             final HashInfo hashInfo = link.getHashInfo();
@@ -311,6 +315,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
                 line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             }
             final CrawledLink link = (CrawledLink) pv;
+            final CrawledPackage cp = link.getParentNode();
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getDownloadLink().getComment()));
@@ -323,6 +328,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = link.getDownloadLink().getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(cp.getName()));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(Files.getFileNameWithoutExtension(name)));
             line = line.replace(PATTERN_EXTENSION, nulltoString(toUpperCase(Files.getExtension(name))));
             final HashInfo hashInfo = link.getDownloadLink().getHashInfo();
@@ -367,6 +373,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
+            line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(null));
             line = line.replace(PATTERN_ARCHIVE_PASSWORD, nulltoString(null));
             line = line.replace(PATTERN_EXTENSION, nulltoString(null));
@@ -389,16 +396,17 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         }
     }
 
-    private String nulltoString(Object comment) {
-        return comment == null ? "" : comment + "";
+    private final String nulltoString(final Object comment) {
+        return comment == null ? "" : comment.toString();
     }
 
-    private PackageControllerTable<?, ?> getTable() {
+    private final PackageControllerTable<?, ?> getTable() {
         if (MainTabbedPane.getInstance().isDownloadView()) {
             return DownloadsTable.getInstance();
         } else if (MainTabbedPane.getInstance().isLinkgrabberView()) {
             return LinkGrabberTable.getInstance();
+        } else {
+            return null;
         }
-        return null;
     }
 }
