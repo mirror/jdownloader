@@ -128,23 +128,26 @@ public class XHamsterGallery extends PluginForDecrypt {
             int page = 1;
             do {
                 logger.info("Crawling page: " + page);
-                final String[] urls = br.getRegex("(/videos/[a-z0-9\\-]+-\\d+)").getColumn(0);
-                for (String url : urls) {
-                    url = br.getURL(url).toString();
-                    final String url_title = new Regex(url, "/videos/(.+)-\\d+$").getMatch(0);
-                    final DownloadLink dl = this.createDownloadlink(url);
-                    dl.setName(username + "_" + url_title.replace("-", " ") + ".mp4");
+                final String[] urlParts = br.getRegex("/videos/([^<>\"']+)").getColumn(0);
+                for (String urlPart : urlParts) {
+                    final DownloadLink dl = this.createDownloadlink(br.getURL("/videos/" + urlPart).toString());
+                    dl.setName(username + "_" + urlPart.replace("-", " ") + ".mp4");
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                 }
+                logger.info("Found " + urlParts.length + " items on page: " + page + " [Probably less without dupes]");
                 page++;
                 final String nextpage = br.getRegex("(/users/" + username + "/videos/" + page + ")").getMatch(0);
-                if (nextpage != null) {
+                if (urlParts.length == 0) {
+                    /* Fail-safe */
+                    logger.info("Failed to find any URLs on current page --> Stopping");
+                    break;
+                } else if (nextpage != null) {
                     logger.info("Nextpage available: " + nextpage);
                     br.getPage(nextpage);
                 } else {
-                    logger.info("No nextpage available");
+                    logger.info("No nextpage available --> Stopping");
                     break;
                 }
             } while (!this.isAbort());
