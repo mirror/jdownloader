@@ -75,7 +75,7 @@ public class MangatownCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/manga/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("([^/\"\\']+\\.mangatown\\.[a-z]+/store/manga/[^<>\"\\']+)").getMatch(0);
+        dllink = br.getRegex("([^/\"\\']+\\.[^/]+/store/manga/[^<>\"\\']+)").getMatch(0);
         if (!StringUtils.isEmpty(dllink)) {
             dllink = "https://" + dllink;
             URLConnectionAdapter con = null;
