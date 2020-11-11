@@ -14,8 +14,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-]+\\.artstation\\.com/(projects/[A-Z0-9]+|(?!artwork)$)" })
-public class ArtistArtstationCom extends antiDDoSForDecrypt {
-    public ArtistArtstationCom(PluginWrapper wrapper) {
+public class ArtStationComProjects extends antiDDoSForDecrypt {
+    public ArtStationComProjects(PluginWrapper wrapper) {
         super(wrapper);
     }
 
