@@ -187,7 +187,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     /**
      * Override this if URLs can end with digits but these are not your FUID! </br>
      * E.g. override this when adding host plugins with patterns that match {@link #type_normal_fuid_at_end} . </br>
-     * Example: example.com/url-title.html TODO: Rename this accordingly </br>
+     * Example: example.com/url-title.html</br>
      * Override {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in
      * this case, FUID will always get detected).
      */
@@ -280,7 +280,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setName(titleURL + ".mp4");
         }
         getPage(link.getPluginPatternMatcher());
-        if (isOffline()) {
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(type_embedded)) {
@@ -316,10 +316,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 /* 2020-11-10: Experimental feature: This can fix "broken" embed URLs: https://svn.jdownloader.org/issues/89009 */
                 final String embedTitle = regexEmbedTitle();
                 if (!StringUtils.isEmpty(embedTitle)) {
-                    /* "Convert" embed title to URL-title */
-                    /* TODO: Check if these ones can end with "-". */
+                    /*
+                     * "Convert" embed title to URL-title. Unsafe attempt but this can make "embed" URLs downloadable that wouldn't be
+                     * downloadable otherwise.
+                     */
                     String urlTitle = embedTitle.trim().toLowerCase();
                     urlTitle = urlTitle.replaceAll("[^a-z0-9]", "-");
+                    /* Make sure that that string doesn't start- or end with "-". */
+                    urlTitle = new Regex(urlTitle, "^(\\-*)(.*?)(\\-*)$").getMatch(1);
                     realURL = this.generateContentURL(fuid, urlTitle);
                 }
             }
@@ -330,7 +334,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     final Browser brc = this.prepBR(new Browser());
                     brc.getPage(realURL);
                     /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
-                    if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches()) {
+                    if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOffline(brc)) {
                         logger.info("Successfully found real URL: " + realURL);
                         link.setPluginPatternMatcher(brc.getURL());
                         br.setRequest(brc.getRequest());
@@ -481,7 +485,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    protected boolean isOffline() {
+    protected boolean isOffline(final Browser br) {
         return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/404.php");
     }
 
@@ -531,12 +535,6 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if ((private_video || StringUtils.isEmpty(this.dllink)) && account != null) {
-            server_issues = false;
-            private_video = false;
-            login(account, false);
-            requestFileInformation(link, true);
-        }
         if (StringUtils.isEmpty(this.dllink)) {
             if (private_video) {
                 throw new AccountRequiredException("Private video");
@@ -612,7 +610,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         this.handleDownload(link, account);
     }
 

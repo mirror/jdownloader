@@ -133,8 +133,8 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected boolean isOffline() {
-        boolean offline = super.isOffline();
+    protected boolean isOffline(final Browser br) {
+        boolean offline = super.isOffline(br);
         final String urltitle = getURLTitle(this.getDownloadLink().getPluginPatternMatcher());
         /* 2020-10-30: Website redirects to random other video if originally requested content is offline. */
         if (!offline && urltitle != null) {
