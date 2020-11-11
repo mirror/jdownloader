@@ -104,7 +104,7 @@ public class BiqleRu extends PluginForHost {
         /* Match variants via filename */
         final String target_filename = link.getFinalFileName();
         try {
-            final CryptedLink forDecrypter = new CryptedLink(link.getContainerUrl());
+            final CryptedLink forDecrypter = new CryptedLink(link.getContainerUrl(), link);
             final ArrayList<DownloadLink> ret = decrypterplugin.decryptIt(forDecrypter, null);
             for (final DownloadLink dl : ret) {
                 correctDownloadLink(dl);
