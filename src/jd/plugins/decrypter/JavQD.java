@@ -2,9 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -14,6 +11,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javqd.tv" }, urls = { "https?://(?:www\\.)?javqd\\.tv/movie/([^/]+)(.html?)?" })
 public class JavQD extends PluginForDecrypt {
@@ -50,11 +49,9 @@ public class JavQD extends PluginForDecrypt {
             } else {
                 name = filename;
             }
-            final DownloadLink downloadLink;
-            if (StringUtils.isEmpty(name)) {
-                downloadLink = createDownloadlink(data_link);
-            } else {
-                downloadLink = createDownloadlink(data_link + "#javclName=" + HexFormatter.byteArrayToHex(name.getBytes("UTF-8")));
+            final DownloadLink downloadLink = createDownloadlink(data_link);
+            if (!StringUtils.isEmpty(name)) {
+                downloadLink.setProperty("javclName", name);
             }
             ret.add(downloadLink);
             index++;

@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins;
 
+import jd.controlling.linkcrawler.CrawledLink;
+
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
@@ -23,15 +25,22 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  * @author jiaz
  */
 public class CryptedLink {
-    /**
-     * enthält die Url, welche an das Decrypter-Plugin übergeben wird
-     */
-    private String cryptedUrl;
+    private String cryptedURL        = null;
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
-    private String decrypterPassword;
+    private String decrypterPassword = null;
+    private Object source            = null;
 
-    public CryptedLink(String cryptedUrl) {
-        this(cryptedUrl, null);
+    public CryptedLink(String url, Object source) {
+        cryptedURL = url;
+        this.source = source;
+    }
+
+    public CryptedLink(Object source) {
+        this.source = source;
+    }
+
+    public void setSourceLink(Object source) {
+        this.source = source;
     }
 
     private LazyCrawlerPlugin lazyC = null;
@@ -44,23 +53,42 @@ public class CryptedLink {
         this.lazyC = lazyC;
     }
 
-    public CryptedLink(String cryptedUrl, String pw) {
-        this.cryptedUrl = cryptedUrl;
-        this.decrypterPassword = pw;
+    public DownloadLink getDownloadLink() {
+        if (source instanceof DownloadLink) {
+            return (DownloadLink) source;
+        } else if (source instanceof CrawledLink) {
+            return ((CrawledLink) source).getDownloadLink();
+        } else {
+            return null;
+        }
+    }
+
+    public Object getSource() {
+        return source;
     }
 
     /**
      * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
     public String getCryptedUrl() {
-        return this.cryptedUrl;
+        if (cryptedURL != null) {
+            return cryptedURL;
+        } else if (source instanceof CrawledLink) {
+            return ((CrawledLink) source).getURL();
+        } else if (source instanceof DownloadLink) {
+            return ((DownloadLink) source).getPluginPatternMatcher();
+        } else if (source instanceof String) {
+            return (String) source;
+        } else {
+            return null;
+        }
     }
 
     /**
      * Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
     public void setCryptedUrl(final String url) {
-        this.cryptedUrl = url;
+        this.cryptedURL = url;
     }
 
     /**
@@ -82,6 +110,6 @@ public class CryptedLink {
      */
     // @Override
     public String toString() {
-        return this.cryptedUrl;
+        return "Plugin:" + getLazyC() + "|URL:" + getCryptedUrl();
     }
 }

@@ -264,6 +264,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                     try {
                         final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
                         if (CrossSystem.isUnix()) {
+                            // new Robot().createScreenCapture may crash the VM, auto disable before to avoid crashing again and again...
                             config.setAutoClickEnabled(false);
                             config._getStorageHandler().write();
                         }

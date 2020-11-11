@@ -2,11 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -14,6 +9,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "javcl.com" }, urls = { "https?://(?:www\\.)?javcl\\.com/([a-z0-9\\-]+)" })
 public class JavCL extends antiDDoSForDecrypt {
@@ -55,11 +54,9 @@ public class JavCL extends antiDDoSForDecrypt {
             } else {
                 name = filename;
             }
-            final DownloadLink downloadLink;
-            if (StringUtils.isEmpty(name)) {
-                downloadLink = createDownloadlink(url);
-            } else {
-                downloadLink = createDownloadlink(url + "#javclName=" + HexFormatter.byteArrayToHex(name.getBytes("UTF-8")));
+            final DownloadLink downloadLink = createDownloadlink(url);
+            if (!StringUtils.isEmpty(name)) {
+                downloadLink.setProperty("javclName", name);
             }
             ret.add(downloadLink);
             index++;
@@ -70,8 +67,8 @@ public class JavCL extends antiDDoSForDecrypt {
     private String decodejav(String data_link, String data_id) {
         String key = Base64.encode(data_id + "decode11234jav");
         key = new StringBuilder(key).reverse().toString();
-        byte[] link = Base64.decode(data_link);
-        StringBuilder sb = new StringBuilder();
+        final byte[] link = Base64.decode(data_link);
+        final StringBuilder sb = new StringBuilder();
         int k = 0;
         for (int i = 0; i < link.length; i++) {
             k = i % key.length();

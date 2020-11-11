@@ -22,12 +22,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,6 +47,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -284,7 +284,7 @@ public class InstaGramCom extends PluginForHost {
             final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
             decrypter.setBrowser(this.br);
             try {
-                final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl());
+                final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl(), link);
                 final ArrayList<DownloadLink> items = decrypter.decryptIt(forDecrypter, null);
                 DownloadLink foundLink = null;
                 if (items.size() == 1) {
