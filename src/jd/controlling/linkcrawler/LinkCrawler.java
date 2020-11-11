@@ -2487,7 +2487,12 @@ public class LinkCrawler {
         if (matches != null && matches.length > 0) {
             final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
             for (final String match : matches) {
-                final CryptedLink cryptedLink = new CryptedLink(match);
+                final CryptedLink cryptedLink;
+                if (matches.length == 1 && match.equals(source.getURL())) {
+                    cryptedLink = new CryptedLink(source);
+                } else {
+                    cryptedLink = new CryptedLink(match, source);
+                }
                 cryptedLink.setLazyC(lazyC);
                 final CrawledLink link = crawledLinkFactorybyCryptedLink(cryptedLink);
                 forwardCrawledLinkInfos(source, link, modifier, null, null);
@@ -2497,6 +2502,10 @@ public class LinkCrawler {
                     // keep DownloadLinks with non empty properties
                     link.setCrawlDeep(source.isCrawlDeep());
                     link.setSourceLink(source.getSourceLink());
+                    if (!(cryptedLink.getSource() instanceof String)) {
+                        cryptedLink.setCryptedUrl(match);
+                    }
+                    cryptedLink.setSourceLink(source.getSourceLink());
                     if (source.getMatchingRule() != null) {
                         link.setMatchingRule(source.getMatchingRule());
                     }
