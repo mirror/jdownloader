@@ -152,18 +152,19 @@ public class AudioMa extends PluginForHost {
     public static String getOAuthQueryString(final Browser br) throws Exception {
         /* 2019-01-30: Used hardcoded values as they change js more often and API vars have also changed */
         String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-        String[] match = new Regex(ogurl, ".+?/(?:embed/)?(song|album|playlist)/(.+?)/(.+)$").getRow(0);
+        String[] match = new Regex(ogurl, ".*/([^/]+)/(song|album|playlist)/([^/]+)").getRow(0);
         if (match == null || match.length != 3) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String musicType = match[0];
-        final String artistId = match[1];
+        final String musicType = match[1];
+        final String artistId = match[0];
         final String musicSlug = match[2];
         // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
         // String jsurl = br.getRegex("src='([^']+?/275\\.[0-9a-f]+?\\.chunk\\.js)").getMatch(0);
         final Browser cbr = br.cloneBrowser();
         // cbr.getPage(jsurl);
         String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
+        /* Use hardcoded value */
         apiUrl = "https://api.audiomack.com";
         String apiVersion = cbr.getRegex("API_VERSION:\"([^\"]+)\"").getMatch(0);
         apiVersion = "v1";

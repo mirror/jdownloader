@@ -55,7 +55,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
             final String title_url = new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0);
-            final String musicType = new Regex(ogurl, ".+?/(?:embed/)?(album|playlist)/.+?/.+$").getMatch(0);
+            final String musicType = new Regex(ogurl, ".*(album|playlist)/.*").getMatch(0);
             if (musicType == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
