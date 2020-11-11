@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +25,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?(?:rapidmoviez\\.(?:com|eu|cr)|rmz\\.rezavn|rmz\\.cr)/release/[^/]+" })
 public class RmzCr extends antiDDoSForDecrypt {
@@ -73,6 +73,7 @@ public class RmzCr extends antiDDoSForDecrypt {
         String linkBlock = br.getRegex("(<div id=\"(?:title_release_after_download_title|title_release_after_imdb)\">[^$]+<div id=\"title_release_after_links\">)").getMatch(0);
         if (linkBlock != null) {
             /* 2020-01-22 */
+            linkBlock = linkBlock.replaceAll("(<![^<>]+>)", "");
             String[] links = new Regex(linkBlock, "id=\"l\\d+\">([^<>\"]+)</pre>").getColumn(0);
             for (String link : links) {
                 if (link.startsWith("/")) {
