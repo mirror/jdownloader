@@ -41,6 +41,10 @@ public class MangatownCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"mangaread_next_info\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML(">\\s*The series [^>]* has been licensed")) {
+            /* 2020-11-11: >The series Onepunch-Man has been licensed, it is not available in MangaTown. </div> */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         final Regex urlinfo = new Regex(parameter, "mangatown\\.com/manga/([^/]+)/c(\\d+)/");
         final String chapter_str = urlinfo.getMatch(1);
