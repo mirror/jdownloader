@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -26,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -38,6 +40,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -185,6 +188,20 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     /** Do we have to be logged in to crawl this URL? */
     private boolean requiresLogin(final String url) {
         return url.matches(TYPE_SAVED_OBJECTS);
+    }
+
+    /** https://stackoverflow.com/questions/38356283/instagram-given-a-user-id-how-do-i-find-the-username */
+    private String getUsernameFromUserID(final String userID) throws PluginException, IOException {
+        if (userID == null || !userID.matches("\\d+")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = new Browser();
+        final Request req = brc.createGetRequest("https://i.instagram.com/api/v1/users/" + userID + "/info/");
+        req.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
+        brc.getPage(req);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("user");
+        return (String) entries.get("username");
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
