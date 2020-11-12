@@ -29,8 +29,10 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -38,6 +40,8 @@ public class MyqloudOrg extends XFileSharingProBasic {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
+
+    private boolean requiresAccountToDownload = false;
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -218,6 +222,11 @@ public class MyqloudOrg extends XFileSharingProBasic {
              */
             /* 2020-03-11: Special */
             getPage(brc, "/dl?op=download_orig_pre&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
+            if (brc.containsHTML(">\\s*Only Premium users can download files")) {
+                /* 2020-11-12 */
+                requiresAccountToDownload = true;
+                throw new AccountRequiredException();
+            }
             /* A lot of workarounds */
             final String oldHTML = br.toString();
             final String correctedBROld = this.correctedBR;
@@ -275,6 +284,15 @@ public class MyqloudOrg extends XFileSharingProBasic {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
+    }
+
+    @Override
+    protected void checkErrorsLastResort(final Account account) throws PluginException {
+        if (requiresAccountToDownload) {
+            throw new AccountRequiredException();
+        } else {
+            super.checkErrorsLastResort(account);
+        }
     }
 
     @Override
