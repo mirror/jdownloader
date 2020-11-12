@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,6 +39,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
@@ -86,9 +86,14 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         /* TODO: Make login work for all supported hosts */
         if (account != null && this.getHost().equals("erai-ddl3.info")) {
-            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+            final PluginForHost plg = JDUtilities.getNewPluginForHostInstance(this.getHost());
             plg.setBrowser(this.br);
-            ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
+            plg.setLogger(getLogger());
+            try {
+                ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
+            } catch (PluginException e) {
+                handleAccountException(account, e);
+            }
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -156,24 +161,22 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
             subfolderPath += subfolderPart;
         }
         for (final String html : htmls) {
-            final String url = new Regex(html, "dtfullurl=\"(http[^\"]+)\"").getMatch(0);
-            final String filename = new Regex(html, "dtfilename=\"([^\"]+)\"").getMatch(0);
-            final String filesizeStr = new Regex(html, "dtsizeraw=\"(\\d+)\"").getMatch(0);
-            final String internalFileID = new Regex(html, "fileId=\"(\\d+)\"").getMatch(0);
-            if (url == null || internalFileID == null) {
+            final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
+            final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+            final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
+            final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
+            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
                 /* Skip invalid items */
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(html);
-            if (filename != null) {
+            final DownloadLink dl = createDownloadlink(url);
+            if (!StringUtils.isEmpty(filename)) {
                 dl.setName(filename);
             }
-            if (filesizeStr != null) {
+            if (!StringUtils.isEmpty(filesizeStr)) {
                 dl.setDownloadSize(Long.parseLong(filesizeStr));
             }
-            if (internalFileID != null) {
-                dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
-            }
+            dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
             /* We know for sure that this file is online! */
             dl.setAvailable(true);
             if (subfolderPath.length() > 0) {
