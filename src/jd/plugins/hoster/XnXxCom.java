@@ -61,17 +61,17 @@ public class XnXxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         // The regex only takes the short urls but these ones redirect to the real ones to if follow redirects is false the plugin doesn't
         // work at all!
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-gb");
-        br.getPage(downloadLink.getDownloadURL() + "/");
+        br.getPage(link.getPluginPatternMatcher() + "/");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename_url = new Regex(downloadLink.getDownloadURL(), "/video([a-z0-9\\-]+)").getMatch(0);
+        final String filename_url = new Regex(link.getDownloadURL(), "/video([a-z0-9\\-]+)").getMatch(0);
         String filename = br.getRegex("<title>(.+) \\- [A-Za-z0-9\\.]+\\.[A-Za-z0-9]{3,8}</title>").getMatch(0);
         if (filename == null) {
             br.getRegex("<span class=\"style5\"><strong>(.*?)</strong>").getMatch(0);
@@ -86,21 +86,21 @@ public class XnXxCom extends PluginForHost {
         filename = Encoding.unicodeDecode(filename);
         filename = Encoding.htmlDecode(filename);
         if (!br.containsHTML(".mp4")) {
-            downloadLink.setFinalFileName(filename.trim() + ".flv");
+            link.setFinalFileName(filename.trim() + ".flv");
         } else {
-            downloadLink.setFinalFileName(filename.trim() + ".mp4");
+            link.setFinalFileName(filename.trim() + ".mp4");
         }
         /* 2020-08-12: HLS sometimes offers higher qualities than their http qualities --> Prefer that */
         dllink = br.getRegex("setVideoHLS\\('(https?://[^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("setVideoUrlHigh\\('(http.*?)'").getMatch(0);
             if (dllink != null) {
-                checkDllink(downloadLink, dllink);
+                checkDllink(link, dllink);
             }
             if (dllink == null) {
                 dllink = br.getRegex("setVideoUrlLow\\('(http.*?)'").getMatch(0);
                 if (dllink != null) {
-                    checkDllink(downloadLink, dllink);
+                    checkDllink(link, dllink);
                 }
             }
         }
@@ -113,8 +113,8 @@ public class XnXxCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(flink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
                 dllink = flink;
             } else {
                 dllink = null;
@@ -130,7 +130,7 @@ public class XnXxCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
