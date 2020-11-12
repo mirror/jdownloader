@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -90,8 +92,8 @@ public class TokyomotionNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                     /*
                      * Special: First URL is only accessible once but it redirects to the final URL which we can access multiple times which
                      * is why we need to get that! 2017-11-14: Seems as if this was a serverside issue - it does not happen anymore!
@@ -114,12 +116,12 @@ public class TokyomotionNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    private void doFree(final DownloadLink link) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (isPrivateContent) {
@@ -129,14 +131,18 @@ public class TokyomotionNet extends PluginForHost {
         }
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity;q=1, *;q=0");
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUME, MAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -147,14 +153,12 @@ public class TokyomotionNet extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
     private boolean isLoggedinHTML() {
         return br.containsHTML("/logout\"");
     }
 
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -204,7 +208,6 @@ public class TokyomotionNet extends PluginForHost {
         account.setMaxSimultanDownloads(MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 

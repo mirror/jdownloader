@@ -117,9 +117,30 @@ public class FileHippoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         br.setFollowRedirects(false);
+        final String continueURL = br.getRegex("\"(https?://[^\"]+/post_download/?)\"").getMatch(0);
+        if (continueURL != null) {
+            /* 2020-11-12 */
+            br.getPage(continueURL);
+        }
+        String dllink = br.getRegex("(/launch_download/[^<>\"\\']+)").getMatch(0);
+        if (dllink != null) {
+            /* 2020-11-12 */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            dl.startDownload();
+            return;
+        }
         String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
         if (normalPage == null) {
             normalPage = br.getRegex("download-link green button-link active long[^\"]*\"\\s+href=\"(?:https?://(?:www\\.)?filehippo\\.com)?(/[^<>\"]*?)\"").getMatch(0);
@@ -136,7 +157,7 @@ public class FileHippoCom extends PluginForHost {
             if (page != null) {
                 br.getPage(page);
             }
-            String dllink = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
+            dllink = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -146,7 +167,7 @@ public class FileHippoCom extends PluginForHost {
             if (dllink == null) {
                 continue;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (!br.getURL().contains("filehippo.com")) {
@@ -154,7 +175,7 @@ public class FileHippoCom extends PluginForHost {
                 }
                 continue;
             }
-            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
             dl.startDownload();
             return;
         }
