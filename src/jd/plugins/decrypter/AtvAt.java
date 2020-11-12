@@ -21,6 +21,13 @@ import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.controlling.ffmpeg.FFmpeg;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,13 +37,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|https?://(?:www\\.)?atvsmart\\.(tv|at)/[^/]+/[^/]+" })
 public class AtvAt extends PluginForDecrypt {
@@ -205,8 +205,10 @@ public class AtvAt extends PluginForDecrypt {
                      */
                     continue;
                 }
+                /* 2020-11-12: Disabled for testing - seems like this doesn't work for all items --> Sometimes leads to timeouts */
+                final boolean allowOldGeoBlockedWorkaround = false;
                 final String linkpart_old_geo_block_workaround = new Regex(src, "((?:tvnext_clip|video_file)/video/\\d+\\.mp4)").getMatch(0);
-                if (is_geo_ip_blocked && linkpart_old_geo_block_workaround != null) {
+                if (is_geo_ip_blocked && linkpart_old_geo_block_workaround != null && allowOldGeoBlockedWorkaround) {
                     /* Get around GEO-block - for older videos */
                     /*
                      * E.g.
