@@ -34,6 +34,7 @@ import javax.script.SimpleScriptContext;
 import jd.parser.Regex;
 import jd.plugins.components.ThrowingRunnable;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.logging.LogController;
@@ -1089,14 +1090,17 @@ public class JavaScriptEngineFactory {
         try {
             return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
-        } catch (Throwable e) {
-            LogController.CL(true).log(e);
+        } catch (JSonMapperException e) {
             // jd 09 workaround. use rhino
             try {
-                ScriptEngineManager mgr = getScriptEngineManager(null);
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                engine.eval("var response=" + string + ";");
-                return toMap(engine.get("response"));
+                final ScriptEngineManager mgr = getScriptEngineManager(null);
+                final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                if (engine == null) {
+                    throw e;
+                } else {
+                    engine.eval("var response=" + string + ";");
+                    return toMap(engine.get("response"));
+                }
             } catch (ScriptException e2) {
                 Exceptions.addSuppressed(e2, e);
                 throw new Exception("JavaScript to Java failed: " + string, e2);

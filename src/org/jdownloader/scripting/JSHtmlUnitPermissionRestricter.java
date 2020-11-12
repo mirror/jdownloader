@@ -1,10 +1,12 @@
 package org.jdownloader.scripting;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.appwork.exceptions.WTFException;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import net.sourceforge.htmlunit.corejs.javascript.Callable;
 import net.sourceforge.htmlunit.corejs.javascript.ClassShutter;
@@ -21,6 +23,8 @@ import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import net.sourceforge.htmlunit.corejs.javascript.WrapFactory;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
+
+import org.appwork.exceptions.WTFException;
 
 /**
  * from http://codeutopia.net/blog/2009/01/02/sandboxing-rhino-in-java/
@@ -107,8 +111,19 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
  *
  */
 public class JSHtmlUnitPermissionRestricter {
-    public static HashSet<String>        LOADED = new HashSet<String>();
-    private static SandboxContextFactory CONTEXT_FACTORY;
+    private static CopyOnWriteArraySet<String> LOADED = new CopyOnWriteArraySet<String>();
+    private static SandboxContextFactory       CONTEXT_FACTORY;
+
+    public static List<String> getLoaded() {
+        final List<String> ret = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
+        Collections.sort(ret, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return o2.length() - o1.length();
+            }
+        });
+        return ret;
+    }
 
     static public class SandboxContextFactory extends ContextFactory {
         public SandboxContextFactory() {
@@ -155,41 +170,45 @@ public class JSHtmlUnitPermissionRestricter {
             cx.setWrapFactory(new SandboxWrapFactory());
             cx.setClassShutter(new ClassShutter() {
                 public boolean visibleToScripts(String className) {
-                    Thread cur = Thread.currentThread();
-                    boolean trusted = TRUSTED_THREAD.containsKey(cur);
-                    if (cur instanceof JSShutterDelegate) {
-                        if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
+                    if (className == null) {
+                        return false;
+                    } else {
+                        final Thread cur = Thread.currentThread();
+                        final boolean trusted = TRUSTED_THREAD.containsKey(cur);
+                        if (cur instanceof JSShutterDelegate) {
+                            if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
+                                LOADED.add(className);
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                        if (trusted) {
+                            LOADED.add(className);
+                            return true;
+                        } else if (className.startsWith("adapter")) {
+                            LOADED.add(className);
+                            return true;
+                        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+                            LOADED.add(className);
+                            return true;
+                        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+                            LOADED.add(className);
+                            return true;
+                        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+                            LOADED.add(className);
+                            return true;
+                        } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
                             LOADED.add(className);
                             return true;
                         } else {
-                            return false;
+                            EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
+                            throw ret;
                         }
-                    }
-                    if (trusted) {
-                        LOADED.add(className);
-                        return true;
-                    } else if (className.startsWith("adapter")) {
-                        LOADED.add(className);
-                        return true;
-                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EcmaError")) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-                        LOADED.add(className);
-                        return true;
-                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.ConsString")) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-                        LOADED.add(className);
-                        return true;
-                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.JavaScriptException")) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-                        LOADED.add(className);
-                        return true;
-                    } else if (className.equals("net.sourceforge.htmlunit.corejs.javascript.EvaluatorException")) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
-                        LOADED.add(className);
-                        return true;
-                    } else {
-                        EcmaError ret = ScriptRuntime.constructError("Security Violation", "Security Violation " + className);
-                        throw ret;
                     }
                 }
             });
