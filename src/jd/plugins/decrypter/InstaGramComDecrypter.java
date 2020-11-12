@@ -785,14 +785,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             filename = server_filename;
         } else {
-            // final String usernameForFilename;
-            // if (this.username_url != null) {
-            // /* E.g. user crawl a complete user profile --> Username is globally given to set on all crawled objects */
-            // usernameForFilename = this.username_url;
-            // } else {
-            // final LinkedHashMap<String, Object> ownerInfo = (LinkedHashMap<String, Object>) entries.get("owner");
-            // usernameForFilename = (String) ownerInfo.get("username");
-            // }
             filename = "";
             if (!StringUtils.isEmpty(this.hashtag)) {
                 filename = this.hashtag + " - ";
