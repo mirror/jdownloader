@@ -3,8 +3,6 @@ package org.jdownloader.plugins.js;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import jd.controlling.ProgressController;
@@ -32,10 +30,8 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
         try {
             JSHtmlUnitPermissionRestricter.init();
         } catch (Throwable e) {
-
         }
     }
-
     private PluginForDecrypt plugin;
 
     public PluginForDecrypt getPlugin() {
@@ -43,15 +39,12 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
     }
 
     private URL     srcUrl;
-
     private Global  scope;
-
     private Context context;
 
     public JavaScriptCrawlerPlugin(PluginForDecrypt plg, URL resource, ProgressController progress) {
         this.plugin = plg;
         this.srcUrl = resource;
-
     }
 
     protected LogInterface getLogger() {
@@ -62,15 +55,11 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
         String jsSource = IO.readURLToString(srcUrl);
         final ContextFactory factory = ContextFactory.getGlobal();
         scope = new Global();
-
         context = Context.enter(JSHtmlUnitPermissionRestricter.makeContext(this));
         context.setOptimizationLevel(-1);
-
         scope.init(context);
-
         context.setOptimizationLevel(-1);
         context.setLanguageVersion(Context.VERSION_1_5);
-
         try {
             String preloadClasses = "";
             Class[] classes = new Class[] { PluginJsInterface.class, RegexWrapper.class, EnvJsBrowserWrapper.class, JSExceptionWrapper.class, Boolean.class, Integer.class, Long.class, String.class, Double.class, Float.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, WTFException.class };
@@ -78,27 +67,15 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
                 preloadClasses += "load=" + c.getName() + ";\r\n";
             }
             preloadClasses += "delete load;";
-
             JSHtmlUnitPermissionRestricter.evaluateTrustedString(context, scope, preloadClasses, preloadClasses, 0, null);
             context.evaluateString(scope, jsSource, "plg:" + srcUrl, 0, null);
-
-            ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
-
-            Collections.sort(list, new Comparator<String>() {
-
-                @Override
-                public int compare(String o1, String o2) {
-                    return o2.length() - o1.length();
-                }
-            });
-
+            final List<String> list = JSHtmlUnitPermissionRestricter.getLoaded();
             ScriptableObject.deleteProperty(scope, "Packages");
             for (String s : list) {
                 while (true) {
                     System.out.println("Delete " + s);
                     try {
                         ScriptableObject.deleteProperty(scope, s);
-
                     } catch (Throwable e) {
                         // e.printStackTrace();
                     }
@@ -124,7 +101,6 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
                 b.close();
             }
         }
-
     }
 
     public Global getScope() {
@@ -150,5 +126,4 @@ public class JavaScriptCrawlerPlugin implements ContextCallback {
     public Context getContext() {
         return context;
     }
-
 }

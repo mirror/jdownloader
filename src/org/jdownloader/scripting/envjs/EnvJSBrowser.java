@@ -5,9 +5,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -632,13 +629,7 @@ public class EnvJSBrowser implements ContextCallback {
             initSource = initSource.replace("%EnvJSinstanceID%", id + "");
             evaluateTrustedString(cx, scope, initSource, "setInstance", 1, null);
             evalTrusted("       var javaInstance=Packages.org.jdownloader.scripting.envjs.EnvJSBrowser.get(" + id + ");stacktrace=function(){javaInstance.printStacktrace();};");
-            ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
-            Collections.sort(list, new Comparator<String>() {
-                @Override
-                public int compare(String o1, String o2) {
-                    return o2.length() - o1.length();
-                }
-            });
+            final List<String> list = JSHtmlUnitPermissionRestricter.getLoaded();
             // Cleanup
             eval("delete Packages;");
             for (String s : list) {

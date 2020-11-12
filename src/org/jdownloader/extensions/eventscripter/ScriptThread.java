@@ -7,8 +7,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -294,13 +292,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     private void cleanupClasses() {
-        ArrayList<String> list = new ArrayList<String>(JSHtmlUnitPermissionRestricter.LOADED);
-        Collections.sort(list, new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                return o2.length() - o1.length();
-            }
-        });
+        final List<String> list = JSHtmlUnitPermissionRestricter.getLoaded();
         // Cleanup
         ScriptableObject.deleteProperty(scope, "Packages");
         for (String s : list) {
