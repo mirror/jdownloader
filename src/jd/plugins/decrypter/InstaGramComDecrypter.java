@@ -62,18 +62,20 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String           TYPE_GALLERY           = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
-    private static final String           TYPE_STORY             = "https?://[^/]+/stories/.+";
-    private static final String           TYPE_SAVED_OBJECTS     = "https?://[^/]+/[^/]+/saved/?$";
-    private static final String           TYPE_TAGS              = "https?://[^/]+/explore/tags/([^/]+)/?$";
-    private String                        username_url           = null;
+    private static final String            TYPE_GALLERY                      = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
+    private static final String            TYPE_STORY                        = "https?://[^/]+/stories/.+";
+    private static final String            TYPE_SAVED_OBJECTS                = "https?://[^/]+/[^/]+/saved/?$";
+    private static final String            TYPE_TAGS                         = "https?://[^/]+/explore/tags/([^/]+)/?$";
+    private String                         username_url                      = null;
     /** For links matching pattern {@link #TYPE_TAGS} --> This will be set on created DownloadLink objects as a (packagizer-) property. */
-    private String                        hashtag                = null;
-    private final ArrayList<DownloadLink> decryptedLinks         = new ArrayList<DownloadLink>();
-    private boolean                       prefer_server_filename = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
-    private Boolean                       isPrivate              = false;
-    private FilePackage                   fp                     = null;
-    private String                        parameter              = null;
+    private String                         hashtag                           = null;
+    private final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
+    private boolean                        prefer_server_filename            = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
+    private boolean                        findUsernameDuringHashtagCrawling = jd.plugins.hoster.InstaGramCom.defaultHASHTAG_CRAWLER_FIND_USERNAMES;
+    private Boolean                        isPrivate                         = false;
+    private FilePackage                    fp                                = null;
+    private String                         parameter                         = null;
+    private static HashMap<String, String> idToUsername                      = new HashMap<String, String>();
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -193,13 +195,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     /** https://stackoverflow.com/questions/38356283/instagram-given-a-user-id-how-do-i-find-the-username */
     private String getUsernameFromUserID(final String userID) throws PluginException, IOException {
         if (userID == null || !userID.matches("\\d+")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return null;
         }
         final Browser brc = new Browser();
         final Request req = brc.createGetRequest("https://i.instagram.com/api/v1/users/" + userID + "/info/");
         req.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
         brc.getPage(req);
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
         return (String) entries.get("username");
     }
@@ -212,6 +214,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         qHash = null;
         br.addAllowedResponseCodes(new int[] { 502 });
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
+        this.findUsernameDuringHashtagCrawling = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.HASHTAG_CRAWLER_FIND_USERNAMES, jd.plugins.hoster.InstaGramCom.defaultHASHTAG_CRAWLER_FIND_USERNAMES);
         fp = FilePackage.getInstance();
         fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
         /* https and www. is required! */
@@ -633,6 +636,50 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (linkid_main == null) {
             linkid_main = (String) entries.get("shortcode");
         }
+        String usernameForFilename = null;
+        if (this.username_url != null) {
+            /* E.g. user crawl a complete user profile --> Username is globally given to set on all crawled objects */
+            usernameForFilename = this.username_url;
+        } else {
+            /* Finding the username "the hard way" */
+            try {
+                final LinkedHashMap<String, Object> ownerInfo = (LinkedHashMap<String, Object>) entries.get("owner");
+                final String userID = (String) ownerInfo.get("id");
+                if (userID == null) {
+                    /* Should always be given! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /* Check if username is in json */
+                usernameForFilename = (String) ownerInfo.get("username");
+                if (usernameForFilename != null) {
+                    /* Cache information for later usage just in case it isn't present in json the next time. */
+                    idToUsername.put(userID, usernameForFilename);
+                } else if (this.findUsernameDuringHashtagCrawling) {
+                    /* Check if we got this username cached */
+                    usernameForFilename = idToUsername.get(userID);
+                    if (usernameForFilename == null) {
+                        /* HTTP request needed to find username! */
+                        usernameForFilename = this.getUsernameFromUserID(userID);
+                        if (usernameForFilename != null) {
+                            /* Cache information for later usage */
+                            idToUsername.put(userID, usernameForFilename);
+                        } else {
+                            logger.warning("WTF failed to find username for userID: " + userID);
+                        }
+                    } else {
+                        logger.info("Found cached username: " + usernameForFilename);
+                    }
+                } else {
+                    logger.info("Username not available for the following ID because this feature has been disabled by the user: " + linkid_main);
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        if (usernameForFilename == null && this.findUsernameDuringHashtagCrawling) {
+            /* This should never happen! */
+            logger.warning("WTF - no username given!");
+        }
         String description = (String) entries.get("caption");
         if (description == null) {
             try {
@@ -653,10 +700,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             distribute(dl);
         } else if (StringUtils.equalsIgnoreCase("GraphImage", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
             /* Single image */
-            crawlSingleImage(entries, linkid_main, date, description, null);
+            crawlSingleImage(entries, linkid_main, date, description, null, usernameForFilename);
         } else if (StringUtils.equalsIgnoreCase("GraphVideo", typename) && (resource_data_list == null || resource_data_list.size() == 0)) {
             /* Single video */
-            crawlSingleImage(entries, linkid_main, date, description, null);
+            crawlSingleImage(entries, linkid_main, date, description, null, usernameForFilename);
         } else if (typename != null && typename.matches("Graph[A-Z][a-zA-Z0-9]+") && resource_data_list == null && !this.parameter.matches(TYPE_GALLERY)) {
             /*
              * 2017-05-09: User has added a 'User' URL and in this case a single post contains multiple images (=album) but at this stage
@@ -674,16 +721,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 final String orderid_formatted = String.format(Locale.US, "%0" + padLength + "d", counter);
                 entries = (LinkedHashMap<String, Object>) pictureo;
                 entries = (LinkedHashMap<String, Object>) entries.get("node");
-                crawlSingleImage(entries, linkid_main, date, description, orderid_formatted);
+                crawlSingleImage(entries, linkid_main, date, description, orderid_formatted, usernameForFilename);
             }
         } else {
             /* Single image */
-            crawlSingleImage(entries, linkid_main, date, description, null);
+            crawlSingleImage(entries, linkid_main, date, description, null, usernameForFilename);
         }
     }
 
     /** Crawls json objects of type "GraphImage". */
-    private void crawlSingleImage(LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description, final String orderid) {
+    private void crawlSingleImage(final LinkedHashMap<String, Object> entries, String linkid_main, final long date, final String description, final String orderid, final String username) {
         final String postID = (String) entries.get("id");
         final long taken_at_timestamp = JavaScriptEngineFactory.toLong(entries.get("taken_at_timestamp"), 0);
         String server_filename = null;
@@ -738,18 +785,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
             filename = server_filename;
         } else {
-            /*
-             * 2020-11-11: At this moment, we will always either have username OR hashtag available. In a "hashtag overview", we can get the
-             * single userIDs of single items but we cannot easily get their Instagram usernames without having to do at least one
-             * additional http-request for each userID!
-             */
-            if (!StringUtils.isEmpty(this.username_url)) {
-                filename = this.username_url + " - " + linkid_main;
-            } else if (!StringUtils.isEmpty(this.hashtag)) {
-                filename = this.hashtag + " - " + linkid_main;
-            } else {
-                filename = linkid_main;
+            // final String usernameForFilename;
+            // if (this.username_url != null) {
+            // /* E.g. user crawl a complete user profile --> Username is globally given to set on all crawled objects */
+            // usernameForFilename = this.username_url;
+            // } else {
+            // final LinkedHashMap<String, Object> ownerInfo = (LinkedHashMap<String, Object>) entries.get("owner");
+            // usernameForFilename = (String) ownerInfo.get("username");
+            // }
+            filename = "";
+            if (!StringUtils.isEmpty(this.hashtag)) {
+                filename = this.hashtag + " - ";
             }
+            if (!StringUtils.isEmpty(username)) {
+                filename += username + " - ";
+            }
+            filename += linkid_main;
             if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
                 filename += "_" + shortcode;
             }
