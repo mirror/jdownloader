@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,19 +32,18 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3ddl.tv" }, urls = { "https?://(www\\.)?3ddl\\.tv/download/\\S+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "3ddl.tv" }, urls = { "https?://(?:www\\.)?(?:3ddl\\.tv|warez-world\\.com)/download/\\S+/" })
 public class ThreeDlTv extends antiDDoSForDecrypt {
     public ThreeDlTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Tags: 3ddl.tv | warez-world.com */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
