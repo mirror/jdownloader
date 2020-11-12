@@ -26,14 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -56,26 +48,38 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String            TYPE_GALLERY                      = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
-    private static final String            TYPE_STORY                        = "https?://[^/]+/stories/.+";
-    private static final String            TYPE_SAVED_OBJECTS                = "https?://[^/]+/[^/]+/saved/?$";
-    private static final String            TYPE_TAGS                         = "https?://[^/]+/explore/tags/([^/]+)/?$";
-    private String                         username_url                      = null;
+    private static final String                  TYPE_GALLERY                      = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
+    private static final String                  TYPE_STORY                        = "https?://[^/]+/stories/.+";
+    private static final String                  TYPE_SAVED_OBJECTS                = "https?://[^/]+/[^/]+/saved/?$";
+    private static final String                  TYPE_TAGS                         = "https?://[^/]+/explore/tags/([^/]+)/?$";
+    private String                               username_url                      = null;
     /** For links matching pattern {@link #TYPE_TAGS} --> This will be set on created DownloadLink objects as a (packagizer-) property. */
-    private String                         hashtag                           = null;
-    private final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
-    private boolean                        prefer_server_filename            = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
-    private boolean                        findUsernameDuringHashtagCrawling = jd.plugins.hoster.InstaGramCom.defaultHASHTAG_CRAWLER_FIND_USERNAMES;
-    private Boolean                        isPrivate                         = false;
-    private FilePackage                    fp                                = null;
-    private String                         parameter                         = null;
-    private static HashMap<String, String> idToUsername                      = new HashMap<String, String>();
+    private String                               hashtag                           = null;
+    private final ArrayList<DownloadLink>        decryptedLinks                    = new ArrayList<DownloadLink>();
+    private boolean                              prefer_server_filename            = jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES;
+    private boolean                              findUsernameDuringHashtagCrawling = jd.plugins.hoster.InstaGramCom.defaultHASHTAG_CRAWLER_FIND_USERNAMES;
+    private Boolean                              isPrivate                         = false;
+    private FilePackage                          fp                                = null;
+    private String                               parameter                         = null;
+    private static LinkedHashMap<String, String> IT_TO_USERNAME                    = new LinkedHashMap<String, String>() {
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 100;
+        };
+    };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -193,17 +197,18 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /** https://stackoverflow.com/questions/38356283/instagram-given-a-user-id-how-do-i-find-the-username */
-    private String getUsernameFromUserID(final String userID) throws PluginException, IOException {
+    private String getUsernameFromUserID(final Browser br, final String userID) throws PluginException, IOException {
         if (userID == null || !userID.matches("\\d+")) {
             return null;
         }
-        final Browser brc = new Browser();
+        final Browser brc = br.cloneBrowser();
+        brc.setRequest(null);
         final Request req = brc.createGetRequest("https://i.instagram.com/api/v1/users/" + userID + "/info/");
         req.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
         brc.getPage(req);
         Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
-        return (String) entries.get("username");
+        return entries != null ? (String) entries.get("username") : null;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
@@ -653,27 +658,29 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 usernameForFilename = (String) ownerInfo.get("username");
                 if (usernameForFilename != null) {
                     /* Cache information for later usage just in case it isn't present in json the next time. */
-                    idToUsername.put(userID, usernameForFilename);
+                    IT_TO_USERNAME.put(userID, usernameForFilename);
                 } else if (this.findUsernameDuringHashtagCrawling) {
                     /* Check if we got this username cached */
-                    usernameForFilename = idToUsername.get(userID);
-                    if (usernameForFilename == null) {
-                        /* HTTP request needed to find username! */
-                        usernameForFilename = this.getUsernameFromUserID(userID);
-                        if (usernameForFilename != null) {
-                            /* Cache information for later usage */
-                            idToUsername.put(userID, usernameForFilename);
+                    synchronized (IT_TO_USERNAME) {
+                        usernameForFilename = IT_TO_USERNAME.get(userID);
+                        if (usernameForFilename == null) {
+                            /* HTTP request needed to find username! */
+                            usernameForFilename = this.getUsernameFromUserID(br, userID);
+                            if (usernameForFilename != null) {
+                                /* Cache information for later usage */
+                                IT_TO_USERNAME.put(userID, usernameForFilename);
+                            } else {
+                                logger.warning("WTF failed to find username for userID: " + userID);
+                            }
                         } else {
-                            logger.warning("WTF failed to find username for userID: " + userID);
+                            logger.info("Found cached username: " + usernameForFilename);
                         }
-                    } else {
-                        logger.info("Found cached username: " + usernameForFilename);
                     }
                 } else {
                     logger.info("Username not available for the following ID because this feature has been disabled by the user: " + linkid_main);
                 }
             } catch (final Throwable e) {
-                e.printStackTrace();
+                logger.log(e);
             }
         }
         if (usernameForFilename == null && this.findUsernameDuringHashtagCrawling) {
