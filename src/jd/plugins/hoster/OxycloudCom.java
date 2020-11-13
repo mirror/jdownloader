@@ -28,6 +28,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
@@ -203,6 +204,21 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
         if (br.containsHTML(">\\s*Musisz być użytkownikiem premium aby pobrać ten plik")) {
             /* 2020-10-21 */
             throw new AccountRequiredException();
+        } else if (br.containsHTML(">\\s*You do not have enough transfer available to download this file")) {
+            /* 2020-11-13: WTF different errormessages are in different languages */
+            throw new AccountUnavailableException("Download limit reached (Failed to download file " + link.getName() + ")", 5 * 60 * 1000l);
         }
+    }
+
+    @Override
+    protected boolean isOfflineSpecial() {
+        /* 2020-11-13: Special: Polish version */
+        return super.isOfflineSpecial() || br.containsHTML(">\\s*Plik został usunięty z powodu naruszenia praw autorskich");
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        /** 2020-11-13: Seems like only premium users can download. */
+        return account != null && account.getType() == AccountType.PREMIUM;
     }
 }

@@ -21,10 +21,8 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -145,39 +143,18 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
              * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because
              * of canHandle()!
              */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unable to download URLs without internal fileID");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unable to download files that haven't been added as part of a folder");
         } else {
             return internalFileID;
         }
     }
 
     @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
-        /*
-         * 2020-11-12: Special: Needs premium status so that upper handling jumps into the right code-block - basically their free accounts
-         * require premium handling too!
-         */
-        // account.setType(AccountType.PREMIUM);
-        /* Correct status to not display default status -> Do not display as premium account (because ... it's not a premium account!) */
-        ai.setStatus("Free account");
-        return ai;
-    }
-
-    @Override
-    protected boolean isPremiumAccount(final Browser br) {
-        /** 2020-11-12: TODO: Implement proper premium account recognition */
-        /** Workaround - see fetchAccountInfoWebsite */
-        return true;
-    }
-
-    @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        /*
+        /**
          * 2020-11-12: Downloads without account are not possible anymore. Downloads are additionally only possible when this internal
-         * fileID is given!
+         * fileID is given --> We handle this case inside getInternalFileID() .
          */
-        return account != null && link != null && link.getStringProperty(PROPERTY_INTERNAL_FILE_ID) != null;
-        // return account != null;
+        return account != null;
     }
 }
