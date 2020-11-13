@@ -3049,6 +3049,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your %s1 username and password below. If you do not have an account yet, click the Link above and register for an account!" })
     String captchasolver_configpanel_my_account_description(String serviceName);
 
+    @Default(lngs = { "en" }, values = { "Leave username emtpy and enter your %s1 authtoken as  password below. If you do not have an account yet, click the Link above and register for an account!" })
+    String captchasolver_configpanel_my_account_token_description(String serviceName);
+
     @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
     String NinekwService_createPanel_enabled();
 
