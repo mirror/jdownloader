@@ -969,22 +969,20 @@ public class TbCmV2 extends PluginForDecrypt {
                                     }
                                 }
                                 if (helper.getYtCfgSet() != null) {
-                                    if (PAGE_CL == null) {
-                                        final Integer pageCl = (Integer) helper.getYtCfgSet().get("PAGE_CL");
-                                        PAGE_CL = pageCl != null ? pageCl + "" : null;
+                                    if (PAGE_CL == null && helper.getYtCfgSet().containsKey("PAGE_CL")) {
+                                        PAGE_CL = String.valueOf(helper.getYtCfgSet().get("PAGE_CL"));
                                     }
-                                    if (PAGE_BUILD_LABEL == null) {
-                                        PAGE_BUILD_LABEL = (String) helper.getYtCfgSet().get("PAGE_BUILD_LABEL");
+                                    if (PAGE_BUILD_LABEL == null && helper.getYtCfgSet().containsKey("PAGE_BUILD_LABEL")) {
+                                        PAGE_BUILD_LABEL = String.valueOf(helper.getYtCfgSet().get("PAGE_BUILD_LABEL"));
                                     }
-                                    if (VARIANTS_CHECKSUM == null) {
-                                        VARIANTS_CHECKSUM = (String) helper.getYtCfgSet().get("VARIANTS_CHECKSUM");
+                                    if (VARIANTS_CHECKSUM == null && helper.getYtCfgSet().containsKey("VARIANTS_CHECKSUM")) {
+                                        VARIANTS_CHECKSUM = String.valueOf(helper.getYtCfgSet().get("VARIANTS_CHECKSUM"));
                                     }
-                                    if (INNERTUBE_CONTEXT_CLIENT_VERSION == null) {
-                                        INNERTUBE_CONTEXT_CLIENT_VERSION = (String) helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION");
+                                    if (INNERTUBE_CONTEXT_CLIENT_VERSION == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_VERSION")) {
+                                        INNERTUBE_CONTEXT_CLIENT_VERSION = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION"));
                                     }
-                                    if (INNERTUBE_CONTEXT_CLIENT_NAME == null) {
-                                        final Integer cn = (Integer) helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME");
-                                        INNERTUBE_CONTEXT_CLIENT_NAME = cn != null ? cn + "" : null;
+                                    if (INNERTUBE_CONTEXT_CLIENT_NAME == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_NAME")) {
+                                        INNERTUBE_CONTEXT_CLIENT_NAME = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME"));
                                     }
                                 }
                             }
