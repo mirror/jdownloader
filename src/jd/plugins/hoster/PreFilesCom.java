@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -125,6 +126,10 @@ public class PreFilesCom extends XFileSharingProBasic {
         if (StringUtils.isEmpty(trafficleft)) {
             /* 2019-07-03: Free Accounts: According to this place, 5 GB (per day?) but another place states 2 GB/day */
             trafficleft = new Regex(correctedBR, "Traffic Remaining</td>\\s*?<td>\\s*([^<>\"]+)\\s*</td>").getMatch(0);
+            if (StringUtils.isEmpty(trafficleft)) {
+                /* 2020-11-13 */
+                trafficleft = new Regex(correctedBR, "Traffic remaining</label></td>\\s*<td>([^<>\"]+)<").getMatch(0);
+            }
         }
         return trafficleft;
     }
@@ -180,5 +185,22 @@ public class PreFilesCom extends XFileSharingProBasic {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isLoggedin() {
+        boolean loggedin = super.isLoggedin();
+        if (!loggedin) {
+            /* 2020-11-13 */
+            final String mainpage = getMainPage();
+            loggedin = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
+        }
+        return loggedin;
+    }
+
+    @Override
+    protected String getRelativeAccountInfoURL() {
+        /* 2020-11-13 */
+        return "/my-account";
     }
 }
