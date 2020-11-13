@@ -56,6 +56,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.hardware.HardwareType;
+import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.appwork.utils.os.hardware.RaspberryPi;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
@@ -329,6 +330,9 @@ public class Multi extends IExtraction {
                     } else {
                         // new scheme
                         libIDs.add("Linux-armv5");
+                        if (HardwareType.getHardware() != null && HardwareTypeInterface.ID.QNAP.equals(HardwareType.getHardware().getHardwareType())) {
+                            libIDs.add("Linux-armv5-qnap");// cross-compiled with cross-project-arm-20110901.tar.gz
+                        }
                         libIDs.add("Linux-armv6");// should work fine on most devices
                         libIDs.add("Linux-armv71");
                         if (RaspberryPi.getRaspberryPiDetails() != null) {
