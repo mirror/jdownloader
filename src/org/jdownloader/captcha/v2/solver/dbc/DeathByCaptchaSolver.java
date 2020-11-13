@@ -17,6 +17,7 @@ import jd.http.requests.PostFormDataRequest;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -85,8 +86,14 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             job.setStatus(SolverStatus.UPLOADING);
             Browser br = createBrowser();
             PostFormDataRequest r = new PostFormDataRequest("http://api.dbcapi.me/api/captcha");
-            r.addFormData(new FormData("username", config.getUserName()));
-            r.addFormData(new FormData("password", config.getPassword()));
+            final String username = config.getUserName();
+            final String password = config.getPassword();
+            if (StringUtils.isEmpty(username)) {
+                r.addFormData(new FormData("authtoken", password));
+            } else {
+                r.addFormData(new FormData("username", username));
+                r.addFormData(new FormData("password", password));
+            }
             final String type;
             if (challenge instanceof RecaptchaV2Challenge) {
                 final RecaptchaV2Challenge rc = (RecaptchaV2Challenge) challenge;
@@ -180,12 +187,14 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     protected boolean validateLogins() {
         if (!CFG_DBC.ENABLED.isEnabled()) {
             return false;
-        } else if (StringUtils.isEmpty(CFG_DBC.USER_NAME.getValue())) {
-            return false;
-        } else if (StringUtils.isEmpty(CFG_DBC.PASSWORD.getValue())) {
-            return false;
-        } else {
+        } else if (StringUtils.isAllNotEmpty(CFG_DBC.USER_NAME.getValue(), CFG_DBC.PASSWORD.getValue())) {
+            // username/password
             return true;
+        } else if (StringUtils.isNotEmpty(CFG_DBC.PASSWORD.getValue())) {
+            // authtoken
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -208,7 +217,15 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
                         // abuser.
                         Challenge<?> challenge = response.getChallenge();
                         if (challenge instanceof BasicCaptchaChallenge) {
-                            createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
+                            final String username = config.getUserName();
+                            final String password = config.getPassword();
+                            UrlQuery query = new UrlQuery();
+                            if (StringUtils.isEmpty(username)) {
+                                query = query.addAndReplace("authtoken", URLEncode.encodeRFC2396(password));
+                            } else {
+                                query = query.addAndReplace("password", URLEncode.encodeRFC2396(password)).addAndReplace("username", URLEncode.encodeRFC2396(username));
+                            }
+                            createBrowser().postPage("http://api.dbcapi.me/api/captcha/" + captcha.getCaptcha() + "/report", query);
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
@@ -223,7 +240,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     public DBCAccount loadAccount() {
         DBCAccount ret = new DBCAccount();
         try {
-            DBCGetUserResponse user = getUserData();
+            final DBCGetUserResponse user = getUserData();
             ret.setBalance(user.getBalance());
             ret.setBanned(user.isIs_banned());
             ret.setId(user.getUser());
@@ -253,12 +270,29 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
     }
 
     private DBCGetUserResponse getUserData() throws UnsupportedEncodingException, IOException {
-        String json = createBrowser().postPage("http://api.dbcapi.me/api/user", new UrlQuery().addAndReplace("password", URLEncode.encodeRFC2396(config.getPassword())).addAndReplace("username", URLEncode.encodeRFC2396(config.getUserName())));
+        final String username = config.getUserName();
+        final String password = config.getPassword();
+        UrlQuery query = new UrlQuery();
+        if (StringUtils.isEmpty(username)) {
+            query = query.addAndReplace("authtoken", URLEncode.encodeRFC2396(password));
+        } else {
+            query = query.addAndReplace("password", URLEncode.encodeRFC2396(password)).addAndReplace("username", URLEncode.encodeRFC2396(username));
+        }
+        final String json = createBrowser().postPage("http://api.dbcapi.me/api/user", query);
+        if (StringUtils.containsIgnoreCase(json, "<htm")) {
+            throw new IOException("Invalid server response");
+        }
+        final Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        if (new Integer(255).equals(map.get("status"))) {
+            throw new IOException(String.valueOf(map.get("error")));
+        }
         return JSonStorage.restoreFromString(json, DBCGetUserResponse.TYPE);
     }
 
     private Browser createBrowser() {
         final Browser br = new Browser();
+        br.setLogger(logger);
+        br.setDebug(true);
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader $Revision$".replace("$Revision$", ""));
         return br;

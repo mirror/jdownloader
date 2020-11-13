@@ -40,9 +40,7 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
 
     public DeathByCaptchaSolverService() {
         config = JsonConfig.create(DeathByCaptchaSettings.class);
-
         AdvancedConfigManager.getInstance().register(config);
-
         if (!Application.isHeadless()) {
             ServicePanel.getInstance().addExtender(this);
             initServicePanel(CFG_DBC.USER_NAME, CFG_DBC.PASSWORD, CFG_DBC.ENABLED);
@@ -63,7 +61,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
             private TextInput     username;
-
             private PasswordInput password;
 
             @Override
@@ -74,38 +71,31 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
             {
                 addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_LOGO_DBC, 32));
                 addDescription(_GUI.T.AntiCaptchaConfigPanel_onShow_description_paid_service());
-
                 add(new SettingsButton(new AppAction() {
                     {
                         setName(_GUI.T.lit_open_website());
-
                     }
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         CrossSystem.openURL("http://www.deathbycaptcha.eu/");
-
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_DBC.USER_NAME);
                 password = new PasswordInput(CFG_DBC.PASSWORD);
-
                 this.addHeader(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_description(DeathByCaptchaSolverService.this.getName()));
+                this.addDescriptionPlain(_GUI.T.captchasolver_configpanel_my_account_token_description(DeathByCaptchaSolverService.this.getName()));
                 addPair(_GUI.T.captchasolver_configpanel_enabled(DeathByCaptchaSolverService.this.getName()), null, new Checkbox(CFG_DBC.ENABLED, username, password));
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_username(), null, username);
                 addPair(_GUI.T.captchabrotherhoodService_createPanel_password(), null, password);
-
                 addPair(_GUI.T.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_DBC.FEED_BACK_SENDING_ENABLED));
-
                 addBlackWhiteList(config);
-
             }
 
             @Override
             public void save() {
-
             }
 
             @Override
@@ -121,7 +111,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
             public String getTitle() {
                 return "deathbycaptcha.eu";
             }
-
         };
         return ret;
     }
@@ -145,7 +134,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
     public void extendServicePabel(List<ServiceCollection<?>> services) {
         if (solver.validateLogins()) {
             services.add(new ServiceCollection<DeathByCaptchaSolver>() {
-
                 @Override
                 public Icon getIcon() {
                     return DomainInfo.getInstance("deathbycaptcha.eu").getFavIcon();
@@ -170,7 +158,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
                 public ExtTooltip createTooltip(ServicePanel owner) {
                     return new ServicePanelDBCTooltip(owner, solver);
                 }
-
             });
         }
     }
@@ -185,7 +172,6 @@ public class DeathByCaptchaSolverService extends AbstractSolverService implement
         // ret.put(EndCaptchaSolverService.ID, 60000);
         // ret.put(TwoCaptchaSolverService.ID, 60000);
         ret.put(TwoCaptchaSolverService.ID, 60000);
-
         return ret;
     }
 
