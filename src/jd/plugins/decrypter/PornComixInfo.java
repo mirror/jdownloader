@@ -2,64 +2,54 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomix.info " }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one)/(?:link-gall/\\d+/|gallery/)?([a-zA-Z0-9\\-_]+)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ilikecomix.io" }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one|ilikecomix\\.io)/([a-z]{2}/)?comic-g/([a-z0-9\\-]+)/?" })
 public class PornComixInfo extends PluginForDecrypt {
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        /* 2020-10-06: They're blocking german IPs. Checked successfully using a US VPN. */
-        br.getPage(parameter.getCryptedUrl());
+        String addedurl = param.getCryptedUrl();
+        /* 2020-11-13: Main domain has changed from porncomix.info --> ilikecomix.io */
+        addedurl = addedurl.replace(Browser.getHost(addedurl) + "/", this.getHost() + "/");
+        br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        String postTitle;
-        if (parameter.getCryptedUrl().matches(".+/gallery.+")) {
-            postTitle = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            FilePackage fp = FilePackage.getInstance();
+        final String urltitle = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
+        /* Allow to pickup quotes */
+        String postTitle = br.getRegex("\"description\":\"(.*?)\",\"").getMatch(0);
+        if (StringUtils.isEmpty(postTitle)) {
+            /* Fallback */
+            postTitle = urltitle;
+        }
+        String[] images = br.getRegex("<li><a href=\"(https?://[^/]+/img/[^<>\"]+)").getColumn(0);
+        if (images != null) {
+            for (final String imageurl : images) {
+                /* 2020-11-13: Not needed anymore */
+                // imageurl = Encoding.htmlDecode(imageurl).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
+                final DownloadLink link = createDownloadlink(imageurl);
+                link.setAvailable(true);
+                link.setContainerUrl(param.getCryptedUrl());
+                decryptedLinks.add(link);
+            }
+        }
+        if (postTitle != null) {
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(postTitle));
-            String[] images = br.getRegex("<li><a href=\"(https?://[^/]+/content/[^\"]+)\"").getColumn(0);
-            if (images != null) {
-                for (final String image : images) {
-                    final DownloadLink link = createDownloadlink(image);
-                    link.setAvailable(true);
-                    link.setContainerUrl(parameter.getCryptedUrl());
-                    fp.add(link);
-                    distribute(link);
-                }
-            }
-        } else {
-            postTitle = br.getRegex("class=\"post-title\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
-            if (postTitle == null || postTitle.length() == 0) {
-                postTitle = br.getRegex("<h1\\s+class\\s*=\\s*\"post-title[^\"]*\"><a[^>]*>\\s*([^<]+)\\s*</a></h1>").getMatch(0);
-            }
-            if (postTitle != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(postTitle));
-                String[] images = br.getRegex("class='gallery-icon\\s*(?:portrait|landscape)'\\s*>\\s*<a.*?href='.*?'\\s*>\\s*<img[^>]+src=\"(https?://(?:www\\.)?\\w+\\.\\w+/.*?(jpe?g|gif|png))\"").getColumn(0);
-                if (images == null || images.length == 0) {
-                    images = br.getRegex("<img[^>]+data-jg-srcset\\s*=\\s*\"([^\",\\s]+)").getColumn(0);
-                }
-                if (images != null) {
-                    for (final String image : images) {
-                        final String url = Encoding.htmlDecode(image).replaceFirst("(-\\d+x\\d+)\\.(jpe?g|gif|png)$", ".$2");
-                        final DownloadLink link = createDownloadlink(url);
-                        link.setAvailable(true);
-                        link.setContainerUrl(parameter.getCryptedUrl());
-                        fp.add(link);
-                        distribute(link);
-                    }
-                }
-            }
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
