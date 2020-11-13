@@ -204,6 +204,7 @@ public class Multi extends IExtraction {
                     return true;
                 }
             } catch (Throwable e) {
+                UpdateController.getInstance().setExtractionError(libID + "_" + e.getMessage());
                 logger.log(e);
             }
         }
