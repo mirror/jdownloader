@@ -503,12 +503,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
     }
 
-    private void crawlHashtag(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
+    /** TODO */
+    private void crawlHashtagLoggedIN(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
         /* TODO: Maybe implement hashtag-crawler via the following request: (requires user to be logged-IN) */
-        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like
-        // Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
-        // br.getPage("http://i.instagram.com/api/v1/feed/tag/test/");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
+        br.getPage("http://i.instagram.com/api/v1/feed/tag/test/");
+        /* TODO */
+        /* 2020-11-13: lol this will also return the story of user "test" */
         /* Source: https://stevesie.com/apps/instagram-api */
+    }
+
+    private void crawlHashtag(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
         /* Jump to a point that is the same for our first page and all following ones */
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/TagPage/{0}/graphql/hashtag");
         this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
@@ -526,6 +531,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         do {
             if (page > 0) {
                 /* 2020-11-05: TODO: Fix pagination handling - returns error 400 */
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* https://svn.jdownloader.org/issues/88960 */
+                    logger.info("Pagination is broken in anonymous mode - add your account and try again");
+                    break;
+                }
                 final Browser br = this.br.cloneBrowser();
                 prepBrAjax(br);
                 final Map<String, Object> vars = new LinkedHashMap<String, Object>();
