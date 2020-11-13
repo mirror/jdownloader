@@ -50,6 +50,15 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class UpdateController implements UpdateCallbackInterface {
     private volatile Boolean extractionLibrary = null;
+    private String           extractionError   = null;
+
+    public String getExtractionError() {
+        return extractionError;
+    }
+
+    public void setExtractionError(String extractionError) {
+        this.extractionError = extractionError;
+    }
 
     public Boolean getExtractionLibrary() {
         return extractionLibrary;
@@ -632,6 +641,10 @@ public class UpdateController implements UpdateCallbackInterface {
                     // verbose hardware details
                     sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
                     hwDebug = true;
+                    final String errorDetails = getExtractionError();
+                    if (errorDetails != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardware.getHardwareType())) {
+                        sb.append("&7zjberror=" + URLEncode.encodeURIComponent(errorDetails));
+                    }
                 }
             } catch (Throwable e) {
                 logger.log(e);
