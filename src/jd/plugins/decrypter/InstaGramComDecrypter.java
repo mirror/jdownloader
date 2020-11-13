@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -97,6 +98,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final DownloadLink link = super.createDownloadlink(url);
         if (this.hashtag != null) {
             link.setProperty("hashtag", this.hashtag);
+        }
+        if (this.fp != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            link._setFilePackage(this.fp);
         }
         return link;
     }
