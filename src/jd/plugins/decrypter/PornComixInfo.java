@@ -30,10 +30,13 @@ public class PornComixInfo extends PluginForDecrypt {
         }
         final String urltitle = new Regex(br.getURL(), "/([^/]+)/?$").getMatch(0);
         /* Allow to pickup quotes */
-        String postTitle = br.getRegex("\"description\":\"(.*?)\",\"").getMatch(0);
+        String postTitle = br.getRegex("itemprop=\"headline\">([^<>\"]+)</h1>").getMatch(0);
+        if (postTitle == null) {
+            postTitle = br.getRegex("<title>([^<>\"]+) \\| Porn comics</title>").getMatch(0);
+        }
         if (StringUtils.isEmpty(postTitle)) {
             /* Fallback */
-            postTitle = urltitle;
+            postTitle = urltitle.replace("-", " ");
         }
         String[] images = br.getRegex("<li><a href=\"(https?://[^/]+/img/[^<>\"]+)").getColumn(0);
         if (images != null) {
