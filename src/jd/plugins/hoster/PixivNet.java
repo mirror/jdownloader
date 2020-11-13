@@ -20,8 +20,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -218,29 +223,38 @@ public class PixivNet extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static void login(Plugin plugin, final Browser br, final Account account, final boolean force, final boolean check) throws Exception {
+    public static void login(Plugin plugin, final Browser br, final Account account, final boolean force, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     /* 2020-04-14: TODO: Add cookie login captcha refresh handling: jdlog://6656815302851/ */
-                    br.setCookies(account.getHoster(), cookies);
-                    if (!check) {
+                    plugin.getLogger().info("Attempting normal cookie login");
+                    if (checkCookieLogin(plugin, br, account, cookies, validateCookies)) {
                         return;
                     } else {
-                        br.getPage("https://www." + account.getHoster() + "/en");
-                        if (isLoggedIN(br)) {
-                            /* Refresh loggedin timestamp */
-                            plugin.getLogger().info("Cookie login successful");
-                            account.saveCookies(br.getCookies(account.getHoster()), "");
-                            return;
-                        }
-                        plugin.getLogger().info("Cookie login failed");
-                        br.clearCookies(br.getURL());
+                        /* Full login required */
                     }
-                    /* Full login required */
+                }
+                if (userCookies != null) {
+                    plugin.getLogger().info("Attempting user cookie login");
+                    if (checkCookieLogin(plugin, br, account, userCookies, validateCookies)) {
+                        /*
+                         * User can put any name into "username" field when doing cookie login --> Try to set a valid, unique username to
+                         * display in account manager.
+                         */
+                        final String pixivId = PluginJSonUtils.getJson(br, "pixivId");
+                        if (!StringUtils.isEmpty(pixivId)) {
+                            account.setUser(pixivId);
+                        }
+                        return;
+                    } else {
+                        /* Full login required but not possible! */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "User cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 plugin.getLogger().info("Performing full login");
                 br.getPage("https://accounts." + account.getHoster() + "/login?lang=en&source=pc&view_type=page&ref=wwwtop_accounts_index");
@@ -323,10 +337,12 @@ public class PixivNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     if (br.containsHTML("Complete the reCAPTCHA verification")) {
+                        showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     br.getPage("https://www." + account.getHoster() + "/en");
                     if (!isLoggedIN(br)) {
+                        showCookieLoginInformation();
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -340,8 +356,66 @@ public class PixivNet extends PluginForHost {
         }
     }
 
+    public static Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Pixiv.net - Login fehlgeschlagen - versuche es mit der Cookie Login Methode";
+                        message += "Hallo liebe(r) Pixiv.net NutzerIn\r\n";
+                        message += "Um deinen pixiv.net Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Pixiv.net - Login failed - try cookie login";
+                        message += "Hello dear pixiv.net user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    // getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    public static boolean checkCookieLogin(final Plugin plugin, final Browser br, final Account account, final Cookies cookies, final boolean validateCookies) throws IOException {
+        br.setCookies(account.getHoster(), cookies);
+        if (!validateCookies) {
+            plugin.getLogger().info("Trust cookies without check");
+            return true;
+        } else {
+            br.getPage("https://www." + account.getHoster() + "/en");
+            if (isLoggedIN(br)) {
+                /* Refresh loggedin timestamp */
+                plugin.getLogger().info("Cookie login successful");
+                account.saveCookies(br.getCookies(account.getHoster()), "");
+                return true;
+            }
+            plugin.getLogger().info("Cookie login failed");
+            br.clearCookies(br.getURL());
+            return false;
+        }
+    }
+
     public static boolean isLoggedIN(final Browser br) {
-        return br.getCookie(br.getHost(), "device_token", Cookies.NOTDELETEDPATTERN) != null;
+        /* 2020-11-13: Don't use cookie to check - check via html! */
+        // return br.getCookie(br.getHost(), "device_token", Cookies.NOTDELETEDPATTERN) != null;
+        final String pixivId = PluginJSonUtils.getJson(br, "pixivId");
+        return br.containsHTML("login\\s*:\\s*'yes'") || !StringUtils.isEmpty(pixivId);
     }
 
     @Override
