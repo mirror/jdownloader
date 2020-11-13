@@ -89,7 +89,11 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         loginWebsiteSpecial(account, force);
     }
 
-    public void loginWebsiteSpecial(final Account account, boolean force) throws Exception {
+    /**
+     * @return true: Cookies were validated</br>
+     *         false: Cookies were not validated
+     */
+    public boolean loginWebsiteSpecial(final Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -100,7 +104,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                     this.br.setCookies(this.getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies as they're not that old --> Do not check them */
-                        return;
+                        return false;
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + "/upgrade");
@@ -113,7 +117,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                             setAccountLimitsByType(account, AccountType.FREE);
                         }
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
+                        return true;
                     } else {
                         logger.info("Failed to login via cookies");
                     }
@@ -221,6 +225,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -232,9 +237,14 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
 
     @Override
     protected boolean isLoggedin() {
+        return isLoggedinSpecial();
+    }
+
+    public boolean isLoggedinSpecial() {
         boolean loggedIN = super.isLoggedin();
         if (!loggedIN) {
-            loggedIN = br.containsHTML("/account/logout");
+            /* Case 1: When in account overview | Case 2: Everywhere slese */
+            loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account\"");
         }
         return loggedIN;
     }
@@ -250,56 +260,76 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        /* TODO: Check download of password protected files */
         if (this.supports_api()) {
             this.handleDownloadAPI(link, account);
         } else {
-            if (account.getType() == AccountType.FREE) {
-                super.handlePremium(link, account);
+            /* 2020-11-13: Free- and premium account download works the same way. */
+            requestFileInformation(link, account, true);
+            loginWebsite(account, false);
+            br.setFollowRedirects(true);
+            String dllink = checkDirectLink(link, account);
+            if (dllink != null) {
+                logger.info("Continuing with stored directURL");
             } else {
-                requestFileInformation(link, account, true);
-                loginWebsite(account, false);
-                br.setFollowRedirects(true);
-                String dllink = checkDirectLink(link, account);
-                if (dllink != null) {
-                    logger.info("Continuing with stored directURL");
+                logger.info("Generating new directURL");
+                final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+                if (this.looksLikeDownloadableContent(con)) {
+                    dllink = con.getURL().toString();
                 } else {
-                    logger.info("Generating new directURL");
-                    final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
-                    if (this.looksLikeDownloadableContent(con)) {
-                        dllink = con.getURL().toString();
+                    br.followConnection();
+                    br.setFollowRedirects(false);
+                    Form pwProtected = getPasswordProtectedForm();
+                    if (pwProtected != null) {
+                        /* File is password protected --> Totally different download-way */
+                        String passCode = link.getDownloadPassword();
+                        if (passCode == null) {
+                            passCode = getUserInput("Password?", link);
+                        }
+                        pwProtected.put("filePassword", Encoding.urlEncode(passCode));
+                        this.submitForm(pwProtected);
+                        if (!this.isDownloadlink(br.getRedirectLocation()) || this.getPasswordProtectedForm() != null) {
+                            /* Assume that entered password is wrong! */
+                            link.setDownloadPassword(null);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                        } else {
+                            /* Entered password is correct - we can start the download. */
+                            dllink = br.getRedirectLocation();
+                            link.setDownloadPassword(passCode);
+                        }
                     } else {
-                        br.followConnection();
                         final String internalFileID = this.getInternalFileID(link);
                         if (internalFileID == null) {
                             this.checkErrors(link, account);
                             checkErrorsLastResort(link, account);
                         }
-                        br.setFollowRedirects(false);
                         br.getPage("/account/direct_download/" + internalFileID);
                         dllink = br.getRedirectLocation();
                     }
                 }
-                if (dllink == null) {
-                    this.checkErrors(link, account);
-                    checkErrorsLastResort(link, account);
-                }
-                final boolean resume = this.isResumeable(link, account);
-                final int maxchunks = this.getMaxChunks(account);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-                link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
-                if (!isDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    checkErrors(link, account);
-                    checkErrorsLastResort(link, account);
-                }
-                dl.startDownload();
             }
+            if (dllink == null) {
+                this.checkErrors(link, account);
+                checkErrorsLastResort(link, account);
+            }
+            final boolean resume = this.isResumeable(link, account);
+            final int maxchunks = this.getMaxChunks(account);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+            link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
+            if (!isDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                checkErrors(link, account);
+                checkErrorsLastResort(link, account);
+            }
+            dl.startDownload();
         }
+    }
+
+    private Form getPasswordProtectedForm() {
+        return br.getFormbyKey("filePassword");
     }
 
     @Override
@@ -311,7 +341,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         return offline;
     }
 
-    private boolean isOfflineSpecial() {
+    protected boolean isOfflineSpecial() {
         return br.containsHTML(">\\s*File has been removed|>\\s*File not found");
     }
 

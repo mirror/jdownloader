@@ -37,7 +37,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -48,6 +47,11 @@ import jd.utils.JDUtilities;
 public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
     public GenericYetiShareFolderSpecialOxycloud(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    /** 2020-11-13: Preventive measure */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -85,18 +89,34 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
         final String currentFolderHash = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         /* TODO: Make login work for all supported hosts */
+        /*
+         * 2020-11-13: erai-ddl3.info only allows one active session. If the user e.g. logs in via JD, he will get logged out in browser and
+         * the other way around!
+         */
         if (account != null && this.getHost().equals("erai-ddl3.info")) {
-            final PluginForHost plg = JDUtilities.getNewPluginForHostInstance(this.getHost());
-            plg.setBrowser(this.br);
-            plg.setLogger(getLogger());
-            try {
-                ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
-            } catch (PluginException e) {
-                handleAccountException(account, e);
+            synchronized (account) {
+                final PluginForHost plg = JDUtilities.getNewPluginForHostInstance(this.getHost());
+                plg.setBrowser(this.br);
+                plg.setLogger(getLogger());
+                try {
+                    final boolean validatedCookies = ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
+                    br.setFollowRedirects(true);
+                    br.getPage(parameter);
+                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedinSpecial()) {
+                        logger.info("Session expired? Trying again, this time with cookie validation");
+                        ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, true);
+                        br.setFollowRedirects(true);
+                        br.getPage(parameter);
+                        /* Assume that we are logged in now. */
+                    }
+                } catch (PluginException e) {
+                    handleAccountException(account, e);
+                }
             }
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
         }
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -114,7 +134,7 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
         /* TODO: Find folders with more than 1 page */
         br.postPage("/account/ajax/load_files", "pageType=folder&nodeId=" + folderID + "&pageStart=1&perPage=0&filterOrderBy=&additionalParams%5BsearchTerm%5D=&additionalParams%5BfilterUploadedDateRange%5D=");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        String fpName = (String) entries.get("page_title");
+        final String fpName = (String) entries.get("page_title");
         String htmlInsideJson = (String) entries.get("html");
         br.getRequest().setHtmlCode(htmlInsideJson);
         boolean passwordSuccess = true;
@@ -147,45 +167,52 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
             htmlInsideJson = (String) entries.get("html");
             br.getRequest().setHtmlCode(htmlInsideJson);
         }
-        final String[] htmls = br.getRegex("<div[^>]*(dttitle.*?)</span></div>").getColumn(0);
-        if (htmls == null || htmls.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Try to construct absolute path */
-        String subfolderPath = "";
-        final String[] subfolderParts = br.getRegex("class=\"btn btn-white mid-item\">([^<>\"]+)<").getColumn(0);
-        for (final String subfolderPart : subfolderParts) {
-            if (subfolderPath.length() > 0) {
-                subfolderPath += "/";
+        final String[] fileHTMLSnippets = br.getRegex("<div[^>]*(dttitle.*?)</span></div>").getColumn(0);
+        if (fileHTMLSnippets.length > 0) {
+            /* Try to construct absolute path */
+            String subfolderPath = "";
+            final String[] subfolderParts = br.getRegex("class=\"btn btn-white mid-item\">([^<>\"]+)<").getColumn(0);
+            for (final String subfolderPart : subfolderParts) {
+                if (subfolderPath.length() > 0) {
+                    subfolderPath += "/";
+                }
+                subfolderPath += subfolderPart;
             }
-            subfolderPath += subfolderPart;
-        }
-        for (final String html : htmls) {
-            final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
-            final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
-            final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
-            final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
-            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
-                /* Skip invalid items */
-                continue;
+            final FilePackage fp = FilePackage.getInstance();
+            if (!StringUtils.isEmpty(fpName)) {
+                fp.setName(fpName);
+            } else {
+                /* Fallback */
+                fp.setName(currentFolderHash);
             }
-            final DownloadLink dl = createDownloadlink(url);
-            if (!StringUtils.isEmpty(filename)) {
-                dl.setName(filename);
+            for (final String html : fileHTMLSnippets) {
+                final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
+                final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+                final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                final DownloadLink dl = createDownloadlink(url);
+                if (!StringUtils.isEmpty(filename)) {
+                    dl.setName(filename);
+                }
+                if (!StringUtils.isEmpty(filesizeStr)) {
+                    dl.setDownloadSize(Long.parseLong(filesizeStr));
+                }
+                dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                /* We know for sure that this file is online! */
+                dl.setAvailable(true);
+                if (subfolderPath.length() > 0) {
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                }
+                if (passCode != null) {
+                    dl.setDownloadPassword(passCode);
+                }
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
             }
-            if (!StringUtils.isEmpty(filesizeStr)) {
-                dl.setDownloadSize(Long.parseLong(filesizeStr));
-            }
-            dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
-            /* We know for sure that this file is online! */
-            dl.setAvailable(true);
-            if (subfolderPath.length() > 0) {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
-            }
-            if (passCode != null) {
-                dl.setDownloadPassword(passCode);
-            }
-            decryptedLinks.add(dl);
         }
         /* Now crawl subfolders inside this folder */
         final String[] folderHashes = br.getRegex("(/folder/[a-f0-9]{32})").getColumn(0);
@@ -197,16 +224,16 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
             final String folderURL = br.getURL(folderHash).toString();
             final DownloadLink folder = this.createDownloadlink(folderURL);
             /*
-             * TODO: Check if that works AND re-use that password for all following crawling instances (subfolders will probably require the
-             * same password!)
+             * 2020-11-13: Not required. If a "root" folder is password-protected, all files within it are usually not password protected
+             * (WTF) and/or can require another password which can be different. Also subfolders inside folders will usually not require a
+             * password at all but users CAN set a (different) password on them.
              */
-            folder.setDownloadPassword(passCode);
+            // folder.setDownloadPassword(passCode);
             decryptedLinks.add(folder);
         }
-        if (!StringUtils.isEmpty(fpName) && subfolderPath.length() == 0) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        if (decryptedLinks.size() == 0) {
+            decryptedLinks.add(this.createOfflinelink(parameter, "empty_folder_" + currentFolderHash, "Empty folder?"));
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
