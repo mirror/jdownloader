@@ -26,6 +26,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -48,14 +56,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
@@ -75,11 +75,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private Boolean                              isPrivate                         = false;
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
-    private static LinkedHashMap<String, String> IT_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+    private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
+                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                           return size() > 100;
+                                                                                       };
+                                                                                   };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -90,6 +90,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
         }
         return null;
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(final String url) {
+        final DownloadLink link = super.createDownloadlink(url);
+        if (this.hashtag != null) {
+            link.setProperty("hashtag", this.hashtag);
+        }
+        return link;
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -217,6 +226,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         fbAppId = null;
         qHash = null;
+        if (param.getDownloadLink() != null) {
+            /*
+             * E.g. user crawls hashtag URL --> Some URLs go back into crawler --> We want to keep the hashtag in order to use it inside
+             * filenames and as a packagizer property.
+             */
+            this.hashtag = param.getDownloadLink().getStringProperty("hashtag");
+        }
         br.addAllowedResponseCodes(new int[] { 502 });
         prefer_server_filename = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.PREFER_SERVER_FILENAMES, jd.plugins.hoster.InstaGramCom.defaultPREFER_SERVER_FILENAMES);
         this.findUsernameDuringHashtagCrawling = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.HASHTAG_CRAWLER_FIND_USERNAMES, jd.plugins.hoster.InstaGramCom.defaultHASHTAG_CRAWLER_FIND_USERNAMES);
@@ -367,10 +383,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             for (final Object galleryo : resource_data_list) {
                 entries = (LinkedHashMap<String, Object>) galleryo;
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
-                username_url = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
+                /** TODO: Check if cached- handling is also required here (see crawlHashtag) */
+                final String usernameTmp = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
                 this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
-                if (username_url != null) {
-                    fp.setName(username_url);
+                if (usernameTmp != null) {
+                    fp.setName(usernameTmp);
                 }
                 crawlAlbum(entries);
             }
@@ -398,10 +415,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
             }
             username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-            final boolean isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
-            if (username_url != null) {
-                fp.setName(username_url);
+            if (username_url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            fp.setName(username_url);
+            final boolean isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
             final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
             final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
             String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
@@ -488,6 +506,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (this.hashtag == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fp.setName("hashtag - " + this.hashtag);
         final String rhxGis = this.getVarRhxGis(this.br);
         String nextid = null;
         int count = 0;
@@ -658,17 +677,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 usernameForFilename = (String) ownerInfo.get("username");
                 if (usernameForFilename != null) {
                     /* Cache information for later usage just in case it isn't present in json the next time. */
-                    IT_TO_USERNAME.put(userID, usernameForFilename);
+                    ID_TO_USERNAME.put(userID, usernameForFilename);
                 } else if (this.findUsernameDuringHashtagCrawling) {
                     /* Check if we got this username cached */
-                    synchronized (IT_TO_USERNAME) {
-                        usernameForFilename = IT_TO_USERNAME.get(userID);
+                    synchronized (ID_TO_USERNAME) {
+                        usernameForFilename = ID_TO_USERNAME.get(userID);
                         if (usernameForFilename == null) {
                             /* HTTP request needed to find username! */
                             usernameForFilename = this.getUsernameFromUserID(br, userID);
                             if (usernameForFilename != null) {
                                 /* Cache information for later usage */
-                                IT_TO_USERNAME.put(userID, usernameForFilename);
+                                ID_TO_USERNAME.put(userID, usernameForFilename);
                             } else {
                                 logger.warning("WTF failed to find username for userID: " + userID);
                             }
@@ -854,10 +873,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         if (!StringUtils.isEmpty(postID)) {
             dl.setProperty("postid", postID);
-        }
-        if (!StringUtils.isEmpty(this.hashtag)) {
-            /* Packagizer Property */
-            dl.setProperty("hashtag", this.hashtag);
         }
         if (!StringUtils.isEmpty(this.username_url)) {
             /* Packagizer Property */
