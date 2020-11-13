@@ -71,8 +71,10 @@ public class MtlAreRg extends PluginForDecrypt {
             }
         }
         if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName.trim());
+            fpName = fpName.replace(" - Metal Area - Extreme Music Portal", "");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
