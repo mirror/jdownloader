@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -31,9 +30,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "http://(?:www\\.)?animegalleries\\.net/album/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "https?://(?:www\\.)?animegalleries\\.net/album/\\d+" })
 public class AnimegalleriesNet extends PluginForDecrypt {
-
     public AnimegalleriesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -48,13 +46,13 @@ public class AnimegalleriesNet extends PluginForDecrypt {
         }
         String fpName = br.getRegex("\">([^<>\"]+)</h2>").getMatch(0);
         if (fpName == null) {
+            /* Fallback */
             fpName = new Regex(parameter, "(\\d+)$").getMatch(0);
         }
         String next = null;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         fp.addLinks(decryptedLinks);
-
         do {
             if (this.isAbort()) {
                 return decryptedLinks;
@@ -77,7 +75,6 @@ public class AnimegalleriesNet extends PluginForDecrypt {
             }
             next = this.br.getRegex("class=\"tableb_compact\".*?class=\"navmenu\"><a href=\"(/album/\\d+/page/\\d+)\"").getMatch(0);
         } while (next != null);
-
         return decryptedLinks;
     }
 
