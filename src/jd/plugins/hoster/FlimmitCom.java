@@ -13,12 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -35,16 +36,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" })
 public class FlimmitCom extends PluginForHost {
-
     public FlimmitCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.flimmit.com/customer/account/create/");
@@ -59,7 +57,6 @@ public class FlimmitCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -78,7 +75,6 @@ public class FlimmitCom extends PluginForHost {
         // if (!br.getURL().contains("/play/")) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
-
         String filename = link.getStringProperty("filename", null);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -181,7 +177,7 @@ public class FlimmitCom extends PluginForHost {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
@@ -211,7 +207,6 @@ public class FlimmitCom extends PluginForHost {
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
-
     }
 
     @Override
@@ -227,5 +222,4 @@ public class FlimmitCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
