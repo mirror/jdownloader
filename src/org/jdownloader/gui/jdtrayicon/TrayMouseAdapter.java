@@ -115,7 +115,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
         };
     }
 
-    private Image getCurrentTrayIconImage() {
+    protected Image getCurrentTrayIconImage() {
         if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled() || !CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.isEnabled()) {
             return image;
         } else {
