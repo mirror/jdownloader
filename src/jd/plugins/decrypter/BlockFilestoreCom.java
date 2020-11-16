@@ -13,13 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,14 +36,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/folder/([a-z0-9\\-]+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "blockfilestore.com" }, urls = { "https?://www\\.blockfilestore\\.com/folder/([a-f0-9\\-]+)" })
 public class BlockFilestoreCom extends PluginForDecrypt {
-
     public BlockFilestoreCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -56,7 +54,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
         final String parameter = param.toString();
         final String uid = new Regex(parameter, getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
-        if (br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(uid) || br.containsHTML(">This chapter has been removed due to infringement\\.<")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -67,7 +65,6 @@ public class BlockFilestoreCom extends PluginForDecrypt {
             br2.submitForm(a.getKey());
             decryptedLinks.addAll(process(br2, parameter, uid));
         }
-
         return decryptedLinks;
     }
 
@@ -76,7 +73,6 @@ public class BlockFilestoreCom extends PluginForDecrypt {
         final String fpName = br.getRegex("<a id=\"ContentPlaceHolder1_rptNiveles_lnkGo_0\"[^>]*>(.*?)</a>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-
         final String[] results = br.getRegex("<a[^>]+>\\s*<div[^>]*>.*?</div>\\s*</a>").getColumn(-1);
         if (results != null) {
             for (String result : results) {
@@ -127,9 +123,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
