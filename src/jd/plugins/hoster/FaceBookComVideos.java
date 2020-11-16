@@ -520,7 +520,7 @@ public class FaceBookComVideos extends PluginForHost {
                     } finally {
                         br.setFollowRedirects(follow);
                     }
-                    if (isLoggedinHTML()) {
+                    if (this.isLoggedinHTML()) {
                         /* Save cookies to save new valid cookie timestamp */
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
@@ -544,17 +544,20 @@ public class FaceBookComVideos extends PluginForHost {
                     } finally {
                         br.setFollowRedirects(follow);
                     }
-                    if (isLoggedinHTML()) {
+                    if (this.isLoggedinHTML()) {
                         /* Save cookies to save new valid cookie timestamp */
                         logger.info("User-cookie login successful");
                         account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
                         /*
-                         * Make sure that username in JD is unique because via cookie login, user can enter whatever he wants into username
-                         * field!
+                         * Try to make sure that username in JD is unique because via cookie login, user can enter whatever he wants into
+                         * username field! 2020-11-16: Username can be "" (empty) for some users [rare case].
                          */
                         final String username = PluginJSonUtils.getJson(br, "username");
                         if (!StringUtils.isEmpty(username)) {
+                            logger.info("Found username in json: " + username);
                             account.setUser(username);
+                        } else {
+                            logger.info("Failed to find username in json (rarec case)");
                         }
                         return;
                     } else {
@@ -779,9 +782,11 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private boolean isLoggedinHTML() {
-        final String username = PluginJSonUtils.getJson(br, "username");
+        final boolean brContainsSecondaryLoggedinHint = br.containsHTML("settings_dropdown_profile_picture");
         final String logout_hash = PluginJSonUtils.getJson(br, "logout_hash");
-        return !StringUtils.isEmpty(username) && !StringUtils.isEmpty(logout_hash);
+        logger.info("logout_hash = " + logout_hash);
+        logger.info("brContainsSecondaryLoggedinHint = " + brContainsSecondaryLoggedinHint);
+        return !StringUtils.isEmpty(logout_hash) && brContainsSecondaryLoggedinHint;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
