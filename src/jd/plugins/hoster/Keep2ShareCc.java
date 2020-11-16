@@ -49,11 +49,11 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public String rewriteHost(String host) {
         if (host == null) {
-            return "keep2share.cc";
+            return "k2s.cc";
         }
         for (final String supportedName : siteSupportedNames()) {
             if (supportedName.equals(host)) {
-                return "keep2share.cc";
+                return "k2s.cc";
             }
         }
         return super.rewriteHost(host);
@@ -62,7 +62,7 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
         if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
-            return "http://keep2share.cc/file/" + getFUID(link);// do not change
+            return "http://k2s.cc/file/" + getFUID(link);// do not change
         } else {
             return link.getPluginPatternMatcher();
         }
