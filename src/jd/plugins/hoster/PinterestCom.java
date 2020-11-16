@@ -15,12 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -135,10 +135,12 @@ public class PinterestCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
         } else if (!br.getURL().contains(pin_id)) {
-            /* Pin redirected to other pin --> initial pin is offline! */
+            /* PIN redirected to other PIN --> initial PIN is offline! */
+            /* Or: PIN is not present in URL --> PIN is offline */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -147,36 +149,39 @@ public class PinterestCom extends PluginForHost {
         doFree(downloadLink, false, 1, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
     /** Checks directurl and sets filesize on success. */
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!this.looksLikeDownloadableContent(con)) {
+                    return null;
                 } else {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
@@ -184,7 +189,7 @@ public class PinterestCom extends PluginForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     /**

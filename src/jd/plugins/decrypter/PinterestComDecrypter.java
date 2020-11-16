@@ -197,6 +197,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             pin_ressource_url += "&_=" + System.currentTimeMillis();
             prepAPIBR(br);
             br.getPage(pin_ressource_url);
+            followSpecialRedirect(br);
             if (jd.plugins.hoster.PinterestCom.isOffline(br, pin_id)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -204,6 +205,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             resource_data_cache = (ArrayList) entries.get("resource_data_cache");
         } else {
             br.getPage(contentURL);
+            followSpecialRedirect(br);
             if (jd.plugins.hoster.PinterestCom.isOffline(br, pin_id)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -261,6 +263,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             }
         }
         return pinMap;
+    }
+
+    /** 2020-11-16 */
+    public static void followSpecialRedirect(final Browser br) throws IOException, PluginException {
+        final String redirect = br.getRegex("window\\.location = \"([^<>\"]+)\"").getMatch(0);
+        if (redirect != null) {
+            if (redirect.contains("show_error=true")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.getPage(redirect);
+        }
     }
 
     /** Returns highest resolution image URL inside given PIN Map. */
