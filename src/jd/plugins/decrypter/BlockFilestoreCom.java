@@ -73,7 +73,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
         final String fpName = br.getRegex("<a id=\"ContentPlaceHolder1_rptNiveles_lnkGo_0\"[^>]*>(.*?)</a>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        final String[] results = br.getRegex("<a[^>]+>\\s*<div[^>]*>.*?</div>\\s*</a>").getColumn(-1);
+        final String[] results = br.getRegex("<a[^>]+>.*?</div>\\s*</a>").getColumn(-1);
         if (results != null) {
             for (String result : results) {
                 result = Encoding.htmlDecode(result);
@@ -85,7 +85,7 @@ public class BlockFilestoreCom extends PluginForDecrypt {
                 final String id = new Regex(result, "href=\"javascript:__doPostBack\\('(.*?)',''\\)\"").getMatch(0);
                 // folders
                 if (new Regex(result, "/images/folder\\.png").matches()) {
-                    final Form f = br.getFormbyAction(uid);
+                    final Form f = br.getFormbyActionRegex(".+" + uid);
                     if (f == null) {
                         // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         // return instead of defect.. could be empty folders or what ever we should always return the results.
