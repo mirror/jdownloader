@@ -73,8 +73,9 @@ public class RsHrbchn extends antiDDoSForDecrypt {
                         logger.info("Retry on ad-redirect");
                         continue;
                     } else if (newid == null) {
-                        logger.info("Retry on newid == null");
-                        continue;
+                        logger.info("No ID inside URL");
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
                     }
                     final String newlink = "https://hoerbuch.us/protection/folder_" + newid + ".html";
                     parameter = newlink;

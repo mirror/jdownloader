@@ -15,12 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,58 +31,38 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "r8link.com" }, urls = { "http://(www\\.)?r8link\\.com/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "r8link.com" }, urls = { "https?://(?:www\\.)?r8link\\.com/([A-Za-z0-9]+)" })
 public class R8LinkCom extends PluginForDecrypt {
     public R8LinkCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String reCaptcha = "api\\.recaptcha\\.net|google\\.com/recaptcha/api/";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">NOT FOUND<|This link does not exist or was deleted") || this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final int repeat = 4;
-        for (int i = 1; i <= repeat; i++) {
-            if (br.containsHTML(reCaptcha)) {
-                final Recaptcha rc = new Recaptcha(br, this);
-                rc.parse();
-                final String[] v = br.getRegex("(\\w)\\.name\\s*=\\s*(\"|')(\\w+)\";\\s*\\1\\.value\\s*=\\s*(\"|')([a-f0-9]+)\\4").getRow(0);
-                if (v == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                Form r = rc.getForm();
-                r.put(v[2], v[4]);
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, param);
-                r.put("recaptcha_challenge_field", rc.getChallenge());
-                r.put("recaptcha_response_field", Encoding.urlEncode(c));
-                br.submitForm(r);
-                if (br.containsHTML(reCaptcha) && i + 1 != repeat) {
-                    continue;
-                } else if (br.containsHTML(reCaptcha) && i + 1 == repeat) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    break;
-                }
-            } else if (br.containsHTML("class=\"g\\-recaptcha\"")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
+        br.setFollowRedirects(false);
+        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+            final Form captchaform = br.getFormbyActionRegex(".+" + contentID);
+            if (captchaform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(captchaform);
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        final String finallink = br.getRegex("HTTP-EQUIV='Refresh'[^>]*CONTENT='\\d+;URL=(http://[^<>\"]*?)'").getMatch(0);
+        final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
