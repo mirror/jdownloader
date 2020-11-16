@@ -138,7 +138,7 @@ public class StreamtapeCom extends PluginForHost {
              * 2020-10-15: New. Do NOT use the first URL inside html matching the (above) pattern. This will lead to a fake video which
              * advises the user to disable his adblocker!
              */
-            dllink = br.getRegex("document\\.getElementById\\(\"videolink\"\\)\\.innerHTML = \"([^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("document\\.getElementById\\('videolink'\\);elem\\['innerHTML'\\]='([^\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

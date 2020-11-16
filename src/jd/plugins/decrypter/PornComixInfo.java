@@ -14,13 +14,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ilikecomix.io" }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one|ilikecomix\\.io)/([a-z]{2}/)?comic-g/([a-z0-9\\-]+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ilikecomix.io" }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com|porncomix\\.one|ilikecomix\\.io)/([a-z]{2}/)?(?:comic-g|gallery)/([a-z0-9\\-]+)/?" })
 public class PornComixInfo extends PluginForDecrypt {
+    /** 2020-11-16: bestporncomix.com got routing issues in germany. Use a US VPN to make the website load faster/load at all. */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String addedurl = param.getCryptedUrl();
+        /* 2020-11-16: "Convert" older (bestporncomix.com) URLs --> New (ilikecomix.io) URLs */
+        String addedurl = param.getCryptedUrl().replace("/gallery/", "/comic-g/");
         /* 2020-11-13: Main domain has changed from porncomix.info --> ilikecomix.io */
         addedurl = addedurl.replace(Browser.getHost(addedurl) + "/", this.getHost() + "/");
         br.getPage(addedurl);
