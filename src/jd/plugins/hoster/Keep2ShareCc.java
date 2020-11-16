@@ -29,6 +29,7 @@ import jd.plugins.PluginForHost;
 /**
  *
  * @author raztoki
+ * @changedby Joaquinito2051
  *
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
