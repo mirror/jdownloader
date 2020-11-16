@@ -6,7 +6,6 @@ import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
 public interface TrayiconTranslation extends TranslateInterface {
-
     @Default(lngs = { "en" }, values = { "Downloads:" })
     String plugins_optional_trayIcon_downloads();
 
@@ -39,6 +38,9 @@ public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Show Tooltip" })
     String plugins_optional_JDLightTray_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Tray Icon indicates disabled clipboard monitoring" })
+    String plugins_optional_JDLightTray_clipboardindicator();
 
     @Default(lngs = { "en" }, values = { "Total:" })
     String plugins_optional_trayIcon_dl_total();
@@ -123,5 +125,4 @@ public interface TrayiconTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "There are updates waiting for installation. Click to install them now!" })
     String popup_update_install_tt();
-
 }

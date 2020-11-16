@@ -7,7 +7,6 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 
 public interface TrayConfig extends ExtensionConfigInterface {
-
     @DefaultBooleanValue(false)
     @AboutConfig
     public boolean isStartMinimizedEnabled();
@@ -44,6 +43,12 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setGreyIconEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    public boolean isTrayIconClipboardIndicatorEnabled();
+
+    public void setTrayIconClipboardIndicatorEnabled(boolean b);
+
     @DefaultBooleanValue(true)
     @AboutConfig
     public boolean isGnomeTrayIconTransparentEnabled();
@@ -55,5 +60,4 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public boolean isTrayOnlyVisibleIfWindowIsHiddenEnabled();
 
     public void setTrayOnlyVisibleIfWindowIsHiddenEnabled(boolean b);
-
 }

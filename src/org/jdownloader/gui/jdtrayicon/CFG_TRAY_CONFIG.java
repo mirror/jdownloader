@@ -39,4 +39,5 @@ public class CFG_TRAY_CONFIG {
     public static final BooleanKeyHandler          TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED = SH.getKeyHandler("ToogleWindowStatusWithSingleClickEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler          START_MINIMIZED_ENABLED                        = SH.getKeyHandler("StartMinimizedEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler          TRAY_ICON_CLIPBOARD_INDICATOR                  = SH.getKeyHandler("TrayIconClipboardIndicatorEnabled", BooleanKeyHandler.class);
 }
