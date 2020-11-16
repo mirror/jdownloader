@@ -74,10 +74,8 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
         };
         size = trayIcon.getSize();
         logger = JDGui.getInstance().getLogger();
-        GraphicsDevice device = null;
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice lstGDs[] = ge.getScreenDevices();
-        ArrayList<GraphicsDevice> lstDevices = new ArrayList<GraphicsDevice>(lstGDs.length);
+        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        final GraphicsDevice lstGDs[] = ge.getScreenDevices();
         possibleLocations = new ArrayList<Area>();
         for (GraphicsDevice gd : lstGDs) {
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
@@ -106,7 +104,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     public void startListener() {
         CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(clipboardToggle, false);
-        CFG_GUI.CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED.getEventSender().addListener(clipboardToggle, false);
+        CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.getEventSender().addListener(clipboardToggle, false);
         new EDTRunner() {
             @Override
             protected void runInEDT() {
@@ -118,7 +116,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     private Image getCurrentTrayIconImage() {
-        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled() || !CFG_GUI.CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED.isEnabled()) {
+        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled() || CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.isEnabled()) {
             return image;
         } else {
             return IconIO.toImage(new BadgeIcon(new ImageIcon(image), NewTheme.I().getCheckBoxImage(IconKey.ICON_CLIPBOARD, false, Math.max(8, image.getHeight(null) / 2), new Color(0xFF9393)), 4, 2));
@@ -127,7 +125,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
 
     public void stopListener() {
         CFG_GUI.CLIPBOARD_MONITORED.getEventSender().removeListener(clipboardToggle);
-        CFG_GUI.CLIPBOARD_DISABLED_WARNING_FLASH_ENABLED.getEventSender().removeListener(clipboardToggle);
+        CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.getEventSender().removeListener(clipboardToggle);
         new EDTRunner() {
             @Override
             protected void runInEDT() {
