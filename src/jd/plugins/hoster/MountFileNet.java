@@ -50,7 +50,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
-
     private final String                   MAINPAGE                   = "http://mountfile.net";
     /* For reconnect special handling */
     private static Object                  CTRLLOCK                   = new Object();
@@ -130,9 +129,9 @@ public class MountFileNet extends antiDDoSForHost {
         }
         if (useExperimentalHandling) {
             /*
-             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he tries to start
-             * more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download using the same free accounts
-             * after performing a reconnect!
+             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
+             * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
+             * using the same free accounts after performing a reconnect!
              */
             lastdownload = getPluginSavedLastDownloadTimestamp();
             passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
@@ -252,7 +251,7 @@ public class MountFileNet extends antiDDoSForHost {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         try {

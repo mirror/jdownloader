@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
@@ -24,6 +23,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,16 +45,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vvvvid.it" }, urls = { "http://vvvviddecrypted\\.it/\\d+" })
 public class VvvvidIt extends PluginForHost {
-
     public VvvvidIt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.vvvvid.it/#register");
@@ -90,7 +88,8 @@ public class VvvvidIt extends PluginForHost {
             /* HDS */
             /*
              * E.g.
-             * 'http://vvvvid-vh.akamaihd.net/z/Dynit/Durarara/DurararaX2_Ep01_H26phJw2RNlnBURem.mp4/manifest.f4m?g=WBTXLPEAWKUL&hdcore=3.6.0&plugin=aasp-3.6.0.50.41'
+             * 'http://vvvvid-vh.akamaihd.net/z/Dynit/Durarara/DurararaX2_Ep01_H26phJw2RNlnBURem.mp4/manifest.f4m?g=WBTXLPEAWKUL&hdcore=3.6.
+             * 0&plugin=aasp-3.6.0.50.41'
              */
             stream_master += "?hdcore=3.6.0&plugin=aasp-3.6.0.50.41";
             br.getPage(stream_master);
@@ -101,8 +100,8 @@ public class VvvvidIt extends PluginForHost {
                  * JojoDiamond_S04Ep03_NCULxv3jGQXwPyIhm.mp4%2Fmanifest.f4m
                  */
                 /*
-                 * http://vvvvid-vh.akamaihd.net/z/Dynit2/Jojo/JojoDiamond_S04Ep03_NCULxv3jGQXwPyIhm.mp4/manifest.f4m?hdnts=exp=1462316725~acl
-                 * =/z/Dynit2/Jojo/JojoDiamond_S04Ep03_NCULxv3jGQXwPyIhm.mp4/*~hmac=4d264
+                 * http://vvvvid-vh.akamaihd.net/z/Dynit2/Jojo/JojoDiamond_S04Ep03_NCULxv3jGQXwPyIhm.mp4/manifest.f4m?hdnts=exp=1462316725~
+                 * acl =/z/Dynit2/Jojo/JojoDiamond_S04Ep03_NCULxv3jGQXwPyIhm.mp4/*~hmac=4d264
                  * a58f22fa5277f15676afd27731484d42cc42b8c5d1e82e89931a86801a4&g=TSVEFKWLFPKQ&hdcore=3.6.0&plugin=aasp-3.6.0.50.41
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
@@ -117,7 +116,6 @@ public class VvvvidIt extends PluginForHost {
             Node media;
             for (int j = 0; j < mediaUrls.getLength(); j++) {
                 media = mediaUrls.item(j);
-
                 String temp = getAttByNamedItem(media, "url");
                 if (temp != null) {
                     finallink = temp;
@@ -225,7 +223,7 @@ public class VvvvidIt extends PluginForHost {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         try {
@@ -272,5 +270,4 @@ public class VvvvidIt extends PluginForHost {
             link.removeProperty(HDSDownloader.RESUME_FRAGMENT);
         }
     }
-
 }

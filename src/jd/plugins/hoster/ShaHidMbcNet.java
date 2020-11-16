@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -37,9 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "shahid.mbc.netrtmpe://mbc\\d\\.csl\\.delvenetworks\\.com/.+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "shahid.mbc.netrtmpe://mbc\\d\\.csl\\.delvenetworks\\.com/.+" })
 public class ShaHidMbcNet extends PluginForHost {
-
     private static final String ALLOW_HD                        = "ALLOW_HD";
     private static final String ALLOW_HIGH                      = "ALLOW_HIGH";
     private static final String ALLOW_LOW                       = "ALLOW_LOW";
@@ -68,13 +66,11 @@ public class ShaHidMbcNet extends PluginForHost {
         }
         final String ext = url.substring(url.lastIndexOf(".") + 1);
         url = url.substring(url.indexOf("//") + 2);
-
         if (ext.matches("(mp3|mp4)")) {
             if (url.indexOf("/" + ext + ":") != -1) {
                 url = url.replace(url.substring(url.indexOf("/") + 1, url.indexOf(":") + 1), "");
             }
         }
-
         url = "http://" + url.replaceAll("\\.csl\\.", ".cpl.");
         url = convertToMediaVaultUrl(url);
         if (url == null) {
@@ -213,7 +209,7 @@ public class ShaHidMbcNet extends PluginForHost {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         try {
@@ -331,5 +327,4 @@ public class ShaHidMbcNet extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LOW, "LOW @ 450Kbps").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_LOWEST, "LOWEST @ 224Kbps").setDefaultValue(true));
     }
-
 }
