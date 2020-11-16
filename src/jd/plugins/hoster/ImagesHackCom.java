@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,11 +33,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" })
 public class ImagesHackCom extends PluginForHost {
-
     private static final String  TYPE_DOWNLOAD     = "https?://(?:www\\.)?imageshack\\.(?:us|com)/f/\\d+/[^<>\"/]+";
     private static final String  TYPE_IMAGE        = "https?://(?:www\\.)?imageshack\\.(?:us|com)/i/[A-Za-z0-9]+";
     private static final boolean enable_api_image  = true;
@@ -90,7 +89,6 @@ public class ImagesHackCom extends PluginForHost {
             prepBR_API(this.br);
             this.fid = getFIDFRomURL_image(link);
             this.br.getPage("https://api.imageshack.com/v2/images/" + this.fid + "?next_prev_limit=0&related_images_limit=0&password=" + Encoding.urlEncode(passCode));
-
             if (this.br.getHttpConnection().getResponseCode() == 401) {
                 /*
                  * TThis case is nearly impossible as only albums can be password protected --> Correct password should already be available
@@ -101,7 +99,6 @@ public class ImagesHackCom extends PluginForHost {
                 link.getLinkStatus().setStatusText("Link is password protected");
                 return AvailableStatus.TRUE;
             }
-
             if (this.br.getHttpConnection().getResponseCode() != 200) {
                 /* Typically response 500 for offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -165,7 +162,6 @@ public class ImagesHackCom extends PluginForHost {
         } else {
             isDeleted = false;
         }
-
         /*
          * Do NOT use 'original_filename' as it can happen that file got converted on the imageshack servers so we'd have a wrong file
          * extension!
@@ -225,9 +221,8 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (passwordprotected) {
             // passCode = Plugin.getUserInput("Password?", downloadLink);
             // /* Simply do the availablecheck again - it will use the password. */
@@ -240,10 +235,12 @@ public class ImagesHackCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This picture is password protected", 3 * 60 * 60 * 1000l);
         }
         // More is possible but 1 chunk is good to prevent errors
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 401) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
@@ -251,10 +248,14 @@ public class ImagesHackCom extends PluginForHost {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("pass", this.passCode);
+        link.setProperty("pass", this.passCode);
         dl.startDownload();
     }
 
@@ -278,5 +279,4 @@ public class ImagesHackCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

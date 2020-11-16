@@ -50,7 +50,7 @@ public class BookFiOrg extends antiDDoSForHost {
                 final String fid = new Regex(link.getDownloadURL(), "bookfi\\.(?:net|org)/dl/(\\d+)").getMatch(0);
                 link.setUrlDownload("https://bookfi.net/book/" + fid);
             } else {
-                link.setUrlDownload(link.getDownloadURL().replaceFirst("(?:www\\.)?(?:[a-z]{2}\\.)?bookfi.org/", "en.bookfi.net/"));
+                link.setUrlDownload(link.getDownloadURL().replaceAll("(?:(www|[a-z]{2})\\.)?" + Browser.getHost(link.getPluginPatternMatcher()) + "/", "en.bookfi.net/"));
             }
         }
     }

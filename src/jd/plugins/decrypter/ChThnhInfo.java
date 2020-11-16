@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -30,9 +29,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "https?://[\\w\\.]*?chauthanh\\.info/(animeDownload/anime/.*?|anime/view/[a-z0-9\\-]+)\\.html" })
 public class ChThnhInfo extends PluginForDecrypt {
-
     public ChThnhInfo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -145,5 +143,4 @@ public class ChThnhInfo extends PluginForDecrypt {
             }
         }
     }
-
 }
