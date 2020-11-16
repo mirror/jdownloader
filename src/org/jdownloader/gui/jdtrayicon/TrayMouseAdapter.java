@@ -116,7 +116,7 @@ public class TrayMouseAdapter implements MouseListener, MouseMotionListener {
     }
 
     private Image getCurrentTrayIconImage() {
-        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled() || CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.isEnabled()) {
+        if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled() || !CFG_TRAY_CONFIG.TRAY_ICON_CLIPBOARD_INDICATOR.isEnabled()) {
             return image;
         } else {
             return IconIO.toImage(new BadgeIcon(new ImageIcon(image), NewTheme.I().getCheckBoxImage(IconKey.ICON_CLIPBOARD, false, Math.max(8, image.getHeight(null) / 2), new Color(0xFF9393)), 4, 2));
