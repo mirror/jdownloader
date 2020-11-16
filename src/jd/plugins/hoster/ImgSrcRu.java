@@ -15,12 +15,17 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,15 +42,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
     // DEV NOTES
     // drop requests on too much traffic, I suspect at the firewall on connection.
-    private String                         ddlink    = null;
+    private String                         dllink    = null;
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
     private static AtomicInteger           uaInt     = new AtomicInteger(0);
 
@@ -68,19 +69,8 @@ public class ImgSrcRu extends PluginForHost {
         return "https://imgsrc.ru/main/dudes.php";
     }
 
-    public boolean hasAutoCaptcha() {
-        return false;
-    }
-
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
+        /* 2020-11-16: No captchas at all */
         return false;
     }
 
@@ -111,27 +101,28 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = prepBrowser(br, false);
-        final String r = downloadLink.getStringProperty("Referer", null);
+        final String r = link.getStringProperty("Referer", null);
         if (r != null) {
             br.getHeaders().put("Referer", r);
         }
-        getPage(downloadLink.getDownloadURL(), downloadLink);
+        getPage(link.getPluginPatternMatcher(), link);
         getDllink();
-        if (ddlink != null) {
+        if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(ddlink);
-                if (con.getContentType().contains("html")) {
-                    downloadLink.setAvailable(false);
+                con = br.openHeadConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    link.setAvailable(false);
                     return AvailableStatus.FALSE;
+                } else {
+                    String filename = getFileNameFromHeader(con);
+                    String oldname = new Regex(link.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+                    link.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    return AvailableStatus.TRUE;
                 }
-                String filename = getFileNameFromHeader(con);
-                String oldname = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
-                downloadLink.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-                downloadLink.setDownloadSize(con.getContentLength());
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -144,28 +135,38 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void getDllink() {
-        Object result = null;
-        String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
-        js = js.replaceFirst("var n=new Image.*?;", "").replaceFirst("n\\.src.*?;", "").replaceAll("Mousetrap.*?;\\}\\s*\\)\\s*;", "");
-        String elementName = new Regex(js, "(?:var|let) [a-z]=(\"|')(.+?)\\1").getMatch(1);
-        String imageTag = br.getRegex("<[^>]+'" + Pattern.quote(elementName) + "'[^>]*>").getMatch(-1);
-        String varSrc = new Regex(imageTag, "src=(\"|')(.+?)\\1").getMatch(1);
-        StringBuilder sb = new StringBuilder();
-        sb.append("var element = {src: elementSrc, href: ''}, document={getElementById:function(e){return element}};");
-        sb.append("String.fromCodePoint = function (cp) {return String.fromCharCode(cp);};");
-        sb.append(js.replaceAll("=\\s*location\\.protocol", "=\"" + br._getURL().getProtocol() + ":\""));
-        sb.append("var result=element.href === '' ? element.src : element.href;");
-        try {
-            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = mgr.getEngineByName("javascript");
-            engine.put("elementSrc", br.getURL(varSrc).toString());
-            engine.eval(sb.toString());
-            result = engine.get("result");
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        if (result != null && result instanceof ConsString) {
-            ddlink = result.toString();
+        /* 2020-11-16 > rev. 42336 */
+        dllink = br.getRegex("img class='big' src='([^<>\"\\']+)").getMatch(0);
+        if (dllink == null) {
+            /* Old: < rev. 42336 */
+            Object result = null;
+            try {
+                String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
+                js = js.replaceFirst("var n=new Image.*?;", "").replaceFirst("n\\.src.*?;", "").replaceAll("Mousetrap.*?;\\}\\s*\\)\\s*;", "");
+                String elementName = new Regex(js, "(?:var|let) [a-z]=(\"|')(.+?)\\1").getMatch(1);
+                String imageTag = br.getRegex("<[^>]+'" + Pattern.quote(elementName) + "'[^>]*>").getMatch(-1);
+                String varSrc = new Regex(imageTag, "src=(\"|')(.+?)\\1").getMatch(1);
+                StringBuilder sb = new StringBuilder();
+                sb.append("var element = {src: elementSrc, href: ''}, document={getElementById:function(e){return element}};");
+                sb.append("String.fromCodePoint = function (cp) {return String.fromCharCode(cp);};");
+                sb.append(js.replaceAll("=\\s*location\\.protocol", "=\"" + br._getURL().getProtocol() + ":\""));
+                sb.append("var result=element.href === '' ? element.src : element.href;");
+                try {
+                    final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
+                    final ScriptEngine engine = mgr.getEngineByName("javascript");
+                    engine.put("elementSrc", br.getURL(varSrc).toString());
+                    engine.eval(sb.toString());
+                    result = engine.get("result");
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+                if (result != null && result instanceof ConsString) {
+                    dllink = result.toString();
+                }
+            } catch (final Throwable e) {
+                /* 2020-11-18 */
+                logger.log(e);
+            }
         }
     }
 
@@ -259,7 +260,7 @@ public class ImgSrcRu extends PluginForHost {
                     break;
                 }
                 if (result != null && result instanceof ConsString) {
-                    ddlink = result.toString();
+                    dllink = result.toString();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -304,24 +305,28 @@ public class ImgSrcRu extends PluginForHost {
             } catch (Throwable e) {
             }
             if (result != null && result instanceof ConsString) {
-                ddlink = result.toString();
+                dllink = result.toString();
             }
         }
-        if (ddlink == null) {
-            ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](https?://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](https?://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        if (ddlink == null) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, ddlink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -331,7 +336,7 @@ public class ImgSrcRu extends PluginForHost {
         return br.containsHTML(">\\s*Album owner has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
     }
 
-    private void getPage(String url, DownloadLink downloadLink) throws Exception {
+    private void getPage(final String url, final DownloadLink link) throws Exception {
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -362,10 +367,10 @@ public class ImgSrcRu extends PluginForHost {
         if (br.containsHTML("Continue to album(?: >>)?")) {
             Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
             if (continueForm != null) {
-                String password = downloadLink.getStringProperty("pass");
+                String password = link.getStringProperty("pass");
                 if (isPasswordProtected(br)) {
                     if (password == null) {
-                        password = getUserInput("Enter password for link:", downloadLink);
+                        password = getUserInput("Enter password for link:", link);
                         if (password == null || password.equals("")) {
                             logger.info("User abored/entered blank password");
                             throw new PluginException(LinkStatus.ERROR_FATAL);
@@ -375,10 +380,10 @@ public class ImgSrcRu extends PluginForHost {
                 }
                 jd.plugins.decrypter.ImgSrcRu.submitForm(br, continueForm);
                 if (isPasswordProtected(br)) {
-                    downloadLink.setProperty("pass", Property.NULL);
+                    link.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                downloadLink.setProperty("pass", password);
+                link.setProperty("pass", password);
             }
         }
         if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
@@ -395,9 +400,9 @@ public class ImgSrcRu extends PluginForHost {
                 logger.warning("Password form finder failed!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String password = downloadLink.getStringProperty("pass");
+            String password = link.getStringProperty("pass");
             if (password == null) {
-                password = getUserInput("Enter password for link:", downloadLink);
+                password = getUserInput("Enter password for link:", link);
                 if (password == null || password.equals("")) {
                     logger.info("User abored/entered blank password");
                     throw new PluginException(LinkStatus.ERROR_FATAL);
@@ -407,12 +412,12 @@ public class ImgSrcRu extends PluginForHost {
             jd.plugins.decrypter.ImgSrcRu.submitForm(br, pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm != null) {
-                downloadLink.setProperty("pass", Property.NULL);
+                link.setProperty("pass", Property.NULL);
                 password = null;
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            downloadLink.setProperty("pass", password);
-        } else if (br.getURL().equals("http://imgsrc.ru/")) {
+            link.setProperty("pass", password);
+        } else if (new Regex(br.getURL(), "https?://imgsrc\\.ru/$").matches()) {
             // link has been removed!
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
