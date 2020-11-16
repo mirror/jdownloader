@@ -118,7 +118,8 @@ public class AnimegalleriesNet extends antiDDoSForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-11-17: WTF happens randomly */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 1000l);
         }
         dl.startDownload();
     }

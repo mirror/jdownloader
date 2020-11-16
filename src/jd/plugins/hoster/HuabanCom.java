@@ -13,17 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -35,9 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/pins/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/pins/(\\d+)" })
 public class HuabanCom extends PluginForHost {
-
     public HuabanCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("https://www.huaban.com/");
@@ -51,11 +50,10 @@ public class HuabanCom extends PluginForHost {
 
     /* Site constants */
     public static final String default_extension = ".jpg";
-
     /* don't touch the following! */
     private String             dllink            = null;
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         String filename = null;
@@ -85,11 +83,11 @@ public class HuabanCom extends PluginForHost {
              * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always present
              * in the normal html code.
              */
-            final String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});[\t\n\r]+").getMatch(0);
+            final String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});\\s+").getMatch(0);
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             dllink = getDirectlinkFromJson(entries);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -107,38 +105,38 @@ public class HuabanCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, false, 1, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!this.looksLikeDownloadableContent(con)) {
+                    return null;
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
@@ -146,10 +144,10 @@ public class HuabanCom extends PluginForHost {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
-    public static String getDirectlinkFromJson(final LinkedHashMap<String, Object> entries) {
+    public static String getDirectlinkFromJson(final Map<String, Object> entries) {
         String directlink = null;
         final String key = (String) JavaScriptEngineFactory.walkJson(entries, "file/key");
         if (key != null) {
@@ -162,7 +160,6 @@ public class HuabanCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
     // private static final String MAINPAGE = "http://huaban.com";
     // private static Object LOCK = new Object();
     //
@@ -264,5 +261,4 @@ public class HuabanCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,13 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "http://(?:www\\.)?bundestag\\.de/mediathek.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "https?://(?:www\\.)?bundestag\\.de/mediathek.+" })
 public class BundestagDe extends PluginForHost {
-
     public BundestagDe(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -47,7 +44,6 @@ public class BundestagDe extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -98,7 +94,7 @@ public class BundestagDe extends PluginForHost {
         }
         if (dllink == null) {
             /* 2017-01-25: New */
-            this.br.getPage("http://www.bundestag.de/mediathekoverlay?view=main&videoid=" + linkid);
+            this.br.getPage("https://www.bundestag.de/mediathekoverlay?view=main&videoid=" + linkid);
             if (this.br.toString().length() <= 50) {
                 /* Probably no video content/offline. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

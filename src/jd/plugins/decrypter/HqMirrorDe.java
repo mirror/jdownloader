@@ -87,6 +87,6 @@ public class HqMirrorDe extends PluginForDecrypt {
     }
 
     public static final boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Zu dieser Sendung sind zur Zeit keine Dateien vorhanden");
     }
 }
