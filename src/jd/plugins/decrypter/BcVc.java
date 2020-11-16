@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,13 +34,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  * Note: using cloudflare, has simlar link structure/behaviour to adfly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?bc\\.vc/(\\d+/.+|[A-Za-z0-9]{5,7})" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,7 +90,7 @@ public class BcVc extends antiDDoSForDecrypt {
         if (redirect == null) {
             redirect = br.getRegex("top\\.location\\.href = \"((?:http|ftp)[^<>\"]*?)\"").getMatch(0);
         }
-        if (redirect != null && !redirect.contains("bc.vc/")) {
+        if (redirect != null && !new Regex(redirect, this.getSupportedLinks()).matches()) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
@@ -142,7 +142,16 @@ public class BcVc extends antiDDoSForDecrypt {
                 // new method, way less requests.. really should use inhouse js
                 String javascript = br.getRegex("(\\$\\.post\\('https?://bc\\.vc/fly/ajax\\.php\\?.*?\\}),\\s*function").getMatch(0);
                 if (javascript == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /*
+                     * 2020-11-16: Hmm not sure about that. They want usets to allow notifications in browser but then simply redirect to
+                     * random ad websites --> Offline content ?!
+                     */
+                    if (br.getHost().equals("bcvc.live")) {
+                        decryptedLinks.add(this.createOfflinelink(br.getURL()));
+                        return decryptedLinks;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 // from here we have construct some ajax request
                 javascript = javascript.replaceFirst(":\\s*tZ(,?)", ": '480'$1");
