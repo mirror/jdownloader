@@ -127,8 +127,8 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, null, false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
     }
 
     private boolean requiresAccount(final DownloadLink link) {
@@ -527,9 +527,9 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink, null, true);
-        doFree(downloadLink, null);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, null, true);
+        doFree(link, null);
     }
 
     private boolean requiresAccount(final String url) {
@@ -580,7 +580,8 @@ public class EHentaiOrg extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "https://e-hentai.org";
+    private static final String MAINPAGE  = "https://e-hentai.org";
+    private static final String MAINPAGE2 = "https://exhentai.org";
 
     /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
@@ -593,11 +594,15 @@ public class EHentaiOrg extends antiDDoSForHost {
              */
             try {
                 br.setCookiesExclusive(true);
-                Cookies cookies = account.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
+                final Cookies cookies2 = account.loadCookies("exhentai");
+                Browser br2 = null;
                 // final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
-                    br.setCookies("http://exhentai.org/", cookies);
+                    if (cookies2 != null) {
+                        br.setCookies(MAINPAGE2, cookies2);
+                    }
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies --> Do not check them */
                         logger.info("Trust login cookies as they're not yet that old");
@@ -608,9 +613,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                     if (this.isLoggedIn(br)) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
+                        /* Get- and save exhentai cookies too */
+                        br2 = br.cloneBrowser();
+                        this.getPage(br2, MAINPAGE2);
+                        account.saveCookies(br2.getCookies(MAINPAGE2), "exhentai");
                         return;
                     } else {
                         logger.info("Failed to login via cookies");
+                        br.clearAll();
                     }
                 }
                 /* 2020-11-09: Debug test */
@@ -672,9 +682,17 @@ public class EHentaiOrg extends antiDDoSForHost {
                 /* This will set two more important cookies! */
                 getPage(br, "https://e-hentai.org/hathperks.php");
                 account.saveCookies(br.getCookies(MAINPAGE), "");
+                /*
+                 * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
+                 * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
+                 */
+                br2 = br.cloneBrowser();
+                this.getPage(br2, MAINPAGE2);
+                account.saveCookies(br2.getCookies(MAINPAGE2), "exhentai");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.clearCookies("exhentai");
                 }
                 throw e;
             }

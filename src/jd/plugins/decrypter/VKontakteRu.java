@@ -139,7 +139,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST        = PATTERN_VALID_PREFIXES + "[^/]+/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED                = PATTERN_VALID_PREFIXES + "[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
     private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH           = PATTERN_VALID_PREFIXES + "[^/]+/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
-    private static final String     PATTERN_VIDEO_ALBUM                       = PATTERN_VALID_PREFIXES + "[^/]+/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
+    private static final String     PATTERN_VIDEO_ALBUM                       = PATTERN_VALID_PREFIXES + "[^/]+/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+(\\?section=album_\\d+)?)";
     private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS   = PATTERN_VALID_PREFIXES + "[^/]+/videos(\\-)?\\d+\\?.+";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM             = PATTERN_VALID_PREFIXES + "[^/]+/video\\?gid=\\d+";
     private static final String     PATTERN_PHOTO_SINGLE                      = PATTERN_VALID_PREFIXES + "[^/]+/photo(\\-)?\\d+_\\d+.*?";
@@ -683,9 +683,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 handleVideoErrors(br);
                 String ajax_json = br.getRegex("ajax\\.preload\\(\\'al_video\\.php\\',\\s*\\{[^\\}]+\\},\\s*(\\[.*?\\])\\);\\s+").getMatch(0);
                 if (ajax_json != null) {
-                    final String embeddedVideo = new Regex(PluginJSonUtils.unescape(ajax_json), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
-                    if (embeddedVideo != null) {
-                        decryptedLinks.add(createDownloadlink(embeddedVideo));
+                    String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(ajax_json), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
+                    if (embeddedVideoURL != null) {
+                        if (embeddedVideoURL.startsWith("//")) {
+                            embeddedVideoURL = "https:" + embeddedVideoURL;
+                        }
+                        decryptedLinks.add(createDownloadlink(embeddedVideoURL));
                         return;
                     }
                     // // rutube
@@ -1051,10 +1054,6 @@ public class VKontakteRu extends PluginForDecrypt {
         int totalCounter = 0;
         final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         while (totalCounter < numberOfEntrys) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user, stopping...");
-                return;
-            }
             String[] videos = null;
             if (totalCounter < 12) {
                 /* 2016-08-24: Updated this */
@@ -1079,22 +1078,22 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             for (String singleVideo : videos) {
                 try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user, stopping...");
-                        return;
-                    }
                     singleVideo = singleVideo.replace(",", "_");
                     singleVideo = singleVideo.replace(" ", "");
                     singleVideo = singleVideo.replace("\"", "");
                     if (!dupe.add(singleVideo)) {
                         continue;
                     }
-                    logger.info("Decrypting video " + (totalCounter + 1) + " / " + numberOfEntrys);
                     final String completeVideolink = getProtocol() + "vk.com/video" + singleVideo;
                     this.decryptedLinks.add(createDownloadlink(completeVideolink));
                 } finally {
                     totalCounter++;
                 }
+            }
+            logger.info("Found " + videos.length + " videos so far");
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user, stopping...");
+                break;
             }
         }
         logger.info("Total videolinks found: " + totalCounter);
