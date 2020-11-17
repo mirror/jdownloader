@@ -46,6 +46,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.maintab.CustomTabHeader;
+import jd.gui.swing.jdgui.maintab.TabHeader;
+import jd.gui.swing.jdgui.views.ClosableView;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -60,13 +67,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
-import jd.gui.swing.jdgui.maintab.CustomTabHeader;
-import jd.gui.swing.jdgui.maintab.TabHeader;
-import jd.gui.swing.jdgui.views.ClosableView;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
     private static final long     serialVersionUID               = -1531827591735215594L;
@@ -98,7 +98,11 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
      */
     @Override
     public void remove(Component component) {
-        throw new RuntimeException("This method is not allowed!");
+        if (component instanceof View) {
+            remove((View) component);
+        } else {
+            super.remove(component);
+        }
     }
 
     @Override
