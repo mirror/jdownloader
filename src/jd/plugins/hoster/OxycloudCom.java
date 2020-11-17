@@ -138,6 +138,7 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
                 long summedTrafficLeft = 0;
                 long highestTrafficMax = 0;
                 long highestExpireTimestamp = 0;
+                boolean hasPackageWithoutTrafficLimit = false;
                 for (final String premiumPackage : premiumPackages) {
                     /* E.g. Transfer odnawialny 1 miesiąc: 50 GB/50 GB - 31/12/2020 00:00:00 */
                     final Regex dailyTrafficRegex = new Regex(premiumPackage, "(\\d+(?:.\\d{2})? [A-Za-z]+)/(\\d+(?:\\.\\d{2})? [A-Za-z]+)");
@@ -149,6 +150,12 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
                     // final String expireStr = br.getRegex("Period premium\\s*:\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})")
                     // .getMatch(0); /* Fits for: /account/edit */
                     final String trafficStr = br.getRegex("Transfer package\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
+                    /* Example: Premium bez limitów: 18/11/2020 19:31:49 */
+                    if (premiumPackage.contains("Premium bez limitów")) {
+                        /* Package with unlimited traffic --> Usually also has expire-date */
+                        logger.info("Found package with unlimited traffic");
+                        hasPackageWithoutTrafficLimit = true;
+                    }
                     if (dailyTrafficLeftStr != null && dailyTrafficMaxStr != null) {
                         /* Daily traffic package ... usually also comes with an expire-date */
                         trafficLeftTmp = SizeFormatter.getSize(dailyTrafficLeftStr);
@@ -158,7 +165,7 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
                             highestTrafficMax = trafficMaxTmp;
                         }
                     } else if (trafficStr != null) {
-                        /* 2020-10-15: Hmm traffic package ... but we have no idea how much traffic of that package is left?! */
+                        /* 2020-10-15: Hmm traffic package ... but wes have no idea how much traffic of that package is left?! */
                         trafficLeftTmp = SizeFormatter.getSize(trafficStr);
                         summedTrafficLeft += trafficLeftTmp;
                     } else {
@@ -166,7 +173,7 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
                     }
                     /* User can have multiple packages. User can e.g. have daily traffic, extra traffic and expire date. */
                     if (packageExpireStr != null) {
-                        logger.info("Found premium expiredate");
+                        logger.info("Found package with expiredate: " + packageExpireStr);
                         long packageExpire = parseExpireTimeStamp(account, packageExpireStr);
                         if (packageExpire > highestExpireTimestamp) {
                             highestExpireTimestamp = packageExpire;
@@ -175,6 +182,16 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
                 }
                 if (summedTrafficLeft > 0) {
                     ai.setTrafficLeft(summedTrafficLeft);
+                    if (hasPackageWithoutTrafficLimit) {
+                        logger.info("Enabling special traffic so account is allowed to download more than the traffic that's displayed in UI");
+                        ai.setSpecialTraffic(true);
+                    } else {
+                        /* Make sure to reset this if e.g. user had traffic with unlimited traffic but it expired */
+                        ai.setSpecialTraffic(false);
+                    }
+                } else {
+                    logger.info("Failed to find traffic --> Assuming user has unlimited traffic");
+                    ai.setUnlimitedTraffic();
                 }
                 if (highestTrafficMax > summedTrafficLeft) {
                     ai.setTrafficMax(highestTrafficMax);
