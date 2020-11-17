@@ -63,6 +63,12 @@ public class InstaGramCom extends PluginForHost {
         this.enablePremium(MAINPAGE + "/accounts/login/");
     }
 
+    public static Browser prepBRAltAPI(final Browser br) {
+        /* 2020-11-17: Also possible: Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
+        return br;
+    }
+
     private String  dllink        = null;
     private boolean server_issues = false;
 
@@ -71,6 +77,8 @@ public class InstaGramCom extends PluginForHost {
         return MAINPAGE + "/about/legal/terms/#";
     }
 
+    /** https://instagram.api-docs.io/1.0 */
+    public static String         ALT_API_BASE                                = "https://i.instagram.com/api/v1";
     /* Connection stuff */
     private static final boolean RESUME                                      = true;
     /* Chunkload makes no sense for pictures/small files */
@@ -237,8 +245,8 @@ public class InstaGramCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser brc = br.cloneBrowser();
-        brc.getHeaders().put("User-Agent", "Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US");
-        brc.getPage("https://i.instagram.com/api/v1/media/" + imageid + "/info/");
+        prepBRAltAPI(brc);
+        brc.getPage(ALT_API_BASE + "/media/" + imageid + "/info/");
         /* Offline errorhandling */
         if (brc.getHttpConnection().getResponseCode() != 200) {
             /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
@@ -638,7 +646,7 @@ public class InstaGramCom extends PluginForHost {
         final ConfigEntry grabXitems = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ONLY_GRAB_X_ITEMS, "Only grab the X latest items?").setDefaultValue(defaultONLY_GRAB_X_ITEMS);
         getConfig().addEntry(grabXitems);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_NUMBER, "How many items shall be grabbed?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER).setEnabledCondidtion(grabXitems, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 1025, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, "How many items shall be grabbed (for '/explore/tags/example')?", defaultONLY_GRAB_X_ITEMS_NUMBER, 10000, defaultONLY_GRAB_X_ITEMS_NUMBER).setDefaultValue(defaultONLY_GRAB_X_ITEMS_NUMBER));
     }
 
     @Override

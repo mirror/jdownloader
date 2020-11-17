@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -48,7 +47,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 public class DdebridCom extends PluginForHost {
     private static final String          API_BASE            = "https://ddebrid.com/api";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("ddebrid.com");
-    private static Map<String, Boolean>  resumableMap        = new HashMap<String, Boolean>();
     private static final int             defaultMAXDOWNLOADS = -1;
     private static final int             defaultMAXCHUNKS    = 0;
     private static final boolean         defaultRESUME       = true;
@@ -119,10 +117,6 @@ public class DdebridCom extends PluginForHost {
                 link.setProperty("resumable", resume);
             }
         }
-        /* Not required anymore */
-        // if (resumableMap.containsKey(link.getHost())) {
-        // resume = resumableMap.get(link.getHost());
-        // }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         link.setProperty(this.getHost() + PROPERTY_directlink, dl.getConnection().getURL().toString());
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -227,14 +221,13 @@ public class DdebridCom extends PluginForHost {
                 continue;
             }
             /* Additionally available: daily_limit */
-            final boolean resumeable = ((Boolean) entries.get("resumeable")).booleanValue();
+            // final boolean resumeable = ((Boolean) entries.get("resumeable")).booleanValue();
             final String originalHost = finder.assignHost(host);
             if (originalHost == null) {
                 /* This should never happen */
                 continue;
             }
             supportedhostslist.add(originalHost);
-            resumableMap.put(originalHost, resumeable);
         }
         ai.setMultiHostSupport(this, supportedhostslist);
         account.setConcurrentUsePossible(true);

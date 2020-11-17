@@ -41,7 +41,6 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -209,16 +208,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return url.matches(TYPE_SAVED_OBJECTS);
     }
 
-    /** https://stackoverflow.com/questions/38356283/instagram-given-a-user-id-how-do-i-find-the-username */
-    private String getUsernameFromUserID(final Browser br, final String userID) throws PluginException, IOException {
+    private String getUsernameFromUserIDAltAPI(final Browser br, final String userID) throws PluginException, IOException {
         if (userID == null || !userID.matches("\\d+")) {
             return null;
         }
         final Browser brc = br.cloneBrowser();
         brc.setRequest(null);
-        final Request req = brc.createGetRequest("https://i.instagram.com/api/v1/users/" + userID + "/info/");
-        req.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
-        brc.getPage(req);
+        InstaGramCom.prepBRAltAPI(brc);
+        brc.getPage(InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
         Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
         return entries != null ? (String) entries.get("username") : null;
@@ -297,83 +294,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         ArrayList<Object> resource_data_list;
         if (parameter.matches(TYPE_SAVED_OBJECTS)) {
-            /* Crawl all saved objects of a user. Works similar to "crawl all posted items of a user" handling. */
-            username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-            fp.setName("saved_" + username_url);
-            final String id_owner = br.getRegex("profilePage_(\\d+)").getMatch(0);
-            // final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql");
-            String nextid = null;
-            long count = 0;
-            int page = 0;
-            int decryptedLinksLastSize = 0;
-            int decryptedLinksCurrentSize = 0;
-            do {
-                if (page > 0) {
-                    if (id_owner == null) {
-                        /* This should never happen */
-                        logger.warning("Pagination failed because required param 'id_owner' is missing");
-                        break;
-                    }
-                    final Browser br2 = this.br.cloneBrowser();
-                    prepBrAjax(br2);
-                    final Map<String, Object> vars = new LinkedHashMap<String, Object>();
-                    vars.put("id", id_owner);
-                    vars.put("first", 12);
-                    vars.put("after", nextid);
-                    if (qHash == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
-                    getPage(param, br2, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
-                    /*
-                     * 2020-11-06: TODO: Fix broken response: edge_owner_to_timeline_media instead of edge_saved_media ... Possibe reasons:
-                     * Wrong "end_cursor" String and/or wrong "query_hash".
-                     */
-                    final int responsecode = br2.getHttpConnection().getResponseCode();
-                    if (responsecode == 404) {
-                        logger.warning("Error occurred: 404");
-                        return decryptedLinks;
-                    } else if (responsecode == 403 || responsecode == 429) {
-                        /* Stop on too many 403s as 403 is not a rate limit issue! */
-                        logger.warning("Failed to bypass rate-limit!");
-                        return decryptedLinks;
-                    } else if (responsecode == 439) {
-                        logger.info("Seems like user is using an unverified account - cannot grab more items");
-                        break;
-                    }
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
-                    entries = (LinkedHashMap<String, Object>) entries.get("data");
-                }
-                if (page == 0) {
-                    count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/count"), 0);
-                    if (count == 0) {
-                        logger.info("User doesn't have any saved objects (?)");
-                        return decryptedLinks;
-                    } else {
-                        logger.info("Expecting saved objects: " + count);
-                    }
-                }
-                nextid = (String) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/page_info/end_cursor");
-                resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/edges");
-                if (resource_data_list == null || resource_data_list.size() == 0) {
-                    logger.info("Found no new links on page " + page + " --> Stopping decryption");
-                    break;
-                }
-                decryptedLinksLastSize = decryptedLinks.size();
-                for (final Object o : resource_data_list) {
-                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
-                    // pages > 0, have a additional nodes entry
-                    if (result.size() == 1 && result.containsKey("node")) {
-                        crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
-                    } else {
-                        crawlAlbum(result);
-                    }
-                }
-                decryptedLinksCurrentSize = decryptedLinks.size();
-                page++;
-            } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
-            return decryptedLinks;
+            this.crawlUserSavedObjects(entries, param);
         } else if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
             if (logged_in) {
@@ -400,7 +321,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         } else if (parameter.matches(TYPE_TAGS)) {
-            this.crawlHashtag(entries, param);
+            if (logged_in && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                this.crawlHashtagAltAPI(param);
+            } else {
+                this.crawlHashtag(entries, param);
+            }
         } else if (parameter.matches(TYPE_STORY)) {
             if (!logged_in) {
                 logger.info("Account required to download stories");
@@ -410,91 +335,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         } else {
             /* Crawl all items of a user */
-            if (!this.br.containsHTML("user\\?username=.+")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            String id_owner = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
-            if (id_owner == null) {
-                id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
-            }
-            username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-            if (username_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            fp.setName(username_url);
-            final boolean isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
-            final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
-            final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
-            String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
-            resource_data_list = (ArrayList) get(entries, "entry_data/ProfilePage/{0}/user/media/nodes", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/edges");
-            final long count = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/user/media/count", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/count"), -1);
-            if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
-                logger.info("Cannot parse url as profile is private");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            } else if (id_owner == null) {
-                // this isn't a error persay! check https://www.instagram.com/israbox/
-                logger.info("Failed to find id_owner");
-                return decryptedLinks;
-            }
-            int page = 0;
-            int decryptedLinksLastSize = 0;
-            int decryptedLinksCurrentSize = 0;
-            do {
-                if (page > 0) {
-                    final Browser br = this.br.cloneBrowser();
-                    prepBrAjax(br);
-                    final Map<String, Object> vars = new LinkedHashMap<String, Object>();
-                    vars.put("id", id_owner);
-                    vars.put("first", 12);
-                    vars.put("after", nextid);
-                    if (qHash == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
-                    getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
-                    /* TODO: Move all of this errorhandling to one place */
-                    final int responsecode = br.getHttpConnection().getResponseCode();
-                    if (responsecode == 404) {
-                        logger.warning("Error occurred: 404");
-                        return decryptedLinks;
-                    } else if (responsecode == 403 || responsecode == 429) {
-                        /* Stop on too many 403s as 403 is not a rate limit issue! */
-                        logger.warning("Failed to bypass rate-limit!");
-                        return decryptedLinks;
-                    } else if (responsecode == 439) {
-                        logger.info("Seems like user is using an unverified account - cannot grab more items");
-                        break;
-                    }
-                    entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                    resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
-                    nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
-                }
-                if (resource_data_list == null || resource_data_list.size() == 0) {
-                    logger.info("Found no new links on page " + page + " --> Stopping decryption");
-                    break;
-                }
-                decryptedLinksLastSize = decryptedLinks.size();
-                for (final Object o : resource_data_list) {
-                    final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
-                    // pages > 0, have a additional nodes entry
-                    if (result.size() == 1 && result.containsKey("node")) {
-                        crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
-                    } else {
-                        crawlAlbum(result);
-                    }
-                }
-                if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
-                    logger.info("Number of items selected in plugin setting has been crawled --> Done");
-                    break;
-                }
-                decryptedLinksCurrentSize = decryptedLinks.size();
-                page++;
-            } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
-            if (decryptedLinks.size() == 0) {
-                logger.warning("WTF found no content at all");
-            }
+            crawlUser(entries, param, logged_in);
         }
         return decryptedLinks;
     }
@@ -503,14 +344,174 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
     }
 
-    /** TODO */
-    private void crawlHashtagLoggedIN(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
-        /* TODO: Maybe implement hashtag-crawler via the following request: (requires user to be logged-IN) */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
-        br.getPage("http://i.instagram.com/api/v1/feed/tag/test/");
-        /* TODO */
-        /* 2020-11-13: lol this will also return the story of user "test" */
-        /* Source: https://stevesie.com/apps/instagram-api */
+    private void crawlUser(LinkedHashMap<String, Object> entries, final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
+        /* Crawl all items of a user */
+        if (!this.br.containsHTML("user\\?username=.+")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return;
+        }
+        final String rhxGis = getVarRhxGis(this.br);
+        String id_owner = (String) get(entries, "entry_data/ProfilePage/{0}/user/id", "entry_data/ProfilePage/{0}/graphql/user/id");
+        if (id_owner == null) {
+            id_owner = br.getRegex("\"owner\": ?\\{\"id\": ?\"(\\d+)\"\\}").getMatch(0);
+        }
+        username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
+        if (username_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp.setName(username_url);
+        final boolean isPrivate = ((Boolean) get(entries, "entry_data/ProfilePage/{0}/user/is_private", "entry_data/ProfilePage/{0}/graphql/user/is_private")).booleanValue();
+        final boolean only_grab_x_items = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS);
+        final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
+        String nextid = (String) get(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/page_info/end_cursor");
+        ArrayList<Object> resource_data_list = (ArrayList) get(entries, "entry_data/ProfilePage/{0}/user/media/nodes", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/edges");
+        final long count = JavaScriptEngineFactory.toLong(get(entries, "entry_data/ProfilePage/{0}/user/media/count", "entry_data/ProfilePage/{0}/graphql/user/edge_owner_to_timeline_media/count"), -1);
+        if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
+            logger.info("Cannot parse url as profile is private");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return;
+        } else if (id_owner == null) {
+            // this isn't a error persay! check https://www.instagram.com/israbox/
+            logger.info("Failed to find id_owner");
+            return;
+        }
+        int page = 0;
+        int decryptedLinksLastSize = 0;
+        int decryptedLinksCurrentSize = 0;
+        do {
+            if (page > 0) {
+                final Browser br = this.br.cloneBrowser();
+                prepBrAjax(br);
+                final Map<String, Object> vars = new LinkedHashMap<String, Object>();
+                vars.put("id", id_owner);
+                vars.put("first", 12);
+                vars.put("after", nextid);
+                if (qHash == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
+                getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                /* TODO: Move all of this errorhandling to one place */
+                final int responsecode = br.getHttpConnection().getResponseCode();
+                if (responsecode == 404) {
+                    logger.warning("Error occurred: 404");
+                    return;
+                } else if (responsecode == 403 || responsecode == 429) {
+                    /* Stop on too many 403s as 403 is not a rate limit issue! */
+                    logger.warning("Failed to bypass rate-limit!");
+                    return;
+                } else if (responsecode == 439) {
+                    logger.info("Seems like user is using an unverified account - cannot grab more items");
+                    break;
+                }
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/edges");
+                nextid = (String) JavaScriptEngineFactory.walkJson(entries, "data/user/edge_owner_to_timeline_media/page_info/end_cursor");
+            }
+            if (resource_data_list == null || resource_data_list.size() == 0) {
+                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                break;
+            }
+            decryptedLinksLastSize = decryptedLinks.size();
+            for (final Object o : resource_data_list) {
+                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                // pages > 0, have a additional nodes entry
+                if (result.size() == 1 && result.containsKey("node")) {
+                    crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
+                } else {
+                    crawlAlbum(result);
+                }
+            }
+            if (only_grab_x_items && decryptedLinks.size() >= maX_items) {
+                logger.info("Number of items selected in plugin setting has been crawled --> Done");
+                break;
+            }
+            decryptedLinksCurrentSize = decryptedLinks.size();
+            page++;
+        } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
+        if (decryptedLinks.size() == 0) {
+            logger.warning("WTF found no content at all");
+        }
+    }
+
+    private void crawlUserSavedObjects(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
+        /* Crawl all saved objects of a user. Works similar to "crawl all posted items of a user" handling. */
+        final String rhxGis = getVarRhxGis(this.br);
+        username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
+        fp.setName("saved_" + username_url);
+        final String id_owner = br.getRegex("profilePage_(\\d+)").getMatch(0);
+        // final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql");
+        String nextid = null;
+        long count = 0;
+        int page = 0;
+        int decryptedLinksLastSize = 0;
+        int decryptedLinksCurrentSize = 0;
+        do {
+            if (page > 0) {
+                if (id_owner == null) {
+                    /* This should never happen */
+                    logger.warning("Pagination failed because required param 'id_owner' is missing");
+                    break;
+                }
+                final Browser br2 = this.br.cloneBrowser();
+                prepBrAjax(br2);
+                final Map<String, Object> vars = new LinkedHashMap<String, Object>();
+                vars.put("id", id_owner);
+                vars.put("first", 12);
+                vars.put("after", nextid);
+                if (qHash == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
+                getPage(param, br2, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                /*
+                 * 2020-11-06: TODO: Fix broken response: edge_owner_to_timeline_media instead of edge_saved_media ... Possibe reasons:
+                 * Wrong "end_cursor" String and/or wrong "query_hash".
+                 */
+                final int responsecode = br2.getHttpConnection().getResponseCode();
+                if (responsecode == 404) {
+                    logger.warning("Error occurred: 404");
+                    return;
+                } else if (responsecode == 403 || responsecode == 429) {
+                    /* Stop on too many 403s as 403 is not a rate limit issue! */
+                    logger.warning("Failed to bypass rate-limit!");
+                    return;
+                } else if (responsecode == 439) {
+                    logger.info("Seems like user is using an unverified account - cannot grab more items");
+                    break;
+                }
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br2.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("data");
+            }
+            if (page == 0) {
+                count = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/count"), 0);
+                if (count == 0) {
+                    logger.info("User doesn't have any saved objects (?)");
+                    return;
+                } else {
+                    logger.info("Expecting saved objects: " + count);
+                }
+            }
+            nextid = (String) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/page_info/end_cursor");
+            ArrayList<Object> resource_data_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "user/edge_saved_media/edges");
+            if (resource_data_list == null || resource_data_list.size() == 0) {
+                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                break;
+            }
+            decryptedLinksLastSize = decryptedLinks.size();
+            for (final Object o : resource_data_list) {
+                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) o;
+                // pages > 0, have a additional nodes entry
+                if (result.size() == 1 && result.containsKey("node")) {
+                    crawlAlbum((LinkedHashMap<String, Object>) result.get("node"));
+                } else {
+                    crawlAlbum(result);
+                }
+            }
+            decryptedLinksCurrentSize = decryptedLinks.size();
+            page++;
+        } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
     }
 
     private void crawlHashtag(LinkedHashMap<String, Object> entries, final CryptedLink param) throws UnsupportedEncodingException, Exception {
@@ -703,7 +704,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                         usernameForFilename = ID_TO_USERNAME.get(userID);
                         if (usernameForFilename == null) {
                             /* HTTP request needed to find username! */
-                            usernameForFilename = this.getUsernameFromUserID(br, userID);
+                            usernameForFilename = this.getUsernameFromUserIDAltAPI(br, userID);
                             if (usernameForFilename != null) {
                                 /* Cache information for later usage */
                                 ID_TO_USERNAME.put(userID, usernameForFilename);
@@ -866,6 +867,253 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         dl.setContentUrl(content_url);
         dl.setLinkID(linkid);
+        if (fp != null && !"Various".equals(fp.getName())) {
+            fp.add(dl);
+        }
+        dl.setAvailable(true);
+        dl.setProperty("decypter_filename", filename);
+        dl.setFinalFileName(filename);
+        if (date > 0) {
+            jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, date);
+        }
+        if (!StringUtils.isEmpty(shortcode)) {
+            dl.setProperty("shortcode", shortcode);
+        }
+        if (!StringUtils.isEmpty(dllink)) {
+            dl.setProperty("directurl", dllink);
+        }
+        if (!StringUtils.isEmpty(description)) {
+            dl.setComment(description);
+            /* For custom packagizer filenames */
+            dl.setProperty("description", orderid);
+        }
+        if (!StringUtils.isEmpty(orderid)) {
+            /* For custom packagizer filenames */
+            dl.setProperty("orderid", orderid);
+        }
+        if (!StringUtils.isEmpty(postID)) {
+            dl.setProperty("postid", postID);
+        }
+        if (!StringUtils.isEmpty(this.username_url)) {
+            /* Packagizer Property */
+            dl.setProperty("uploader", this.username_url);
+        }
+        dl.setProperty("isvideo", isVideo);
+        if (taken_at_timestamp > 0) {
+            jd.plugins.hoster.InstaGramCom.setReleaseDate(dl, taken_at_timestamp);
+        }
+        decryptedLinks.add(dl);
+        distribute(dl);
+    }
+
+    /*************************************************
+     * Methods using alternative API below. All of these require the user to be logged in!
+     ***************************************************/
+    private void crawlHashtagAltAPI(final CryptedLink param) throws UnsupportedEncodingException, Exception {
+        /* TODO: Maybe implement hashtag-crawler via the following request: (requires user to be logged-IN) */
+        this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
+        if (this.hashtag == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp.setName("hashtag - " + this.hashtag);
+        InstaGramCom.prepBRAltAPI(this.br);
+        /* TODO */
+        /* 2020-11-13: lol this will also return the story of user "test" */
+        String nextid = null;
+        int page = 0;
+        int numberofCrawledItemsTotal = 0;
+        final String hashtagBaseURL = InstaGramCom.ALT_API_BASE + "/feed/tag/" + this.hashtag + "/";
+        final int maxItemsPerPage = 85;
+        final long maX_items = SubConfiguration.getConfig(this.getHost()).getLongProperty(jd.plugins.hoster.InstaGramCom.ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER, jd.plugins.hoster.InstaGramCom.defaultONLY_GRAB_X_ITEMS_NUMBER);
+        Map<String, Object> entries = null;
+        do {
+            logger.info("Crawling page: " + page);
+            if (page == 0) {
+                br.getPage(hashtagBaseURL);
+            } else {
+                // br.getPage(hashtagBaseURL + "?after=" + nextid);
+                br.getPage(hashtagBaseURL + "?max_id=" + nextid);
+            }
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
+            if (numberofitemsOnThisPage == 0) {
+                /* Rare case */
+                logger.info("Stopping, 0 items available ...");
+                return;
+            }
+            logger.info("Crawling items: " + numberofitemsOnThisPage);
+            nextid = (String) entries.get("next_max_id");
+            final boolean more_available = ((Boolean) entries.get("more_available"));
+            ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("items");
+            if (resource_data_list == null || resource_data_list.size() == 0) {
+                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                break;
+            }
+            for (final Object o : resource_data_list) {
+                crawlAlbumAltAPI((Map<String, Object>) o);
+            }
+            numberofCrawledItemsTotal += numberofitemsOnThisPage;
+            logger.info("Total number of items crawler: " + numberofCrawledItemsTotal);
+            /* Check for stop-reason */
+            // if (numberofitemsOnThisPage < maxItemsPerPage) {
+            // logger.info("Stopping because current page contains less items than: " + maxItemsPerPage);
+            // break;
+            // }
+            if (!more_available) {
+                logger.info("Stopping because more_available == false");
+                break;
+            } else if (StringUtils.isEmpty(nextid)) {
+                logger.info("Stopping because no nextid available");
+                break;
+            } else if (decryptedLinks.size() >= maX_items) {
+                logger.info("Number of items selected in plugin setting has been crawled --> Done");
+                break;
+            }
+            page++;
+        } while (!this.isAbort());
+        if (decryptedLinks.size() == 0) {
+            logger.warning("WTF");
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void crawlAlbumAltAPI(Map<String, Object> entries) throws PluginException {
+        if (entries == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final long date = JavaScriptEngineFactory.toLong(entries.get("taken_at"), 0);
+        /* 1 = single photo, 2 = single video, 8 = multiple images */
+        final long media_type = JavaScriptEngineFactory.toLong(entries.get("media_type"), 1);
+        final String linkid_main = (String) entries.get("code");
+        if (StringUtils.isEmpty(linkid_main)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String usernameForFilename = (String) JavaScriptEngineFactory.walkJson(entries, "user/username");
+        if (usernameForFilename == null) {
+            /* This should never happen! */
+            logger.warning("WTF - no username given!");
+        }
+        final String description = (String) JavaScriptEngineFactory.walkJson(entries, "caption/text");
+        if (media_type == 1 || media_type == 2) {
+            /* Single image */
+            crawlSingleImageAltAPI(entries, linkid_main, date, description, null, usernameForFilename);
+        } else if (media_type == 8) {
+            /* Multiple images */
+            final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "carousel_media");
+            final int padLength = getPadLength(resource_data_list.size());
+            int counter = 0;
+            /* Album */
+            for (final Object pictureo : resource_data_list) {
+                counter++;
+                final String orderid_formatted = String.format(Locale.US, "%0" + padLength + "d", counter);
+                entries = (Map<String, Object>) pictureo;
+                crawlSingleImageAltAPI(entries, linkid_main, date, description, orderid_formatted, usernameForFilename);
+            }
+        } else {
+            /* TODO */
+            logger.info("WTF unknown media_type");
+        }
+    }
+
+    private void crawlSingleImageAltAPI(final Map<String, Object> entries, String linkid_main, final long date, final String description, final String orderid, final String username) throws PluginException {
+        if (entries == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String postID = (String) entries.get("id");
+        final long taken_at_timestamp = JavaScriptEngineFactory.toLong(entries.get("taken_at"), 0);
+        String server_filename = null;
+        final String shortcode = (String) entries.get("code");
+        if (linkid_main == null && shortcode != null) {
+            // link uid, with /p/ its shortcode
+            linkid_main = shortcode;
+        }
+        /* TODO */
+        final Object videoO = entries.get("video_versions");
+        final boolean isVideo = false;
+        String dllink = null;
+        if (videoO != null) {
+            /* Find best video-quality */
+            /*
+             * TODO: 2020-11-17: What's the difference between e.g. the following "types": 101, 102, 103 - seems to be all the same quality
+             * and filesize/resolution/URLs
+             */
+            final List<Object> ressourcelist = (List<Object>) videoO;
+            if (ressourcelist != null) {
+                long qualityMax = 0;
+                for (final Object qualityO : ressourcelist) {
+                    final Map<String, Object> imageQualityInfo = (Map<String, Object>) qualityO;
+                    final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("width"), 0);
+                    if (widthTmp > qualityMax && imageQualityInfo.containsKey("url")) {
+                        qualityMax = widthTmp;
+                        dllink = (String) imageQualityInfo.get("url");
+                    }
+                }
+            }
+        } else {
+            /* Find best image-quality */
+            final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "image_versions2/candidates");
+            if (ressourcelist != null) {
+                long qualityMax = 0;
+                for (final Object qualityO : ressourcelist) {
+                    final Map<String, Object> imageQualityInfo = (Map<String, Object>) qualityO;
+                    final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("width"), 0);
+                    if (widthTmp > qualityMax && imageQualityInfo.containsKey("url")) {
+                        qualityMax = widthTmp;
+                        dllink = (String) imageQualityInfo.get("url");
+                    }
+                }
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("WTF failed to find a direct-url");
+        }
+        if (!StringUtils.isEmpty(dllink)) {
+            try {
+                server_filename = getFileNameFromURL(new URL(dllink));
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
+        String filename;
+        final String ext;
+        if (isVideo) {
+            ext = ".mp4";
+        } else {
+            ext = ".jpg";
+        }
+        if (prefer_server_filename && server_filename != null) {
+            server_filename = jd.plugins.hoster.InstaGramCom.fixServerFilename(server_filename, ext);
+            filename = server_filename;
+        } else {
+            filename = "";
+            if (!StringUtils.isEmpty(this.hashtag)) {
+                filename = this.hashtag + " - ";
+            }
+            if (!StringUtils.isEmpty(username)) {
+                filename += username + " - ";
+            }
+            filename += linkid_main;
+            if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
+                filename += "_" + shortcode;
+            }
+            filename += ext;
+        }
+        String hostplugin_url = "instagrammdecrypted://" + linkid_main;
+        if (!StringUtils.isEmpty(shortcode)) {
+            // hostplugin_url += "/" + shortcode; // Refresh directurl will fail
+        }
+        final DownloadLink dl = this.createDownloadlink(hostplugin_url);
+        String content_url = createSinglePosturl(linkid_main);
+        if (this.isPrivate) {
+            /*
+             * Without account, private urls look exactly the same as offline urls --> Save private status for better host plugin
+             * errorhandling.
+             */
+            content_url += "?private_url=true";
+            dl.setProperty("private_url", true);
+        }
+        dl.setContentUrl(content_url);
+        dl.setLinkID(postID);
         if (fp != null && !"Various".equals(fp.getName())) {
             fp.add(dl);
         }
