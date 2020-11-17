@@ -269,8 +269,8 @@ public class PixivNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                final String siteKeyInvisible = "6LfJ0Z0UAAAAANqP-8mvUln2z6mHJwuv5YGtC8xp";
-                final String siteKeyNormal = "6Lf-skYUAAAAABjeBwIS8LhyQ7v1hwYnOsW3DoNA";
+                final String siteKeyInvisible = "6LfF1dcZAAAAAOHQX8v16MX5SktDwmQINVD_6mBF";
+                final String siteKeyNormal = "6LejidcZAAAAAE0-BHUjuY_1yIR478OolN4akKyy";
                 if (plugin instanceof PluginForHost) {
                     final PluginForHost plg = (PluginForHost) plugin;
                     final DownloadLink dlinkbefore = plg.getDownloadLink();
@@ -282,11 +282,11 @@ public class PixivNet extends PluginForHost {
                             @Override
                             protected Map<String, Object> getV3Action(final String source) {
                                 final Map<String, Object> ret = new HashMap<String, Object>();
-                                ret.put("action", "login");
+                                ret.put("action", "accounts/login");
                                 return ret;
                             }
                         };
-                        loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
+                        loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
                         final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyNormal) {
                             @Override
                             protected Map<String, Object> getV3Action(final String source) {
@@ -309,7 +309,7 @@ public class PixivNet extends PluginForHost {
                             return ret;
                         }
                     };
-                    loginform.put("recaptcha_v3_token", Encoding.urlEncode(v3Captcha.getToken()));
+                    loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
                     final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyNormal) {
                         @Override
                         protected Map<String, Object> getV3Action(final String source) {
