@@ -13,6 +13,7 @@ TrayMenuManager_getName=Gerenciador do Ícone da Área de Notificação
 getName=Ícone na Área de Notificação
 jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar ou fechar o JDownloader para a Área de Notificação e outros recursos, como proteção por senha e mais.
+plugins_optional_JDLightTray_clipboardindicator=O Ícone da Área de Notificação indica que o monitoramento da área de transferência está desativada
 plugins_optional_JDLightTray_closetotray2=Ação ao clicar em 'Fechar <X>'
 plugins_optional_JDLightTray_hideifframevisible=Ocultar Ícone na Área de Notificação se a janela estiver visível
 plugins_optional_JDLightTray_minimizetotray=Ação ao clicar em 'Minimizar <_>'

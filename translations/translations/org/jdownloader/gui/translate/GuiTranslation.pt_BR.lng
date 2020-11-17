@@ -1707,6 +1707,7 @@ captchabrotherhoodService_createPanel_password=Senha
 captchabrotherhoodService_createPanel_username=Usuário
 captchasolver_configpanel_enabled=Ativar o serviço %s1
 captchasolver_configpanel_my_account_description=Entre seu nome de usuário e senha do %s1 abaixo. Se ainda não possui uma conta, clique no Link acima e crie uma conta.
+captchasolver_configpanel_my_account_token_description=Deixe o nome de usuário em branco e entre o seu authtoken do %s1 como senha abaixo. Se você ainda não tem conta, clique no Link acima e registre-se agora!
 change_language=%s1 (clique para alterar)
 checksumcolumnmd5=Checksum
 cloudFlare_requires_captcha_context=O Cloudfare (sistema Anti-DDos) necessita de Captcha
