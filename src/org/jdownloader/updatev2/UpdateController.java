@@ -28,6 +28,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -609,8 +610,8 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public List<HTTPProxy> selectProxy(URL url) {
-        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        List<HTTPProxy> lst = ProxyController.getInstance().getProxiesForUpdater(url);
+        final List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        final List<HTTPProxy> lst = ProxyController.getInstance().getProxiesForUpdater(url);
         for (HTTPProxy p : lst) {
             ret.add(new ProxyClone(p));
         }
@@ -632,34 +633,36 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public void append(StringBuilder sb) {
-        boolean hwDebug = false;
-        if (Boolean.FALSE.equals(getExtractionLibrary())) {
-            try {
-                sb.append("&7zjb=false");
-                final HardwareTypeInterface hardware = HardwareType.getHardware();
-                if (hardware != null) {
-                    // verbose hardware details
-                    sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
-                    hwDebug = true;
+        if (sb != null && !new Regex(sb, ".*app=JDU.*").matches()) {
+            boolean hwDebug = false;
+            if (Boolean.FALSE.equals(getExtractionLibrary())) {
+                try {
+                    sb.append("&7zjb=false");
                     final String errorDetails = getExtractionError();
-                    if (errorDetails != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardware.getHardwareType())) {
+                    if (errorDetails != null) {
                         sb.append("&7zjberror=" + URLEncode.encodeURIComponent(errorDetails));
                     }
+                    final HardwareTypeInterface hardware = HardwareType.getHardware();
+                    if (hardware != null) {
+                        // verbose hardware details
+                        sb.append("&hw=" + URLEncode.encodeURIComponent(hardware.toString()));
+                        hwDebug = true;
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
                 }
-            } catch (Throwable e) {
-                logger.log(e);
             }
-        }
-        if (hwDebug == false) {
-            try {
-                final HardwareTypeInterface hardware = HardwareType.getHardware();
-                if (hardware != null) {
-                    // hardware type only
-                    sb.append("&hw=" + hardware.getHardwareType());
+            if (hwDebug == false) {
+                try {
+                    final HardwareTypeInterface hardware = HardwareType.getHardware();
+                    if (hardware != null) {
+                        // hardware type only
+                        sb.append("&hw=" + hardware.getHardwareType());
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
+                    sb.append("&hw=error");
                 }
-            } catch (Throwable e) {
-                logger.log(e);
-                sb.append("&hw=error");
             }
         }
     }
