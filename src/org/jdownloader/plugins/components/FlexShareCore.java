@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -20,10 +24,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FlexShareCore extends antiDDoSForHost {
@@ -65,8 +65,9 @@ public class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
-     * still not work, it will just return 404. Override this to use API.
+     * filepup.net </br>
+     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
+     * will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -242,12 +243,13 @@ public class FlexShareCore extends antiDDoSForHost {
     protected void handleErrors() throws PluginException {
         if (br.containsHTML("Server is too busy for free users")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots", 10 * 60 * 1000l);
-        }
-        if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) {
+        } else if (br.containsHTML("(files per hour for free users\\.</div>|>Los usuarios de Cuenta Gratis pueden descargar|hours for free users\\.|var time =)")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
-        }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|\"g-recaptcha\")")) {
+        } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|\"g-recaptcha\")")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (br.getURL().contains("error_503.html")) {
+            /* 2020-11-17: E.g.: http://www.filepup.net/err/error_503.html */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 1 * 60 * 1000l);
         }
         final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
         if (unknownError != null) {
@@ -452,7 +454,9 @@ public class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
+     *         default: true </br>
+     *         Example which supports https: extmatrix.com </br>
+     *         Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;
