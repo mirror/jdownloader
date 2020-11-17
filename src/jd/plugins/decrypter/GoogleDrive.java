@@ -77,8 +77,13 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         final PluginForHost plg = JDUtilities.getPluginForHost("docs.google.com");
         final Account aa = AccountController.getInstance().getValidAccount(plg);
+        /*
+         * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders was broken
+         * anyways: https://svn.jdownloader.org/issues/88600
+         */
+        final boolean allowLogin = false;
         boolean loggedin = false;
-        if (aa != null) {
+        if (aa != null && allowLogin) {
             login(this.br, aa);
         }
         logger.info("LoggedIn:" + loggedin);
