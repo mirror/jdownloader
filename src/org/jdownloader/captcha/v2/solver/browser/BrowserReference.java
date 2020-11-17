@@ -16,7 +16,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -48,7 +47,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
     private final AbstractBrowserChallenge         challenge;
     private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
-    private final DelayedRunnable                  unload;
 
     public UniqueAlltimeID getId() {
         return id;
@@ -89,15 +87,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
-        unload = new DelayedRunnable(10000) {
-            @Override
-            public void delayedrun() {
-                final SolverJob<?> job = ChallengeResponseController.getInstance().getJobByChallengeId(BrowserReference.this.challenge.getId().getID());
-                if (job != null) {
-                    BrowserSolver.getInstance().kill((SolverJob<String>) job);
-                }
-            }
-        };
     }
 
     protected volatile HttpHandlerInfo handler = null;
@@ -269,7 +258,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
             if ("loaded".equals(pDo)) {
-                unload.stop();
                 HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
                 final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
                 if (config.isAutoClickEnabled()) {
@@ -299,7 +287,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 }
                 return true;
             } else if ("canClose".equals(pDo)) {
-                unload.stop();
                 if (useractive != null) {
                     ChallengeResponseController.getInstance().keepAlivePendingChallenges(challenge);
                 }
@@ -311,7 +298,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                     response.getOutputStream(true).write("false".getBytes("UTF-8"));
                 }
             } else if ("skip".equals(pDo)) {
-                unload.stop();
                 final ChallengeResponseController challengeResponseController = ChallengeResponseController.getInstance();
                 final SolverJob<?> job = challengeResponseController.getJobByChallengeId(challenge.getId().getID());
                 if (job != null) {
@@ -330,7 +316,6 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;
             } else if ("unload".equals(pDo)) {
-                unload.resetAndStart();
                 response.getOutputStream(true).write("true".getBytes("UTF-8"));
                 return true;
             } else if (pDo == null) {

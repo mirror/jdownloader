@@ -43,8 +43,11 @@ function getOffset(elem) {
 
 function init(elem) {
 
+	if (false) {
+	//no longer close dialog when browser closed
+	//browser extension can close/reopen / reload the tab automatically, eg bookmarksidebar
 	window.addEventListener("beforeunload", function(e) {
-		// close dialog when user closed browser
+		// close dialog when user closed browser		
 		unload();
 		// https://svn.jdownloader.org/issues/78145
 		// http://stackoverflow.com/questions/11793996/onbeforeunload-handler-says-null-in-ie
@@ -52,7 +55,7 @@ function init(elem) {
 			return null;
 			; // Webkit, Safari, Chrome
 		}
-	});
+	});}
 
 	var bounds = null;
 	if (elem != null) {
