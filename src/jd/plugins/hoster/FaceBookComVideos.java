@@ -201,69 +201,78 @@ public class FaceBookComVideos extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
                 String fallback_downloadurl = null;
-                /* Get standardized json object "VideoObject" */
-                String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
-                Map<String, Object> entries = null;
-                try {
-                    entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                    final String title = (String) entries.get("name");
-                    final String uploadDate = (String) entries.get("uploadDate");
-                    final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
-                    if (StringUtils.isAllNotEmpty(title, uploadDate, uploader)) {
-                        String date_formatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-                        if (date_formatted == null) {
-                            /* Fallback */
-                            date_formatted = uploadDate;
-                        }
-                        filename = date_formatted + "_";
-                        /* 2020-06-12: Uploader is not always given in json */
-                        if (uploader != null) {
-                            filename += uploader + "_";
-                        }
-                        filename += title;
-                    }
-                    /*
-                     * 2020-06-12: We avoid using this as final downloadurl [use only as fallback] as it is lower quality than via the
-                     * "embed" way. Also the given filesize is usually much higher than any stream we get --> That might be the original
-                     * filesize of the uploaded content ...
-                     */
-                    fallback_downloadurl = (String) entries.get("contentUrl");
-                    // final String contentSize = (String) entries.get("contentSize");
-                    // if (contentSize != null) {
-                    // link.setDownloadSize(SizeFormatter.getSize(contentSize));
-                    // }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    /*
-                     * 2020-08-20: Very very very very rare case: Redirect to:
-                     * m.facebook.com/groups/12345678?view=permalink&id=12345678&_rdr
-                     */
-                    logger.info("json1 failed - trying to find alternative json");
-                    json = br.getRegex("data-store=\"([^\"]+videoID[^\"]+)").getMatch(0);
+                if (this.br.getURL().contains(videoID)) {
+                    /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
+                    /* Get standardized json object "VideoObject" */
+                    String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
+                    Map<String, Object> entries = null;
                     try {
-                        if (Encoding.isHtmlEntityCoded(json)) {
-                            json = Encoding.htmlDecode(json);
-                        }
-                        /* This json doesn't contain anything useful for us other than the downloadurl */
                         entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                        fallback_downloadurl = (String) entries.get("src");
-                    } catch (final Throwable e2) {
-                        e2.printStackTrace();
-                        logger.info("json2 failed");
-                    }
-                    /* Hm still part of this strange edge-case ... */
-                    if (StringUtils.isEmpty(fallback_downloadurl)) {
-                        fallback_downloadurl = br.getRegex("/video_redirect/\\?src=(https?[^<>\"]+)\"").getMatch(0);
-                        if (fallback_downloadurl != null && Encoding.isHtmlEntityCoded(fallback_downloadurl)) {
-                            fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
+                        final String title = (String) entries.get("name");
+                        final String uploadDate = (String) entries.get("uploadDate");
+                        final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
+                        if (StringUtils.isAllNotEmpty(title, uploadDate, uploader)) {
+                            String date_formatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                            if (date_formatted == null) {
+                                /* Fallback */
+                                date_formatted = uploadDate;
+                            }
+                            filename = date_formatted + "_";
+                            /* 2020-06-12: Uploader is not always given in json */
+                            if (uploader != null) {
+                                filename += uploader + "_";
+                            }
+                            filename += title;
+                        }
+                        /*
+                         * 2020-06-12: We avoid using this as final downloadurl [use only as fallback] as it is lower quality than via the
+                         * "embed" way. Also the given filesize is usually much higher than any stream we get --> That might be the original
+                         * filesize of the uploaded content ...
+                         */
+                        fallback_downloadurl = (String) entries.get("contentUrl");
+                        // final String contentSize = (String) entries.get("contentSize");
+                        // if (contentSize != null) {
+                        // link.setDownloadSize(SizeFormatter.getSize(contentSize));
+                        // }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        /*
+                         * 2020-08-20: Very very very very rare case: Redirect to:
+                         * m.facebook.com/groups/12345678?view=permalink&id=12345678&_rdr
+                         */
+                        logger.info("json1 failed - trying to find alternative json");
+                        json = br.getRegex("data-store=\"([^\"]+videoID[^\"]+)").getMatch(0);
+                        try {
+                            if (Encoding.isHtmlEntityCoded(json)) {
+                                json = Encoding.htmlDecode(json);
+                            }
+                            /* This json doesn't contain anything useful for us other than the downloadurl */
+                            entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                            fallback_downloadurl = (String) entries.get("src");
+                            if (fallback_downloadurl != null) {
+                                /* 2020-11-17: Fix sometimes double-escaped data */
+                                fallback_downloadurl = fallback_downloadurl.replace("\\", "");
+                            }
+                        } catch (final Throwable e2) {
+                            e2.printStackTrace();
+                            logger.info("json2 failed");
+                        }
+                        /* Hm still part of this strange edge-case ... */
+                        if (StringUtils.isEmpty(fallback_downloadurl)) {
+                            fallback_downloadurl = br.getRegex("/video_redirect/\\?src=(https?[^<>\"]+)\"").getMatch(0);
+                            if (fallback_downloadurl != null && Encoding.isHtmlEntityCoded(fallback_downloadurl)) {
+                                fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
+                            }
                         }
                     }
-                }
-                if (filename == null) {
-                    /* Fallback - json is not always given */
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    if (filename == null) {
+                        /* Fallback - json is not always given */
+                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    }
+                } else {
+                    /* Rare case */
+                    logger.info("Video is unavailable on mobile page");
                 }
                 /*
                  * 2020-06-12: Get downloadurl from embedded URL --> Best possible http quality --> Use this one only as a fallback e.g. for
@@ -323,7 +332,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (this.dllink != null && this.dllink.startsWith("http") && findAndCheckDownloadurl) {
             try {
                 con = br.openHeadConnection(this.dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     link.setDownloadSize(con.getCompleteContentLength());
@@ -413,8 +422,12 @@ public class FaceBookComVideos extends PluginForHost {
         requestFileInformation(link, true);
         if (dllink != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -478,8 +491,12 @@ public class FaceBookComVideos extends PluginForHost {
         final String Vollkornkeks = link.getDownloadURL().replace(FACEBOOKMAINPAGE, "");
         br.setCookie(FACEBOOKMAINPAGE, "x-referer", Encoding.urlEncode(FACEBOOKMAINPAGE + Vollkornkeks + "#" + Vollkornkeks));
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
