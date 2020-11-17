@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" })
 public class ImagesHackCom extends PluginForHost {
@@ -130,11 +130,14 @@ public class ImagesHackCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(DLLINK);
-            if (con.getContentType().contains("html")) {
+            if (!looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                link.setName(getFileNameFromHeader(con));
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             }
-            link.setName(getFileNameFromHeader(con));
-            link.setDownloadSize(con.getLongContentLength());
         } catch (final Throwable e) {
             try {
                 con.disconnect();
@@ -237,6 +240,11 @@ public class ImagesHackCom extends PluginForHost {
         // More is possible but 1 chunk is good to prevent errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -247,13 +255,9 @@ public class ImagesHackCom extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 500) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("pass", this.passCode);
         dl.startDownload();

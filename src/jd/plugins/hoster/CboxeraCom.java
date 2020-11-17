@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -45,6 +36,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cboxera.com" }, urls = { "" })
 public class CboxeraCom extends PluginForHost {
@@ -166,7 +166,7 @@ public class CboxeraCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    return null;
+                    throw new IOException();
                 } else {
                     return dllink;
                 }
@@ -178,8 +178,9 @@ public class CboxeraCom extends PluginForHost {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override

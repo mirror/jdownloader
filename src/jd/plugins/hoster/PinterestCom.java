@@ -175,12 +175,15 @@ public class PinterestCom extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    return null;
+                    throw new IOException();
                 } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 return null;
             } finally {
                 try {
