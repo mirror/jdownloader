@@ -87,7 +87,7 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
         });
     }
 
-    private ConcurrentHashMap<Long, Job> done = new ConcurrentHashMap<Long, Job>();
+    private final ConcurrentHashMap<Long, Job> done = new ConcurrentHashMap<Long, Job>();
 
     private long enqueue(Job job) {
         ensureRunner().execute(createRunnable(job));
@@ -112,7 +112,7 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
 
     @Override
     public String getResult(long jobID) throws FileNotFound404Exception, InternalApiException {
-        Job job = done.remove(jobID);
+        final Job job = done.remove(jobID);
         if (job == null) {
             throw new FileNotFound404Exception();
         }
