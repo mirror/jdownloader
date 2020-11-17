@@ -45,7 +45,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractRecaptchaV2<Plug
     }
 
     public String getToken() throws PluginException, InterruptedException {
-        logger.info("SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey() + "|Type:" + getType() + "|V3Action:" + (getV3Action() != null));
+        logger.info((isEnterprise() ? "Enterprise|" : "Free|") + "SiteDomain:" + getSiteDomain() + "|SiteKey:" + getSiteKey() + "|Type:" + getType() + "|V3Action:" + (getV3Action() != null));
         runDdosPrevention();
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");

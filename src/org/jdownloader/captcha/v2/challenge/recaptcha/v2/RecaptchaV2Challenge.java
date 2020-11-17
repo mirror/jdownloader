@@ -60,9 +60,18 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         public RecaptchaV2APIStorable() {
         }
 
-        private String stoken;
-        private String type;
-        private String v3Action;
+        private String  stoken;
+        private String  type;
+        private String  v3Action;
+        private boolean enterprise = false;
+
+        public boolean isEnterprise() {
+            return enterprise;
+        }
+
+        public void setEnterprise(boolean enterprise) {
+            this.enterprise = enterprise;
+        }
 
         public String getV3Action() {
             return v3Action;
@@ -162,6 +171,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             } else {
                 protocol = "http://";
             }
+            ret.setEnterprise(isEnterprise());
             ret.setContextUrl(protocol + getSiteDomain());
             ret.setSiteUrl(siteUrl);
             ret.setStoken(getSecureToken());
@@ -224,6 +234,10 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
+    }
+
+    public boolean isEnterprise() {
+        return false;
     }
 
     public AbstractRecaptchaV2<?> getAbstractCaptchaHelperRecaptchaV2() {
@@ -641,6 +655,7 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%siteDomain%%%", getSiteDomain());
             html = html.replace("%%%sitekey%%%", getSiteKey());
             html = html.replace("%%%sitekeyType%%%", getType());
+            html = html.replace("%%%enterprise%%%", String.valueOf(isEnterprise()));
             final Map<String, Object> v3Action = getV3Action();
             if (v3Action == null) {
                 html = html.replace("%%%v3action%%%", "");

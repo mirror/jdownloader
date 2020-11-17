@@ -22,10 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -40,6 +36,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "https?://\\w+\\.debriditalia\\.com/dl/\\d+/.+" })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -292,8 +292,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
+                URLConnectionAdapter con = null;
                 try {
+                    // head connection not possible
+                    con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(dllink));
                     if (!looksLikeDownloadableContent(con)) {
                         throw new IOException();
                     } else {
@@ -341,7 +343,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private boolean isDirectLink(final DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }

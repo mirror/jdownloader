@@ -24,14 +24,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -45,7 +37,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com", "pm-wissen.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?(?:pm-wissen)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
     public ServusCom(PluginWrapper wrapper) {
         super(wrapper);

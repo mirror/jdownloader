@@ -26,6 +26,10 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.jdownloader.logging.LogController;
 
 public abstract class AbstractRecaptchaV2<T extends Plugin> {
+    /**
+     * https://cloud.google.com/recaptcha-enterprise/docs/migrate-recaptcha
+     *
+     */
     public static enum TYPE {
         NORMAL,
         INVISIBLE
@@ -76,7 +80,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
 
     protected Map<String, Object> getV3Action(final String source) {
         if (source != null) {
-            final String actionJson = new Regex(source, "grecaptcha\\.execute\\s*\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
+            final String actionJson = new Regex(source, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\([^{]*,\\s*(\\{.*?\\}\\s*)").getMatch(0);
             final String action = new Regex(actionJson, "action(?:\"|')?\\s*:\\s*(?:\"|')(.*?)(\"|')").getMatch(0);
             if (action != null) {
                 final Map<String, Object> ret = new HashMap<String, Object>();
@@ -85,6 +89,14 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             }
         }
         return null;
+    }
+
+    protected boolean isEnterprise() {
+        return isEnterprise(br != null ? br.toString() : null);
+    }
+
+    protected boolean isEnterprise(final String source) {
+        return StringUtils.contains(source, "/recaptcha/enterprise.js") || StringUtils.contains(source, "grecaptcha.enterprise.");
     }
 
     protected String getSecureToken(final String source) {
@@ -367,13 +379,13 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         {
             // json values in script or json
             // with container, grecaptcha.render(container,parameters), eg RecaptchaV2
-            String jsSource = new Regex(source, "recaptcha\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            String jsSource = new Regex(source, "recaptcha(?:\\.enterprise)?\\.render\\s*\\(.*?,\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
             String siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
             if (siteKey != null) {
                 return siteKey;
             }
             // without, grecaptcha.render(parameters), eg RecaptchaV3
-            jsSource = new Regex(source, "recaptcha\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
+            jsSource = new Regex(source, "recaptcha(?:\\.enterprise)?\\.render\\s*\\(\\s*\\{(.*?)\\s*\\}\\s*\\)\\s*;").getMatch(0);
             siteKey = new Regex(jsSource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)\\s*(" + apiKeyRegex + ")\\s*\\2").getMatch(2);
             if (siteKey != null) {
                 return siteKey;
@@ -381,7 +393,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         }
         {
             // RecaptchaV3, grecaptcha.execute(apiKey)
-            final String siteKey = new Regex(source, "grecaptcha\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
+            final String siteKey = new Regex(source, "grecaptcha(?:\\.enterprise)?\\.execute\\s*\\(\\s*('|\")\\s*(" + apiKeyRegex + ")\\s*\\1").getMatch(1);
             if (siteKey != null) {
                 return siteKey;
             }
@@ -391,6 +403,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
 
     protected RecaptchaV2Challenge createChallenge() {
         return new RecaptchaV2Challenge(getSiteKey(), getSecureToken(), getPlugin(), br, getSiteDomain()) {
+            @Override
+            public boolean isEnterprise() {
+                return AbstractRecaptchaV2.this.isEnterprise();
+            }
+
             @Override
             public String getSiteUrl() {
                 return AbstractRecaptchaV2.this.getSiteUrl();

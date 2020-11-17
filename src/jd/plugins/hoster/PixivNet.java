@@ -20,16 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -51,6 +41,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixiv.net" }, urls = { "decryptedpixivnet://(?:www\\.)?.+" })
 public class PixivNet extends PluginForHost {
@@ -262,7 +262,7 @@ public class PixivNet extends PluginForHost {
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String postkey = br.getRegex("name=\"post_key\" value=\"([a-f0-9]+)\"").getMatch(0);
+                String postkey = br.getRegex("name\\s*=\\s*\"post_key\"\\s*value\\s*=\\s*\"([a-f0-9]+)\"").getMatch(0);
                 if (postkey == null) {
                     postkey = br.getRegex("pixivAccount\\.postKey\"\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
                     if (postkey == null) {
@@ -280,6 +280,11 @@ public class PixivNet extends PluginForHost {
                         }
                         final CaptchaHelperHostPluginRecaptchaV2 v3Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyInvisible) {
                             @Override
+                            protected boolean isEnterprise(String source) {
+                                return true;
+                            }
+
+                            @Override
                             protected Map<String, Object> getV3Action(final String source) {
                                 final Map<String, Object> ret = new HashMap<String, Object>();
                                 ret.put("action", "accounts/login");
@@ -288,6 +293,11 @@ public class PixivNet extends PluginForHost {
                         };
                         loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
                         final CaptchaHelperHostPluginRecaptchaV2 v2Captcha = new CaptchaHelperHostPluginRecaptchaV2(plg, br, siteKeyNormal) {
+                            @Override
+                            protected boolean isEnterprise(String source) {
+                                return true;
+                            }
+
                             @Override
                             protected Map<String, Object> getV3Action(final String source) {
                                 return null;
@@ -303,14 +313,24 @@ public class PixivNet extends PluginForHost {
                     final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
                     final CaptchaHelperCrawlerPluginRecaptchaV2 v3Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyInvisible) {
                         @Override
+                        protected boolean isEnterprise(String source) {
+                            return true;
+                        }
+
+                        @Override
                         protected Map<String, Object> getV3Action(final String source) {
                             final Map<String, Object> ret = new HashMap<String, Object>();
-                            ret.put("action", "login");
+                            ret.put("action", "accounts/login");
                             return ret;
                         }
                     };
                     loginform.put("recaptcha_enterprise_score_token", Encoding.urlEncode(v3Captcha.getToken()));
                     final CaptchaHelperCrawlerPluginRecaptchaV2 v2Captcha = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br, siteKeyNormal) {
+                        @Override
+                        protected boolean isEnterprise(String source) {
+                            return true;
+                        }
+
                         @Override
                         protected Map<String, Object> getV3Action(final String source) {
                             return null;
