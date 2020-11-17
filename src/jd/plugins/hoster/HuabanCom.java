@@ -83,9 +83,13 @@ public class HuabanCom extends PluginForHost {
              * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always present
              * in the normal html code.
              */
-            final String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});\\s+").getMatch(0);
+            String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});\\s+").getMatch(0);
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (json.contains("undefined") && !json.contains("\"undefined\"")) {
+                /* 2020-11-17: Fix broken json */
+                json = json.replace("undefined", "\"undefined\"");
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             dllink = getDirectlinkFromJson(entries);

@@ -40,6 +40,7 @@ public class HqMirrorDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -52,8 +53,9 @@ public class HqMirrorDe extends PluginForDecrypt {
         }
         final String[] htmls = getHtmls(this.br);
         if (htmls == null || htmls.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            /* 2020-11-17: Some items just don't have any downloadable items - the table will just be empty for those! */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         for (final String singleHTML : htmls) {
             final String filename = new Regex(singleHTML, "<td[^<>]*?title=\"([^<>\"]+)").getMatch(0);

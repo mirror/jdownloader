@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,10 +38,9 @@ public class Brds4Chnrg extends PluginForDecrypt {
     }
 
     /* TODO: Maybe implement API: https://github.com/4chan/4chan-API */
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         String parameter = param.toString();
         String prot = new Regex(parameter, "(https?)://").getMatch(0);
         br.getPage(parameter);
@@ -83,14 +85,43 @@ public class Brds4Chnrg extends PluginForDecrypt {
                     suffix = new Date().toString();
                 }
                 fp.setName(domain + " - " + cat + " - " + suffix);
-                for (String image : images) {
-                    if (image.startsWith("/") && !image.startsWith("h")) {
-                        image = image.replace("//", prot + "://");
+                /* First post = "postContainer opContainer", all others = "postContainer replyContainer" */
+                final String[] posts = br.getRegex("<div class=\"postContainer [^\"]+\".*?</blockquote></div></div>").getColumn(-1);
+                for (final String post : posts) {
+                    String url = new Regex(post, "<a[^>]*href=\"((//|http)[^\"]+)\"").getMatch(0);
+                    if (url == null) {
+                        continue;
                     }
-                    DownloadLink dl = createDownloadlink(image);
-                    dl.setAvailableStatus(AvailableStatus.TRUE);
-                    fp.add(dl);
+                    if (url.startsWith("/") && !url.startsWith("h")) {
+                        url = url.replace("//", prot + "://");
+                    }
+                    final DownloadLink dl = this.createDownloadlink(url);
+                    dl.setAvailable(true);
+                    String filename = new Regex(post, "<a title=\"([^\"]+)\" href=\"").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(post, "target=\"_blank\">([^<>\"]+)</a>").getMatch(0);
+                    }
+                    final String filesizeStr = new Regex(post, "\\((\\d+[^<>\"]+), \\d+x\\d+\\)").getMatch(0);
+                    if (filename != null) {
+                        dl.setForcedFileName(Encoding.htmlDecode(filename).trim());
+                    }
+                    if (filesizeStr != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                    }
+                    dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
+                }
+                if (decryptedLinks.size() == 0) {
+                    /* Fallback - old method which was used until rev 42702 */
+                    for (String image : images) {
+                        if (image.startsWith("/") && !image.startsWith("h")) {
+                            image = image.replace("//", prot + "://");
+                        }
+                        DownloadLink dl = createDownloadlink(image);
+                        dl.setAvailableStatus(AvailableStatus.TRUE);
+                        fp.add(dl);
+                        decryptedLinks.add(dl);
+                    }
                 }
             }
         }

@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -118,6 +119,22 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
     public boolean requires_WWW() {
         /* 2020-11-12 */
         return false;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        loginWebsite(account, true);
+        if (br.getURL() == null || !br.getURL().contains("/account")) {
+            getPage("/account");
+        }
+        if (!isPremiumAccount(br)) {
+            logger.info("Looks like we have a free account");
+            setAccountLimitsByType(account, AccountType.FREE);
+        } else {
+            setAccountLimitsByType(account, AccountType.PREMIUM);
+        }
+        return ai;
     }
 
     @Override

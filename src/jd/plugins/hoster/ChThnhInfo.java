@@ -25,7 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "https?://(www\\.)?chauthanh\\.info/(animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+|animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+|anime/download/[^<>\"]+\\.html)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "https?://(www\\.)?chauthanh\\.info/(animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+|animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+|[a-z]+/download/[^<>\"]+\\.html)" })
 public class ChThnhInfo extends antiDDoSForHost {
     public String dllink = null;
 
@@ -45,15 +45,18 @@ public class ChThnhInfo extends antiDDoSForHost {
 
     private static final String TYPE1 = "http://(www\\.)?chauthanh\\.info/animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+";
     private static final String TYPE2 = "http://(www\\.)?chauthanh\\.info/animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+";
-    private static final String TYPE3 = "http://(www\\.)?chauthanh\\.info/anime/download/[^<>\"]+\\.html";
+    private static final String TYPE3 = "http://(www\\.)?chauthanh\\.info/[a-z]+/download/[^<>\"]+\\.html";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        getPage(downloadLink.getDownloadURL());
+        getPage(link.getPluginPatternMatcher());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
-        if (downloadLink.getDownloadURL().matches(TYPE1)) {
+        if (link.getDownloadURL().matches(TYPE1)) {
             if (br.containsHTML("(This video does not exist|>Removed due to licensed<)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -65,7 +68,7 @@ public class ChThnhInfo extends antiDDoSForHost {
             if (dllink == null) {
                 dllink = br.getRegex("<p><a href=\"(/animeDownload/.+/download/\\d+/[^\"]+)").getMatch(0);
             }
-        } else if (downloadLink.getDownloadURL().matches(TYPE2)) {
+        } else if (link.getDownloadURL().matches(TYPE2)) {
             if (!br.containsHTML("\\[Download to your computer\\]<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -84,7 +87,7 @@ public class ChThnhInfo extends antiDDoSForHost {
         if (!dllink.contains("chauthanh.info")) {
             dllink = "http://chauthanh.info" + dllink;
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
