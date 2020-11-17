@@ -28,16 +28,16 @@ public class LogController extends LogSourceProvider {
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
     public static LogSource                                TRASH    = new LogSource("Trash") {
-                                                                        @Override
-                                                                        public synchronized void log(LogRecord record) {
-                                                                            /* trash */
-                                                                        }
+        @Override
+        public synchronized void log(LogRecord record) {
+            /* trash */
+        }
 
-                                                                        @Override
-                                                                        public String toString() {
-                                                                            return "Log > /dev/null!";
-                                                                        }
-                                                                    };
+        @Override
+        public String toString() {
+            return "Log > /dev/null!";
+        }
+    };
     private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
     /**
@@ -92,11 +92,9 @@ public class LogController extends LogSourceProvider {
                 if (owner != null) {
                     if (owner instanceof PluginForDecrypt) {
                         logger = ((PluginForDecrypt) owner).getLogger();
-                    }
-                    if (owner instanceof PluginForHost) {
+                    } else if (owner instanceof PluginForHost) {
                         logger = ((PluginForHost) owner).getLogger();
-                    }
-                    if (owner instanceof PluginsC) {
+                    } else if (owner instanceof PluginsC) {
                         logger = ((PluginsC) owner).getLogger();
                     }
                 }
