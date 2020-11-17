@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -41,7 +42,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
  * @author psp
  * @tags: similar to MightyScriptAdLinkFly
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io", "ouo.press", "cpmlink.net", "uskip.me" }, urls = { "https?://(?:www\\.)?ouo\\.io/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://(?:www\\.)?ouo\\.press/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://cpmlink\\.net/[A-Za-z0-9]+", "https?://uskip\\.me/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io", "ouo.today", "ouo.press", "cpmlink.net", "uskip.me" }, urls = { "https?://(?:www\\.)?ouo\\.io/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://(?:\\w+\\.)?ouo\\.today/\\?[^/]*(s|cr)=((?:http|ftp).+|[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})", "https?://(?:www\\.)?ouo\\.press/(:?s/[A-Za-z0-9]{4,}\\?s=(?:http|ftp).+|[A-Za-z0-9]{4,})", "https?://cpmlink\\.net/[A-Za-z0-9]+", "https?://uskip\\.me/[A-Za-z0-9]+" })
 public class OuoIo extends antiDDoSForDecrypt {
     public OuoIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,7 +58,21 @@ public class OuoIo extends antiDDoSForDecrypt {
         set(param.toString().replace("//www.", "//").replace("https://", "http://"));
         DownloadLink fallBack = null;
         if (slink != null) {
-            fallBack = createDownloadlink(Encoding.urlDecode(slink, false));
+            String link = Encoding.urlDecode(slink, false);
+            if (link.startsWith("aHR0c") || link.startsWith("ZnRwOi")) {
+                String base64 = link;
+                /* base64 http and ftp */
+                while (true) {
+                    if (base64.length() % 4 != 0) {
+                        base64 += "=";
+                    } else {
+                        break;
+                    }
+                }
+                final byte[] decoded = Base64.decode(base64);
+                link = new String(decoded, "UTF-8");
+            }
+            fallBack = createDownloadlink(link);
             if (true) {
                 decryptedLinks.add(fallBack);
                 return decryptedLinks;
@@ -157,7 +172,7 @@ public class OuoIo extends antiDDoSForDecrypt {
     private void set(final String downloadLink) {
         parameter = downloadLink;
         fuid = new Regex(parameter, "https?://[^/]+/([A-Za-z0-9]+)").getMatch(0);
-        slink = new Regex(parameter, "\\.(?:io|press)/s/[A-Za-z0-9]{4,}\\?s=((?:http|ftp).+)").getMatch(0);
+        slink = new Regex(parameter, "(?:\\?s|&cr)=((?:http|ftp).+|[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);
     }
 
     public boolean hasAutoCaptcha() {

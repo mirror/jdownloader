@@ -23,10 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -114,13 +114,14 @@ public class ImgSrcRu extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    link.setAvailable(false);
-                    return AvailableStatus.FALSE;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     String filename = getFileNameFromHeader(con);
                     String oldname = new Regex(link.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
                     link.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     return AvailableStatus.TRUE;
                 }
             } finally {
@@ -136,7 +137,7 @@ public class ImgSrcRu extends PluginForHost {
 
     private void getDllink() {
         /* 2020-11-16 > rev. 42336 */
-        dllink = br.getRegex("img class='big' src='([^<>\"\\']+)").getMatch(0);
+        dllink = br.getRegex("img\\s*class\\s*=\\s*'big'\\s*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             /* Old: < rev. 42336 */
             Object result = null;

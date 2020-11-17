@@ -15,9 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -26,12 +23,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
-/**
- *
- * @author raztoki
- * @changedby Joaquinito2051
- *
- */
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class Keep2ShareCc extends K2SApi {
     public Keep2ShareCc(PluginWrapper wrapper) {
@@ -44,7 +38,7 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
-        return new String[] { "keep2share.cc", "k2s.cc", "keep2s.cc", "k2share.cc", "keep2share.com", "keep2share" };
+        return new String[] { "k2s.cc", "keep2share.cc", "keep2s.cc", "k2share.cc", "keep2share.com", "keep2share" };
     }
 
     @Override

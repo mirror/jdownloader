@@ -20,13 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -43,6 +36,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddebrid.com" }, urls = { "" })
 public class DdebridCom extends PluginForHost {
@@ -158,7 +158,7 @@ public class DdebridCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
-                    return null;
+                    throw new IOException();
                 } else {
                     return dllink;
                 }
@@ -170,8 +170,9 @@ public class DdebridCom extends PluginForHost {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -241,46 +242,48 @@ public class DdebridCom extends PluginForHost {
     }
 
     private void loginAPI(final Account account, final boolean forceAuthCheck) throws IOException, PluginException, InterruptedException {
-        String token = account.getStringProperty(PROPERTY_logintoken);
-        if (token != null) {
-            logger.info("Attempting token login");
-            if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !forceAuthCheck) {
-                /* We trust our token --> Do not check them */
-                logger.info("Trust login token as it is not that old");
-                return;
+        synchronized (account) {
+            String token = account.getStringProperty(PROPERTY_logintoken);
+            if (token != null) {
+                logger.info("Attempting token login");
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !forceAuthCheck) {
+                    /* We trust our token --> Do not check them */
+                    logger.info("Trust login token as it is not that old");
+                    return;
+                }
+                br.getPage(API_BASE + "/info?token=" + token);
+                final String status = PluginJSonUtils.getJson(br, "status");
+                if ("success".equalsIgnoreCase(status)) {
+                    logger.info("Token login successful");
+                    /* We don't really need the cookies but the timestamp ;) */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    /* 2020-11-16: E.g. {"status":"error","reason":"Token not found."} */
+                    logger.info("Token login failed");
+                    this.br.clearAll();
+                }
             }
-            br.getPage(API_BASE + "/info?token=" + token);
-            final String status = PluginJSonUtils.getJson(br, "status");
-            if ("success".equalsIgnoreCase(status)) {
-                logger.info("Token login successful");
-                /* We don't really need the cookies but the timestamp ;) */
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                return;
-            } else {
-                /* 2020-11-16: E.g. {"status":"error","reason":"Token not found."} */
-                logger.info("Token login failed");
-                this.br.clearAll();
+            logger.info("Performing full login");
+            if (StringUtils.isEmpty(account.getUser()) || !account.getUser().matches(".+@.+\\..+")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
-        }
-        logger.info("Performing full login");
-        if (StringUtils.isEmpty(account.getUser()) || !account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            this.prepBR(this.br);
+            br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            token = PluginJSonUtils.getJson(br, "token");
+            if (StringUtils.isEmpty(token)) {
+                handleErrors(br, account, null);
+                /* This should never happen - do not permanently disable accounts for unexpected login errors! */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown login failure", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
+            account.setProperty(PROPERTY_logintoken, token);
+            /* We don't really need the cookies but the timestamp ;) */
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
-        this.prepBR(this.br);
-        br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        token = PluginJSonUtils.getJson(br, "token");
-        if (StringUtils.isEmpty(token)) {
-            handleErrors(br, account, null);
-            /* This should never happen - do not permanently disable accounts for unexpected login errors! */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown login failure", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        account.setProperty(PROPERTY_logintoken, token);
-        /* We don't really need the cookies but the timestamp ;) */
-        account.saveCookies(br.getCookies(br.getHost()), "");
     }
 
     private void handleErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {

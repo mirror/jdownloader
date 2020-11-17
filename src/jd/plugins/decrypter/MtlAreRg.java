@@ -31,6 +31,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalarea.org" }, urls = { "https?://(?:www\\.)?metalarea\\.org/forum/index\\.php\\?showtopic=([0-9]+)" })
@@ -55,12 +57,9 @@ public class MtlAreRg extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'><div><img[^>]*/>\\&nbsp;<b>(.*?)</div></td>").getMatch(0);
-        if (fpName != null) {
-            fpName = fpName.replace("</b>", "");
-        }
+        String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'>\\s*<div>\\s*<img[^>]*/>\\s*\\&nbsp;\\s*<b>\\s*(.*?)\\s*</b>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            fpName = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             if (fpName != null) {
                 fpName = fpName.replace(" - Metal Area - Extreme Music Portal", "");
             }
@@ -68,8 +67,7 @@ public class MtlAreRg extends PluginForDecrypt {
         // Filter links in hide(s)
         String pagepieces[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
         if (pagepieces == null || pagepieces.length == 0) {
-            logger.info("Failed to find any HIDE-area");
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String pagepiece : pagepieces) {
             String[] links = HTMLParser.getHttpLinks(pagepiece, "");
