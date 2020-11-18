@@ -40,7 +40,7 @@ public class FileupOrg extends XFileSharingProBasic {
      * mods: See overridden functions<br />
      * limit-info: 2020-08-10: No limits at all <br />
      * captchatype-info: 2019-02-18: reCaptchaV2<br />
-     * other:<br />
+     * other: 2020-11-18: Broken because of Cloudflare <br />
      */
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());

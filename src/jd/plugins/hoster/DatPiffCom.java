@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -72,7 +74,7 @@ public class DatPiffCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(ONLYREGISTEREDUSERTEXT)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
@@ -113,6 +115,10 @@ public class DatPiffCom extends PluginForHost {
             }
         }
         if (filename == null) {
+            /* Fallback */
+            filename = new Regex(br.getURL(), ".*/([^/]+)\\.html$").getMatch(0);
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -132,23 +138,19 @@ public class DatPiffCom extends PluginForHost {
             if (br.containsHTML(CURRENTLYUNAVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
             }
-            if (!link.getDownloadURL().contains(".php?id=")) {
+            final String downloadID = br.getRegex("openDownload\\(\\s*'([^<>\"\\']+)").getMatch(0);
+            if (downloadID == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable");
             }
-            String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
-            if (downloadButton != null) {
-                br.getPage(downloadButton);
-                downloadButton = br.getRegex("(?-s)downloadbutton\" href=\"(https?://.*?download\\?id=\\d+)").getMatch(0);
-                if (downloadButton != null) {
-                    br.getPage(downloadButton);
-                    final Form form = br.getForm(0);
-                    if (form != null) {
-                        br.setFollowRedirects(false);
-                        br.submitForm(form);
-                        br.setFollowRedirects(true);
-                        dllink = br.getRedirectLocation();
-                    }
-                }
+            br.getPage("/pop-mixtape-download.php?id=" + downloadID);
+            final Form form = br.getForm(0);
+            if (form != null) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.setFollowRedirects(false);
+                br.submitForm(form);
+                br.setFollowRedirects(true);
+                dllink = br.getRedirectLocation();
             }
             if (dllink == null) {
                 // whole mixtape
@@ -204,8 +206,12 @@ public class DatPiffCom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Server doesn't send the correct filename directly, filename fix also
@@ -215,21 +221,21 @@ public class DatPiffCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    return null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                } else {
+                    return dllink;
                 }
-                return dllink;
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
             } finally {
                 if (con != null) {
                     con.disconnect();
