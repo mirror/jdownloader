@@ -78,7 +78,13 @@ public class InstaGramCom extends PluginForHost {
         return MAINPAGE + "/about/legal/terms/#";
     }
 
-    /** https://instagram.api-docs.io/1.0 */
+    /**
+     * https://instagram.api-docs.io/1.0 </br>
+     * TODO: Add rate-limit errorhandling for such requests: {"message": "feedback_required", "spam": true, "feedback_title": "Versuche es
+     * sp\u00e4ter noch einmal", "feedback_message": "Wir schr\u00e4nken die H\u00e4ufigkeit mancher Handlungen ...", "feedback_url":
+     * "repute/report_problem/scraping/", "feedback_appeal_label": "Gib uns Feedback", "feedback_ignore_label": "OK", "feedback_action":
+     * "report_problem", "status": "fail"}
+     */
     public static String         ALT_API_BASE                                = "https://i.instagram.com/api/v1";
     /* Connection stuff */
     private static final boolean RESUME                                      = true;
