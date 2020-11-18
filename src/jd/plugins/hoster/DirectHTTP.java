@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
@@ -313,8 +314,9 @@ public class DirectHTTP extends antiDDoSForHost {
             logger.info("Disable Chunks:" + downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) + "|" + downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) + "|" + resume);
             chunks = 1;
         }
-        if (downloadLink.getProperty("streamMod") != null) {
-            logger.info("Apply streamMod handling");
+        final String streamMod = downloadLink.getStringProperty("streamMod", null);
+        if (streamMod != null) {
+            logger.info("Apply streamMod handling:" + streamMod);
             resume = true;
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         }
@@ -678,7 +680,14 @@ public class DirectHTTP extends antiDDoSForHost {
                 downloadLink.setProperty(BYPASS_CLOUDFLARE_BGJ, Boolean.TRUE);
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
-            final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
+            String streamMod = null;
+            for (Entry<String, List<String>> header : urlConnection.getHeaderFields().entrySet()) {
+                if (StringUtils.startsWithCaseInsensitive(header.getKey(), "X-Mod-H264-Streaming")) {
+                    streamMod = header.getKey();
+                } else if (StringUtils.startsWithCaseInsensitive(header.getKey(), "x-swarmify")) {
+                    streamMod = header.getKey();
+                }
+            }
             if (streamMod != null && downloadLink.getProperty("streamMod") == null) {
                 downloadLink.setProperty("streamMod", streamMod);
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
@@ -834,6 +843,7 @@ public class DirectHTTP extends antiDDoSForHost {
             default:
                 downloadLink.setProperty("requestType", Property.NULL);
             }
+            downloadLink.setProperty("allowOrigin", urlConnection.getHeaderField("access-control-allow-origin"));
             downloadLink.removeProperty(IOEXCEPTIONS);
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
@@ -944,6 +954,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty("lastRefURL");
         link.removeProperty("requestType");
         link.removeProperty("streamMod");
+        link.removeProperty("allowOrigin");
         link.removeProperty(BYPASS_CLOUDFLARE_BGJ);
         final String fixName = link.getStringProperty(FIXNAME, null);
         if (StringUtils.isNotEmpty(fixName)) {
@@ -1008,6 +1019,15 @@ public class DirectHTTP extends antiDDoSForHost {
             }
         }
         this.downloadWorkaround(br, downloadLink);
+        if (downloadLink.hasProperty("allowOrigin")) {
+            final String referer = br.getHeaders().get("Referer");
+            if (referer != null) {
+                final URL refURL = new URL(referer);
+                br.getHeaders().put("Origin", refURL.getProtocol() + "://" + refURL.getHost());
+            } else {
+                br.getHeaders().put("Origin", "*");
+            }
+        }
     }
 
     protected String getValidReferer(final String referer) {
