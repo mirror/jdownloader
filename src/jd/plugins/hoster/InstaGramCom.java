@@ -20,6 +20,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -95,7 +96,9 @@ public class InstaGramCom extends PluginForHost {
     public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
     public static final String   ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER    = "ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER";
     /* DownloadLink properties */
-    private static final String  PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
+    public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
+    public static final String   PROPERTY_is_part_of_story                   = "is_part_of_story";
+    /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
@@ -128,7 +131,7 @@ public class InstaGramCom extends PluginForHost {
          * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
          * disabled for whatever reason.
          */
-        prepBR(this.br);
+        prepBRWebsite(this.br);
         boolean isLoggedIN = false;
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -144,12 +147,12 @@ public class InstaGramCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         dllink = link.getStringProperty("directurl", null);
-        if (canGrabOriginalQualityDownloadurl(link, isLoggedIN) && !link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false)) {
-            this.dllink = this.getHighesQualityDownloadlink(link, true);
+        if (canGrabOriginalQualityDownloadurlViaAltAPI(link, isLoggedIN) && !link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false)) {
+            this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
         } else {
             this.dllink = checkLinkAndSetFilesize(link, this.dllink);
         }
-        if (dllink == null) {
+        if (this.dllink == null) {
             /* This will also act as a fallback in case that "original quality" handling fails */
             this.dllink = getFreshDirecturl(link, isLoggedIN);
             if (this.dllink == null) {
@@ -208,7 +211,7 @@ public class InstaGramCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean canGrabOriginalQualityDownloadurl(final DownloadLink link, final boolean is_logged_in) {
+    private boolean canGrabOriginalQualityDownloadurlViaAltAPI(final DownloadLink link, final boolean is_logged_in) {
         // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
@@ -217,8 +220,8 @@ public class InstaGramCom extends PluginForHost {
         /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
         // String drlink = dllink.replace(resolution_inside_url, "/");
         final String imageid = link.getStringProperty("postid");
-        /* Important: Do not jump into this handling when downloading videos! */
-        final boolean isVideo = link.getBooleanProperty("isvideo", true);
+        /* Avoids doing an extra http request for video files as they're never available in "original" quality (?) */
+        final boolean isVideo = link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4");
         final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
         return userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null;
     }
@@ -226,7 +229,7 @@ public class InstaGramCom extends PluginForHost {
     /**
      * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      */
-    private String getHighesQualityDownloadlink(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
+    private String getHighesQualityDownloadlinkAltAPI(final DownloadLink link, final boolean removePictureEffects) throws IOException, PluginException {
         // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
@@ -256,39 +259,74 @@ public class InstaGramCom extends PluginForHost {
         /*
          * New URL should be the BEST quality (resolution).
          */
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-        String downloadurl = (String) JavaScriptEngineFactory.walkJson(entries, "items/{0}/image_versions2/candidates/{0}/url");
-        if (StringUtils.isEmpty(downloadurl)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /*
-         * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture then!
-         * The resolution will usually not change - it will only remove the filters!
-         */
-        /*
-         * Source of this idea:
-         * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
-         */
-        if (removePictureEffects) {
-            logger.info("Trying to remove picture effects");
-            if (downloadurl.contains("&se=")) {
-                logger.info("Successfully removed picture effects");
-                downloadurl = downloadurl.replaceAll("&se=\\d+(&)?", "&");
-            } else {
-                logger.info("Failed to remove picture effects");
-            }
-        }
+        Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
+        final String downloadurl = getBestQualityURLAltAPI(entries);
         link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
         link.setProperty("directurl", downloadurl);
         return downloadurl;
     }
 
+    public static String getBestQualityURLAltAPI(final Map<String, Object> entries) {
+        final Object videoO = entries.get("video_versions");
+        final boolean isVideo = videoO != null;
+        String dllink = null;
+        if (isVideo) {
+            /* Find best video-quality */
+            /*
+             * TODO: 2020-11-17: What's the difference between e.g. the following "types": 101, 102, 103 - seems to be all the same quality
+             * and filesize/resolution/URLs
+             */
+            final List<Object> ressourcelist = (List<Object>) videoO;
+            if (ressourcelist != null) {
+                long qualityMax = 0;
+                for (final Object qualityO : ressourcelist) {
+                    final Map<String, Object> imageQualityInfo = (Map<String, Object>) qualityO;
+                    final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("width"), 0);
+                    if (widthTmp > qualityMax && imageQualityInfo.containsKey("url")) {
+                        qualityMax = widthTmp;
+                        dllink = (String) imageQualityInfo.get("url");
+                    }
+                }
+            }
+        } else {
+            /* Find best image-quality */
+            final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "image_versions2/candidates");
+            if (ressourcelist != null) {
+                long qualityMax = 0;
+                for (final Object qualityO : ressourcelist) {
+                    final Map<String, Object> imageQualityInfo = (Map<String, Object>) qualityO;
+                    final long widthTmp = JavaScriptEngineFactory.toLong(imageQualityInfo.get("width"), 0);
+                    if (widthTmp > qualityMax && imageQualityInfo.containsKey("url")) {
+                        qualityMax = widthTmp;
+                        dllink = (String) imageQualityInfo.get("url");
+                    }
+                }
+            }
+        }
+        final boolean removePictureEffects = true;
+        if (dllink != null && removePictureEffects && dllink.contains("&se=")) {
+            /*
+             * 2020-10-07: By replacing that one parameter, we will additionally remove all filters so we should get the original picture
+             * then! The resolution will usually not change - it will only remove the filters!
+             */
+            /*
+             * Source of this idea:
+             * https://github.com/instaloader/instaloader/blob/f4ecfea64cc11efba44cda2b44c8cfe41adbd28a/instaloader/structures.py#L247
+             */
+            dllink = dllink.replaceAll("&se=\\d+(&)?", "&");
+        }
+        return dllink;
+    }
+
     private String getFreshDirecturl(final DownloadLink link, final boolean isLoggedIN) throws IOException, PluginException {
         String directurl = null;
         logger.info("Trying to refresh directurl");
-        if (canGrabOriginalQualityDownloadurl(link, isLoggedIN)) {
+        /* Story elements can only be refreshed by ID and thus we need to use the other API for those! */
+        final boolean forceOriginalQualitDownload = isLoggedIN && link.getBooleanProperty(PROPERTY_is_part_of_story, false);
+        if (canGrabOriginalQualityDownloadurlViaAltAPI(link, isLoggedIN) || forceOriginalQualitDownload) {
             logger.info("Tring to obtain fresh original quality downloadurl");
-            directurl = getHighesQualityDownloadlink(link, true);
+            directurl = getHighesQualityDownloadlinkAltAPI(link, true);
         } else {
             logger.info("Trying to obtain fresh downloadurl via crawler");
             final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
@@ -336,9 +374,11 @@ public class InstaGramCom extends PluginForHost {
         return directurl;
     }
 
-    public static void checkErrors(final Browser br) throws AccountRequiredException {
+    public static void checkErrors(final Browser br) throws PluginException {
         if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
             throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -424,7 +464,7 @@ public class InstaGramCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                prepBR(br);
+                prepBRWebsite(br);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
@@ -628,7 +668,7 @@ public class InstaGramCom extends PluginForHost {
         this.handleDownload(link);
     }
 
-    public static Browser prepBR(final Browser br) {
+    public static Browser prepBRWebsite(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36");
         br.setCookie(MAINPAGE, "ig_pr", "1");
         // 429 == too many requests, we need to rate limit requests.
