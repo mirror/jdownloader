@@ -221,9 +221,12 @@ public class InstaGramCom extends PluginForHost {
         // String drlink = dllink.replace(resolution_inside_url, "/");
         final String imageid = link.getStringProperty("postid");
         /* Avoids doing an extra http request for video files as they're never available in "original" quality (?) */
-        final boolean isVideo = link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4");
         final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
-        return userWantsToDownloadOriginalQuality && is_logged_in && !isVideo && imageid != null;
+        return userWantsToDownloadOriginalQuality && is_logged_in && !isVideo(link) && imageid != null;
+    }
+
+    private boolean isVideo(final DownloadLink link) {
+        return link.getBooleanProperty("isvideo", false) || (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4"));
     }
 
     /**

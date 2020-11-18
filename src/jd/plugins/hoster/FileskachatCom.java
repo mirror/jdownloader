@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,11 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileskachat.com" }, urls = { "https?://(?:www\\.)?fileskachat\\.com/file/\\d+_[A-Fa-f0-9]{32}\\.html" })
 public class FileskachatCom extends PluginForHost {
-
     public FileskachatCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
@@ -50,7 +48,6 @@ public class FileskachatCom extends PluginForHost {
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = 0;
     private final int     FREE_MAXDOWNLOADS = 20;
-
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -61,18 +58,19 @@ public class FileskachatCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("Файл:</td><td>([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("Файл:</td><td[^>]*>([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex("Размер: ([^<>\"]+)\\.").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize != null) {
+            filesize = filesize.replace("Гбайта", "GB").replace("МБайт", "MB").replace("Кбайта", "kb");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        filesize = filesize.replace("Гбайта", "GB").replace("МБайт", "MB").replace("Кбайта", "kb");
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -130,7 +128,6 @@ public class FileskachatCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
-
     // private static Object LOCK = new Object();
     //
     // private void login(final Account account, final boolean force) throws Exception {
@@ -148,11 +145,13 @@ public class FileskachatCom extends PluginForHost {
     // if (br.getCookie(this.getHost(), "") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -190,11 +189,13 @@ public class FileskachatCom extends PluginForHost {
     // if (expire == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein
+    // eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered
+    // are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // } else {
@@ -254,5 +255,4 @@ public class FileskachatCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

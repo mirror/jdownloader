@@ -104,6 +104,7 @@ public class FlimmitCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
+                    logger.info("Attempting cookie login");
                     br.setCookies(cookies);
                     if (!force) {
                         logger.info("Trust cookies without login");
@@ -120,6 +121,7 @@ public class FlimmitCom extends PluginForHost {
                         }
                     }
                 }
+                logger.info("Performing full login");
                 br.getPage("https://flimmit.at/de/login");
                 br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
                 br.getPage("/account");
