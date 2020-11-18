@@ -241,7 +241,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     }
 
     protected boolean tryRangeRequest() {
-        Boolean isRangeRequestSupported = rafHints.isRangeRequestSupported();
+        final Boolean isRangeRequestSupported = rafHints.isRangeRequestSupported();
         if (Boolean.FALSE.equals(isRangeRequestSupported)) {
             return isRangeRequestSupported;
         }
@@ -288,8 +288,8 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                     return connection;
                 }
                 if (tryRangeRequest()) {
-                    if (connection.getHeaderField("X-Mod-H264-Streaming") != null && connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE) == null) {
-                        logger.info("Try workaround for X-Mod-H264-Streaming");
+                    if (downloadable.isServerComaptibleForByteRangeRequest() && connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE) == null) {
+                        logger.info("Try again with range request if possible");
                         connection.disconnect();
                         connection = openConnection(true);
                     }
@@ -482,6 +482,10 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         /* encoding can cause problems because indices no longer match real file indices */
         initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity", false));
         if (rangeRequest != null) {
+            if (initialRequest.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_RANGE) != null) {
+                logger.info("Override Header:" + initialRequest.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_RANGE));
+                initialRequest.getHeaders().remove(HTTPConstants.HEADER_REQUEST_RANGE);
+            }
             initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, rangeRequest, false));
             final URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
             if (connection.getRequest().getLocation() != null) {
@@ -495,6 +499,10 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             }
             return connection;
         } else {
+            if (initialRequest.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_RANGE) != null) {
+                logger.info("Override Header:" + initialRequest.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_RANGE));
+                initialRequest.getHeaders().remove(HTTPConstants.HEADER_REQUEST_RANGE);
+            }
             initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_RANGE, null, false));
             final URLConnectionAdapter connection = browser.openRequestConnection(initialRequest, false);
             if (connection.getRequest().getLocation() != null) {

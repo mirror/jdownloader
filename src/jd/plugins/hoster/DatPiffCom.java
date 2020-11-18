@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +37,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
 public class DatPiffCom extends PluginForHost {
@@ -178,9 +178,10 @@ public class DatPiffCom extends PluginForHost {
                             cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         } catch (final Exception e) {
                             if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", e);
+                            } else {
+                                throw e;
                             }
-                            throw e;
                         }
                         final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
@@ -232,10 +233,17 @@ public class DatPiffCom extends PluginForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
-                    return dllink;
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    throw new IOException();
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 link.setProperty(property, Property.NULL);
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -270,12 +278,7 @@ public class DatPiffCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered User");

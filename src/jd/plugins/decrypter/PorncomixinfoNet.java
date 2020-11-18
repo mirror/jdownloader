@@ -2,8 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -14,7 +12,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixinfo.net" }, urls = { "https?(?:www\\.)?://porncomixinfo\\.net/chapter/([a-z0-9\\-]+/[a-z0-9\\-]+)/?" })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixinfo.net" }, urls = { "https?(?:www\\.)?://porncomixinfo\\.(?net|com)/chapter/([a-z0-9\\-]+/[a-z0-9\\-]+)/?" })
 public class PorncomixinfoNet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

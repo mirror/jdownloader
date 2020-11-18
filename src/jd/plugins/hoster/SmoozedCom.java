@@ -17,19 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.Base64OutputStream;
-import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +34,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.SmoozedTranslation;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" })
 public class SmoozedCom extends antiDDoSForHost {
@@ -572,7 +572,9 @@ public class SmoozedCom extends antiDDoSForHost {
                     }
                 }
             }
-        } else if (br.containsHTML(">DNS points to prohibited IP<")) {
+        } else if (br.containsHTML(">\\s*DNS points to prohibited IP")) {
+            throw new AccountUnavailableException("Cloudflare server error at smoozed.com", 10 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*The web server reported a gateway time-out error")) {
             throw new AccountUnavailableException("Cloudflare server error at smoozed.com", 10 * 60 * 1000l);
         }
     }

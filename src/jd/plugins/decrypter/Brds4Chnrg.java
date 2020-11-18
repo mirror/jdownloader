@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/[0-9a-z]{1,}/(thread/[0-9]+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
@@ -42,7 +42,6 @@ public class Brds4Chnrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         String parameter = param.toString();
-        String prot = new Regex(parameter, "(https?)://").getMatch(0);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline (404): " + parameter);
@@ -58,7 +57,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
-                br.getPage(prot + "://sys.4chan.org/error/404/rid.php");
+                br.getPage("//sys.4chan.org/error/404/rid.php");
                 String image404 = br.getRegex("(https?://.+)").getMatch(0);
                 DownloadLink dl = createDownloadlink(image404);
                 dl.setAvailableStatus(AvailableStatus.TRUE);
@@ -69,12 +68,12 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 return decryptedLinks;
             } else {
                 String domain = "4chan.org";
-                String cat = br.getRegex("<div class=\"boardTitle\">/(?:.{1,4}|trash)/ - (.*?)</div>").getMatch(0);
+                String cat = br.getRegex("<div class=\"boardTitle\">/(?:.{1,4}|trash)/\\s*-\\s*(.*?)\\s*</div>").getMatch(0);
                 if (cat == null) {
-                    cat = br.getRegex("<title>/b/ - (.*?)</title>").getMatch(0);
+                    cat = br.getRegex("<title>\\s*/b/\\s*-\\s*(.*?)\\s*</title>").getMatch(0);
                 }
                 if (cat != null) {
-                    cat = cat.replace("&amp;", "&");
+                    cat = Encoding.htmlOnlyDecode(cat);
                 } else {
                     cat = "Unknown Cat";
                 }
@@ -91,20 +90,19 @@ public class Brds4Chnrg extends PluginForDecrypt {
                     String url = new Regex(post, "<a[^>]*href=\"((//|http)[^\"]+)\"").getMatch(0);
                     if (url == null) {
                         continue;
-                    }
-                    if (url.startsWith("/") && !url.startsWith("h")) {
-                        url = url.replace("//", prot + "://");
+                    } else {
+                        url = br.getURL(url).toString();
                     }
                     final DownloadLink dl = this.createDownloadlink(url);
                     dl.setAvailable(true);
                     String filename = new Regex(post, "<a title=\"([^\"]+)\" href=\"").getMatch(0);
                     if (filename == null) {
-                        filename = new Regex(post, "target=\"_blank\">([^<>\"]+)</a>").getMatch(0);
+                        filename = new Regex(post, "target=\"_blank\">\\s*([^<>\"]+)\\s*</a>").getMatch(0);
                     }
-                    final String filesizeStr = new Regex(post, "\\((\\d+[^<>\"]+), \\d+x\\d+\\)").getMatch(0);
                     if (filename != null) {
                         dl.setForcedFileName(Encoding.htmlDecode(filename).trim());
                     }
+                    final String filesizeStr = new Regex(post, "\\((\\d+[^<>\"]+), \\d+x\\d+\\)").getMatch(0);
                     if (filesizeStr != null) {
                         dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                     }
@@ -114,9 +112,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 if (decryptedLinks.size() == 0) {
                     /* Fallback - old method which was used until rev 42702 */
                     for (String image : images) {
-                        if (image.startsWith("/") && !image.startsWith("h")) {
-                            image = image.replace("//", prot + "://");
-                        }
+                        image = br.getURL(image).toString();
                         DownloadLink dl = createDownloadlink(image);
                         dl.setAvailableStatus(AvailableStatus.TRUE);
                         fp.add(dl);

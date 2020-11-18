@@ -24,14 +24,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -44,6 +36,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com", "pm-wissen.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?(?:pm-wissen)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
 public class ServusCom extends PluginForHost {
@@ -145,7 +145,7 @@ public class ServusCom extends PluginForHost {
             if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            GetRequest assetRequest = br.createGetRequest("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid.toUpperCase());
+            GetRequest assetRequest = br.createGetRequest("https://sparkle-api.liiift.io/api/v1/stv/channels/international/assets/" + fid.toUpperCase(Locale.ENGLISH));
             assetRequest.getHeaders().put("Authorization", "Bearer " + access_token);
             br.getPage(assetRequest);
             if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 409) {
