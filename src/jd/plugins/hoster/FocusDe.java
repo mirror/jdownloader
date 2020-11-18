@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -31,9 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "focus.de" }, urls = { "http://(?:www\\.)?focus\\.de/[A-Za-z]+/(?:videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "focus.de" }, urls = { "https?://(?:www\\.)?focus\\.de/[A-Za-z]+/(?:videos|internet/[a-zA-Z]+)/[\\w\\-]+\\.html" })
 public class FocusDe extends PluginForHost {
-
     public FocusDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,7 +40,6 @@ public class FocusDe extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -52,14 +49,14 @@ public class FocusDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         /* Exclude invalid (comments) links */
-        if (downloadLink.getDownloadURL().contains("kommentar_id_")) {
+        if (link.getDownloadURL().contains("kommentar_id_")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -75,12 +72,12 @@ public class FocusDe extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("videourl[\t\n\r ]+=[\t\n\r ]+\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("videourl\"\\s*:\\s*\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("videoUrl[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
+            dllink = br.getRegex("videoUrl\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"]*?)\\'").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.startsWith("rtmp")) {
@@ -88,14 +85,16 @@ public class FocusDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext = getFileNameExtensionFromString(dllink, ".mp4");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
-        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -106,12 +105,12 @@ public class FocusDe extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
+            link.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -122,16 +121,20 @@ public class FocusDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

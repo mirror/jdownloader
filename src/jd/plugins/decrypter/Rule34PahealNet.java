@@ -55,7 +55,7 @@ public class Rule34PahealNet extends PluginForDecrypt {
             }
             String[] links = br.getRegex("<br><a href=('|\")(https?://.*?)\\1>").getColumn(1);
             if (links == null || links.length == 0) {
-                links = br.getRegex("('|\")(https?://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                links = br.getRegex("('|\")(https?://[^/]+\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
             }
             if (links == null || links.length == 0) {
                 links = br.getRegex("('|\")(https?://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);

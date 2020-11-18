@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,9 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "games.reveur.de" }, urls = { "http://(www\\.)?games\\.reveur\\.de/(en|de)/[a-z0-9\\-]+/addons/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/[A-Za-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "games.reveur.de" }, urls = { "https?://(?:www\\.)?games\\.reveur\\.de/(?:en|de)/[a-z0-9\\-]+/addons/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class GamesReveurDe extends PluginForHost {
     public GamesReveurDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,7 +51,7 @@ public class GamesReveurDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://games.reveur.de/") || br.containsHTML(">\\s*Download not available!\\s*<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || new Regex(br.getURL(), "https?://games\\.reveur\\.de/?$").matches() || br.containsHTML(">\\s*Download not available!\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) zum Download</title>").getMatch(0);
@@ -84,7 +84,7 @@ public class GamesReveurDe extends PluginForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://games.reveur.de/includes/ajax/getDlValues.php", "");
+        br.postPage("https://games.reveur.de/includes/ajax/getDlValues.php", "");
         final String val1 = getJson("value1");
         final String val2 = getJson("value2");
         final String sign = getJson("arithmethicSign");
@@ -99,16 +99,20 @@ public class GamesReveurDe extends PluginForHost {
         } else {
             result = value1 - value2;
         }
-        br.postPage("http://games.reveur.de/includes/ajax/checkUserInput.php", "params={\"val1\":" + value1 + ",\"val2\":" + value2 + ",\"result\":\"" + result + "\"}");
+        br.postPage("https://games.reveur.de/includes/ajax/checkUserInput.php", "params={\"val1\":" + value1 + ",\"val2\":" + value2 + ",\"result\":\"" + result + "\"}");
         final String ticket = getJson("ticket");
         if (ticket == null) {
             /* Happens sometimes ... */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 1 * 60 * 1000l);
         }
-        final String dllink = "http://games.reveur.de/Download.php?intDlId=" + dlid + "&strDlType=" + dltype + "&strFileType=zip&intGameId=" + gameid + "&strGameShort=" + gameshort + "&strTicket=" + ticket;
+        final String dllink = "https://games.reveur.de/Download.php?intDlId=" + dlid + "&strDlType=" + dltype + "&strFileType=zip&intGameId=" + gameid + "&strGameShort=" + gameshort + "&strTicket=" + ticket;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
