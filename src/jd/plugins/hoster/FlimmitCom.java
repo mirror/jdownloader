@@ -15,17 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -54,13 +54,8 @@ public class FlimmitCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static final int FREE_MAXDOWNLOADS = 20;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -85,8 +80,8 @@ public class FlimmitCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
@@ -102,77 +97,53 @@ public class FlimmitCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://flimmit.com";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
                 br.setFollowRedirects(true);
-                br.getPage("https://www.flimmit.com/customer/account/login/");
-                final String form_key = br.getRegex("name=\"form_key\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (form_key == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!force) {
+                        logger.info("Trust cookies without login");
+                        return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        br.getPage("https://flimmit.at/account");
+                        if (this.isLoggedIN()) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearAll();
+                        }
                     }
                 }
-                br.postPage("https://www.flimmit.com/customer/account/loginPost/", "send=&login%5Busername%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&form_key=" + Encoding.urlEncode(form_key));
-                if (!br.containsHTML("customer/account/logout/\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                br.getPage("https://flimmit.at/de/login");
+                br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
+                br.getPage("/account");
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                /* E.g. bad response: {"status":"failure","message":"Email oder Passwort ist nicht korrekt","extraData":[]} */
+                /* E.g. good response: */
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean isLoggedIN() {
+        return br.containsHTML("/logout");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         if (!account.getUser().matches(".+@.+\\..+")) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -181,17 +152,19 @@ public class FlimmitCom extends PluginForHost {
             }
         }
         /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
-        ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        try {
+        br.getPage("/dynamically/me/user-subscriptions/active");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("data");
+        String expireDateStr = (String) entries.get("next_payment_date");
+        if (!StringUtils.isEmpty(expireDateStr)) {
+            expireDateStr = expireDateStr.replaceAll("(\\+.+)$", "");
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH));
+        } else {
+            account.setType(AccountType.FREE);
         }
-        ai.setStatus("Premium Account");
-        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        account.setConcurrentUsePossible(true);
         return ai;
     }
 
@@ -211,8 +184,7 @@ public class FlimmitCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return 1;
     }
 
     @Override

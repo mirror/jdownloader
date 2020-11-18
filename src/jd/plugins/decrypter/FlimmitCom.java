@@ -13,30 +13,32 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Random;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
 /**
@@ -44,77 +46,67 @@ import jd.utils.JDUtilities;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(?:www\\.)?flimmit\\.com/(?:catalog/product/view/id/|video/stream/play/(?:product_id/|order_item/))(\\d+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://flimmit\\.at/([a-z0-9\\-]+)/assets/(\\d+)" })
 public class FlimmitCom extends PluginForDecrypt {
-
     public FlimmitCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        final String vid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String parameter = param.toString();
+        final String titleURL = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         login();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        // support via mpd / mobilempd / hls
+        br.getPage("https://flimmit.at/dynamically/video/" + contentID);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
         // we get hls since thats all we support at this stage.
-        final String m3u = PluginJSonUtils.getJsonValue(br, "hls");
-        if (m3u == null) {
-            return null;
-        }
-        String title = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (title == null) {
-            title = vid;
-        }
-        title = Encoding.htmlDecode(title).trim();
-        br.getPage(m3u);
-        final String[] medias = br.getRegex("#EXT-X.*?\\.m3u8").getColumn(-1);
-        if (medias == null) {
-            return null;
-        }
-        for (final String media : medias) {
-            // segmented audio and segmented video in differnet objects. dl both and then mux?
-
-            final String groupid = new Regex(media, "GROUP-ID=\"([^<>\"]*?)\"").getMatch(0);
-            final String res = new Regex(media, "RESOLUTION=(\\d+x\\d+)").getMatch(0);
-            // final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-            final String m3u8 = new Regex(media, "(?:\n|\")([^\n\"]+\\.m3u8)").getMatch(0);
-            if (m3u8 == null) {
-                return null;
+        final String error = (String) JavaScriptEngineFactory.walkJson(entries, "data/error");
+        /* Content is not a video object --> Maybe Series */
+        if ("Video not found.".equalsIgnoreCase(error)) {
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
-            String filename;
-            final String extension;
-            if (media.contains("TYPE=AUDIO")) {
-                /* MP4 extension needed for FFmpeg! */
-                extension = ".mp4";
-                filename = title + "_AUDIO_" + groupid + extension;
-            } else {
-                extension = ".mp4";
-                filename = title + "_VIDEO_" + res + extension;
+            final String[] assetIDs = br.getRegex("/assets..?(\\d+)").getColumn(0);
+            for (final String assetID : assetIDs) {
+                if (assetIDs.equals(contentID)) {
+                    /* Do not add currently processed URL again! */
+                    continue;
+                } else {
+                    decryptedLinks.add(this.createDownloadlink("https://flimmit.at/" + titleURL + "/assets/" + assetID));
+                }
             }
-
-            final DownloadLink dlink = createDownloadlink("http://flimmit.com/" + System.currentTimeMillis() + new Random().nextInt(100000000));
-            dlink.setProperty("title", title);
-            dlink.setProperty("filename", filename);
-            dlink.setProperty("ext", media);
-            dlink.setProperty("m3u8url", br.getBaseURL() + m3u8);
-            dlink.setProperty("vid", vid);
-            if (res != null) {
-                dlink.setProperty("res", res);
+        } else {
+            /* Process video object */
+            final String m3u = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/hls");
+            final String title = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/title");
+            final String description = (String) JavaScriptEngineFactory.walkJson(entries, "data/modules/titles/description");
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(titleURL);
+            if (m3u == null) {
+                logger.info("Failed to find any downloadable content");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
-            final String linkID = "flimmit:" + vid + ":HLS:" + filename;
-            dlink.setLinkID(linkID);
-            dlink.setName(filename);
-            dlink.setContentUrl(parameter);
-            dlink.setAvailable(true);
-            decryptedLinks.add(dlink);
+            br.getPage(m3u);
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
+            for (final HlsContainer quality : qualities) {
+                final DownloadLink dl = this.createDownloadlink(quality.getDownloadurl().replaceAll("https?://", "m3u8://"));
+                dl.setFinalFileName(titleURL + "_" + title + "_" + quality.getStandardFilename());
+                dl.setAvailable(true);
+                dl.setComment(description);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+            }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
-        fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
 
@@ -142,7 +134,7 @@ public class FlimmitCom extends PluginForDecrypt {
             }
         }
         if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Account Required");
+            throw new AccountRequiredException();
         }
         final PluginForHost plugin = JDUtilities.getPluginForHost("flimmit.com");
         if (plugin == null) {
@@ -153,16 +145,11 @@ public class FlimmitCom extends PluginForDecrypt {
         ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
-
 }
