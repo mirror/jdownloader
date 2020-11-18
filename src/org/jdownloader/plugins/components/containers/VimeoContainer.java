@@ -57,7 +57,8 @@ public class VimeoContainer extends VideoContainer {
         SD,
         HD,
         UHD,
-        ORIGINAL;
+        ORIGINAL,
+        SOURCE
     }
 
     // order is important, methods that can resume vs not resume.
@@ -208,7 +209,7 @@ public class VimeoContainer extends VideoContainer {
     public String bestString() {
         if (Source.SUBTITLE.equals(getSource())) {
             return getLang();
-        } else if (getQuality() == Quality.ORIGINAL) {
+        } else if (getQuality() == Quality.ORIGINAL || getQuality() == Quality.SOURCE) {
             /*
              * Special case: Original download is an exception as the resolution does not matter: If wished, it should always be added as it
              * will definitely be the BEST quality available.
