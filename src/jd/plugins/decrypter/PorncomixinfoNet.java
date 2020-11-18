@@ -14,7 +14,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixinfo.net" }, urls = { "https?(?:www\\.)?://porncomixinfo\\.(?net|com)/chapter/([a-z0-9\\-]+/[a-z0-9\\-]+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porncomixinfo.net" }, urls = { "https?(?:www\\.)?://porncomixinfo\\.(?:net|com)/chapter/([a-z0-9\\-]+/[a-z0-9\\-]+)/?" })
 public class PorncomixinfoNet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
