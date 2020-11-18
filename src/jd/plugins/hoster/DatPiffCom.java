@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,8 +40,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
 public class DatPiffCom extends PluginForHost {
     private static final String PREMIUMONLY              = ">you must be logged in to download mixtapes<";
@@ -51,23 +51,6 @@ public class DatPiffCom extends PluginForHost {
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.datpiff.com/register");
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) throws IOException {
-        if (link.getDownloadURL().matches("https?://(www\\.)?datpiff\\.com/mixtapes\\-detail\\.php\\?id=\\d+")) {
-            link.setUrlDownload(link.getDownloadURL().replace("datpiff.com/mixtapes-detail.php?id=", "datpiff.com/pop-mixtape-download.php?id="));
-        } else if (!link.getDownloadURL().contains(".php?id=")) {
-            final Browser br2 = new Browser();
-            br2.getPage(link.getDownloadURL());
-            String downID = br2.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
-            if (downID == null) {
-                downID = br2.getRegex("mixtapePlayer(Tall)?\\.swf\\?mid=(.*?)\"").getMatch(0);
-            }
-            if (downID != null) {
-                link.setUrlDownload("https://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
-            }
-        }
     }
 
     @SuppressWarnings("deprecation")
