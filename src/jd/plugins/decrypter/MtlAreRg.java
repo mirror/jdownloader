@@ -57,12 +57,15 @@ public class MtlAreRg extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'>\\s*<div>\\s*<img[^>]*/>\\s*\\&nbsp;\\s*<b>\\s*(.*?)\\s*</b>").getMatch(0);
+        String fpName = br.getRegex("<td width='99%' style='word-wrap:break-word;'>\\s*<div>\\s*<img[^>]*/>\\s*\\&nbsp;\\s*<b>\\s*(.*?)\\s*</div>\\s*</td>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             if (fpName != null) {
                 fpName = fpName.replace(" - Metal Area - Extreme Music Portal", "");
             }
+        }
+        if (fpName != null) {
+            fpName = fpName.replaceAll("(</b>(\\s*,)?)", "");
         }
         // Filter links in hide(s)
         String pagepieces[] = br.getRegex("<\\!\\-\\-HideBegin\\-\\->(.*?)<\\!\\-\\-HideEnd\\-\\->").getColumn(0);
