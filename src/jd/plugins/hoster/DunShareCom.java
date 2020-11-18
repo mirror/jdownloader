@@ -13,16 +13,18 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,11 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dunshare.com" }, urls = { "http://(?:www\\.)?dunshare\\.com/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dunshare.com" }, urls = { "https?://(?:www\\.)?dunshare\\.com/([A-Za-z0-9]+)" })
 public class DunShareCom extends PluginForHost {
-
     public DunShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +48,6 @@ public class DunShareCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -64,6 +62,7 @@ public class DunShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"") || !this.br.containsHTML("class=\"wrapper-content title-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -83,16 +82,17 @@ public class DunShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             final Form dlform = this.br.getFormbyProperty("name", "frm");
             if (dlform == null) {
+                checkErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int wait = 30;
@@ -100,39 +100,51 @@ public class DunShareCom extends PluginForHost {
             if (wait_regexed != null) {
                 wait = Integer.parseInt(wait_regexed);
             }
-            this.sleep(wait * 1001l, downloadLink);
+            this.sleep(wait * 1001l, link);
             this.br.submitForm(dlform);
-            dllink = br.getRegex("\"(http[^<>\"]*?/dl/[^<>\"]*?)\"").getMatch(0);
+            checkErrors();
+            dllink = br.getRegex("\"(https?[^<>\"]*?/(dl|download)/[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private void checkErrors() throws PluginException {
+        final Regex ipBlocked = br.getRegex("Next download delay per \\d+ minutes\\. Please wait (\\d+):(\\d+)");
+        final String waitMins = ipBlocked.getMatch(0);
+        final String waitSecs = ipBlocked.getMatch(1);
+        if (waitMins != null) {
+            final long wait = Long.parseLong(waitMins) * 60 * 1001l + Long.parseLong(waitSecs) * 1001l;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+        }
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 } else {
-                    con = br2.openHeadConnection(dllink);
-                }
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
                 try {
@@ -141,11 +153,7 @@ public class DunShareCom extends PluginForHost {
                 }
             }
         }
-        return dllink;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return null;
     }
 
     @Override
@@ -160,5 +168,4 @@ public class DunShareCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
