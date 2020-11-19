@@ -1,8 +1,6 @@
 package jd.plugins.hoster;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -22,7 +20,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html", "https?://(?:www\\.)?sxyprn\\.com/post/[a-fA-F0-9]{13}\\.html" })
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/[a-fA-F0-9]{13}\\.html" })
 public class SxyprnCom extends antiDDoSForHost {
     public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -101,7 +103,11 @@ public class SxyprnCom extends antiDDoSForHost {
 
     private String getDllink(final DownloadLink link, final String vnfo) throws Exception {
         final String tmp[] = vnfo.split("/");
-        tmp[1] += "8";
+        if (StringUtils.containsIgnoreCase(br.getHost(), "sxyprn.net")) {
+            tmp[1] += "5";
+        } else {
+            tmp[1] += "8";
+        }
         tmp[5] = String.valueOf((Long.parseLong(tmp[5]) - (ssut51(tmp[6]) + ssut51(tmp[7]))));
         final String url = "/" + StringUtils.join(tmp, "/");
         Browser brc = br.cloneBrowser();
@@ -149,8 +155,12 @@ public class SxyprnCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("text")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection();
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -159,8 +169,9 @@ public class SxyprnCom extends antiDDoSForHost {
                  * up a lot of connections to this host!
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
