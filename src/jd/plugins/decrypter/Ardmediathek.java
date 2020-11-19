@@ -27,23 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -72,10 +55,28 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "rbb-online.de", "sandmann.de", "wdr.de", "sportschau.de", "one.ard.de", "wdrmaus.de", "sr-online.de", "ndr.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "checkeins.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/[^<>\"]+/(?:videos|videosextern)/[a-z0-9\\-]+\\.html", "https?://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:www\\.)?sportschau\\.de/.*?\\.html",
         "https?://(?:www\\.)?one\\.ard\\.de/tv/[^<>\"]+documentId=\\d+[^/]*?", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://sr\\-mediathek\\.sr\\-online\\.de/index\\.php\\?seite=\\d+\\&id=\\d+", "https?://(?:[a-z0-9]+\\.)?ndr\\.de/.*?\\.html", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?checkeins\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     private static final String                 EXCEPTION_LINKOFFLINE                      = "EXCEPTION_LINKOFFLINE";
+    private static final String                 EXCEPTION_GEOBLOCKED                       = "EXCEPTION_GEOBLOCKED";
     /* Constants */
     private static final String                 type_unsupported                           = ".+ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
     private static final String                 type_invalid                               = ".+(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
@@ -99,18 +100,22 @@ public class Ardmediathek extends PluginForDecrypt {
         heigth_to_bitrate.put("720", 3773000l);
         heigth_to_bitrate.put("1080", 6666000l);
     }
-    private String                              subtitleLink                               = null;
-    private String                              parameter                                  = null;
-    private String                              title                                      = null;
-    private String                              show                                       = null;
-    private String                              provider                                   = null;
-    private long                                date_timestamp                             = -1;
-    private boolean                             grabHLS                                    = false;
-    private String                              contentID                                  = null;
-    private ArdConfigInterface                  cfg                                        = null;
+    private String             subtitleLink   = null;
+    private String             parameter      = null;
+    private String             title          = null;
+    private String             show           = null;
+    private String             provider       = null;
+    private long               date_timestamp = -1;
+    private boolean            grabHLS        = false;
+    private String             contentID      = null;
+    private ArdConfigInterface cfg            = null;
 
     public Ardmediathek(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private String getURLPart(final String url) {
+        return new Regex(url, "https?://[^/]+/(.+)").getMatch(0);
     }
 
     @Override
@@ -256,6 +261,9 @@ public class Ardmediathek extends PluginForDecrypt {
             try {
                 if (e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else if (e.getMessage().equals(EXCEPTION_GEOBLOCKED)) {
+                    decryptedLinks.add(this.createOfflinelink(parameter, "GEO-blocked_" + getURLPart(this.parameter), "GEO-blocked_" + getURLPart(this.parameter)));
                     return decryptedLinks;
                 }
             } catch (final Exception x) {
@@ -741,18 +749,27 @@ public class Ardmediathek extends PluginForDecrypt {
         final List<String> httpStreamsQualityIdentifiers = new ArrayList<String>();
         /* For http stream quality identifiers which have been created by the hls --> http URLs converter */
         final List<String> httpStreamsQualityIdentifiers_2_over_hls_master = new ArrayList<String>();
-        try {
-            Map<String, Object> map;
-            if (mediaCollection instanceof Map) {
-                map = (Map<String, Object>) mediaCollection;
-                if (!map.containsKey("_mediaArray")) {
-                    /* 2020-06-08: For new ARD URLs */
-                    map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "widgets/{0}/mediaCollection/embedded");
-                }
-            } else {
-                map = null;
+        Map<String, Object> map;
+        if (mediaCollection instanceof Map) {
+            map = (Map<String, Object>) mediaCollection;
+            if (!map.containsKey("_mediaArray")) {
+                /* 2020-06-08: For new ARD URLs */
+                map = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "widgets/{0}/mediaCollection/embedded");
             }
-            if (map != null && map.containsKey("_mediaArray")) {
+        } else {
+            map = null;
+        }
+        if (map != null && map.containsKey("_mediaArray")) {
+            /*
+             * Website actually tries to stream video - only then it is safe to know if the items is only "somewhere" GEO-blocked or
+             * GEO-blocked for the current user/IP!
+             */
+            // final boolean geoBlocked = ((Boolean) map.get("_geoblocked")).booleanValue();
+            // if (geoBlocked) {
+            // /* 2020-11-19: Direct-URLs are given but will all redirect to a "GEO-blocked" video so let's stop here! */
+            // throw new DecrypterException(EXCEPTION_GEOBLOCKED);
+            // }
+            try {
                 final List<Map<String, Object>> mediaArray = (List<Map<String, Object>>) map.get("_mediaArray");
                 for (Map<String, Object> media : mediaArray) {
                     List<Map<String, Object>> mediaStreamArray = (List<Map<String, Object>>) media.get("_mediaStreamArray");
@@ -905,9 +922,9 @@ public class Ardmediathek extends PluginForDecrypt {
                         }
                     }
                 }
+            } catch (Throwable e) {
+                logger.log(e);
             }
-        } catch (Throwable e) {
-            logger.log(e);
         }
         /*
          * TODO: It might only make sense to attempt this if we found more than 3 http qualities previously because usually 3 means we will
@@ -930,7 +947,18 @@ public class Ardmediathek extends PluginForDecrypt {
             final String[] qualities_hls = quality_string != null ? quality_string.split(",") : null;
             if (http_url_format != null && qualities_hls != null && qualities_hls.length > 0) {
                 /* Access HLS master to find correct resolution for each ID (the only possible way) */
-                br.getPage("http:" + hls_master);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection("http:" + hls_master);
+                    if (con.getURL().toString().contains("/static/geoblocking.mp4")) {
+                        throw new DecrypterException(EXCEPTION_GEOBLOCKED);
+                    }
+                    br.followConnection();
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                }
                 final String[] resolutionsInOrder = br.getRegex("RESOLUTION=(\\d+x\\d+)").getColumn(0);
                 if (resolutionsInOrder != null) {
                     logger.info("Crawling additional http urls");

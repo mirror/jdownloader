@@ -85,7 +85,7 @@ public class SxyprnCom extends antiDDoSForDecrypt {
                     /* 2019-09-24: Try to skip non-video (e.g. text-only) content */
                     continue;
                 }
-                final String[][] hits = new Regex(postHTML, "href=(?:\"|')(/post/[a-fA-F0-9]{13}\\.html)[^<>]*?title='(.*?)'").getMatches();
+                final String[][] hits = new Regex(postHTML, "href=(?:\"|')(/post/[a-fA-F0-9]{13}(?:\\.html)?)[^<>]*?title='(.*?)'").getMatches();
                 for (final String[] hit : hits) {
                     final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
                     link.setName(hit[1].trim() + ".mp4");

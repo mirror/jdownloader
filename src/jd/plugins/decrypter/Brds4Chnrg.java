@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,16 +73,16 @@ public class Brds4Chnrg extends PluginForDecrypt {
             }
         } else {
             if (useAPI) {
-                decryptedLinks = crawlCategoryThreadsAPI(param);
+                decryptedLinks = crawlBoardThreadsAPI(param);
             } else {
-                decryptedLinks = crawlCategoryThreadsWebsite(param);
+                decryptedLinks = crawlBoardThreadsWebsite(param);
             }
         }
         return decryptedLinks;
     }
 
     @Deprecated
-    private ArrayList<DownloadLink> crawlCategoryThreadsWebsite(final CryptedLink param) throws IOException {
+    private ArrayList<DownloadLink> crawlBoardThreadsWebsite(final CryptedLink param) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -97,9 +98,9 @@ public class Brds4Chnrg extends PluginForDecrypt {
 
     @Deprecated
     private ArrayList<DownloadLink> crawlSingleThreadWebsite(final CryptedLink param) throws IOException, PluginException {
-        final String categoryName = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(0);
+        final String boardShortTitle = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(0);
         final String threadID = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(1);
-        if (categoryName == null || threadID == null) {
+        if (boardShortTitle == null || threadID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -124,11 +125,11 @@ public class Brds4Chnrg extends PluginForDecrypt {
             logger.info("Empty 4chan link: " + param.getCryptedUrl());
             return decryptedLinks;
         } else {
-            final String categoryNameLong = br.getRegex("<div class=\"boardTitle\">/(?:.{1,4}|trash)/\\s*-\\s*(.*?)\\s*</div>").getMatch(0);
-            if (categoryNameLong != null) {
-                fp.setName("4chan.org" + " - " + categoryNameLong + " - " + threadID);
+            final String boardLongTitle = br.getRegex("<div class=\"boardTitle\"[^>]*>/(?:.{1,4}|trash)/\\s*-\\s*(.*?)\\s*</div>").getMatch(0);
+            if (boardLongTitle != null) {
+                fp.setName("4chan.org" + " - " + boardLongTitle + " - " + threadID);
             } else {
-                fp.setName("4chan.org" + " - " + categoryName + " - " + threadID);
+                fp.setName("4chan.org" + " - " + boardShortTitle + " - " + threadID);
             }
             /* First post = "postContainer opContainer", all others = "postContainer replyContainer" */
             final String[] posts = br.getRegex("<div class=\"postContainer [^\"]+\".*?</blockquote></div></div>").getColumn(-1);
@@ -171,8 +172,17 @@ public class Brds4Chnrg extends PluginForDecrypt {
     }
 
     /************************************************** API methods here ****************************************************/
+    /*
+     * API does not return long title when crawling a thread --> Cache all once per session / if current short-title is not yet in that list
+     * --> Ideally once once per session!
+     */
+    private static LinkedHashMap<String, String> BOARD_LONG_TITLE_CACHE = new LinkedHashMap<String, String>() {
+                                                                            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                return size() > 200;
+                                                                            };
+                                                                        };
     /** Docs: https://github.com/4chan/4chan-API */
-    private static final String API_BASE = "https://a.4cdn.org/";
+    private static final String                  API_BASE               = "https://a.4cdn.org/";
 
     private Browser prepBrAPI(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -184,13 +194,13 @@ public class Brds4Chnrg extends PluginForDecrypt {
      *
      * @throws PluginException
      */
-    private ArrayList<DownloadLink> crawlCategoryThreadsAPI(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlBoardThreadsAPI(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String categoryName = new Regex(param.getCryptedUrl(), TYPE_CATEGORY).getMatch(0);
-        if (categoryName == null) {
+        final String boardShortTitle = new Regex(param.getCryptedUrl(), TYPE_CATEGORY).getMatch(0);
+        if (boardShortTitle == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(API_BASE + categoryName + "/threads.json");
+        br.getPage(API_BASE + boardShortTitle + "/threads.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
@@ -205,7 +215,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             for (final Object threadO : threads) {
                 entries = (Map<String, Object>) threadO;
                 final long threadID = ((Number) entries.get("no")).longValue();
-                decryptedLinks.add(this.createDownloadlink("https://boards.4channel.org/" + categoryName + "/thread/" + threadID));
+                decryptedLinks.add(this.createDownloadlink("https://boards.4channel.org/" + boardShortTitle + "/thread/" + threadID));
             }
             if (currentPage >= maxPage) {
                 logger.info("Stopping because reached max. user defined page: " + maxPage);
@@ -220,23 +230,50 @@ public class Brds4Chnrg extends PluginForDecrypt {
 
     /** See: https://github.com/4chan/4chan-API/blob/master/pages/Threads.md */
     private ArrayList<DownloadLink> crawlSingleThreadAPI(final CryptedLink param) throws IOException, PluginException {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String categoryName = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(0);
+        String boardLongTitle = null;
+        final String boardShortTitle = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(0);
         final String threadID = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(1);
-        if (categoryName == null || threadID == null) {
+        if (boardShortTitle == null || threadID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepBrAPI(this.br);
-        br.getPage(API_BASE + categoryName + "/thread/" + threadID + ".json");
+        Map<String, Object> entries;
+        /* We need this because the other method doesn't return the long title of our board. */
+        synchronized (BOARD_LONG_TITLE_CACHE) {
+            /** See: https://github.com/4chan/4chan-API/blob/master/pages/Boards.md */
+            if (!BOARD_LONG_TITLE_CACHE.containsKey(boardShortTitle)) {
+                logger.info("Updating board cache because it doesn't contain the long title for: " + boardShortTitle);
+                br.getPage(API_BASE + "/boards.json");
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final List<Object> boards = (List<Object>) entries.get("boards");
+                for (final Object boardO : boards) {
+                    entries = (Map<String, Object>) boardO;
+                    final String boardShortTitleTmp = (String) entries.get("board");
+                    final String boardLongTitleTmp = (String) entries.get("title");
+                    if (StringUtils.isEmpty(boardShortTitleTmp) || StringUtils.isEmpty(boardLongTitleTmp)) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    BOARD_LONG_TITLE_CACHE.put(boardShortTitleTmp, boardLongTitleTmp);
+                }
+                if (!BOARD_LONG_TITLE_CACHE.containsKey(boardShortTitle)) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        boardLongTitle = BOARD_LONG_TITLE_CACHE.get(boardShortTitle);
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.getPage(API_BASE + boardShortTitle + "/thread/" + threadID + ".json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Object> posts = (List<Object>) entries.get("posts");
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName("4chan.org" + " - " + categoryName + " - " + threadID);
+        fp.setName("4chan.org" + " - " + boardLongTitle + " - " + threadID);
         for (final Object postO : posts) {
             entries = (Map<String, Object>) postO;
             final Object md5_base64O = entries.get("md5");
@@ -253,7 +290,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             final long tim = ((Number) entries.get("tim")).longValue();
             final long fsize = ((Number) entries.get("fsize")).longValue();
             /* https://github.com/4chan/4chan-API/blob/master/pages/User_images_and_static_content.md */
-            final DownloadLink dl = this.createDownloadlink("https://i.4cdn.org/" + categoryName + "/" + tim + ".webm");
+            final DownloadLink dl = this.createDownloadlink("https://i.4cdn.org/" + boardShortTitle + "/" + tim + ext);
             if (preferServerFilenames) {
                 dl.setForcedFileName(tim + ext);
             } else {
