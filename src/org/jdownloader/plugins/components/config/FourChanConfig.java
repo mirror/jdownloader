@@ -2,7 +2,9 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -17,4 +19,13 @@ public interface FourChanConfig extends PluginConfigInterface {
     boolean isPreferServerFilenamesOverPluginDefaultFilenames();
 
     void setPreferServerFilenamesOverPluginDefaultFilenames(boolean b);
+
+    @AboutConfig
+    @DefaultIntValue(1)
+    @DescriptionForConfigEntry("How many pages should be crawled when adding a category containing threads? Every page contains 15 items.")
+    @SpinnerValidator(min = 1, max = 20, step = 1)
+    @Order(40)
+    int getCategoryCrawlerPageLimit();
+
+    void setCategoryCrawlerPageLimit(int pageLimit);
 }
