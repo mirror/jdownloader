@@ -44,6 +44,7 @@ import jd.http.Browser;
 import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,7 +65,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private static final String                  TYPE_GALLERY                      = ".+/(?:p|tv)/([A-Za-z0-9_-]+)/?";
     private static final String                  TYPE_STORY                        = "https?://[^/]+/stories/([^/]+).*";
-    private static final String                  TYPE_SAVED_OBJECTS                = "https?://[^/]+/[^/]+/saved/?$";
+    private static final String                  TYPE_SAVED_OBJECTS                = "https?://[^/]+/([^/]+)/saved/?$";
     private static final String                  TYPE_TAGS                         = "https?://[^/]+/explore/tags/([^/]+)/?$";
     private String                               username_url                      = null;
     /** For links matching pattern {@link #TYPE_TAGS} --> This will be set on created DownloadLink objects as a (packagizer-) property. */
@@ -218,7 +219,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         return entries != null ? (String) entries.get("username") : null;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.clearAll();
         br.setFollowRedirects(true);
@@ -270,12 +271,21 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else if (this.requiresLogin(this.parameter) && !logged_in) {
             /* Saved users own objects can only be crawled when he's logged in ;) */
             logger.info("Account required to crawl your own saved items");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         InstaGramCom.prepBRWebsite(this.br);
         br.addAllowedResponseCodes(new int[] { 502 });
         if (parameter.matches(TYPE_SAVED_OBJECTS)) {
-            this.crawlUserSavedObjects(param);
+            if (!logged_in) {
+                throw new AccountRequiredException();
+            }
+            /* 2020-11-19: Prefer API as pagination is broken in website method. */
+            final boolean preferAPI = true;
+            if (preferAPI) {
+                this.crawlUserSavedObjectsAltAPI(param);
+            } else {
+                this.crawlUserSavedObjects(param);
+            }
         } else if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
             crawlGallery(param, logged_in);
@@ -457,8 +467,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final String json = websiteGetJson();
         Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         final String rhxGis = getVarRhxGis(this.br);
-        username_url = new Regex(parameter, "instagram\\.com/([^/]+)").getMatch(0);
-        fp.setName("saved_" + username_url);
+        this.username_url = new Regex(parameter, TYPE_SAVED_OBJECTS).getMatch(0);
+        fp.setName("saved - " + this.username_url);
         final String id_owner = br.getRegex("profilePage_(\\d+)").getMatch(0);
         // final String graphql = br.getRegex("window\\._sharedData = (\\{.*?);</script>").getMatch(0);
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/ProfilePage/{0}/graphql");
@@ -939,6 +949,67 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     /*************************************************
      * Methods using alternative API below. All of these require the user to be logged in!
      ***************************************************/
+    /** Crawls all saved data of currently logged-in account. */
+    private void crawlUserSavedObjectsAltAPI(final CryptedLink param) throws UnsupportedEncodingException, Exception {
+        this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
+        this.username_url = new Regex(parameter, TYPE_SAVED_OBJECTS).getMatch(0);
+        if (this.username_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        fp.setName("saved - " + this.username_url);
+        InstaGramCom.prepBRAltAPI(this.br);
+        Map<String, Object> entries;
+        String nextid = null;
+        int page = 0;
+        int numberofCrawledItems = 0;
+        final String savedItemsFeedBaseURL = InstaGramCom.ALT_API_BASE + "/feed/saved/18143233873100885";
+        do {
+            logger.info("Crawling page: " + page);
+            if (page == 0) {
+                /*
+                 * TODO: Why does this return 84 items on the first request and then only 9? Check if there is a way to allow this to return
+                 * more items!
+                 */
+                InstaGramCom.getPageAltAPI(this.br, savedItemsFeedBaseURL);
+            } else {
+                // br.getPage(hashtagBaseURL + "?after=" + nextid);
+                InstaGramCom.getPageAltAPI(this.br, savedItemsFeedBaseURL + "?max_id=" + nextid);
+            }
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
+            if (numberofitemsOnThisPage == 0) {
+                /* Rare case */
+                logger.info("Stopping, 0 items available ...");
+                return;
+            }
+            logger.info("Crawling items: " + numberofitemsOnThisPage);
+            nextid = (String) entries.get("next_max_id");
+            final boolean more_available = ((Boolean) entries.get("more_available"));
+            ArrayList<Object> mediaItems = (ArrayList<Object>) entries.get("items");
+            if (mediaItems == null || mediaItems.size() == 0) {
+                logger.info("Found no new links on page " + page + " --> Stopping decryption");
+                break;
+            }
+            for (final Object mediaItemO : mediaItems) {
+                final Map<String, Object> mediaItem = (Map<String, Object>) mediaItemO;
+                crawlAlbumAltAPI((Map<String, Object>) mediaItem.get("media"));
+            }
+            numberofCrawledItems += numberofitemsOnThisPage;
+            logger.info("Total number of items crawled: " + numberofCrawledItems + " of ??");
+            if (!more_available) {
+                logger.info("Stopping because more_available == false");
+                break;
+            } else if (StringUtils.isEmpty(nextid)) {
+                logger.info("Stopping because no nextid available");
+                break;
+            }
+            page++;
+        } while (!this.isAbort());
+        if (decryptedLinks.size() == 0) {
+            logger.warning("WTF");
+        }
+    }
+
     private void crawlHashtagAltAPI(final CryptedLink param) throws UnsupportedEncodingException, Exception {
         this.hashtag = new Regex(param.getCryptedUrl(), TYPE_TAGS).getMatch(0);
         if (this.hashtag == null) {
@@ -953,7 +1024,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "No items available for this tag", "No items available for this tag"));
             return;
         }
-        /* TODO: fix nextid handling */
         String nextid = null;
         int page = 0;
         int numberofCrawledItemsTotal = 0;
@@ -964,8 +1034,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             logger.info("Crawling page: " + page);
             if (page == 0) {
                 /*
-                 * TODO: Why does this return 84 items on the first request and then only 9? Check if there is a way to allow this to return
-                 * more items!
+                 * Returns a lot of items on first access and then a lot less e.g. 84 on first request, then 8-9 on each subsequent request.
                  */
                 InstaGramCom.getPageAltAPI(this.br, hashtagBaseURL);
             } else {
