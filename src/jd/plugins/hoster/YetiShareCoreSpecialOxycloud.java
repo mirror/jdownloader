@@ -243,7 +243,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
     public boolean isLoggedinSpecial() {
         boolean loggedIN = super.isLoggedin();
         if (!loggedIN) {
-            /* Case 1: When in account overview | Case 2: Everywhere slese */
+            /* Case 1: When in account overview | Case 2: Everywhere else */
             loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account\"");
         }
         return loggedIN;

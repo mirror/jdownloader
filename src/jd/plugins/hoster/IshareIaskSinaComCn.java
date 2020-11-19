@@ -86,10 +86,9 @@ public class IshareIaskSinaComCn extends PluginForHost {
             filename = br.getRegex("<h2 title=\"([^<>\"]+)\">").getMatch(0);
         }
         String filesize = br.getRegex("class=\"f10\">0分<br>(.*?)</span></td>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(filename.trim());
         }
-        link.setName(filename.trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -97,21 +96,24 @@ public class IshareIaskSinaComCn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (br.containsHTML("<a class=\"btn-download btn-m-not\"><i class=\"icon-iShare\"></i>下载</a>")) {
+                throw new AccountRequiredException();
+            } else if (true) {
+                /* 2020-11-19: Account required for all files?! */
                 throw new AccountRequiredException();
             }
             br.setFollowRedirects(false);
             this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://ishare.iask.sina.com.cn/f/download/" + new Regex(downloadLink.getDownloadURL(), "/(\\d+)\\.html").getMatch(0));
+            br.getPage("http://ishare.iask.sina.com.cn/f/download/" + new Regex(link.getDownloadURL(), "/(\\d+)\\.html").getMatch(0));
             final String code = PluginJSonUtils.getJsonValue(this.br, "code");
             if ("102".equals(code)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -121,12 +123,12 @@ public class IshareIaskSinaComCn extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
