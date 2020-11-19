@@ -212,7 +212,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         brc.setRequest(null);
         InstaGramCom.prepBRAltAPI(brc);
-        brc.getPage(InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
+        InstaGramCom.getPageAltAPI(brc, InstaGramCom.ALT_API_BASE + "/users/" + userID + "/info/");
         Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
         return entries != null ? (String) entries.get("username") : null;
@@ -278,36 +278,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             this.crawlUserSavedObjects(param);
         } else if (parameter.matches(TYPE_GALLERY)) {
             /* Crawl single images & galleries */
-            getPage(param, br, parameter, null, null);
-            InstaGramCom.checkErrors(this.br);
-            final String json = websiteGetJson();
-            // if (json == null) {
-            // /* E.g. if you add invalid URLs such as: instagram.com/developer */
-            // logger.info("Failed to find any downloadable content");
-            // decryptedLinks.add(this.createOfflinelink(parameter));
-            // return decryptedLinks;
-            // }
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            ArrayList<Object> resource_data_list;
-            if (logged_in) {
-                String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
-                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
-                resource_data_list = new ArrayList<Object>();
-                resource_data_list.add(JavaScriptEngineFactory.walkJson(entries, "/"));
-            } else {
-                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
-            }
-            for (final Object galleryo : resource_data_list) {
-                entries = (Map<String, Object>) galleryo;
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
-                /** TODO: Check if cached- handling is useful here as well (see crawlHashtag) */
-                final String usernameTmp = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
-                this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
-                if (usernameTmp != null) {
-                    fp.setName(usernameTmp);
-                }
-                crawlAlbum(entries);
-            }
+            crawlGallery(param, logged_in);
         } else if (parameter.matches(TYPE_TAGS)) {
             if (logged_in) {
                 this.crawlHashtagAltAPI(param);
@@ -348,6 +319,39 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     private String getVarRhxGis(final Browser br) {
         return br.getRegex("\"rhx_gis\"\\s*:\\s*\"([a-f0-9]{32})\"").getMatch(0);
+    }
+
+    private void crawlGallery(final CryptedLink param, final boolean logged_in) throws Exception {
+        getPage(param, br, parameter, null, null);
+        InstaGramCom.checkErrors(this.br);
+        final String json = websiteGetJson();
+        // if (json == null) {
+        // /* E.g. if you add invalid URLs such as: instagram.com/developer */
+        // logger.info("Failed to find any downloadable content");
+        // decryptedLinks.add(this.createOfflinelink(parameter));
+        // return decryptedLinks;
+        // }
+        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        ArrayList<Object> resource_data_list;
+        if (logged_in) {
+            String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
+            resource_data_list = new ArrayList<Object>();
+            resource_data_list.add(JavaScriptEngineFactory.walkJson(entries, "/"));
+        } else {
+            resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
+        }
+        for (final Object galleryo : resource_data_list) {
+            entries = (Map<String, Object>) galleryo;
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
+            /** TODO: Check if cached- handling is useful here as well (see crawlHashtag) */
+            final String usernameTmp = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
+            this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
+            if (usernameTmp != null) {
+                fp.setName(usernameTmp);
+            }
+            crawlAlbum(entries);
+        }
     }
 
     /** Alternatively possible via: /api/v1/feed/user/{userID} */
@@ -642,7 +646,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br.getPage(url);
         getPage(param, br, url, null, null);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        /* TODO: Use crawlGallery to crawl these json items */
         final ArrayList<Object> ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/reels_media/{0}/items");
         ArrayList<Object> qualities;
         final FilePackage fp = FilePackage.getInstance();
@@ -943,7 +946,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         fp.setName("hashtag - " + this.hashtag);
         InstaGramCom.prepBRAltAPI(this.br);
-        br.getPage(InstaGramCom.ALT_API_BASE + "/tags/" + this.hashtag + "/info/");
+        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/tags/" + this.hashtag + "/info/");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final long totalNumberofItems = JavaScriptEngineFactory.toLong(entries.get("media_count"), 0);
         if (totalNumberofItems == 0) {
@@ -964,10 +967,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                  * TODO: Why does this return 84 items on the first request and then only 9? Check if there is a way to allow this to return
                  * more items!
                  */
-                br.getPage(hashtagBaseURL);
+                InstaGramCom.getPageAltAPI(this.br, hashtagBaseURL);
             } else {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
-                br.getPage(hashtagBaseURL + "?max_id=" + nextid);
+                InstaGramCom.getPageAltAPI(this.br, hashtagBaseURL + "?max_id=" + nextid);
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
@@ -1019,7 +1022,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         fp.setName("story - " + this.username_url);
         InstaGramCom.prepBRAltAPI(this.br);
-        br.getPage(InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
+        InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("items");
         if (resource_data_list == null || resource_data_list.size() == 0) {

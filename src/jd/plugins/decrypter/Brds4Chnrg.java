@@ -80,6 +80,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Deprecated
     private ArrayList<DownloadLink> crawlCategoryThreadsWebsite(final CryptedLink param) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
@@ -94,6 +95,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Deprecated
     private ArrayList<DownloadLink> crawlSingleThreadWebsite(final CryptedLink param) throws IOException, PluginException {
         final String categoryName = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(0);
         final String threadID = new Regex(param.getCryptedUrl(), TYPE_THREAD).getMatch(1);
