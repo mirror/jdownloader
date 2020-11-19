@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.components.config.XFSConfigVideoUpstreamTo;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoUpstreamTo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstreamTo extends XFileSharingProBasic {
@@ -109,6 +109,11 @@ public class UpstreamTo extends XFileSharingProBasic {
     protected boolean isVideohosterEmbed() {
         /* 2020-01-22: Special */
         return true;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        return false;
     }
 
     @Override

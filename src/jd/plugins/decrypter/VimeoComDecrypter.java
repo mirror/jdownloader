@@ -50,12 +50,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -72,7 +70,8 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
-    private final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.(source|hd|sd)\\.(mp4|mov).+";
+    private final String type_player_private_external_direct = "https?://player\\.vimeo.com/external/\\d+\\.(source|hd|sd)\\.(mp4|mov|wmv|avi|flv).+";
+    private final String type_player_private_play_direct     = "https?://player\\.vimeo.com/play/\\d+.+";
     private final String type_player_private_external_m3u8   = "https?://player\\.vimeo.com/external/\\d+\\..*?\\.m3u8.+";
     private final String type_player_private_external        = "https?://player\\.vimeo.com/external/\\d+((\\&|\\?|#)forced_referer=[A-Za-z0-9=]+)?";
     /*
@@ -84,6 +83,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
     public static List<String[]> getPluginDomains() {
@@ -130,9 +134,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* Embedded content URLs */
             pattern.append("|");
             /* VimeoComDecrypter.type_player_private_external_direct */
-            pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/external/\\d+\\.(source|hd|sd)\\.(mp4|mov).+");
+            pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/external/\\d+\\.(source|hd|sd)\\.(mp4|mov|wmv|avi|flv).+");
             pattern.append("|");
-            /* embedded m3u8 */
+            /* VimeoComDecrypter.type_player_private_play_direct */
+            pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/play/\\d+.+");
+            pattern.append("|");
             /* VimeoComDecrypter.type_player_private_external_m3u8 */
             pattern.append("https?://player\\." + buildHostsPatternPart(domains) + "/external/\\d+\\.[^/\\?]+?\\.m3u8.+");
             pattern.append("|");
@@ -226,19 +232,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
     }
 
-    public DownloadLink fromExternalLink(String url) throws Exception {
-        if (url.matches(type_player_private_external_m3u8) || url.matches(type_player_private_external_direct)) {
+    public DownloadLink createExternalOrPlayLink(String url) throws Exception {
+        if (url.matches(type_player_private_external_m3u8) || url.matches(type_player_private_play_direct) || url.matches(type_player_private_external_direct)) {
             final String vimeo_forced_referer = getForcedRefererFromURLParam(url);
-            if (url.matches(type_player_private_external_direct)) {
+            if ((url.matches(type_player_private_external_direct) || url.matches(type_player_private_play_direct)) && !url.matches("^.*(\\?|&)download=1.*")) {
                 // download parameter results in content-disposition header with filename
                 url = url.replaceAll("download=\\d+", "download=1");
-                if (!StringUtils.containsIgnoreCase(url, "download=")) {
+                if (!url.matches("^.*(\\?|&)download=1.*")) {
                     url = URLHelper.parseLocation(new URL(url), "&download=1");
                 }
             }
             final DownloadLink link = createDownloadlink(url.replaceAll("https?://", "decryptedforVimeoHosterPlugin://"));
             link.setProperty("directURL", url);
-            link.setProperty(VimeoCom.VIMEOURLTYPE, VIMEO_URL_TYPE.EXTERNAL);
+            if (url.matches(type_player_private_play_direct)) {
+                link.setProperty(VimeoCom.VIMEOURLTYPE, VIMEO_URL_TYPE.PLAY);
+            } else {
+                link.setProperty(VimeoCom.VIMEOURLTYPE, VIMEO_URL_TYPE.EXTERNAL);
+            }
             // TODO: parse profile_id parameter and fill properties like resolution,quality....
             // profile_id=107 ?
             // profile_id=113 ?
@@ -255,7 +265,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             if (vimeo_forced_referer != null) {
                 link.setProperty("vimeo_forced_referer", vimeo_forced_referer);
             }
-            final String fileName = Plugin.getFileNameFromURL(new URL(url));
+            String fileName = Plugin.getFileNameFromURL(new URL(url));
             if (url.matches(type_player_private_external_direct)) {
                 final String details[] = new Regex(fileName, "(\\d+)\\.(.*?)\\.(.+)").getRow(0);
                 if (details != null && details.length == 3) {
@@ -270,10 +280,40 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             } else {
                 link.setProperty("videoTitle", fileName);
             }
-            link.setFinalFileName(fileName);
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 link.setAvailable(true);
             }
+            if (url.matches(type_player_private_external_direct) || url.matches(type_player_private_play_direct)) {
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setAllowedResponseCodes(410);
+                    brc.setFollowRedirects(false);
+                    brc.getPage(url);
+                    if (brc.getHttpConnection().getResponseCode() == 410) {
+                        // expired link
+                        link.setAvailable(false);
+                    }
+                    if (brc.getRedirectLocation() != null) {
+                        fileName = UrlQuery.parse(brc.getRedirectLocation()).getDecoded("filename");
+                        if (fileName != null) {
+                            final String videoTitle = fileName.replaceFirst("(\\.(mp4|mov|wmv|avi|flv))", "");
+                            final String extension = fileName.replaceFirst("(.+?)\\.([a-z0-9]{3})$", "$2");
+                            if (StringUtils.isNotEmpty(videoTitle)) {
+                                link.setProperty("videoTitle", videoTitle);
+                            }
+                            if (StringUtils.isNotEmpty(extension)) {
+                                link.setProperty("videoExt", "." + extension);
+                            }
+                        }
+                    } else {
+                        // fast crawling can end up in "This video does not exist" but still may be online
+                        throw new IOException();
+                    }
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            }
+            link.setFinalFileName(getFormattedFilename(link));
             return link;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + url);
@@ -291,10 +331,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final String orgParameter = parameter;
         if (parameter.matches(type_player_private_external_m3u8)) {
             parameter = parameter.replaceFirst("(p=.*?)($|&)", "");
-            decryptedLinks.add(fromExternalLink(parameter));
+            decryptedLinks.add(createExternalOrPlayLink(parameter));
             return decryptedLinks;
-        } else if (parameter.matches(type_player_private_external_direct)) {
-            decryptedLinks.add(fromExternalLink(parameter));
+        } else if (parameter.matches(type_player_private_external_direct) || parameter.matches(type_player_private_play_direct)) {
+            decryptedLinks.add(createExternalOrPlayLink(parameter));
             return decryptedLinks;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
@@ -816,9 +856,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     public static String getVideoidFromURL(final String url) {
-        String ret = new Regex(url, "https?://[^/]+/(?:video|external/)?(\\d+)").getMatch(0);
+        String ret = new Regex(url, "https?://[^/]+/play/[^/]*s=(\\d+)").getMatch(0);
         if (ret == null) {
-            ret = new Regex(url, "/(\\d+)").getMatch(0);
+            ret = new Regex(url, "https?://[^/]+/(?:video|external|play/)?(\\d+)").getMatch(0);
+            if (ret == null) {
+                ret = new Regex(url, "/(\\d+)").getMatch(0);
+            }
         }
         return ret;
     }
@@ -985,28 +1028,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     private Browser prepBrowser(final Browser ibr) throws PluginException {
-        pluginLoaded();
-        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).prepBrGeneral(this, null, ibr);
+        return jd.plugins.hoster.VimeoCom.prepBrGeneral(this, null, ibr);
     }
-
-    private PluginForHost vimeo_hostPlugin = null;
 
     private String getXsrft(final Browser br) throws PluginException {
         return jd.plugins.hoster.VimeoCom.getXsrft(br);
     }
 
     private String getFormattedFilename(DownloadLink link) throws Exception {
-        pluginLoaded();
-        return ((jd.plugins.hoster.VimeoCom) vimeo_hostPlugin).getFormattedFilename(link);
-    }
-
-    private void pluginLoaded() throws PluginException {
-        if (vimeo_hostPlugin == null) {
-            vimeo_hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
-            if (vimeo_hostPlugin == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        return jd.plugins.hoster.VimeoCom.getFormattedFilename(link);
     }
 
     private String handlePW(final CryptedLink param, final Browser br) throws Exception {

@@ -20,7 +20,6 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -125,7 +124,7 @@ public class VimeoCom extends PluginForHost {
         }
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.setAllowedResponseCodes(new int[] { 418, 451, 406 });
+        prepBr.setAllowedResponseCodes(new int[] { 418, 410, 451, 406 });
         prepBr.setCookiesExclusive(true);
         prepBr.clearCookies(plugin.getHost());
         prepBr.setCookie(plugin.getHost(), "language", "en");
@@ -146,25 +145,28 @@ public class VimeoCom extends PluginForHost {
         final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
         final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
         br.setFollowRedirects(true);
+        final VIMEO_URL_TYPE type = getVimeoUrlType(link);
         URLConnectionAdapter con = null;
         finalURL = link.getStringProperty("directURL", null);
         if (finalURL != null) {
             try {
                 final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
                 brc.getHeaders().put("Accept-Encoding", "identity");
                 /* Some videos are hosted on Amazon S3, don't use head requests for this reason */
                 con = brc.openGetConnection(finalURL);
-                if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "vnd.apple.mpegurl") && isHLS) {
+                final int responseCode = con.getResponseCode();
+                final String contentType = con.getContentType();
+                if (responseCode == 200 && StringUtils.containsIgnoreCase(contentType, "vnd.apple.mpegurl") && isHLS) {
                     link.setFinalFileName(getFormattedFilename(link));
                     return AvailableStatus.TRUE;
-                } else if (con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "vtt") && isSubtitle) {
+                } else if (responseCode == 200 && StringUtils.containsIgnoreCase(contentType, "vtt") && isSubtitle) {
                     if (con.getLongContentLength() > 0) {
                         link.setVerifiedFileSize(con.getLongContentLength());
                     }
                     link.setFinalFileName(getFormattedFilename(link));
                     return AvailableStatus.TRUE;
-                    // } else if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "mp4") && isDownload) {
-                } else if (con.getResponseCode() == 200 && new Regex(con.getContentType(), "^.*(mp4|mov|quicktime).*$").matches()) {
+                } else if (responseCode == 200 && new Regex(contentType, "^.*(mp4|mov|quicktime).*$").matches()) {
                     if (con.getLongContentLength() > 0) {
                         link.setVerifiedFileSize(con.getLongContentLength());
                     }
@@ -173,9 +175,15 @@ public class VimeoCom extends PluginForHost {
                         if (fileName == null) {
                             fileName = UrlQuery.parse(con.getURL().getQuery()).getDecoded("filename");
                         }
-                        if (fileName != null) {
-                            fileName = fileName.replaceFirst("(\\.(mp4|mov))", "");
-                            link.setProperty("videoTitle", fileName);
+                        if (StringUtils.isNotEmpty(fileName)) {
+                            final String videoTitle = fileName.replaceFirst("(\\.(mp4|mov|wmv|avi|flv))", "");
+                            final String extension = fileName.replaceFirst("(.+?)\\.([a-z0-9]{3})$", "$2");
+                            if (StringUtils.isNotEmpty(videoTitle)) {
+                                link.setProperty("videoTitle", videoTitle);
+                            }
+                            if (StringUtils.isNotEmpty(extension)) {
+                                link.setProperty("videoExt", "." + extension);
+                            }
                         }
                     }
                     link.setFinalFileName(getFormattedFilename(link));
@@ -186,12 +194,17 @@ public class VimeoCom extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
+                    if (VIMEO_URL_TYPE.PLAY.equals(type) && responseCode == 410) {
+                        // expired
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (StringUtils.containsIgnoreCase(contentType, "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
+                        // defrosting, fetching from cold storage
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
+                    } else {
+                        /* directURL no longer valid */
+                        finalURL = null;
+                        link.setProperty("directURL", Property.NULL);
                     }
-                    /* directURL no longer valid */
-                    finalURL = null;
-                    link.setProperty("directURL", Property.NULL);
                 }
             } catch (final IOException e) {
                 link.setProperty("directURL", Property.NULL);
@@ -207,9 +220,12 @@ public class VimeoCom extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final VIMEO_URL_TYPE type = getVimeoUrlType(link);
-        if (VIMEO_URL_TYPE.EXTERNAL.equals(type)) {
+        switch (type) {
+        case PLAY:
+        case EXTERNAL:
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        default:
+            break;
         }
         br = prepBrGeneral(this, link, new Browser());
         br.setFollowRedirects(true);
@@ -244,12 +260,13 @@ public class VimeoCom extends PluginForHost {
             String videoTitle = null;
             try {
                 final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
                 if (entries != null) {
                     videoTitle = (String) entries.get("title");
                 }
             } catch (final Throwable e) {
+                logger.log(e);
             }
             // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
             final boolean isStream = !isHLS && !isDownload && !isSubtitle;
@@ -308,6 +325,7 @@ public class VimeoCom extends PluginForHost {
                             logger.log(e);
                         }
                         if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
+                            // defrosting, fetching from cold storage
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
                         } else if (con.getResponseCode() == 500) {
                             /* 2020-07-06: E.g. "Original" version of video is officially available but download is broken serverside. */
@@ -347,7 +365,8 @@ public class VimeoCom extends PluginForHost {
     }
 
     public static enum VIMEO_URL_TYPE {
-        EXTERNAL,
+        PLAY, // https://player.vimeo.com/play/, links do expire!
+        EXTERNAL, // https://player.vimeo.com/external/
         SHOWCASE,
         RAW,
         PLAYER,
@@ -365,6 +384,8 @@ public class VimeoCom extends PluginForHost {
                 final String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url);
                 if (unlistedHash != null) {
                     return VIMEO_URL_TYPE.UNLISTED;
+                } else if (url.matches("^https?://player\\.vimeo.com/play/.+")) {
+                    return VIMEO_URL_TYPE.PLAY;
                 } else if (url.matches("^https?://player\\.vimeo.com/external/.+")) {
                     return VIMEO_URL_TYPE.EXTERNAL;
                 } else if (url.matches("^https?://player\\.vimeo.com/.+")) {
@@ -506,13 +527,15 @@ public class VimeoCom extends PluginForHost {
         if (finalURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
+            final String forced_referer = getForcedReferer(downloadLink);
+            if (forced_referer != null) {
+                br.setCurrentURL(forced_referer);
+            }
             final VIMEO_URL_TYPE type = getVimeoUrlType(downloadLink);
             switch (type) {
             case EXTERNAL:
-                final String forced_referer = getForcedReferer(downloadLink);
-                if (forced_referer != null) {
-                    br.getPage(forced_referer);
-                }
+            case PLAY:
+                // nothing
                 break;
             default:
                 br.getPage(downloadLink.getDownloadURL());
@@ -527,7 +550,15 @@ public class VimeoCom extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (VIMEO_URL_TYPE.PLAY.equals(type) && br.getHttpConnection().getResponseCode() == 410) {
+                        // expired
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(br.getURL().toString(), "cold_request=1")) {
+                        // defrosting, fetching from cold storage
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             } else {
                 // hls
@@ -672,6 +703,11 @@ public class VimeoCom extends PluginForHost {
         return StringUtils.equals(isLocked, "true");
     }
 
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
+    }
+
     /** Handles password protected URLs - usually correct password will already be given via decrypter handling! */
     private void handlePW(final DownloadLink link, final Browser br) throws Exception {
         if (isPasswordProtectedReview(br)) {
@@ -778,7 +814,7 @@ public class VimeoCom extends PluginForHost {
             if (!download_might_be_possible) {
                 try {
                     final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
-                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
+                    final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                     /* Empty Array = download possible, null = download NOT possible! */
                     final Object download_might_be_possibleO = entries.get("download_config");
                     plugin.getLogger().info("download_config:" + download_might_be_possibleO);
@@ -904,7 +940,7 @@ public class VimeoCom extends PluginForHost {
             request.getHeaders().put("Pragma", "no-cache");
             request.getHeaders().put("Connection", "closed");
             final String json = brc.getPage(request);
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             if (entries != null) {
                 final ArrayList<Object> official_downloads_all = new ArrayList<Object>();
                 final ArrayList<Object> official_downloads_streams = (ArrayList<Object>) entries.get("files");
@@ -971,7 +1007,7 @@ public class VimeoCom extends PluginForHost {
             // atm they only have one object in array [] and then wrapped in {}
             for (final Object obj : progressive) {
                 // todo some code to map...
-                final LinkedHashMap<String, Object> abc = (LinkedHashMap<String, Object>) obj;
+                final Map<String, Object> abc = (Map<String, Object>) obj;
                 final VimeoContainer vvc = new VimeoContainer();
                 vvc.setDownloadurl((String) abc.get("url"));
                 vvc.setExtension();
@@ -1064,7 +1100,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public String getFormattedFilename(final DownloadLink downloadLink) throws Exception {
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws Exception {
         final VimeoContainer vvc = getVimeoVideoContainer(downloadLink, true);
         String videoTitle = downloadLink.getStringProperty("videoTitle", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
