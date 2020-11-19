@@ -6,10 +6,12 @@ public class DecrypterRetryException extends Exception {
     public static enum RetryReason {
         CAPTCHA(_JDT.T.decrypter_wrongcaptcha()),
         NO_ACCOUNT(_JDT.T.decrypter_invalidaccount()),
+        FILE_NOT_FOUND(_JDT.T.decrypter_contentoffline()),
         PLUGIN_DEFECT(_JDT.T.decrypter_plugindefect()),
         PLUGIN_SETTINGS(_JDT.T.decrypter_pluginsettings()),
         PASSWORD(_JDT.T.decrypter_wrongpassword()),
         HOST(_JDT.T.plugins_errors_hosterproblem());
+
         private final String exp;
 
         private RetryReason(String exp) {

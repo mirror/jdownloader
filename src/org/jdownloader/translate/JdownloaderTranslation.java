@@ -98,6 +98,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No valid account found" })
     String decrypter_invalidaccount();
 
+    @Default(lngs = { "en" }, values = { "Content offline" })
+    String decrypter_contentoffline();
+
     @Default(lngs = { "en" }, values = { "Please enter the password for\r\n%s1" })
     String jd_plugins_PluginUtils_askPassword(Object s1);
 

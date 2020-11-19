@@ -67,6 +67,7 @@ public class InstaGramCom extends PluginForHost {
     public static Browser prepBRAltAPI(final Browser br) {
         /* 2020-11-17: Also possible: Instagram 123.1.0.26.115 (iPhone12,1; iOS 13_3; en_US; en-US */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)");
+        br.setAllowedResponseCodes(new int[] { 429 });
         return br;
     }
 
@@ -80,10 +81,6 @@ public class InstaGramCom extends PluginForHost {
 
     /**
      * https://instagram.api-docs.io/1.0 </br>
-     * TODO: Add rate-limit errorhandling for such requests: {"message": "feedback_required", "spam": true, "feedback_title": "Versuche es
-     * sp\u00e4ter noch einmal", "feedback_message": "Wir schr\u00e4nken die H\u00e4ufigkeit mancher Handlungen ...", "feedback_url":
-     * "repute/report_problem/scraping/", "feedback_appeal_label": "Gib uns Feedback", "feedback_ignore_label": "OK", "feedback_action":
-     * "report_problem", "status": "fail"}
      */
     public static String         ALT_API_BASE                                = "https://i.instagram.com/api/v1";
     /* Connection stuff */
@@ -258,7 +255,7 @@ public class InstaGramCom extends PluginForHost {
         }
         final Browser brc = br.cloneBrowser();
         prepBRAltAPI(brc);
-        brc.getPage(ALT_API_BASE + "/media/" + imageid + "/info/");
+        getPageAltAPI(brc, ALT_API_BASE + "/media/" + imageid + "/info/");
         /* Offline errorhandling */
         if (brc.getHttpConnection().getResponseCode() != 200) {
             /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
@@ -274,6 +271,17 @@ public class InstaGramCom extends PluginForHost {
         link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
         link.setProperty("directurl", downloadurl);
         return downloadurl;
+    }
+
+    public static void getPageAltAPI(final Browser br, final String url) throws PluginException, IOException {
+        br.getPage(url);
+        checkErrorsAltAPI(br);
+    }
+
+    public static void checkErrorsAltAPI(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached");
+        }
     }
 
     public static String getBestQualityURLAltAPI(final Map<String, Object> entries) {
