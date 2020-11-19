@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -51,6 +52,19 @@ public class DatPiffCom extends PluginForHost {
     public DatPiffCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.datpiff.com/register");
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        String mixtape_id = null;
+        try {
+            mixtape_id = UrlQuery.parse(link.getPluginPatternMatcher()).get("id");
+        } catch (final Throwable e) {
+        }
+        if (mixtape_id != null) {
+            /* E.g. correct "pop-mixtape-download.php?id=" style of URLs. */
+            link.setPluginPatternMatcher("https://www." + this.getHost() + "/mixtapes-detail.php?id=mixtape_id");
+        }
     }
 
     @SuppressWarnings("deprecation")

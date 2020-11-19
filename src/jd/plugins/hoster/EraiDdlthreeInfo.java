@@ -138,6 +138,12 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
     }
 
     @Override
+    public boolean isLoggedinSpecial() {
+        final boolean loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account/edit\"");
+        return loggedIN;
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, null, true);
         /* 2020-11-12: Downloads without account are not possible anymore */

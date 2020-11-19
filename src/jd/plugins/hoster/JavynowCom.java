@@ -64,18 +64,20 @@ public class JavynowCom extends PluginForHost {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
-        /* Important - do NOT allow redirects here! */
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("id=\"deleted\"")) {
+            /* 2020-11-19: E.g. <div id="deleted">This video has been deleted.</div> */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getRedirectLocation().contains("/cushion/")) {
-            br.getPage(br.getRedirectLocation());
-            // <a href="https://javynow.com/video/20805072/">
-            br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
-        }
-        final String url_filename = new Regex(link.getDownloadURL(), "video(?:id=|/)([A-Za-z0-9]+)").getMatch(0).replace("-", " ");
+        // if (br.getRedirectLocation().contains("/cushion/")) {
+        // br.getPage(br.getRedirectLocation());
+        // // <a href="https://javynow.com/video/20805072/">
+        // br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
+        // }
+        final String url_filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0).replace("-", " ");
         String filename = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
         if (StringUtils.isEmpty(filename) || "no title".equals(filename)) {
             filename = url_filename;
@@ -108,16 +110,16 @@ public class JavynowCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, dllink);
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
     }
 

@@ -13,11 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,11 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.(?:karelia|sampo)\\.ru/[a-z0-9]+/" })
 public class FileKareliaRuDecrypter extends PluginForDecrypt {
-
     public FileKareliaRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,7 +61,6 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
             if (singleLink == null || filename == null) {
                 continue;
             }
-
             final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
             filename = Encoding.htmlDecode(filename);
             dl.setFinalFileName(filename);
@@ -79,9 +76,8 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         /* Only add general zip url if we found nothing above or more than 1 item. */
-        if (decryptedLinks.size() != 1) {
+        if (decryptedLinks.size() > 1) {
             final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setFinalFileName(fid + ".zip");
             dl.setLinkID(fid);
@@ -91,10 +87,11 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
             }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
+            /* Only set packagename if we got multiple items */
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fid);
+            fp.addLinks(decryptedLinks);
         }
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(fid);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
@@ -102,5 +99,4 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

@@ -125,14 +125,15 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        // final String expectedMaxNumberofItemsPerPage = br.getRegex("var perPage = (\\d+);").getMatch(0);
         final String folderID = br.getRegex("loadImages\\('folder', '(\\d+)'").getMatch(0);
         if (folderID == null) {
             /* Most likely we've been logged-out and/or account is required to view this folder! */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             throw new AccountRequiredException();
         }
-        /* TODO: Find folders with more than 1 page */
-        br.postPage("/account/ajax/load_files", "pageType=folder&nodeId=" + folderID + "&pageStart=1&perPage=0&filterOrderBy=&additionalParams%5BsearchTerm%5D=&additionalParams%5BfilterUploadedDateRange%5D=");
+        final String folderPostData = "pageType=folder&nodeId=" + folderID + "&perPage=0&filterOrderBy=&additionalParams%5BsearchTerm%5D=&additionalParams%5BfilterUploadedDateRange%5D=&pageStart=";
+        br.postPage("/account/ajax/load_files", folderPostData + "1");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String fpName = (String) entries.get("page_title");
         String htmlInsideJson = (String) entries.get("html");
@@ -162,75 +163,97 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         } else if (passCode != null) {
             /* Re-do request to access folder content */
-            br.postPage("/account/ajax/load_files", "pageType=folder&nodeId=" + folderID + "&pageStart=1&perPage=0&filterOrderBy=&additionalParams%5BsearchTerm%5D=&additionalParams%5BfilterUploadedDateRange%5D=");
+            br.postPage("/account/ajax/load_files", folderPostData + "1");
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             htmlInsideJson = (String) entries.get("html");
             br.getRequest().setHtmlCode(htmlInsideJson);
         }
-        final String[] fileHTMLSnippets = br.getRegex("<div[^>]*(dttitle.*?)</span></div>").getColumn(0);
-        if (fileHTMLSnippets.length > 0) {
-            /* Try to construct absolute path */
-            String subfolderPath = "";
-            final String[] subfolderParts = br.getRegex("class=\"btn btn-white mid-item\">([^<>\"]+)<").getColumn(0);
-            for (final String subfolderPart : subfolderParts) {
-                if (subfolderPath.length() > 0) {
-                    subfolderPath += "/";
+        int page = 1;
+        do {
+            logger.info("Crawling page: " + page);
+            final String[] fileHTMLSnippets = br.getRegex("<div[^>]*(dttitle.*?)</span></div>").getColumn(0);
+            if (fileHTMLSnippets.length > 0) {
+                /* Try to construct absolute path */
+                String subfolderPath = "";
+                final String[] subfolderParts = br.getRegex("class=\"btn btn-white mid-item\">([^<>\"]+)<").getColumn(0);
+                for (final String subfolderPart : subfolderParts) {
+                    if (subfolderPath.length() > 0) {
+                        subfolderPath += "/";
+                    }
+                    subfolderPath += subfolderPart;
                 }
-                subfolderPath += subfolderPart;
+                final FilePackage fp = FilePackage.getInstance();
+                if (!StringUtils.isEmpty(fpName)) {
+                    fp.setName(fpName);
+                } else {
+                    /* Fallback */
+                    fp.setName(currentFolderHash);
+                }
+                for (final String html : fileHTMLSnippets) {
+                    final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
+                    final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+                    final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                    final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
+                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
+                        /* Skip invalid items */
+                        continue;
+                    }
+                    final DownloadLink dl = createDownloadlink(url);
+                    if (!StringUtils.isEmpty(filename)) {
+                        dl.setName(filename);
+                    }
+                    if (!StringUtils.isEmpty(filesizeStr)) {
+                        dl.setDownloadSize(Long.parseLong(filesizeStr));
+                    }
+                    dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                    /* We know for sure that this file is online! */
+                    dl.setAvailable(true);
+                    if (subfolderPath.length() > 0) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
+                    }
+                    if (passCode != null) {
+                        dl.setDownloadPassword(passCode);
+                    }
+                    dl._setFilePackage(fp);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
             }
-            final FilePackage fp = FilePackage.getInstance();
-            if (!StringUtils.isEmpty(fpName)) {
-                fp.setName(fpName);
-            } else {
-                /* Fallback */
-                fp.setName(currentFolderHash);
-            }
-            for (final String html : fileHTMLSnippets) {
-                final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
-                final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
-                final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
-                final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
-                if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
-                    /* Skip invalid items */
+            /* Now crawl subfolders inside this folder */
+            final String[] folderHashes = br.getRegex("(/folder/[a-f0-9]{32})").getColumn(0);
+            for (String folderHash : folderHashes) {
+                if (folderHash.equalsIgnoreCase(currentFolderHash)) {
+                    /* Don't re-add the folder we're just crawling! */
                     continue;
                 }
-                final DownloadLink dl = createDownloadlink(url);
-                if (!StringUtils.isEmpty(filename)) {
-                    dl.setName(filename);
-                }
-                if (!StringUtils.isEmpty(filesizeStr)) {
-                    dl.setDownloadSize(Long.parseLong(filesizeStr));
-                }
-                dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
-                /* We know for sure that this file is online! */
-                dl.setAvailable(true);
-                if (subfolderPath.length() > 0) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);
-                }
-                if (passCode != null) {
-                    dl.setDownloadPassword(passCode);
-                }
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                final String folderURL = br.getURL(folderHash).toString();
+                final DownloadLink folder = this.createDownloadlink(folderURL);
+                /*
+                 * 2020-11-13: Not required. If a "root" folder is password-protected, all files within it are usually not password
+                 * protected (WTF) and/or can require another password which can be different. Also subfolders inside folders will usually
+                 * not require a password at all but users CAN set a (different) password on them.
+                 */
+                // folder.setDownloadPassword(passCode);
+                decryptedLinks.add(folder);
+                distribute(folder);
             }
-        }
-        /* Now crawl subfolders inside this folder */
-        final String[] folderHashes = br.getRegex("(/folder/[a-f0-9]{32})").getColumn(0);
-        for (String folderHash : folderHashes) {
-            if (folderHash.equalsIgnoreCase(currentFolderHash)) {
-                /* Don't re-add the folder we're just crawling! */
-                continue;
+            if (fileHTMLSnippets.length == 0 && folderHashes.length == 0) {
+                logger.info("Stopping because failed to find any items on current page");
+                break;
             }
-            final String folderURL = br.getURL(folderHash).toString();
-            final DownloadLink folder = this.createDownloadlink(folderURL);
-            /*
-             * 2020-11-13: Not required. If a "root" folder is password-protected, all files within it are usually not password protected
-             * (WTF) and/or can require another password which can be different. Also subfolders inside folders will usually not require a
-             * password at all but users CAN set a (different) password on them.
-             */
-            // folder.setDownloadPassword(passCode);
-            decryptedLinks.add(folder);
-        }
+            final String nextpageStr = br.getRegex("onClick=\"loadImages\\('folder', '\\d+', (\\d+),[^\\)]+\\); return false;\"><span>Next</span>").getMatch(0);
+            /* Only continue if found page matches expected page! */
+            if (nextpageStr != null && nextpageStr.matches(page + 1 + "")) {
+                page++;
+                br.postPage("/account/ajax/load_files", folderPostData + page);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                htmlInsideJson = (String) entries.get("html");
+                br.getRequest().setHtmlCode(htmlInsideJson);
+            } else {
+                logger.info("Failed to find nextpage -> Stopping");
+                break;
+            }
+        } while (!this.isAbort());
         if (decryptedLinks.size() == 0) {
             decryptedLinks.add(this.createOfflinelink(parameter, "empty_folder_" + currentFolderHash, "Empty folder?"));
             return decryptedLinks;
