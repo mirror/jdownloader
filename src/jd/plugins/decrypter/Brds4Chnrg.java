@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.FourChanConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/[0-9a-z]{1,}/(thread/[0-9]+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
@@ -53,6 +55,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(parameter + "thread/" + thread));
             }
         } else {
+            final FourChanConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|is\\d*?\\.4chan\\.org|images\\.4chan\\.org)";
             String[] images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 - Not Found")) {
@@ -99,7 +102,8 @@ public class Brds4Chnrg extends PluginForDecrypt {
                     if (filename == null) {
                         filename = new Regex(post, "target=\"_blank\">\\s*([^<>\"]+)\\s*</a>").getMatch(0);
                     }
-                    if (filename != null) {
+                    /* Set no name if user prefers server-filenames --> These will be auto-set on downloadstart */
+                    if (filename != null && !cfg.isPreferServerFilenamesOverPluginDefaultFilenames()) {
                         dl.setForcedFileName(Encoding.htmlDecode(filename).trim());
                     }
                     final String filesizeStr = new Regex(post, "\\((\\d+[^<>\"]+), \\d+x\\d+\\)").getMatch(0);
@@ -124,8 +128,12 @@ public class Brds4Chnrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Class<? extends FourChanConfig> getConfigInterface() {
+        return FourChanConfig.class;
     }
 }
