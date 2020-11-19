@@ -2,6 +2,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -20,11 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/[a-fA-F0-9]{13}\\.html", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/[a-fA-F0-9]{13}\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
     public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,11 +37,17 @@ public class SxyprnCom extends antiDDoSForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        if (link.getSetLinkID() == null) {
-            final String id = new Regex(link.getPluginPatternMatcher(), "/post/([a-fA-F0-9]{13})\\.html").getMatch(0);
-            link.setLinkID(getHost() + "://" + id);
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
         }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     private String  json         = null;
@@ -73,7 +79,7 @@ public class SxyprnCom extends antiDDoSForHost {
         if (link.getFinalFileName() == null) {
             link.setFinalFileName(title.trim() + ".mp4");
         }
-        String fid = new Regex(link.getLinkID(), "//([a-z0-9]+)").getMatch(0);
+        final String fid = this.getFID(link);
         authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
         String vnfo = PluginJSonUtils.getJsonValue(json, fid);
