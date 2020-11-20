@@ -22,7 +22,7 @@ public interface FourChanConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(1)
-    @DescriptionForConfigEntry("How many pages should be crawled when adding a category containing threads? Every page contains 15 items.")
+    @DescriptionForConfigEntry("How many pages should be crawled when adding a category containing threads?")
     @SpinnerValidator(min = 1, max = 20, step = 1)
     @Order(40)
     int getCategoryCrawlerPageLimit();
