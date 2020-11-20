@@ -67,7 +67,7 @@ public class GooglePremium extends PluginForHost {
         super(wrapper);
         /*
          * 2020-07-027: Disabled as it is not needed anymore (for now) and is only confusing users. Google login is still possible via
-         * hosts: youtube.com and docs.google.com
+         * hosts: youtube.com and drive.google.com
          */
         // this.enablePremium("https://accounts.google.com/signup");
     }
