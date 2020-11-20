@@ -20,20 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.GoogleConfig;
-import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -54,6 +40,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -392,7 +392,7 @@ public class GoogleDrive extends PluginForHost {
                 /* Uses a slightly different request than when not logged in but answer is the same. */
                 br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
             } else {
-                br.getPage("https://drive.google.com//get_video_info?docid=" + this.getFID(link));
+                br.getPage("https://drive.google.com/get_video_info?docid=" + this.getFID(link));
             }
             final UrlQuery query = UrlQuery.parse(br.toString());
             /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
@@ -469,8 +469,7 @@ public class GoogleDrive extends PluginForHost {
         }
         /**
          * E.g. older alternative URL for documents: https://docs.google.com/document/export?format=pdf&id=<fid>&includes_info_params=true
-         * </br>
-         * Last rev. with this handling: 42866
+         * </br> Last rev. with this handling: 42866
          */
         return "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
     }

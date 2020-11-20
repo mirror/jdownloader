@@ -298,7 +298,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         }
         if (txtPackagename2 != txtPackagename && txtPackagename2 != txtFilename) {
-            ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
+            ret.add(new VariableAction(txtPackagename2, _GUI.T.PackagizerFilterRuleDialog_createVariablesMenu_current_packagename(), "<jd:" + PackagizerController.PACKAGENAME + ">"));
         }
         return ret;
     }

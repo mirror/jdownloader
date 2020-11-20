@@ -573,9 +573,14 @@ public class SmoozedCom extends antiDDoSForHost {
                 }
             }
         } else if (br.containsHTML(">\\s*DNS points to prohibited IP")) {
-            throw new AccountUnavailableException("Cloudflare server error at smoozed.com", 10 * 60 * 1000l);
-        } else if (br.containsHTML(">\\s*The web server reported a gateway time-out error")) {
-            throw new AccountUnavailableException("Cloudflare server error at smoozed.com", 10 * 60 * 1000l);
+            throw new AccountUnavailableException("Cloudflare 'blocked IP' at smoozed.com", 10 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*The web server reported a")) {
+            final String error = br.getRegex(">\\s*The web server reported a\\s*(.*?)\\s*<").getMatch(0);
+            if (error != null) {
+                throw new AccountUnavailableException("Cloudflare '" + error.replace(".", "") + "' at smoozed.com", 10 * 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Cloudflare 'unknown error' at smoozed.com", 10 * 60 * 1000l);
+            }
         }
     }
 

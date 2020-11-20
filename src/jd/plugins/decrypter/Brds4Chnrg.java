@@ -21,13 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.FourChanConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -41,6 +34,16 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.download.HashInfo;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.FourChanConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/[0-9a-z]{1,}/(thread/\\d+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
@@ -48,7 +51,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         super(wrapper);
         try {
             /* 2020-11-19: https://github.com/4chan/4chan-API#api-rules */
-            Browser.setRequestIntervalLimitGlobal(API_BASE, 1250);
+            Browser.setRequestIntervalLimitGlobal(API_BASE, true, 1250);
         } catch (final Throwable e) {
         }
     }
@@ -177,10 +180,10 @@ public class Brds4Chnrg extends PluginForDecrypt {
      * --> Ideally once once per session!
      */
     private static LinkedHashMap<String, String> BOARD_LONG_TITLE_CACHE = new LinkedHashMap<String, String>() {
-                                                                            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                                return size() > 200;
-                                                                            };
-                                                                        };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 200;
+        };
+    };
     /** Docs: https://github.com/4chan/4chan-API */
     private static final String                  API_BASE               = "https://a.4cdn.org/";
 
@@ -276,7 +279,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         fp.setName("4chan.org" + " - " + boardLongTitle + " - " + threadID);
         for (final Object postO : posts) {
             entries = (Map<String, Object>) postO;
-            final Object md5_base64O = entries.get("md5");
+            final String md5_base64O = (String) entries.get("md5");
             if (md5_base64O == null) {
                 /* Skip posts with no file attached */
                 continue;
@@ -291,12 +294,16 @@ public class Brds4Chnrg extends PluginForDecrypt {
             final long fsize = ((Number) entries.get("fsize")).longValue();
             /* https://github.com/4chan/4chan-API/blob/master/pages/User_images_and_static_content.md */
             final DownloadLink dl = this.createDownloadlink("https://i.4cdn.org/" + boardShortTitle + "/" + tim + ext);
+            final String setFileName;
             if (preferServerFilenames) {
-                dl.setForcedFileName(tim + ext);
+                setFileName = tim + ext;
             } else {
-                dl.setForcedFileName(filename + ext);
+                setFileName = filename + ext;
             }
-            dl.setDownloadSize(fsize);
+            dl.setHashInfo(HashInfo.parse(HexFormatter.byteArrayToHex(Base64.decode(md5_base64O))));
+            dl.setFinalFileName(setFileName);
+            dl.setProperty("fixName", setFileName);
+            dl.setVerifiedFileSize(fsize);
             dl.setAvailable(true);
             dl._setFilePackage(fp);
             decryptedLinks.add(dl);
