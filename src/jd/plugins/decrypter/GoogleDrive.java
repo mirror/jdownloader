@@ -43,7 +43,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
     /**
      * @author raztoki
@@ -75,8 +75,8 @@ public class GoogleDrive extends PluginForDecrypt {
         } else {
             fid = new Regex(parameter, "id=([^\\&=]+)").getMatch(0);
         }
-        final PluginForHost plg = JDUtilities.getPluginForHost("docs.google.com");
-        final Account aa = AccountController.getInstance().getValidAccount(plg);
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("drive.google.com");
+        final Account aa = AccountController.getInstance().getValidAccount("drive.google.com");
         /*
          * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders was broken
          * anyways: https://svn.jdownloader.org/issues/88600
@@ -85,6 +85,9 @@ public class GoogleDrive extends PluginForDecrypt {
         boolean loggedin = false;
         if (aa != null && allowLogin) {
             login(this.br, aa);
+        } else {
+            /* Respect users' plugin settings (e.g. custom User-Agent) */
+            ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(br, aa);
         }
         logger.info("LoggedIn:" + loggedin);
         if (parameter.contains("open?id")) {
@@ -101,7 +104,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 do {
                     br.getPage(redirect);
                 } while ((redirect = br.getRedirectLocation()) != null && retry++ <= 3);
-                if (new Regex(br.getURL(), "google\\.com/(?:document|file)/d/").matches() || "article".equals(((jd.plugins.hoster.GoogleDrive) plg).getType(br))) {
+                if (new Regex(br.getURL(), ".*google\\.com/(?:document|file)/d/.*").matches()) {
                     decryptedLinks.add(createDownloadlink(br.getURL()));
                     return decryptedLinks;
                 }
@@ -112,8 +115,6 @@ public class GoogleDrive extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         parameter = "https://drive.google.com/drive/folders/" + fid;
-        final PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
-        ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br, aa);
         String subfolder = this.getAdoptedCloudFolderStructure();
         int retry = 0;
         do {

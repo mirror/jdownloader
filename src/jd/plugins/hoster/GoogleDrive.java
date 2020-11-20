@@ -16,12 +16,27 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
@@ -40,16 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.GoogleConfig;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
     public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,7 +69,16 @@ public class GoogleDrive extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "docs.google.com", "googledrive" };
+        return new String[] { "drive.google.com", "docs.google.com", "googledrive" };
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        if (host == null || host.equalsIgnoreCase("docs.google.com")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
@@ -86,7 +101,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
-    public String getLinkID(DownloadLink link) {
+    public String getLinkID(final DownloadLink link) {
         final String id = getFID(link);
         if (id != null) {
             return getHost().concat("://".concat(id));
@@ -105,7 +120,7 @@ public class GoogleDrive extends PluginForHost {
     private static final int    FREE_MAXDOWNLOADS                 = 20;
 
     @SuppressWarnings("deprecation")
-    private String getFID(DownloadLink downloadLink) {
+    private String getFID(final DownloadLink downloadLink) {
         // known url formats
         // https://docs.google.com/file/d/0B4AYQ5odYn-pVnJ0Z2V4d1E5UWc/preview?pli=1
         // can't dl these particular links, same with document/doc, presentation/present and view
@@ -127,9 +142,14 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    public String   agent      = null;
-    private boolean isDocument = false;
-    private String  dllink     = null;
+    /**
+     * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
+     * change the quality and then resume the started download with another URL.
+     */
+    private static final String PROPERTY_CHOSEN_QUALITY = "CHOSEN_QUALITY";
+    public String               agent                   = null;
+    private boolean             isStreamable            = false;
+    private String              dllink                  = null;
 
     public Browser prepBrowser(Browser pbr, final Account account) {
         // used within the decrypter also, leave public
@@ -162,9 +182,11 @@ public class GoogleDrive extends PluginForHost {
         privatefile = false;
         downloadHasReachedServersideQuota = false;
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        boolean loggedIN = false;
         if (account != null) {
             try {
                 login(br, account, false);
+                loggedIN = true;
             } catch (final PluginException e) {
                 logger.log(e);
                 logger.info("Login failure");
@@ -201,8 +223,8 @@ public class GoogleDrive extends PluginForHost {
                     if (!StringUtils.isEmpty(fileName)) {
                         link.setFinalFileName(fileName);
                     }
-                    if (con.getCompleteContentLength() != -1) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     dllink = con.getURL().toString();
                     return AvailableStatus.TRUE;
@@ -255,15 +277,20 @@ public class GoogleDrive extends PluginForHost {
                 if (dllink != null) {
                     dllink = HTMLEntities.unhtmlentities(dllink);
                     logger.info("Direct download active");
-                    return AvailableStatus.TRUE;
+                    /* TODO: Remove this */
+                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        return AvailableStatus.TRUE;
+                    }
                 } else {
-                    logger.info("Direct download inactive");
+                    logger.info("Direct download inactive --> Download Overview");
                 }
             }
         }
         /* In case we were not able to find a download-URL until now, we'll have to try the more complicated way ... */
         logger.info("Trying to find file information via 'download overview' page");
         br.getPage("https://drive.google.com/file/d/" + getFID(link) + "/view");
+        /* TODO: Make use of this */
+        isStreamable = br.containsHTML("video\\.google\\.com/get_player\\?docid=" + Encoding.urlEncode(this.getFID(link)));
         if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().contains("accounts.google.com/")) {
@@ -329,15 +356,14 @@ public class GoogleDrive extends PluginForHost {
                  */
                 /* 2020-09-14: Handling for this edge case has been removed. Provide example URLs if it happens again! */
                 // download_might_not_be_possible = true;
-                final String type = getType(br);
                 filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
-                if (filename != null && type != null) {
-                    if (type.equals("article") && !filename.endsWith(".pdf")) {
-                        isDocument = true;
-                        // we can name it many formats! but we are only downloading as pdf at this stage.
-                        filename += ".pdf";
-                    }
-                }
+                // if (filename != null && type != null) {
+                // if (type.equals("article") && !filename.endsWith(".pdf")) {
+                // isDocument = true;
+                // // we can name it many formats! but we are only downloading as pdf at this stage.
+                // filename += ".pdf";
+                // }
+                // }
             }
             if (filename == null) {
                 /* Fallback */
@@ -359,34 +385,50 @@ public class GoogleDrive extends PluginForHost {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
             }
         }
-        if (StringUtils.isEmpty(dllink) && !isDocument) {
-            /* TODO: Check if this is still required */
-            /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
-            logger.info("Last chance: Looking for stream download");
-            String streamLink = null;
-            /* Download not possible ? Download stream! */
-            String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
-            if (stream_map != null) {
-                final String[] links = stream_map.split("\\|");
-                streamLink = links[links.length - 1];
-                streamLink = Encoding.unicodeDecode(streamLink);
+        final PreferredQuality qual = PluginJsonConfig.get(GoogleConfig.class).getPreferredQuality();
+        if (qual != PreferredQuality.ORIGINAL && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            logger.info("Looking for stream download");
+            if (loggedIN) {
+                /* Uses a slightly different request than when not logged in but answer is the same. */
+                br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
             } else {
-                stream_map = br.getRegex("\"fmt_stream_map\",\"(.*?)\"").getMatch(0);
-                if (stream_map != null) {
-                    final String[] links = stream_map.split("\\|");
-                    streamLink = links[links.length - 1];
-                    streamLink = Encoding.unicodeDecode(streamLink);
+                br.getPage("https://drive.google.com//get_video_info?docid=" + this.getFID(link));
+            }
+            final UrlQuery query = UrlQuery.parse(br.toString());
+            /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
+            final String errorcodeStr = query.get("errorcode");
+            final String errorReason = query.get("reason");
+            if (errorcodeStr != null && errorcodeStr.matches("\\d+")) {
+                final int errorCode = Integer.parseInt(errorcodeStr);
+                if (errorCode == 150) {
+                    /* Same as in file-download mode: File is definitely not downloadable at this moment! */
+                    /* TODO: Add recognition for non-available stream downloads --> To at least have this case logged! */
+                    if (isDownload) {
+                        downloadTempUnavailableAndOrOnlyViaAccount(account);
+                    } else {
+                        return AvailableStatus.TRUE;
+                    }
+                } else {
+                    logger.info("Streaming download impossible because: " + errorcodeStr + " | " + errorReason);
+                    return AvailableStatus.TRUE;
                 }
             }
-            stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
-            if (stream_map != null) {
-                final String[] links = stream_map.split("\\,");
-                for (int i = 0; i < links.length; i++) {
-                    links[i] = Encoding.unicodeDecode(links[i]);
-                }
-                final UrlQuery query = Request.parseQuery(links[0]);
-                streamLink = Encoding.urlDecode(query.get("url"), false);
+            /* Usually same as the title we already have but always with .mp4 ending! */
+            // final String streamFilename = query.get("title");
+            // final String fmt_stream_map = query.get("fmt_stream_map");
+            String url_encoded_fmt_stream_map = query.get("url_encoded_fmt_stream_map");
+            url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
+            /* TODO: Collect StreamMaps, then do quality selection */
+            final YoutubeHelper dummy = new YoutubeHelper(this.br, this.getLogger());
+            final List<YoutubeStreamData> qualities = new ArrayList<YoutubeStreamData>();
+            final String[] qualityInfos = url_encoded_fmt_stream_map.split(",");
+            for (final String qualityInfo : qualityInfos) {
+                final UrlQuery qualityQuery = UrlQuery.parse(qualityInfo);
+                final YoutubeStreamData yts = dummy.convert(qualityQuery, this.br.getURL());
+                qualities.add(yts);
             }
+            /* TODO: Now we got a list of available qualities --> Handle quality selection! */
+            String streamLink = null;
             if (streamLink != null) {
                 this.dllink = streamLink;
                 /* TODO: 2020-09-14: Check if this is still required */
@@ -420,13 +462,17 @@ public class GoogleDrive extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public String getType(Browser br) {
-        final String type = br.getRegex("<meta property=\"og:type\" content=\"([^<>\"]+)\">").getMatch(0);
-        return type;
-    }
-
-    private String constructDownloadUrl(DownloadLink link) {
-        return !isDocument ? "https://docs.google.com/uc?id=" + getFID(link) + "&export=download" : "https://docs.google.com/document/export?format=pdf&id=" + getFID(link) + "&includes_info_params=true";
+    private String constructDownloadUrl(final DownloadLink link) throws PluginException {
+        final String fid = getFID(link);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /**
+         * E.g. older alternative URL for documents: https://docs.google.com/document/export?format=pdf&id=<fid>&includes_info_params=true
+         * </br>
+         * Last rev. with this handling: 42866
+         */
+        return "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
     }
 
     @Override
@@ -571,6 +617,7 @@ public class GoogleDrive extends PluginForHost {
         if (link != null) {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(GoogleDrive.NOCHUNKS);
+            link.removeProperty(GoogleDrive.PROPERTY_CHOSEN_QUALITY);
         }
     }
 
