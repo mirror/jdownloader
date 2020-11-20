@@ -962,7 +962,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         String nextid = null;
         int page = 0;
         int numberofCrawledItems = 0;
-        final String savedItemsFeedBaseURL = InstaGramCom.ALT_API_BASE + "/feed/saved/18143233873100885";
+        final String savedItemsFeedBaseURL = InstaGramCom.ALT_API_BASE + "/feed/saved/";
         do {
             logger.info("Crawling page: " + page);
             if (page == 0) {
