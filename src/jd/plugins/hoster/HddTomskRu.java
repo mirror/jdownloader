@@ -2,9 +2,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -24,11 +25,7 @@ public class HddTomskRu extends PluginForHost {
     public static final String  TERMS_ACCEPT        = "http://hdd.tomsk.ru/?rm=terms_accept";
     private static final String FILE_ENTER_PASSWORD = "http://hdd.tomsk.ru/?rm=file_enter_password";
     private static final String PWTEXT              = ">Для доступа к файлу необходим пароль<";
-    private String              DLLINK              = null;
 
-    /**
-     * @author rnw
-     */
     public HddTomskRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -105,42 +102,30 @@ public class HddTomskRu extends PluginForHost {
                 }
             }
         }
-        final Regex linkRegex = br.getRegex("<a href=\"(http://download\\.hdd\\.tomsk\\.ru/download/" + fileId + "\\?[a-f0-9]{32})\" title=[^>]+>(.*?)</a>");
-        DLLINK = linkRegex.getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://download\\.hdd\\.tomsk\\.ru/download/" + fileId + "\\?[a-f0-9]{32})").getMatch(0);
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        String filename = br.getRegex("id=\"download_file_name\">([^<>\"]+)").getMatch(0);
+        String filesize = br.getRegex("title=\"Скачать файл \\(\\~([^<>\"]+)\\)\"").getMatch(0);
+        if (filename != null) {
+            link.setName(filename);
         }
-        String finalFileName = linkRegex.getMatch(1);
-        if (finalFileName == null) {
-            finalFileName = br.getRegex("<title>hdd\\.tomsk\\.ru &mdash; (.*?)</title>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(DLLINK);
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setDownloadSize(con.getCompleteContentLength());
-                if (finalFileName != null) {
-                    link.setFinalFileName(finalFileName);
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        final String fileId = this.getFID(link);
+        final Regex linkRegex = br.getRegex("<a href=\"(https?://download\\.hdd\\.tomsk\\.ru/download/" + fileId + "\\?[a-f0-9]{32})\" title=[^>]+>(.*?)</a>");
+        String dllink = linkRegex.getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("(https?://download\\.hdd\\.tomsk\\.ru/download/" + fileId + "\\?[a-f0-9]{32})").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             try {
                 br.followConnection(true);
