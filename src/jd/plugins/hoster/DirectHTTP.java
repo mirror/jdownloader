@@ -142,6 +142,12 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
+    public String getMirrorID(DownloadLink link) {
+        final String mirrorID = link != null ? link.getStringProperty("mirrorID", null) : null;
+        return mirrorID;
+    }
+
+    @Override
     public boolean isValidURL(String url) {
         if (url != null) {
             if (StringUtils.startsWithCaseInsensitive(url, "directhttp")) {
