@@ -1,6 +1,8 @@
 package org.jdownloader.plugins.components;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 
 import jd.PluginWrapper;
@@ -57,6 +59,37 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
             account.setProperty(PROPERTY_LASTDOWNLOAD_WEBSITE, System.currentTimeMillis());
         }
         return dllink;
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        if (fuid != null) {
+            /* link cleanup, prefer https if possible */
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
+                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
+            }
+            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/file/[a-z0-9]{12}")) {
+                // new fileIDs 23.11.2020
+                link.setPluginPatternMatcher(getMainPage() + "/file/" + fuid);
+            } else {
+                // old fileIDs, not compatible with new ones
+                link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
+            }
+            link.setLinkID(getHost() + "://" + fuid);
+        }
+    }
+
+    public static final String getFileJokerAnnotationPatternPart() {
+        return "/(?:embed-|file/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasicSpecialFilejoker.getFileJokerAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
