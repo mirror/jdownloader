@@ -20,11 +20,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.GoogleConfig;
+import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
+import org.jdownloader.plugins.components.google.GoogleHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeHelper;
+import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -40,20 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.GoogleConfig;
-import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
-import org.jdownloader.plugins.components.google.GoogleHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeHelper;
-import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -146,10 +144,10 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private static final String PROPERTY_CHOSEN_QUALITY = "CHOSEN_QUALITY";
-    public String               agent                   = null;
-    private boolean             isStreamable            = false;
-    private String              dllink                  = null;
+    private static final String PROPERTY_USED_QUALITY = "USED_QUALITY";
+    public String               agent                 = null;
+    private boolean             isStreamable          = false;
+    private String              dllink                = null;
 
     public Browser prepBrowser(Browser pbr, final Account account) {
         // used within the decrypter also, leave public
@@ -182,15 +180,8 @@ public class GoogleDrive extends PluginForHost {
         privatefile = false;
         downloadHasReachedServersideQuota = false;
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        boolean loggedIN = false;
         if (account != null) {
-            try {
-                login(br, account, false);
-                loggedIN = true;
-            } catch (final PluginException e) {
-                logger.log(e);
-                logger.info("Login failure");
-            }
+            login(br, account, false);
         }
         prepBrowser(br, account);
         String filename = null;
@@ -385,81 +376,201 @@ public class GoogleDrive extends PluginForHost {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
             }
         }
+        return AvailableStatus.TRUE;
+    }
+
+    private String handleStreamQualitySelection(final DownloadLink link, final Account account) throws PluginException, IOException {
         final PreferredQuality qual = PluginJsonConfig.get(GoogleConfig.class).getPreferredQuality();
-        if (qual != PreferredQuality.ORIGINAL && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            logger.info("Looking for stream download");
-            if (loggedIN) {
-                /* Uses a slightly different request than when not logged in but answer is the same. */
-                br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
+        final int preferredQualityHeight;
+        final boolean userHasDownloadedStreamBefore = link.hasProperty(PROPERTY_USED_QUALITY);
+        if (userHasDownloadedStreamBefore) {
+            preferredQualityHeight = (int) link.getLongProperty(PROPERTY_USED_QUALITY, 0);
+            logger.info("Using last used quality: " + preferredQualityHeight);
+        } else {
+            preferredQualityHeight = getPreferredQualityHeight(qual);
+            logger.info("Using currently selected quality: " + preferredQualityHeight);
+        }
+        final boolean streamShouldBeAvailable = DebugMode.TRUE_IN_IDE_ELSE_FALSE && (this.isStreamable || isVideoFile(link.getFinalFileName()));
+        if (preferredQualityHeight <= -1 || !streamShouldBeAvailable) {
+            logger.info("Downloading original file");
+            return null;
+        }
+        logger.info("Looking for stream download");
+        if (account != null) {
+            /* Uses a slightly different request than when not logged in but answer is the same. */
+            br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
+        } else {
+            br.getPage("https://drive.google.com/get_video_info?docid=" + this.getFID(link));
+        }
+        final UrlQuery query = UrlQuery.parse(br.toString());
+        /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
+        final String errorcodeStr = query.get("errorcode");
+        final String errorReason = query.get("reason");
+        if (errorcodeStr != null && errorcodeStr.matches("\\d+")) {
+            final int errorCode = Integer.parseInt(errorcodeStr);
+            if (errorCode == 150) {
+                /* Same as in file-download mode: File is definitely not downloadable at this moment! */
+                /* TODO: Add recognition for non-available stream downloads --> To at least have this case logged! */
+                // if (isDownload) {
+                // downloadTempUnavailableAndOrOnlyViaAccount(account);
+                // } else {
+                // return AvailableStatus.TRUE;
+                // }
+                downloadTempUnavailableAndOrOnlyViaAccount(account);
             } else {
-                br.getPage("https://drive.google.com/get_video_info?docid=" + this.getFID(link));
-            }
-            final UrlQuery query = UrlQuery.parse(br.toString());
-            /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
-            final String errorcodeStr = query.get("errorcode");
-            final String errorReason = query.get("reason");
-            if (errorcodeStr != null && errorcodeStr.matches("\\d+")) {
-                final int errorCode = Integer.parseInt(errorcodeStr);
-                if (errorCode == 150) {
-                    /* Same as in file-download mode: File is definitely not downloadable at this moment! */
-                    /* TODO: Add recognition for non-available stream downloads --> To at least have this case logged! */
-                    if (isDownload) {
-                        downloadTempUnavailableAndOrOnlyViaAccount(account);
-                    } else {
-                        return AvailableStatus.TRUE;
-                    }
-                } else {
-                    logger.info("Streaming download impossible because: " + errorcodeStr + " | " + errorReason);
-                    return AvailableStatus.TRUE;
-                }
-            }
-            /* Usually same as the title we already have but always with .mp4 ending! */
-            // final String streamFilename = query.get("title");
-            // final String fmt_stream_map = query.get("fmt_stream_map");
-            String url_encoded_fmt_stream_map = query.get("url_encoded_fmt_stream_map");
-            url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
-            /* TODO: Collect StreamMaps, then do quality selection */
-            final YoutubeHelper dummy = new YoutubeHelper(this.br, this.getLogger());
-            final List<YoutubeStreamData> qualities = new ArrayList<YoutubeStreamData>();
-            final String[] qualityInfos = url_encoded_fmt_stream_map.split(",");
-            for (final String qualityInfo : qualityInfos) {
-                final UrlQuery qualityQuery = UrlQuery.parse(qualityInfo);
-                final YoutubeStreamData yts = dummy.convert(qualityQuery, this.br.getURL());
-                qualities.add(yts);
-            }
-            /* TODO: Now we got a list of available qualities --> Handle quality selection! */
-            String streamLink = null;
-            if (streamLink != null) {
-                this.dllink = streamLink;
-                /* TODO: 2020-09-14: Check if this is still required */
-                br.setFollowRedirects(true);
-                if (link.getVerifiedFileSize() == -1) {
-                    // why do this here??? shouldnt this be action of the download core? -raztoki20170727
-                    final Browser brc = br.cloneBrowser();
-                    final GetRequest request = new GetRequest(brc.getURL(dllink));
-                    request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
-                    request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = brc.openRequestConnection(request);
-                        if (con.isOK()) {
-                            if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
-                                link.setVerifiedFileSize(con.getCompleteContentLength());
-                                link.setProperty("ServerComaptibleForByteRangeRequest", true);
-                            } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
-                                link.setVerifiedFileSize(con.getCompleteContentLength());
-                                link.setProperty("ServerComaptibleForByteRangeRequest", true);
-                            }
-                        }
-                    } finally {
-                        if (con != null) {
-                            con.disconnect();
-                        }
-                    }
-                }
+                logger.info("Streaming download impossible because: " + errorcodeStr + " | " + errorReason);
+                return null;
             }
         }
-        return AvailableStatus.TRUE;
+        /* Usually same as the title we already have but always with .mp4 ending(?) */
+        // final String streamFilename = query.get("title");
+        // final String fmt_stream_map = query.get("fmt_stream_map");
+        String url_encoded_fmt_stream_map = query.get("url_encoded_fmt_stream_map");
+        url_encoded_fmt_stream_map = Encoding.urlDecode(url_encoded_fmt_stream_map, false);
+        /* TODO: Collect qualities, then do quality selection */
+        final YoutubeHelper dummy = new YoutubeHelper(this.br, this.getLogger());
+        final List<YoutubeStreamData> qualities = new ArrayList<YoutubeStreamData>();
+        final String[] qualityInfos = url_encoded_fmt_stream_map.split(",");
+        for (final String qualityInfo : qualityInfos) {
+            final UrlQuery qualityQuery = UrlQuery.parse(qualityInfo);
+            final YoutubeStreamData yts = dummy.convert(qualityQuery, this.br.getURL());
+            qualities.add(yts);
+        }
+        if (qualities.isEmpty()) {
+            logger.warning("Failed to find any stream qualities");
+            return null;
+        }
+        logger.info("Found " + qualities.size() + " qualities");
+        String bestQualityDownloadlink = null;
+        int bestQualityHeight = 0;
+        String selectedQualityDownloadlink = null;
+        for (final YoutubeStreamData quality : qualities) {
+            if (quality.getItag().getVideoResolution().getHeight() == preferredQualityHeight) {
+                logger.info("Found user preferred quality: " + preferredQualityHeight + "p");
+                selectedQualityDownloadlink = quality.getUrl();
+                break;
+            } else if (quality.getItag().getVideoResolution().getHeight() > bestQualityHeight) {
+                bestQualityHeight = quality.getItag().getVideoResolution().getHeight();
+                bestQualityDownloadlink = quality.getUrl();
+            }
+        }
+        final int usedQuality;
+        if (selectedQualityDownloadlink == null && bestQualityDownloadlink != null) {
+            logger.info("Using best stream quality: " + bestQualityHeight + "p");
+            selectedQualityDownloadlink = bestQualityDownloadlink;
+            usedQuality = bestQualityHeight;
+        } else if (selectedQualityDownloadlink != null) {
+            usedQuality = preferredQualityHeight;
+        } else {
+            /* This should never happen! */
+            logger.warning("Failed to find any quality");
+            return null;
+        }
+        String filename = link.getFinalFileName();
+        if (filename == null) {
+            filename = link.getName();
+        }
+        if (filename != null) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* Put quality in filename */
+                link.setFinalFileName(correctFileNameExtension(filename, "_" + usedQuality + "p.mp4"));
+            } else {
+                link.setFinalFileName(correctFileNameExtension(filename, ".mp4"));
+            }
+        }
+        /* TODO: Leave this one in after public release and remove this comment! */
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (userHasDownloadedStreamBefore) {
+                link.setComment("Using FORCED preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
+            } else {
+                link.setComment("Using preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
+            }
+        }
+        /* TODO: Check to see if we still need any of that old handling / headers. */
+        // String streamLink = null;
+        // if (streamLink != null) {
+        // this.dllink = streamLink;
+        // /* TODO: 2020-09-14: Check if this is still required */
+        // br.setFollowRedirects(true);
+        // if (link.getVerifiedFileSize() == -1) {
+        // // why do this here??? shouldnt this be action of the download core? -raztoki20170727
+        // final Browser brc = br.cloneBrowser();
+        // final GetRequest request = new GetRequest(brc.getURL(dllink));
+        // request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+        // request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
+        // URLConnectionAdapter con = null;
+        // try {
+        // con = brc.openRequestConnection(request);
+        // if (con.isOK()) {
+        // if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
+        // link.setVerifiedFileSize(con.getCompleteContentLength());
+        // link.setProperty("ServerComaptibleForByteRangeRequest", true);
+        // } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
+        // link.setVerifiedFileSize(con.getCompleteContentLength());
+        // link.setProperty("ServerComaptibleForByteRangeRequest", true);
+        // }
+        // }
+        // } finally {
+        // if (con != null) {
+        // con.disconnect();
+        // }
+        // }
+        // }
+        // }
+        if (!userHasDownloadedStreamBefore) {
+            /* User could have started download of original file before: Clear progress! */
+            link.setChunksProgress(null);
+            link.setVerifiedFileSize(-1);
+            link.setProperty(PROPERTY_USED_QUALITY, usedQuality);
+        }
+        return selectedQualityDownloadlink;
+    }
+
+    /**
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
+     * Pass fileExtension with dots to this! </br>
+     * Only replaces extensions with one dot not e.g. ".tar.gz". </br>
+     * TODO: Review this and move it into Plugin class.
+     */
+    private static String correctFileNameExtension(final String filenameOrg, final String newExtension) {
+        if (filenameOrg == null) {
+            return filenameOrg;
+        } else if (!filenameOrg.contains(".")) {
+            /* Filename doesn't contain an extension at all -> Add extension to filename. */
+            return filenameOrg + newExtension;
+        } else {
+            /* Replace existing extension with new extension. */
+            final String filenameWithoutExtension = filenameOrg.substring(0, filenameOrg.lastIndexOf("."));
+            return filenameWithoutExtension + newExtension;
+        }
+    }
+
+    private static boolean isVideoFile(final String filename) {
+        if (filename == null) {
+            return false;
+        } else if (filename.matches(".*\\.(mp4|mkv)")) { // TODO: Improve this to support more filetypes and make it more reliable.
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private int getPreferredQualityHeight(final PreferredQuality quality) {
+        switch (quality) {
+        case STREAM_BEST:
+            return 0;
+        case STREAM_360P:
+            return 360;
+        case STREAM_480P:
+            return 480;
+        case STREAM_720P:
+            return 720;
+        case STREAM_1080P:
+            return 1080;
+        default:
+            /* Original quality (no stream download) */
+            return -1;
+        }
     }
 
     private String constructDownloadUrl(final DownloadLink link) throws PluginException {
@@ -469,7 +580,8 @@ public class GoogleDrive extends PluginForHost {
         }
         /**
          * E.g. older alternative URL for documents: https://docs.google.com/document/export?format=pdf&id=<fid>&includes_info_params=true
-         * </br> Last rev. with this handling: 42866
+         * </br>
+         * Last rev. with this handling: 42866
          */
         return "https://docs.google.com/uc?id=" + getFID(link) + "&export=download";
     }
@@ -477,10 +589,10 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        doFree(link, null);
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link, final Account account) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (privatefile) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (downloadHasReachedServersideQuota) {
@@ -496,6 +608,14 @@ public class GoogleDrive extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /*
+         * TODO: Files can be blocked for downloading but streaming may still be possible(rare case). Usually if downloads are blocked
+         * because of "too high traffic", streaming is blocked too!
+         */
+        final String streamDownloadlink = this.handleStreamQualitySelection(link, account);
+        if (streamDownloadlink != null) {
+            this.dllink = streamDownloadlink;
+        }
         boolean resume = true;
         int maxChunks = 0;
         if (link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
@@ -505,7 +625,7 @@ public class GoogleDrive extends PluginForHost {
         /* 2020-03-18: Streams do not have content-disposition but often 206 partial content. */
         // if ((!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206) ||
         // (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
-        if (!dl.getConnection().isContentDisposition() || (dl.getConnection().getResponseCode() != 200 && dl.getConnection().getResponseCode() != 206)) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 /* Most likely quota error or "Missing permissions" error. */
                 downloadTempUnavailableAndOrOnlyViaAccount(account);
@@ -604,7 +724,7 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, true);
-        doFree(link, account);
+        handleDownload(link, account);
     }
 
     @Override
@@ -616,7 +736,7 @@ public class GoogleDrive extends PluginForHost {
         if (link != null) {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(GoogleDrive.NOCHUNKS);
-            link.removeProperty(GoogleDrive.PROPERTY_CHOSEN_QUALITY);
+            link.removeProperty(GoogleDrive.PROPERTY_USED_QUALITY);
         }
     }
 
