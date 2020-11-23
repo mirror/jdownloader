@@ -13,13 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,13 +43,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "http://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "https?://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" })
 public class OldGamesCom extends PluginForHost {
-
     public OldGamesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.old-games.com/");
@@ -69,9 +67,7 @@ public class OldGamesCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private String               fuid                         = null;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -80,7 +76,8 @@ public class OldGamesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         fuid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        link.setLinkID(fuid);
+        link.setLinkID(this.getHost() + "://" + fuid);
+        br.setFollowRedirects(true);
         br.getPage(getGetfileURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,7 +134,7 @@ public class OldGamesCom extends PluginForHost {
     private String getFinalDownloadlink() throws PluginException {
         String dllink = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.old\\-games\\.com/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.old\\-games\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -290,5 +287,4 @@ public class OldGamesCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

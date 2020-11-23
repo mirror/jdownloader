@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -31,9 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangahome.com" }, urls = { "https?://(?:www\\.)?(mangakoi|mangahome)\\.com/manga/[A-Za-z0-9\\-_]+/c\\d+(?:\\.\\d+)?" })
-public class MangakoiCom extends antiDDoSForDecrypt {
-
-    public MangakoiCom(PluginWrapper wrapper) {
+public class MangahomeCom extends antiDDoSForDecrypt {
+    public MangahomeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,7 +40,7 @@ public class MangakoiCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"mobile\\-none\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -62,22 +60,23 @@ public class MangakoiCom extends antiDDoSForDecrypt {
         final String url_fpname = url_name + "_chapter_" + chapter_str;
         final DecimalFormat df_chapter = new DecimalFormat("0000");
         final DecimalFormat df_page = new DecimalFormat("000");
-
         String ext = this.br.getRegex("(\\.[A-Za-z]+)\\?v=\\d+\" id=\"image\"").getMatch(0);
-
         if (ext == null) {
             ext = ".jpg";
         }
-
-        short page_max = 1;
-        final String[] pages = this.br.getRegex("<option value=\"http[^<>\"]+\"[^<>]*?>(\\d+)</option>").getColumn(0);
+        short page_max = 0;
+        final String[] pages = this.br.getRegex("<option[^>]*>(\\d+)</option>").getColumn(0);
         for (final String page_temp_str : pages) {
             final short page_temp = Short.parseShort(page_temp_str);
             if (page_temp > page_max) {
                 page_max = page_temp;
             }
         }
-
+        if (page_max == 0) {
+            logger.info("Failed to find any downloadable content");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         for (short page = 1; page <= page_max; page++) {
             final String chapter_formatted = df_chapter.format(chapter_main);
             final String page_formatted = df_page.format(page);
@@ -94,12 +93,9 @@ public class MangakoiCom extends antiDDoSForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }

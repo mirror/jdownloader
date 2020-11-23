@@ -1,140 +1,89 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2020  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafedecrypted\\.com/watch/(sy\\-)?\\d+/.{1}" })
-public class MetacafeCom extends PluginForHost {
-    private String dllink = null;
-
-    public MetacafeCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class MetacafeCom extends KernelVideoSharingComV2 {
+    public MetacafeCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("metacafedecrypted.com/", "metacafe.com/"));
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "metacafe.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://www.metacafe.com/terms/";
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    private static final String TYPE_CUSTOM = "https?://(?:www\\.)?[^/]+/watch/(\\d+)/([a-z0-9\\-]+)/?";
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(watch/\\d+/[a-z0-9\\-]+/?|embed/\\d+/?)");
+        }
+        return ret.toArray(new String[0]);
     }
 
-    public static Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(400);
-        br.setAcceptLanguage("en-us,en;q=0.5");
-        /* Important! */
-        br.setCookie("metacafe.com", "user", "%7B%22ffilter%22%3Afalse%7D");
-        return br;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String url_filename = new Regex(link.getDownloadURL(), "(\\d+)/.{1}$").getMatch(0);
-        // Offline links should also have nice filenames
-        if (!link.isNameSet()) {
-            link.setName(url_filename + ".mp4");
-        }
-        this.setBrowserExclusive();
-        prepBR(this.br);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(link.getDownloadURL());
-        if (jd.plugins.decrypter.MetaCafeComDecrypter.isOffline(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.getURL().contains("metacafe.com/family_filter/")) {
-            br.postPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user", "filters=0");
-        }
-        String fileName = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
-        if (fileName == null) {
-            fileName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        }
-        if (fileName == null) {
-            fileName = url_filename;
-        }
-        fileName = fileName.trim();
-        if (fileName != null) {
-            link.setFinalFileName(fileName.trim() + ".mp4");
-        }
-        if (!link.getDownloadURL().contains("metacafe.com/watch/sy-")) {
-            String sources = br.getRegex("\"sources\":(\\[\\{\"src\":\"[^<>]+\\}\\])").getMatch(0);
-            dllink = PluginJSonUtils.getJsonValue(sources, "src");
-            // dllink = br.getRegex("\"sources\":\\[\\{\"src\":\"(http[^<>\"]+)\"").getMatch(0);
-            if (dllink == null || dllink.contains("null")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // dllink = dllink.replace("\\", "");
-            if (!dllink.contains(".m3u8")) {
-                try {
-                    if (!br.openGetConnection(dllink).getContentType().contains("html")) {
-                        link.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                        br.getHttpConnection().disconnect();
-                    }
-                } finally {
-                    if (br.getHttpConnection() != null) {
-                        br.getHttpConnection().disconnect();
-                    }
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink.contains(".m3u8")) {
-            /* hls download */
-            this.br.getPage(dllink);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, url_hls);
-            dl.startDownload();
+    protected String getFUIDFromURL(final String url) {
+        if (url != null && url.matches(TYPE_CUSTOM)) {
+            return new Regex(url, TYPE_CUSTOM).getMatch(0);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            dl.startDownload();
+            return super.getFUIDFromURL(url);
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    @Override
+    protected String getURLTitle(final String url) {
+        if (url.matches(TYPE_CUSTOM)) {
+            return new Regex(url, TYPE_CUSTOM).getMatch(1);
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
+    protected String getDllink(final Browser br) throws PluginException, IOException {
+        String dllink = PluginJSonUtils.getJson(br, "video_url");
+        if (dllink != null) {
+            /* 2020-11-23: Cheap way of doing an unnecessary stringformat. */
+            dllink = dllink.replace("%07d", "0000000");
+            return dllink;
+        }
+        return null;
     }
 }

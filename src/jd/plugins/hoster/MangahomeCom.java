@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -30,12 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangakoi.com" }, urls = { "http://mangakoidecrypted\\.com/\\d+" })
-public class MangakoiCom extends antiDDoSForHost {
-
-    public MangakoiCom(PluginWrapper wrapper) {
+public class MangahomeCom extends antiDDoSForHost {
+    public MangahomeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -45,7 +42,6 @@ public class MangakoiCom extends antiDDoSForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
 
     @Override
@@ -64,12 +60,10 @@ public class MangakoiCom extends antiDDoSForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         dllink = br.getRegex("\"(http[^<>\"]*?)\" id=\"image\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://a\\.(mangahome|mangakoi)\\.com/store/manga/[^<>\"]*?)\"").getMatch(0);

@@ -70,8 +70,12 @@ public class MixUploadOrg extends PluginForHost {
         br.setFollowRedirects(true);
         String trackID = link.getStringProperty("trackid", null);
         if (trackID == null) {
+            br.setAllowedResponseCodes(new int[] { 451 });
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML(">Page not found<|>Error<|\"/img/404\\-img\\.png\"|\"/img/forbidden\\.png\"")) {
+            if (br.getHttpConnection().getResponseCode() == 451) {
+                /* 2020-11-23: HTTP/1.1 451 Unavailable For Legal Reasons */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">Page not found<|>Error<|\"/img/404\\-img\\.png\"|\"/img/forbidden\\.png\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             trackID = br.getRegex("id=\"pl_track(\\d+)\"").getMatch(0);

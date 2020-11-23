@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
@@ -21,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,19 +36,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "https?://(?:www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" })
 public class Music163Com extends PluginForDecrypt {
-
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SINGLE_ALBUM = "http://(www\\.)?music\\.163\\.com/(?:#/)?album\\?id=\\d+";
-    private static final String TYPE_ARTIST       = "http://(www\\.)?music\\.163\\.com/(?:#/)?artist/album\\?id=\\d+";
-    private static final String TYPE_PLAYLIST     = "http://(www\\.)?music\\.163\\.com/(?:#/)?playlist\\?id=\\d+";
-
+    private static final String TYPE_SINGLE_ALBUM = "https?://[^/]+/(?:#/)?album\\?id=\\d+";
+    private static final String TYPE_ARTIST       = "https?://[^/]+/(?:#/)?artist/album\\?id=\\d+";
+    private static final String TYPE_PLAYLIST     = "https?://[^/]+/(?:#/)?playlist\\?id=\\d+";
     /** Settings stuff */
     private static final String FAST_LINKCHECK    = "FAST_LINKCHECK";
     private static final String GRAB_COVER        = "GRAB_COVER";
@@ -90,7 +87,6 @@ public class Music163Com extends PluginForDecrypt {
             String coverurl = null;
             String name_creator = null;
             String name_playlist = null;
-
             if (parameter.matches(TYPE_PLAYLIST)) {
                 /* Playlist */
                 br.getPage("http://music.163.com/api/playlist/detail?id=" + lid);
@@ -102,7 +98,6 @@ public class Music163Com extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) entries.get("result");
                 artistinfo = (LinkedHashMap<String, Object>) entries.get("creator");
                 resourcelist = (ArrayList) entries.get("tracks");
-
                 coverurl = (String) entries.get("coverImgUrl");
                 name_playlist = (String) entries.get("name");
                 name_creator = (String) artistinfo.get("signature");
@@ -155,7 +150,6 @@ public class Music163Com extends PluginForDecrypt {
                         break;
                     }
                 }
-
                 if (ext == null || content_title == null || fid.equals("-1") || filesize == -1) {
                     return null;
                 }
@@ -204,11 +198,7 @@ public class Music163Com extends PluginForDecrypt {
                 decryptedLinks.add(dlcover);
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (formattedDate != null) {
@@ -218,7 +208,6 @@ public class Music163Com extends PluginForDecrypt {
             fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 

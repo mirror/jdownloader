@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangafox.me" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/[A-Za-z0-9\\-_]+/((v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+))?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net" }, urls = { "https?://[\\w\\.]*?(?:mangafox\\.(com|me|mobi|la)|fanfox\\.net)/manga/[A-Za-z0-9\\-_]+/((v[A-Za-z0-9]+/c[\\d\\.]+|c[\\d\\.]+))?" })
 public class Mangafox extends PluginForDecrypt {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,8 +43,8 @@ public class Mangafox extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        /* Change URL to current domain */
-        String url = parameter.toString().replaceAll("://[\\w\\.]*?mangafox\\.(com|me|mobi|la)/", "://fanfox.net/");
+        /* Change URL to current domain and also correct URLs of mobile website e.g. "https://m.fanfox.net/...". */
+        String url = parameter.toString().replaceAll("https?://[^/]+/", "https://fanfox.net/");
         br.setCookie(new URL(url).getHost(), "isAdult", "1");
         if (url.matches("^https?://[^/]+/manga/[^/]+/?$")) {
             /* Manga overview page - find chapters/volumes which then go back into decrypter. */
