@@ -49,7 +49,8 @@ public class RmzCr extends antiDDoSForDecrypt {
         final String[] covers = br.getRegex("(https?://[^/]+/data/images/movies/[^<>\"]+)\"").getColumn(0);
         if (covers.length > 0) {
             logger.info("Found covers");
-            for (final String coverURL : covers) {
+            for (String coverURL : covers) {
+                coverURL = coverURL.replaceFirst("^(https?://)", br._getURL().getProtocol() + "://");
                 final DownloadLink dl = createDownloadlink("directhttp://" + coverURL);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
