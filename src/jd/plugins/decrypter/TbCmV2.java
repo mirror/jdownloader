@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
@@ -164,7 +165,6 @@ public class TbCmV2 extends PluginForDecrypt {
         return containsFlag.get();
     }
 
-    private HashSet<String>         dupeCheckSet;
     private YoutubeConfig           cfg;
     private static Object           DIALOGLOCK = new Object();
     private String                  videoID;
@@ -183,7 +183,6 @@ public class TbCmV2 extends PluginForDecrypt {
         playlistID = null;
         channelID = null;
         userID = null;
-        dupeCheckSet = new HashSet<String>();
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
         final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
@@ -403,7 +402,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
             }
             videoIdsToAdd.addAll(parseVideoIds(watch_videos));
-            if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
+            if (StringUtils.isNotEmpty(videoID)) {
                 videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
             }
             if (videoIdsToAdd.size() == 0) {
@@ -417,11 +416,15 @@ public class TbCmV2 extends PluginForDecrypt {
             logger.log(e);
             return decryptedLinks;
         }
+        final Set<String> videoIDsdupeCheck = new HashSet<String>();
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
                 return decryptedLinks;
             } else if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
+                continue;
+            } else if (!videoIDsdupeCheck.add(vid.videoID)) {
+                logger.info("Duplicated Video skip:" + vid.videoID);
                 continue;
             }
             try {
@@ -439,7 +442,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         throw e;
                     }
                 }
-                vid.playlistEntryNumber = reversePlaylistNumber ? videoIdsToAdd.size() - old.playlistEntryNumber + 1 : old.playlistEntryNumber;
+                vid.playlistEntryNumber = reversePlaylistNumber ? (videoIdsToAdd.size() - old.playlistEntryNumber + 1) : old.playlistEntryNumber;
             } catch (Exception e) {
                 logger.log(e);
                 String emsg = null;
@@ -763,23 +766,15 @@ public class TbCmV2 extends PluginForDecrypt {
                 String[] videos = br.getRegex("data\\-video\\-id=\"([^\"]+)").getColumn(0);
                 if (videos != null) {
                     for (String id : videos) {
-                        if (dupeCheckSet.add(id)) {
-                            ret.add(new YoutubeClipData(id, counter++));
-                        } else {
-                            logger.info("Ignore dupe entry:" + id);
-                        }
+                        ret.add(new YoutubeClipData(id, counter++));
                     }
                 }
                 if (ret.size() == 0) {
                     videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
                     if (videos != null) {
                         for (String relativeUrl : videos) {
-                            String id = getVideoIDByUrl(relativeUrl);
-                            if (dupeCheckSet.add(id)) {
-                                ret.add(new YoutubeClipData(id, counter++));
-                            } else {
-                                logger.info("Ignore dupe entry:" + id);
-                            }
+                            final String id = getVideoIDByUrl(relativeUrl);
+                            ret.add(new YoutubeClipData(id, counter++));
                         }
                     }
                 }
@@ -920,6 +915,7 @@ public class TbCmV2 extends PluginForDecrypt {
             String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
             String INNERTUBE_CONTEXT_CLIENT_VERSION = br.getRegex("INNERTUBE_CONTEXT_CLIENT_VERSION: \"(.*?)\"").getMatch(0);
             String INNERTUBE_CONTEXT_CLIENT_NAME = br.getRegex("INNERTUBE_CONTEXT_CLIENT_NAME: \"(.*?)\"").getMatch(0);
+            final Set<String> playListDupes = new HashSet<String>();
             while (true) {
                 if (this.isAbort()) {
                     throw new InterruptedException();
@@ -928,16 +924,13 @@ public class TbCmV2 extends PluginForDecrypt {
                 checkErrors(pbr);
                 // this will speed up searches. we know this wont be present..
                 String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
-                int before = dupeCheckSet.size();
+                int before = playListDupes.size();
                 if (videos != null && videos.length > 0) {
                     for (String relativeUrl : videos) {
                         if (relativeUrl.contains("list=" + playlistID)) {
-                            String id = getVideoIDByUrl(relativeUrl);
-                            if (dupeCheckSet.add(id)) {
-                                ret.add(new YoutubeClipData(id, counter++));
-                            } else {
-                                logger.info("Ignore dupe entry:" + id);
-                            }
+                            final String id = getVideoIDByUrl(relativeUrl);
+                            playListDupes.add(id);
+                            ret.add(new YoutubeClipData(id, counter++));
                         }
                     }
                     jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
@@ -952,11 +945,8 @@ public class TbCmV2 extends PluginForDecrypt {
                                     final LinkedHashMap<String, Object> vid = (LinkedHashMap<String, Object>) p;
                                     final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
                                     if (id != null) {
-                                        if (dupeCheckSet.add(id)) {
-                                            ret.add(new YoutubeClipData(id, counter++));
-                                        } else {
-                                            logger.info("Ignore dupe entry:" + id);
-                                        }
+                                        playListDupes.add(id);
+                                        ret.add(new YoutubeClipData(id, counter++));
                                     }
                                 }
                                 // continuation
@@ -1017,11 +1007,8 @@ public class TbCmV2 extends PluginForDecrypt {
                                     final Map<String, Object> vid = (Map<String, Object>) p;
                                     final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
                                     if (id != null) {
-                                        if (dupeCheckSet.add(id)) {
-                                            ret.add(new YoutubeClipData(id, counter++));
-                                        } else {
-                                            logger.info("Ignore dupe entry:" + id);
-                                        }
+                                        playListDupes.add(id);
+                                        ret.add(new YoutubeClipData(id, counter++));
                                     }
                                 }
                                 // continuation
@@ -1042,7 +1029,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                     }
                 }
-                if (dupeCheckSet.size() == before) {
+                if (playListDupes.size() == before) {
                     logger.info("no new video found, abort");
                     // no videos in the last round. we are probably done here
                     break;
@@ -1131,12 +1118,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
                 if (videos != null) {
                     for (String relativeUrl : videos) {
-                        String id = getVideoIDByUrl(relativeUrl);
-                        if (dupeCheckSet.add(id)) {
-                            ret.add(new YoutubeClipData(id, counter++));
-                        } else {
-                            logger.info("Ignore dupe entry:" + id);
-                        }
+                        final String id = getVideoIDByUrl(relativeUrl);
+                        ret.add(new YoutubeClipData(id, counter++));
                     }
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
@@ -1203,12 +1186,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
                 if (videos != null) {
                     for (String relativeUrl : videos) {
-                        String id = getVideoIDByUrl(relativeUrl);
-                        if (dupeCheckSet.add(id)) {
-                            ret.add(new YoutubeClipData(id, counter++));
-                        } else {
-                            logger.info("Ignore dupe entry:" + id);
-                        }
+                        final String id = getVideoIDByUrl(relativeUrl);
+                        ret.add(new YoutubeClipData(id, counter++));
                     }
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
@@ -1236,11 +1215,7 @@ public class TbCmV2 extends PluginForDecrypt {
             String[] videos = new Regex(video_ids, "([A-Za-z0-9\\-_]+)").getColumn(0);
             if (videos != null) {
                 for (String vid : videos) {
-                    if (dupeCheckSet.add(vid)) {
-                        ret.add(new YoutubeClipData(vid, counter++));
-                    } else {
-                        logger.info("Ignore dupe entry:" + vid);
-                    }
+                    ret.add(new YoutubeClipData(vid, counter++));
                 }
             }
         }
