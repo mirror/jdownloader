@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/gallery/([^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/(?:gallery|scraps)/([^/]+)" })
 public class FuraffinityNet extends PluginForDecrypt {
     public FuraffinityNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,6 +75,7 @@ public class FuraffinityNet extends PluginForDecrypt {
             final String json = br.getRegex("var descriptions = (\\{.*?\\});").getMatch(0);
             final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+            int itemsCounter = 0;
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
                 final String itemID = entry.getKey();
@@ -94,7 +95,9 @@ public class FuraffinityNet extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 distribute(dl);
+                itemsCounter += 1;
             }
+            logger.info("Number of items on current page: " + itemsCounter);
             page++;
             hasNextPage = br.containsHTML("/" + username + "/" + page);
         } while (!this.isAbort() && hasNextPage);

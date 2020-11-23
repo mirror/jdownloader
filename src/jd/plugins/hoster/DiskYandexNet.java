@@ -91,10 +91,11 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   TYPE_VIDEO                         = "https?://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)";
     private static final String   TYPE_VIDEO_USER                    = "https?://video\\.yandex\\.ru/users/[A-Za-z0-9]+/view/\\d+";
     private static final String   TYPE_DISK                          = "https?://yandexdecrypted\\.net/\\d+";
-    private static final String   TYPE_ALBUM                         = "https://yadi\\.sk/a/.+";
+    private static final String   TYPE_ALBUM                         = "https://yadi\\.sk/a/(.+)";
     private static final String   ACCOUNTONLYTEXT                    = "class=\"nb-panel__warning aside\\-public__warning\\-speed\"|>File download limit exceeded";
     /* Properties */
     public static final String    PROPERTY_HASH                      = "hash_main";
+    public static final String    PROPERTY_INTERNAL_FUID             = "INTERNAL_FUID";
     private Account               currAcc                            = null;
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
@@ -122,7 +123,9 @@ public class DiskYandexNet extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         /** TODO: Check linkid for other linktypes */
         if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
-            return new Regex(link.getPluginPatternMatcher(), "/a/(.+)").getMatch(0);
+            return new Regex(this.getHost() + "://" + link.getPluginPatternMatcher(), TYPE_ALBUM).getMatch(0);
+        } else if (link.hasProperty(PROPERTY_INTERNAL_FUID)) {
+            return this.getHost() + "://" + link.getStringProperty(PROPERTY_INTERNAL_FUID);
         } else {
             return super.getLinkID(link);
         }
@@ -373,17 +376,17 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink link) throws Exception, PluginException {
         String dllink;
-        if (downloadLink.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
-            handleDownloadAlbum(downloadLink);
-        } else if (downloadLink.getPluginPatternMatcher().matches(TYPE_DISK)) {
-            if (downloadableViaAccountOnly(downloadLink)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_ALBUM)) {
+            handleDownloadAlbum(link);
+        } else if (link.getPluginPatternMatcher().matches(TYPE_DISK)) {
+            if (downloadableViaAccountOnly(link)) {
                 /*
                  * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case
                  * the user can only download the link by importing it into his account and downloading it "from there".
@@ -406,14 +409,14 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
-                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getRawHash(downloadLink)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(downloadLink)));
+                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getRawHash(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                     if (this.br.containsHTML("DiskNotFoundError")) {
                         /* Inside key 'error' */
                         /*
                          * Usually this would mean that the file is offline but we checked it before so it has probably simply reached the
                          * traffic limit.
                          */
-                        downloadLink.setProperty("premiumonly", true);
+                        link.setProperty("premiumonly", true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                     }
                     final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -425,7 +428,7 @@ public class DiskYandexNet extends PluginForHost {
                     if (StringUtils.isEmpty(dllink)) {
                         /* Free website download */
                         this.br = this.prepbrWebsite(new Browser());
-                        getPage(getMainLink(downloadLink));
+                        getPage(getMainLink(link));
                         String sk = getSK(this.br);
                         if (sk == null) {
                             logger.warning("sk in account handling (without move) is null");
@@ -435,7 +438,7 @@ public class DiskYandexNet extends PluginForHost {
                         // getPage("https://yadi.sk/tns.html");
                         br.getHeaders().put("Accept", "*/*");
                         br.getHeaders().put("Content-Type", "text/plain");
-                        postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(downloadLink), sk));
+                        postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
                         /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                         if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                             logger.warning("WRONG_SK --> This should not happen");
@@ -461,15 +464,19 @@ public class DiskYandexNet extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                handleServerErrors(downloadLink);
-                br.followConnection();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleServerErrors(link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         } else {
-            handleDownloadVideo(downloadLink);
+            handleDownloadVideo(link);
         }
     }
 
@@ -701,7 +708,6 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -849,9 +855,13 @@ public class DiskYandexNet extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
-                handleServerErrors(link);
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleServerErrors(link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // final String server_filename = getFileNameFromHeader(dl.getConnection());
