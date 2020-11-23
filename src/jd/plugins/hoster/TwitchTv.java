@@ -616,6 +616,11 @@ public class TwitchTv extends PluginForHost {
     public void login(Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
+                if (true) {
+                    // 23.11.2020
+                    // https://api.twitch.tv/kraken/user no longer exists
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account support is currently broken!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
                 br.addAllowedResponseCodes(400);
                 // Load cookies
                 br.setCookiesExclusive(true);
