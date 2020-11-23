@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.plugins.Account;
@@ -29,12 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 /**
  *
@@ -158,16 +158,25 @@ public class FlimmitCom extends PluginForHost {
         /* All accounts are "premium" - users have to buy the movies to get the links they can add to JD. */
         br.getPage("/dynamically/me/user-subscriptions/active");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("data");
-        String expireDateStr = (String) entries.get("next_payment_date");
-        if (!StringUtils.isEmpty(expireDateStr)) {
-            expireDateStr = expireDateStr.replaceAll("(\\+.+)$", "");
-            account.setType(AccountType.PREMIUM);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH));
+        final Object dataO = entries.get("data");
+        if (dataO != null) {
+            entries = (Map<String, Object>) entries.get(dataO);
+            String expireDateStr = (String) entries.get("next_payment_date");
+            if (!StringUtils.isEmpty(expireDateStr)) {
+                expireDateStr = expireDateStr.replaceAll("(\\+.+)$", "");
+                account.setType(AccountType.PREMIUM);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH));
+                ai.setUnlimitedTraffic();
+            } else {
+                account.setType(AccountType.FREE);
+                /* Free accounts cannot download/stream anything. */
+                ai.setTrafficLeft(0);
+            }
         } else {
             account.setType(AccountType.FREE);
+            /* Free accounts cannot download/stream anything. */
+            ai.setTrafficLeft(0);
         }
-        ai.setUnlimitedTraffic();
         account.setConcurrentUsePossible(true);
         return ai;
     }

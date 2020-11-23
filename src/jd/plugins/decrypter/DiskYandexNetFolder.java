@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DiskYandexNet;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
 public class DiskYandexNetFolder extends PluginForDecrypt {
@@ -205,7 +206,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     final String md5 = (String) entries.get("md5");
                     final String url_preview = (String) entries.get("preview");
                     if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path)) {
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String name = (String) entries.get("name");
                     if (type.equals(JSON_TYPE_DIR)) {
@@ -232,8 +233,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                     } else {
                         final String media_type = (String) entries.get("media_type");
-                        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(hash)) {
-                            return null;
+                        final String resource_id = (String) entries.get("resource_id");
+                        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(hash) || StringUtils.isEmpty(resource_id)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                         decryptSingleFile(dl, entries);
@@ -270,7 +272,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                         }
                         dl.setContentUrl(url_content);
-                        dl.setLinkID(hash + path);
+                        dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
                         dl._setFilePackage(fp);
                         decryptedLinks.add(dl);
                         distribute(dl);
