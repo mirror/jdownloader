@@ -3570,10 +3570,14 @@ public class LinkCrawler {
                     if (nextURL != null && !StringUtils.equals(pluginURL, nextURL)) {
                         final String[] hits = new Regex(nextURL, plugin.getSupportedLinks()).getColumn(-1);
                         if (hits != null) {
-                            if (hits.length == 1 && hits[0] != null && !StringUtils.equals(pluginURL, hits[0])) {
-                                return hits[0];
+                            try {
+                                if (hits.length == 1 && hits[0] != null && !StringUtils.equals(pluginURL, hits[0]) && new URL(hits[0]).getPath().length() > 1) {
+                                    return hits[0];
+                                } else {
+                                    return null;
+                                }
+                            } catch (IOException e) {
                             }
-                            return null;
                         }
                     }
                     if (next.getDownloadLink() != null) {

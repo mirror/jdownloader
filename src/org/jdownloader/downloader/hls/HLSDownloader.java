@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -1119,6 +1121,7 @@ public class HLSDownloader extends DownloadInterface {
                                         getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + byteRange[1] + "-" + (byteRange[1] + byteRange[0] - 1));
                                     }
                                     URLConnectionAdapter connection = null;
+                                    boolean updateTimestamp = true;
                                     try {
                                         ffmpeg.updateLastUpdateTimestamp(getRequest.getConnectTimeout() + getRequest.getReadTimeout() + timeoutBuffer);
                                         connection = br.openRequestConnection(getRequest);
@@ -1126,6 +1129,9 @@ public class HLSDownloader extends DownloadInterface {
                                             throw new IOException("ResponseCode(" + connection.getResponseCode() + ") must be 200 or 206!");
                                         }
                                     } catch (IOException e) {
+                                        if (Exceptions.containsInstanceOf(e, SocketTimeoutException.class)) {
+                                            updateTimestamp = false;
+                                        }
                                         requestLogger.log(e);
                                         if (onSegmentConnectException(connection, e, fileBytesMap, retry, requestLogger)) {
                                             continue retryLoop;
@@ -1133,7 +1139,9 @@ public class HLSDownloader extends DownloadInterface {
                                             return false;
                                         }
                                     } finally {
-                                        ffmpeg.updateLastUpdateTimestamp();
+                                        if (updateTimestamp) {
+                                            ffmpeg.updateLastUpdateTimestamp();
+                                        }
                                     }
                                     final byte[] readWriteBuffer = new byte[32 * 1024];
                                     final long length;

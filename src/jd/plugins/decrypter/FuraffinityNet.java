@@ -20,11 +20,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,7 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/(gallery|scraps|user)/([^/]+)" })
 public class FuraffinityNet extends PluginForDecrypt {
@@ -67,8 +66,7 @@ public class FuraffinityNet extends PluginForDecrypt {
             /* Login if account is available */
             final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
             if (acc != null) {
-                final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-                plg.setBrowser(this.br);
+                final PluginForHost plg = getNewPluginForHostInstance(getHost());
                 ((jd.plugins.hoster.FuraffinityNet) plg).login(acc, false);
             }
             br.setFollowRedirects(true);

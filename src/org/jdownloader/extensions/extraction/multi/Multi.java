@@ -369,11 +369,17 @@ public class Multi extends IExtraction {
                 break;
             case MAC:
                 if (is64BitJvm) {
-                    libIDs.add("Mac-x86_64");
                     libIDs.remove("Mac-i386");
+                    if (CrossSystem.ARCHFamily.ARM.equals(arch)) {
+                        // AppleSilicon, M1, arm64
+                        libIDs.add("Mac-arm64");
+                    } else {
+                        // Intel CPU
+                        libIDs.add("Mac-x86_64");
+                    }
                 } else {
-                    libIDs.add("Mac-i386");
                     libIDs.remove("Mac-x86_64");
+                    libIDs.add("Mac-i386");
                 }
                 break;
             case WINDOWS:
@@ -1186,25 +1192,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
