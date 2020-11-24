@@ -923,7 +923,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setProperty("shortcode", shortcode);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dl.setProperty("directurl", dllink);
+            dl.setProperty(InstaGramCom.PROPERTY_DIRECTURL, dllink);
         }
         if (!StringUtils.isEmpty(description)) {
             dl.setComment(description);
@@ -1232,7 +1232,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setProperty("shortcode", shortcode);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dl.setProperty("directurl", dllink);
+            dl.setProperty(InstaGramCom.PROPERTY_DIRECTURL, dllink);
         }
         if (!StringUtils.isEmpty(description)) {
             dl.setComment(description);
