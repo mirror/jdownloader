@@ -15,7 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,8 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "https?://(?:www\\.)?puls4\\.com/.*" })
 public class Puls4Com extends PluginForHost {
@@ -92,20 +93,20 @@ public class Puls4Com extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issue = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
         String date = null;
-        final String urlpart = new Regex(downloadLink.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
+        final String urlpart = new Regex(link.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
         if (use_mobile_api) {
             prepBR(this.br);
             /* 2016-09-08: Webpage has changed. */
-            String mobileID = new Regex(downloadLink.getDownloadURL(), "(\\d{5,})$").getMatch(0);
+            String mobileID = new Regex(link.getDownloadURL(), "(\\d{5,})$").getMatch(0);
             if (mobileID == null) {
-                this.br.getPage("http://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
+                this.br.getPage("https://www." + this.getHost() + "/api/json-fe/page/" + urlpart);
                 this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
                 mobileID = this.br.getRegex("/video-grid/(\\d+)").getMatch(0);
                 if (mobileID == null) {
@@ -121,7 +122,7 @@ public class Puls4Com extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* API can even avoid geo blocks! */
             /* 2016-09-09: Changed from "m.puls4.com" to "www.puls4.com" */
-            br.getPage("http://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
+            br.getPage("https://www.puls4.com/api/video/single/" + mobileID + "?version=v4");
             /* Offline or geo blocked video */
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() <= 10) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -145,7 +146,7 @@ public class Puls4Com extends PluginForHost {
                 }
             }
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             /* Offline|Other error (e.g. geo block) */
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"message\\-error\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -167,19 +168,19 @@ public class Puls4Com extends PluginForHost {
         filename = encodeUnicode(filename);
         if (dllink == null) {
             filename = filename + ".mp4";
-            downloadLink.setName(filename);
+            link.setName(filename);
         } else {
-            downloadLink.setFinalFileName(filename);
+            link.setFinalFileName(filename);
             dllink = dllink.replace("\\", "");
             String ext = getFileNameExtensionFromString(dllink, ".mp4");
             filename += ext;
-            downloadLink.setFinalFileName(filename);
+            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setProperty("directlink", dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setProperty("directlink", dllink);
                 } else {
                     server_issue = true;
                 }
@@ -194,21 +195,25 @@ public class Puls4Com extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issue) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

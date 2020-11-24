@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
@@ -268,10 +269,7 @@ public class GoogleDrive extends PluginForHost {
                 if (dllink != null) {
                     dllink = HTMLEntities.unhtmlentities(dllink);
                     logger.info("Direct download active");
-                    /* TODO: Remove this */
-                    if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        return AvailableStatus.TRUE;
-                    }
+                    return AvailableStatus.TRUE;
                 } else {
                     logger.info("Direct download inactive --> Download Overview");
                 }
@@ -346,15 +344,7 @@ public class GoogleDrive extends PluginForHost {
                  * image per page) - we would need a decrypter for this.
                  */
                 /* 2020-09-14: Handling for this edge case has been removed. Provide example URLs if it happens again! */
-                // download_might_not_be_possible = true;
                 filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
-                // if (filename != null && type != null) {
-                // if (type.equals("article") && !filename.endsWith(".pdf")) {
-                // isDocument = true;
-                // // we can name it many formats! but we are only downloading as pdf at this stage.
-                // filename += ".pdf";
-                // }
-                // }
             }
             if (filename == null) {
                 /* Fallback */
@@ -390,7 +380,7 @@ public class GoogleDrive extends PluginForHost {
             preferredQualityHeight = getPreferredQualityHeight(qual);
             logger.info("Using currently selected quality: " + preferredQualityHeight);
         }
-        final boolean streamShouldBeAvailable = DebugMode.TRUE_IN_IDE_ELSE_FALSE && (this.isStreamable || isVideoFile(link.getFinalFileName()));
+        final boolean streamShouldBeAvailable = this.isStreamable || isVideoFile(link.getFinalFileName());
         if (preferredQualityHeight <= -1 || !streamShouldBeAvailable) {
             logger.info("Downloading original file");
             return null;
@@ -473,9 +463,9 @@ public class GoogleDrive extends PluginForHost {
         if (filename != null) {
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* Put quality in filename */
-                link.setFinalFileName(correctFileNameExtension(filename, "_" + usedQuality + "p.mp4"));
+                link.setFinalFileName(Plugin.correctOrApplyFileNameExtension(filename, "_" + usedQuality + "p.mp4"));
             } else {
-                link.setFinalFileName(correctFileNameExtension(filename, ".mp4"));
+                link.setFinalFileName(Plugin.correctOrApplyFileNameExtension(filename, ".mp4"));
             }
         }
         /* TODO: Leave this one in after public release and remove this comment! */
@@ -486,37 +476,6 @@ public class GoogleDrive extends PluginForHost {
                 link.setComment("Using preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
             }
         }
-        /* TODO: Check to see if we still need any of that old handling / headers. */
-        // String streamLink = null;
-        // if (streamLink != null) {
-        // this.dllink = streamLink;
-        // /* TODO: 2020-09-14: Check if this is still required */
-        // br.setFollowRedirects(true);
-        // if (link.getVerifiedFileSize() == -1) {
-        // // why do this here??? shouldnt this be action of the download core? -raztoki20170727
-        // final Browser brc = br.cloneBrowser();
-        // final GetRequest request = new GetRequest(brc.getURL(dllink));
-        // request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
-        // request.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=0-");
-        // URLConnectionAdapter con = null;
-        // try {
-        // con = brc.openRequestConnection(request);
-        // if (con.isOK()) {
-        // if (con.getResponseCode() == 206 && con.getCompleteContentLength() > 0) {
-        // link.setVerifiedFileSize(con.getCompleteContentLength());
-        // link.setProperty("ServerComaptibleForByteRangeRequest", true);
-        // } else if (con.isContentDisposition() && con.getCompleteContentLength() > 0) {
-        // link.setVerifiedFileSize(con.getCompleteContentLength());
-        // link.setProperty("ServerComaptibleForByteRangeRequest", true);
-        // }
-        // }
-        // } finally {
-        // if (con != null) {
-        // con.disconnect();
-        // }
-        // }
-        // }
-        // }
         if (!userHasDownloadedStreamBefore) {
             /* User could have started download of original file before: Clear progress! */
             link.setChunksProgress(null);
@@ -524,25 +483,6 @@ public class GoogleDrive extends PluginForHost {
             link.setProperty(PROPERTY_USED_QUALITY, usedQuality);
         }
         return selectedQualityDownloadlink;
-    }
-
-    /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dots to this! </br>
-     * Only replaces extensions with one dot not e.g. ".tar.gz". </br>
-     * TODO: Review this and move it into Plugin class.
-     */
-    private static String correctFileNameExtension(final String filenameOrg, final String newExtension) {
-        if (filenameOrg == null) {
-            return filenameOrg;
-        } else if (!filenameOrg.contains(".")) {
-            /* Filename doesn't contain an extension at all -> Add extension to filename. */
-            return filenameOrg + newExtension;
-        } else {
-            /* Replace existing extension with new extension. */
-            final String filenameWithoutExtension = filenameOrg.substring(0, filenameOrg.lastIndexOf("."));
-            return filenameWithoutExtension + newExtension;
-        }
     }
 
     private static boolean isVideoFile(final String filename) {
