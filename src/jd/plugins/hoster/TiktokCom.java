@@ -25,11 +25,11 @@ import java.util.Locale;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -44,8 +44,10 @@ import jd.plugins.PluginException;
 public class TiktokCom extends antiDDoSForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setConfigElements();
-        // this.enablePremium("");
+        try {
+            Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1250);
+        } catch (final Throwable e) {
+        }
     }
 
     @Override
@@ -54,10 +56,9 @@ public class TiktokCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean RESUME       = true;
+    private final boolean RESUME    = true;
     /* 2019-07-10: More chunks possible but that would not be such a good idea! */
-    private final int     MAXCHUNKS    = 1;
-    private final int     MAXDOWNLOADS = 20;
+    private final int     MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -109,7 +110,7 @@ public class TiktokCom extends antiDDoSForHost {
             filename += user + "_";
         }
         filename += fid + ".mp4";
-        if (this.getPluginConfig().getBooleanProperty(FAST_LINKCHECK, defaultFAST_LINKCHECK) && !isDownload) {
+        if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
             br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
             final String status_msg = (String) entries.get("status_msg");
@@ -286,14 +287,12 @@ public class TiktokCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return MAXDOWNLOADS;
+        return PluginJsonConfig.get(getConfigInterface()).getMaxSimultaneousDownloads();
     }
 
-    private static final String  FAST_LINKCHECK        = "FAST_LINKCHECK";
-    private static final boolean defaultFAST_LINKCHECK = true;
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck? Filesize won't be displayed until download is started!").setDefaultValue(defaultFAST_LINKCHECK));
+    @Override
+    public Class<TiktokConfig> getConfigInterface() {
+        return TiktokConfig.class;
     }
 
     @Override

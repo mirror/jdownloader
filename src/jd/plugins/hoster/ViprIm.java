@@ -109,4 +109,10 @@ public class ViprIm extends XFileSharingProBasic {
     protected boolean isImagehoster() {
         return true;
     }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-11-24: Broken serverside: https://vipr.im/?op=checkfiles */
+        return false;
+    }
 }

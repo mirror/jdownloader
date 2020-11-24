@@ -23,6 +23,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,12 +54,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -94,6 +94,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String   QUIT_ON_RATE_LIMIT_REACHED                  = "QUIT_ON_RATE_LIMIT_REACHED";
     public static final String   HASHTAG_CRAWLER_FIND_USERNAMES              = "HASHTAG_CRAWLER_FIND_USERNAMES";
     public static final String   PREFER_SERVER_FILENAMES                     = "PREFER_SERVER_FILENAMES";
+    public static final String   ADD_ORDERID_TO_FILENAMES                    = "ADD_ORDERID_TO_FILENAMES";
     private static final String  ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY        = "ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY";
     public static final String   ONLY_GRAB_X_ITEMS                           = "ONLY_GRAB_X_ITEMS";
     public static final String   ONLY_GRAB_X_ITEMS_NUMBER                    = "ONLY_GRAB_X_ITEMS_NUMBER";
@@ -104,6 +105,7 @@ public class InstaGramCom extends PluginForHost {
     /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
+    public static final boolean  defaultADD_ORDERID_TO_FILENAMES             = true;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
     public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES       = false;
     public static final boolean  defaultONLY_GRAB_X_ITEMS                    = false;
@@ -700,7 +702,9 @@ public class InstaGramCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES));
+        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SERVER_FILENAMES, "Use server-filenames whenever possible?").setDefaultValue(defaultPREFER_SERVER_FILENAMES);
+        getConfig().addEntry(cfg);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ADD_ORDERID_TO_FILENAMES, "Add order-ID to filenames if an album contains more than one element?\r\nWarning: Turning this off may lead to duplicated filenames and skipped downloads!").setDefaultValue(defaultADD_ORDERID_TO_FILENAMES).setEnabledCondidtion(cfg, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, "Try to download original quality (bigger filesize, without image-effects)? [This will slow down the download-process!]").setDefaultValue(defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), QUIT_ON_RATE_LIMIT_REACHED, "Abort crawl process once rate limit is reached?").setDefaultValue(defaultQUIT_ON_RATE_LIMIT_REACHED));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HASHTAG_CRAWLER_FIND_USERNAMES, "Crawl usernames for filenames when crawling '/explore/tags/<hashtag>' URLs? (Can slow down the crawl-process!)").setDefaultValue(defaultHASHTAG_CRAWLER_FIND_USERNAMES));
