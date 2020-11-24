@@ -170,6 +170,9 @@ public class PbsOrg extends PluginForHost {
         /* 2020-03-10: E.g. offline: https://www.pbs.org/video/2018-bmw-x2-2018-callaway-tahoes-3ph8t5/ */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video is currently not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*We're sorry, but this video is not available")) {
+            /* 2020-11-24 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(">\\s*This video is unavailable in your area")) {
             geoblocked = true;

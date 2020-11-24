@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -122,5 +123,14 @@ public class RareFileNet extends XFileSharingProBasic {
         regexStuff.add("(visibility:hidden>.*?<)");
         regexStuff.add("(<div style=\"display:none\"><BR>.*?<br><br>)");
         return regexStuff;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        boolean offline = super.isOffline(link);
+        if (!offline) {
+            offline = new Regex(correctedBR, ">\\s*This server has crashed but we are still working for this server|>\\s*No such file with this filename").matches();
+        }
+        return offline;
     }
 }
