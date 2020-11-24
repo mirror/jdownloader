@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/(?:gallery|scraps)/([^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/(gallery|scraps|user)/([^/]+)" })
 public class FuraffinityNet extends PluginForDecrypt {
     public FuraffinityNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,54 +53,62 @@ public class FuraffinityNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String username = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username);
-        int page = 1;
-        boolean hasNextPage = false;
-        /* Login if account is available */
-        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        if (acc != null) {
-            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-            plg.setBrowser(this.br);
-            ((jd.plugins.hoster.FuraffinityNet) plg).login(acc, false);
+        final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final String username = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        if (type.equalsIgnoreCase("user")) {
+            /* These will go back into this crawler! */
+            decryptedLinks.add(this.createDownloadlink("https://www." + this.getHost() + "/gallery/" + username));
+            decryptedLinks.add(this.createDownloadlink("https://www." + this.getHost() + "/scraps/" + username));
+        } else {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(username + " - " + type);
+            int page = 1;
+            boolean hasNextPage = false;
+            /* Login if account is available */
+            final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+            if (acc != null) {
+                final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+                plg.setBrowser(this.br);
+                ((jd.plugins.hoster.FuraffinityNet) plg).login(acc, false);
+            }
+            br.setFollowRedirects(true);
+            do {
+                logger.info("Crawling page " + page);
+                br.getPage(parameter + "/" + page);
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*System Message")) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                final String json = br.getRegex("var descriptions = (\\{.*?\\});").getMatch(0);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
+                int itemsCounter = 0;
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String itemID = entry.getKey();
+                    final Map<String, Object> itemProperties = (Map<String, Object>) entry.getValue();
+                    String title = (String) itemProperties.get("title");
+                    final String description = (String) itemProperties.get("description");
+                    if (StringUtils.isEmpty(title)) {
+                        /* Fallback */
+                        title = itemID;
+                    }
+                    final DownloadLink dl = this.createDownloadlink("https://www.furaffinity.net/view/" + itemID);
+                    dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
+                    dl.setName(title);
+                    if (!StringUtils.isEmpty(description)) {
+                        dl.setComment(description);
+                    }
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    distribute(dl);
+                    itemsCounter += 1;
+                }
+                logger.info("Number of items on current page: " + itemsCounter);
+                page++;
+                hasNextPage = br.containsHTML("/" + username + "/" + page);
+            } while (!this.isAbort() && hasNextPage);
         }
-        do {
-            logger.info("Crawling page " + page);
-            br.getPage(parameter + "/" + page);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*System Message")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            final String json = br.getRegex("var descriptions = (\\{.*?\\});").getMatch(0);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-            int itemsCounter = 0;
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                final String itemID = entry.getKey();
-                final Map<String, Object> itemProperties = (Map<String, Object>) entry.getValue();
-                String title = (String) itemProperties.get("title");
-                final String description = (String) itemProperties.get("description");
-                if (StringUtils.isEmpty(title)) {
-                    /* Fallback */
-                    title = itemID;
-                }
-                final DownloadLink dl = this.createDownloadlink("https://www.furaffinity.net/view/" + itemID);
-                dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
-                dl.setName(title);
-                if (!StringUtils.isEmpty(description)) {
-                    dl.setComment(description);
-                }
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                distribute(dl);
-                itemsCounter += 1;
-            }
-            logger.info("Number of items on current page: " + itemsCounter);
-            page++;
-            hasNextPage = br.containsHTML("/" + username + "/" + page);
-        } while (!this.isAbort() && hasNextPage);
         return decryptedLinks;
     }
 }
