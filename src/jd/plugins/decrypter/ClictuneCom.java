@@ -17,16 +17,14 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clictune.com" }, urls = { "https?://(?:www\\.)?(?:mylinks\\.xyz|clictune\\.com)/([A-Za-z0-9]+)" })
 public class ClictuneCom extends antiDDoSForDecrypt {
@@ -39,13 +37,15 @@ public class ClictuneCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 403) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String finallink = this.br.getRegex("redirect/\\?url=(http[^<>\"]+)\">Click here to access the link").getMatch(0);
         if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Assume that URL is offline. */
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         finallink = Encoding.htmlDecode(finallink);
         decryptedLinks.add(createDownloadlink(finallink));
