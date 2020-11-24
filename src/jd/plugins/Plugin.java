@@ -33,29 +33,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.uio.CloseReason;
@@ -88,6 +65,29 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -346,6 +346,32 @@ public abstract class Plugin implements ActionListener {
 
     public static String getFileNameFromURL(final URL url) {
         return Plugin.extractFileNameFromURL(url.getPath());
+    }
+
+    /**
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
+     * Pass fileExtension with dot(s) to this! </br>
+     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     *
+     * @param filenameOrg
+     *            Original filename
+     * @param newExtension
+     *            New extension for filename
+     *
+     *
+     * @return Filename with new extension
+     */
+    public static String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
+        if (filenameOrg == null) {
+            return filenameOrg;
+        } else if (!filenameOrg.contains(".")) {
+            /* Filename doesn't contain an extension at all -> Add extension to filename. */
+            return filenameOrg + newExtension;
+        } else {
+            /* Replace existing extension with new extension. */
+            final String filenameWithoutExtension = filenameOrg.substring(0, filenameOrg.lastIndexOf("."));
+            return filenameWithoutExtension + newExtension;
+        }
     }
 
     /**

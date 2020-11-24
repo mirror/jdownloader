@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -50,7 +52,7 @@ public class ChThnhInfo extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,7 +78,7 @@ public class ChThnhInfo extends antiDDoSForHost {
             dllink = br.getRegex("\"(/animeOST/download/[^<>\"]*?)\"").getMatch(0);
         } else {
             filename = br.getRegex(">Download file ([^<>\"]*?)</h3>").getMatch(0);
-            dllink = br.getRegex("class=\"p100 center middle\">[\t\n\r ]+<a href=\"\\.\\.(/[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("class=\"p100 center middle\">\\s*<a href=\"\\.\\.(/[^<>\"]*?)\"").getMatch(0);
             if (dllink != null) {
                 dllink = "http://chauthanh.info/anime/download" + dllink;
             }
@@ -92,12 +94,16 @@ public class ChThnhInfo extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         br.setReadTimeout(3 * 60 * 60 * 1000);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == 0) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

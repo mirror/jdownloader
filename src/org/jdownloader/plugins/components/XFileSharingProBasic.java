@@ -1177,10 +1177,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Removes double extensions (of video hosts) to correct ugly filenames such as 'some_videoname.mkv.flv.mp4'.<br />
      *
      * @param filename
-     *            input filename whose extensions will be replaced by parameter defaultExtension.
+     *            input filename whose extensions will be replaced by desiredExtension.
      * @param desiredExtension
-     *            Extension which is supposed to replace the (multiple) wrong extension(s). <br />
-     *            If defaultExtension is null,this function will only remove existing extensions.
+     *            Extension which is supposed to replace all eventually existing wrong extension(s). <br />
+     *            If desiredExtension is null, this function will only remove existing extensions.
      */
     private String removeDoubleVideoExtensions(String filename, final String desiredExtension) {
         if (filename == null || desiredExtension == null) {
@@ -1191,7 +1191,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         boolean foundExt = true;
         while (foundExt) {
             foundExt = false;
-            /* Chek for video extensions at the end of the filename and remove them */
+            /* Check for video extensions at the end of the filename and remove them. Do this until no extension is found anymore */
             for (final VideoExtensions videoExt : videoExtensions) {
                 final Pattern pattern = videoExt.getPattern();
                 final String extStr = pattern.toString();

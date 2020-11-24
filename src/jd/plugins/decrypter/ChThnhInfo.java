@@ -69,16 +69,13 @@ public class ChThnhInfo extends PluginForDecrypt {
             if (br.containsHTML("The series information was not found on this server")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
-            }
-            if (br.containsHTML("Removed due to licensed\\.")) {
+            } else if (br.containsHTML("Removed due to licensed\\.")) {
                 logger.info("Link offline (deleted): " + parameter);
                 return decryptedLinks;
-            }
-            if (br.containsHTML(">No files available for this series")) {
+            } else if (br.containsHTML(">No files available for this series")) {
                 logger.info("Link offline ('No files available for this series'): " + parameter);
                 return decryptedLinks;
-            }
-            if (br.getURL().equals("http://chauthanh.info/404")) {
+            } else if (br.getURL().equals("http://chauthanh.info/404")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -88,10 +85,10 @@ public class ChThnhInfo extends PluginForDecrypt {
             }
             String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
+                links = br.getRegex("\"([^\"]*/download/\\d+/.*?)\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
-                links = br.getRegex("\\'\\.\\.(/download/[^<>\"]*?)\\'").getColumn(0);
+                links = br.getRegex("\\.\\.(/download/[^<>\"\\']+)").getColumn(0);
             }
             if (links == null || links.length == 0) {
                 if (br.containsHTML("<th>Size</th>")) {

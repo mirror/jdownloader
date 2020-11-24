@@ -40,11 +40,20 @@ public class CatcutNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && !new Regex(redirect, this.getSupportedLinks()).matches()) {
+            /* 2020-11-24: Direct redirect (mostly to advertising websites) */
+            decryptedLinks.add(this.createDownloadlink(redirect));
+            return decryptedLinks;
+        } else if (redirect != null) {
+            br.setFollowRedirects(true);
+            br.followRedirect();
         }
         String finallink = br.getRegex("<span\\s*id\\s*=\\s*\"noCaptchaBlock\"[^<>]+>\\s*?<a href\\s*=\\s*\"(http[^<>\"]+)\"").getMatch(0);
         if (finallink == null) {
