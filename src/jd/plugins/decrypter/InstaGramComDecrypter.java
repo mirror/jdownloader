@@ -819,6 +819,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * @throws PluginException
      */
     private void crawlSingleMediaObject(final Map<String, Object> entries, String linkid_main, final long date, final String description, final String orderid, final String username) throws PluginException {
+        final boolean addOrderIDToFilename = JDUtilities.getPluginForHost(this.getHost()).getPluginConfig().getBooleanProperty(InstaGramCom.ADD_ORDERID_TO_FILENAMES, InstaGramCom.defaultADD_ORDERID_TO_FILENAMES);
         final String itemID = (String) entries.get("id");
         if (StringUtils.isEmpty(itemID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -887,8 +888,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (!StringUtils.isEmpty(shortcode) && !shortcode.equals(linkid_main)) {
                 filename += "_" + shortcode;
             }
-            if (orderid != null) {
-                /* Include orderid whenever it is given to prevent duplicate filenames for different files! */
+            if (orderid != null && addOrderIDToFilename) {
+                /* By default: Include orderid whenever it is given to prevent duplicate filenames for different files! */
                 filename += "_" + orderid;
             }
             filename += ext;
