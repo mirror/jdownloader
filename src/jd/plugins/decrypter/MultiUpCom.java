@@ -13,23 +13,19 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multi-up.com" }, urls = { "http://(www\\.)?multi\\-up\\.com/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multi-up.com" }, urls = { "http://(www\\.)?multi\\-up\\.(?:com|org)/\\d+" })
 public class MultiUpCom extends PluginForDecrypt {
-
     public MultiUpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,7 +34,6 @@ public class MultiUpCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        final String fpName = br.getRegex("Название: ([^<>\"]*?)<br />").getMatch(0);
         if (br.containsHTML("Название:  [\t\n\r ]+<br />")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -48,12 +43,10 @@ public class MultiUpCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
-            if (!singleLink.matches("http://(www\\.)?multi\\-up\\.com/\\d+.*?")) decryptedLinks.add(createDownloadlink(singleLink));
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        for (String singleLink : links) {
+            if (!singleLink.matches("http://(www\\.)?multi\\-up\\.com/\\d+.*?")) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
         return decryptedLinks;
     }
@@ -62,5 +55,4 @@ public class MultiUpCom extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
