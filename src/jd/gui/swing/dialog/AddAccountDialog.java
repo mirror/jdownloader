@@ -324,7 +324,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
                 }
                 try {
                     scrollToSelection(0);
-                    final PluginForHost plg = getSelectedPlugin().newInstance(cl);
+                    final LazyHostPlugin selected = getSelectedPlugin();
+                    final PluginForHost plg = selected != null ? selected.newInstance(cl) : null;
                     if (plg != null && (lazyHostPlugin == null || !lazyHostPlugin.equals(plg.getLazyP()))) {
                         final PluginForHost ret = updatePanel(plg);
                         if (ret != null) {
@@ -381,7 +382,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         link.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 try {
-                    final PluginForHost plugin = hoster.getSelectedPlugin().newInstance(cl);
+                    final LazyHostPlugin selected = hoster.getSelectedPlugin();
+                    final PluginForHost plugin = selected != null ? selected.newInstance(cl) : null;
                     if (plugin != null) {
                         AccountController.openAfflink(plugin, null, "accountmanager/table");
                     }

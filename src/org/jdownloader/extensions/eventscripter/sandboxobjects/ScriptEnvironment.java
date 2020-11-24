@@ -69,7 +69,9 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.extmanager.DevNullLogger;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OSFamily;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -182,10 +184,15 @@ public class ScriptEnvironment {
         if (env.isCheckPermissions()) {
             final String md5 = Hash.getMD5(env.getScript().getScript());
             if (!env.isPermissionSet(md5)) {
-                ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
+                final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.permission_title(), T.T.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T.T.allow(), T.T.deny()) {
                     @Override
                     public String getDontShowAgainKey() {
                         return "ASK_FOR_PERMISSION_" + md5 + "_" + string;
+                    }
+
+                    @Override
+                    protected LogInterface getLogger() {
+                        return new DevNullLogger();
                     }
 
                     @Override
@@ -204,10 +211,6 @@ public class ScriptEnvironment {
                     }
                 };
                 d.setDoNotShowAgainSelected(true);
-                // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
-                // if (ret != null && ret > 0) {
-                // return;
-                // }
                 if (d.show().getCloseReason() != CloseReason.OK) {
                     throw new EnvironmentException("Security Warning: User Denied Access to " + string);
                 }

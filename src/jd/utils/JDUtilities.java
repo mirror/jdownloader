@@ -113,6 +113,7 @@ public class JDUtilities {
      *            Der Host, von dem das Plugin runterladen kann
      * @return Ein passendes Plugin oder null
      */
+    @Deprecated
     public static PluginForDecrypt getPluginForDecrypt(final String host) {
         final LazyCrawlerPlugin l = CrawlerPluginController.getInstance().get(host);
         if (l != null) {
@@ -125,6 +126,7 @@ public class JDUtilities {
         return null;
     }
 
+    @Deprecated
     public static PluginForHost getPluginForHost(final String host) {
         final LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
         if (lplugin != null) {
@@ -137,6 +139,10 @@ public class JDUtilities {
         return null;
     }
 
+    @Deprecated
+    /*
+     * Use PluginForDecrypt.getNewPluginForHostInstance
+     */
     public static PluginForHost getNewPluginForHostInstance(final String host) {
         final LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
         if (lplugin != null) {
