@@ -15,19 +15,23 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "classiccinemaonline.com" }, urls = { "https?://(www\\.)?classiccinemaonline\\.com/movie-billboards/[^/]+/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "classiccinemaonline.com" }, urls = { "https?://(www\\.)?classiccinemaonline\\.com/(?:index.php/)?movie-billboards/[^/]+/.+" })
 public class ClassicCinemaOnline extends antiDDoSForDecrypt {
     public ClassicCinemaOnline(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,16 +43,31 @@ public class ClassicCinemaOnline extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s*</title>").getMatch(0);
-        String link = br.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0);
-        if (link != null && link.length() > 0) {
-            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-            decryptedLinks.add(createDownloadlink(link));
+        ArrayList<String> links = new ArrayList<String>();
+        Collections.addAll(links, br.getRegex("<iframe[^>]+src=\"([^\"]+)\"").getMatch(0));
+        Collections.addAll(links, br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+><button[^>]+class\\s*=\\s*\"[^\"]+btn-warning\"[^>]+>Download").getMatch(0));
+        for (String link : links) {
+            if (StringUtils.isNotEmpty(link)) {
+                decryptedLinks.add(createDownloadlink(processPrefixSlashes(link)));
+            }
         }
-        if (fpName != null) {
+        if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String processPrefixSlashes(String link) throws IOException {
+        if (StringUtils.isNotEmpty(link)) {
+            link = link.trim().replaceAll("^//", "https://");
+            if (link.startsWith("/")) {
+                link = this.br.getURL(link).toString();
+            }
+        }
+        return link;
     }
 }
