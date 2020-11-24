@@ -8,14 +8,12 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "tiktok.com", type = Type.HOSTER)
 public interface TiktokConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
-    @TakeValueFromSubconfig("FAST_LINKCHECK")
     @DescriptionForConfigEntry("Activate experimental forced SSL for downloads?")
     @Order(10)
     boolean isEnableFastLinkcheck();
