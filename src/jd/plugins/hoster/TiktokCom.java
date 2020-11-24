@@ -45,7 +45,7 @@ public class TiktokCom extends antiDDoSForHost {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1250);
+            Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1000);
         } catch (final Throwable e) {
         }
     }
