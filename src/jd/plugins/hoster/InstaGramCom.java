@@ -102,6 +102,7 @@ public class InstaGramCom extends PluginForHost {
     /* DownloadLink properties */
     public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
     public static final String   PROPERTY_is_part_of_story                   = "is_part_of_story";
+    public static final String   PROPERTY_DIRECTURL                          = "directurl";
     /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
@@ -151,15 +152,15 @@ public class InstaGramCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Login required to download this content");
             return AvailableStatus.UNCHECKABLE;
         }
-        dllink = link.getStringProperty("directurl", null);
         if (canGrabOriginalQualityDownloadurlViaAltAPI(link, isLoggedIN) && !link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false)) {
             this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
         } else {
-            this.dllink = checkLinkAndSetFilesize(link, this.dllink);
+            this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         }
+        this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
         if (this.dllink == null) {
             /* This will also act as a fallback in case that "original quality" handling fails */
-            this.dllink = getFreshDirecturl(link, isLoggedIN);
+            this.dllink = this.getFreshDirecturl(link, isLoggedIN);
             if (this.dllink == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
@@ -201,7 +202,7 @@ public class InstaGramCom extends PluginForHost {
                 } else if (this.looksLikeDownloadableContent(con)) {
                     link.setDownloadSize(con.getLongContentLength());
                     /* Save it to have it in case it was re-freshed! */
-                    link.setProperty("directurl", this.dllink);
+                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 } else {
                     /* Will get displayed as unknown error later on */
                     server_issues = true;
@@ -271,7 +272,7 @@ public class InstaGramCom extends PluginForHost {
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "items/{0}");
         final String downloadurl = getBestQualityURLAltAPI(entries);
         link.setProperty(PROPERTY_has_tried_to_crawl_original_url, true);
-        link.setProperty("directurl", downloadurl);
+        link.setProperty(PROPERTY_DIRECTURL, downloadurl);
         return downloadurl;
     }
 
@@ -369,7 +370,7 @@ public class InstaGramCom extends PluginForHost {
                         }
                     }
                 }
-                directurl = foundLink.getStringProperty("directurl");
+                directurl = foundLink.getStringProperty(PROPERTY_DIRECTURL);
             } catch (final Throwable e) {
                 logger.log(e);
             }
@@ -469,7 +470,8 @@ public class InstaGramCom extends PluginForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            link.removeProperty(PROPERTY_DIRECTURL);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired (?)", 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
