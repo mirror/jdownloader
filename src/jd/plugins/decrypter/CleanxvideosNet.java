@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,13 +24,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cleanxvideos.net" }, urls = { "https?://(?:www\\.)?cleanxvideos\\.net/[a-z]{2}/v/\\d+\\.html" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cleanxvideos.net" }, urls = { "https?://(?:www\\.)?cleanxvideos\\.net/[a-z]+/[a-z0-9\\-]+\\.php" })
 public class CleanxvideosNet extends PornEmbedParser {
-
     public CleanxvideosNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     /* Porn_plugin */
 
@@ -48,5 +45,4 @@ public class CleanxvideosNet extends PornEmbedParser {
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
-
 }
