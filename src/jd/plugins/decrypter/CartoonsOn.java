@@ -21,13 +21,14 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonson.tv" }, urls = { "https?://(www[0-9]*\\.)?cartoonson\\.tv/cartoons/(?:watch|view).*/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonson.tv" }, urls = { "https?://(www[0-9]*\\.)?cartoonson\\.(?:tv|net)/cartoons/(?:watch|view).*/.+" })
 public class CartoonsOn extends antiDDoSForDecrypt {
     public CartoonsOn(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,6 +74,8 @@ public class CartoonsOn extends antiDDoSForDecrypt {
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
