@@ -109,12 +109,16 @@ public class VikiCom extends PluginForHost {
         link.setName(vid);
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
+        /* 2020-11-24 */
+        final String ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36";
+        br.getHeaders().put("User-Agent", ua);
         // final UrlQuery query = new UrlQuery();
         // query.append("app", "100005a", true);
         // query.append("t", System.currentTimeMillis() + "", true);
         // query.append("site", "www.viki.com", true);
         /* 2020-05-04: This header is required from now on. */
-        br.getHeaders().put("x-viki-app-ver", "4.0.52-175e743");
+        br.getHeaders().put("x-viki-app-ver", "4.0.57");
+        br.getHeaders().put("x-client-user-agent", ua);
         br.getPage(API_BASE + "/videos/" + this.getVID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -298,7 +302,8 @@ public class VikiCom extends PluginForHost {
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         } else if (dllink == null && hls_master == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2020-11-24: If no Exception happens until this point, most likely only MPD streaming is available ... */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol MPD/DASH");
         }
         boolean preferHLS = false;
         try {
