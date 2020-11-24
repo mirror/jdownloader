@@ -22,6 +22,9 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,10 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de", "kabeleinsdoku.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?7tv\\.(?:de|at|ch)/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+", "https?://(?:www\\.)?kabeleinsdoku\\.(?:de|at|ch)/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "kabeleinsdoku.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleinsdoku\\.(?:de|at|ch)/.+" })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
     public ProSevenDeDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,6 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
         }
         String date = br.getRegex("property=\"og:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
         if ("1979-11-30T00:00:00+01:00".equals(date)) {
-            /* Avoid serverside wrong date e.g. http://www.7tv.de/circus-halligalli/52-episode-2-staffel-5-ganze-folge */
             date = br.getRegex("property=\"og:modified_time\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
         final String brand = new Regex(parameter, "https?://(?:www\\.)?([^<>\"/]*?)\\.(?:de|at|ch)/").getMatch(0);
@@ -91,20 +90,17 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             if (formatName != null && formatName.length() > 0) {
                 filename += "_" + formatName;
             }
-            /* E.g. http://www.7tv.de/big-brother/161-staffel-1-episode-61-big-brother-tag-60-teil-2-ganze-folge */
             Regex seriesinfo = new Regex(title, "(Staffel (\\d+) Episode (\\d+): )");
             String delete_me = seriesinfo.getMatch(0);
             String seasonnumber_str = seriesinfo.getMatch(1);
             String episodenumber_str = seriesinfo.getMatch(2);
             if (seasonnumber_str == null || episodenumber_str == null || delete_me == null) {
-                /* E.g. http://www.7tv.de/circus-halligalli/52-episode-2-staffel-5-ganze-folge */
                 seriesinfo = new Regex(title, "(Episode (\\d+) \\- Staffel (\\d+))");
                 delete_me = seriesinfo.getMatch(0);
                 seasonnumber_str = seriesinfo.getMatch(2);
                 episodenumber_str = seriesinfo.getMatch(1);
             }
             if (seasonnumber_str == null || episodenumber_str == null || delete_me == null) {
-                /* E.g. http://www.7tv.de/circus-halligalli/62-staffel-6-episode-2-ganze-folge */
                 seriesinfo = new Regex(title, "(Staffel (\\d+) \\- Episode (\\d+))");
                 delete_me = seriesinfo.getMatch(0);
                 seasonnumber_str = seriesinfo.getMatch(1);
@@ -117,7 +113,6 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
                 /* Only try this if we already found season- and episodenumber! */
                 delete_me = new Regex(title, "(Folge \\d+)").getMatch(0);
                 if (delete_me != null) {
-                    /* E.g. http://www.7tv.de/mila/131-staffel-1-episode-31-folge-31-ganze-folge */
                     title = title.replace(delete_me, "");
                 }
             }

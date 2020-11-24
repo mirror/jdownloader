@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -29,12 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pscp.tv" }, urls = { "https?://(?:www\\.)?pscp\\.tv/w/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pscp.tv" }, urls = { "https?://(?:www\\.)?pscp\\.tv/w/(.+)" })
 public class PscpTv extends PluginForHost {
     public PscpTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,36 +48,40 @@ public class PscpTv extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "w/(.+)").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(new int[] { 400 });
-        br.getPage("https://proxsee.pscp.tv/api/v2/accessVideoPublic?replay_redirect=false&broadcast_id=" + this.getLinkID(link));
+        br.getPage("https://proxsee.pscp.tv/api/v2/accessVideoPublic?replay_redirect=false&broadcast_id=" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJson(br, "status");
-        if (filename == null) {
-            filename = this.getLinkID(link);
-        }
         if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = this.getFID(link);
         }
-        link.setFinalFileName(filename + ".mp4");
+        if (filename != null) {
+            link.setFinalFileName(filename + ".mp4");
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         final String replayURL = PluginJSonUtils.getJson(br, "replay_url");
         if (StringUtils.isEmpty(replayURL)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -94,8 +99,8 @@ public class PscpTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, dllink);
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
     }
 
