@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -28,10 +29,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonsonline.la" }, urls = { "https?://(www\\.)?cartoonsonline\\.la/cartoon/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cartoonsonline.la" }, urls = { "https?://(www\\.)?cartoonsonline\\.la/cartoon/.+" })
 public class CartoonsOnline extends antiDDoSForDecrypt {
     public CartoonsOnline(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,7 +48,11 @@ public class CartoonsOnline extends antiDDoSForDecrypt {
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getPage(br2.getURL("/inc/getvideo.php?url=" + fid.trim()).toString());
             if (br2.containsHTML("No htmlCode read")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return decryptedLinks; // Service returns an empty string if there are no streams
+            }
+            String iframeLink = br2.getRegex("<iframe[^>]+src\\s*=\\s*\\\\\"([^\"]+)").getMatch(0);
+            if (StringUtils.isNotEmpty(iframeLink)) {
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(iframeLink.replaceAll("\\", ""))));
             }
             String[] links = br2.getRegex("data-linkdata=\\W+([\\d\\w+\\-\\_\\.\\~]+)").getColumn(0);
             if (links != null && links.length > 0) {
@@ -62,7 +65,7 @@ public class CartoonsOnline extends antiDDoSForDecrypt {
                 }
             }
         }
-        if (fpName != null) {
+        if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
