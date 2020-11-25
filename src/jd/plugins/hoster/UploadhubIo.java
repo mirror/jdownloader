@@ -41,7 +41,8 @@ public class UploadhubIo extends XFileSharingProBasic {
      * mods: See overridden functions<br />
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
-     * other:<br />
+     * other: 2020-11-25: Users have to install a proprietary download manager to download files from this websites. In my tests (psp), this
+     * software did not work at all. <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -114,6 +115,15 @@ public class UploadhubIo extends XFileSharingProBasic {
         if (new Regex(correctedBR, "Download \\& Install Our FREE Rapid Download Manager|Visit Your UploadHUB Download Link\\s*<").matches()) {
             /* 2020-11-24: They want to force users to use a self-coded tool which is only available for Windows. */
             throw new AccountRequiredException();
+        }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
         }
     }
 }
