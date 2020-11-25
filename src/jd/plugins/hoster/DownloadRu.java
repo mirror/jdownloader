@@ -180,7 +180,7 @@ public class DownloadRu extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 }
             } catch (final Exception e) {

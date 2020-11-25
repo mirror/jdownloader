@@ -106,7 +106,8 @@ public class InstaGramCom extends PluginForHost {
     /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
-    public static final boolean  defaultADD_ORDERID_TO_FILENAMES             = true;
+    /* 2020-11-25: Set this to false by default until we can maybe auto-detect the situation in which this is needed. */
+    public static final boolean  defaultADD_ORDERID_TO_FILENAMES             = false;
     public static final boolean  defaultQUIT_ON_RATE_LIMIT_REACHED           = false;
     public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES       = false;
     public static final boolean  defaultONLY_GRAB_X_ITEMS                    = false;
