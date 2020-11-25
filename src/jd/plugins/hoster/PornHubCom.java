@@ -497,6 +497,7 @@ public class PornHubCom extends PluginForHost {
             final String flashVarsID = new Regex(flashVars, "flashvars_(\\d+)").getMatch(0);
             if (flashVarsID != null) {
                 try {
+                    flashVars = flashVars.replaceFirst("(?s)(playerObjList.+)", "");
                     final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plugin);
                     final ScriptEngine engine = manager.getEngineByName("javascript");
                     engine.eval(flashVars + "var result=JSON.stringify(flashvars_" + flashVarsID + ");");
