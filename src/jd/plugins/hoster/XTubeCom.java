@@ -49,7 +49,8 @@ public class XTubeCom extends PluginForHost {
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
     private String               dllink                          = null;
-    private boolean              privateVideo                    = false;
+    /* This can mean either a free- or a premium account is required! */
+    private boolean              accountRequired                 = false;
     private boolean              server_issues                   = false;
 
     public void correctDownloadLink(DownloadLink link) {
@@ -103,7 +104,7 @@ public class XTubeCom extends PluginForHost {
          * 2019-08-08: Some videos are still downloadable via the 'old way' so we only set this if we really aren't able to find a
          * downloadurl!
          */
-        boolean maybePremiumonly = br.containsHTML("data-tr-action=\"watchpage_login_from_videoplayer\"");
+        boolean maybePremiumonly = br.containsHTML("data-tr-action=\"watchpage_(login|signup)_from_videoplayer\"");
         if (!maybePremiumonly) {
             /* When loggedin and the video still isn't downloadable the HTML looks different! */
             /*
@@ -170,28 +171,41 @@ public class XTubeCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename).trim();
         link.setFinalFileName(filename + ".mp4");
         if (!StringUtils.isEmpty(dllink) && this.dllink.startsWith("http") && !isDownload) {
-            dllink = Encoding.htmlDecode(dllink);
-            if (dllink.contains("/notfound")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(this.dllink);
-                if (con.getResponseCode() == 403) {
-                    privateVideo = true;
-                } else if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
+                dllink = Encoding.htmlDecode(dllink);
+                if (dllink.contains("/notfound")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            } finally {
+                URLConnectionAdapter con = null;
+                final Browser br2 = br.cloneBrowser();
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = br2.openHeadConnection(this.dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else if (con.getResponseCode() == 403) {
+                        accountRequired = true;
+                    } else {
+                        server_issues = true;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            } catch (final PluginException e) {
+                /*
+                 * Some videos that may require an account can sometimes still be watched for free --> If not, they're still online but an
+                 * account is required.
+                 */
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && maybePremiumonly) {
+                    this.accountRequired = true;
+                } else {
+                    throw e;
                 }
             }
         } else {
-            this.privateVideo = maybePremiumonly;
+            this.accountRequired = maybePremiumonly;
         }
         return AvailableStatus.TRUE;
     }
@@ -199,7 +213,7 @@ public class XTubeCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (this.privateVideo) {
+        if (this.accountRequired) {
             /*
              * Free account, paid account or account with money ('coins') required to buy/view content. This may still happen if the user
              * uses an account as some videos need to be bought separately!
@@ -211,8 +225,12 @@ public class XTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
