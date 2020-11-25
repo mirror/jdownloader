@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,6 +34,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:photos/)?([a-z0-9\\-]+)-(\\d+)/" })
 public class PixaBayCom extends PluginForHost {
@@ -87,7 +87,7 @@ public class PixaBayCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<title>([^<>]*?)(?: - Free photo on Pixabay)?</title>").getMatch(0);
+        String filename = br.getRegex("<title>\\s*([^<>]*?)\\s*(?: - Free photo on Pixabay)?</title>").getMatch(0);
         /* Find filesize based on whether user has an account or not. Users with account can download the best quality/original. */
         String filesize = null;
         if (aa != null) {
@@ -132,9 +132,9 @@ public class PixaBayCom extends PluginForHost {
         }
         /* Also as fallback for account download: Grab publicly visible image (lowest quality). */
         if (filesize == null || quality_download_id == null) { // No account
-            String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1\\.333x").getMatch(0);
+            String dllink = br.getRegex("(https?://cdn[^<>\"\\s]+) 1\\.333x").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1x").getMatch(0);
+                dllink = br.getRegex("(https?://cdn[^<>\"\\s]+) 1x").getMatch(0);
             }
             if (dllink != null) {
                 String ext = dllink.substring(dllink.lastIndexOf("."));
@@ -177,6 +177,8 @@ public class PixaBayCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -260,7 +262,9 @@ public class PixaBayCom extends PluginForHost {
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -322,8 +326,9 @@ public class PixaBayCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directurlproperty, dllink);
         dl.startDownload();

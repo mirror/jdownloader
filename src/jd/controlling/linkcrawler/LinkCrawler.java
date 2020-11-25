@@ -748,24 +748,28 @@ public class LinkCrawler {
 
                 @Override
                 public boolean add(HtmlParserCharSequence e) {
-                    final boolean ret = super.add(e);
-                    if (ret && (!e.contains("...") && ((getBaseURL() != null && !e.equals(getBaseURL())) || isSkipBaseURL() == false))) {
-                        fastResults.add(e);
-                        final CrawledLink crawledLink;
-                        if (true || e.getRetainedLength() > 10) {
-                            crawledLink = crawledLinkFactorybyURL(e.toURL());
-                        } else {
-                            crawledLink = crawledLinkFactorybyURL(e.toCharSequenceURL());
+                    if (!generation.isValid()) {
+                        throw new RuntimeException("Abort");
+                    } else {
+                        final boolean ret = super.add(e);
+                        if (ret && (!e.contains("...") && ((getBaseURL() != null && !e.equals(getBaseURL())) || isSkipBaseURL() == false))) {
+                            fastResults.add(e);
+                            final CrawledLink crawledLink;
+                            if (true || e.getRetainedLength() > 10) {
+                                crawledLink = crawledLinkFactorybyURL(e.toURL());
+                            } else {
+                                crawledLink = crawledLinkFactorybyURL(e.toCharSequenceURL());
+                            }
+                            crawledLink.setCrawlDeep(allowDeep);
+                            if (crawledLink.getSourceLink() == null) {
+                                crawledLink.setSourceLink(baseLink);
+                            }
+                            final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
+                            crawledLinks.add(crawledLink);
+                            crawl(generation, crawledLinks);
                         }
-                        crawledLink.setCrawlDeep(allowDeep);
-                        if (crawledLink.getSourceLink() == null) {
-                            crawledLink.setSourceLink(baseLink);
-                        }
-                        final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
-                        crawledLinks.add(crawledLink);
-                        crawl(generation, crawledLinks);
+                        return ret;
                     }
-                    return ret;
                 };
 
                 private LogSource logger = null;
@@ -803,6 +807,15 @@ public class LinkCrawler {
                 private LogSource logger = null;
 
                 @Override
+                public boolean add(HtmlParserCharSequence e) {
+                    if (!generation.isValid()) {
+                        throw new RuntimeException("Abort");
+                    } else {
+                        return super.add(e);
+                    }
+                }
+
+                @Override
                 public LogInterface getLogger() {
                     if (logger == null) {
                         logger = LogController.getInstance().getClassLogger(LinkCrawler.class);
@@ -811,18 +824,29 @@ public class LinkCrawler {
                 }
             };
         }
-        final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
-        if (possibleLinks != null && possibleLinks.length > 0) {
-            final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
-            for (final String possibleLink : possibleLinks) {
-                final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
-                crawledLink.setCrawlDeep(allowDeep);
-                if (crawledLink.getSourceLink() == null) {
-                    crawledLink.setSourceLink(baseLink);
+        final LinkCrawlerTask task;
+        if ((task = checkStartNotify(generation, "find")) != null) {
+            try {
+                final String[] possibleLinks = HTMLParser.getHttpLinks(preprocessFind(text, baseURL, allowDeep), baseURL, resultSet);
+                if (possibleLinks != null && possibleLinks.length > 0) {
+                    final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
+                    for (final String possibleLink : possibleLinks) {
+                        final CrawledLink crawledLink = crawledLinkFactorybyURL(possibleLink);
+                        crawledLink.setCrawlDeep(allowDeep);
+                        if (crawledLink.getSourceLink() == null) {
+                            crawledLink.setSourceLink(baseLink);
+                        }
+                        possibleCryptedLinks.add(crawledLink);
+                    }
+                    return possibleCryptedLinks;
                 }
-                possibleCryptedLinks.add(crawledLink);
+            } catch (RuntimeException e) {
+                if (generation.isValid()) {
+                    resultSet.getLogger().log(e);
+                }
+            } finally {
+                checkFinishNotify(task);
             }
-            return possibleCryptedLinks;
         }
         return null;
     }
@@ -1985,7 +2009,7 @@ public class LinkCrawler {
                                 LinkCrawlerRule rule = null;
                                 if (isDirect) {
                                     rule = possibleCryptedLink.getMatchingRule();
-                                    if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission) || (DirectHTTPPermission.RULES_ONLY.equals(directHTTPPermission) && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule))) {
+                                    if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission) || (DirectHTTPPermission.RULES_ONLY.equals(directHTTPPermission) && (rule != null && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule())))) {
                                         /* now we will check for directPlugin links */
                                         final DISTRIBUTE ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
                                         switch (ret) {
@@ -3688,6 +3712,9 @@ public class LinkCrawler {
 
     protected void handleFinalCrawledLink(CrawledLink link) {
         if (link != null) {
+            if (link.getMatchingRule() != null && link.getDownloadLink() != null) {
+                link.getDownloadLink().setProperty("lcrID", link.getMatchingRule().getId());
+            }
             final CrawledLink origin = link.getOriginLink();
             if (link.getCreated() == -1) {
                 link.setCreated(getCreated());

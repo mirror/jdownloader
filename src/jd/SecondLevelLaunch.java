@@ -78,6 +78,7 @@ import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -166,25 +167,30 @@ public class SecondLevelLaunch {
         new Thread() {
             public void run() {
                 try {
-                    LoggerFactory.getDefaultLogger().info("Try to disable AppNap");
+                    final LogInterface logger = LoggerFactory.getDefaultLogger();
                     // single bundle installer
-                    File file = getInfoPlistPath();
+                    final File file = getMacInfoPlistPath();
                     String cFBundleIdentifier = null;
-                    if (file != null && file.exists()) {
+                    if (file != null && file.isFile()) {
                         cFBundleIdentifier = new Regex(IO.readFileToString(file), "<key>CFBundleIdentifier</key>.*?<string>(.+?)</string>").getMatch(0);
                     }
                     LoggerFactory.getDefaultLogger().info("MAC Bundle Identifier: " + cFBundleIdentifier);
-                    if (cFBundleIdentifier == null) {
+                    if (StringUtils.isEmpty(cFBundleIdentifier)) {
                         cFBundleIdentifier = "org.jdownloader.launcher";
-                        LoggerFactory.getDefaultLogger().info("Use MAC Default Bundle Identifier: " + cFBundleIdentifier);
+                        logger.info("Use default Bundle Identifier: " + cFBundleIdentifier);
+                    } else {
+                        logger.info("Use found Bundle Identifier: " + cFBundleIdentifier);
                     }
                     if (StringUtils.isNotEmpty(cFBundleIdentifier)) {
-                        ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
                         Process process = null;
                         try {
+                            logger.info("Try to disable AppNap");
+                            final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSAppSleepDisabled", "-bool", "YES");
                             process = p.start();
-                            String ret = IO.readInputStreamToString(process.getInputStream());
-                            LoggerFactory.getDefaultLogger().info("Disable App Nap");
+                            final String ret = IO.readInputStreamToString(process.getInputStream());
+                            logger.info("Disable AppNap:" + ret);
+                        } catch (Throwable e) {
+                            logger.log(e);
                         } finally {
                             try {
                                 if (process != null) {
@@ -193,10 +199,26 @@ public class SecondLevelLaunch {
                             } catch (final Throwable e) {
                             }
                         }
-                        p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
                         try {
+                            logger.info("Try to set AppleWindowTabbingMode to manual");
+                            final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "AppleWindowTabbingMode", "manual");
                             process = p.start();
-                            String ret = IO.readInputStreamToString(process.getInputStream());
+                            final String ret = IO.readInputStreamToString(process.getInputStream());
+                            logger.info("Set AppleWindowTabbingMode to manual:" + ret);
+                        } catch (Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            try {
+                                if (process != null) {
+                                    process.destroy();
+                                }
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        try {
+                            final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
+                            process = p.start();
+                            final String ret = IO.readInputStreamToString(process.getInputStream());
                             LoggerFactory.getDefaultLogger().info("App Defaults: \r\n" + ret);
                         } finally {
                             try {
@@ -208,7 +230,6 @@ public class SecondLevelLaunch {
                         }
                     }
                 } catch (Throwable e) {
-                    LoggerFactory.getDefaultLogger().log(e);
                 }
             };
         }.start();
@@ -235,21 +256,22 @@ public class SecondLevelLaunch {
         }
     }
 
-    protected static File getInfoPlistPath() {
-        String ownBundlePath = System.getProperty("i4j.ownBundlePath");
-        if (StringUtils.isNotEmpty(ownBundlePath) && ownBundlePath.endsWith(".app")) {
+    private static File getMacInfoPlistPath() {
+        final String ownBundlePath = System.getProperty("i4j.ownBundlePath");
+        if (StringUtils.endsWithCaseInsensitive(ownBundlePath, ".app")) {
             // folder installer
-            File file = new File(new File(ownBundlePath), "Contents/Info.plist");
+            final File file = new File(new File(ownBundlePath), "Contents/Info.plist");
             if (file.exists()) {
                 return file;
             }
         }
         // old singlebundle installer
-        File file = Application.getResource("../../Info.plist");
+        final File file = Application.getResource("../../Info.plist");
         if (file.exists()) {
             return file;
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static void statics() {

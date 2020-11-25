@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,6 +35,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtube.com" }, urls = { "https?://(?:www\\.)?xtube\\.com/(?:video-watch/(?:embedded/)?|(?:watch|play_re)\\.php\\?v=)([A-Za-z0-9_\\-]+)" })
 public class XTubeCom extends PluginForHost {
@@ -179,9 +179,12 @@ public class XTubeCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 final Browser br2 = br.cloneBrowser();
                 try {
+                    br2.setFollowRedirects(true);
                     con = br2.openHeadConnection(this.dllink);
                     if (this.looksLikeDownloadableContent(con)) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        }
                     } else if (con.getResponseCode() == 403) {
                         accountRequired = true;
                     } else {

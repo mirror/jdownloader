@@ -18,6 +18,8 @@ public interface GoogleConfig extends PluginConfigInterface {
     @Order(10)
     String getUserAgent();
 
+    public void setUserAgent(String userAgent);
+
     public static enum PreferredQuality implements LabelInterface {
         ORIGINAL {
             @Override
