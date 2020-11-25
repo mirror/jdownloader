@@ -15,14 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:photos/)?([a-z0-9\\-]+\\-\\d+)/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:photos/)?([a-z0-9\\-]+)-(\\d+)/" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,23 +50,27 @@ public class PixaBayCom extends PluginForHost {
         return "https://pixabay.com/en/service/terms/";
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME               = false;
-    private static final int     FREE_MAXCHUNKS            = 1;
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_FREE_RESUME       = false;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
     /* TODO: Maybe add support for SVG format(s) */
-    private final String[]       qualities                 = { "Original", "O", "XXL", "XL", "L", "M", "S" };
-    private String               quality_max               = null;
-    private String               quality_download_id       = null;
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
+    // private final String[] qualities = { "Original", "O", "XXL", "XL", "L", "M", "S" };
+    private String quality_max         = null;
+    private String quality_download_id = null;
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
     @SuppressWarnings("deprecation")
@@ -86,67 +88,56 @@ public class PixaBayCom extends PluginForHost {
         }
         final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<title>([^<>]*?)(?: - Free photo on Pixabay)?</title>").getMatch(0);
-        /* Find filesize based on whether user has an account or not. */
+        /* Find filesize based on whether user has an account or not. Users with account can download the best quality/original. */
         String filesize = null;
         if (aa != null) {
-            boolean done = false;
             int heightMax = 0;
             int heightTmp = 0;
             final String[] qualityInfo = br.getRegex("(<td><input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
-            for (final String possiblequality : qualities) {
-                for (final String quality : qualityInfo) {
-                    boolean grabDownloadData = false;
-                    // logger.info("quality: " + quality);
-                    String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
-                    if (quality_name == null) {
-                        quality_name = new Regex(quality, "(\\d+(?:x|×)\\d+)").getMatch(0);
-                    }
-                    if (quality_name == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final boolean accountQualityPossible = aa != null && (quality_name.equalsIgnoreCase("XXL") || quality_name.equalsIgnoreCase("XL") || quality_name.equalsIgnoreCase("O") || quality_name.equalsIgnoreCase("Original"));
-                    final boolean isNoAccountQuality = !quality_name.equalsIgnoreCase("XXL") && !quality_name.equalsIgnoreCase("XL") && !quality_name.equalsIgnoreCase("O") && !quality_name.equalsIgnoreCase("Original");
-                    /* Possibly unknown quality but we might be able to find the highest quality by resolution */
-                    final boolean isResolution = quality_name.matches("\\d+.\\d+");
-                    if (quality_name.equals(possiblequality) && (accountQualityPossible || isNoAccountQuality)) {
-                        done = true;
-                        grabDownloadData = true;
-                        break;
-                    } else if (isResolution) {
-                        grabDownloadData = true;
-                        final String heightStr = new Regex(quality_name, "^(\\d+)").getMatch(0);
-                        heightTmp = Integer.parseInt(heightStr);
-                        if (heightTmp > heightMax) {
-                            heightMax = heightTmp;
-                        }
-                    }
-                    if (grabDownloadData) {
+            for (final String quality : qualityInfo) {
+                // logger.info("quality: " + quality);
+                /* Old: TODO: Check if these ones still exist. */
+                boolean isResolution = false;
+                String quality_name = new Regex(quality, "(ORIGINAL|O|S|M|L|XXL|XL|SVG)</td>").getMatch(0);
+                if (quality_name == null) {
+                    /* 2020-11-25: New/current */
+                    quality_name = new Regex(quality, "(\\d+(?:x|×)\\d+)").getMatch(0);
+                    isResolution = true;
+                }
+                if (quality_name == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (isResolution) {
+                    final String heightStr = new Regex(quality_name, "^(\\d+)").getMatch(0);
+                    heightTmp = Integer.parseInt(heightStr);
+                    if (heightTmp > heightMax) {
+                        heightMax = heightTmp;
                         filesize = new Regex(quality, "class=\"hide-xs hide-md\">([^<>\"]*?)<").getMatch(0);
                         if (filesize == null) {
                             filesize = new Regex(quality, ">(\\d+(?:\\.\\d+)? (?:kB|mB|gB))<").getMatch(0);
                         }
-                        quality_max = new Regex(quality, ">(\\d+)\\s*(?:×|x)\\s*\\d+<").getMatch(0);
+                        quality_max = heightStr;
                         quality_download_id = new Regex(quality, "([^<>\"/]*?\\.jpg)").getMatch(0);
                         if (quality_download_id == null) {
                             quality_download_id = new Regex(quality, "name=\"download\" value=\"([^<>\"]*?)\"").getMatch(0);
                         }
                     }
-                }
-                if (done) {
-                    break;
+                } else {
+                    logger.info("Skipping unsupported quality");
                 }
             }
         }
         if (filename == null) {
             filename = fallback_filename;
         }
+        /* Also as fallback for account download: Grab publicly visible image (lowest quality). */
         if (filesize == null || quality_download_id == null) { // No account
-            String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1.333x").getMatch(0);
+            String dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1\\.333x").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("(https://cdn[^<>\"\\s]+) 1x").getMatch(0);
             }
             if (dllink != null) {
-                String ext = new Regex(dllink, "(\\.[a-z]+)$").getMatch(0);
+                String ext = dllink.substring(dllink.lastIndexOf("."));
                 link.setProperty("free_directlink", dllink);
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = encodeUnicode(filename) + ext;
@@ -171,120 +162,101 @@ public class PixaBayCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        handleDownload(link, null);
     }
 
-    @SuppressWarnings("static-access")
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            final String post_url = "https://pixabay.com/en/photos/download/" + quality_download_id + "?attachment&modal";
-            this.br.getPage(post_url);
-            final String timestamp = this.br.getRegex("name=\"timestamp\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String security_hash = this.br.getRegex("name=\"security_hash\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (timestamp == null || security_hash == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final Recaptcha rc = new Recaptcha(br, this);
-            /* Last updated: 2015-08-17 */
-            rc.setId("6Ld8hL8SAAAAAKbydL06Ir20hG_u2SfRkBbfpTNf");
-            rc.load();
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            this.br.postPage(post_url, "topyenoh=&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&timestamp=" + timestamp + "&security_hash=" + security_hash + "&attachment=1");
-            dllink = br.getRegex("window\\.location=\"(/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = "https://pixabay.com" + dllink;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        return null;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                /* 2019-09-07: If life was always as simple as that ... :D */
+                /* 2019-09-07: If life was always as simple as that ... :D 2020-11-25: Cookie is still used :D */
                 br.setCookie(this.getHost(), "is_human", "1");
                 // br.setCookie(this.getHost(), "lang", "de");
                 br.setCookie(this.getHost(), "client_width", "1920");
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean loggedIN = false;
                 if (cookies != null) {
+                    logger.info("Attempting to login via cookies");
                     br.setCookies(account.getHoster(), cookies);
-                    br.getPage("https://" + this.getHost() + "/de/accounts/media/");
-                    loggedIN = this.isLoggedIN();
+                    if (!force) {
+                        logger.info("Trust cookies without login");
+                        return;
+                    } else {
+                        br.getPage("https://" + this.getHost() + "/de/accounts/media/");
+                        if (this.isLoggedIN()) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            this.br.clearAll();
+                        }
+                    }
                 }
-                if (!loggedIN) {
-                    logger.info("Performing full login");
-                    br.getPage("https://" + this.getHost() + "/accounts/login/");
-                    final Form loginform = br.getFormbyKey("password");
-                    if (loginform == null) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/accounts/login/");
+                final Form loginform = br.getFormbyKey("password");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", account.getUser());
+                loginform.put("password", account.getPass());
+                if (loginform.getAction() != null && loginform.getAction().equals(".")) {
+                    loginform.setAction(br.getURL());
+                }
+                // if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform) ||
+                // loginform.containsHTML("g-recaptcha-response")) {
+                if (true) { /* 2020-11-25: Login captcha is always required */
+                    /* 2020-11-25: New: Login captcha */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
+                        } else {
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
+                        }
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
                     }
-                    loginform.put("username", account.getUser());
-                    loginform.put("password", account.getPass());
-                    if (loginform.getAction() != null && loginform.getAction().equals(".")) {
-                        loginform.setAction(br.getURL());
-                    }
-                    br.submitForm(loginform);
-                    if (!isLoggedIN()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                }
+                br.submitForm(loginform);
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -298,29 +270,63 @@ public class PixaBayCom extends PluginForHost {
         return br.containsHTML("/accounts/logout/\"");
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.FREE);
-            /* Free accounts cannot have captchas */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.FREE);
+        /* Free accounts do not have captchas. */
+        account.setConcurrentUsePossible(true);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        final String directurlproperty;
+        if (account != null) {
+            directurlproperty = "premium_directlink";
+        } else {
+            directurlproperty = "free_directlink";
+        }
+        String dllink = checkDirectLink(link, directurlproperty);
+        if (dllink == null) {
+            if (this.quality_download_id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = "https://pixabay.com/images/download/" + this.quality_download_id + "?attachment";
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                dl.startDownload();
+                return;
+            }
+            /* Captcha required e.g. download without account */
+            br.followConnection(true);
+            final Form dlform = br.getForm(0);
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(dlform);
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty(directurlproperty, dllink);
+        dl.startDownload();
     }
 
     @Override
@@ -331,30 +337,12 @@ public class PixaBayCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "https://pixabay.com/en/photos/download/" + dllink + "?attachment";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (this.br.containsHTML("\"fdiv_recaptcha\"|google\\.com/recaptcha/help")) {
-                /*
-                 * If a user downloads too much, he might get asked to enter captchas in premium mode --> Wait to get around this problem.
-                 */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Captcha needed - wait some time until you can download again", 10 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty("premium_directlink", dllink);
-        dl.startDownload();
+        handleDownload(link, account);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return -1;
     }
 
     @Override
