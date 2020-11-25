@@ -448,15 +448,19 @@ public class LinkCrawler {
         }
     }
 
-    public List<String[]> getLinkCrawlerRuleCookies(final long ruleID) {
+    public static List<String[]> getLinkCrawlerRuleCookies(final long ruleID) {
+        return getLinkCrawlerRuleCookies(ruleID, false);
+    }
+
+    public static List<String[]> getLinkCrawlerRuleCookies(final long ruleID, final boolean mustBeEnabled) {
         synchronized (LINKCRAWLERRULESLOCK) {
             final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
-            if (rules == null) {
+            if (rules == null || rules.size() == 0) {
                 return null;
             } else {
                 for (final LinkCrawlerRuleStorable rule : rules) {
                     if (rule.getId() == ruleID) {
-                        if (rule.getCookies() != null) {
+                        if (rule.getCookies() != null && (!mustBeEnabled || rule.isEnabled())) {
                             return new ArrayList<String[]>(rule.getCookies());
                         } else {
                             return null;
