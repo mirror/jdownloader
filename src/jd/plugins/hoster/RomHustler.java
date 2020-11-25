@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +30,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" })
-public class RomHustlerNet extends PluginForHost {
-    public RomHustlerNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.org" }, urls = { "https?://(?:www\\.)?romhustler\\.(?:net|org)/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" })
+public class RomHustler extends PluginForHost {
+    public RomHustler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -60,6 +63,7 @@ public class RomHustlerNet extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         prepBrowser(br);
         final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
         if (decrypterLink == null) {
@@ -76,7 +80,7 @@ public class RomHustlerNet extends PluginForHost {
         String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
         if (jslink != null) {
             try {
-                br.cloneBrowser().getPage("http://romhustler.net" + jslink);
+                br.cloneBrowser().getPage("https://" + this.getHost() + jslink);
             } catch (final Exception e) {
             }
         }
@@ -84,8 +88,9 @@ public class RomHustlerNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         boolean skipWaittime = true;
         if (!skipWaittime) {
             int wait = 8;
@@ -93,9 +98,9 @@ public class RomHustlerNet extends PluginForHost {
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
-            sleep(wait * 1001l, downloadLink);
+            sleep(wait * 1001l, link);
         }
-        final String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/").getMatch(0);
+        final String fuid = new Regex(link.getDownloadURL(), "/(\\d+)/").getMatch(0);
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -105,23 +110,23 @@ public class RomHustlerNet extends PluginForHost {
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
-            ddlink = br2.getRegex("\"hashed\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            ddlink = PluginJSonUtils.getJson(br2, "hashed");
         }
-        if (ddlink == null || !ddlink.startsWith("http") || ddlink.length() > 500) {
+        if (StringUtils.isEmpty(ddlink) || !ddlink.startsWith("http") || ddlink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ddlink = ddlink.replace("\\", "");
-        if (downloadLink.getBooleanProperty("splitlink", false)) {
+        if (link.getBooleanProperty("splitlink", false)) {
             ddlink += "/1";
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = getFileNameFromHeader(dl.getConnection());
         filename = Encoding.htmlDecode(filename);
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         dl.startDownload();
     }
 
