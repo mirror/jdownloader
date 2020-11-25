@@ -79,7 +79,6 @@ public class EHentaiOrg extends antiDDoSForHost {
     /* Limit chunks to 1 as we only download small files */
     private static final int            free_maxchunks                    = 1;
     private static final int            free_maxdownloads                 = -1;
-    private static final long           minimal_filesize                  = 1000;
     private String                      dllink                            = null;
     private boolean                     server_issues                     = false;
     private final boolean               ENABLE_RANDOM_UA                  = true;
@@ -537,14 +536,10 @@ public class EHentaiOrg extends antiDDoSForHost {
         return url != null && StringUtils.containsIgnoreCase(url, "/img/kokomade.jpg");
     }
 
-    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (link.getDownloadSize() < minimal_filesize) {
-            /* Rare error: E.g. "403 picture" is smaller than 1 KB */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
@@ -555,18 +550,26 @@ public class EHentaiOrg extends antiDDoSForHost {
             /* Whatever happens - its most likely a server problem for this host! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l, ebr);
         }
+        long expectedFilesize = link.getView().getBytesTotal();
+        if (expectedFilesize > 1000) {
+            /*
+             * Allow content to be up to 1KB smaller than expected filesize --> All to prevent downloading static images e.g. when trying to
+             * download after randomly being logged-out.
+             */
+            expectedFilesize -= 1000;
+        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
             }
             if (br.containsHTML("¿You have exceeded your image viewing limits\\. Note that you can reset these limits by going")) {
                 limitReached(account);
@@ -575,7 +578,10 @@ public class EHentaiOrg extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account / Re-login required", 1 * 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (requiresAccount(dl.getConnection().getURL().toString()) || (dl.getConnection().getCompleteContentLength() > 0 && dl.getConnection().getLongContentLength() < minimal_filesize)) {
+        } else if (expectedFilesize > 0 && dl.getConnection().getLongContentLength() < expectedFilesize) {
+            /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
+        } else if (requiresAccount(dl.getConnection().getURL().toString())) {
             maybeLoginFailure(account);
         }
         dl.startDownload();
