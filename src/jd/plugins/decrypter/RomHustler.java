@@ -28,19 +28,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" })
-public class RomHustlerNet extends PluginForDecrypt {
-    public RomHustlerNet(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romhustler.org" }, urls = { "https?://(?:www\\.)?romhustler\\.(?:net|org)/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" })
+public class RomHustler extends PluginForDecrypt {
+    public RomHustler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final PluginForHost rhPlugin = JDUtilities.getPluginForHost(this.getHost());
-        ((jd.plugins.hoster.RomHustlerNet) rhPlugin).prepBrowser(this.br);
+        final PluginForHost rhPlugin = this.getNewPluginForHostInstance(this.getHost());
+        ((jd.plugins.hoster.RomHustler) rhPlugin).prepBrowser(this.br);
         br.getPage(parameter);
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost|>\\s*This is a ESA protected rom|>Administrators only")) {
             decryptedLinks.add(createOfflinelink(parameter));

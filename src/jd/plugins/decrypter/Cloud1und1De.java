@@ -6,6 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -19,26 +25,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.1und1.de" }, urls = { "https?://cloud\\.1und1\\.de/ngcloud/external\\?.*?guestToken=[a-zA-Z0-9\\-]{22}(&loginName=\\d+)?" })
 public class Cloud1und1De extends PluginForDecrypt {
-
     public Cloud1und1De(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private final String                   brokenPlaceholder = "";
-
     private static AtomicReference<String> APPKEY            = new AtomicReference<String>(null);
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            return ret;
+        }
         final String version = br.getRegex("\"version\"\\s*:\\s*\"(.*?)\"").getMatch(0);
         if (version == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -57,23 +61,32 @@ public class Cloud1und1De extends PluginForDecrypt {
                     appKey = br2.getRegex("X-UI-API-KEY\"\\s*:.*?:\"(.*?)\",").getMatch(0);
                     if (appKey == null) {
                         APPKEY.set(brokenPlaceholder);// broken
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        logger.warning("Failed to find appKey");
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
                         APPKEY.set(appKey);
                     }
                 }
             } else if (brokenPlaceholder.equals(appKey)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("appKey missing");
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final String shareID = new Regex(parameter.getCryptedUrl(), "guestToken=([a-zA-Z0-9\\-]+)").getMatch(0);
         final String userName = new Regex(parameter.getCryptedUrl(), "loginName=(\\d+)").getMatch(0);
         Browser br2 = br.cloneBrowser();
-        br2.setHeader("X-UI-API-KEY", appKey);
-        br2.setHeader("X-UI-APP", "1&1access.web.onlinespeichernebula/" + version);
+        if (appKey != null) {
+            br2.setHeader("X-UI-API-KEY", appKey);
+        }
+        if (version != null) {
+            br2.setHeader("X-UI-APP", "1&1access.web.onlinespeichernebula/" + version);
+        }
         br2.setAllowedResponseCodes(new int[] { 401 });
         br2.getPage("https://cloud.1und1.de/ngcloud/restfs/guest/" + userName + "/share/" + shareID + "/resourceAlias/ROOT?option=shares&option=download&option=thumbnails&option=metadata&option=props&option=displayresource&sort=ui:meta:user.created-a,name-a-i&option=props&length=1000&offset=0");
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (br2.getHttpConnection().getResponseCode() == 404) {
+            ret.add(this.createOfflinelink(parameter.getCryptedUrl()));
+            return ret;
+        }
         if (br2.getRequest().getHttpConnection().getResponseCode() == 404) {
             return ret;
         } else if (br2.getRequest().getHttpConnection().getResponseCode() == 401) {
