@@ -21,11 +21,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,9 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "top4top.net" }, urls = { "https?://(?:www\\.)?up\\.top4top\\.net/downloadf\\-[a-z0-9\\-]+\\.html" })
-public class Top4topNet extends PluginForHost {
-    public Top4topNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "top4top.io" }, urls = { "https?://(?:www\\.)?(?:up\\.top4top\\.net|top4top\\.io)/downloadf\\-([a-z0-9\\-]+)\\.html" })
+public class Top4topIo extends PluginForHost {
+    public Top4topIo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -46,11 +46,24 @@ public class Top4topNet extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), "downloadf\\-(.+)").getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("top4top.net")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
         }
     }
 
@@ -71,22 +84,29 @@ public class Top4topNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("لم نتمكن من إيجاد الملف..")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*لم نتمكن من إيجاد الملف..!!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fid = this.getFID(link);
+        /* 2020-11-26: File-extension is not given in title we find in html but it is usually given inside our fuid! */
+        String betterFileExtension = null;
+        if (fid != null && fid.contains("-")) {
+            betterFileExtension = fid.substring(fid.lastIndexOf("-") + 1);
+        }
         String filename = br.getRegex("class=\"title_page\">([^<>\"]+) \\| تحميل</h1>").getMatch(0);
-        if (filename == null) {
-            filename = getLinkID(link);
-        }
-        /* Not sure if all files are archives but final filename will be set on downloadstart anyways. */
-        filename += ".zip";
         String filesize = br.getRegex(">حجم الملف</td>\\s*?<td class=\"tddata\">([^<>\"]+)</td>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            if (betterFileExtension != null) {
+                filename += "." + betterFileExtension;
+            } else {
+                /* Not sure if all files are archives but final filename will be set on downloadstart anyways. */
+                filename += ".zip";
+            }
+            link.setName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -94,56 +114,60 @@ public class Top4topNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            dllink = br.getRegex("(https?://[^/]+/f_[^/]+\\?key=[a-f0-9]+)").getMatch(0);
+            final Form continueForm = br.getFormbyActionRegex(".*/process/.*");
+            br.submitForm(continueForm);
+            dllink = br.getRegex("(https?://[^/]+/f_[^<>\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
