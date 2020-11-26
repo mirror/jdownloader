@@ -26,6 +26,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -38,6 +47,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -46,15 +57,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -76,10 +78,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                           return size() > 100;
+                                                                                       };
+                                                                                   };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -415,12 +417,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
                 getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                try {
+                    InstaGramCom.checkErrors(br);
+                } catch (final AccountRequiredException ar) {
+                    /* Instagram blocks the amount of items a user can see based on */
+                    throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, null);
+                }
                 /* TODO: Move all of this errorhandling to one place */
                 final int responsecode = br.getHttpConnection().getResponseCode();
-                if (responsecode == 404) {
-                    logger.warning("Error occurred: 404");
-                    return;
-                } else if (responsecode == 403 || responsecode == 429) {
+                if (responsecode == 403 || responsecode == 429) {
                     /* Stop on too many 403s as 403 is not a rate limit issue! */
                     logger.warning("Failed to bypass rate-limit!");
                     return;
@@ -583,12 +588,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
                 getPage(param, br, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
+                InstaGramCom.checkErrors(br);
                 /* TODO: Move all of this errorhandling to one place */
                 final int responsecode = br.getHttpConnection().getResponseCode();
-                if (responsecode == 404) {
-                    logger.warning("Error occurred: 404");
-                    return;
-                } else if (responsecode == 403 || responsecode == 429) {
+                if (responsecode == 403 || responsecode == 429) {
                     /* Stop on too many 403s as 403 is not a rate limit issue! */
                     logger.warning("Failed to bypass rate-limit!");
                     return;
@@ -651,7 +654,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             return;
         }
         final String url = "/graphql/query/?query_hash=" + qHash + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
-        br.getPage(url);
         getPage(param, br, url, null, null);
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/reels_media/{0}/items");

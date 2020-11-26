@@ -396,7 +396,10 @@ public class InstaGramCom extends PluginForHost {
     }
 
     public static void checkErrors(final Browser br) throws PluginException {
-        if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
+        /* Old trait */
+        // if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
+        /* New trait 2020-11-26 */
+        if (br.getURL().matches("https?://[^/]+/accounts/login.*")) {
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
