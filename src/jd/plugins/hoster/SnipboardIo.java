@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -29,13 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snag.gy" }, urls = { "https?://(?:(?:www|i)\\.)?snag\\.gy/[A-Za-z0-9]+\\.jpg" })
-public class SnagGy extends PluginForHost {
-
-    public SnagGy(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snipboard.io" }, urls = { "https?://(?:(?:www|i)\\.)?(?:snag\\.gy|snipboard\\.io)/([A-Za-z0-9]+)\\.jpg" })
+public class SnipboardIo extends PluginForHost {
+    public SnipboardIo(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // protocol: https
 
@@ -43,7 +40,6 @@ public class SnagGy extends PluginForHost {
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -52,16 +48,38 @@ public class SnagGy extends PluginForHost {
         return "https://snag.gy/terms";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("snag.gy")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        String url_filename = getFID(link);
         /* Acoid redirect from http --> https */
-        dllink = "https://i.snag.gy/" + url_filename;
+        dllink = "https://i." + this.getHost() + "/" + url_filename;
         if (url_filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -72,7 +90,6 @@ public class SnagGy extends PluginForHost {
         if (!url_filename.endsWith(ext)) {
             url_filename += ext;
         }
-
         link.setName(url_filename);
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
@@ -85,12 +102,13 @@ public class SnagGy extends PluginForHost {
                     url_filename = url_filename.replace(ext, "." + ext_header);
                     link.setFinalFileName(url_filename);
                 }
-                link.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getCompleteContentLength());
             } else {
                 if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 410) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    server_issues = true;
                 }
-                server_issues = true;
             }
         } finally {
             try {
@@ -102,21 +120,25 @@ public class SnagGy extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

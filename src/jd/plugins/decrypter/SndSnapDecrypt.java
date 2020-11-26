@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,18 +24,18 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "http://(www\\.)?soundsnap\\.com/node/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "https?://(?:www\\.)?soundsnap\\.com/node/(\\d+)" })
 public class SndSnapDecrypt extends PluginForDecrypt {
-
     public SndSnapDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        // final String thisnodeID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
-        if (br.containsHTML("(Page not found|Sorry, unable to find that page)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(Page not found|Sorry, unable to find that page)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -45,15 +44,13 @@ public class SndSnapDecrypt extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String id : ids)
+        for (String id : ids) {
             decryptedLinks.add(createDownloadlink("decryptedsndspnr=" + id));
-
+        }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

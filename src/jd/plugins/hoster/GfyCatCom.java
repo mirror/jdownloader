@@ -112,12 +112,8 @@ public class GfyCatCom extends PluginForHost {
                     link.setComment(description);
                 }
                 final String username = (String) entries.get("author");
-                String filename = (String) entries.get("headline");
-                if (StringUtils.isEmpty(filename)) {
-                    /* Fallback */
-                    filename = this.getFID(link);
-                }
-                if (StringUtils.isEmpty(datePublished) || StringUtils.isEmpty(username) || StringUtils.isEmpty(filename)) {
+                final String title = (String) entries.get("headline");
+                if (StringUtils.isEmpty(datePublished) || StringUtils.isEmpty(username) || StringUtils.isEmpty(title)) {
                     /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -149,7 +145,16 @@ public class GfyCatCom extends PluginForHost {
                     ext = ".mp4";
                     break;
                 }
-                link.setFinalFileName(dateFormatted + "_" + username + " - " + filename + ext);
+                if (!StringUtils.isEmpty(title)) {
+                    /*
+                     * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be
+                     * published on the same date (very rare case).
+                     */
+                    link.setFinalFileName(dateFormatted + "_" + username + " - " + this.getFID(link) + " - " + title + ext);
+                } else {
+                    /* Fallback */
+                    link.setFinalFileName(this.getFID(link) + ext);
+                }
             } else {
                 /* Old handling */
                 final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
