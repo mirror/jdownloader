@@ -23,6 +23,16 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -40,6 +50,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,16 +59,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -1227,6 +1228,7 @@ public abstract class K2SApi extends PluginForHost {
         }
         if (!inValidate(errCode) && errCode.matches("\\d+")) {
             final int err = Integer.parseInt(errCode);
+            final String subErrs = PluginJSonUtils.getJsonArray(brString, "errors");
             String msg = getErrorMessage(err);
             if (StringUtils.isEmpty(msg)) {
                 /* No language String available for errormessage? Fallback to provided errormessage */
@@ -1279,6 +1281,26 @@ public abstract class K2SApi extends PluginForHost {
                     privateDownloadRestriction(msg);
                 case 10:
                 case 11:
+                case 42:
+                    /* 2020-11-26: E.g. "File is available for premium users only" AFTER captcha in free mode. */
+                    /* Old comments below */
+                    // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
+                    // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
+                    // {"message":"Download is not
+                    // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":3}]}
+                    // {"message":"Download not
+                    // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":"
+                    // Free account does not allow to download more than one file at the same time"}]}
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
+                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
+                    // sub error, pass it back into itself.
+                    if (subErrs != null) {
+                        handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
+                    } else {
+                        throw new AccountRequiredException();
+                    }
                 case 75:
                     // ERROR_YOU_ARE_NEED_AUTHORIZED = 10;
                     // ERROR_AUTHORIZATION_EXPIRED = 11;
@@ -1296,7 +1318,6 @@ public abstract class K2SApi extends PluginForHost {
                     // {"message":"Download is not
                     // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
-                    final String subErrs = PluginJSonUtils.getJsonArray(brString, "errors");
                     if (subErrs != null) {
                         handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                     }
@@ -1328,20 +1349,6 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_WRONG_FREE_DOWNLOAD_KEY = 40;
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
                 case 41:
-                case 42:
-                    // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
-                    // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
-                    // {"message":"Download is not
-                    // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":3}]}
-                    // {"message":"Download not
-                    // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
-                    // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":"
-                    // Free account does not allow to download more than one file at the same time"}]}
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
-                    // sub error, pass it back into itself.
-                    handleErrors(account, br, PluginJSonUtils.getJsonArray(brString, "errors"), true);
                 case 70:
                 case 72:
                     // ERROR_INCORRECT_USERNAME_OR_PASSWORD = 70;
