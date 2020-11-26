@@ -2022,55 +2022,73 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 LogSource.exception(logger, e);
             }
         }
+        // PostProcessing
         switch (variant.getType()) {
         case SUBTITLES:
             // rename subtitles to match the videos.
             // this code
-            if (CFG_YOUTUBE.CFG.isSubtitleCopyforEachVideoVariant()) {
+            final YoutubeConfig.SubtitleVariantMode subtitleVariantMode = CFG_YOUTUBE.CFG.getSubtitleVariantMode();
+            if (subtitleVariantMode != null && !YoutubeConfig.SubtitleVariantMode.DISABLED.equals(subtitleVariantMode)) {
                 final FilePackage pkg = downloadLink.getParentNode();
-                boolean readL2 = pkg.getModifyLock().readLock();
+                final boolean readL2 = pkg.getModifyLock().readLock();
                 final File source = new File(downloadLink.getFileOutput(false, false));
                 try {
-                    final String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
-                    for (DownloadLink child : pkg.getChildren()) {
-                        try {
-                            if (myID.equals(child.getStringProperty(YoutubeHelper.YT_ID, null))) {
-                                final AbstractVariant v = getVariant(child);
-                                switch (v.getGroup()) {
-                                case VIDEO:
-                                    final String ext = Files.getExtension(child.getFinalFileName());
-                                    if (StringUtils.isNotEmpty(ext)) {
-                                        final String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
-                                        final String displayLanguage;
-                                        if (variant instanceof SubtitleVariant) {
-                                            displayLanguage = ((SubtitleVariant) variant).getDisplayLanguage();
-                                        } else {
-                                            final Locale locale = new SubtitleVariantOld(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
-                                            displayLanguage = locale.getDisplayLanguage();
-                                        }
-                                        final File dest;
-                                        if (StringUtils.isEmpty(displayLanguage)) {
-                                            dest = new File(source.getParentFile(), base + ".srt");
-                                        } else {
-                                            dest = new File(source.getParentFile(), base + "." + displayLanguage + ".srt");
-                                        }
-                                        IO.copyFile(source, dest);
-                                        try {
-                                            if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-                                                dest.setLastModified(source.lastModified());
+                    logger.info("PostProcessing for Subtitle:" + subtitleVariantMode + "|exists:" + source.isFile());
+                    boolean successfulFlag = false;
+                    boolean keepOriginal = false;
+                    if (source.isFile()) {
+                        final String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
+                        for (DownloadLink child : pkg.getChildren()) {
+                            try {
+                                if (myID.equals(child.getStringProperty(YoutubeHelper.YT_ID, null))) {
+                                    final AbstractVariant v = getVariant(child);
+                                    switch (v.getGroup()) {
+                                    case VIDEO:
+                                        final String ext = Files.getExtension(child.getFinalFileName());
+                                        if (StringUtils.isNotEmpty(ext)) {
+                                            final String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
+                                            final String displayLanguage;
+                                            if (variant instanceof SubtitleVariant) {
+                                                displayLanguage = ((SubtitleVariant) variant).getDisplayLanguage();
+                                            } else {
+                                                final Locale locale = new SubtitleVariantOld(downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, ""))._getLocale();
+                                                displayLanguage = locale.getDisplayLanguage();
                                             }
-                                        } catch (final Throwable e) {
-                                            getLogger().log(e);
+                                            final File dest;
+                                            if (StringUtils.isEmpty(displayLanguage)) {
+                                                dest = new File(source.getParentFile(), base + ".srt");
+                                            } else {
+                                                dest = new File(source.getParentFile(), base + "." + displayLanguage + ".srt");
+                                            }
+                                            if (dest.equals(source)) {
+                                                logger.info("PostProcessing for Subtitle:" + subtitleVariantMode + "|KeepOriginal source:'" + source + "' because equals dest:" + dest);
+                                                keepOriginal = true;
+                                            } else {
+                                                logger.info("PostProcessing for Subtitle:" + subtitleVariantMode + "|Copy source:'" + source + "' to dest:" + dest);
+                                                IO.copyFile(source, dest);
+                                                successfulFlag = true;
+                                            }
+                                            try {
+                                                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                                                    dest.setLastModified(source.lastModified());
+                                                }
+                                            } catch (final Throwable e) {
+                                                getLogger().log(e);
+                                            }
                                         }
+                                        break;
+                                    default:
+                                        break;
                                     }
-                                    break;
-                                default:
-                                    break;
                                 }
+                            } catch (Exception e) {
+                                getLogger().log(e);
                             }
-                        } catch (Exception e) {
-                            getLogger().log(e);
                         }
+                    }
+                    if (!keepOriginal && successfulFlag && YoutubeConfig.SubtitleVariantMode.COPY_AND_DELETE.equals(subtitleVariantMode)) {
+                        logger.info("PostProcessing for Subtitle:" + subtitleVariantMode + "|Delete source:" + source);
+                        source.delete();
                     }
                 } finally {
                     pkg.getModifyLock().readUnlock(readL2);
