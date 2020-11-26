@@ -1343,9 +1343,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2701,17 +2701,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (autoExtensionLearning) {
                                 final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
                                 lc.setDeepInspector(new LinkCrawlerDeepInspector() {
-                                    private final boolean hasDirectHTTPRule(LinkCrawler lc, final URLConnectionAdapter urlConnection) {
+                                    private final LinkCrawlerRule getDirectHTTPRule(LinkCrawler lc, final URLConnectionAdapter urlConnection) {
                                         final List<LinkCrawlerRule> rules = lc.getLinkCrawlerRules();
                                         if (rules != null) {
                                             final String url = urlConnection.getURL().toString();
                                             for (final LinkCrawlerRule rule : rules) {
                                                 if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                    return true;
+                                                    return rule;
                                                 }
                                             }
                                         }
-                                        return false;
+                                        return null;
                                     }
 
                                     @Override
@@ -2719,12 +2719,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         if (urlConnection.getResponseCode() == 200 && urlConnection.getRequest().getLocation() == null) {
                                             final LinkCrawlerRule matchingRule = link.getMatchingRule();
                                             if (matchingRule == null && looksLikeDownloadableContent(urlConnection)) {
+                                                LinkCrawlerRule rule = null;
                                                 final URL url = urlConnection.getURL();
                                                 if (url.getPath() != null && url.getPath().matches(".*\\.(php|aspx)$") && url.getQuery() != null) {
                                                     // hoster.domain/script.php?somevalue=somekey.....->Download
-                                                    if (!hasDirectHTTPRule(lc, urlConnection)) {
+                                                    if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
                                                         final String domain = Browser.getHost(url, false);
-                                                        final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                                        rule = new LinkCrawlerRule();
                                                         rule.setName("Learned php script download: " + domain + url.getPath());
                                                         rule.setPattern("(?i)https?://.*?" + Pattern.quote(domain) + Pattern.quote(url.getPath()) + "\\?.+");
                                                         rule.setRule(RULE.DIRECTHTTP);
@@ -2734,8 +2735,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                     final String fileName = Plugin.getFileNameFromURL(url);
                                                     final String fileExtension = Files.getExtension(fileName);
                                                     if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                        if (!hasDirectHTTPRule(lc, urlConnection)) {
-                                                            final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                                        if ((rule = getDirectHTTPRule(lc, urlConnection)) == null) {
+                                                            rule = new LinkCrawlerRule();
                                                             rule.setName("Learned file extension: " + fileExtension);
                                                             rule.setPattern("(?i)https?://.*\\." + fileExtension + "($|\\?.*$)");
                                                             rule.setRule(RULE.DIRECTHTTP);
@@ -2747,6 +2748,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                                 final ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
                                                 final CrawledLink direct = lc.createDirectHTTPCrawledLink(link, urlConnection);
                                                 if (direct != null) {
+                                                    direct.setMatchingRule(rule);
                                                     ret.add(direct);
                                                 }
                                                 return ret;

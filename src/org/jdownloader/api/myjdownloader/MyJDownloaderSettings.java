@@ -14,6 +14,7 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 
 //org.jdownloader.extensions.myjdownloader.MyJDownloaderExtension has been the old path of the settingsfile
@@ -84,7 +85,7 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public static class DeviceNameFactory extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue() {
+        public String getDefaultValue(KeyHandler<?> keyHandler) {
             return "JDownloader@" + System.getProperty("user.name", "User");
         }
     }
