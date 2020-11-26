@@ -75,6 +75,15 @@ public class GfyCatCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        if (link != null && getFID(link) != null && StringUtils.equals(getHost(), link.getHost())) {
+            return getHost() + "://" + getFID(link);
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     private String dllink = null;
 
     /*
@@ -150,7 +159,7 @@ public class GfyCatCom extends PluginForHost {
                      * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be
                      * published on the same date (very rare case).
                      */
-                    link.setFinalFileName(dateFormatted + "_" + username + " - " + this.getFID(link) + " - " + title + ext);
+                    link.setFinalFileName(dateFormatted + "_" + username + " - " + title + ext);
                 } else {
                     /* Fallback */
                     link.setFinalFileName(this.getFID(link) + ext);

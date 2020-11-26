@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -26,9 +25,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //Links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "decryptedsndspnr=\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "decryptedsndspnr=\\d+" })
 public class SoundSnapCom extends PluginForHost {
-
     public SoundSnapCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,9 +47,9 @@ public class SoundSnapCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -63,10 +61,14 @@ public class SoundSnapCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
         long filesize = con.getLongContentLength();
-        if (con.getContentType().contains("html") || filesize == 0) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (con.getContentType().contains("html") || filesize == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = getFileNameFromHeader(con);
         link.setName(filename.trim());
         link.setDownloadSize(filesize);
@@ -80,5 +82,4 @@ public class SoundSnapCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
