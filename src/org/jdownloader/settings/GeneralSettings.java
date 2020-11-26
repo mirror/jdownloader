@@ -30,7 +30,7 @@ import org.jdownloader.gui.translate._GUI;
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue() {
+        public String getDefaultValue(KeyHandler<?> keyHandler) {
             if (CrossSystem.isLinux()) {
                 if (new File("/volume1/@appstore").exists()) {
                     // synology
@@ -55,7 +55,7 @@ public interface GeneralSettings extends ConfigInterface {
                 if (defaultFolder != null) {
                     return defaultFolder;
                 }
-                defaultFolder = new DefaultDownloadFolder().getDefaultValue();
+                defaultFolder = new DefaultDownloadFolder().getDefaultValue(keyHandler);
                 return defaultFolder;
             }
             return value;
