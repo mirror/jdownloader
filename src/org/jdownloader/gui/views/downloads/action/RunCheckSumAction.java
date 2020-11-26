@@ -12,11 +12,12 @@ import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
 
 public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
-
     /**
      *
      */
@@ -30,10 +31,19 @@ public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePac
 
     public void actionPerformed(ActionEvent e) {
         for (final DownloadLink downloadLink : getSelection().getChildren()) {
-            final Downloadable downloadable = new DownloadLinkDownloadable(downloadLink);
+            final Downloadable downloadable = new DownloadLinkDownloadable(downloadLink) {
+                private LogInterface logger = null;
+
+                @Override
+                public LogInterface getLogger() {
+                    if (logger == null) {
+                        logger = LogController.CL();
+                    }
+                    return logger;
+                }
+            };
             if (downloadable.isHashCheckEnabled()) {
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                     @Override
                     protected Void run() throws RuntimeException {
                         final File file = new File(downloadable.getFileOutput());
@@ -52,7 +62,6 @@ public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePac
                         return null;
                     }
                 });
-
             }
         }
     }

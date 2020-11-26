@@ -626,7 +626,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     class DefaultLookAndFeelTheme extends AbstractDefaultFactory<LookAndFeelType> {
         @Override
-        public LookAndFeelType getDefaultValue() {
+        public LookAndFeelType getDefaultValue(KeyHandler<?> keyHandler) {
             if (Application.isHeadless()) {
                 return LookAndFeelType.JAVA_SYSTEM;
             } else {

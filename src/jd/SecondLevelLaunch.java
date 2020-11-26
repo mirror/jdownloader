@@ -154,6 +154,7 @@ public class SecondLevelLaunch {
      */
     private static void initMACProperties() {
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
+        System.setProperty("apple.awt.application.name", "JDownloader");
         // set DockIcon (most used in Building)
         try {
             com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));

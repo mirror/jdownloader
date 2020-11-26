@@ -37,7 +37,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.plugins.FinalLinkState;
@@ -64,32 +63,32 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void setResumeable(boolean value) {
-        downloadLink.setResumeable(value);
+        getDownloadLink().setResumeable(value);
     }
 
     @Override
     public Browser getContextBrowser() {
-        return plugin.getBrowser().cloneBrowser();
+        return getPlugin().getBrowser().cloneBrowser();
     }
 
     @Override
     public LogInterface getLogger() {
-        return plugin.getLogger();
+        return getPlugin().getLogger();
     }
 
     @Override
     public void setDownloadInterface(DownloadInterface di) {
-        plugin.setDownloadInterface(di);
+        getPlugin().setDownloadInterface(di);
     }
 
     @Override
     public long getVerifiedFileSize() {
-        return downloadLink.getView().getBytesTotalVerified();
+        return getDownloadLink().getView().getBytesTotalVerified();
     }
 
     @Override
     public boolean isServerComaptibleForByteRangeRequest() {
-        return downloadLink.getBooleanProperty("ServerComaptibleForByteRangeRequest", false);
+        return getDownloadLink().getBooleanProperty("ServerComaptibleForByteRangeRequest", false);
     }
 
     @Override
@@ -101,21 +100,21 @@ public class DownloadLinkDownloadable implements Downloadable {
                 return connection.getURL().getHost();
             }
         }
-        return downloadLink.getHost();
+        return getDownloadLink().getHost();
     }
 
     @Override
     public boolean isDebug() {
-        return this.plugin.getBrowser().isDebug();
+        return getPlugin().getBrowser().isDebug();
     }
 
     @Override
     public void setDownloadTotalBytes(long l) {
-        downloadLink.setDownloadSize(l);
+        getDownloadLink().setDownloadSize(l);
     }
 
     public SingleDownloadController getDownloadLinkController() {
-        return downloadLink.getDownloadLinkController();
+        return getDownloadLink().getDownloadLinkController();
     }
 
     @Override
@@ -125,12 +124,12 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void setVerifiedFileSize(long length) {
-        downloadLink.setVerifiedFileSize(length);
+        getDownloadLink().setVerifiedFileSize(length);
     }
 
     @Override
     public void validateLastChallengeResponse() {
-        plugin.validateLastChallengeResponse();
+        getPlugin().validateLastChallengeResponse();
     }
 
     @Override
@@ -145,17 +144,17 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void setAvailable(AvailableStatus status) {
-        downloadLink.setAvailableStatus(status);
+        getDownloadLink().setAvailableStatus(status);
     }
 
     @Override
     public String getFinalFileName() {
-        return downloadLink.getFinalFileName();
+        return getDownloadLink().getFinalFileName();
     }
 
     @Override
     public void setFinalFileName(String newfinalFileName) {
-        downloadLink.setFinalFileName(newfinalFileName);
+        getDownloadLink().setFinalFileName(newfinalFileName);
     }
 
     @Override
@@ -190,7 +189,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void addDownloadTime(long ms) {
-        downloadLink.addDownloadTime(ms);
+        getDownloadLink().addDownloadTime(ms);
     }
 
     @Override
@@ -200,36 +199,36 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getDownloadTotalBytes() {
-        return downloadLink.getView().getBytesTotalEstimated();
+        return getDownloadLink().getView().getBytesTotalEstimated();
     }
 
     @Override
     public void setDownloadBytesLoaded(long bytes) {
-        downloadLink.setDownloadCurrent(bytes);
+        getDownloadLink().setDownloadCurrent(bytes);
     }
 
     @Override
     public boolean isHashCheckEnabled() {
-        return downloadLink.getBooleanProperty("ALLOW_HASHCHECK", true);
+        return getDownloadLink().getBooleanProperty("ALLOW_HASHCHECK", true);
     }
 
     @Override
     public String getName() {
-        return downloadLink.getName();
+        return getDownloadLink().getName();
     }
 
     @Override
     public long getKnownDownloadSize() {
-        return downloadLink.getView().getBytesTotal();
+        return getDownloadLink().getView().getBytesTotal();
     }
 
     @Override
     public void addPluginProgress(PluginProgress progress) {
-        downloadLink.addPluginProgress(progress);
+        getDownloadLink().addPluginProgress(progress);
     }
 
     public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
-        if (hashInfo == null) {
+        if (hashInfo == null || TYPE.NONE.equals(hashInfo.getType())) {
             return null;
         }
         final TYPE type = hashInfo.getType();
@@ -245,7 +244,9 @@ public class DownloadLinkDownloadable implements Downloadable {
             switch (type) {
             case MD5:
             case SHA1:
+            case SHA224:
             case SHA256:
+            case SHA384:
             case SHA512:
                 DigestInputStream is = null;
                 try {
@@ -257,7 +258,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                     }
                     hashFile = HexFormatter.byteArrayToHex(is.getMessageDigest().digest());
                 } catch (final Throwable e) {
-                    LogSource.exception(getLogger(), e);
+                    getLogger().log(e);
                 } finally {
                     crcHashingInProgress = false;
                     try {
@@ -284,7 +285,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                     byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
                     hashFile = HexFormatter.byteArrayToHex(longBytes);
                 } catch (final Throwable e) {
-                    LogSource.exception(getLogger(), e);
+                    getLogger().log(e);
                 } finally {
                     crcHashingInProgress = false;
                     try {
@@ -297,6 +298,9 @@ public class DownloadLinkDownloadable implements Downloadable {
                     }
                 }
                 break;
+            case NONE:
+            default:
+                break;
             }
             return new HashResult(hashInfo, hashFile);
         } finally {
@@ -306,7 +310,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public HashInfo getHashInfo() {
-        final HashInfo hashInfo = downloadLink.getHashInfo();
+        final HashInfo hashInfo = getDownloadLink().getHashInfo();
         if (hashInfo != null) {
             return hashInfo;
         }
@@ -320,13 +324,13 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
             }
         }
-        final FilePackage filePackage = downloadLink.getFilePackage();
+        final FilePackage filePackage = getDownloadLink().getFilePackage();
         if (!FilePackage.isDefaultFilePackage(filePackage)) {
             final ArrayList<File> checkSumFiles = new ArrayList<File>();
             final boolean readL = filePackage.getModifyLock().readLock();
             try {
                 for (final DownloadLink dl : filePackage.getChildren()) {
-                    if (dl != downloadLink && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                    if (dl != getDownloadLink() && FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
                         final File checkSumFile = getFileOutput(dl, false);
                         final String fileName = checkSumFile.getName();
                         if (fileName.matches(".*\\.(sfv|md5|sha1|sha256|sha512)$") && checkSumFile.exists() && !checkSumFiles.contains(checkSumFile)) {
@@ -405,31 +409,31 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     @Deprecated
     public String getMD5Hash() {
-        return downloadLink.getMD5Hash();
+        return getDownloadLink().getMD5Hash();
     }
 
     @Override
     @Deprecated
     public String getSha1Hash() {
-        return downloadLink.getSha1Hash();
+        return getDownloadLink().getSha1Hash();
     }
 
     @Override
     @Deprecated
     public String getSha256Hash() {
-        return downloadLink.getSha256Hash();
+        return getDownloadLink().getSha256Hash();
     }
 
     @Override
     @Deprecated
     public long[] getChunksProgress() {
-        return downloadLink.getView().getChunksProgress();
+        return getDownloadLink().getView().getChunksProgress();
     }
 
     @Override
     @Deprecated
     public void setChunksProgress(long[] ls) {
-        downloadLink.setChunksProgress(ls);
+        getDownloadLink().setChunksProgress(ls);
     }
 
     public PluginForHost getPlugin() {
@@ -486,7 +490,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                     DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(reservation, this);
                 }
             } catch (Throwable e) {
-                LogSource.exception(getLogger(), e);
+                getLogger().log(e);
                 /* error happened, lets delete complete file */
                 if (outputCompleteFile.exists() && outputCompleteFile.length() != outputPartFile.length()) {
                     FileCreationManager.getInstance().delete(outputCompleteFile, null);
@@ -503,7 +507,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void waitForNextConnectionAllowed() throws InterruptedException {
-        plugin.waitForNextConnectionAllowed(downloadLink);
+        getPlugin().waitForNextConnectionAllowed(getDownloadLink());
     }
 
     @Override
@@ -514,7 +518,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFileOutput() {
-        return getFileOutput(downloadLink, false).getAbsolutePath();
+        return getFileOutput(getDownloadLink(), false).getAbsolutePath();
     }
 
     @Override
@@ -529,12 +533,12 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public String getFinalFileOutput() {
-        return getFileOutput(downloadLink, true).getAbsolutePath();
+        return getFileOutput(getDownloadLink(), true).getAbsolutePath();
     }
 
     @Override
     public boolean isResumable() {
-        return downloadLink.isResumeable();
+        return getDownloadLink().isResumeable();
     }
 
     @Override
@@ -572,17 +576,17 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getDownloadBytesLoaded() {
-        return downloadLink.getView().getBytesLoaded();
+        return getDownloadLink().getView().getBytesLoaded();
     }
 
     @Override
     public boolean removePluginProgress(PluginProgress remove) {
-        return downloadLink.removePluginProgress(remove);
+        return getDownloadLink().removePluginProgress(remove);
     }
 
     @Override
     public <T> T getDataBindingInterface(Class<? extends DownloadLinkDatabindingInterface> T) {
-        return (T) downloadLink.bindData(T);
+        return (T) getDownloadLink().bindData(T);
     }
 
     @Override
@@ -633,18 +637,18 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public DownloadInterface getDownloadInterface() {
-        return plugin.getDownloadInterface();
+        return getPlugin().getDownloadInterface();
     }
 
     public void setHashInfo(final HashInfo hashInfo) {
         if (hashInfo != null && hashInfo.isTrustworthy() && getHashInfo() == null) {
-            downloadLink.setHashInfo(hashInfo);
+            getDownloadLink().setHashInfo(hashInfo);
         }
     }
 
     @Override
     public int getChunks() {
-        return downloadLink.getChunks();
+        return getDownloadLink().getChunks();
     }
 
     public static boolean isCrcHashingInProgress() {
