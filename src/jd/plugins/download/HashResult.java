@@ -4,7 +4,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class HashResult {
-
     private final HashInfo hashInfo;
     private final String   fileHash;
 
@@ -20,8 +19,14 @@ public class HashResult {
     public FinalLinkState getFinalLinkState() {
         if (match()) {
             switch (getHashInfo().getType()) {
+            case SHA512:
+                return FinalLinkState.FINISHED_SHA512;
+            case SHA384:
+                return FinalLinkState.FINISHED_SHA384;
             case SHA256:
                 return FinalLinkState.FINISHED_SHA256;
+            case SHA224:
+                return FinalLinkState.FINISHED_SHA224;
             case SHA1:
                 return FinalLinkState.FINISHED_SHA1;
             case MD5:
@@ -33,8 +38,14 @@ public class HashResult {
             }
         } else {
             switch (getHashInfo().getType()) {
+            case SHA512:
+                return FinalLinkState.FAILED_SHA512;
+            case SHA384:
+                return FinalLinkState.FAILED_SHA384;
             case SHA256:
                 return FinalLinkState.FAILED_SHA256;
+            case SHA224:
+                return FinalLinkState.FAILED_SHA224;
             case SHA1:
                 return FinalLinkState.FAILED_SHA1;
             case MD5:

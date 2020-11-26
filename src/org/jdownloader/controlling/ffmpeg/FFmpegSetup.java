@@ -12,6 +12,7 @@ import org.appwork.storage.config.annotations.DefaultStringArrayValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.settings.advanced.AdvancedValueEditorFactory;
@@ -39,7 +40,7 @@ public interface FFmpegSetup extends ConfigInterface {
         final String binary = "ffmpeg";
 
         @Override
-        public String getDefaultValue() {
+        public String getDefaultValue(KeyHandler<?> keyHandler) {
             if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
@@ -59,7 +60,7 @@ public interface FFmpegSetup extends ConfigInterface {
         final String binary = "ffprobe";
 
         @Override
-        public String getDefaultValue() {
+        public String getDefaultValue(KeyHandler<?> keyHandler) {
             if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {

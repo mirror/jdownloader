@@ -3,12 +3,14 @@ package org.jdownloader.plugins.components.youtube;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.Storage;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
 import org.appwork.storage.config.annotations.CustomStorageName;
 import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringValue;
@@ -16,6 +18,7 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
@@ -54,6 +57,28 @@ public interface YoutubeConfig extends PluginConfigInterface {
             }
             return ret;
         }
+    }
+
+    class DefaultConvertSubtitleVariantMode extends AbstractDefaultFactory<SubtitleVariantMode> {
+        @Override
+        public SubtitleVariantMode getDefaultValue(KeyHandler<?> keyHandler) {
+            Storage storage = null;
+            if (keyHandler != null && (storage = keyHandler.getStorageHandler().getPrimitiveStorage()) != null) {
+                final String oldKey = "subtitlecopyforeachvideovariant";
+                final Object oldValue = storage.get(oldKey, null);
+                if (oldValue != null && StringUtils.equalsIgnoreCase("false", oldValue.toString())) {
+                    storage.remove(oldKey);
+                    return SubtitleVariantMode.DISABLED;
+                }
+            }
+            return SubtitleVariantMode.COPY_AND_KEEP;
+        }
+    }
+
+    public static enum SubtitleVariantMode {
+        DISABLED,
+        COPY_AND_KEEP,
+        COPY_AND_DELETE
     }
 
     public static enum IfUrlisAPlaylistAction implements LabelInterface {
@@ -265,6 +290,12 @@ public interface YoutubeConfig extends PluginConfigInterface {
     YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
 
     @AboutConfig
+    @DefaultFactory(DefaultConvertSubtitleVariantMode.class)
+    YoutubeConfig.SubtitleVariantMode getSubtitleVariantMode();
+
+    public void setSubtitleVariantMode(YoutubeConfig.SubtitleVariantMode mode);
+
+    @AboutConfig
     @CustomValueGetter(NotNullCustomGetter.class)
     @DefaultStringValue("*VIDEO_NAME*")
     String getPackagePattern();
@@ -377,8 +408,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     boolean isSetCustomUrlEnabled();
 
-    boolean isSubtitleCopyforEachVideoVariant();
-
     void setAdvancedVariantNamesEnabled(boolean b);
 
     void setAndroidSupportEnabled(boolean b);
@@ -474,10 +503,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setQualitySortIdentifierOrderVideoFramerate(String[] s);
 
     void setSetCustomUrlEnabled(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    void setSubtitleCopyforEachVideoVariant(boolean b);
 
     void setSubtitleFilenamePattern(String name);
 

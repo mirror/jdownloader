@@ -151,7 +151,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
                                 return new HashResult(fileHashInfo, fileHashInfo.getHash());
                             }
                         } catch (final Throwable e) {
-                            logger.log(e);
+                            getLogger().log(e);
                         } finally {
                             removePluginProgress(hashProgress);
                         }

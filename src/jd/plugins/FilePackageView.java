@@ -499,11 +499,14 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 }
                 break;
             case FINISHED:
-            case FINISHED_SHA1:
-            case FINISHED_SHA256:
-            case FINISHED_MD5:
-            case FINISHED_CRC32:
             case FINISHED_MIRROR:
+            case FINISHED_CRC32:
+            case FINISHED_MD5:
+            case FINISHED_SHA1:
+            case FINISHED_SHA224:
+            case FINISHED_SHA256:
+            case FINISHED_SHA384:
+            case FINISHED_SHA512:
             }
             // }
             final ExtractionStatus extractionStatus = link.getExtractionStatus();
