@@ -44,6 +44,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
     }
 
     public static final String PROPERTY_INTERNAL_FILE_ID = "INTERNALFILEID";
+    public static final String PROPERTY_UPLOAD_DATE_RAW  = "UPLOADDATE_RAW";
 
     /**
      * DEV NOTES YetiShare<br />

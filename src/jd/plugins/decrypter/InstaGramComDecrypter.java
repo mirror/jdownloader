@@ -26,6 +26,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,15 +58,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
@@ -78,10 +78,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 100;
-        };
-    };
+                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                           return size() > 100;
+                                                                                       };
+                                                                                   };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -364,7 +364,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
-    /** Alternatively possible via: /api/v1/feed/user/{userID} */
+    /**
+     * Crawl all media items of a user. </br>
+     * Sometimes required user to be logged in to see all/more than X items. <br>
+     * Alternatively possible via: /api/v1/feed/user/{userID}.
+     */
     private void crawlUser(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
         /* Crawl all items of a user */
         getPage(param, br, parameter, null, null);
@@ -467,6 +471,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
     }
 
+    /**
+     * Crawls all saved media items of the currently logged in user. </br>
+     * Obviously this will only work when logged in.
+     */
     private void crawlUserSavedObjects(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
         /* Crawl all saved objects of a user. Works similar to "crawl all posted items of a user" handling. */
         getPage(param, br, parameter, null, null);
@@ -503,16 +511,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 }
                 final String jsonString = JSonStorage.toString(vars).replaceAll("[\r\n]+", "").replaceAll("\\s+", "");
                 getPage(param, br2, "/graphql/query/?query_hash=" + qHash + "&variables=" + URLEncoder.encode(jsonString, "UTF-8"), rhxGis, jsonString);
-                try {
-                    InstaGramCom.checkErrors(br);
-                } catch (final AccountRequiredException ar) {
-                    /* Instagram blocks the amount of items a user can see based on */
-                    if (logged_in) {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, null);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
-                    }
-                }
+                InstaGramCom.checkErrors(br);
                 /*
                  * 2020-11-06: TODO: Fix broken response: edge_owner_to_timeline_media instead of edge_saved_media ... Possibe reasons:
                  * Wrong "end_cursor" String and/or wrong "query_hash".
@@ -562,6 +561,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } while (!this.isAbort() && nextid != null && decryptedLinksCurrentSize > decryptedLinksLastSize && decryptedLinksCurrentSize < count);
     }
 
+    /**
+     * Crawls all items found when looking for a specified items. </br>
+     * Max. number of items which this returns can be limited by user setting. </br>
+     * Doesn't require the user to be logged in!
+     */
     private void crawlHashtag(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
         /* Jump to a point that is the same for our first page and all following ones */
         getPage(param, br, parameter, null, null);
@@ -607,7 +611,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } catch (final AccountRequiredException ar) {
                     /* Instagram blocks the amount of items a user can see based on */
                     if (logged_in) {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, null);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of hashtag " + this.hashtag, null, null);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
                     }
@@ -661,7 +665,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("unchecked")
     @Deprecated
-    /** 2020-11-18: This never worked but we should keep it as there isn't much worf left to make this work. */
+    /**
+     * 2020-11-18: This never worked but we should keep it as there isn't much work left to make this work. </br>
+     * Do not update this! Do not delete this! Only modify it if you can make it work!
+     */
     private void crawlStory(Map<String, Object> entries, final CryptedLink param) throws Exception {
         final boolean pluginNotYetDone = true;
         if (pluginNotYetDone) {

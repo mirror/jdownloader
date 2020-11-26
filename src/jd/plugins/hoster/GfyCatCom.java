@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,14 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -112,6 +112,7 @@ public class GfyCatCom extends PluginForHost {
             dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
         } else {
             final String simpleJSON = br.getRegex("<script data-react-helmet=\"true\" type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
+            final String complicatedJSON = br.getRegex("___INITIAL_STATE__\\s*=(\\{.*?)</script").getMatch(0);
             if (simpleJSON != null) {
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(simpleJSON);
                 final String datePublished = (String) entries.get("datePublished");
@@ -122,7 +123,28 @@ public class GfyCatCom extends PluginForHost {
                     link.setComment(description);
                 }
                 final String username = (String) entries.get("author");
-                String title = (String) entries.get("headline");
+                String title = null;
+                if (!true) {
+                    /* Alternative ways to find title */
+                    if (complicatedJSON != null) {
+                        try {
+                            final Object rootO = JavaScriptEngineFactory.jsonToJavaObject(complicatedJSON);
+                            // final List<Object> ressourcelist = JSonStorage.restoreFromString(complicatedJSON, TypeRef.LIST);
+                            final Map<String, Object> allMedia = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootO, "{0}/cache/gifs");
+                            final Map<String, Object> thisMediaInfo = (Map<String, Object>) allMedia.get(this.getFID(link));
+                            title = (String) thisMediaInfo.get("title");
+                        } catch (final Throwable e) {
+                        }
+                    }
+                    if (StringUtils.isEmpty(title)) {
+                        title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+                    }
+                }
+                title = (String) entries.get("headline");
+                if (!StringUtils.isEmpty(title)) {
+                    /* 2020-11-26: Remove stuff we don't want! */
+                    title = title.replaceFirst("(\\s*Porn\\s*GIF\\s*(by.+)?)", "");
+                }
                 if (!StringUtils.isAllNotEmpty(datePublished, username, title)) {
                     /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -171,25 +193,23 @@ public class GfyCatCom extends PluginForHost {
                     }
                     break;
                 }
-                /*
-                 * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be published on
-                 * the same date (very rare case).
-                 */
-                title = title.replaceFirst("(\\s*Porn\\s*GIF\\s*(by.+)?)", "");
                 if (link.getFinalFileName() == null) {
+                    /*
+                     * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be
+                     * published on the same date (very rare case).
+                     */
                     link.setFinalFileName(dateFormatted + "_" + username + " - " + this.getFID(link) + " - " + title + ext);
                 }
             } else {
                 /* Old handling */
-                final String json = br.getRegex("___INITIAL_STATE__\\s*=\\s*(.*?)\\s*</script").getMatch(0);
                 // final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>)
                 // JavaScriptEngineFactory.jsonToJavaMap(json);
-                if (StringUtils.isEmpty(json) || br.getHttpConnection().getResponseCode() == 404) {
+                if (StringUtils.isEmpty(complicatedJSON) || br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String username = PluginJSonUtils.getJsonValue(json, "author");
+                final String username = PluginJSonUtils.getJsonValue(complicatedJSON, "author");
                 final String filename = this.getFID(link);
-                final String filesize = PluginJSonUtils.getJsonValue(json, "webmSize");
+                final String filesize = PluginJSonUtils.getJsonValue(complicatedJSON, "webmSize");
                 if (StringUtils.isEmpty(username) || StringUtils.isEmpty(filename)) {
                     /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -198,7 +218,7 @@ public class GfyCatCom extends PluginForHost {
                 if (!StringUtils.isEmpty(filesize)) {
                     link.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
-                dllink = PluginJSonUtils.getJsonValue(json, "webmUrl");
+                dllink = PluginJSonUtils.getJsonValue(complicatedJSON, "webmUrl");
             }
         }
         if (!isDownload) {

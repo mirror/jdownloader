@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.YetiShareCoreSpecialOxycloud;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
@@ -95,7 +95,7 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
          */
         if (account != null && this.getHost().equals("erai-ddl3.info")) {
             synchronized (account) {
-                final PluginForHost plg = JDUtilities.getNewPluginForHostInstance(this.getHost());
+                final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
                 plg.setBrowser(this.br);
                 plg.setLogger(getLogger());
                 try {
@@ -192,6 +192,7 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
                 for (final String html : fileHTMLSnippets) {
                     final String url = new Regex(html, "dtfullurl\\s*=\\s*\"(https?[^\"]+)\"").getMatch(0);
                     final String filename = new Regex(html, "dtfilename\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+                    final String uploaddateStr = new Regex(html, "dtuploaddate\\s*=\\s*\"([^\"]+)\"").getMatch(0);
                     final String filesizeStr = new Regex(html, "dtsizeraw\\s*=\\s*\"(\\d+)\"").getMatch(0);
                     final String internalFileID = new Regex(html, "fileId\\s*=\\s*\"(\\d+)\"").getMatch(0);
                     if (StringUtils.isEmpty(url) || StringUtils.isEmpty(internalFileID)) {
@@ -206,6 +207,10 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
                         dl.setDownloadSize(Long.parseLong(filesizeStr));
                     }
                     dl.setProperty(jd.plugins.hoster.YetiShareCoreSpecialOxycloud.PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                    if (uploaddateStr != null) {
+                        /* 2020-11-26: For Packagizer/EventScripter - not used anywhere else. */
+                        dl.setProperty(YetiShareCoreSpecialOxycloud.PROPERTY_UPLOAD_DATE_RAW, uploaddateStr);
+                    }
                     /* We know for sure that this file is online! */
                     dl.setAvailable(true);
                     if (subfolderPath.length() > 0) {
