@@ -23,12 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,6 +48,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -201,7 +201,9 @@ public class InstaGramCom extends PluginForHost {
                 if (con.getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
                 } else if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    }
                     /* Save it to have it in case it was re-freshed! */
                     link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                 } else {
@@ -399,9 +401,9 @@ public class InstaGramCom extends PluginForHost {
         /* Old trait */
         // if (br.getURL().matches("https?://[^/]+/accounts/login/\\?next=.*")) {
         /* New trait 2020-11-26 */
-        if (br.getURL().matches("https?://[^/]+/accounts/login.*")) {
+        if (br.getURL() != null && br.getURL().matches("https?://[^/]+/accounts/login.*")) {
             throw new AccountRequiredException();
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -415,7 +417,9 @@ public class InstaGramCom extends PluginForHost {
             if (!looksLikeDownloadableContent(con)) {
                 throw new IOException();
             } else {
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
                 return flink;
             }
         } catch (final Exception e) {

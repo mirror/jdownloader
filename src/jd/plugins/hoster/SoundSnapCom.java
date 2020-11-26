@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -50,8 +52,12 @@ public class SoundSnapCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -64,15 +70,24 @@ public class SoundSnapCom extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
-        long filesize = con.getLongContentLength();
-        if (con.getContentType().contains("html") || filesize == 0) {
+        final URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
+        if (!looksLikeDownloadableContent(con)) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            con.disconnect();
+            final long filesize = con.getLongContentLength();
+            String filename = getFileNameFromHeader(con);
+            link.setName(filename.trim());
+            if (filesize > 0) {
+                link.setVerifiedFileSize(filesize);
+            }
+            return AvailableStatus.TRUE;
         }
-        String filename = getFileNameFromHeader(con);
-        link.setName(filename.trim());
-        link.setDownloadSize(filesize);
-        return AvailableStatus.TRUE;
     }
 
     @Override

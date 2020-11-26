@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -31,6 +28,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/folder/\\d+/.*" })
 @SuppressWarnings("deprecation")
@@ -48,8 +48,6 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         uid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         // standardise browser configurations to avoid detection.
         final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.RapidGatorNet) plugin).setBrowser(br);
-        ((jd.plugins.hoster.RapidGatorNet) plugin).setLogger(getLogger());
         // normal stuff
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.RapidGatorNet) plugin).getPage(parameter);
