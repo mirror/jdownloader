@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?(?:rapidmoviez\\.(?:com|eu|cr)|rmz\\.rezavn|rmz\\.cr)/release/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?(?:rapidmoviez\\.(?:com|eu|cr|site)|rmz\\.rezavn|rmz\\.cr)/release/[^/]+" })
 public class RmzCr extends antiDDoSForDecrypt {
     public RmzCr(PluginWrapper wrapper) {
         super(wrapper);
