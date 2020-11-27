@@ -50,7 +50,7 @@ public class FreeDiscPl extends PluginForHost {
         this.enablePremium("http://freedisc.pl/");
         this.setStartIntervall(1000);
         try {
-            Browser.setRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
+            Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 250, 20, 60000);
         } catch (final Throwable e) {
         }
     }

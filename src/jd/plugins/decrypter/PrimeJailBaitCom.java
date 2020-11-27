@@ -53,7 +53,7 @@ public class PrimeJailBaitCom extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         for (final String host : siteSupportedNames()) {
-            Browser.setRequestIntervalLimitGlobal(host, 50, 15, 1000);
+            Browser.setBurstRequestIntervalLimitGlobal(host, 50, 15, 1000);
         }
         br.setFollowRedirects(true);
         getPage(parameter);

@@ -32,7 +32,7 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
     public XXXAPornComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal(getHost(), 100, 5, 1000);
+            Browser.setBurstRequestIntervalLimitGlobal(getHost(), 100, 5, 1000);
         } catch (final Throwable e) {
         }
     }
