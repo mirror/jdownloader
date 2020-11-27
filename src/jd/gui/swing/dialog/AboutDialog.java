@@ -21,6 +21,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.lang.management.MemoryPoolMXBean;
 import java.net.MalformedURLException;
@@ -213,7 +215,33 @@ public class AboutDialog extends AbstractDialog<Integer> {
             stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_installdir()), "");
             ExtButton bt;
             final File directory = Application.getResource(".");
-            stats.add(bt = disable("<html><u>" + directory + "</u></html>"));
+            final String fullPath = "<html><u>" + directory + "</u></html>";
+            final String anonPath = "<html><u>" + _GUI.T.jd_gui_swing_components_AboutDialog_installdir_anon() + "</u></html>";
+            stats.add(bt = disable(anonPath));
+            final ExtButton directoryButton = bt;
+            bt.addMouseListener(new MouseListener() {
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    directoryButton.setText(anonPath);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    directoryButton.setText(fullPath);
+                }
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                }
+            });
             bt.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
