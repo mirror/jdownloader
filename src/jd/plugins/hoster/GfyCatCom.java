@@ -18,14 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,6 +29,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -111,8 +111,8 @@ public class GfyCatCom extends PluginForHost {
             link.setName(this.getFID(link) + ".webm");
             dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
         } else {
-            final String simpleJSON = br.getRegex("<script data-react-helmet=\"true\" type=\"application/ld\\+json\">(.*?)</script>").getMatch(0);
-            final String complicatedJSON = br.getRegex("___INITIAL_STATE__\\s*=(\\{.*?)</script").getMatch(0);
+            final String simpleJSON = br.getRegex("<script data-react-helmet\\s*=\\s*\"true\"\\s*type\\s*=\\s*\"application/ld\\+json\">\\s*(.*?)\\s*</script>").getMatch(0);
+            final String complicatedJSON = br.getRegex("___INITIAL_STATE__\\s*=\\s*(\\{.*?)\\s*</script").getMatch(0);
             if (simpleJSON != null) {
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(simpleJSON);
                 final String datePublished = (String) entries.get("datePublished");
@@ -137,7 +137,7 @@ public class GfyCatCom extends PluginForHost {
                         }
                     }
                     if (StringUtils.isEmpty(title)) {
-                        title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+                        title = br.getRegex("<h1 class\\s*=\\s*\"title\">\\s*([^<>\"]+)\\s*</h1>").getMatch(0);
                     }
                 }
                 title = (String) entries.get("headline");
@@ -255,7 +255,7 @@ public class GfyCatCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (looksLikeDownloadableContent(dl.getConnection())) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
