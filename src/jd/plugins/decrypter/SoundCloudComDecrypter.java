@@ -27,6 +27,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -46,10 +50,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SoundcloudCom;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
