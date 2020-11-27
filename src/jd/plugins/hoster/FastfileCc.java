@@ -36,8 +36,9 @@ public class FastfileCc extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-08-20: Premium untested, set FREE account limits <br />
-     * captchatype-info: 2019-08-20: 4dignum<br />
+     * limit-info: 2020-11-27: Premium untested, set FREE limits | Free max. simultaneous downloads slot increase after every download e.g.
+     * Start download1, wait 5 minutes (reconnect-waittime) -> Start Download2 and so on<br />
+     * captchatype-info: 2020-11-27: reCaptchaV2 <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -90,17 +91,17 @@ public class FastfileCc extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 1;
+        return 20;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 1;
+        return 20;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 6;
+        return 20;
     }
 
     @Override

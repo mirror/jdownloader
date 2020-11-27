@@ -35,7 +35,7 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
 
     /**
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2020-11-27: Not more than 8 total connections possible <br />
      * captchatype-info: null<br />
      * other: 2019-05-15: NOT RELATED TO anonfile.com!!!<br />
      */
@@ -57,29 +57,29 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return -4;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -4;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -4;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 2;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override

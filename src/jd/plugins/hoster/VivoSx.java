@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URLDecoder;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,10 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vivo.sx" }, urls = { "https?://(?:www\\.)?vivo\\.sx/(?:embed/)?([a-z0-9]{10})" })
 public class VivoSx extends antiDDoSForHost {
@@ -159,8 +159,13 @@ public class VivoSx extends antiDDoSForHost {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "*/*");
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.getHeaders().put("", "");
-            postPage(brc, "/request", "action=view&abs=false&hash=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            // postPage(brc, "/request", "action=view&abs=false&hash=" + getFID(link));
+            /*
+             * 2020-11-27: New: If that gets outdated, they will only provide very slow downloadspeed and kill the connection after some
+             * seconds/minutes.
+             */
+            postPage(brc, "/request", "action=track&abs=false&hash=" + getFID(link));
+            postPage(brc, "/request", "action=click&abs=false&hash=" + getFID(link));
         } catch (final Throwable e) {
             logger.log(e);
         }
