@@ -164,8 +164,8 @@ public class VivoSx extends antiDDoSForHost {
              * 2020-11-27: New: If that gets outdated, they will only provide very slow downloadspeed and kill the connection after some
              * seconds/minutes.
              */
-            postPage(brc, "/request", "action=track&abs=false&hash=" + getFID(link));
-            postPage(brc, "/request", "action=click&abs=false&hash=" + getFID(link));
+            postPage(brc, "/request", "action=track&hash=" + getFID(link));
+            postPage(brc, "/request", "action=click&hash=" + getFID(link));
         } catch (final Throwable e) {
             logger.log(e);
         }
