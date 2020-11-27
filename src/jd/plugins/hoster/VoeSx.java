@@ -39,7 +39,7 @@ public class VoeSx extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2020-11-27: Premium untested, set FREE limits <br />
      * captchatype-info: 2020-08-19: null<br />
      * other:<br />
      */
@@ -106,13 +106,13 @@ public class VoeSx extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return -5;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return -5;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -5;
         }
     }
 

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.EpornerComConfig;
 import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -81,6 +82,7 @@ public class EPornerCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         server_issues = false;
         /* This would dump our login cookies in account mode! */
@@ -92,8 +94,8 @@ public class EPornerCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         if (filename == null) {
-            /* Filename inside url */
-            filename = new Regex(link.getPluginPatternMatcher(), "eporner\\.com/hd\\-porn/\\w+/(.+)").getMatch(0);
+            /* Filename inside current url */
+            filename = new Regex(this.br.getURL(), "eporner\\.com/hd\\-porn/\\w+/(.*?)/?$").getMatch(0);
             if (filename != null) {
                 /* url filename --> Nicer url filename */
                 filename = filename.replace("-", " ");
@@ -108,6 +110,7 @@ public class EPornerCom extends PluginForHost {
         }
         long filesize = 0;
         getDllink(this.br, link);
+        boolean verifiedFilesize = false;
         if (dllink == null) {
             /* First try to get DOWNLOADurls */
             final String[][] dloadinfo = this.br.getRegex("href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
@@ -159,8 +162,9 @@ public class EPornerCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    filesize = con.getLongContentLength();
+                if (this.looksLikeDownloadableContent(con)) {
+                    filesize = con.getCompleteContentLength();
+                    verifiedFilesize = true;
                 } else {
                     /* 2020-05-26: Probably daily limit reached */
                     server_issues = true;
@@ -173,7 +177,11 @@ public class EPornerCom extends PluginForHost {
             }
         }
         if (filesize > 0) {
-            link.setDownloadSize(filesize);
+            if (verifiedFilesize) {
+                link.setVerifiedFileSize(filesize);
+            } else {
+                link.setDownloadSize(filesize);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -192,8 +200,12 @@ public class EPornerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             /* 2020-05-26: Limit = 100 videos per day for unregistered users, no limit for registered users */
             if (br.containsHTML(">\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
                 if (account != null) {
