@@ -146,7 +146,7 @@ public class VKontakteRuHoster extends PluginForHost {
         this.setConfigElements();
         /* need this twice, because hoster plugin might not be loaded yet */
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
+            Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
         } catch (final Throwable e) {
         }
     }

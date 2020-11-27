@@ -103,7 +103,7 @@ public class FlickrCom extends PluginForHost {
     @Override
     public void init() {
         try {
-            Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 1900);
+            Browser.setBurstRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 1900);
         } catch (final Throwable t) {
             Browser.setRequestIntervalLimitGlobal(this.getHost(), 1800);
         }

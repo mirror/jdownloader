@@ -63,7 +63,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     @Override
     public void init() {
         try {
-            Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 60000);
+            Browser.setBurstRequestIntervalLimitGlobal(this.getHost(), 3000, 20, 60000);
         } catch (Exception e) {
         }
     }

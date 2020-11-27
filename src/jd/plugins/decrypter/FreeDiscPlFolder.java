@@ -45,7 +45,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     public FreeDiscPlFolder(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("freedisc.pl", 1000, 20, 60000);
+            Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 1000, 20, 60000);
         } catch (final Throwable ignore) {
         }
     }

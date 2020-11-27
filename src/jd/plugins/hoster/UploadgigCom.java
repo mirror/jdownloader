@@ -88,7 +88,7 @@ public class UploadgigCom extends antiDDoSForHost {
     @Override
     public void init() {
         try {
-            Browser.setRequestIntervalLimitGlobal("uploadgig.com", 500, 10, 20000);
+            Browser.setBurstRequestIntervalLimitGlobal("uploadgig.com", 500, 10, 20000);
         } catch (Throwable t) {
         }
     }
