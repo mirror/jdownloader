@@ -27,23 +27,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.FileNameModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.parser.html.HTMLParser;
-import jd.plugins.AddonPanel;
-import jd.plugins.ContainerStatus;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginsC;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -72,6 +55,24 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.FileNameModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.parser.html.HTMLParser;
+import jd.plugins.AddonPanel;
+import jd.plugins.ContainerStatus;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginsC;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
     private FolderWatchConfigPanel                          configPanel;
@@ -516,8 +517,21 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         ret.setCustomCrawledLinkModifier(crawledLinkModifier);
                         return ret;
                     }
+
+                    @Override
+                    public LinkCrawlerGeneration getCurrentLinkCrawlerGeneration() {
+                        LinkCrawlerGeneration ret = null;
+                        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                            ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler().getCurrentLinkCrawlerGeneration();
+                        }
+                        if (ret == null) {
+                            return super.getValidLinkCrawlerGeneration();
+                        } else {
+                            return ret;
+                        }
+                    }
                 };
-                final List<CrawledLink> ret = lc.find(null, null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
+                final List<CrawledLink> ret = lc.find(lc.getCurrentLinkCrawlerGeneration(), null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
                 if (ret != null) {
                     results.addAll(ret);
                 }
