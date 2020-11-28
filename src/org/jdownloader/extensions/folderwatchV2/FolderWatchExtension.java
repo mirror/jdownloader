@@ -522,7 +522,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     public LinkCrawlerGeneration getCurrentLinkCrawlerGeneration() {
                         LinkCrawlerGeneration ret = null;
                         if (Thread.currentThread() instanceof LinkCrawlerThread) {
-                            ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler().getCurrentLinkCrawlerGeneration();
+                            ret = ((LinkCrawlerThread) Thread.currentThread()).getLinkCrawlerGeneration();
                         }
                         if (ret == null) {
                             return super.getValidLinkCrawlerGeneration();
@@ -530,8 +530,13 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             return ret;
                         }
                     }
+
+                    @Override
+                    public List<CrawledLink> find(LinkCrawlerGeneration generation, CrawledLink source, String text, String baseURL, boolean allowDeep, boolean allowInstantCrawl) {
+                        return super.find(getCurrentLinkCrawlerGeneration(), source, text, baseURL, allowDeep, allowInstantCrawl);
+                    }
                 };
-                final List<CrawledLink> ret = lc.find(lc.getCurrentLinkCrawlerGeneration(), null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
+                final List<CrawledLink> ret = lc.find(null, null, crawlJob.getText(), null, crawlJob.isDeepAnalyseEnabled() != null ? crawlJob.isDeepAnalyseEnabled().booleanValue() : currentLink.isCrawlDeep() || job != null && job.isDeepAnalyse(), false);
                 if (ret != null) {
                     results.addAll(ret);
                 }

@@ -156,7 +156,7 @@ public class LinkCrawler {
         }
     }
 
-    public LinkCrawlerGeneration getCurrentLinkCrawlerGeneration() {
+    protected LinkCrawlerGeneration getCurrentLinkCrawlerGeneration() {
         synchronized (linkCrawlerGeneration) {
             final LinkCrawlerGeneration ret = linkCrawlerGeneration.get();
             return ret;

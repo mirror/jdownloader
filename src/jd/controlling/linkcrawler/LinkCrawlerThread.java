@@ -2,13 +2,13 @@ package jd.controlling.linkcrawler;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jdownloader.plugins.controller.PluginClassLoader;
+
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.plugins.controller.PluginClassLoader;
-
 public class LinkCrawlerThread extends BrowserSettingsThread {
-
     private static AtomicInteger linkCrawlerThread = new AtomicInteger(0);
     private LinkCrawler          crawler;
     private Object               owner             = null;
@@ -27,6 +27,10 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
             PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
         }
         this.crawler = crawler;
+    }
+
+    public LinkCrawlerGeneration getLinkCrawlerGeneration() {
+        return crawler != null ? crawler.getCurrentLinkCrawlerGeneration() : null;
     }
 
     public LinkCrawler getCurrentLinkCrawler() {
@@ -50,5 +54,4 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
 
     public void setActivePlugin(PluginForDecrypt wplg) {
     }
-
 }
