@@ -87,7 +87,7 @@ public class GoogleDrive extends PluginForDecrypt {
             login(this.br, aa);
         } else {
             /* Respect users' plugin settings (e.g. custom User-Agent) */
-            ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(br, aa);
+            ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(br);
         }
         logger.info("LoggedIn:" + loggedin);
         if (parameter.contains("open?id")) {
