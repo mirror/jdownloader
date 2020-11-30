@@ -68,7 +68,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, that something isn\\'t here\\.<|trackinfo\\s*:\\s*\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -91,7 +90,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!this.canHandle(br.getURL())) {
+                logger.info("Invalid URL or URL doesn't contain any downloadable content");
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
         }
