@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.gui.notify.gui;
 
 import java.util.ArrayList;
@@ -42,7 +41,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements StateUpdateListener, GenericConfigEventListener<Enum> {
-
     private static final long         serialVersionUID = 1L;
     private ArrayList<Pair<Checkbox>> boxes;
     private DelayedRunnable           delayer;
@@ -53,16 +51,13 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
 
     public BubbleNotifyConfigPanel() {
         super();
-
         layoutComponents();
         CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_STATE.getEventSender().addListener(this, true);
         onConfigValueModified(null, null);
         delayer = new DelayedRunnable(3000, 5000) {
-
             @Override
             public void delayedrun() {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         removeAll();
@@ -79,15 +74,14 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
         this.addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_BUBBLE, 32));
         this.addDescription(_GUI.T.plugins_optional_JDLightTray_ballon_desc());
         addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_enabledstate(), null, new ComboBox<BubbleNotifyEnabledState>(CFG_BUBBLE.SH.getKeyHandler("BubbleNotifyEnabledState", KeyHandler.class), new BubbleNotifyEnabledState[] { BubbleNotifyEnabledState.ALWAYS, BubbleNotifyEnabledState.JD_NOT_ACTIVE, BubbleNotifyEnabledState.TRAY_OR_TASKBAR, BubbleNotifyEnabledState.TASKBAR, BubbleNotifyEnabledState.TRAY, BubbleNotifyEnabledState.NEVER, }, new String[] { _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_always(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_jdnotactive(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_trayortask(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_taskbar(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_tray(), _GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_never(), }));
-
         boxes = new ArrayList<Pair<Checkbox>>();
         for (AbstractBubbleSupport pt : BubbleNotify.getInstance().getTypes()) {
             boxes.add(addPair(_GUI.T.lit_and() + " " + pt.getLabel(), "skip 1,split 2,pushx,growx", null, new Checkbox(pt.getKeyHandler())));
         }
         this.addHeader(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_settings_(), new AbstractIcon(IconKey.ICON_SETTINGS, 32));
-
         addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_silent_(), null, new Checkbox(CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE));
         addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout(), null, new Spinner(CFG_BUBBLE.DEFAULT_TIMEOUT));
+        addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_timeout_links_notification(), null, new Spinner(CFG_BUBBLE.BUBBLE_NOTIFY_ON_NEW_LINKGRABBER_LINKS_END_NOTIFY_DELAY));
         addPair(_GUI.T.BubbleNotifyConfigPanel_BubbleNotifyConfigPanel_fadetime(), null, new Spinner(CFG_BUBBLE.FADE_ANIMATION_DURATION));
     }
 
@@ -101,17 +95,14 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
 
     @Override
     public void save() {
-
     }
 
     @Override
     public void updateContents() {
-
     }
 
     @Override
     public void onStateUpdated() {
-
         delayer.resetAndStart();
     }
 
@@ -122,7 +113,6 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
     @Override
     public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 for (Pair<Checkbox> pc : boxes) {
@@ -131,5 +121,4 @@ public class BubbleNotifyConfigPanel extends AbstractConfigPanel implements Stat
             }
         };
     }
-
 }
