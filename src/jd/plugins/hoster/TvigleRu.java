@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,8 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvigle.ru" }, urls = { "http://cloud\\.tvigle\\.ru/video/\\d+|http://www\\.tvigle\\.ru/video/[a-z0-9\\-]+/" })
 public class TvigleRu extends PluginForHost {
@@ -78,6 +78,10 @@ public class TvigleRu extends PluginForHost {
                 if (videoID == null) {
                     videoID = br.getRegex("api/v1/video/(\\d+)").getMatch(0);
                 }
+                if (videoID == null) {
+                    /* 2020-11-30 */
+                    videoID = br.getRegex("cloud\\.tvigle\\.ru/video/(\\d+)").getMatch(0);
+                }
             }
             if (videoID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -90,7 +94,7 @@ public class TvigleRu extends PluginForHost {
         }
         /* partner_id = number between 0 and 18 */
         br.getPage("http://cloud.tvigle.ru/api/play/video/" + videoID + "/?partner_id=" + partner_id);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/json")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("application/json")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         api_data = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());

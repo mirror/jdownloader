@@ -246,11 +246,12 @@ public class OkRu extends PluginForHost {
         // video blocked | video not found (RU, then EN)
         if (br.containsHTML(">\\s*Видеоролик заблокирован\\s*<|>\\s*Видеоролик не найден\\s*<|>\\s*The video is blocked")) {
             return true;
-        }
-        if (br.containsHTML(">Video has not been found</div") || br.containsHTML(">Video hasn't been found</div")) {
+        } else if (br.containsHTML(">Video has not been found</div") || br.containsHTML(">Video hasn't been found</div")) {
             return true;
-        }
-        if (offlineBecauseOfDMCA(br)) {
+        } else if (offlineBecauseOfDMCA(br)) {
+            return true;
+        } else if (br.containsHTML(">The author of this video has not been found or is blocked")) {
+            /* 2020-11-30 */
             return true;
         }
         // offline due to copyright claim

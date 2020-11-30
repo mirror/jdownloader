@@ -93,8 +93,7 @@ public class BcVc extends antiDDoSForDecrypt {
         if (redirect != null && !new Regex(redirect, this.getSupportedLinks()).matches()) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
-        }
-        if (redirect != null) {
+        } else if (redirect != null) {
             getPage(redirect);
         }
         if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
@@ -143,7 +142,7 @@ public class BcVc extends antiDDoSForDecrypt {
                 String javascript = br.getRegex("(\\$\\.post\\('https?://bc\\.vc/fly/ajax\\.php\\?.*?\\}),\\s*function").getMatch(0);
                 if (javascript == null) {
                     /*
-                     * 2020-11-16: Hmm not sure about that. They want usets to allow notifications in browser but then simply redirect to
+                     * 2020-11-16: Hmm not sure about that. They want users to allow notifications in browser but then simply redirect to
                      * random ad websites --> Offline content ?!
                      */
                     if (br.getHost().equals("bcvc.live")) {

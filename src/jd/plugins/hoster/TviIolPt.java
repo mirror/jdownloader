@@ -15,6 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -24,9 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt", "tviplayer.iol.pt" }, urls = { "http://(?:www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(?:www\\.)?tvi24\\.iol\\.pt/videos/[^/]+/[^/]+/[^/]+", "http://(?:www\\.)?tviplayer\\.iol\\.pt/programa/[^/]+/[^/]+/video/[^/]+" })
 public class TviIolPt extends PluginForHost {
@@ -55,6 +55,7 @@ public class TviIolPt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)/[a-z0-9]$").getMatch(0));
         br.getPage(downloadLink.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Lamentamos mas o conteúdo")) {
@@ -139,7 +140,7 @@ public class TviIolPt extends PluginForHost {
         } else {
             /* hls download */
             // String dllink = this.br.getRegex("videoUrl: \\'(http[^<>\"\\']*?)\\'").getMatch(0);
-            String dllink = br.getRegex("videoUrl = '(http[^<>\"']*?)'").getMatch(0);
+            String dllink = br.getRegex("videoUrl\":(?:\\'|\")(http[^<>\"']+)").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

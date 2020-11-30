@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,10 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -105,8 +105,13 @@ public class DoodriveCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*File Not Found|>\\s*The file has expired")) { // 2020-11-30
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2020-10-30: No filename & filesize given before captcha :( */
+        final String filename = br.getRegex("<title>Download ([^<>}\"]+) - DooDrive</title>").getMatch(0);
+        if (filename != null) {
+            link.setName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -125,33 +130,37 @@ public class DoodriveCom extends PluginForHost {
                 dlform0 = br.getForm(0);
             }
             if (dlform0 != null && !CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform0)) {
+                br.setFollowRedirects(false);
                 br.submitForm(dlform0);
+                dllink = br.getRedirectLocation();
+            } else {
+                /* [Optional] Step 2 - Captcha & Pre-download-waittime (10 seconds - unsure if those are skippable) */
+                Form dlform = br.getFormbyActionRegex(".*file-download");
+                if (dlform == null) {
+                    dlform = br.getForm(0);
+                }
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final boolean pluginUnfinished = !DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+                if (pluginUnfinished) {
+                    /* 2020-10-31 */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                /* Should redirect to "/f/<fuid>?f=blabla" */
+                br.submitForm(dlform);
+                /* Step 3 - Download */
+                final Form dlform2 = br.getFormbyActionRegex(".*/f/" + this.getFID(link));
+                if (dlform2 == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.setFollowRedirects(false);
+                br.submitForm(dlform2);
+                br.submitForm(dlform);
+                dllink = br.getRedirectLocation();
             }
-            /* Step 2 - Captcha & Pre-download-waittime (10 seconds - unsure if those are skippable) */
-            Form dlform = br.getFormbyActionRegex(".*file-download");
-            if (dlform == null) {
-                dlform = br.getForm(0);
-            }
-            if (dlform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final boolean pluginUnfinished = !DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-            if (pluginUnfinished) {
-                /* 2020-10-31 */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            /* Should redirect to "/f/<fuid>?f=blabla" */
-            br.submitForm(dlform);
-            /* Step 3 - Download */
-            final Form dlform2 = br.getFormbyActionRegex(".*/f/" + this.getFID(link));
-            if (dlform2 == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.setFollowRedirects(false);
-            br.submitForm(dlform2);
-            dllink = br.getRedirectLocation();
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
