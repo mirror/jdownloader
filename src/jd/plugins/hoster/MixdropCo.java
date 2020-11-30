@@ -171,8 +171,6 @@ public class MixdropCo extends antiDDoSForHost {
             if (USE_API_FOR_LINKCHECK) {
                 getPage(link.getPluginPatternMatcher());
             }
-            /* 2020-06-08: reCaptchaV3 only works for domain mixdrop.co and not any other domains but some URLs are kinda domain-bound. */
-            final String forced_xhr_domain = "mixdrop.co";
             final String fid = getFID(link);
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
             if (csrftoken == null) {
@@ -180,7 +178,7 @@ public class MixdropCo extends antiDDoSForHost {
                 csrftoken = "";
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            final String url = "https://" + forced_xhr_domain + "/f/" + fid + "?download";
+            final String url = "/f/" + fid + "?download";
             getPage(url);
             String postData = "a=genticket&csrf=" + csrftoken;
             /* 2019-12-13: Invisible reCaptcha */

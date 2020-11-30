@@ -17,6 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,9 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "https?://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
@@ -458,7 +462,8 @@ public class EightTracksCom extends antiDDoSForHost {
                 accessSoundcloudLink(br2, dlink);
             } catch (final Throwable e) {
             }
-            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(this, br2, null);
+            final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(this, null, br2, (Map<String, Object>) ressourcelist.get(0));
             return streamlink;
         } else {
             return dlink;
