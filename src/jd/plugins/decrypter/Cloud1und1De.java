@@ -52,10 +52,7 @@ public class Cloud1und1De extends PluginForDecrypt {
             appKey = APPKEY.get();
             if (appKey == null) {
                 final String cloudAppMin = br.getRegex("src=\"(cloud-app.*?\\.js.*?)\"").getMatch(0);
-                if (cloudAppMin == null) {
-                    APPKEY.set(brokenPlaceholder);// broken
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
+                if (cloudAppMin != null) {
                     final Browser br2 = br.cloneBrowser();
                     br2.getPage(cloudAppMin);
                     appKey = br2.getRegex("X-UI-API-KEY\"\\s*:.*?:\"(.*?)\",").getMatch(0);

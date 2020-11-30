@@ -26,6 +26,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -40,13 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "https?://(([a-z0-9\\-]+\\.)?bandcamp\\.com/(?:album|track)/[a-z0-9\\-_]+|(?<!www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/?$)" })
 public class BandCampComDecrypter extends PluginForDecrypt {
@@ -76,6 +76,18 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (!br.getURL().contains("bandcamp.com") && json == null) {
             /* 2020-03-16: Redirect to external website */
             decryptedLinks.add(this.createDownloadlink(br.getURL()));
+            return decryptedLinks;
+        }
+        /*
+         * 2020-11-30: URLs to Labels look the same as artist URLs but they won't lead to any music directly but simply list all artists
+         * under that label.
+         */
+        final String[] artistList = br.getRegex("(https?://[^/]+\\.bandcamp\\.com)\\?label=\\d+").getColumn(0);
+        if (artistList.length > 0) {
+            for (String artistURL : artistList) {
+                artistURL += "/";
+                decryptedLinks.add(this.createDownloadlink(artistURL));
+            }
             return decryptedLinks;
         }
         if (json == null) {

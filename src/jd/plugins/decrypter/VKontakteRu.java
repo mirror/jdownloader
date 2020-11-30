@@ -46,6 +46,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -83,7 +84,6 @@ public class VKontakteRu extends PluginForDecrypt {
         return VKontakteRuHoster.getProtocol();
     }
 
-    private static final String     EXCEPTION_ACCOUNT_REQUIRED                = "EXCEPTION_ACCOUNT_REQUIRED";
     private static final String     EXCEPTION_ACCPROBLEM                      = "EXCEPTION_ACCPROBLEM";
     public static final String      EXCEPTION_LINKOFFLINE                     = "EXCEPTION_LINKOFFLINE";
     private static final String     EXCEPTION_API_UNKNOWN                     = "EXCEPTION_API_UNKNOWN";
@@ -372,11 +372,7 @@ public class VKontakteRu extends PluginForDecrypt {
             e.printStackTrace();
         } catch (final DecrypterException e) {
             if (e.getMessage() != null) {
-                if (e.getMessage().equals(EXCEPTION_ACCOUNT_REQUIRED)) {
-                    logger.info("Existing account is invalid or no account available, cannot process link: " + CRYPTEDLINK_FUNCTIONAL);
-                    decryptedLinks.add(this.createOfflinelink(this.CRYPTEDLINK_ORIGINAL, "Account_Required", "Account_Required"));
-                    return decryptedLinks;
-                } else if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
+                if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
                     logger.info("Account problem! Stopped decryption of link: " + CRYPTEDLINK_FUNCTIONAL);
                     return decryptedLinks;
                 } else if (e.getMessage().equals(EXCEPTION_API_UNKNOWN)) {
@@ -812,10 +808,10 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private void handleVideoErrors(final Browser br) throws DecrypterException {
+    private void handleVideoErrors(final Browser br) throws DecrypterException, AccountRequiredException {
         final boolean isError = containsErrorTitle(br);
         if ((isError && br.containsHTML("div class=\"message_page_body\">\\s+You need to be a member of this group to view its video files.")) || br.getHttpConnection().getResponseCode() == 403) {
-            throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+            throw new AccountRequiredException();
         } else if (isError && br.containsHTML("<div class=\"message_page_body\">\\s*Access denied")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.containsHTML("The owner of this video has either been suspended or deleted")) {
@@ -829,6 +825,11 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.containsHTML("profile_deleted_text")) {
             /* 2019-07-26: E.g. <h5 class="profile_deleted_text">Dieses Profil ist nur f&#252;r autorisierte Nutzer verf&#252;gbar.</h5> */
+            /* 2020-11-30: E.g. <h5 class="profile_deleted_text">You have to log in to view this page.</h5> */
+            /*
+             * 2020-11-30: E.g. <h5 class="profile_deleted_text">This profile has been deleted.<br>Information on this profile is
+             * unavailable.</h5>
+             */
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
     }
@@ -979,6 +980,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String startOffset = br.getRegex("var preload\\s*=\\s*\\[(\\d+),\"").getMatch(0);
         if (numberOfEntriesStr == null) {
+            this.handleVideoErrors(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
@@ -2588,13 +2590,17 @@ public class VKontakteRu extends PluginForDecrypt {
         return input.matches(PATTERN_WALL_POST_LINK);
     }
 
-    /** Handles basic (offline) errors. */
-    private void siteGeneralErrorhandling() throws DecrypterException {
+    /**
+     * Handles basic (offline) errors.
+     *
+     * @throws AccountRequiredException
+     */
+    private void siteGeneralErrorhandling() throws DecrypterException, AccountRequiredException {
         /* General errorhandling start */
         if (br.containsHTML(">\\s+Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.containsHTML(">Only logged in users can see this profile\\.<")) {
-            throw new DecrypterException(EXCEPTION_ACCOUNT_REQUIRED);
+            throw new AccountRequiredException();
         } else if (br.containsHTML("Access denied|Ошибка доступа|>You do not have permission to do this")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("vk.com/blank.php")) {

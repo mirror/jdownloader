@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "http://(www\\.)?mais\\.uol\\.com\\.br/view/[a-z0-9]+/[A-Za-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mais.uol.com.br" }, urls = { "https?://(?:www\\.)?mais\\.uol\\.com\\.br/view/([a-z0-9]+)/([A-Za-z0-9\\-]+)" })
 public class MaisUolComBr extends PluginForHost {
     public MaisUolComBr(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,11 +72,14 @@ public class MaisUolComBr extends PluginForHost {
             /* 2020-11-23: ID is inside URL */
             mediaID = new Regex(br.getURL(), ".*/(\\d+)$").getMatch(0);
         }
-        if (mediaID == null) {
-            logger.info("Failed to find any downloadable content");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (mediaID != null) {
+            /* Old request */
+            br.getPage("https://api.mais.uol.com.br/apiuol/v3/player/" + mediaID);
+        } else {
+            /* 2020-11-30: New */
+            final String urlpart = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+            br.getPage("https://api.mais.uol.com.br/apiuol/v3/media/detail/" + urlpart);
         }
-        br.getPage("https://api.mais.uol.com.br/apiuol/v3/player/" + mediaID);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         entries = (LinkedHashMap<String, Object>) entries.get("item");
         String filename = (String) entries.get("title");
