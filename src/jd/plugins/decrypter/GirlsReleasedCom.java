@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -110,16 +111,21 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Get API result
-        final String postURL = "https://girlsreleased.com/";
         final Browser br2 = br.cloneBrowser();
-        String apiResult = null;
-        final PostRequest post = new PostRequest(postURL);
-        post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        post.setContentType("application/json");
-        post.setPostDataString(payload);
-        br2.setRequest(post);
-        postPage(br2, postURL, payload);
-        apiResult = br2.toString();
+        if (pageType == PageType.GR_SET) {
+            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/sets/" + setID);
+            sendRequest(br2, request);
+        } else {
+            // TODO timestamp/signature
+            final String postURL = "https://girlsreleased.com/";
+            final PostRequest post = new PostRequest(postURL);
+            post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            post.setContentType("application/json");
+            post.setPostDataString(payload);
+            br2.setRequest(post);
+            postPage(br2, postURL, payload);
+        }
+        String apiResult = br2.toString();
         // Filter/build links
         if (apiResult != null && apiResult.length() > 0) {
             apiResult = apiResult.replaceAll("\\\\/", "/");
