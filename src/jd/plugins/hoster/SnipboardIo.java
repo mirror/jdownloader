@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,9 +34,9 @@ public class SnipboardIo extends PluginForHost {
     public SnipboardIo(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // protocol: https
-
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -95,14 +96,21 @@ public class SnipboardIo extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = this.br.openHeadConnection(dllink);
-            if (con.getContentType().contains("image")) {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openHeadConnection(dllink);
+            if (con.isOK() && con.getContentType().contains("image")) {
                 if (con.getContentType().contains("/")) {
-                    ext_header = con.getContentType().split("/")[1];
+                    ext_header = DirectHTTP.getExtensionFromMimeType(con.getContentType());
+                    if (ext_header == null) {
+                        ext_header = con.getContentType().split("/")[1];
+                    }
                     url_filename = url_filename.replace(ext, "." + ext_header);
                     link.setFinalFileName(url_filename);
                 }
-                link.setDownloadSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
             } else {
                 if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 410) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -138,12 +146,9 @@ public class SnipboardIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

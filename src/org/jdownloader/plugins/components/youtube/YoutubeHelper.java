@@ -1375,7 +1375,10 @@ public class YoutubeHelper {
         String result = null;
         Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            result = (String) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/ownerChannelName");
+            if (StringUtils.isEmpty(result)) {
+                result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
+            }
         }
         map = getYtInitialData();
         if (StringUtils.isEmpty(result) && map != null) {
@@ -1506,19 +1509,13 @@ public class YoutubeHelper {
 
     public String getUserFromMaps() {
         String result = null;
-        Map<String, Object> map = getYtInitialData();
+        Map<String, Object> map = getYtInitialPlayerResponse();
         if (map != null) {
-            String string = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/webNavigationEndpointData/url");
-            if (StringUtils.isEmpty(string)) {
-                string = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/navigationEndpoint/browseEndpoint/canonicalBaseUrl");
-            }
-            if (string != null) {
-                result = new Regex(string, "/user/(.+)").getMatch(0);
-            }
+            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/author");
         }
-        map = getYtInitialPlayerResponse();
+        map = getYtInitialData();
         if (StringUtils.isEmpty(result) && map != null) {
-            result = (String) JavaScriptEngineFactory.walkJson(map, "videoDetails/channelId");
+            result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoSecondaryInfoRenderer/owner/videoOwnerRenderer/title/runs/{0}/text");
         }
         return result;
     }
