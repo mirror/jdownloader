@@ -475,7 +475,10 @@ public class GoogleDrive extends PluginForHost {
      * Last updated: 2020-11-29
      */
     private static boolean isVideoFile(final String filename) {
-        /* TODO: Check .ogg (audio?) Streaming */
+        /*
+         * 2020-11-30: .ogg is also supported but audio streams seem to be the original files --> Do not allow streaming download for .ogg
+         * files.
+         */
         if (filename == null) {
             return false;
         } else if (new Regex(filename, Pattern.compile(".*\\.(webm|3gp|mov|wmv|mp4|mpeg|mkv|avi|flv|mts|m2ts)$", Pattern.CASE_INSENSITIVE)).matches()) {
