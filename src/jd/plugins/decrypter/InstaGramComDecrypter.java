@@ -425,10 +425,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     InstaGramCom.checkErrors(br);
                 } catch (final AccountRequiredException ar) {
                     /* Instagram blocks the amount of items a user can see based on */
-                    if (logged_in) {
+                    if (!logged_in) {
                         throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, null);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account session refresh required to crawl more items of user " + this.username_url, null, null);
                     }
                 }
                 /* TODO: Move all of this errorhandling to one place */

@@ -28,8 +28,12 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -39,6 +43,8 @@ public class TiktokCom extends PluginForDecrypt {
     public TiktokCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_USER = ".+tiktok\\.com/(?:@|share/user/\\d+)(.+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -62,7 +68,7 @@ public class TiktokCom extends PluginForDecrypt {
             /* Single URL for host plugin */
             decryptedLinks.add(this.createDownloadlink(parameter));
             return decryptedLinks;
-        } else if (parameter.matches(".+tiktok\\.com/(@.+|share/user/\\d+.+)")) {
+        } else if (parameter.matches(TYPE_USER)) {
             crawlProfile(parameter, decryptedLinks);
         } else {
             logger.info("Unsupported URL: " + parameter);
@@ -72,10 +78,16 @@ public class TiktokCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> crawlProfile(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
         br.setFollowRedirects(true);
+        final String username_url = new Regex(parameter, TYPE_USER).getMatch(0);
+        if (username_url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
+            throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + username_url, null, null);
         }
         final String websiteJson = br.getRegex("window\\.__INIT_PROPS__ = (\\{.*?\\})</script>").getMatch(0);
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
@@ -86,7 +98,7 @@ public class TiktokCom extends PluginForDecrypt {
         final String username = (String) user_data.get("uniqueId");
         // final String username = new Regex(parameter, "/@([^/\\?\\&]+)").getMatch(0);
         if (StringUtils.isEmpty(secUid) || StringUtils.isEmpty(userId) || StringUtils.isEmpty(username)) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ArrayList<Object> ressourcelist;
         final boolean api_broken = true;
@@ -110,13 +122,13 @@ public class TiktokCom extends PluginForDecrypt {
         int page = 1;
         // final int maxItemsPerPage = 48;
         String maxCursor = "0";
-        while (hasMore && !StringUtils.isEmpty(maxCursor)) {
+        do {
             logger.info("Current page: " + page);
             logger.info("Current index: " + index);
-            if (this.isAbort()) {
-                break;
-            }
             br.getPage("https://m." + this.getHost() + "/share/item/list?secUid=" + secUid + "&id=" + userId + "&type=1&count=48&minCursor=0&maxCursor=" + maxCursor + "&_signature=TODO_FIXME");
+            if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
+                throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl more items of user " + username_url, null, null);
+            }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("body");
             hasMore = ((Boolean) entries.get("hasMore")).booleanValue();
@@ -141,7 +153,7 @@ public class TiktokCom extends PluginForDecrypt {
                 index++;
             }
             page++;
-        }
+        } while (!this.isAbort() && hasMore && !StringUtils.isEmpty(maxCursor));
         return decryptedLinks;
     }
 

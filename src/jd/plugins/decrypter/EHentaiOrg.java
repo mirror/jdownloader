@@ -57,13 +57,13 @@ public class EHentaiOrg extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("e-hentai.org");
         // final String url_host = Browser.getHost(param.getCryptedUrl());
-        final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
-        if (aa != null) {
-            ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, aa, false);
+        final Account account = AccountController.getInstance().getValidAccount(hostplugin);
+        if (account != null) {
+            ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, account, false);
         }
         // links are transferable between the login enforced url and public, but may not be available on public
         String gallerytype = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        if (aa == null) {
+        if (account == null) {
             /* Enforce "normal" gallery type as "/mpv/" is only available for loggedin users!" */
             gallerytype = "g";
         }
@@ -82,6 +82,9 @@ public class EHentaiOrg extends PluginForDecrypt {
         if (galleryid == null || galleryhash == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (Browser.getHost(parameter).equals("exhentai.org") && account == null) {
+            /* Account required to crawl URLs of this host! */
+            throw new AccountRequiredException();
         }
         this.br.setFollowRedirects(true);
         br.setCookie(Browser.getHost(parameter), "nw", "1");
