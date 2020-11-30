@@ -81,7 +81,13 @@ public class MetacafeCom extends KernelVideoSharingComV2 {
         String dllink = PluginJSonUtils.getJson(br, "video_url");
         if (dllink != null) {
             /* 2020-11-23: Cheap way of doing an unnecessary stringformat. */
-            dllink = dllink.replace("%07d", "0000000");
+            if (dllink.contains("%07d")) {
+                dllink = dllink.replace("%07d", "0000000");
+            }
+            final String urlPart = new Regex(dllink, "/get_file/\\d*/[a-f0-9]{32}/(.+\\.mp4)").getMatch(0);
+            if (urlPart != null) {
+                dllink = "https://cdn.mcstatic.com/videos/" + urlPart;
+            }
             return dllink;
         }
         return null;

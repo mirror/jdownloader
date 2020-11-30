@@ -78,8 +78,8 @@ public class SnipboardIo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String url_filename = getFID(link);
-        /* Acoid redirect from http --> https */
-        dllink = "https://i." + this.getHost() + "/" + url_filename;
+        /* Avoid redirect from http --> https */
+        dllink = "https://i." + this.getHost() + link.getPluginPatternMatcher().substring(link.getPluginPatternMatcher().lastIndexOf("/"));
         if (url_filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

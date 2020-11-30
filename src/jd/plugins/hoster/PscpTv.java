@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -69,13 +72,17 @@ public class PscpTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("broadcast");
+        final String user_display_name = (String) entries.get("user_display_name");
         String filename = PluginJSonUtils.getJson(br, "status");
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
         }
-        if (filename != null) {
-            link.setFinalFileName(filename + ".mp4");
+        if (!StringUtils.isEmpty(user_display_name)) {
+            filename = user_display_name + " - " + filename;
         }
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
