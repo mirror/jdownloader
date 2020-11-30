@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -49,6 +50,7 @@ import jd.plugins.download.raf.FileBytesMap;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
@@ -897,7 +899,24 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     private void initPipe(final AbstractFFmpegBinary ffmpeg) throws IOException {
-        final LinkedList<MeteredThrottledInputStream> cachedMeteredThrottledInputStream = new LinkedList<MeteredThrottledInputStream>();
+        final LinkedList<MeteredThrottledInputStream> connectedMeteredThrottledInputStream = new LinkedList<MeteredThrottledInputStream>();
+        final DelayedRunnable delayedCleanup = new DelayedRunnable(5000) {
+            @Override
+            public void delayedrun() {
+                synchronized (connectedMeteredThrottledInputStream) {
+                    while (true) {
+                        final MeteredThrottledInputStream is = connectedMeteredThrottledInputStream.pollLast();
+                        if (is != null) {
+                            if (connectionHandler != null) {
+                                connectionHandler.removeThrottledConnection(is);
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        };
         server = new HttpServer(0);
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
@@ -1223,8 +1242,8 @@ public class HLSDownloader extends DownloadInterface {
                                         }
                                         if (meteredThrottledInputStream == null) {
                                             for (int waitLoop = 1; waitLoop < 10; waitLoop++) {
-                                                synchronized (cachedMeteredThrottledInputStream) {
-                                                    meteredThrottledInputStream = cachedMeteredThrottledInputStream.poll();
+                                                synchronized (connectedMeteredThrottledInputStream) {
+                                                    meteredThrottledInputStream = connectedMeteredThrottledInputStream.poll();
                                                 }
                                                 if (meteredThrottledInputStream != null) {
                                                     break;
@@ -1234,11 +1253,11 @@ public class HLSDownloader extends DownloadInterface {
                                             }
                                             if (meteredThrottledInputStream == null) {
                                                 meteredThrottledInputStream = new MeteredThrottledInputStream(inputStream, new AverageSpeedMeter(10));
+                                                if (connectionHandler != null) {
+                                                    connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                                }
                                             } else {
                                                 meteredThrottledInputStream.setInputStream(inputStream);
-                                            }
-                                            if (connectionHandler != null) {
-                                                connectionHandler.addThrottledConnection(meteredThrottledInputStream);
                                             }
                                         } else {
                                             meteredThrottledInputStream.setInputStream(inputStream);
@@ -1254,10 +1273,24 @@ public class HLSDownloader extends DownloadInterface {
                                         } else {
                                             outputStream = requestOutputStream;
                                         }
+                                        final PushbackInputStream pushBackInputStream = new PushbackInputStream(meteredThrottledInputStream, readWriteBuffer.length + 1024);
                                         while (true) {
                                             final int len;
                                             try {
-                                                len = meteredThrottledInputStream.read(readWriteBuffer);
+                                                len = pushBackInputStream.read(readWriteBuffer);
+                                                final int eof = pushBackInputStream.read();
+                                                if (eof == -1 || len == -1) {
+                                                    synchronized (connectedMeteredThrottledInputStream) {
+                                                        connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
+                                                        meteredThrottledInputStream.setInputStream(new NullInputStream());
+                                                        meteredThrottledInputStream = null;
+                                                    }
+                                                    if (!delayedCleanup.isDelayerActive()) {
+                                                        delayedCleanup.resetAndStart();
+                                                    }
+                                                } else {
+                                                    pushBackInputStream.unread(eof);
+                                                }
                                             } catch (IOException e) {
                                                 requestLogger.log(e);
                                                 if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
@@ -1323,16 +1356,13 @@ public class HLSDownloader extends DownloadInterface {
                                 }
                             }
                         } finally {
-                            if (connectionHandler != null) {
-                                if (meteredThrottledInputStream != null) {
-                                    if (connectionHandler.size() > 1) {
-                                        connectionHandler.removeThrottledConnection(meteredThrottledInputStream);
-                                    }
-                                    synchronized (cachedMeteredThrottledInputStream) {
-                                        cachedMeteredThrottledInputStream.add(meteredThrottledInputStream);
-                                        meteredThrottledInputStream.setInputStream(new NullInputStream());
-                                    }
+                            if (meteredThrottledInputStream != null) {
+                                synchronized (connectedMeteredThrottledInputStream) {
+                                    connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
+                                    meteredThrottledInputStream.setInputStream(new NullInputStream());
+                                    meteredThrottledInputStream = null;
                                 }
+                                delayedCleanup.resetAndStart();
                             }
                         }
                     } else {
