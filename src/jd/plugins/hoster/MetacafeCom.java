@@ -84,6 +84,7 @@ public class MetacafeCom extends KernelVideoSharingComV2 {
             if (dllink.contains("%07d")) {
                 dllink = dllink.replace("%07d", "0000000");
             }
+            /* 2020-11-30: Workaround */
             final String urlPart = new Regex(dllink, "/get_file/\\d*/[a-f0-9]{32}/(.+\\.mp4)").getMatch(0);
             if (urlPart != null) {
                 dllink = "https://cdn.mcstatic.com/videos/" + urlPart;
