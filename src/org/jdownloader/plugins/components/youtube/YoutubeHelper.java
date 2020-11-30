@@ -514,6 +514,17 @@ public class YoutubeHelper {
                 return _GUI.T.YoutubeHelper_getDescription_title();
             }
         });
+        REPLACER.add(new YoutubeReplacer("CATEGORY") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_CATEGORY, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_category();
+            }
+        });
         REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME", "DATE_PUBLISH") {
             @Override
             public String getDescription() {
@@ -769,6 +780,7 @@ public class YoutubeHelper {
         });
     }
     public static final String                YT_TITLE                         = "YT_TITLE";
+    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
     public static final String                YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String                YT_ID                            = "YT_ID";
     public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
@@ -1184,12 +1196,13 @@ public class YoutubeHelper {
         parseChannelTitle(vid);
         parseUser(vid);
         parseViews(vid);
+        parseCategory(vid);
         return vid;
     }
 
     protected String parseViews(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.views)) {
-            parseViewsFromMaps(vid);
+            vid.views = parseViewsFromMaps(vid);
         }
         return vid.views;
     }
@@ -1267,6 +1280,13 @@ public class YoutubeHelper {
         return vid.user;
     }
 
+    protected String parseCategory(YoutubeClipData vid) {
+        if (StringUtils.isEmpty(vid.category)) {
+            vid.category = getCategoryFromMaps();
+        }
+        return vid.category;
+    }
+
     protected String parseChannelTitle(YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.channelTitle)) {
             vid.channelTitle = getChannelTitleFromMaps();
@@ -1286,14 +1306,18 @@ public class YoutubeHelper {
 
     public String parseViewsFromMaps(YoutubeClipData vid) {
         String result = null;
-        Map<String, Object> map = getYtInitialData();
-        if (map != null) {
+        Map<String, Object> map = getYtInitialPlayerResponse();
+        if (StringUtils.isEmpty(result) && map != null) {
+            final Object viewCount = JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/viewCount");
+            if (viewCount != null) {
+                result = viewCount.toString();
+            }
+        }
+        map = getYtInitialData();
+        if (StringUtils.isEmpty(result) && map != null) {
             result = (String) JavaScriptEngineFactory.walkJson(map, "contents/twoColumnWatchNextResults/results/results/contents/{}/videoPrimaryInfoRenderer/viewCount/videoViewCountRenderer/shortViewCount/simpleText");
         }
-        if (!StringUtils.isEmpty(result)) {
-            vid.views = result;
-        }
-        return vid.views;
+        return result;
     }
 
     public String getVidDescriptionFromMaps() {
@@ -1362,6 +1386,15 @@ public class YoutubeHelper {
             result = (String) JavaScriptEngineFactory.walkJson(map, "args/author");
         }
         return result;
+    }
+
+    public String getCategoryFromMaps() {
+        String category = null;
+        final Map<String, Object> map = getYtInitialPlayerResponse();
+        if (StringUtils.isEmpty(category) && map != null) {
+            category = (String) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/category");
+        }
+        return category;
     }
 
     public long getPublishedDateFromMaps() {
@@ -2509,38 +2542,46 @@ public class YoutubeHelper {
         // } else {
         // clone.getPage("http://gdata.youtube.com/feeds/api/videos/" + vid.videoID + "?v=2");
         // }
-        try {
-            // dd.MM.yyyy_HH-mm-ss
-            // 2014-01-06T00:01:01.000Z
-            final String date = clone.getRegex("<published>\\s*(.*?)\\s*</published>").getMatch(0);
-            if (StringUtils.isNotEmpty(date)) {
-                DatatypeFactory f = DatatypeFactory.newInstance();
-                XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
-                vid.datePublished = xgc.toGregorianCalendar().getTime().getTime();
+        if (vid.datePublished == -1) {
+            try {
+                // dd.MM.yyyy_HH-mm-ss
+                // 2014-01-06T00:01:01.000Z
+                final String date = clone.getRegex("<published>\\s*(.*?)\\s*</published>").getMatch(0);
+                if (StringUtils.isNotEmpty(date)) {
+                    DatatypeFactory f = DatatypeFactory.newInstance();
+                    XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
+                    vid.datePublished = xgc.toGregorianCalendar().getTime().getTime();
+                }
+            } catch (DatatypeConfigurationException e) {
+                logger.log(e);
             }
-        } catch (DatatypeConfigurationException e) {
-            logger.log(e);
         }
-        try {
-            // dd.MM.yyyy_HH-mm-ss
-            // 2014-01-06T00:01:01.000Z
-            final String date = clone.getRegex("<updated>\\s*(.*?)\\s*</updated>").getMatch(0);
-            if (StringUtils.isNotEmpty(date)) {
-                DatatypeFactory f = DatatypeFactory.newInstance();
-                XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
-                vid.dateUploaded = xgc.toGregorianCalendar().getTime().getTime();
+        if (vid.dateUploaded == -1) {
+            try {
+                // dd.MM.yyyy_HH-mm-ss
+                // 2014-01-06T00:01:01.000Z
+                final String date = clone.getRegex("<updated>\\s*(.*?)\\s*</updated>").getMatch(0);
+                if (StringUtils.isNotEmpty(date)) {
+                    DatatypeFactory f = DatatypeFactory.newInstance();
+                    XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
+                    vid.dateUploaded = xgc.toGregorianCalendar().getTime().getTime();
+                }
+            } catch (DatatypeConfigurationException e) {
+                logger.log(e);
             }
-        } catch (DatatypeConfigurationException e) {
-            logger.log(e);
         }
-        vid.category = clone.getRegex("<media:category.*?>(.*?)</media:category>").getMatch(0);
-        // duration
-        String duration = clone.getRegex("duration=\"(\\d+)\"").getMatch(0);
-        if (StringUtils.isEmpty(duration)) {
-            duration = clone.getRegex("<yt\\:duration seconds=\"(\\d+)\" />").getMatch(0);
+        if (StringUtils.isEmpty(vid.category)) {
+            vid.category = clone.getRegex("<media:category.*?>\\s*(.*?)\\s*</media:category>").getMatch(0);
         }
-        if (StringUtils.isNotEmpty(duration)) {
-            vid.duration = Integer.parseInt(duration);
+        if (vid.duration == -1) {
+            // duration
+            String duration = clone.getRegex("duration\\s*=\\s*\"(\\d+)\"").getMatch(0);
+            if (StringUtils.isEmpty(duration)) {
+                duration = clone.getRegex("<yt\\:duration seconds\\s*=\\s*\"(\\d+)\" />").getMatch(0);
+            }
+            if (StringUtils.isNotEmpty(duration)) {
+                vid.duration = Integer.parseInt(duration);
+            }
         }
     }
 

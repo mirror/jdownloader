@@ -148,6 +148,7 @@ public class YoutubeClipData {
 
     public void copyToDownloadLink(final DownloadLink dest) {
         setValue(dest, YoutubeHelper.YT_TITLE, title);
+        setValue(dest, YoutubeHelper.YT_CATEGORY, category);
         setValue(dest, YoutubeHelper.YT_PLAYLIST_INT, playlistEntryNumber);
         setValue(dest, YoutubeHelper.YT_3D, is3D());
         setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
