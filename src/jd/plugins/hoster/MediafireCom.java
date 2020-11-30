@@ -25,13 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,6 +52,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -343,7 +343,6 @@ public class MediafireCom extends PluginForHost {
             }
             captchaCorrect = true;
             if (url == null) {
-                logger.info("Handle possible PW");
                 this.handlePW(downloadLink);
                 url = br.getRegex("kNO\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
                 logger.info("Kno= " + url);
@@ -460,8 +459,9 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handlePW(final DownloadLink downloadLink) throws Exception {
-        final String label = "aria-labelledby\\s*=\\s*\"passwordmsg\"";
+        final String label = "aria-labelledby\\s*=\\s*\"passwordmsg\"|class\\s*=\\s*\"passwordPrompt\"";
         if (br.containsHTML(label)) {
+            logger.info("Handle possible PW");
             new PasswordSolver(this, br, downloadLink) {
                 String curPw = null;
 
@@ -494,8 +494,13 @@ public class MediafireCom extends PluginForHost {
                     }
                     form = br.getFormbyProperty("name", "download");
                     if (form != null && !form.containsHTML(label)) {
-                        logger.warning("Wrong passwordform(?) --> Returning null");
-                        return null;
+                        if (form.getInputField("downloadp") != null) {
+                            logger.warning("Maybe passwordform(?)");
+                            return form;
+                        } else {
+                            logger.warning("Wrong passwordform(?) --> Returning null");
+                            return null;
+                        }
                     }
                     return form;
                 }
@@ -627,7 +632,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                // offline file, to file/get_info as a single file... we need to return so the proper
+                    // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
