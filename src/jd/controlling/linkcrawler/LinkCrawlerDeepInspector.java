@@ -52,6 +52,11 @@ public abstract class LinkCrawlerDeepInspector {
                 return true;
             } else if (!hasContentType && completeContentLength > 0 && hasStrongEtag) {
                 return true;
+            } else if (!hasContentType && completeContentLength > 0 && allowsByteRanges) {
+                // HTTP/1.1 200 OK
+                // Content-Length: 1156000
+                // Accept-Ranges: bytes
+                return true;
             } else if (completeContentLength > sizeDownloadableContent && (!hasContentType || !isTextContent(urlConnection))) {
                 return true;
             } else if (completeContentLength > sizeDownloadableContent && (allowsByteRanges || (urlConnection.getResponseCode() == 206 && urlConnection.getRange() != null))) {
