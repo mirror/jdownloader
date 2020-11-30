@@ -86,6 +86,10 @@ public class EHentaiOrg extends PluginForDecrypt {
         this.br.setFollowRedirects(true);
         br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
+        if (!new Regex(br.getURL(), this.getSupportedLinks()).matches() && !br.getURL().contains(galleryid)) {
+            logger.info("Redirect to mainpage? Accessing gallery URL again ...");
+            br.getPage(parameter);
+        }
         if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

@@ -735,6 +735,8 @@ public class EHentaiOrg extends antiDDoSForHost {
             logger.warning("Failed to find items_downloadedStr or items_maxStr");
             ai.setStatus("Free Account");
         }
+        /* 2020-11-30: Experimental */
+        account.setRefreshTimeout(10 * 60 * 1000l);
         return ai;
     }
 
