@@ -82,20 +82,32 @@ public class BandCampComDecrypter extends PluginForDecrypt {
          * under that label.
          */
         final String[] artistList = br.getRegex("(https?://[^/]+\\.bandcamp\\.com)\\?label=\\d+").getColumn(0);
-        if (artistList.length > 0) {
-            for (String artistURL : artistList) {
-                artistURL += "/";
-                decryptedLinks.add(this.createDownloadlink(artistURL));
-            }
-            return decryptedLinks;
-        }
+        final String[] albumList = br.getRegex("(/album/[^<>\"\\']+)").getColumn(0);
         if (json == null) {
             if (!this.canHandle(br.getURL())) {
                 logger.info("Invalid URL or URL doesn't contain any downloadable content");
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Let's see if there is anything else other than music that we may be able to download. */
+                if (artistList.length > 0) {
+                    for (String artistURL : artistList) {
+                        artistURL += "/";
+                        decryptedLinks.add(this.createDownloadlink(artistURL));
+                    }
+                    return decryptedLinks;
+                } else if (albumList.length > 0) {
+                    for (String albumURL : albumList) {
+                        albumURL = br.getURL(albumURL).toString();
+                        decryptedLinks.add(this.createDownloadlink(albumURL));
+                    }
+                    return decryptedLinks;
+                } else {
+                    /* E.g. https://daily.bandcamp.com/ */
+                    logger.info("Failed to find any downloadable content");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
             }
         } else if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);

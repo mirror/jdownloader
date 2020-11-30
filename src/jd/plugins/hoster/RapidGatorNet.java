@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -93,7 +92,6 @@ public class RapidGatorNet extends antiDDoSForHost {
      */
     private final long                     WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
     private final String[]                 IPCHECK                                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart                  = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                                 = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP            = "rapidgatornet_lastdownload_timestamp";
     private static final String            PROPERTY_sessionid                         = "session_id";
@@ -376,7 +374,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                         final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
                         logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
                         if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download sessions", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
                         }
                     }
                 }
@@ -385,275 +383,274 @@ public class RapidGatorNet extends antiDDoSForHost {
                 }
             }
         }
-        try {
-            if (finalDownloadURL == null) {
-                // end of experiment
-                handleErrorsWebsite(this.br, link, null);
-                final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
-                if (freedlsizelimit != null && !freedlsizelimit.equalsIgnoreCase("2 GB")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        if (finalDownloadURL == null) {
+            // end of experiment
+            handleErrorsWebsite(this.br, link, null);
+            final String freedlsizelimit = br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+            if (freedlsizelimit != null && !freedlsizelimit.equalsIgnoreCase("2 GB")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
+            final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
+            if (reconnectWait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
+            }
+            final String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
+            if (fid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // far as I can tell it's not needed.
+            simulateBrowser();
+            int wait = 30;
+            final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime);
+            }
+            Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            getPage(br2, "https://" + this.getHost() + "/download/AjaxStartTimer?fid=" + fid);
+            final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
+            String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
+            if (!"started".equalsIgnoreCase(state)) {
+                if (br2.toString().equals("No htmlCode read")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
                 }
-                final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
-                if (reconnectWait != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
-                }
-                final String fid = br.getRegex("var fid = (\\d+);").getMatch(0);
-                if (fid == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // far as I can tell it's not needed.
-                simulateBrowser();
-                int wait = 30;
-                final String waittime = br.getRegex("var secs = (\\d+);").getMatch(0);
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
-                }
-                Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                getPage(br2, "https://" + this.getHost() + "/download/AjaxStartTimer?fid=" + fid);
-                final String sid = br2.getRegex("sid\":\"([a-zA-Z0-9]{32})").getMatch(0);
-                String state = br2.getRegex("state\":\"([^\"]+)").getMatch(0);
-                if (!"started".equalsIgnoreCase(state)) {
-                    if (br2.toString().equals("No htmlCode read")) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unknown server error", 2 * 60 * 1000l);
-                    }
-                    logger.info(br2.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (sid == null) {
-                    logger.info(br2.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                sleep((wait + 5) * 1001l, link);
-                /* needed so we have correct referrer ;) (back to original br) */
-                br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                getPage(br2, "https://" + this.getHost() + "/download/AjaxGetDownloadLink?sid=" + sid);
-                state = br2.getRegex("state\":\"(.*?)\"").getMatch(0);
-                if (!"done".equalsIgnoreCase(state)) {
-                    if (br2.containsHTML("wait specified time")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
-                    }
-                    logger.info(br2.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://rapidgator.net/download/captcha"));
-                if (con1.getResponseCode() == 302) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                logger.info(br2.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (sid == null) {
+                logger.info(br2.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            sleep((wait + 5) * 1001l, link);
+            /* needed so we have correct referrer ;) (back to original br) */
+            br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            getPage(br2, "https://" + this.getHost() + "/download/AjaxGetDownloadLink?sid=" + sid);
+            state = br2.getRegex("state\":\"(.*?)\"").getMatch(0);
+            if (!"done".equalsIgnoreCase(state)) {
+                if (br2.containsHTML("wait specified time")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
-                } else if (con1.getResponseCode() == 403) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (con1.getResponseCode() == 500) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
                 }
-                // wasn't needed for raz, but psp said something about a redirect)
-                br.followConnection();
-                final long timeBeforeCaptchaInput = System.currentTimeMillis();
-                Form captcha = null;
-                if (br.containsHTML("data-sitekey")) {
-                    captcha = br.getFormbyProperty("id", "captchaform");
-                    if (captcha == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                    final String recaptchaV2Response = rc2.getToken();
-                    if (recaptchaV2Response == null) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    captcha.put("DownloadCaptchaForm[verifyCode]", recaptchaV2Response);
-                } else if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi")) {
-                    captcha = br.getFormbyProperty("id", "captchaform");
-                    if (captcha == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        captcha.put("DownloadCaptchaForm[captcha]", "");
-                    }
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
-                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    final String code = getCaptchaCode(cf, link);
-                    checkForExpiredCaptcha(timeBeforeCaptchaInput);
-                    final String chid = sm.getChallenge(code);
-                    // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    captcha.put("adcopy_challenge", chid);
-                    captcha.put("adcopy_response", Encoding.urlEncode(code));
-                } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
-                    captcha = br.getFormbyProperty("id", "captchaform");
-                    if (captcha == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        captcha.put("DownloadCaptchaForm[captcha]", "");
-                    }
-                    final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
-                    final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
-                    if (captchaAdress == null || captchaType == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (!"3017".equals(captchaType)) {
-                        logger.warning("ADSCaptcha: Captcha type not supported!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Browser adsCaptcha = br.cloneBrowser();
-                    getPage(adsCaptcha, captchaAdress);
-                    String challenge = adsCaptcha.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
-                    if (StringUtils.isEmpty(challenge)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String code = adsCaptcha.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
-                    if (StringUtils.isEmpty(code)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    challenge = getCaptchaCode(challenge, link);
-                    if (StringUtils.isEmpty(challenge)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    checkForExpiredCaptcha(timeBeforeCaptchaInput);
-                    captcha.put("adscaptcha_response_field", challenge);
-                    captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
-                }
-                if (captcha != null) {
-                    submitForm(captcha);
-                }
-                final String redirect = br.getRedirectLocation();
-                // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
-                if ("1".equals(br.getCookie("http://rapidgator.net", "failed_on_captcha")) || br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
-                    invalidateLastChallengeResponse();
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    validateLastChallengeResponse();
-                }
-                finalDownloadURL = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
-                if (finalDownloadURL == null) {
-                    // Old regex
-                    finalDownloadURL = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
-                }
-                if (finalDownloadURL == null) {
-                    /* 2020-02-06 */
-                    finalDownloadURL = br.getRegex("(https?://[^/]+/download/[^<>\"\\']+)").getMatch(0);
-                }
-                if (finalDownloadURL == null) {
-                    logger.info(br.toString());
-                    if (br.getRegex("location\\.href = '/\\?r=download/index&session_id=[A-Za-z0-9]+'").matches()) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    handleErrorsBasic();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                logger.info(br2.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
-                finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
-            }
-            // 2020-05-27, rapidgator now advertises that it doesn't support resume for free accounts
-            // 2020-07-14: Resume works in free mode for most of all files. For some, server may return an "X-Error" header with the content
-            // "Unexpected range request" - see code below.
-            final boolean resume;
-            if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableResumeFree()) {
-                logger.info("Resume enabled by user");
-                resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
-            } else {
-                logger.info("Resume disabled by user");
-                resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false);
-            }
-            /*
-             * More loggers - e.g. if resume has been attempted but was disabled via property PROPERTY_RESUMEABLE --> Resumability can
-             * differ no matter which setting the user has chosen!
-             */
-            if (resume) {
-                logger.info("Resume enabled for this download");
-            } else {
-                logger.info("Resume disabled for this download");
-            }
-            /* E.g. when directurl was re-used successfully, download is already ready to be started! */
-            if (dl == null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
-            }
-            /* 2020-03-17: Content-Disposition should always be given */
-            if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || !dl.getConnection().isContentDisposition() || !dl.getConnection().isOK()) {
+            final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("https://rapidgator.net/download/captcha"));
+            if (con1.getResponseCode() == 302) {
                 try {
                     br.followConnection(true);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     logger.log(e);
                 }
-                final URLConnectionAdapter con = dl.getConnection();
-                final int responsecode = con.getResponseCode();
-                if (responsecode == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
-                } else if (responsecode == 416) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
+            } else if (con1.getResponseCode() == 403) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
-                /* 2020-07-28: Resume can now also fail with error 500 and josn: {"error":"Unexpected range request","success":false} */
-                String errorMsgJson = PluginJSonUtils.getJson(br, "error");
-                final String errorMsgHeader = con.getRequest().getResponseHeader("X-Error");
-                if (StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgHeader) || StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgJson)) {
-                    /* Resume impossible */
-                    if (!resume) {
-                        /* Resume was already disabled? Then we cannot do anything about it --> Wait and retry later */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown resume related server error");
-                    }
-                    /* Reset progress and try again */
-                    logger.info("Resume impossible, disabling it for the next try");
-                    /*
-                     * Special: Save directurl although we have an error --> It should be 're-usable' because this failed attempt does not
-                     * count as download attempt serverside.
-                     */
-                    link.setProperty(getDownloadModeDirectlinkProperty(account), finalDownloadURL);
-                    /* Disable resume on next attempt */
-                    link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(false));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (con1.getResponseCode() == 500) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
-                if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
-                } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
-                    /*
-                     * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds
-                     * between downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
-                     */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
+            }
+            // wasn't needed for raz, but psp said something about a redirect)
+            br.followConnection();
+            final long timeBeforeCaptchaInput = System.currentTimeMillis();
+            Form captcha = null;
+            if (br.containsHTML("data-sitekey")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String recaptchaV2Response = rc2.getToken();
+                if (recaptchaV2Response == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captcha.put("DownloadCaptchaForm[verifyCode]", recaptchaV2Response);
+            } else if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api-secure\\.solvemedia\\.com/papi")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    logger.info("Unknown error happened");
-                    if (StringUtils.isEmpty(errorMsgJson)) {
-                        errorMsgJson = "Unknown server error";
-                    }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgJson);
+                    captcha.put("DownloadCaptchaForm[captcha]", "");
                 }
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new SolveMedia(br);
+                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                final String code = getCaptchaCode(cf, link);
+                checkForExpiredCaptcha(timeBeforeCaptchaInput);
+                final String chid = sm.getChallenge(code);
+                // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                captcha.put("adcopy_challenge", chid);
+                captcha.put("adcopy_response", Encoding.urlEncode(code));
+            } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
+                captcha = br.getFormbyProperty("id", "captchaform");
+                if (captcha == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    captcha.put("DownloadCaptchaForm[captcha]", "");
+                }
+                final String captchaAdress = captcha.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
+                final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
+                if (captchaAdress == null || captchaType == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!"3017".equals(captchaType)) {
+                    logger.warning("ADSCaptcha: Captcha type not supported!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Browser adsCaptcha = br.cloneBrowser();
+                getPage(adsCaptcha, captchaAdress);
+                String challenge = adsCaptcha.getRegex("<img src=\"(https?://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
+                if (StringUtils.isEmpty(challenge)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String code = adsCaptcha.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
+                if (StringUtils.isEmpty(code)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                challenge = getCaptchaCode(challenge, link);
+                if (StringUtils.isEmpty(challenge)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                checkForExpiredCaptcha(timeBeforeCaptchaInput);
+                captcha.put("adscaptcha_response_field", challenge);
+                captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
             }
-            /*
-             * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or
-             * captcha attempt gets wasted!
-             */
-            if (resume && link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false) == false) {
-                link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+            if (captcha != null) {
+                submitForm(captcha);
             }
-            link.setProperty(getDownloadModeDirectlinkProperty(account), finalDownloadURL);
-            RapidGatorNet.hasAttemptedDownloadstart.set(true);
+            final String redirect = br.getRedirectLocation();
+            // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
+            if ("1".equals(br.getCookie("http://rapidgator.net", "failed_on_captcha")) || br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)") || (redirect != null && redirect.matches("https?://rapidgator\\.net/file/[a-z0-9]+"))) {
+                invalidateLastChallengeResponse();
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                validateLastChallengeResponse();
+            }
+            finalDownloadURL = br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+            if (finalDownloadURL == null) {
+                // Old regex
+                finalDownloadURL = br.getRegex("location\\.href = '(https?://.*?)'").getMatch(0);
+            }
+            if (finalDownloadURL == null) {
+                /* 2020-02-06 */
+                finalDownloadURL = br.getRegex("(https?://[^/]+/download/[^<>\"\\']+)").getMatch(0);
+            }
+            if (finalDownloadURL == null) {
+                logger.info(br.toString());
+                if (br.getRegex("location\\.href = '/\\?r=download/index&session_id=[A-Za-z0-9]+'").matches()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                handleErrorsBasic();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
+            finalDownloadURL = finalDownloadURL.replaceFirst("^http://", "https://");
+        }
+        // 2020-05-27, rapidgator now advertises that it doesn't support resume for free accounts
+        // 2020-07-14: Resume works in free mode for most of all files. For some, server may return an "X-Error" header with the content
+        // "Unexpected range request" - see code below.
+        final boolean resume;
+        if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableResumeFree()) {
+            logger.info("Resume enabled by user");
+            resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, true);
+        } else {
+            logger.info("Resume disabled by user");
+            resume = link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false);
+        }
+        /*
+         * More loggers - e.g. if resume has been attempted but was disabled via property PROPERTY_RESUMEABLE --> Resumability can differ no
+         * matter which setting the user has chosen!
+         */
+        if (resume) {
+            logger.info("Resume enabled for this download");
+        } else {
+            logger.info("Resume disabled for this download");
+        }
+        /* E.g. when directurl was re-used successfully, download is already ready to be started! */
+        if (dl == null) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
+        }
+        /* 2020-03-17: Content-Disposition should always be given */
+        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || !dl.getConnection().isContentDisposition() || !dl.getConnection().isOK()) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            final URLConnectionAdapter con = dl.getConnection();
+            final int responsecode = con.getResponseCode();
+            if (responsecode == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
+            } else if (responsecode == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
+            }
+            /* 2020-07-28: Resume can now also fail with error 500 and josn: {"error":"Unexpected range request","success":false} */
+            String errorMsgJson = PluginJSonUtils.getJson(br, "error");
+            final String errorMsgHeader = con.getRequest().getResponseHeader("X-Error");
+            if (StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgHeader) || StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgJson)) {
+                /* Resume impossible */
+                if (!resume) {
+                    /* Resume was already disabled? Then we cannot do anything about it --> Wait and retry later */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown resume related server error");
+                }
+                /* Reset progress and try again */
+                logger.info("Resume impossible, disabling it for the next try");
+                /*
+                 * Special: Save directurl although we have an error --> It should be 're-usable' because this failed attempt does not count
+                 * as download attempt serverside.
+                 */
+                link.setProperty(getDirectlinkProperty(account), finalDownloadURL);
+                /* Disable resume on next attempt */
+                link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(false));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
+            } else if (br.containsHTML("<div class=\"error\">\\s*File is already downloading</div>")) {
+                /*
+                 * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
+                 * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
+            } else {
+                logger.info("Unknown error happened");
+                if (StringUtils.isEmpty(errorMsgJson)) {
+                    errorMsgJson = "Unknown server error";
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgJson);
+            }
+        }
+        /*
+         * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or captcha
+         * attempt gets wasted!
+         */
+        if (resume && link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false) == false) {
+            link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+        }
+        link.setProperty(getDirectlinkProperty(account), finalDownloadURL);
+        try {
             dl.startDownload();
         } finally {
+            /* Save timestamp after download - does not matter whether it was finished or stopped by the user! */
+            RapidGatorNet.timeBefore.set(System.currentTimeMillis());
+            this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
             try {
-                if (RapidGatorNet.hasAttemptedDownloadstart.get()) {
-                    RapidGatorNet.timeBefore.set(System.currentTimeMillis());
-                    this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
-                }
                 setIP(currentIP, link);
             } catch (final Throwable e) {
+                logger.log(e);
             }
         }
     }
 
-    protected static String getDownloadModeDirectlinkProperty(final Account account) {
+    protected static String getDirectlinkProperty(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return "freelink2";
@@ -677,7 +674,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
-        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        final String directlinkproperty = getDirectlinkProperty(account);
         final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             final boolean resume = this.isResumeable(link, account);
@@ -1257,7 +1254,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         String session_id = null;
         final boolean isPremium;
