@@ -18,10 +18,8 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -37,6 +35,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://[A-Za-z0-9]+\\.tiktok\\.com/.+" })
 public class TiktokCom extends PluginForDecrypt {
@@ -90,9 +91,9 @@ public class TiktokCom extends PluginForDecrypt {
             throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + username_url, null, null);
         }
         final String websiteJson = br.getRegex("window\\.__INIT_PROPS__ = (\\{.*?\\})</script>").getMatch(0);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
-        entries = (LinkedHashMap<String, Object>) entries.get("/@:uniqueId");
-        final LinkedHashMap<String, Object> user_data = (LinkedHashMap<String, Object>) entries.get("userData");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
+        entries = (Map<String, Object>) entries.get("/@:uniqueId");
+        final Map<String, Object> user_data = (Map<String, Object>) entries.get("userData");
         final String secUid = (String) user_data.get("secUid");
         final String userId = (String) user_data.get("userId");
         final String username = (String) user_data.get("uniqueId");
@@ -100,7 +101,7 @@ public class TiktokCom extends PluginForDecrypt {
         if (StringUtils.isEmpty(secUid) || StringUtils.isEmpty(userId) || StringUtils.isEmpty(username)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        ArrayList<Object> ressourcelist;
+        List<Object> ressourcelist;
         final boolean api_broken = true;
         if (api_broken) {
             logger.warning("Plugin not yet finished, API signing is missing");
@@ -129,14 +130,14 @@ public class TiktokCom extends PluginForDecrypt {
             if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
                 throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl more items of user " + username_url, null, null);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("body");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (Map<String, Object>) entries.get("body");
             hasMore = ((Boolean) entries.get("hasMore")).booleanValue();
             maxCursor = (String) entries.get("maxCursor");
-            ressourcelist = (ArrayList<Object>) entries.get("itemListData");
+            ressourcelist = (List<Object>) entries.get("itemListData");
             for (final Object videoO : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) videoO;
-                entries = (LinkedHashMap<String, Object>) entries.get("itemInfos");
+                entries = (Map<String, Object>) videoO;
+                entries = (Map<String, Object>) entries.get("itemInfos");
                 final String videoID = (String) entries.get("id");
                 final long createTimestamp = JavaScriptEngineFactory.toLong(entries.get("createTime"), 0);
                 if (StringUtils.isEmpty(videoID) || createTimestamp == 0) {

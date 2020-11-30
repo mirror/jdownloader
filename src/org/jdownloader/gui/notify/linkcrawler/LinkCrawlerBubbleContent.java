@@ -35,7 +35,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private Pair             listQueue;
     private Pair             packages;
     private Pair             online;
-    private final long       CLOSETIMEOUT = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
+    private final int        CLOSETIMEOUT = JsonConfig.create(BubbleNotifyConfig.class).getBubbleNotifyOnNewLinkgrabberLinksEndNotifyDelay();
     private final LinkOrigin origin;
 
     public LinkCrawlerBubbleContent(JobLinkCrawler crawler) {

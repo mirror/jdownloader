@@ -17,10 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import java.util.HashSet;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,6 +27,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "b98.tv" }, urls = { "https?://(?:www\\.)?b98\\.tv/(?:videos_categories|video)/([^/]+)/?.*" })
 public class BNinetyEightTV extends antiDDoSForDecrypt {
@@ -41,25 +43,24 @@ public class BNinetyEightTV extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
         String stub = new Regex(parameter, "/(?:videos_categories|video)/([^/]+)/?").getMatch(0);
         if (StringUtils.isEmpty(stub) || stub.toLowerCase().matches("(cartoons|series|studios)")) {
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>\\s*([^<]+)(?:\\s+\\|\\s+B98\\.TV)?").getMatch(0);
-        ArrayList<String> links = new ArrayList<String>();
+        final String fpName = br.getRegex("<title>\\s*([^<]+)(?:\\s+\\|\\s+B98\\.TV)?").getMatch(0);
+        final Set<String> links = new HashSet<String>();
         Collections.addAll(links, br.getRegex("file\\s*:\\s*[\"']([^\"']+)[\"']").getColumn(0));
         if (!links.isEmpty()) { // video page
-            for (int i = 0; i < links.size(); i++) {
-                links.set(i, "directhttp://" + links.get(i));
+            for (String link : links) {
+                decryptedLinks.add(createDownloadlink(link));
             }
         } else { // list page
             Collections.addAll(links, br.getRegex("<a\\s+class\\s*=\\s*\"[^\"]*page-numbers[^\"]*\"[^>]*href\\s*=\\s*\"([^\"]*)\"").getColumn(0));
             Collections.addAll(links, br.getRegex("<div[^>]*class=\"image-holder\"[^>]*>\\s*<a[^>]*href=\"([^\"]+)\"[^>]*>").getColumn(0));
-        }
-        for (String link : links) {
-            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-            decryptedLinks.add(createDownloadlink(link));
+            for (String link : links) {
+                link = br.getURL(link).toString();
+                decryptedLinks.add(createDownloadlink(link));
+            }
         }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
