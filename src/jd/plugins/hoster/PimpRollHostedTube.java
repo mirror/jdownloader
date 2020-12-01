@@ -15,13 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -78,7 +82,7 @@ public class PimpRollHostedTube extends PluginForHost {
         }
         /* Special RegExes go here */
         s[s.length - 2] = "https?://(?:www\\.)?contentadult\\.com/contentadult/\\d+";
-        s[s.length - 1] = "https?://(?:www\\.)?wankz\\.com/(?:[\\w\\-]+|embed/)\\d+";
+        s[s.length - 1] = "https?://(?:www\\.)?wankz\\.com/(?:[\\w\\-]+-\\d+|embed/)\\d+";
         return s;
     }
 
@@ -129,12 +133,36 @@ public class PimpRollHostedTube extends PluginForHost {
         return prepBr;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        String fid = null;
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         // 404 on desktop page
         if (br.containsHTML("was not found on this server, please try a") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -177,7 +205,7 @@ public class PimpRollHostedTube extends PluginForHost {
                 logger.info("Free Video Limit Reached or for premium only");
                 // we can set filename
                 if (filename != null) {
-                    downloadLink.setName(Encoding.htmlDecode(filename) + ".mp4");
+                    link.setName(Encoding.htmlDecode(filename) + ".mp4");
                 }
                 return AvailableStatus.TRUE;
             } else if (!br.containsHTML("flowplayer\\.pseudostreaming")) {
@@ -193,19 +221,20 @@ public class PimpRollHostedTube extends PluginForHost {
         while (filename.endsWith(".")) {
             filename = filename.substring(0, filename.length() - 1);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         // br2.getHeaders().put("Referer", "");
-        if (downloadLink.getDownloadURL().contains("xnxxx.eu")) {
+        if (link.getDownloadURL().contains("xnxxx.eu")) {
             // br2.getHeaders().put("Referer", dllink);
         }
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } else {
                 if (br2.getHttpConnection().getResponseCode() == 401) {
                     logger.info("401 unautorized");
@@ -224,17 +253,21 @@ public class PimpRollHostedTube extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null && br.containsHTML(HTML_PREMIUMONLY)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (dllink == null && br.containsHTML(">Free Video Limit Reached")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free Video Limit Reached", 3 * 60 * 60 * 1000l);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue");
         }
         dl.startDownload();

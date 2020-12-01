@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,13 +32,11 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.)?vdisk\\.cn/(?:down/index/[A-Z0-9]+|[a-zA-Z0-9]+/.*?\\.html)" })
 public class VdiskCn extends PluginForHost {
-
     // No HTTPS
     // Found hard to test this hoster, has many server issues.
     // locked it to 2(dl) * -4(chunk) = 8 total connection
     // other: they keep changing final download links url structure, best to use
     // regex only on finallink static info and not html
-
     private static String       UA       = RandomUserAgent.generate();
     private static final String NOCHUNKS = "NOCHUNKS";
 
@@ -127,14 +124,14 @@ public class VdiskCn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
@@ -180,5 +177,4 @@ public class VdiskCn extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

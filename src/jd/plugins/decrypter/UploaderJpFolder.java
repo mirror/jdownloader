@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -25,8 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploader.jp" }, urls = { "https?://u[a-z0-9]\\.getuploader\\.com/.+" })
 public class UploaderJpFolder extends antiDDoSForDecrypt {
@@ -40,6 +40,7 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
         if (parameter.matches("https?://[^/]+/[^/]+/download/\\d+.*")) {
             decryptedLinks.add(createDownloadlink(parameter));
         } else {
+            br.setFollowRedirects(true);
             getPage(parameter);
             final Form form = br.getFormByInputFieldKeyValue("q", "age_confirmation");
             if (form != null) {
@@ -53,7 +54,9 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
             final String[] links = br.getRegex("\"(https?://[^/]+/[^/]+/download/\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Empty folder?");
+                decryptedLinks.add(this.createOfflinelink(parameter, "Empty folder", "Empty folder"));
+                return decryptedLinks;
             }
             for (final String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(singleLink));
