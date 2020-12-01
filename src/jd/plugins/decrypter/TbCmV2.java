@@ -176,6 +176,13 @@ public class TbCmV2 extends PluginForDecrypt {
     private HashMap<String, Object> globalPropertiesForDownloadLink;
     private YoutubeHelper           helper;
 
+    @Override
+    protected DownloadLink createOfflinelink(String link, String filename, String message) {
+        final DownloadLink ret = super.createOfflinelink(link, filename, message);
+        logger.log(new Exception("Debug:" + filename + "|" + message));
+        return ret;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         // nullify, for debugging purposes!
         videoID = null;
@@ -419,6 +426,7 @@ public class TbCmV2 extends PluginForDecrypt {
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
+                logger.info("Aborted!");
                 return decryptedLinks;
             } else if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
