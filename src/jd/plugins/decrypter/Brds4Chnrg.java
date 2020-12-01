@@ -284,13 +284,15 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 /* Skip posts with no file attached */
                 continue;
             }
-            final String filename = (String) entries.get("filename");
-            final String ext = (String) entries.get("ext");
-            if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(ext)) {
-                /* This should never happen! */
-                continue;
-            }
             final long tim = ((Number) entries.get("tim")).longValue();
+            String filename = (String) entries.get("filename");
+            if (StringUtils.isEmpty(filename)) {
+                filename = String.valueOf(tim);
+            }
+            String ext = (String) entries.get("ext");
+            if (StringUtils.isEmpty(ext)) {
+                ext = "";
+            }
             final long fsize = ((Number) entries.get("fsize")).longValue();
             /* https://github.com/4chan/4chan-API/blob/master/pages/User_images_and_static_content.md */
             final DownloadLink dl = this.createDownloadlink("https://i.4cdn.org/" + boardShortTitle + "/" + tim + ext);
