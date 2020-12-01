@@ -79,6 +79,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawledLinkSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadlistSelectionSandbox;
@@ -214,7 +215,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                         for (ScriptEntry script : entries) {
                             if (script.isEnabled() && EventTrigger.ON_JDOWNLOADER_STARTED.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                                 try {
-                                    HashMap<String, Object> props = new HashMap<String, Object>();
+                                    final HashMap<String, Object> props = new HashMap<String, Object>();
                                     runScript(script, props);
                                 } catch (Throwable e) {
                                     getLogger().log(e);
@@ -244,12 +245,15 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
                         @Override
                         protected void push(final EventObject event) {
+                            EventSandbox eventSandbox = null;
                             for (ScriptEntry script : entries) {
                                 if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_OUTGOING_REMOTE_API_EVENT == script.getEventTrigger()) {
                                     try {
-                                        HashMap<String, Object> props = new HashMap<String, Object>();
-                                        props.put("event", new EventSandbox(event));
-                                        // props.put("package", getPackageInfo(downloadController.getDownloadLink().getParentNode()));
+                                        final HashMap<String, Object> props = new HashMap<String, Object>();
+                                        if (eventSandbox == null) {
+                                            eventSandbox = new EventSandbox(event);
+                                        }
+                                        props.put("event", eventSandbox);
                                         runScript(script, props);
                                     } catch (Throwable e) {
                                         getLogger().log(e);
@@ -358,7 +362,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_DOWNLOADS_PAUSE.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -372,7 +376,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_DOWNLOADS_RUNNING.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -386,7 +390,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_DOWNLOADS_STOPPED.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -401,12 +405,20 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
+        DownloadLinkSandBox downloadLinkSandBox = null;
+        FilePackageSandBox filePackageSandBox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_DOWNLOAD_CONTROLLER_START.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
-                    props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
+                    if (filePackageSandBox == null) {
+                        filePackageSandBox = new FilePackageSandBox(downloadController.getDownloadLink().getParentNode());
+                    }
+                    if (downloadLinkSandBox == null) {
+                        downloadLinkSandBox = new DownloadLinkSandBox(downloadController.getDownloadLink());
+                    }
+                    props.put("link", downloadLinkSandBox);
+                    props.put("package", filePackageSandBox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -427,26 +439,33 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+        DownloadLinkSandBox downloadLinkSandBox = null;
+        final DownloadLink dlLink = downloadController.getDownloadLink();
+        final FilePackage fp = dlLink.getParentNode();
+        final FilePackageSandBox filePackageSandBox = new FilePackageSandBox(fp);
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && (EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED.equals(script.getEventTrigger()) || EventTrigger.ON_PACKAGE_FINISHED.equals(script.getEventTrigger())) && StringUtils.isNotEmpty(script.getScript())) {
-                final DownloadLink dlLink = downloadController.getDownloadLink();
-                final FilePackage fp = dlLink.getParentNode();
                 if (EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED.equals(script.getEventTrigger())) {
                     try {
-                        HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("link", new DownloadLinkSandBox(dlLink));
-                        props.put("package", new FilePackageSandBox(fp));
+                        final HashMap<String, Object> props = new HashMap<String, Object>();
+                        if (downloadLinkSandBox == null) {
+                            downloadLinkSandBox = new DownloadLinkSandBox(dlLink);
+                        }
+                        props.put("link", downloadLinkSandBox);
+                        props.put("package", filePackageSandBox);
                         runScript(script, props);
                     } catch (Throwable e) {
                         getLogger().log(e);
                     }
                 }
-                FilePackageSandBox pkg = null;
-                if (EventTrigger.ON_PACKAGE_FINISHED.equals(script.getEventTrigger()) && (pkg = new FilePackageSandBox(fp)).isFinished()) {
+                if (EventTrigger.ON_PACKAGE_FINISHED.equals(script.getEventTrigger()) && filePackageSandBox.isFinished()) {
                     try {
-                        HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("link", new DownloadLinkSandBox(dlLink));
-                        props.put("package", pkg);
+                        final HashMap<String, Object> props = new HashMap<String, Object>();
+                        if (downloadLinkSandBox == null) {
+                            downloadLinkSandBox = new DownloadLinkSandBox(dlLink);
+                        }
+                        props.put("link", downloadLinkSandBox);
+                        props.put("package", filePackageSandBox);
                         runScript(script, props);
                     } catch (Throwable e) {
                         getLogger().log(e);
@@ -534,7 +553,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_NEW_FILE.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     String[] pathes = new String[fileList.length];
                     for (int i = 0; i < fileList.length; i++) {
                         pathes[i] = fileList[i].getAbsolutePath();
@@ -579,11 +598,20 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onLinkCollectorLinkAdded(final LinkCollectorEvent event, final CrawledLink link) {
+        PackagizerLinkSandbox packagizerLinkSandbox = null;
+        CrawledLinkSandbox crawledLinkSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_NEW_LINK.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("link", new PackagizerLinkSandbox(link));
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
+                    if (packagizerLinkSandbox == null) {
+                        packagizerLinkSandbox = new PackagizerLinkSandbox(link);
+                    }
+                    if (crawledLinkSandbox == null) {
+                        crawledLinkSandbox = new CrawledLinkSandbox(link);
+                    }
+                    props.put("link", packagizerLinkSandbox);// wrong type but kept for compatibility with older scripts
+                    props.put("crawledLink", crawledLinkSandbox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -610,11 +638,15 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onLinkCrawlerNewJob(LinkCollectingJob job) {
+        CrawlerJobSandbox crawlerJobSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_NEW_CRAWLER_JOB.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("job", new CrawlerJobSandbox(job));
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
+                    if (crawlerJobSandbox == null) {
+                        crawlerJobSandbox = new CrawlerJobSandbox(job);
+                    }
+                    props.put("job", crawlerJobSandbox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -629,13 +661,17 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onPackagizerRunBeforeLinkcheck(final CrawledLink link, final STATE state) {
+        PackagizerLinkSandbox packagizerLinkSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_PACKAGIZER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
                     final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("linkcheckDone", false);
                     props.put("state", state.name());
-                    props.put("link", new PackagizerLinkSandbox(link));
+                    if (packagizerLinkSandbox == null) {
+                        packagizerLinkSandbox = new PackagizerLinkSandbox(link);
+                    }
+                    props.put("link", packagizerLinkSandbox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -646,13 +682,17 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onPackagizerRunAfterLinkcheck(final CrawledLink link, final STATE state) {
+        PackagizerLinkSandbox packagizerLinkSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_PACKAGIZER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
                     final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("linkcheckDone", true);
                     props.put("state", state.name());
-                    props.put("link", new PackagizerLinkSandbox(link));
+                    if (packagizerLinkSandbox == null) {
+                        packagizerLinkSandbox = new PackagizerLinkSandbox(link);
+                    }
+                    props.put("link", packagizerLinkSandbox);
                     runScript(script, props);
                 } catch (Throwable e) {
                     getLogger().log(e);
@@ -663,11 +703,15 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onExtractionEvent(ExtractionEvent event) {
+        ArchiveSandbox archiveSandbox = null;
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.ON_GENERIC_EXTRACTION.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchive()));
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
+                    if (archiveSandbox == null) {
+                        archiveSandbox = new ArchiveSandbox(event.getCaller().getArchive());
+                    }
+                    props.put("archive", archiveSandbox);
                     props.put("event", event.getType().name());
                     runScript(script, props);
                 } catch (Throwable e) {
@@ -680,8 +724,11 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             for (ScriptEntry script : entries) {
                 if (script.isEnabled() && EventTrigger.ON_ARCHIVE_EXTRACTED.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                     try {
-                        HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("archive", new ArchiveSandbox(event.getCaller().getArchive()));
+                        final HashMap<String, Object> props = new HashMap<String, Object>();
+                        if (archiveSandbox == null) {
+                            archiveSandbox = new ArchiveSandbox(event.getCaller().getArchive());
+                        }
+                        props.put("archive", archiveSandbox);
                         props.put("event", event.getType().name());
                         runScript(script, props);
                     } catch (Throwable e) {
@@ -722,7 +769,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         }
     }
 
-    public void triggerAction(String name, String iconKey, String shortCutString, EventTrigger downloadTableContextMenuButton, SelectionInfo selectionInfo) {
+    public void triggerAction(String name, String iconKey, String shortCutString, EventTrigger downloadTableContextMenuButton, final SelectionInfo selectionInfo) {
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && downloadTableContextMenuButton == script.getEventTrigger() && StringUtils.isNotEmpty(script.getScript())) {
                 try {
@@ -758,7 +805,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.RECONNECT_AFTER.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("result", event.getResult() + "");
                     props.put("method", event.getPlugin().getClass().getSimpleName());
                     runScript(script, props);
@@ -774,7 +821,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && EventTrigger.RECONNECT_BEFORE.equals(script.getEventTrigger()) && StringUtils.isNotEmpty(script.getScript())) {
                 try {
-                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    final HashMap<String, Object> props = new HashMap<String, Object>();
                     props.put("method", event.getPlugin().getClass().getSimpleName());
                     runScript(script, props);
                 } catch (Throwable e) {
