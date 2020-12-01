@@ -23,6 +23,7 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawledLinkSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadlistSelectionSandbox;
@@ -218,6 +219,7 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("link", new PackagizerLinkSandbox());
+            props.put("crawledLink", new CrawledLinkSandbox());
             return props;
         }
 

@@ -80,9 +80,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-        public void killQueue() {
-        };
-    };
+                                                       public void killQueue() {
+                                                       };
+                                                   };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -677,7 +677,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                 });
             }
         };
-        final Thread refreshThread = new Thread() {
+        final Thread refreshThread = new Thread("BannerRotation") {
             {
                 setDaemon(true);
             }

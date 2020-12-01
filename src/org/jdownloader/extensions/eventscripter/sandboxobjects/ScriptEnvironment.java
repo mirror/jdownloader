@@ -15,9 +15,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -67,6 +70,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogInterface;
@@ -588,12 +592,24 @@ public class ScriptEnvironment {
         }
     }
 
-    public static void lock(String id, boolean global) {
-        // TODO
-    }
+    private final static WeakHashMap<ReentrantReadWriteLock, String> LOCKS = new WeakHashMap<ReentrantReadWriteLock, String>();
 
-    public static void unlock(String id, boolean global) {
-        // TODO
+    @ScriptAPI(description = "Get a ModifyLock.", parameters = { "\"key\"" }, example = "var lock=getModifyLock(\"lockID\");")
+    public static ModifyLockSandBox getModifyLock(final String id) {
+        synchronized (LOCKS) {
+            final ScriptThread thread = (ScriptThread) Thread.currentThread();
+            for (Entry<ReentrantReadWriteLock, String> lockEntry : LOCKS.entrySet()) {
+                if (StringUtils.equals(lockEntry.getValue(), id)) {
+                    final ReentrantReadWriteLock lock = lockEntry.getKey();
+                    thread.addLock(lock);
+                    return new ModifyLockSandBox(new ModifyLock(lock));
+                }
+            }
+            final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+            thread.addLock(lock);
+            LOCKS.put(lock, id);
+            return new ModifyLockSandBox(new ModifyLock(lock));
+        }
     }
 
     public static Collection<Class<?>> getRequiredClasses() {
@@ -1137,14 +1153,14 @@ public class ScriptEnvironment {
         return (String) env.evalTrusted(js);
     }
 
-    private static final HashMap<File, AtomicInteger> LOCKS = new HashMap<File, AtomicInteger>();
+    private static final HashMap<File, AtomicInteger> FILE_LOCKS = new HashMap<File, AtomicInteger>();
 
     private static Object requestLock(File name) {
-        synchronized (LOCKS) {
-            final AtomicInteger existingLock = LOCKS.get(name);
+        synchronized (FILE_LOCKS) {
+            final AtomicInteger existingLock = FILE_LOCKS.get(name);
             if (existingLock == null) {
                 final AtomicInteger newLock = new AtomicInteger(1);
-                LOCKS.put(name, newLock);
+                FILE_LOCKS.put(name, newLock);
                 return newLock;
             } else {
                 existingLock.incrementAndGet();
@@ -1154,10 +1170,10 @@ public class ScriptEnvironment {
     }
 
     private static void unLock(File name) {
-        synchronized (LOCKS) {
-            final AtomicInteger existingLock = LOCKS.get(name);
+        synchronized (FILE_LOCKS) {
+            final AtomicInteger existingLock = FILE_LOCKS.get(name);
             if (existingLock != null && existingLock.decrementAndGet() == 0) {
-                LOCKS.remove(name);
+                FILE_LOCKS.remove(name);
             }
         }
     }
