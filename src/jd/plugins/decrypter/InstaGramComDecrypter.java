@@ -344,10 +344,17 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         ArrayList<Object> resource_data_list;
         if (logged_in) {
-            String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
-            resource_data_list = new ArrayList<Object>();
-            resource_data_list.add(JavaScriptEngineFactory.walkJson(entries, "/"));
+            final String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
+            if (graphql != null) {
+                logger.info("Found expected loggedin json");
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
+                resource_data_list = new ArrayList<Object>();
+                resource_data_list.add(JavaScriptEngineFactory.walkJson(entries, "/"));
+            } else {
+                /* 2020-12-01: Rare case/fallback */
+                logger.info("Failed to find expected loggedin json --> Trying fallback");
+                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
+            }
         } else {
             resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
         }
