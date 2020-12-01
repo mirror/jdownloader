@@ -805,7 +805,6 @@ public class TbCmV2 extends PluginForDecrypt {
 
     private DownloadLink createLink(YoutubeVariantCollection l, VariantInfo variantInfo, List<VariantInfo> alternatives) {
         try {
-            System.out.println("Add  Link " + l.getName());
             YoutubeClipData clip = null;
             if (clip == null && variantInfo.getVideoStreams() != null) {
                 clip = variantInfo.getVideoStreams().get(0).getClip();
@@ -1182,7 +1181,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         li.getPage(pageUrl);
                     } catch (final BrowserException b) {
                         if (li.getHttpConnection() != null && li.getHttpConnection().getResponseCode() == 400) {
-                            logger.warning("Youtube issue!");
+                            logger.warning("Youtube issue!:" + b);
                             return ret;
                         } else {
                             throw b;
