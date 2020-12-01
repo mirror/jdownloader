@@ -89,7 +89,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         this.br.setFollowRedirects(true);
         br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
-        if (!new Regex(br.getURL(), this.getSupportedLinks()).matches() && !br.getURL().contains(galleryid)) {
+        if (!this.canHandle(br.getURL()) && !br.getURL().contains(galleryid)) {
             logger.info("Redirect to mainpage? Accessing gallery URL again ...");
             br.getPage(parameter);
         }

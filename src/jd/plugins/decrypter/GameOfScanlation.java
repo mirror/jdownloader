@@ -11,10 +11,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gameofscanlation.moe" }, urls = { "https?://(www\\.)?gameofscanlation\\.moe/(projects/[^/]+/|threads/[^/]+)chapter(-?\\d+(-\\d+)?)?\\.\\d+" })
 public class GameOfScanlation extends PluginForDecrypt {
-
     public GameOfScanlation(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,7 +62,7 @@ public class GameOfScanlation extends PluginForDecrypt {
                 final DownloadLink link = createDownloadlink("directhttp://" + url);
                 link.setAvailable(true);
                 final String fileName = title + "_" + pageIndex + ext;
-                link.setProperty("fixName", fileName);
+                link.setProperty(DirectHTTP.FIXNAME, fileName);
                 link.setForcedFileName(fileName);
                 ret.add(link);
             }
