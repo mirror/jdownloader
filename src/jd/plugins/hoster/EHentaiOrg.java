@@ -271,6 +271,15 @@ public class EHentaiOrg extends antiDDoSForHost {
             final String mainlink = getMainlink(link);
             br.setFollowRedirects(true);
             getPage(mainlink);
+            final String urlpart = new Regex(mainlink, TYPE_SINGLE_IMAGE).getMatch(0);
+            /*
+             * 2020-12-01: Workaround attempt: Some users randomly always get the "cookie redirect" for exhentai.org which should only
+             * happen when accessing it for the first time. It redirects them to the main page.
+             */
+            if (link.getPluginPatternMatcher().contains("exhentai") && !this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
+                logger.info("Redirect to mainpage? Accessing gallery URL again ...");
+                br.getPage(mainlink);
+            }
             if (br.toString().length() <= 100) {
                 /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
                 throw new AccountRequiredException();
@@ -587,8 +596,8 @@ public class EHentaiOrg extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE  = "https://e-hentai.org";
-    private static final String MAINPAGE2 = "https://exhentai.org";
+    private static final String MAINPAGE_ehentai  = "https://e-hentai.org";
+    private static final String MAINPAGE_exhentai = "https://exhentai.org";
 
     /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
@@ -606,9 +615,9 @@ public class EHentaiOrg extends antiDDoSForHost {
                 Browser br2 = null;
                 // final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
+                    br.setCookies(MAINPAGE_ehentai, cookies);
                     if (cookies2 != null) {
-                        br.setCookies(MAINPAGE2, cookies2);
+                        br.setCookies(MAINPAGE_exhentai, cookies2);
                     }
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
                         /* We trust these cookies --> Do not check them */
@@ -619,11 +628,11 @@ public class EHentaiOrg extends antiDDoSForHost {
                     getPage(br, "https://e-hentai.org/hathperks.php");
                     if (this.isLoggedIn(br)) {
                         logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(MAINPAGE), "");
+                        account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
                         /* Get- and save exhentai cookies too */
                         br2 = br.cloneBrowser();
-                        this.getPage(br2, MAINPAGE2);
-                        account.saveCookies(br2.getCookies(MAINPAGE2), "exhentai");
+                        this.getPage(br2, MAINPAGE_exhentai);
+                        account.saveCookies(br2.getCookies(MAINPAGE_exhentai), "exhentai");
                         return;
                     } else {
                         logger.info("Failed to login via cookies");
@@ -688,14 +697,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                 }
                 /* This will set two more important cookies! */
                 getPage(br, "https://e-hentai.org/hathperks.php");
-                account.saveCookies(br.getCookies(MAINPAGE), "");
+                account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
                 /*
                  * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
                  * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
                  */
                 br2 = br.cloneBrowser();
-                this.getPage(br2, MAINPAGE2);
-                account.saveCookies(br2.getCookies(MAINPAGE2), "exhentai");
+                this.getPage(br2, MAINPAGE_exhentai);
+                account.saveCookies(br2.getCookies(MAINPAGE_exhentai), "exhentai");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -707,7 +716,7 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     private boolean isLoggedIn(final Browser br) {
-        return br.getCookie(MAINPAGE, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
+        return br.getCookie(MAINPAGE_ehentai, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override

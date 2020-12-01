@@ -21,6 +21,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.FourChanConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,15 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.FourChanConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boards.4chan.org" }, urls = { "https?://[\\w\\.]*?boards\\.(?:4chan|4channel)\\.org/[0-9a-z]{1,}/(thread/\\d+)?" })
 public class Brds4Chnrg extends PluginForDecrypt {
@@ -151,7 +152,9 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 }
                 /* Set no name if user prefers server-filenames --> These will be auto-set on downloadstart */
                 if (filename != null && !preferServerFilenames) {
-                    dl.setForcedFileName(Encoding.htmlDecode(filename).trim());
+                    filename = Encoding.htmlDecode(filename).trim();
+                    dl.setFinalFileName(filename);
+                    dl.setProperty(DirectHTTP.FIXNAME, filename);
                 }
                 final String filesizeStr = new Regex(post, "\\((\\d+[^<>\"]+), \\d+x\\d+\\)").getMatch(0);
                 if (filesizeStr != null) {
@@ -180,10 +183,10 @@ public class Brds4Chnrg extends PluginForDecrypt {
      * --> Ideally once once per session!
      */
     private static LinkedHashMap<String, String> BOARD_LONG_TITLE_CACHE = new LinkedHashMap<String, String>() {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-            return size() > 200;
-        };
-    };
+                                                                            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                                return size() > 200;
+                                                                            };
+                                                                        };
     /** Docs: https://github.com/4chan/4chan-API */
     private static final String                  API_BASE               = "https://a.4cdn.org/";
 
@@ -304,7 +307,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             }
             dl.setHashInfo(HashInfo.parse(HexFormatter.byteArrayToHex(Base64.decode(md5_base64O))));
             dl.setFinalFileName(setFileName);
-            dl.setProperty("fixName", setFileName);
+            dl.setProperty(DirectHTTP.FIXNAME, setFileName);
             dl.setVerifiedFileSize(fsize);
             dl.setAvailable(true);
             dl._setFilePackage(fp);
