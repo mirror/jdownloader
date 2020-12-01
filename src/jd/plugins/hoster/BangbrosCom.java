@@ -107,11 +107,11 @@ public class BangbrosCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!isDownloadableContent(con)) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     /* Refresh directurl */
                     refreshDirecturl(link);
                     con = br.openHeadConnection(dllink);
-                    if (!isDownloadableContent(con)) {
+                    if (!this.looksLikeDownloadableContent(con)) {
                         server_issues = true;
                         return AvailableStatus.TRUE;
                     }
@@ -133,10 +133,6 @@ public class BangbrosCom extends PluginForHost {
             link.setFinalFileName(final_filename);
         }
         return AvailableStatus.TRUE;
-    }
-
-    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
-        return con != null && con.isOK() && con.isContentDisposition();
     }
 
     private String getDllink(final DownloadLink dl) throws IOException, PluginException {

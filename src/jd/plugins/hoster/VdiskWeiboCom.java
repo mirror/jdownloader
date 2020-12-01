@@ -13,12 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -30,12 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vdisk.weibo.com" }, urls = { "http://(?:www\\.)?vdisk\\.weibo\\.com/s/[A-Za-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vdisk.weibo.com" }, urls = { "http://(?:www\\.)?vdisk\\.weibo\\.com/s/[A-Za-z0-9]+" })
 public class VdiskWeiboCom extends PluginForHost {
-
     public VdiskWeiboCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,9 +47,7 @@ public class VdiskWeiboCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
-
     private String               dllink            = null;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -69,6 +65,7 @@ public class VdiskWeiboCom extends PluginForHost {
         this.setBrowserExclusive();
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -139,7 +136,6 @@ public class VdiskWeiboCom extends PluginForHost {
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
-
     // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
     // String dllink = downloadLink.getStringProperty(property);
     // if (dllink != null) {
@@ -177,5 +173,4 @@ public class VdiskWeiboCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
