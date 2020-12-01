@@ -117,7 +117,7 @@ public class MediafireCom extends PluginForHost {
         public void run() throws Exception {
             while (this.currentTry++ < this.maxTries) {
                 String password = null;
-                if ((password = this.dlink.getStringProperty("pass", null)) != null) {
+                if ((password = this.dlink.getDownloadPassword()) != null) {
                 } else {
                     password = Plugin.getUserInput(JDL.LF("PasswordSolver.askdialog", "Downloadpassword for %s/%s", this.plg.getHost(), this.dlink.getName()), this.dlink);
                 }
@@ -126,10 +126,10 @@ public class MediafireCom extends PluginForHost {
                 }
                 this.handlePassword(password);
                 if (!this.isCorrect()) {
-                    this.dlink.setProperty("pass", Property.NULL);
+                    this.dlink.setDownloadPassword(null);
                     continue;
                 } else {
-                    this.dlink.setProperty("pass", password);
+                    this.dlink.setDownloadPassword(password);
                     return;
                 }
             }

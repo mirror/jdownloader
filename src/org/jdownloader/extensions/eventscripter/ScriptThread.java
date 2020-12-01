@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.SwingUtilities;
 
@@ -43,16 +44,17 @@ import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 import org.jdownloader.scripting.JSShutterDelegate;
 
 public class ScriptThread extends Thread implements JSShutterDelegate {
-    private final ScriptEntry            script;
-    private final Map<String, Object>    props;
-    private Global                       scope;
-    private Context                      cx;
-    private final LogSource              logger;
-    private final EventScripterExtension extension;
-    private boolean                      checkPermissions   = true;
-    private boolean                      disableOnException = true;
-    private boolean                      notifyOnException  = true;
-    private boolean                      advancedAlert      = false;
+    private final ScriptEntry                  script;
+    private final Map<String, Object>          props;
+    private Global                             scope;
+    private Context                            cx;
+    private final LogSource                    logger;
+    private final EventScripterExtension       extension;
+    private boolean                            checkPermissions   = true;
+    private boolean                            disableOnException = true;
+    private boolean                            notifyOnException  = true;
+    private boolean                            advancedAlert      = false;
+    private final List<ReentrantReadWriteLock> locks              = new ArrayList<ReentrantReadWriteLock>();
 
     public boolean isNotifyOnException() {
         return notifyOnException;
@@ -184,7 +186,37 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             logger.log(e);
             notifyAboutException(e);
         } finally {
-            Context.exit();
+            try {
+                Context.exit();
+            } finally {
+                releaseLocks();
+            }
+        }
+    }
+
+    protected void releaseLocks() {
+        synchronized (locks) {
+            while (locks.size() > 0) {
+                final ReentrantReadWriteLock lock = locks.remove(0);
+                final int readLocks = lock.getReadHoldCount();
+                for (int free = 0; free < readLocks; free++) {
+                    lock.readLock().unlock();
+                }
+                final int writeLocks = lock.getWriteHoldCount();
+                for (int free = 0; free < writeLocks; free++) {
+                    lock.writeLock().unlock();
+                }
+            }
+        }
+    }
+
+    public void addLock(final ReentrantReadWriteLock lock) {
+        if (lock != null) {
+            synchronized (locks) {
+                if (!locks.contains(lock)) {
+                    locks.add(lock);
+                }
+            }
         }
     }
 

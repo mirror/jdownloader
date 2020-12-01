@@ -62,9 +62,9 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.EmptyInputStream;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.LimitedInputStream;
-import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.SkippingLimitedOutputStream;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
@@ -1274,15 +1274,15 @@ public class HLSDownloader extends DownloadInterface {
                                             outputStream = requestOutputStream;
                                         }
                                         final PushbackInputStream pushBackInputStream = new PushbackInputStream(meteredThrottledInputStream, readWriteBuffer.length + 1024);
-                                        while (true) {
+                                        while (meteredThrottledInputStream != null) {
                                             final int len;
                                             try {
                                                 len = pushBackInputStream.read(readWriteBuffer);
                                                 final int eof = pushBackInputStream.read();
-                                                if (eof == -1 || len == -1) {
+                                                if (eof == -1) {
                                                     synchronized (connectedMeteredThrottledInputStream) {
+                                                        meteredThrottledInputStream.setInputStream(new EmptyInputStream());
                                                         connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
-                                                        meteredThrottledInputStream.setInputStream(new NullInputStream());
                                                         meteredThrottledInputStream = null;
                                                     }
                                                     if (!delayedCleanup.isDelayerActive()) {
@@ -1292,6 +1292,11 @@ public class HLSDownloader extends DownloadInterface {
                                                     pushBackInputStream.unread(eof);
                                                 }
                                             } catch (IOException e) {
+                                                synchronized (connectedMeteredThrottledInputStream) {
+                                                    meteredThrottledInputStream.setInputStream(new EmptyInputStream());
+                                                    connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
+                                                    meteredThrottledInputStream = null;
+                                                }
                                                 requestLogger.log(e);
                                                 if (onSegmentReadException(connection, e, fileBytesMap, retry, requestLogger)) {
                                                     continue retryLoop;
@@ -1358,8 +1363,8 @@ public class HLSDownloader extends DownloadInterface {
                         } finally {
                             if (meteredThrottledInputStream != null) {
                                 synchronized (connectedMeteredThrottledInputStream) {
+                                    meteredThrottledInputStream.setInputStream(new EmptyInputStream());
                                     connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
-                                    meteredThrottledInputStream.setInputStream(new NullInputStream());
                                     meteredThrottledInputStream = null;
                                 }
                                 delayedCleanup.resetAndStart();

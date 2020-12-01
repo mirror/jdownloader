@@ -165,6 +165,7 @@ public class SecondLevelLaunch {
         }
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("com.apple.macos.useScreenMenuBar", "true");
         new Thread() {
             public void run() {
                 try {
