@@ -174,10 +174,6 @@ public class AncensoredCom extends PluginForHost {
         return free_maxdownloads;
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public void reset() {
     }
