@@ -13,12 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.controlling.PasswordUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,24 +30,21 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.controlling.PasswordUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "http://(www\\.)?rlslog\\.net/.+/(.+/)?#comments" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "https?://(?:www\\.)?rlslog\\.net/.+/(.+/)?#comments" })
 public class Rlslg extends PluginForDecrypt {
-
     public Rlslg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static String ua = RandomUserAgent.generate();
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController dummyProgressController) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("#comments", "");
         br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter);
-        String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment\\-\\d+)").getMatch(0);
+        String directComment = new Regex(param.toString(), "https?://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment\\-\\d+)").getMatch(0);
         if (directComment != null) {
             String comment = br.getRegex(Pattern.compile("<li class=.*? id=.*?" + directComment + ".*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             final Set<String> pws = PasswordUtils.getPasswords(comment);
@@ -64,7 +63,7 @@ public class Rlslg extends PluginForDecrypt {
         } else {
             ArrayList<String> pages = new ArrayList<String>();
             pages.add(param.toString());
-            String comment_pages[] = br.getRegex("class=\\'page\\-numbers\\' href=\\'(http://(www\\.)?rlslog\\.net/.*?)\\'").getColumn(0);
+            String comment_pages[] = br.getRegex("class=\\'page\\-numbers\\' href=\\'(https?://(?:www\\.)?rlslog\\.net/.*?)\\'").getColumn(0);
             if (comment_pages != null && comment_pages.length != 0) {
                 for (String page : comment_pages) {
                     if (!pages.contains(page)) {
@@ -72,7 +71,6 @@ public class Rlslg extends PluginForDecrypt {
                     }
                 }
             }
-            progress.setRange(pages.size());
             for (String page : pages) {
                 // Don't enter first page as it is already entered
                 if (!page.equals(param.toString())) {
@@ -94,15 +92,12 @@ public class Rlslg extends PluginForDecrypt {
                         }
                     }
                 }
-                progress.increase(1);
             }
         }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
