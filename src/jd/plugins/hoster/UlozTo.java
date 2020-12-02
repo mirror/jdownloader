@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,11 +50,11 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "https?://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+", "https?://(?:www\\.)?(?:pornfile\\.cz|pornfile\\.ulozto\\.net)/[\\!a-zA-Z0-9]+/[^\\?\\s]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
-    private static final String  CAPTCHA_TEXT                 = "CAPTCHA_TEXT";
-    private static final String  CAPTCHA_ID                   = "CAPTCHA_ID";
+    // private static final String CAPTCHA_TEXT = "CAPTCHA_TEXT";
+    // private static final String CAPTCHA_ID = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
     private static final String  PREMIUMONLYUSERTEXT          = "Only downloadable for premium users!";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
@@ -73,21 +75,42 @@ public class UlozTo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to").replaceFirst("^http://", "https://"));
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net", "zachowajto.pl" });
+        ret.add(new String[] { "pornfile.cz", "pornfile.ulozto.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        if ("uloz.to".equals(getHost())) {
-            return new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net" };
-        } else {
-            return new String[] { "pornfile.cz", "pornfile.ulozto.net" };
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+");
         }
+        return ret.toArray(new String[0]);
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
     public String rewriteHost(String host) {
         if ("ulozto.sk".equalsIgnoreCase(host) || "ulozto.cz".equalsIgnoreCase(host) || "ulozto.net".equalsIgnoreCase(host)) {
             return "uloz.to";
+        } else {
+            return super.rewriteHost(host);
         }
-        return super.rewriteHost(host);
     }
 
     @Override
