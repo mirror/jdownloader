@@ -84,9 +84,13 @@ public class VdiskWeiboCom extends PluginForHost {
                 final ArrayList<Object> ressourcelist = (ArrayList) entries.get("download_list");
                 final int listsize = ressourcelist.size();
                 if (ressourcelist != null && listsize > 0) {
-                    /* Randomply chose downloadlink / mirror */
-                    final int random = new Random().nextInt(listsize - 1);
-                    this.dllink = (String) ressourcelist.get(random);
+                    if (listsize == 1) {
+                        this.dllink = (String) ressourcelist.get(0);
+                    } else {
+                        /* Randomly chose downloadlink / mirror */
+                        final int random = new Random().nextInt(listsize - 1);
+                        this.dllink = (String) ressourcelist.get(random);
+                    }
                 }
                 md5 = (String) entries.get("md5");
                 sha1 = (String) entries.get("sha1");

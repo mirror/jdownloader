@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,9 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://video\\.online\\.uadecrypted/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "https?://video\\.online\\.ua/(\\d+)" })
 public class VideoOnlineUa extends PluginForHost {
-
     public VideoOnlineUa(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,28 +44,39 @@ public class VideoOnlineUa extends PluginForHost {
         return "http://about.online.ua/contact/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("video.online.uadecrypted/", "video.online.ua/"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         br.setFollowRedirects(true);
         // Allow adult videos
-        br.setCookie("http://video.online.ua/", "online_18", "1");
-        br.getPage(downloadLink.getDownloadURL());
-        String externLink = br.getRegex("\"(http://(www\\.)?novy\\.tv/embed/\\d+)\"").getMatch(0);
+        br.setCookie(this.getHost(), "online_18", "1");
+        br.getPage(link.getDownloadURL());
+        String externLink = br.getRegex("\"(https?://(www\\.)?novy\\.tv/embed/\\d+)\"").getMatch(0);
         if (externLink == null) {
-            externLink = br.getRegex("\"(http://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
+            externLink = br.getRegex("\"(https?://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
         }
         // External sites - not supported
         if (externLink != null || br.containsHTML("ictv\\.ua/public/swfobject/zl_player\\.swf\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        br.getPage("http://video.online.ua/embed/" + fid);
+        final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        br.getPage("https://video.online.ua/embed/" + fid + "/");
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -73,18 +84,21 @@ public class VideoOnlineUa extends PluginForHost {
         if (br.containsHTML("stb\\.ua/embed/|m1\\.tv/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
         if (hash != null) {
-            dllink = "http://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
+            dllink = "https://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
         } else {
             dllink = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("video\\s*?:\\s*?(?:\\'|\")(https?://[^<>\"\\']+)(?:\\'|\")").getMatch(0);
             }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
+            /* Fallback */
+            filename = getFID(link);
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser br2 = br.cloneBrowser();
@@ -109,29 +123,33 @@ public class VideoOnlineUa extends PluginForHost {
                 dllink = Encoding.htmlDecode(dllink);
                 con = br2.openHeadConnection(dllink);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = Encoding.htmlDecode(filename).trim();
             final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-            downloadLink.setFinalFileName(filename + ext);
-            return AvailableStatus.TRUE;
+            link.setFinalFileName(filename + ext);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

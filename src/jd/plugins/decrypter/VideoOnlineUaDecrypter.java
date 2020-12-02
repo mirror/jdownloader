@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "http://(www\\.)?video\\.online\\.ua/(embed/)?\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.online.ua" }, urls = { "https?://(?:www\\.)?video\\.online\\.ua/(embed/)?\\d+" })
 public class VideoOnlineUaDecrypter extends PluginForDecrypt {
-
     public VideoOnlineUaDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,9 +77,8 @@ public class VideoOnlineUaDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        final DownloadLink main = createDownloadlink("http://video.online.uadecrypted/" + new Regex(parameter, "(\\d+)/?$").getMatch(0));
+        final DownloadLink main = createDownloadlink("https://video.online.ua/" + new Regex(parameter, "(\\d+)/?$").getMatch(0));
         decryptedLinks.add(main);
         return decryptedLinks;
     }
-
 }

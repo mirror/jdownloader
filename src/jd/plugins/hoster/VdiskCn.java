@@ -131,9 +131,6 @@ public class VdiskCn extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://vdisk.cn/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String filename = br.getRegex("(?i)文件名称: <b>(.*?)</b><br>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("(?i)<META content=\"(.*?)\" name=\"description\">").getMatch(0);
@@ -145,8 +142,8 @@ public class VdiskCn extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex(">文件大小</td>\\s*<td>(.*?)</td>").getMatch(0);
             if (filesize == null) {
-                logger.warning("Can't find filesize, Please report issue to JDownloader Development!");
-                logger.warning("Continuing...");
+                /* 2020-12-02 */
+                filesize = br.getRegex("文件大小:\\s*(\\d+)").getMatch(0);
             }
         }
         String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
@@ -157,15 +154,21 @@ public class VdiskCn extends PluginForHost {
                 logger.warning("Continuing...");
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (MD5sum != null) {
             link.setMD5Hash(MD5sum);
+        }
+        /* 2020-12-02: Filename/size can still be given for offline files! */
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(文件已删除,无法下载\\.|>此文件涉嫌有害信息不允许下载\\!<|>找不到您需要的页面\\!<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*该文件已不提供下载")) {
+            /* 2020-12-02 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
