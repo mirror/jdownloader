@@ -507,10 +507,13 @@ public class GoogleDrive extends PluginForHost {
                 link.setComment("Using preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
             }
         }
+        /* Reset this because md5hash could possibly have been set during availablecheck before! */
+        link.setMD5Hash(null);
         if (!userHasDownloadedStreamBefore) {
             /* User could have started download of original file before: Clear progress! */
             link.setChunksProgress(null);
             link.setVerifiedFileSize(-1);
+            /* Save the quality we've decided to download in case user stops and resumes download later. */
             link.setProperty(PROPERTY_USED_QUALITY, usedQuality);
         }
         return selectedQualityDownloadlink;
