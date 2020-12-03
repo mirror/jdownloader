@@ -26,13 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,6 +39,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -333,8 +333,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return;
         }
         entries_2 = (LinkedHashMap<String, Object>) entries_2.get("http://zdf.de/rels/target");
-        final String internal_videoid;
         final String player_url_template = (String) entries_2.get("http://zdf.de/rels/streams/ptmd-template");
+        String internal_videoid = (String) JavaScriptEngineFactory.walkJson(entries_2, "streams/default/extId");
         if (StringUtils.isEmpty(player_url_template)) {
             this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER_ORIGINAL, "NO_DOWNLOADABLE_CONTENT"));
             return;
@@ -353,7 +353,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         String base_title = title;
         final String date_formatted = new Regex(editorialDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        internal_videoid = new Regex(player_url_template, "/([^/]+)$").getMatch(0);
+        if (StringUtils.isEmpty(internal_videoid)) {
+            internal_videoid = new Regex(player_url_template, "/([^/]{2,})$").getMatch(0);
+        }
         if (date_formatted == null || internal_videoid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
