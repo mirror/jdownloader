@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -816,7 +815,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
         String errorMsg = null;
         try {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             errorMsg = (String) entries.get("message");
         } catch (final Throwable e) {
             logger.log(e);
