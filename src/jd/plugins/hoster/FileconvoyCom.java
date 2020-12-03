@@ -89,6 +89,9 @@ public class FileconvoyCom extends PluginForHost {
         /* Special: Filename- and size are sometimes given even for offline urls. */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file set you are looking for is no longer available")) {
             return AvailableStatus.FALSE;
+        } else if (br.containsHTML("Invalid retrieval request")) {
+            /* 2020-12-03 */
+            return AvailableStatus.FALSE;
         }
         return AvailableStatus.TRUE;
     }
