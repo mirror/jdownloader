@@ -178,6 +178,16 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        /* TODO: Decide whether to use website- or API here. */
+        return requestFileInformationWebsite(link, isDownload);
+    }
+
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final boolean isDownload) throws Exception {
+        /* TODO */
+        return AvailableStatus.FALSE;
+    }
+
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
         this.br = new Browser();
         privatefile = false;
         fileHasReachedServersideQuota = false;
