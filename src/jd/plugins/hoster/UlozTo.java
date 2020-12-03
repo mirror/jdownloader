@@ -27,7 +27,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -67,17 +66,18 @@ public class UlozTo extends PluginForHost {
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.uloz.to/kredit");
+        this.enablePremium("https://uloz.to/kredit");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
-        // ulozto.net = the english version of the site
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to").replaceFirst("^http://", "https://"));
+        /* Always use current main domain! */
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/"));
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        /* ulozto.net = the english version of the site */
         ret.add(new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net", "zachowajto.pl" });
         ret.add(new String[] { "pornfile.cz", "pornfile.ulozto.net" });
         return ret;
@@ -523,7 +523,7 @@ public class UlozTo extends PluginForHost {
         if (dl == null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection();
             } catch (final IOException e) {
@@ -632,26 +632,25 @@ public class UlozTo extends PluginForHost {
         return isPasswordProtectedAccordingToHTML || isPasswordProtectedAccordingToResponseCode;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.isOK() && (con.isContentDisposition() || (!con.getContentType().contains("html") && con.getLongContentLength() > 0))) {
+                if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
-            downloadLink.setProperty(property, Property.NULL);
         }
         return null;
     }
@@ -679,7 +678,7 @@ public class UlozTo extends PluginForHost {
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection();
                 } catch (final IOException e) {

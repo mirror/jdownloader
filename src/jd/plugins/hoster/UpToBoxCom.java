@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -410,8 +411,12 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         /* Save final downloadurl for later usage */
@@ -607,9 +612,21 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             link.setProperty(PROPERTY_last_downloaded_quality, null);
         }
+        logger.info("Current protocol: " + new Regex(dllink, "^(https?://)").getMatch(0));
+        if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
+            logger.info("User prefers httpS");
+            dllink = dllink.replaceAll("http://", "https://");
+        } else {
+            logger.info("User prefers http");
+            dllink = dllink.replaceAll("https?://", "http://");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
@@ -618,26 +635,25 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private String checkDirectLink(final DownloadLink link, final String property) {
         String dllink = link.getStringProperty(property);
-        if (dllink == null) {
-            return null;
-        }
-        URLConnectionAdapter con = null;
-        try {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-            if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                }
+            } catch (final Exception e) {
+                logger.log(e);
                 return null;
-            }
-        } catch (final Exception e) {
-            logger.log(e);
-            return null;
-        } finally {
-            if (con != null) {
-                con.disconnect();
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -775,9 +791,10 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (acc == null || acc.getType() == AccountType.FREE) {
             /* no account or free account, yes we can expect captcha */
             return true;
+        } else {
+            /* Premium accounts do not have captchas */
+            return false;
         }
-        /* Premium accounts do not have captchas */
-        return false;
     }
 
     private int getErrorcode() {
