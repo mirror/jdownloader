@@ -17,12 +17,30 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -44,23 +62,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -431,11 +432,10 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     protected void checkErrorsWebsite(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
-        final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
+        final boolean requires_premium = link != null && link.getBooleanProperty(PROPERTY_needs_premium, false);
         if (requires_premium) {
             throw new AccountRequiredException();
-        }
-        if (br.containsHTML(">\\s*Wrong password")) {
+        } else if (br.containsHTML(">\\s*Wrong password")) {
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
         }
@@ -483,6 +483,8 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         } else if (br.toString().contains("showVPNWarning")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website error: 'Warning: Your ip adress may come from a VPN. Please submit your VPN'", 15 * 60 * 1000);
+        } else if (br.containsHTML("<h1>\\s*Banned\\s*</h1>|>\\s*We suspected fraudulent activity from your connection")) {
+            throw new AccountUnavailableException("Account banned", 3 * 60 * 60 * 1000l);
         }
     }
 
@@ -672,65 +674,61 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private void loginAPI(final Account account, boolean verifySession) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                prepBrowser(this.br, this.getHost());
-                final Cookies cookies = account.loadCookies("");
-                final String apikey;
-                /*
-                 * Only accounts of users who never logged in via API will have cookies available --> Convert them to apikey and delete them
-                 * (only on success)
-                 */
-                if (cookies != null) {
-                    /* TODO: Remove this after 2020-07-01 */
-                    try {
-                        logger.info("Trying to convert cookie --> apikey");
-                        this.br.setCookies(this.getHost(), cookies);
-                        getPage(API_BASE + "/token/get");
-                        final String msg = PluginJSonUtils.getJson(br, "message");
-                        apikey = PluginJSonUtils.getJson(br, "data");
-                        if (!"success".equalsIgnoreCase(msg) || StringUtils.isEmpty(apikey)) {
-                            /* E.g. {"statusCode":1,"message":"An error occured","data":"user not found"} */
-                            logger.warning("Failed to convert cookies to apikey --> Account invalid");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        logger.info("Successfully converted cookies to apikey");
-                        account.setPass(apikey);
-                        /* Delete old session from current browser instance (not necessary) */
-                        br.clearCookies(br.getHost());
-                        /* Enforce verifying the session this time */
-                        verifySession = true;
-                    } finally {
-                        /* We have only one attempt. If that fails, user should manually enter his token. */
-                        account.clearCookies("");
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            prepBrowser(this.br, this.getHost());
+            final Cookies cookies = account.loadCookies("");
+            final String apikey;
+            /*
+             * Only accounts of users who never logged in via API will have cookies available --> Convert them to apikey and delete them
+             * (only on success)
+             */
+            if (cookies != null) {
+                /* TODO: Remove this after 2020-07-01 */
+                try {
+                    logger.info("Trying to convert cookie --> apikey");
+                    this.br.setCookies(this.getHost(), cookies);
+                    getPage(API_BASE + "/token/get");
+                    final String msg = PluginJSonUtils.getJson(br, "message");
+                    apikey = PluginJSonUtils.getJson(br, "data");
+                    if (!"success".equalsIgnoreCase(msg) || StringUtils.isEmpty(apikey)) {
+                        /* E.g. {"statusCode":1,"message":"An error occured","data":"user not found"} */
+                        logger.warning("Failed to convert cookies to apikey --> Account invalid");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                } else {
-                    apikey = account.getPass();
+                    logger.info("Successfully converted cookies to apikey");
+                    account.setPass(apikey);
+                    /* Delete old session from current browser instance (not necessary) */
+                    br.clearCookies(br.getHost());
+                    /* Enforce verifying the session this time */
+                    verifySession = true;
+                } finally {
+                    /* We have only one attempt. If that fails, user should manually enter his token. */
+                    account.clearCookies("");
                 }
-                if (!verifySession) {
-                    /* Force verify session/apikey everx X minutes */
-                    verifySession = System.currentTimeMillis() - account.getLongProperty(PROPERTY_timestamp_lastcheck, 0) > 15 * 60 * 1000;
-                }
-                if (StringUtils.isEmpty(apikey)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (!verifySession) {
-                    logger.info("Trust apikey without verification");
-                    return;
-                }
-                logger.info("Performing full login");
-                this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
-                this.checkErrorsAPI(this.getDownloadLink(), account);
-                /* 2020-04-16: Additional check is not required */
-                // final String token = PluginJSonUtils.getJson(br, "token");
-                // if (token == null || !token.equals(account.getPass())) {
-                // logger.warning("Failed to find token in json or token in json != account.getPass()");
-                // this.invalidLogin();
-                // }
-                account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
-            } catch (final PluginException e) {
-                throw e;
+            } else {
+                apikey = account.getPass();
             }
+            if (!verifySession) {
+                /* Force verify session/apikey everx X minutes */
+                verifySession = System.currentTimeMillis() - account.getLongProperty(PROPERTY_timestamp_lastcheck, 0) > 15 * 60 * 1000;
+            }
+            if (StringUtils.isEmpty(apikey)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (!verifySession) {
+                logger.info("Trust apikey without verification");
+                return;
+            }
+            logger.info("Performing full login");
+            this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
+            this.checkErrorsAPI(this.getDownloadLink(), account);
+            /* 2020-04-16: Additional check is not required */
+            // final String token = PluginJSonUtils.getJson(br, "token");
+            // if (token == null || !token.equals(account.getPass())) {
+            // logger.warning("Failed to find token in json or token in json != account.getPass()");
+            // this.invalidLogin();
+            // }
+            account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
         }
     }
 
@@ -816,7 +814,23 @@ public class UpToBoxCom extends antiDDoSForHost {
      * @throws PluginException
      */
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
-        String errorMsg = PluginJSonUtils.getJson(br, "message");
+        String errorMsg = null;
+        try {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            errorMsg = (String) entries.get("message");
+        } catch (final Throwable e) {
+            logger.log(e);
+            logger.warning("API did not return json?");
+            /* Assume we got html code and check for errors in html code */
+            this.checkErrorsWebsite(link, account);
+            /* TODO: Throw exception here? */
+            // if (link == null) {
+            // throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000l);
+            // } else {
+            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
+            // }
+            return;
+        }
         if (StringUtils.isEmpty(errorMsg)) {
             errorMsg = "Unknown error";
         }
@@ -865,7 +879,11 @@ public class UpToBoxCom extends antiDDoSForHost {
              * * Error 8 reads itself as if it was a "trafficlimit reached" error but it has nothingt todo with downloading, it is only for
              * their "voucher reedem API call".
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
+            if (link == null) {
+                throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
+            }
         }
     }
 
