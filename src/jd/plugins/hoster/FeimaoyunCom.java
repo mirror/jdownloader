@@ -16,14 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -42,9 +43,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feemoo.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/file\\-([a-z0-9]+)\\.html" })
-public class FeemooCom extends PluginForHost {
-    public FeemooCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "feimaoyun.com" }, urls = { "https?://(?:www\\.)?feemoo\\.com/(file\\-\\d+\\.html|#/s/\\d+)" })
+public class FeimaoyunCom extends PluginForHost {
+    public FeimaoyunCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + this.getHost() + "/upgrade.html");
     }
@@ -75,43 +76,70 @@ public class FeemooCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("feemoo.com")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
+    }
+
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), "(\\d+)(?:\\.html)?$").getMatch(0);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("文件不存在或已删除")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("class=\"sfilename\">([^<>\"]+)<").getMatch(0);
-        String filesize = br.getRegex("<span>文件大小：</span><font>([^<>\"]+)<").getMatch(0);
-        if (filename != null) {
-            /* Set final filename here because server filenames are bad. */
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        } else {
+        if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
-        if (filesize != null) {
-            filesize += "b";
+        br.postPage("https://www." + this.getHost() + "/index.php/down_detaila", "code=" + this.getFID(link));
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 0);
+        if (status == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/file");
+        String filename = (String) entries.get("file_name");
+        final String filesize = (String) entries.get("file_size");
+        if (!StringUtils.isEmpty(filename)) {
+            /* Set final filename here because server filenames are bad. */
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        } else if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link));
+        }
+        if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final long isDeleted = JavaScriptEngineFactory.toLong(entries.get("is_del"), 0);
+        if (isDeleted == 1) {
+            /* 2020-12-03: Filename- and size can be given for offline items too! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = getFID(downloadLink);
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String fid = getFID(link);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            if (true) {
+                /* 2020-12-03: Failed to find any way to download as free user */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String down2_url = null;
             if (br.containsHTML("/down2-" + fid)) {
                 br.getPage("/down2-" + fid + ".html");
@@ -131,7 +159,7 @@ public class FeemooCom extends PluginForHost {
             }
             if (br.containsHTML("imagecode\\.php")) {
                 /* 2019-06-27: TODO: Improve this captcha-check! */
-                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), downloadLink);
+                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
                 ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
                 if (ajax.toString().equals("false")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -140,7 +168,7 @@ public class FeemooCom extends PluginForHost {
                     this.br.getHeaders().put("Referer", down2_url);
                 }
                 /* If we don't wait for some seconds here, the continue_url will redirect us to the main url!! */
-                this.sleep(5 * 1001l, downloadLink);
+                this.sleep(5 * 1001l, link);
             }
             br.getPage(continue_url);
             // final String dlarg = br.getRegex("url : \\'ajax\\.php\\',\\s*?data\\s*?:\\s*?\\'action=(pc_\\d+)").getMatch(0);
@@ -166,11 +194,16 @@ public class FeemooCom extends PluginForHost {
             if (waittime != null) {
                 wait = Integer.parseInt(waittime);
             }
-            this.sleep(wait * 1001l, downloadLink);
+            this.sleep(wait * 1001l, link);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        link.setProperty(directlinkproperty, dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -182,36 +215,33 @@ public class FeemooCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
-
-    private static Object LOCK = new Object();
 
     /**
      * @param validateCookies
@@ -223,7 +253,7 @@ public class FeemooCom extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -346,13 +376,26 @@ public class FeemooCom extends PluginForHost {
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
+        }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
         }
     }
 
