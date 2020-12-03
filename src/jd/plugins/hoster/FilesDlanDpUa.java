@@ -65,11 +65,15 @@ public class FilesDlanDpUa extends PluginForHost {
         final String url_name = new Regex(link.getPluginPatternMatcher(), "name=(.+)").getMatch(0);
         link.setLinkID(linkid);
         link.setMD5Hash(linkid);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\\&g=1|/error\\.png\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("type=\"password\" name=\"pass\"")) {
             /* 2018-08-07: Password protected - not yet supported. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("/images/404\\.png")) {
+            /* 2020-12-03: They do not answer with a 404 http response anymore thus we have to check HTML. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("Название файла\\s*?:\\s*?(?:<b>)?([^<>\"]+)<").getMatch(0);

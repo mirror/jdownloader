@@ -104,8 +104,17 @@ public class NopyTo extends PluginForHost {
             final String status = (String) entries.get("status");
             if ("error".equalsIgnoreCase(status)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (statusO != null && statusO instanceof String) {
+            /* 2020-12-03 */
+            final String status = (String) entries.get("status");
+            if ("error".equalsIgnoreCase(status)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         entries = (LinkedHashMap<String, Object>) entries.get("msg");
         final String sha1hash = (String) entries.get("hash");

@@ -65,6 +65,9 @@ public class FichierZipCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/notfound.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("^https?://[^/]+/?$")) {
+            /* 2020-12-03 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String linkid = br.getRegex("timer\\.php\\?id=(\\d+)").getMatch(0);
         String filename = br.getRegex("<h2 class=\"title\">([^<>\"]+)</h2>").getMatch(0);
