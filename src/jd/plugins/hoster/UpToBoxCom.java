@@ -410,6 +410,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         }
+        dllink = correctProtocolOfFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -612,14 +613,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             link.setProperty(PROPERTY_last_downloaded_quality, null);
         }
-        logger.info("Current protocol: " + new Regex(dllink, "^(https?://)").getMatch(0));
-        if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
-            logger.info("User prefers httpS");
-            dllink = dllink.replaceAll("http://", "https://");
-        } else {
-            logger.info("User prefers http");
-            dllink = dllink.replaceAll("https?://", "http://");
-        }
+        dllink = correctProtocolOfFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -631,6 +625,18 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private String correctProtocolOfFinalDownloadURL(String finalDownloadurl) {
+        logger.info("Current protocol: " + new Regex(finalDownloadurl, "^(https?://)").getMatch(0));
+        if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
+            logger.info("User prefers httpS");
+            finalDownloadurl = finalDownloadurl.replaceAll("http://", "https://");
+        } else {
+            logger.info("User prefers http");
+            finalDownloadurl = finalDownloadurl.replaceAll("https?://", "http://");
+        }
+        return finalDownloadurl;
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
