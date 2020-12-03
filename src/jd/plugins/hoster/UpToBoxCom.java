@@ -24,23 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -61,6 +44,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -334,6 +334,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.log(e);
             logger.warning("Unexpected (json) response?");
             return false;
         }
@@ -628,15 +629,15 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private String correctProtocolOfFinalDownloadURL(String finalDownloadurl) {
-        logger.info("Current protocol: " + new Regex(finalDownloadurl, "^(https?://)").getMatch(0));
+        final String ret;
         if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
-            logger.info("User prefers httpS");
-            finalDownloadurl = finalDownloadurl.replaceAll("http://", "https://");
+            logger.info("User prefers https");
+            ret = finalDownloadurl.replaceFirst("http://", "https://");
         } else {
             logger.info("User prefers http");
-            finalDownloadurl = finalDownloadurl.replaceAll("https?://", "http://");
+            ret = finalDownloadurl.replaceFirst("https?://", "http://");
         }
-        return finalDownloadurl;
+        return ret;
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -649,6 +650,8 @@ public class UpToBoxCom extends antiDDoSForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -734,11 +737,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            loginAPI(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        loginAPI(account, true);
         if (br.getURL() == null || !br.getURL().contains("/user/me")) {
             this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(account.getPass()));
             checkErrorsAPI(this.getDownloadLink(), account);

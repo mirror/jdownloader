@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +44,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
@@ -269,10 +269,10 @@ public class UlozTo extends PluginForHost {
             }
             logger.info("Getting redirect-page");
             final URLConnectionAdapter con = br.openRequestConnection(br.createRedirectFollowingRequest(br.getRequest()));
-            if (con.isContentDisposition() && con.isOK()) {
+            if (looksLikeDownloadableContent(con)) {
                 con.disconnect();
-                if (con.getLongContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getLongContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 final String fileName = getFileNameFromDispositionHeader(con);
                 if (fileName != null) {
@@ -457,7 +457,7 @@ public class UlozTo extends PluginForHost {
                         break;
                     }
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
-                    if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
+                    if (this.looksLikeDownloadableContent(dl.getConnection())) {
                         captcha_failed = false;
                         break;
                     } else {
@@ -490,7 +490,7 @@ public class UlozTo extends PluginForHost {
                         dllink = handleDownloadUrl(link);
                         if (dllink != null) {
                             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
-                            if (!dl.getConnection().getContentType().contains("html") || dl.getConnection().isContentDisposition()) {
+                            if (this.looksLikeDownloadableContent(dl.getConnection())) {
                                 captcha_failed = false;
                                 break;
                             } else {
@@ -524,6 +524,7 @@ public class UlozTo extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The finallink doesn't seem to be a file: " + dllink);
             try {
                 br.followConnection();
             } catch (final IOException e) {
@@ -544,9 +545,9 @@ public class UlozTo extends PluginForHost {
                     totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, maxFree.get() - 1), totalMaxSimultanFreeDownload.get()));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("The finallink doesn't seem to be a file: " + dllink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
@@ -642,6 +643,8 @@ public class UlozTo extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);
@@ -686,13 +689,13 @@ public class UlozTo extends PluginForHost {
                 }
                 if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
                     throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
+                } else if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
