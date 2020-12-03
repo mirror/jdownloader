@@ -58,10 +58,19 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
 
     void setPreferredQuality(PreferredQuality domain);
 
+    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("If enabled, JD will try to crawl a subtitle file for all uptostream URLs. Only works if you own a premium account!")
     @Order(50)
     boolean isGrabSubtitle();
 
     void setGrabSubtitle(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Use https for final downloadurls")
+    @Order(60)
+    boolean isUseHTTPSForDownloads();
+
+    void setUseHTTPSForDownloads(boolean b);
 }
