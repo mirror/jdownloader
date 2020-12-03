@@ -26,15 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.instagram.Qdb;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -58,6 +49,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.InstaGramCom;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.instagram.Qdb;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?instagram\\.com/(stories/[^/]+|explore/tags/[^/]+/?|((?:p|tv)/[A-Za-z0-9_-]+|(?!explore)[^/]+(/saved|/p/[A-Za-z0-9_-]+)?))" })
 public class InstaGramComDecrypter extends PluginForDecrypt {
     public InstaGramComDecrypter(PluginWrapper wrapper) {
@@ -78,10 +78,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private FilePackage                          fp                                = null;
     private String                               parameter                         = null;
     private static LinkedHashMap<String, String> ID_TO_USERNAME                    = new LinkedHashMap<String, String>() {
-                                                                                       protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                                                                                           return size() > 100;
-                                                                                       };
-                                                                                   };
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 100;
+        };
+    };
 
     /** Tries different json paths and returns the first result. */
     private Object get(Map<String, Object> entries, final String... paths) {
@@ -342,7 +342,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         // return decryptedLinks;
         // }
         Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        ArrayList<Object> resource_data_list;
+        final List<Object> resource_data_list;
         if (logged_in) {
             final String graphql = br.getRegex(">window\\.__additionalDataLoaded\\('/p/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);</script>").getMatch(0);
             if (graphql != null) {
@@ -353,14 +353,16 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } else {
                 /* 2020-12-01: Rare case/fallback */
                 logger.info("Failed to find expected loggedin json --> Trying fallback");
-                resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
+                resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
             }
         } else {
-            resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
+            resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
         }
-        for (final Object galleryo : resource_data_list) {
-            entries = (Map<String, Object>) galleryo;
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "graphql/shortcode_media");
+        for (final Object entry : resource_data_list) {
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entry, "graphql/shortcode_media");
+            if (entries == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /** TODO: Check if cached- handling is useful here as well (see crawlHashtag) */
             final String usernameTmp = (String) JavaScriptEngineFactory.walkJson(entries, "owner/username");
             this.isPrivate = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "owner/is_private")).booleanValue();
@@ -372,8 +374,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawl all media items of a user. </br>
-     * Sometimes required user to be logged in to see all/more than X items. <br>
+     * Crawl all media items of a user. </br> Sometimes required user to be logged in to see all/more than X items. <br>
      * Alternatively possible via: /api/v1/feed/user/{userID}.
      */
     private void crawlUser(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
@@ -433,9 +434,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } catch (final AccountRequiredException ar) {
                     /* Instagram blocks the amount of items a user can see based on */
                     if (!logged_in) {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, null);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of user " + this.username_url, null, ar);
                     } else {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account session refresh required to crawl more items of user " + this.username_url, null, null);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account session refresh required to crawl more items of user " + this.username_url, null, ar);
                     }
                 }
                 /* TODO: Move all of this errorhandling to one place */
@@ -479,8 +480,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all saved media items of the currently logged in user. </br>
-     * Obviously this will only work when logged in.
+     * Crawls all saved media items of the currently logged in user. </br> Obviously this will only work when logged in.
      */
     private void crawlUserSavedObjects(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
         /* Crawl all saved objects of a user. Works similar to "crawl all posted items of a user" handling. */
@@ -569,9 +569,8 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls all items found when looking for a specified items. </br>
-     * Max. number of items which this returns can be limited by user setting. </br>
-     * Doesn't require the user to be logged in!
+     * Crawls all items found when looking for a specified items. </br> Max. number of items which this returns can be limited by user
+     * setting. </br> Doesn't require the user to be logged in!
      */
     private void crawlHashtag(final CryptedLink param, final boolean logged_in) throws UnsupportedEncodingException, Exception {
         /* Jump to a point that is the same for our first page and all following ones */
@@ -618,7 +617,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 } catch (final AccountRequiredException ar) {
                     /* Instagram blocks the amount of items a user can see based on */
                     if (logged_in) {
-                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of hashtag " + this.hashtag, null, null);
+                        throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "Account required to crawl more items of hashtag " + this.hashtag, null, ar);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, ar);
                     }
@@ -648,7 +647,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     logger.info("Crawling items: " + count);
                 }
             }
-            ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("edges");
+            List<Object> resource_data_list = (List<Object>) entries.get("edges");
             if (resource_data_list == null || resource_data_list.size() == 0) {
                 logger.info("Found no new links on page " + page + " --> Stopping decryption");
                 break;
@@ -814,7 +813,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.log(e);
             }
         }
-        final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
+        final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "edge_sidecar_to_children/edges");
         if (StringUtils.equalsIgnoreCase("GraphSidecar", typename) && !this.parameter.matches(TYPE_GALLERY) && (resource_data_list == null || resource_data_list.size() > 1)) {
             final DownloadLink dl = this.createDownloadlink(createSinglePosturl(linkid_main));
             this.decryptedLinks.add(dl);
@@ -1023,7 +1022,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             logger.info("Crawling items: " + numberofitemsOnThisPage);
             nextid = (String) entries.get("next_max_id");
             final boolean more_available = ((Boolean) entries.get("more_available"));
-            ArrayList<Object> mediaItems = (ArrayList<Object>) entries.get("items");
+            List<Object> mediaItems = (List<Object>) entries.get("items");
             if (mediaItems == null || mediaItems.size() == 0) {
                 logger.info("Found no new links on page " + page + " --> Stopping decryption");
                 break;
@@ -1089,7 +1088,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             logger.info("Crawling items: " + numberofitemsOnThisPage);
             nextid = (String) entries.get("next_max_id");
             final boolean more_available = ((Boolean) entries.get("more_available"));
-            ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("items");
+            List<Object> resource_data_list = (List<Object>) entries.get("items");
             if (resource_data_list == null || resource_data_list.size() == 0) {
                 logger.info("Found no new links on page " + page + " --> Stopping decryption");
                 break;
@@ -1131,7 +1130,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(this.br, InstaGramCom.ALT_API_BASE + "/feed/user/" + userID + "/reel_media/");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        ArrayList<Object> resource_data_list = (ArrayList<Object>) entries.get("items");
+        List<Object> resource_data_list = (List<Object>) entries.get("items");
         if (resource_data_list == null || resource_data_list.size() == 0) {
             logger.info("User doesn't have any story items");
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "User does not have any story items", "User does not have any story items"));
@@ -1166,7 +1165,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             crawlSingleMediaObjectAltAPI(entries, linkid_main, description, null, usernameForFilename);
         } else if (media_type == 8) {
             /* Multiple images */
-            final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "carousel_media");
+            final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "carousel_media");
             final int padLength = getPadLength(resource_data_list.size());
             int counter = 0;
             /* Album */
