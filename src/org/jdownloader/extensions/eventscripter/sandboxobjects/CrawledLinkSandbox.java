@@ -10,6 +10,7 @@ import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.PackageController;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
@@ -24,6 +25,7 @@ import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFac
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.settings.UrlDisplayType;
 
 @ScriptAPI(description = "The context linkgrabber list link")
@@ -149,6 +151,19 @@ public class CrawledLinkSandbox {
                 return new DownloadLinkSandBox(downloadLink);
             } else {
                 return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    public String getDownloadHost() {
+        if (link != null) {
+            final DownloadLink downloadLink = link.getDownloadLink();
+            if (downloadLink != null && downloadLink.getDefaultPlugin().hasFeature(FEATURE.GENERIC)) {
+                return Browser.getHost(downloadLink.getPluginPatternMatcher());
+            } else {
+                return link.getHost();
             }
         } else {
             return null;
