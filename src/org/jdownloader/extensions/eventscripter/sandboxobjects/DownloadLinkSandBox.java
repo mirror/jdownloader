@@ -14,6 +14,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginProgress;
 
@@ -31,6 +32,7 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.CustomConditionalSkipReasonMessageIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -545,6 +547,27 @@ public class DownloadLinkSandBox {
         } else {
             return super.equals(obj);
         }
+    }
+
+    public String getAvailableState() {
+        if (downloadLink != null) {
+            final AvailableStatus availableStatus = downloadLink.getAvailableStatus();
+            if (availableStatus != null) {
+                switch (availableStatus) {
+                case TRUE:
+                    return AvailableLinkState.ONLINE.name();
+                case FALSE:
+                    return AvailableLinkState.OFFLINE.name();
+                case UNCHECKED:
+                    return AvailableLinkState.UNKNOWN.name();
+                case UNCHECKABLE:
+                    return AvailableLinkState.TEMP_UNKNOWN.name();
+                default:
+                    return AvailableLinkState.UNKNOWN.name();
+                }
+            }
+        }
+        return AvailableLinkState.UNKNOWN.name();
     }
 
     public FilePackageSandBox getPackage() {
