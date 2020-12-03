@@ -66,7 +66,15 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
+        return crawlWebsite(param);
+    }
+
+    private ArrayList<DownloadLink> crawlAPI(final CryptedLink param) throws Exception {
+        /* TODO */
+        return null;
+    }
+
+    private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http:", "https:");
         final String fid;
@@ -249,6 +257,10 @@ public class GoogleDrive extends PluginForDecrypt {
                         logger.info("break1");
                         break;
                     }
+                    /*
+                     * TODO: Add parser for this json which will work via API and website (json is the same.) Also adjust "fields" value to
+                     * return more information such as MD5 hash.
+                     */
                     nextPageToken = (String) entries.get("nextPageToken");
                     for (final Object item : items) {
                         addedlinks++;
