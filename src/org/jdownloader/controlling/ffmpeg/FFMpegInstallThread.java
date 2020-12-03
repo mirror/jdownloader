@@ -44,15 +44,24 @@ public class FFMpegInstallThread extends Thread {
         return progress;
     }
 
+    private boolean isFile(File file) {
+        if (CrossSystem.isMac()) {
+            // File.isFile may fail on MacOS
+            return file != null && file.exists() && !file.isDirectory();
+        } else {
+            return file != null && file.isFile();
+        }
+    }
+
     @Override
     public void run() {
         try {
             File ffmpeg = getBundledBinaryPath(BINARY.FFMPEG);
-            if (ffmpeg != null && !ffmpeg.isFile()) {
+            if (!isFile(ffmpeg)) {
                 ffmpeg = null;
             }
             File ffprobe = getBundledBinaryPath(BINARY.FFPROBE);
-            if (ffprobe != null && !ffprobe.isFile()) {
+            if (!isFile(ffprobe)) {
                 ffprobe = null;
             }
             if (ffmpeg == null || ffprobe == null) {
@@ -87,16 +96,18 @@ public class FFMpegInstallThread extends Thread {
                 }
             }
             ffmpeg = getBundledBinaryPath(BINARY.FFMPEG);
-            if (ffmpeg != null && ffmpeg.isFile()) {
+            if (isFile(ffmpeg)) {
                 JsonConfig.create(FFmpegSetup.class).setBinaryPath(ffmpeg.getAbsolutePath());
+            } else {
+                ffmpeg = null;
             }
             ffprobe = getBundledBinaryPath(BINARY.FFPROBE);
-            if (ffprobe != null && ffprobe.isFile()) {
+            if (isFile(ffprobe)) {
                 JsonConfig.create(FFmpegSetup.class).setBinaryPathProbe(ffprobe.getAbsolutePath());
+            } else {
+                ffprobe = null;
             }
-            if (ffmpeg != null && ffprobe != null && ffprobe.exists() && ffmpeg.exists()) {
-                success = true;
-            }
+            success = ffmpeg != null && ffprobe != null;
         } finally {
             synchronized (this.fFmpegProvider) {
                 this.fFmpegProvider.installThread = null;
