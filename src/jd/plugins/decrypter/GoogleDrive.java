@@ -18,9 +18,14 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -66,22 +71,78 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        return crawlWebsite(param);
+        final boolean tryAPI = false;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryAPI) {
+            return this.crawlAPI(param);
+        } else {
+            return this.crawlWebsite(param);
+        }
+    }
+
+    private String getFolderID(final String url) {
+        if (url.matches(FOLDER_NORMAL) || url.matches(FOLDER_CURRENT)) {
+            return new Regex(url, "([^/]+)$").getMatch(0);
+        } else {
+            return new Regex(url, "id=([^\\&=]+)").getMatch(0);
+        }
     }
 
     private ArrayList<DownloadLink> crawlAPI(final CryptedLink param) throws Exception {
         /* TODO */
-        return null;
+        /* TODO: Check/fix FilePackage handling */
+        /*
+         * TODO: Find a way to get the name of the folder we're currently in. In website mode, we obtain this from HTML - we don't want to
+         * do this here!
+         */
+        final String fid = getFolderID(param.getCryptedUrl());
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final UrlQuery queryFolder = new UrlQuery();
+        queryFolder.appendEncoded("q", "'" + fid + "' in parents");
+        queryFolder.add("supportsAllDrives", "true");
+        queryFolder.add("includeItemsFromAllDrives", "true");
+        /* Returns up to 1000 items per request (default = 100) */
+        queryFolder.add("pageSize", "200");
+        /*
+         * Only request the fields we actually need! TODO: Check what's up when capabilities(isDownload) == false --> Maybe for "special"
+         * docs??
+         */
+        queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(kind,mimeType,id,name,size,description,md5Checksum)");
+        /* API key for testing */
+        queryFolder.appendEncoded("key", "addYourOwnTestApikey");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        int page = 0;
+        do {
+            logger.info("Working on pagination page " + (page + 1));
+            br.getPage("https://www.googleapis.com/drive/v3/files?" + queryFolder.toString());
+            /* TODO: Add check for empty / offline folder */
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final boolean incompleteSearch = ((Boolean) entries.get("incompleteSearch")).booleanValue();
+            if (incompleteSearch) {
+                /* This should never happen */
+                logger.warning("WTF");
+            }
+            this.parseFolderJsonAPI(decryptedLinks, entries, this.getAdoptedCloudFolderStructure());
+            String nextPageToken = (String) entries.get("nextPageToken");
+            if (StringUtils.isEmpty(nextPageToken)) {
+                logger.info("Stopping because nextPageToken is null");
+                break;
+            }
+            /* TODO: Check if this is needed or of add() replaces the previous value */
+            queryFolder.remove("nextPageToken");
+            queryFolder.appendEncoded("nextPageToken", nextPageToken);
+            page++;
+        } while (!this.isAbort());
+        return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http:", "https:");
-        final String fid;
-        if (parameter.matches(FOLDER_NORMAL) || parameter.matches(FOLDER_CURRENT)) {
-            fid = new Regex(parameter, "([^/]+)$").getMatch(0);
-        } else {
-            fid = new Regex(parameter, "id=([^\\&=]+)").getMatch(0);
+        final String fid = this.getFolderID(param.getCryptedUrl());
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("drive.google.com");
         final Account aa = AccountController.getInstance().getValidAccount("drive.google.com");
@@ -171,10 +232,6 @@ public class GoogleDrive extends PluginForDecrypt {
         if (!StringUtils.isEmpty(currentFolderTitle)) {
             currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim());
         }
-        if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
-            /* Begin subfolder structure if not given already */
-            subfolder = currentFolderTitle;
-        }
         String[] results = null;
         // old type
         String json_src = br.getRegex("window\\['_DRIVE_ivd'\\]\\s*=\\s*'\\[(.*?)';").getMatch(0);
@@ -214,6 +271,7 @@ public class GoogleDrive extends PluginForDecrypt {
             String nextPageToken = null;
             boolean firstRequest = true;
             int addedlinks;
+            final int maxItemsPerPage = 50;
             do {
                 addedlinks = 0;
                 if (decryptedLinks.size() >= 50 || firstRequest) {
@@ -251,68 +309,19 @@ public class GoogleDrive extends PluginForDecrypt {
                         logger.log(e);
                         break;
                     }
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                    Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
-                    if (items == null) {
+                    if (items == null || items.isEmpty()) {
                         logger.info("break1");
                         break;
                     }
+                    addedlinks = items.size();
                     /*
                      * TODO: Add parser for this json which will work via API and website (json is the same.) Also adjust "fields" value to
                      * return more information such as MD5 hash.
                      */
                     nextPageToken = (String) entries.get("nextPageToken");
-                    for (final Object item : items) {
-                        addedlinks++;
-                        entries = (LinkedHashMap<String, Object>) item;
-                        // kind within entries, returns false positives 20170709-raz
-                        final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
-                        String title = (String) entries.get("title");
-                        if (title != null) {
-                            title = title.replace("의 사본", "");
-                        }
-                        final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
-                        final String id = (String) entries.get("id");
-                        if (kind == null || title == null || id == null) {
-                            /* This should never happen */
-                            continue;
-                        }
-                        final DownloadLink dl;
-                        String folder_path = null;
-                        if (kind.contains("#file")) {
-                            /* Single file - use name of current folder */
-                            if (subfolder != null) {
-                                folder_path = subfolder;
-                            }
-                            /* Single file */
-                            dl = createDownloadlink("https://drive.google.com/file/d/" + id);
-                            dl.setName(title);
-                            dl.setDownloadSize(fileSize);
-                            dl.setAvailable(true);
-                            if (folder_path != null) {
-                                /*
-                                 * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after
-                                 * the name of the root dir.
-                                 */
-                                final String root_dir_name = new Regex(folder_path, "^/?([^/]+)").getMatch(0);
-                                if (root_dir_name != null) {
-                                    dl.setProperty("root_dir", root_dir_name);
-                                }
-                            }
-                        } else {
-                            /* Folder */
-                            if (subfolder != null) {
-                                folder_path = subfolder + "/" + title;
-                            } else {
-                                folder_path = "/" + title;
-                            }
-                            dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
-                        }
-                        if (folder_path != null) {
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
-                        }
-                        decryptedLinks.add(dl);
-                    }
+                    parseFolderJsonWebsite(decryptedLinks, entries, subfolder, currentFolderTitle);
                     logger.info("added:" + addedlinks);
                     if (StringUtils.isEmpty(nextPageToken)) {
                         logger.info("break2");
@@ -320,7 +329,11 @@ public class GoogleDrive extends PluginForDecrypt {
                         break;
                     }
                 }
-            } while (key != null && addedlinks >= 50 && !isAbort());
+                if (addedlinks < maxItemsPerPage) {
+                    logger.info("Stopping because current page contains less than " + maxItemsPerPage + " elements");
+                    break;
+                }
+            } while (key != null && !isAbort());
         }
         if (decryptedLinks.size() == 0) {
             logger.info("Found nothing to download: " + parameter);
@@ -332,6 +345,140 @@ public class GoogleDrive extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /**
+     * There are differences between website- and API json e.g. we cannot request all fields we can get via API from website and the
+     * filesize field is "fileSize" via website and "size" via API.
+     *
+     * @throws PluginException
+     */
+    private void parseFolderJsonWebsite(final ArrayList<DownloadLink> decryptedLinks, Map<String, Object> entries, String subfolder, final String currentFolderTitle) throws PluginException {
+        if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
+            /* Begin subfolder structure if not given already */
+            subfolder = currentFolderTitle;
+        }
+        final List<Object> items = (List<Object>) entries.get("items");
+        for (final Object item : items) {
+            entries = (Map<String, Object>) item;
+            // kind within entries, returns false positives 20170709-raz
+            final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
+            String title = (String) entries.get("title");
+            if (title != null) {
+                title = title.replace("의 사본", "");
+            }
+            final String id = (String) entries.get("id");
+            if (kind == null || title == null || id == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final DownloadLink dl;
+            String folder_path = null;
+            if (kind.contains("#file")) {
+                /* Single file */
+                /* TODO: Maybe put parts of this in a static method in host plugin */
+                final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
+                /* Single file */
+                dl = createDownloadlink("https://drive.google.com/file/d/" + id);
+                dl.setName(title);
+                dl.setDownloadSize(fileSize);
+                dl.setAvailable(true);
+                if (subfolder != null) {
+                    folder_path = subfolder;
+                }
+                if (folder_path != null) {
+                    /*
+                     * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after the name of
+                     * the root dir.
+                     */
+                    final String root_dir_name = new Regex(folder_path, "^/?([^/]+)").getMatch(0);
+                    if (root_dir_name != null) {
+                        dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
+                    }
+                }
+            } else {
+                /* Folder */
+                if (subfolder != null) {
+                    folder_path = subfolder + "/" + title;
+                } else {
+                    folder_path = "/" + title;
+                }
+                dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
+            }
+            if (folder_path != null) {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
+            }
+            decryptedLinks.add(dl);
+        }
+    }
+
+    private void parseFolderJsonAPI(final ArrayList<DownloadLink> decryptedLinks, Map<String, Object> entries, String subfolder) throws PluginException {
+        // if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
+        // /* Begin subfolder structure if not given already */
+        // subfolder = currentFolderTitle;
+        // }
+        /* TODO: Add FilePackage handling */
+        final List<Object> items = (List<Object>) entries.get("files");
+        for (final Object item : items) {
+            entries = (Map<String, Object>) item;
+            // kind within entries, returns false positives 20170709-raz
+            final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
+            String title = (String) entries.get("name");
+            final String id = (String) entries.get("id");
+            if (kind == null || title == null || id == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final DownloadLink dl;
+            String folder_path = null;
+            if (kind.contains("#file")) {
+                /* Single file */
+                final String md5Checksum = (String) entries.get("md5Checksum");
+                final long fileSize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                final String description = (String) entries.get("description");
+                /* Single file */
+                dl = createDownloadlink("https://drive.google.com/file/d/" + id);
+                dl.setName(title);
+                if (fileSize > 0) {
+                    dl.setDownloadSize(fileSize);
+                    dl.setVerifiedFileSize(fileSize);
+                }
+                dl.setAvailable(true);
+                if (!StringUtils.isEmpty("md5Checksum")) {
+                    dl.setMD5Hash(md5Checksum);
+                }
+                if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(dl.getComment())) {
+                    dl.setComment(description);
+                }
+                if (subfolder != null) {
+                    folder_path = subfolder;
+                }
+                if (folder_path != null) {
+                    /*
+                     * Packagizer property so user can e.g. merge all files of a folder and subfolders in a package named after the name of
+                     * the root dir.
+                     */
+                    final String root_dir_name = new Regex(folder_path, "^/?([^/]+)").getMatch(0);
+                    if (root_dir_name != null) {
+                        dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
+                    }
+                }
+            } else {
+                /* Folder */
+                if (subfolder != null) {
+                    folder_path = subfolder + "/" + title;
+                } else {
+                    folder_path = "/" + title;
+                }
+                dl = createDownloadlink("https://drive.google.com/drive/folders/" + id);
+            }
+            if (folder_path != null) {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
+            }
+            decryptedLinks.add(dl);
+            /* TODO: 2020-12-04 */
+            // this.distribute(dl);
+        }
     }
 
     public boolean login(final Browser br, final Account account) throws Exception {

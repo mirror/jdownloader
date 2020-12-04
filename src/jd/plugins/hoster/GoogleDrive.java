@@ -149,6 +149,8 @@ public class GoogleDrive extends PluginForHost {
      * change the quality and then resume the started download with another URL.
      */
     private static final String PROPERTY_USED_QUALITY = "USED_QUALITY";
+    /* Packagizer property */
+    public static final String  PROPERTY_ROOT_DIR     = "root_dir";
     public String               agent                 = null;
     private boolean             isStreamable          = false;
     private String              dllink                = null;
