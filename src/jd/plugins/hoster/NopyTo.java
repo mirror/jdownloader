@@ -112,19 +112,18 @@ public class NopyTo extends PluginForHost {
             final String status = (String) entries.get("status");
             if ("error".equalsIgnoreCase(status)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         entries = (LinkedHashMap<String, Object>) entries.get("msg");
         final String sha1hash = (String) entries.get("hash");
         String filename = (String) entries.get("filename");
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = filename_url;
-        }
         long filesize = JavaScriptEngineFactory.toLong(entries.get("raw_size"), 0);
-        link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        } else if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(filename_url);
+        }
         if (filesize > 0) {
             link.setDownloadSize(filesize);
         }

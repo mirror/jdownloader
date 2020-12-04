@@ -77,6 +77,9 @@ public class GlobalFilesNet extends PluginForHost {
         } else if (!br.containsHTML("#FileProperties")) {
             /* User added an url which does not lead to a file e.g. http://global-files.net/catalog */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*The file was deleted")) {
+            /* 2020-12-04 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("Download file <strong>([^<>\"]+)</strong> \\(([^<>\"]+)\\)\\s+");
         String filename = br.getRegex("data\\-yashareTitle=\"([^<>\"]+) \\- Global\\-Files\\.NET\"").getMatch(0);
@@ -90,10 +93,9 @@ public class GlobalFilesNet extends PluginForHost {
         if (StringUtils.isEmpty(filesize)) {
             filesize = finfo.getMatch(1);
         }
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!StringUtils.isEmpty(filename)) {
+            filename = Encoding.htmlDecode(filename).trim();
         }
-        filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));

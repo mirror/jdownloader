@@ -90,7 +90,7 @@ public class BayFilesCom extends UnknownHostingScriptCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bayfiles.com", "letsupload.cc", "megaupload.is" });
+        ret.add(new String[] { "bayfiles.com", "letsupload.cc", "megaupload.is", "openload.cc" });
         return ret;
     }
 
