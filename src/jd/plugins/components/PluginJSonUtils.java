@@ -441,7 +441,11 @@ public class PluginJSonUtils {
         // true : false
         // 0 : 1 = false : true
         // 0 : !0 = false : true
-        if ("true".equalsIgnoreCase(input)) {
+        if ("yes".equalsIgnoreCase(input)) {
+            return true;
+        } else if ("no".equalsIgnoreCase(input)) {
+            return false;
+        } else if ("true".equalsIgnoreCase(input)) {
             return true;
         } else if ("false".equalsIgnoreCase(input)) {
             return false;
@@ -453,7 +457,8 @@ public class PluginJSonUtils {
             return true;
         } else if ("!1".equalsIgnoreCase(input)) {
             return false;
+        } else {
+            return false;
         }
-        return false;
     }
 }

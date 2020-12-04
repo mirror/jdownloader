@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,7 +33,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
 public class MediafireComFolder extends PluginForDecrypt {
@@ -186,23 +188,28 @@ public class MediafireComFolder extends PluginForDecrypt {
             }
             if (Boolean.TRUE.equals(isFile)) {
                 final DownloadLink link = createSingleDownloadlink(contentID);
-                link.setAvailable(true);
-                String browser = br.toString();
-                String name = getXML("filename", browser);
-                String size = getXML("size", browser);
+                final String browser = br.toString();
+                final String name = getXML("filename", browser);
+                final String size = getXML("size", browser);
                 if (name != null) {
                     link.setFinalFileName(Encoding.htmlDecode(name));
                 } else {
                     link.setName(contentID);
                 }
-                if (size != null) {
-                    long sizeLong = Long.parseLong(size);
-                    link.setDownloadSize(sizeLong);
-                    try {
-                        link.setVerifiedFileSize(sizeLong);
-                    } catch (final Throwable ignore) {
-                    }
+                final String hash = getXML("hash", browser);
+                if (!StringUtils.isEmpty(hash)) {
+                    link.setHashInfo(HashInfo.parse(hash));
                 }
+                final String pass = getXML("password_protected", browser);
+                if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
+                    link.setProperty("passwordRequired", true);
+                }
+                if (size != null) {
+                    final long sizeLong = Long.parseLong(size);
+                    link.setDownloadSize(sizeLong);
+                    link.setVerifiedFileSize(sizeLong);
+                }
+                link.setAvailable(true);
                 decryptedLinks.add(link);
                 return decryptedLinks;
             } else if (Boolean.TRUE.equals(isFolder)) {
@@ -236,10 +243,28 @@ public class MediafireComFolder extends PluginForDecrypt {
                         if (files != null) {
                             for (final String fileInfo : files) {
                                 final DownloadLink link = createSingleDownloadlink(getXML("quickkey", fileInfo));
-                                link.setDownloadSize(Long.parseLong(getXML("size", fileInfo)));
-                                link.setName(getXML("filename", fileInfo));
+                                final String size = getXML("size", fileInfo);
+                                if (size != null) {
+                                    final long sizeLong = Long.parseLong(size);
+                                    link.setDownloadSize(sizeLong);
+                                    link.setVerifiedFileSize(sizeLong);
+                                }
+                                final String name = getXML("filename", fileInfo);
+                                if (name != null) {
+                                    link.setFinalFileName(Encoding.htmlDecode(name));
+                                } else {
+                                    link.setName(contentID);
+                                }
                                 if ("private".equals(privacy)) {
                                     link.setProperty("privatefile", true);
+                                }
+                                final String hash = getXML("hash", fileInfo);
+                                if (!StringUtils.isEmpty(hash)) {
+                                    link.setHashInfo(HashInfo.parse(hash));
+                                }
+                                final String pass = getXML("password_protected", fileInfo);
+                                if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
+                                    link.setProperty("passwordRequired", true);
                                 }
                                 link.setAvailable(true);
                                 if (fp != null) {
