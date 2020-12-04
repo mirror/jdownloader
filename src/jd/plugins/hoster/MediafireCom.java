@@ -776,8 +776,8 @@ public class MediafireCom extends PluginForHost {
                             if (!StringUtils.isEmpty(privacy)) {
                                 item.setProperty("privacy", privacy);
                             }
-                            if (!StringUtils.isEmpty(pass)) {
-                                item.setProperty("passwordRequired", PluginJSonUtils.parseBoolean(pass));
+                            if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
+                                item.setProperty("passwordRequired", true);
                             }
                             if (!StringUtils.isEmpty(content_url)) {
                                 /*

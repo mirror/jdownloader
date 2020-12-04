@@ -32,6 +32,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
@@ -64,27 +85,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -2045,9 +2045,8 @@ public class LinkCrawler {
                                         final CrawledLink copy = createCopyOf(possibleCryptedLink);
                                         final CrawledLinkModifier linkModifier = copy.getCustomCrawledLinkModifier();
                                         copy.setCustomCrawledLinkModifier(null);
-                                        final CrawledLink directHTTP;
+                                        final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url, true);
                                         if (rule != null && rule.getCookies() != null) {
-                                            final DownloadLink link = new DownloadLink(null, null, null, "directhttp://" + url, true);
                                             final StringBuilder sb = new StringBuilder();
                                             for (String[] cookie : rule.getCookies()) {
                                                 if (cookie.length == 1) {
@@ -2057,10 +2056,8 @@ public class LinkCrawler {
                                                 }
                                             }
                                             link.setProperty("cookies", sb.toString());
-                                            directHTTP = crawledLinkFactorybyDownloadLink(link);
-                                        } else {
-                                            directHTTP = crawledLinkFactorybyURL("directhttp://" + url);
                                         }
+                                        final CrawledLink directHTTP = crawledLinkFactorybyDownloadLink(link);
                                         directHTTP.setMatchingRule(rule);
                                         forwardCrawledLinkInfos(copy, directHTTP, linkModifier, getAndClearSourceURLs(copy), true);
                                         // modify sourceLink because directHTTP arise from possibleCryptedLink(convert to directhttp)
