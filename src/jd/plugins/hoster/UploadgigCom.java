@@ -25,6 +25,13 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -43,13 +50,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -230,7 +230,7 @@ public class UploadgigCom extends antiDDoSForHost {
         if (dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getContentType().contains("text")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
@@ -245,12 +245,10 @@ public class UploadgigCom extends antiDDoSForHost {
             // ok browser set by another method is now lost.
             br = dl.getDownloadable().getContextBrowser();
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
-            if (br.containsHTML("The download link has expired")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The download link has expired'", 30 * 60 * 1000l);
-            }
+            errorhandlingGeneral(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -319,7 +317,7 @@ public class UploadgigCom extends antiDDoSForHost {
             final Browser brc = this.br.cloneBrowser();
             brc.setFollowRedirects(true);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, this.getDownloadLink(), dllink, resumes, chunks);
-            if (dl.getConnection().getContentType().contains("text") || !dl.getConnection().isOK()) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     brc.followConnection(true);
                 } catch (final IOException e) {
@@ -377,6 +375,15 @@ public class UploadgigCom extends antiDDoSForHost {
             throw new AccountRequiredException();
         }
         // "0" and "e" shouldn't happen
+    }
+
+    private void errorhandlingGeneral(final Browser br) throws PluginException {
+        if (br.containsHTML("The download link has expired")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The download link has expired'", 30 * 60 * 1000l);
+        } else if (br.containsHTML("Sorry, this server is under maintenance|>please try to download other files, other servers are")) {
+            /* 2020-12-04 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server under maintenance", 5 * 60 * 1000l);
+        }
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -519,7 +526,7 @@ public class UploadgigCom extends antiDDoSForHost {
             if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dl.getConnection().getContentType().contains("text")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
@@ -535,9 +542,10 @@ public class UploadgigCom extends antiDDoSForHost {
                 if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
                     account.setNextDayAsTempTimeout(br);
                 }
+                errorhandlingGeneral(this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("premium_directlink", dllink);
+            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
             dl.startDownload();
         }
     }
