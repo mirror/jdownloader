@@ -171,10 +171,10 @@ public class PicflashOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         String dllink;
         if (link.getPluginPatternMatcher().contains("viewer.php")) {
             /* Directurl */
@@ -207,7 +207,6 @@ public class PicflashOrg extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 

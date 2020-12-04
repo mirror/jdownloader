@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,18 +28,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "comicspace.com.br" }, urls = { "https?://(?:www\\.)?comicspace\\.com\\.br/manga/[a-z0-9\\-]+/[0-9\\.]+" })
-public class ComicspaceComBr extends antiDDoSForDecrypt {
-    public ComicspaceComBr(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "acomic.space" }, urls = { "https?://(?:www\\.)?(?:comicspace\\.com\\.br|acomic\\.space)/manga/[a-z0-9\\-]+/[0-9\\.]+" })
+public class AcomicSpace extends antiDDoSForDecrypt {
+    public AcomicSpace(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* Tags: MangaPictureCrawler */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* Convert URLs containing old domain to new ones */
+        final String parameter = param.toString().replaceFirst("https?://[^/]+/", "https://" + this.getHost() + "/");
         final String extension_fallback = ".png";
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
