@@ -17,12 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +28,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wcostream.com" }, urls = { "https?://(?:www[0-9]*\\.)?wcostream\\.com/(?:anime/)?.+$" })
 public class WCOStream extends antiDDoSForDecrypt {
@@ -75,7 +75,7 @@ public class WCOStream extends antiDDoSForDecrypt {
         Collections.addAll(embedPageLinks, br.getRegex("<meta[^>]+itemprop\\s*=\\s*\"embedURL\"[^>]+content=\"\\s*([^\"]+)\\s*\"").getColumn(0));
         if (!embedPageLinks.isEmpty()) {
             for (String embedPageLink : embedPageLinks) {
-                if (StringUtils.isNotEmpty(embedPageLink)) {
+                if (StringUtils.isNotEmpty(embedPageLink) && isAbort()) {
                     Browser br2 = br.cloneBrowser();
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -84,7 +84,7 @@ public class WCOStream extends antiDDoSForDecrypt {
                     if (StringUtils.isNotEmpty(embedServiceLink)) {
                         br2.getPage(embedServiceLink);
                         String embedServiceResponse = br2.toString();
-                        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(embedServiceResponse);
+                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(embedServiceResponse);
                         if (entries != null) {
                             String server = (String) entries.get("server");
                             String enc = (String) entries.get("enc");

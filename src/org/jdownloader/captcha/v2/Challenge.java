@@ -247,8 +247,9 @@ public abstract class Challenge<T> {
         final Plugin plugin = getPlugin();
         if (plugin != null && plugin instanceof PluginForHost) {
             return ((PluginForHost) plugin).getDownloadLink();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public DomainInfo getDomainInfo() {

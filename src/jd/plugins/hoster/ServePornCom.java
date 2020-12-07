@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serveporn.com", "lanporno.com", "serviporno.com", "heureporno.com", "seansporno.com", "koloporno.com", "einfachporno.com", "vielerporno.com", "pornozot.com", "voglioporno.com", "pornodoido.com", "bubbaporn.com", "pornodrome.tv", "nedporno.com", "filmikiporno.tv", "pornjam.com", "canalporno.com", "prendiporno.com", "prendiporno.tv", "guterporn.com", "guterporn.xxx", "pornalia.xxx", "bundesporno.xxx", "hierporno.com", "pornburst.xxx", "gauleporno.xxx", "muchoporno.xxx", "pornoheit.com", "drpornofilme.com", "garotaporno.com" }, urls = { "https?://(?:www\\.)?serveporn.com\\.com/videos/[a-z0-9\\-_]+/", "https?://(?:www\\.)?lanporno\\.com\\.com/videolar/[a-z0-9\\-_]+/", "https?://(?:www\\.)?serviporno\\.com/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?heureporno\\.com/videos?/[a-z0-9\\-_]+/",
         "https?://(?:www\\.)?seansporno\\.com/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?koloporno\\.com/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?(?:einfachporno\\.com|pornomenge\\.com)/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?vielerporno\\.com/filme/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornozot\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?voglioporno\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodoido\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?bubbaporn\\.com/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornodrome\\.tv/videos?/[a-z0-9\\-_]+/", "https?://(?:www\\.)?nedporno\\.com/films/[a-z0-9\\-_]+/", "https?://(?:www\\.)?filmikiporno\\.tv/filmy/[a-z0-9\\-_]+/", "https?://(?:www\\.)?pornjam\\.com/video/[a-z0-9\\-_]+/", "https?://(?:www\\.)?canalporno\\.com/ver/[a-z0-9\\-_]+/", "https?://(?:www\\.)?prendiporno\\.com/video/[a-z0-9\\-_]+/",
@@ -77,7 +77,7 @@ public class ServePornCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<source src=\"https:///videos/")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<source\\s*src\\s*=\\s*\"https?:///videos/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("content=(\"|')([^<>\"]*?)\\1 property=(\"|')og:title\\3\\s*/\\s*>").getMatch(1);
@@ -88,12 +88,12 @@ public class ServePornCom extends antiDDoSForHost {
             /* Last chance fallback */
             filename = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
         }
-        dllink = br.getRegex("url: '(https?://[^/]+/[^<>\"']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)'").getMatch(0);
+        dllink = br.getRegex("url\\s*:\\s*'(https?://[^/]+/[^<>\"']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)'").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("url: '(https?://cdn[^/]+/[^<>\"']*?\\.(?:flv|mp4)[^<>\"/]*?)'").getMatch(0);
+            dllink = br.getRegex("url\\s*:\\s*'(https?://cdn[^/]+/[^<>\"']*?\\.(?:flv|mp4)[^<>\"/]*?)'").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("src=\"([^\"]*?//cdn[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("src\\s*=\\s*\"([^\"]*?//cdn[^\"]+)\"").getMatch(0);
         }
         final String ext = ".mp4";
         if (filename != null) {
@@ -109,7 +109,9 @@ public class ServePornCom extends antiDDoSForHost {
             try {
                 con = br2.openGetConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }

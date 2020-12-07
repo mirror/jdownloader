@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -30,6 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "classiccinemaonline.com" }, urls = { "https?://(www\\.)?classiccinemaonline\\.com/(?:index.php/)?.+$" })
 public class ClassicCinemaOnline extends antiDDoSForDecrypt {
@@ -63,10 +63,7 @@ public class ClassicCinemaOnline extends antiDDoSForDecrypt {
 
     private String processPrefixSlashes(String link) throws IOException {
         if (StringUtils.isNotEmpty(link)) {
-            link = link.trim().replaceAll("^//", "https://");
-            if (link.startsWith("/")) {
-                link = this.br.getURL(link).toString();
-            }
+            link = this.br.getURL(link).toString();
         }
         return link;
     }
