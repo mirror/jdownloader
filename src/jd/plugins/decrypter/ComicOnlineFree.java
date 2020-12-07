@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\\\.)?(comiconlinefree\\.(?:com|net)|viewcomics\\.me)/(?:[^/]+/).+$" })
 public class ComicOnlineFree extends antiDDoSForDecrypt {
@@ -49,6 +49,9 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*[^<]+\\s+Online\\s+For\\s+Free").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^<]+\\s+Online\\s+").getMatch(0);
+            if (StringUtils.isEmpty(fpName)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         if (StringUtils.isNotEmpty(fpName)) {
@@ -66,9 +69,6 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         }
         final String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
         if (images != null && images.length > 0) {
-            if (StringUtils.isEmpty(fpName)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final String chapter_name = Encoding.htmlDecode(fpName.trim());
             final int padlength = getPadLength(images.length);
             int page = 1;
