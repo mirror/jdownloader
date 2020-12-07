@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -200,14 +201,18 @@ public class FlexShareCore extends antiDDoSForHost {
                 br.followConnection();
                 /* 2019-10-02: Tested with filepup.net, they do not have a download captcha! */
                 final String action = getLink();
-                final Form dlform = br.getFormbyProperty("name", "pipi");
+                Form dlform = br.getFormbyProperty("name", "pipi");
+                if (dlform == null) {
+                    /* 2020-12-07: extmatrix.com */
+                    dlform = br.getFormByInputFieldKeyValue("task", "download");
+                }
                 if (dlform == null || action == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dlform.getAction() == null) {
                     dlform.setAction(action);
                 }
-                if (br.containsHTML("g-recaptcha-response")) {
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform)) {
                     final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
                     final String recaptchaV2Response = rc2.getToken();
                     dlform.put("g-recaptcha-response", recaptchaV2Response);
@@ -222,10 +227,14 @@ public class FlexShareCore extends antiDDoSForHost {
             } catch (Throwable e) {
             }
         }
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             handleGeneralServerErrors();
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -412,10 +421,14 @@ public class FlexShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 handleGeneralServerErrors();
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

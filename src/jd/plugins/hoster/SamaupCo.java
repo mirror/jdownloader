@@ -21,7 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -101,15 +100,7 @@ public class SamaupCo extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexFilenameAbuse(final Browser br) {
-        String filename = super.regexFilenameAbuse(br);
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("name=\"file_name\" value=\"([^<>\"]+)\"").getMatch(0);
-        }
-        return filename;
-    }
-
-    @Overrideprotected boolean supports_availablecheck_filesize_html() {
+    protected boolean supports_availablecheck_filesize_html() {
         /* 2019-05-08: Special */
         return false;
     }

@@ -45,7 +45,7 @@ public class AdfLy extends antiDDoSForDecrypt {
             "threadsphere.bid", "dashsphere.com", "fasttory.com", "rapidteria.com", "sprysphere.com", "swifttopia.com", "restorecosm.bid", "bullads.net", "velociterium.com", "zipansion.com", "activeterium.com", "clearload.bid", "brightvar.bid", "activetect.net", "swiftviz.net", "kudoflow.com", "infopade.com", "linkjaunt.com", "combostruct.com", "turboagram.com", "wirecellar.com", "streamvoyage.com", "metastead.com", "briskgram.net", "swarife.com", "baymaleti.net", "dapalan.com", "cinebo.net", "stratoplot.com", "thouth.net", "atabencot.net", "ecleneue.com", "twiriock.com", "uclaut.net", "linkup.pro", "lopoteam.com", "keistaru.com", "gloyah.net", "cesinthi.com", "sluppend.com", "fainbory.com", "infopade.com", "onisedeo.com", "ethobleo.com", "evassmat.com", "aclabink.com", "optitopt.com", "tonancos.com", "clesolea.com", "thacorag.com", "xterca.net", "larati.net", "cowner.net",
             "scuseami.net", "gatustox.net", "hinafinea.com", "fiaharam.net", "libittarc.com", "raboninco.com", "gdanstum.net",
             /** <-- full domains & subdomains --> */
-            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "lnk.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net", "st.uploadit.host", "vonasort.com", "atharori.net" };
+            "chathu.apkmania.co", "alien.apkmania.co", "adf.acb.im", "lnk.acb.im", "packs.redmusic.pl", "packs2.redmusic.pl", "dl.android-zone.org", "out.unionfansub.com", "sostieni.ilwebmaster21.com", "fuyukai-desu.garuda-raws.net", "st.uploadit.host", "vonasort.com", "atharori.net", "hideadew.com" };
 
     @Override
     public String[] siteSupportedNames() {
