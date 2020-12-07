@@ -24,6 +24,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -45,12 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -621,6 +621,13 @@ public class PornHubCom extends PluginForDecrypt {
         }
         final String username = jd.plugins.hoster.PornHubCom.getUserName(this, br);
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
+        if (!br.getURL().contains(viewkey)) {
+            /* Offline - initial URL redirected to some other URL (unsupported/offline) */
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String siteTitle = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
         final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);

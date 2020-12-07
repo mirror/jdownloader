@@ -49,7 +49,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+" })
 public class ArchiveOrg extends PluginForDecrypt {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,7 +70,7 @@ public class ArchiveOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replace("://www.", "://").replace("/stream/", "/download/");
+        final String parameter = param.toString().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/");
         /*
          * 2020-08-26: Login might sometimes be required for book downloads.
          */

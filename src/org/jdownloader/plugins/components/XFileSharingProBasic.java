@@ -1139,6 +1139,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (filename_src != null) {
             filename = new Regex(filename_src, ">([^>]+)</td>$").getMatch(0);
         }
+        if (filename == null) {
+            /* 2020-12-07 e.g. samaup.co, pandafiles.com */
+            filename = br.getRegex("name=\"file_name\"[^>]*value=\"([^<>\"]+)\"").getMatch(0);
+        }
         return filename;
     }
 

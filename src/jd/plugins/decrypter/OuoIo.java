@@ -18,6 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,11 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -87,14 +87,6 @@ public class OuoIo extends antiDDoSForDecrypt {
             br.setCurrentURL(browserReferrer);
         }
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            if (fallBack != null) {
-                decryptedLinks.add(fallBack);
-            } else {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            }
-            return decryptedLinks;
-        }
         do {
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -107,6 +99,17 @@ public class OuoIo extends antiDDoSForDecrypt {
                 }
             }
         } while (br.getRedirectLocation() != null);
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            if (fallBack != null) {
+                decryptedLinks.add(fallBack);
+            } else {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            }
+            return decryptedLinks;
+        } else if (br.containsHTML("class=\"no-found\"")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         Form captchaForm = br.getFormbyProperty("id", "skip");
         if (captchaForm == null) {
             captchaForm = br.getFormbyProperty("id", "form-captcha");
