@@ -161,7 +161,10 @@ public class ImgSrcRu extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            username = br.getRegex(">more photos from (.*?)</a>").getMatch(0);
+            username = br.getRegex(">\\s*more\\s*photos\\s*from\\s*(.*?)\\s*<").getMatch(0);
+            if (username == null) {
+                username = br.getRegex(">\\s*Add\\s*(.*?)\\s*to\\s*your").getMatch(0);
+            }
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
