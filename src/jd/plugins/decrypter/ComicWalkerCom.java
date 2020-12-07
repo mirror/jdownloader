@@ -42,6 +42,10 @@ public class ComicWalkerCom extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>([^<]+)\\s+-\\s+無料コミック\\s+ComicWalker").getMatch(0);
         if (parameter.contains("/contents/detail/")) {
             String[] links = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]*/viewer/[^\"]+)\"").getColumn(0);

@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -63,14 +65,18 @@ public class ServePornCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String url_filename = new Regex(downloadLink.getPluginPatternMatcher(), "(?:/video(?:s?/)?|/filme/|/filmy/|/films/)(.+?)/?$").getMatch(0);
-        if (url_filename != null && !downloadLink.isNameSet()) {
-            downloadLink.setName(url_filename + ".flv");
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String url_filename = new Regex(link.getPluginPatternMatcher(), "/([^/]+)/?$").getMatch(0);
+        if (url_filename != null) {
+            url_filename = url_filename.replace("-", " ");
+            url_filename = url_filename.trim();
+            if (!link.isNameSet()) {
+                link.setName(url_filename + ".mp4");
+            }
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<source src=\"https:///videos/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -80,7 +86,7 @@ public class ServePornCom extends antiDDoSForHost {
         }
         if (filename == null) {
             /* Last chance fallback */
-            filename = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
+            filename = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
         }
         dllink = br.getRegex("url: '(https?://[^/]+/[^<>\"']*?\\.(?:flv|mp4)\\?key=[^<>\"/]*?)'").getMatch(0);
         if (dllink == null) {
@@ -89,12 +95,11 @@ public class ServePornCom extends antiDDoSForHost {
         if (dllink == null) {
             dllink = br.getRegex("src=\"([^\"]*?//cdn[^\"]+)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.trim();
         final String ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        if (filename != null) {
+            filename = filename.trim();
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        }
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             final Browser br2 = br.cloneBrowser();
@@ -103,8 +108,8 @@ public class ServePornCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -119,11 +124,15 @@ public class ServePornCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

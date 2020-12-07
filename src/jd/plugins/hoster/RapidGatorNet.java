@@ -592,7 +592,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             } else if (responsecode == 416) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 10 * 60 * 1000l);
             }
-            /* 2020-07-28: Resume can now also fail with error 500 and josn: {"error":"Unexpected range request","success":false} */
+            /* 2020-07-28: Resume can now also fail with error 500 and json: {"error":"Unexpected range request","success":false} */
             String errorMsgJson = PluginJSonUtils.getJson(br, "error");
             final String errorMsgHeader = con.getRequest().getResponseHeader("X-Error");
             if (StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgHeader) || StringUtils.equalsIgnoreCase("Unexpected range request", errorMsgJson)) {
