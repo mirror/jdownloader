@@ -6,11 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -25,6 +22,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FlexShareCore extends antiDDoSForHost {
@@ -66,9 +67,8 @@ public class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br>
-     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
-     * will just return 404. Override this to use API.
+     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
+     * still not work, it will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -228,13 +228,13 @@ public class FlexShareCore extends antiDDoSForHost {
             }
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
             handleGeneralServerErrors();
-            logger.warning("The final dllink seems not to be a file!");
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -266,8 +266,8 @@ public class FlexShareCore extends antiDDoSForHost {
         }
     }
 
-    private static final String PREMIUMLIMIT = "out of 1024\\.00 TB</td>";
-    private static final String PREMIUMTEXT  = "Account type:</td>\\s*<td><b>Premium</b>";
+    private static final String PREMIUMLIMIT  = "out of 1024\\.00 TB</td>";
+    private static final String NOPREMIUMTEXT = "title\\s*=\\s*\"Get a premium account now";
 
     protected void login(final Account account, boolean force) throws Exception {
         synchronized (account) {
@@ -281,7 +281,8 @@ public class FlexShareCore extends antiDDoSForHost {
                     getPage(getMainPage() + "/members/myfiles.php");
                     loggedIN = isLoggedIN();
                     if (loggedIN) {
-                        logger.info("Successfully loggedin via cookies");
+                        updateAccountType(br, account);
+                        logger.info("Successfully loggedin via cookies:" + account.getType());
                     }
                 }
                 if (!loggedIN) {
@@ -356,18 +357,28 @@ public class FlexShareCore extends antiDDoSForHost {
         return br.getCookie(br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null;
     }
 
+    protected void updateAccountType(final Browser br, final Account account) throws Exception {
+        if (br.getURL() == null || !br.getURL().contains("/members/myfiles.php")) {
+            getPage("/members/myfiles.php");
+        }
+        synchronized (account) {
+            if (br.containsHTML(NOPREMIUMTEXT) || !br.containsHTML(PREMIUMLIMIT)) {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+            } else {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(20);
+                account.setConcurrentUsePossible(true);
+            }
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.containsHTML(PREMIUMTEXT) && (br.getURL() == null || !br.getURL().contains("/members/myfiles.php"))) {
-            getPage("/members/myfiles.php");
-            if (!br.containsHTML(PREMIUMLIMIT)) {
-                account.setType(AccountType.FREE);
-            } else {
-                account.setType(AccountType.PREMIUM);
-            }
-        }
+        updateAccountType(br, account);
         String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
         if (hostedFiles != null) {
             ai.setFilesNum(Integer.parseInt(hostedFiles));
@@ -379,14 +390,8 @@ public class FlexShareCore extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         if (AccountType.FREE.equals(account.getType())) {
             // free accounts can still have captcha.
-            account.setMaxSimultanDownloads(1);
-            account.setConcurrentUsePossible(false);
-            account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
         } else {
-            account.setMaxSimultanDownloads(20);
-            account.setConcurrentUsePossible(true);
-            account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium Account");
             getPage(getMainPage());
             final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
@@ -412,23 +417,27 @@ public class FlexShareCore extends antiDDoSForHost {
                 getLink = br.getRedirectLocation();
             }
             if (getLink == null) {
-                getLink = br.getRegex("<a id='jd_support' href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                getLink = br.getRegex("<a\\s*id\\s*=\\s*'jd_support'\\s*href\\s*=\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
             if (getLink == null) {
                 getLink = getLink();
             }
             if (getLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("(>Premium Only\\!|you have requested require a premium account for download\\.<)")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
                 handleGeneralServerErrors();
-                logger.warning("The final dllink seems not to be a file!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -436,7 +445,7 @@ public class FlexShareCore extends antiDDoSForHost {
     }
 
     private String getLink() {
-        String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location='(https?.*?)';\"").getMatch(0);
+        String getLink = br.getRegex("disabled\\s*=\\s*\"disabled\"\\s*onclick\\s*=\\s*\"document\\.location\\s*=\\s*'(https?.*?)';\"").getMatch(0);
         if (getLink == null) {
             getLink = br.getRegex("('|\")(" + "https?://(www\\.)?([a-z0-9]+\\.)?" + Pattern.quote(this.getHost()) + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)\\1").getMatch(1);
         }
@@ -467,9 +476,7 @@ public class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br>
-     *         Example which supports https: extmatrix.com </br>
-     *         Example which does NOT support https: filepup.net
+     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;
