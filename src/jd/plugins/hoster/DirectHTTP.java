@@ -29,22 +29,6 @@ import java.util.Map.Entry;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -75,25 +59,42 @@ import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
         "https?(viajd)?://[\\p{L}\\p{Nd}\\w\\.:\\-@\\[\\]]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
-    public static final String ENDINGS               = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
-    public static final String NORESUME              = "nochunkload";
-    public static final String NOCHUNKS              = "nochunk";
+    public static final String ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|apk|azw3|azw|adf|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
+    public static final String NORESUME                 = "nochunkload";
+    public static final String NOCHUNKS                 = "nochunk";
     /**
      * Set this property on DownloadLink objects if you want to force a filename which also survives if the user resets a DownloadLink.
      * Otherwise, Content-Disposition filename will be used (or filename from inside URL as fallback).
      */
-    public static final String FIXNAME               = "fixName";
-    public static final String FORCE_NORESUME        = "forcenochunkload";
-    public static final String FORCE_NOCHUNKS        = "forcenochunk";
-    public static final String TRY_ALL               = "tryall";
-    public static final String POSSIBLE_URLPARAM     = "POSSIBLE_GETPARAM";
-    public static final String BYPASS_CLOUDFLARE_BGJ = "bpCfBgj";
+    public static final String FIXNAME                  = "fixName";
+    public static final String FORCE_NORESUME           = "forcenochunkload";
+    public static final String FORCE_NOCHUNKS           = "forcenochunk";
+    public static final String FORCE_NOVERIFIEDFILESIZE = "forcenoverifiedfilesize";
+    public static final String TRY_ALL                  = "tryall";
+    public static final String POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
+    public static final String BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
 
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
@@ -324,6 +325,11 @@ public class DirectHTTP extends antiDDoSForHost {
             logger.info("Disable Chunks:" + downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) + "|" + downloadLink.getBooleanProperty(DirectHTTP.FORCE_NOCHUNKS, false) + "|" + resume);
             chunks = 1;
         }
+        if (downloadLink.getBooleanProperty(FORCE_NOVERIFIEDFILESIZE, false)) {
+            logger.info("Forced NoVerifiedFilesize! Disable Chunks/Resume!");
+            chunks = 1;
+            resume = false;
+        }
         final String streamMod = downloadLink.getStringProperty("streamMod", null);
         if (streamMod != null) {
             logger.info("Apply streamMod handling:" + streamMod);
@@ -342,6 +348,7 @@ public class DirectHTTP extends antiDDoSForHost {
             resume = false;
             chunks = 1;
         }
+        logger.info("ServerComaptibleForByteRangeRequest:" + downloadLink.getProperty("ServerComaptibleForByteRangeRequest"));
         try {
             if (downloadLink.getStringProperty("post", null) != null) {
                 this.dl = new jd.plugins.BrowserAdapter().openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
@@ -363,17 +370,26 @@ public class DirectHTTP extends antiDDoSForHost {
             }
         }
         if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty("Range") != null) {
-            // requestFileInformation is successful but connection with range request fails with 403, retry without range
-            dl.getConnection().disconnect();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (this.dl.getConnection().getResponseCode() == 503) {
+        } else if (this.dl.getConnection().getResponseCode() == 503) {
             try {
-                br.followConnection();
-            } catch (final Throwable ignore) {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+        } else if ((dl.getConnection().getResponseCode() == 200 || dl.getConnection().getResponseCode() == 206) && dl.getConnection().getCompleteContentLength() == -1 && downloadLink.getVerifiedFileSize() > 0) {
+            logger.info("Workaround for missing Content-Length!");
+            dl.getConnection().disconnect();
+            downloadLink.setVerifiedFileSize(-1);
+            downloadLink.setProperty(DirectHTTP.FORCE_NOVERIFIEDFILESIZE, Boolean.TRUE);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         try {
             if (!this.dl.startDownload()) {
@@ -529,10 +545,9 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     private void followURLConnectinon(Browser br, URLConnectionAdapter urlConnection) {
-        urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
         try {
-            br.followConnection();
-        } catch (final Throwable e) {
+            br.followConnection(true);
+        } catch (final IOException e) {
             logger.log(e);
         } finally {
             urlConnection.disconnect();
@@ -665,7 +680,7 @@ public class DirectHTTP extends antiDDoSForHost {
             final String contentType = getContentType(urlConnection);
             if (contentType != null) {
                 if (StringUtils.startsWithCaseInsensitive(contentType, "application/pls") && StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), ".mp3")) {
-                    this.br.followConnection();
+                    this.br.followConnection(true);
                     final String mp3URL = this.br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
                     if (hasCustomDownloadURL()) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -679,7 +694,7 @@ public class DirectHTTP extends antiDDoSForHost {
             final long length = urlConnection.getLongContentLength();
             if (length == 0 && RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                 preferHeadRequest = false;
-                br.followConnection();
+                br.followConnection(true);
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
             if (urlConnection.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
@@ -716,7 +731,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     followURLConnectinon(br, urlConnection);
                     return this.requestFileInformation(downloadLink, retry + 1);
                 } else {
-                    final String pageContent = this.br.followConnection();
+                    final String pageContent = this.br.followConnection(true);
                     if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
                         final String videoURL = br.getRegex("source type=\"video/mp4\"\\s*src=\"(https?://.*)\"").getMatch(0);
                         if (videoURL != null && !hasCustomDownloadURL()) {
@@ -836,7 +851,12 @@ public class DirectHTTP extends antiDDoSForHost {
                             downloadLink.setMD5Hash(contentMD5);
                         }
                     }
-                    downloadLink.setVerifiedFileSize(length);
+                    if (downloadLink.getBooleanProperty(FORCE_NOVERIFIEDFILESIZE, false)) {
+                        logger.info("Forced NoVerifiedFileSize:" + length);
+                        downloadLink.setVerifiedFileSize(-1);
+                    } else {
+                        downloadLink.setVerifiedFileSize(length);
+                    }
                 }
             } else {
                 downloadLink.setDownloadSize(-1);
@@ -966,6 +986,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty("requestType");
         link.removeProperty("streamMod");
         link.removeProperty("allowOrigin");
+        link.removeProperty(FORCE_NOVERIFIEDFILESIZE);
         link.removeProperty(BYPASS_CLOUDFLARE_BGJ);
         /* E.g. filename set in crawler --> We don't want to lose that. */
         final String fixName = link.getStringProperty(FIXNAME, null);
