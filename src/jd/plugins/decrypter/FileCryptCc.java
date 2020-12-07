@@ -24,9 +24,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -48,18 +59,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -68,11 +67,8 @@ public class FileCryptCc extends PluginForDecrypt {
         return 1;
     }
 
-    private final String NEXT_RETRY = "0";
-
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
     /* NO OVERRIDE!! */
@@ -161,7 +157,8 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         // captcha time!
         counter = -1;
-        int cutCaptcha = 15;
+        int cutCaptchaTries = 0;
+        final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidaneRetries();
         while (counter++ < retry && containsCaptcha()) {
             Form captchaForm = null;
             final Form[] allForms = br.getForms();
@@ -248,12 +245,23 @@ public class FileCryptCc extends PluginForDecrypt {
                     captchaForm.put("cap_token", cutcaptcha);
                     submitForm(captchaForm);
                 } else {
-                    logger.info("cutcaptcha captcha is not yet supported:retry left:" + cutCaptcha);
-                    if (cutCaptcha-- == 0 || true && getPluginConfig().getBooleanProperty(NEXT_RETRY, false) == false) {
+                    logger.info("cutcaptcha captcha is not yet/anymore supported:retries so far:" + cutCaptchaTries);
+                    if (usedPassword != null) {
+                        /*
+                         * 2020-12-07: We need new cookies for a higher chance of getting another captcha type - sure we could also re-enter
+                         * the password now that we know the correct one but we won't do this for now (I was too lazy - sorry).
+                         */
+                        logger.info("Cannot retry and hope for different captcha type if password was required");
+                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else if (cutCaptchaTries++ >= cutCaptchaAvoidanceMaxRetries || true) {
                         // fallback to rc2 no longer working
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
                     } else {
                         counter--;
+                        /* Clear cookies to increase the chances of getting another captcha than cutcaptcha */
+                        br.clearAll();
                         br.getPage(br.getURL());
                         sleep(1000, param);
                     }
@@ -553,7 +561,8 @@ public class FileCryptCc extends PluginForDecrypt {
         cleanUpHTML();
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NEXT_RETRY, JDL.L("plugins.decrypter.filecryptcc.retry", "Retrys?")).setDefaultValue(false));
+    @Override
+    public Class<? extends FileCryptConfig> getConfigInterface() {
+        return FileCryptConfig.class;
     }
 }
