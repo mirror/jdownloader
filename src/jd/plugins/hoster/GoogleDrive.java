@@ -198,6 +198,7 @@ public class GoogleDrive extends PluginForHost {
         queryFile.appendEncoded("fields", getFieldsAPI());
         queryFile.appendEncoded("key", "YourAPIKey");
         br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
+        /* TODO: 2020-12-07: Check offline detection */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
