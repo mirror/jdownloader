@@ -35,6 +35,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -119,7 +120,8 @@ public class GoogleDrive extends PluginForHost {
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
     private static final int    FREE_MAXDOWNLOADS             = 20;
-    private static Object       LOCK                          = new Object();
+    private static Object       CAPTCHA_LOCK                  = new Object();
+    public static final String  API_BASE                      = "https://www.googleapis.com/drive/v3";
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink link) {
@@ -186,7 +188,47 @@ public class GoogleDrive extends PluginForHost {
 
     private AvailableStatus requestFileInformationAPI(final DownloadLink link, final boolean isDownload) throws Exception {
         /* TODO */
-        return AvailableStatus.FALSE;
+        final String fid = this.getFID(link);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final UrlQuery queryFile = new UrlQuery();
+        queryFile.appendEncoded("fileId", fid);
+        queryFile.add("supportsAllDrives", "true");
+        queryFile.appendEncoded("fields", getFieldsAPI());
+        queryFile.appendEncoded("key", "YourAPIKey");
+        br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            parseFileInfoAPI(link, entries);
+            return AvailableStatus.TRUE;
+        }
+    }
+
+    public static final String getFieldsAPI() {
+        return "kind,mimeType,id,name,size,description,md5Checksum";
+    }
+
+    public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> entries) {
+        String title = (String) entries.get("name");
+        final String md5Checksum = (String) entries.get("md5Checksum");
+        final long fileSize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final String description = (String) entries.get("description");
+        /* Single file */
+        link.setName(title);
+        if (fileSize > 0) {
+            link.setDownloadSize(fileSize);
+            link.setVerifiedFileSize(fileSize);
+        }
+        link.setAvailable(true);
+        if (!StringUtils.isEmpty("md5Checksum")) {
+            link.setMD5Hash(md5Checksum);
+        }
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -336,7 +378,7 @@ public class GoogleDrive extends PluginForHost {
         /* In case we were not able to find a download-URL until now, we'll have to try the more complicated way ... */
         logger.info("Trying to find file information via 'download overview' page");
         if (isDownload) {
-            synchronized (LOCK) {
+            synchronized (CAPTCHA_LOCK) {
                 br.getPage("https://drive.google.com/file/d/" + getFID(link) + "/view");
                 this.handleErrors(this.br, link, account);
             }
@@ -422,7 +464,7 @@ public class GoogleDrive extends PluginForHost {
             return null;
         }
         logger.info("Looking for stream download");
-        synchronized (LOCK) {
+        synchronized (CAPTCHA_LOCK) {
             if (account != null) {
                 /* Uses a slightly different request than when not logged in but answer is the same. */
                 br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
