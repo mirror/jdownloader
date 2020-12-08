@@ -10,9 +10,10 @@ import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -20,7 +21,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://members\\.met-art\\.com/members/(media/.+|movie\\.php.+|movie\\.mp4.+|zip\\.php\\?zip=[A-Z0-9]+\\&type=(high|med|low))|decryptedmetartcom://.+", "decryptedsexartcom://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://(?:www\\.)?metart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+", "https?://(?:www\\.)?sexart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+" })
 public class MetArtCom extends PluginForHost {
     public MetArtCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -32,49 +33,14 @@ public class MetArtCom extends PluginForHost {
         return "http://guests.met-art.com/faq/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted[a-z0-9]+://", "https://"));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        String name = new Regex(link.getDownloadURL(), "file=([^\\&]+)").getMatch(0);
-        if (link.getDownloadURL().contains("/media/")) {
-            name = new Regex(link.getDownloadURL(), "/media/.*?/[A-F0-9]+/(.+)").getMatch(0);
-        } else if (link.getDownloadURL().contains("movie.php")) {
-            name = new Regex(link.getDownloadURL(), "movie\\.php.+?file=(.*?)($|&)").getMatch(0);
-        } else if (link.getDownloadURL().contains("movie.mp4")) {
-            name = new Regex(link.getDownloadURL(), "movie\\.mp4.+?file=(.*?)($|&)").getMatch(0);
-        } else if (link.getDownloadURL().contains("zip.php")) {
-            name = new Regex(link.getDownloadURL(), "zip\\.php\\?zip=([A-Z0-9]+)\\&").getMatch(0);
-        }
-        if (name == null) {
-            name = "Unknown Filename";
-        }
-        String type = new Regex(link.getDownloadURL(), "movie\\.(php|mp4).*?type=(.*?)&").getMatch(1);
-        if (link.getDownloadURL().contains("zip.php")) {
-            type = ".zip";
-        }
-        if (type != null) {
-            if ("avi".equalsIgnoreCase(type)) {
-                name = name + ".avi";
-            } else if ("wmv".equalsIgnoreCase(type)) {
-                name = name + ".wmv";
-            } else if ("mpg".equalsIgnoreCase(type)) {
-                name = name + ".mpg";
-            } else if (".zip".equalsIgnoreCase(type)) {
-                name = name + type;
-            } else {
-                name = name + "-" + type + ".mp4";
-            }
-        }
-        link.setName(name);
         return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     @Override
@@ -103,11 +69,6 @@ public class MetArtCom extends PluginForHost {
     }
 
     public void login(final Account account, final boolean verifyCredentials) throws PluginException, IOException {
-        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-        if (!verifyCredentials) {
-            logger.info("Trust credentials without check");
-            return;
-        }
         final Cookies cookies = account.loadCookies("");
         if (cookies != null) {
             logger.info("Attempting cookie login");
@@ -131,10 +92,11 @@ public class MetArtCom extends PluginForHost {
         }
         /* 2020-12-07: This way to login is not used anymore by the current version of the website but it is still working fine! */
         logger.info("Performing full login");
+        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
         br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection("https://members." + account.getHoster() + "/members/");
         if (con.getResponseCode() == 401) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         } else {
             /* Multiple redirects */
             br.followConnection();
@@ -144,19 +106,24 @@ public class MetArtCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        this.login(account, false);
+        /* TODO: Find a way to set cookies without the need to check them again prior to download */
+        this.login(account, true);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        if (dl.getConnection().getResponseCode() == 401) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired?", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired?");
+            if (dl.getConnection().getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired?", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                /* Should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired?");
+            }
         }
         if (!link.isNameSet()) {
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
