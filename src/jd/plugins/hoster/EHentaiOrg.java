@@ -479,7 +479,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 /*
                  * script we require!
                  */
-                this.getPage("https://e-hentai.org/hathperks.php");
+                this.getPage(MAINPAGE_ehentai + "/hathperks.php");
                 this.getPage(targetURL);
             }
             final String b = br.toString();
@@ -610,7 +610,6 @@ public class EHentaiOrg extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies cookies2 = account.loadCookies("exhentai");
-                Browser br2 = null;
                 // final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     br.setCookies(MAINPAGE_ehentai, cookies);
@@ -622,15 +621,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                         logger.info("Trust login cookies as they're not yet that old");
                         return;
                     }
-                    // getPage(br, "https://forums.e-hentai.org/index.php?");
-                    getPage(br, "https://e-hentai.org/hathperks.php");
+                    // getPage(br, MAINPAGE_ehentai + "/index.php?");
+                    getPage(br, MAINPAGE_ehentai + "/hathperks.php");
                     if (this.isLoggedIn(br)) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
                         /* Get- and save exhentai cookies too */
-                        br2 = br.cloneBrowser();
-                        this.getPage(br2, MAINPAGE_exhentai);
-                        account.saveCookies(br2.getCookies(MAINPAGE_exhentai), "exhentai");
+                        this.getPage(br, MAINPAGE_exhentai);
+                        account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
                         return;
                     } else {
                         logger.info("Failed to login via cookies");
@@ -661,7 +659,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 boolean failed = true;
                 br.setFollowRedirects(true);
                 /* Login page with params to redirect to /home.php */
-                getPage(br, "https://e-hentai.org/bounce_login.php?b=d&bt=1-1");
+                getPage(br, MAINPAGE_ehentai + "/bounce_login.php?b=d&bt=1-1");
                 /* 2020-03-04: --> Will redirect to forums.* */
                 // br.getPage("https://forums.e-hentai.org/index.php?act=Login");
                 for (int i = 0; i <= 1; i++) {
@@ -694,15 +692,14 @@ public class EHentaiOrg extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* This will set two more important cookies! */
-                getPage(br, "https://e-hentai.org/hathperks.php");
+                getPage(br, MAINPAGE_ehentai + "/hathperks.php");
                 account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
                 /*
                  * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
                  * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
                  */
-                br2 = br.cloneBrowser();
-                this.getPage(br2, MAINPAGE_exhentai);
-                account.saveCookies(br2.getCookies(MAINPAGE_exhentai), "exhentai");
+                this.getPage(br, MAINPAGE_exhentai);
+                account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -733,7 +730,7 @@ public class EHentaiOrg extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
-        getPage("/home.php");
+        getPage(MAINPAGE_ehentai + "/home.php");
         final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
         final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
         if (items_downloadedStr != null && items_maxStr != null) {
