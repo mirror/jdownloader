@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.components;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -408,10 +409,14 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
          * connections) --> Should work fine after the next try.
          */
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        checkResponseCodeErrors(dl.getConnection());
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             checkErrors(link, account);
+            checkResponseCodeErrors(dl.getConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Fix filename (e.g. required for anonfiles.com) */
@@ -525,42 +530,44 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
 
     /** Handles all kinds of error-responsecodes! */
     private void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
-        if (con == null) {
-            return;
-        }
-        final long responsecode = con.getResponseCode();
+        final long responsecode = con != null ? con.getResponseCode() : -1;
         if (responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
         } else if (responsecode == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 2 * 60 * 1000l);
+        } else if (responsecode == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
         }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             final Browser br2 = this.br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     protected String getProtocol() {

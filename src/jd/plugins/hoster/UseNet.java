@@ -346,48 +346,64 @@ public class UseNet extends antiDDoSForHost {
                 try {
                     final UsenetFileSegment firstSegment = usenetFile.getSegments().get(0);
                     final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(firstSegment.getMessageID());
-                    if (bodyInputStream instanceof YEncInputStream) {
-                        final YEncInputStream yEncInputStream = (YEncInputStream) bodyInputStream;
-                        final String yEncFileName = yEncInputStream.getName();
-                        if (StringUtils.isNotEmpty(yEncFileName)) {
-                            writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, yEncFileName);
-                        }
-                        final long yEncFileSize = yEncInputStream.getSize();
-                        if (yEncFileSize >= 0) {
-                            final long verifiedFileSize = downloadLink.getVerifiedFileSize();
-                            if (verifiedFileSize == -1 || yEncFileSize != verifiedFileSize) {
-                                downloadLink.setVerifiedFileSize(yEncFileSize);
+                    try {
+                        if (bodyInputStream instanceof YEncInputStream) {
+                            final YEncInputStream yEncInputStream = (YEncInputStream) bodyInputStream;
+                            final String yEncFileName = yEncInputStream.getName();
+                            if (StringUtils.isNotEmpty(yEncFileName)) {
+                                writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, yEncFileName);
                             }
-                            if (usenetFile.getSize() != yEncFileSize) {
+                            if (StringUtils.isNotEmpty(yEncInputStream.getFileCRC32())) {
+                                usenetFile.setHash(new HashInfo(yEncInputStream.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
                                 writeUsenetFile = true;
-                                usenetFile.setSize(yEncFileSize);
-                            }
-                        }
-                        drainInputStream(bodyInputStream);
-                        if (StringUtils.isNotEmpty(yEncInputStream.getFileCRC32())) {
-                            usenetFile.setHash(new HashInfo(yEncInputStream.getFileCRC32(), HashInfo.TYPE.CRC32, true).exportAsString());
-                            writeUsenetFile = true;
-                        } else {
-                            if (usenetFile.getHash() != null) {
+                            } else if (usenetFile.getHash() != null) {
                                 usenetFile.setHash(null);
                                 writeUsenetFile = true;
                             }
+                            final int totalParts = yEncInputStream.getPartTotal();
+                            final boolean trustYEncFileSize;
+                            if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
+                                logger.severe("YEnc states different number of overall segments?:" + totalParts + "!=" + usenetFile.getSegments().size());
+                                if (usenetFile.getNumSegments() == usenetFile.getSegments().size()) {
+                                    // Fake YEnc meta information about size/number of segments/name
+                                    // NZB contains the correct meta information
+                                    trustYEncFileSize = false;
+                                    logger.info("Ignore it because of matching known number of segments:" + usenetFile.getSegments().size() + "==" + usenetFile.getNumSegments());
+                                } else {
+                                    setIncomplete(downloadLink, true);
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                }
+                            } else {
+                                trustYEncFileSize = true;
+                            }
+                            final long yEncFileSize = yEncInputStream.getSize();
+                            if (yEncFileSize >= 0) {
+                                if (!trustYEncFileSize) {
+                                    // Fake YEnc meta information about size/number of segments/name
+                                    // NZB contains the correct meta information
+                                    logger.info("Don't trust YEnc FileSize:" + yEncFileSize + "|VerifiedFileSize:" + downloadLink.getVerifiedFileSize() + "|UseNetFileSize:" + usenetFile.getSize());
+                                } else {
+                                    logger.info("Trust YEnc FileSize:" + yEncFileSize + "|VerifiedFileSize:" + downloadLink.getVerifiedFileSize() + "|UseNetFileSize:" + usenetFile.getSize());
+                                    final long verifiedFileSize = downloadLink.getVerifiedFileSize();
+                                    if (verifiedFileSize == -1 || yEncFileSize != verifiedFileSize) {
+                                        downloadLink.setVerifiedFileSize(yEncFileSize);
+                                    }
+                                    if (usenetFile.getSize() != yEncFileSize) {
+                                        writeUsenetFile = true;
+                                        usenetFile.setSize(yEncFileSize);
+                                    }
+                                }
+                            }
+                        } else if (bodyInputStream instanceof UUInputStream) {
+                            final UUInputStream uuInputStream = (UUInputStream) bodyInputStream;
+                            final String uuFileName = uuInputStream.getName();
+                            if (StringUtils.isNotEmpty(uuFileName)) {
+                                writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, uuFileName);
+                            }
                         }
-                        final int totalParts = yEncInputStream.getPartTotal();
-                        if (totalParts >= 1 && totalParts != usenetFile.getSegments().size()) {
-                            logger.severe("Segments missing: " + totalParts + "!=" + usenetFile.getSegments().size());
-                            setIncomplete(downloadLink, true);
-                            drainInputStream(bodyInputStream);
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                    } else if (bodyInputStream instanceof UUInputStream) {
-                        final UUInputStream uuInputStream = (UUInputStream) bodyInputStream;
-                        final String uuFileName = uuInputStream.getName();
-                        if (StringUtils.isNotEmpty(uuFileName)) {
-                            writeUsenetFile = setUseNetFileName(downloadLink, usenetFile, uuFileName);
-                        }
+                    } finally {
+                        drainInputStream(bodyInputStream);
                     }
-                    drainInputStream(bodyInputStream);
                 } finally {
                     if (writeUsenetFile) {
                         usenetFile._write(downloadLink);
