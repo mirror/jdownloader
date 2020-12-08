@@ -411,25 +411,22 @@ public class UseNet extends antiDDoSForHost {
                 }
             }
             dl = new SimpleUseNetDownloadInterface(client, downloadLink, usenetFile);
-            try {
-                dl.startDownload();
-            } catch (MessageBodyNotFoundException e) {
-                logger.log(e);
-                final String messageID = e.getMessageID();
-                final int count;
-                if (StringUtils.equals(messageID, downloadLink.getStringProperty(LAST_MESSAGE_NOT_FOUND, messageID))) {
-                    count = downloadLink.getIntegerProperty(MESSAGE_NOT_FOUND_COUNT, 0);
-                } else {
-                    count = 0;
-                }
-                if (count < getAutoRetryMessageNotFound()) {
-                    downloadLink.setProperty(MESSAGE_NOT_FOUND_COUNT, count + 1);
-                    downloadLink.setProperty(LAST_MESSAGE_NOT_FOUND, messageID);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment not found!", 1 * 60 * 1000l);
-                } else {
-                    setIncomplete(downloadLink, true);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
-                }
+            dl.startDownload();
+        } catch (MessageBodyNotFoundException e) {
+            final String messageID = e.getMessageID();
+            final int count;
+            if (StringUtils.equals(messageID, downloadLink.getStringProperty(LAST_MESSAGE_NOT_FOUND, messageID))) {
+                count = downloadLink.getIntegerProperty(MESSAGE_NOT_FOUND_COUNT, 0);
+            } else {
+                count = 0;
+            }
+            if (count < getAutoRetryMessageNotFound()) {
+                downloadLink.setProperty(MESSAGE_NOT_FOUND_COUNT, count + 1);
+                downloadLink.setProperty(LAST_MESSAGE_NOT_FOUND, messageID);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment not found!", 1 * 60 * 1000l, e);
+            } else {
+                setIncomplete(downloadLink, true);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
             }
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
