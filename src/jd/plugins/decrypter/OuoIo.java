@@ -115,6 +115,12 @@ public class OuoIo extends antiDDoSForDecrypt {
             captchaForm = br.getFormbyProperty("id", "form-captcha");
         }
         if (captchaForm == null) {
+            /* Last chance errorhandling */
+            if (!br.containsHTML("/go/" + this.fuid)) {
+                /* E.g. https://ouo.io/rates */
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
