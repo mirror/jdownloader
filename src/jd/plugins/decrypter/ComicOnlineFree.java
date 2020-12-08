@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,10 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\\\.)?(comiconlinefree\\.(?:com|net)|viewcomics\\.me)/(?:[^/]+/).+$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "comiconlinefree.com" }, urls = { "https?://(www\\.)?(comiconlinefree\\.(?:com|net)|viewcomics\\.me)/(?:[^/]+/).+$" })
 public class ComicOnlineFree extends antiDDoSForDecrypt {
     public ComicOnlineFree(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,14 +42,23 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        if (new Regex(parameter, "/[^/]+/issue-.+").matches() && !parameter.endsWith("/full")) {
-            parameter = parameter + "/full";
+        if (!new Regex(parameter, "/(comic/|issue-)").matches()) {
+            getLogger().warning("Not a summary or issue page");
+            return decryptedLinks;
+        }
+        if (new Regex(parameter, "/[^/]+/issue-[^/]+").matches() && !parameter.endsWith("/full")) {
+            parameter = new Regex(parameter, "(.*/issue-[^/]+)").getMatch(0) + "/full";
         }
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>\\s*([^<]+)Comic\\s*-\\s*Read\\s*[^<]+\\s+Online\\s+For\\s+Free").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<title>\\s*([^>]+)\\s+-\\s+Read\\s+[^<]+\\s+Online\\s+").getMatch(0);
             if (StringUtils.isEmpty(fpName)) {
+                getLogger().warning("Unable to determine comic/issue title, can't proceed without one.");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -64,7 +73,6 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
                 DownloadLink dl = createDownloadlink(link);
                 fp.add(dl);
                 distribute(dl);
-                decryptedLinks.add(dl);
             }
         }
         final String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
@@ -80,7 +88,6 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
                 dl.setFinalFileName(chapter_name + "_" + page_formatted + ext);
                 fp.add(dl);
                 distribute(dl);
-                decryptedLinks.add(dl);
             }
         }
         return decryptedLinks;
