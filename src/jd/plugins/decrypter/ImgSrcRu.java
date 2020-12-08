@@ -42,6 +42,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?(ad|id)=\\d+(&pwd=[a-z0-9]{32})?|main/(preword|pic_tape|warn|pic)\\.php\\?ad=\\d+(&pwd=[a-z0-9]{32})?|[^/]+/a?\\d+\\.html)" })
@@ -164,6 +165,10 @@ public class ImgSrcRu extends PluginForDecrypt {
             username = br.getRegex(">\\s*more\\s*photos\\s*from\\s*(.*?)\\s*<").getMatch(0);
             if (username == null) {
                 username = br.getRegex(">\\s*Add\\s*(.*?)\\s*to\\s*your").getMatch(0);
+                if (username == null) {
+                    username = br.getRegex("/main/user\\.php\\?user=(.*?)'").getMatch(0);
+                    username = URLEncode.decodeURIComponent(username);
+                }
             }
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -307,7 +312,7 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean isPasswordProtected(Browser br) {
-        return br.containsHTML(">\\s*Album owner has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
+        return jd.plugins.hoster.ImgSrcRu.isPasswordProtected(br);
     }
 
     public static String getPage(Browser br, final String url) throws Exception {
@@ -333,6 +338,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         }
     }
 
+    // TODO: reduce duplicated code with hoster
     private boolean getPage(String url, CryptedLink param) throws Exception {
         if (url == null || parameter == null) {
             return false;
@@ -380,6 +386,12 @@ public class ImgSrcRu extends PluginForDecrypt {
                 // needs to be before password
                 if (br.containsHTML("Continue to album(?: >>)?")) {
                     Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
+                    boolean didSubmitContinueForm = false;
+                    if (continueForm != null && !isPasswordProtected(br)) {
+                        didSubmitContinueForm = true;
+                        submitForm(br, continueForm);
+                        continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
+                    }
                     if (continueForm != null) {
                         if (isPasswordProtected(br)) {
                             tryDefaultPassword(param, br);
@@ -411,16 +423,20 @@ public class ImgSrcRu extends PluginForDecrypt {
                         this.getPluginConfig().setProperty("lastusedpassword", password);
                         pwd = br.getRegex("\\?pwd=([a-z0-9]{32})").getMatch(0);
                     } else {
-                        String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
-                        if (newLink == null) {
-                            /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
-                            newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
+                        if (didSubmitContinueForm) {
+                            return true;
+                        } else {
+                            String newLink = br.getRegex("\\((\"|')right\\1,function\\(\\) \\{window\\.location=('|\")(https?://imgsrc\\.ru/[^<>\"'/]+/[a-z0-9]+\\.html((\\?pwd=)?(\\?pwd=[a-z0-9]{32})?)?)\\2").getMatch(2);
+                            if (newLink == null) {
+                                /* This is also possible: "/blablabla/[0-9]+.html?pwd=&" */
+                                newLink = br.getRegex("href=(/[^<>\"]+\\?pwd=[^<>\"/]*?)><br><br>Continue to album >></a>").getMatch(0);
+                            }
+                            if (newLink == null) {
+                                logger.warning("Couldn't process Album forward: " + parameter);
+                                return false;
+                            }
+                            getPage(br, newLink);
                         }
-                        if (newLink == null) {
-                            logger.warning("Couldn't process Album forward: " + parameter);
-                            return false;
-                        }
-                        getPage(br, newLink);
                     }
                 }
                 if (isPasswordProtected(br)) {

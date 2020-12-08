@@ -171,149 +171,6 @@ public class ImgSrcRu extends PluginForHost {
         }
     }
 
-    private void getDllink_old2() {
-        try {
-            boolean done = false;
-            String js = br.getRegex(".+<script(?: type=(\"|')text/javascript\\1)?>.*?\\s*((?:var|let) [a-z]=[^<]+.*?)</script>.+").getMatch(1);
-            Object result = null;
-            String t = null;
-            if (js != null) {
-                String[] var = new Regex(js, "((?:(?:var|let)\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+)?,)").getRow(0);
-                String replaced = null;
-                if (var == null) {
-                    final String var_e[] = new Regex(js, "(?:var|let)\\s*(\\w+)\\s*=\\s*'(.*?)'\\s*,").getRow(0);
-                    if (var_e != null) {
-                        replaced = var_e[0];
-                        js = js.replaceFirst("getElementById\\(" + Pattern.quote(var_e[0]) + "\\)", "getElementById(" + var_e[1] + ").src");
-                        js = js.replaceFirst("d=", "var q=");
-                        js = js.replaceAll("String\\.fromCodePoint", "String.fromCharCode");// different method names Javascript<->Java
-                        js = js.replaceFirst("q=d.src,", "");
-                    }
-                    var = new Regex(js, "((?:(?:var|let)\\s*)?(\\w+)\\s*=\\s*document\\.getElementById\\('?([\\w_]+)'?\\)\\.(\\w+)?,)").getRow(0);
-                }
-                String varres = br.getRegex("<[^>]+'" + Pattern.quote(var[2]) + "'[^>]*>").getMatch(-1);// find image tag with correct id
-                if (varres == null) {
-                    // within js as var
-                    t = new Regex(js, var[2] + "='?(.*?)'?[,;]").getMatch(0);
-                    if (t != null) {
-                        varres = br.getRegex("<[^>]+'" + Pattern.quote(t) + "'[^>]*>").getMatch(-1);
-                    }
-                }
-                final String varsrc = new Regex(varres, var[3] + "=('|\")(.*?)\\1").getMatch(1);// parse src from image tag
-                js = js.replace(var[0], "");// set by engine.put(key,value)
-                // they are now referencing o+elementid(e) for original, and big is just elementid(e)
-                final String[] qual;
-                if (replaced != null) {
-                    qual = new String[] { /* original */"o'\\s*\\+\\s*" + var[2], "o'\\s*\\+\\s*" + replaced, "pic_o", "ori", /* big */"pic_b", "bip", replaced, var[2] };
-                } else {
-                    qual = new String[] { /* original */"o'\\s*\\+\\s*" + var[2], "pic_o", "ori", /* big */"pic_b", "bip", var[2] };
-                }
-                for (final String q : qual) {
-                    if (new Regex(js, "document.getElementById\\('?" + q + ".*?\\)").matches()) {
-                        if (!done) {
-                            js = js.replaceFirst("document.getElementById\\('?" + q + ".*?\\)\\.\\w+=", "var result=");
-                            done = true;
-                            // replace non needed
-                            js = js.replaceAll("document.getElementById\\(.*?\\)[^\r\n]+", "");
-                            js = js.replaceAll("\\w+\\.src\\s*=\\s*[^\r\n]+", "");
-                            break;
-                        }
-                    }
-                }
-                if (!done) {
-                    final String newJS = js.replaceFirst("\\w+\\.src\\s*=", "var result=");
-                    if (!StringUtils.equals(js, newJS)) {
-                        js = newJS;
-                        done = true;
-                    }
-                }
-                if (!done) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                while (true) {
-                    try {
-                        final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                        final ScriptEngine engine = mgr.getEngineByName("javascript");
-                        engine.put(var[1], varsrc);
-                        engine.eval(js);
-                        result = engine.get("result");
-                    } catch (final Throwable e) {
-                        // my youtube approach -raztoki
-                        if (e.getMessage() != null) {
-                            // do not use language components of the error message. Only static identifies, otherwise other languages will
-                            // fail!
-                            final String ee = new Regex(e.getMessage(), "ReferenceError: \"([\\$\\w]+)\".+<Unknown source>").getMatch(0);
-                            if (ee != null) {
-                                // lets look for missing reference
-                                final String ref = br.getRegex("var\\s+" + Pattern.quote(ee) + "\\s*=\\s*.*?;").getMatch(-1);
-                                if (ref != null) {
-                                    js = ref + "\r\n" + js;
-                                    continue;
-                                } else {
-                                    logger.warning("Could not find missing var/function");
-                                }
-                            } else {
-                                logger.warning("Could not find reference Error");
-                            }
-                        }
-                        logger.log(e);
-                    }
-                    break;
-                }
-                if (result != null && result instanceof ConsString) {
-                    dllink = result.toString();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        } catch (Exception e) {
-            logger.log(e);
-            return;
-        }
-    }
-
-    private void getDllink_old() throws Exception {
-        String js = br.getRegex("<script(?: type=(\"|')text/javascript\\1)?>.*?((?:\\s*var [a-z]='.*?'[;,]){1,}[^<]+)</script>").getMatch(1);
-        if (js == null) {
-            logger.warning("Could not find JS!");
-        } else {
-            String best = new Regex(js, "'(ori_?pic)'").getMatch(0);
-            if (best == null) {
-                best = new Regex(js, "'(big_?pic)'").getMatch(0);
-                if (best == null) {
-                    best = new Regex(js, "main_?pic").getMatch(-1);
-                    if (best == null) {
-                        logger.warning("determining best!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-            }
-            String x = new Regex(js, "document\\.getElementById\\('" + best + "'\\).(\\w+)").getMatch(0);
-            if (x == null) {
-                if (best.contains("ori")) {
-                    x = "href";
-                } else {
-                    x = "src";
-                }
-            }
-            final ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = mgr.getEngineByName("javascript");
-            Object result = null;
-            try {
-                engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function src() { return a.src; } this[a].src = src(); } return this[a]; }};");
-                engine.eval(js + "\r\nvar result=document.getElementById('" + best + "')." + x + ";");
-                result = engine.get("result");
-            } catch (Throwable e) {
-            }
-            if (result != null && result instanceof ConsString) {
-                dllink = result.toString();
-            }
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](https?://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
-        }
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
@@ -333,10 +190,11 @@ public class ImgSrcRu extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean isPasswordProtected(Browser br) {
-        return br.containsHTML(">\\s*Album owner has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
+    public static boolean isPasswordProtected(Browser br) {
+        return br.containsHTML("this album requires password\\s*<") || br.containsHTML(">\\s*Album owner\\s*(</a>)?\\s*has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner\\s*(</a>)?\\s*has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
     }
 
+    // TODO: reduce duplicated code with decrypter
     private void getPage(final String url, final DownloadLink link) throws Exception {
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
