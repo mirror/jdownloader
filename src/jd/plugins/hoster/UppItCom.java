@@ -117,4 +117,16 @@ public class UppItCom extends XFileSharingProBasic {
             return false;
         }
     }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2020-12-08 */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2020-12-08 */
+        return false;
+    }
 }

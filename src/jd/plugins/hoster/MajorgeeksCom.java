@@ -114,8 +114,9 @@ public class MajorgeeksCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("report_a_bad_link\\.html")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || (!br.containsHTML("report_a_bad_link\\.html") && !br.containsHTML("/SoftwareApplication"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = this.getFID(link);

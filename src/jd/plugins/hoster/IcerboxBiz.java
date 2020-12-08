@@ -33,7 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.biz" }, urls = { "http://(?:www\\.)?(?:nitrobit\\.net|icerbox\\.biz)/(?:view|watch)/([A-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.biz" }, urls = { "https?://(?:www\\.)?(?:nitrobit\\.net|icerbox\\.biz)/(?:view|watch)/([A-Z0-9]+)" })
 public class IcerboxBiz extends antiDDoSForHost {
     public IcerboxBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,6 +104,10 @@ public class IcerboxBiz extends antiDDoSForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (br.containsHTML(">\\s*קובץ זה נמחק<")) {
+            /* 2020-12-08: Filename- and size can be given for offline files too! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }

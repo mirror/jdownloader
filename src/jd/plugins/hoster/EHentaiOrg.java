@@ -283,8 +283,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             if (br.toString().length() <= 100) {
                 /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
                 throw new AccountRequiredException();
-            }
-            if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
+            } else if (br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
                 if (account == null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");
                 }
@@ -311,8 +310,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 }
                 long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                 throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
-            }
-            if (isOffline(br)) {
+            } else if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String namepart = getNamePart(link);

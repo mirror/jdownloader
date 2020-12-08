@@ -59,8 +59,12 @@ public class SendgbCom extends PluginForHost {
         this.setBrowserExclusive();
         final String linkid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
         link.setLinkID(linkid);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"boo\\-wrapper\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* 2020-12-08: E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // String filename = br.getRegex("<title>Download ([^<>\"]+)</title>").getMatch(0);
@@ -76,22 +80,20 @@ public class SendgbCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        // String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        // if (dllink == null) {
-        // dllink = br.getRegex("").getMatch(0);
-        // if (StringUtils.isEmpty(dllink)) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // }
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         final Form dlForm = br.getFormbyProperty("id", "downloadItems");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlForm, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -99,7 +101,6 @@ public class SendgbCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
