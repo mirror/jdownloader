@@ -87,6 +87,7 @@ import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.Docker;
+import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -397,6 +398,13 @@ public class SecondLevelLaunch {
         try {
             if (Docker.isInsideDocker()) {
                 LoggerFactory.getDefaultLogger().info("Docker detected:" + Docker.getDockerContainerID());
+            }
+        } catch (final Throwable ignore) {
+            LoggerFactory.getDefaultLogger().log(ignore);
+        }
+        try {
+            if (Snap.isInsideSnap()) {
+                LoggerFactory.getDefaultLogger().info("Snap detected:" + Snap.getSnapInstanceName());
             }
         } catch (final Throwable ignore) {
             LoggerFactory.getDefaultLogger().log(ignore);
