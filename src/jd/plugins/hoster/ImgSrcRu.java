@@ -137,7 +137,7 @@ public class ImgSrcRu extends PluginForHost {
 
     private void getDllink() {
         /* 2020-11-16 > rev. 42336 */
-        dllink = br.getRegex("img\\s*class\\s*=\\s*'big'\\s*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
+        dllink = br.getRegex("img[^>]*class\\s*=\\s*'big'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             /* Old: < rev. 42336 */
             Object result = null;

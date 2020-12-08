@@ -1643,24 +1643,7 @@ public class YoutubeHelper {
             }
         }
         handleRentalVideos();
-        Map<String, Object> ytPlayerConfig = getYtPlayerConfig();
-        html5PlayerJs = ytPlayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "assets/js") : null;
-        if (html5PlayerJs != null) {
-            html5PlayerJs = html5PlayerJs.replace("\\/", "/");
-            html5PlayerJs = br.getURL(html5PlayerJs).toString();
-        }
-        if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"((https?:)?//[^\"<>]*?/base.js)\"[^<>]*name=\"player\\\\?/base");
-            if (html5PlayerJs != null) {
-                html5PlayerJs = br.getURL(html5PlayerJs).toString();
-            }
-        }
-        if (html5PlayerJs == null) {
-            html5PlayerJs = br.getMatch("src=\"([^\"<>]*?/base.js)\"[^<>]*n");
-            if (html5PlayerJs != null) {
-                html5PlayerJs = br.getURL(html5PlayerJs).toString();
-            }
-        }
+        html5PlayerJs = getHtml5PlayerJs();
         final Map<String, Object> map = getYtInitialPlayerResponse();
         final String unavailableStatus = map != null ? (String) JavaScriptEngineFactory.walkJson(map, "playabilityStatus/status") : null;
         final String unavailableReason = getUnavailableReason(unavailableStatus);
@@ -1670,7 +1653,7 @@ public class YoutubeHelper {
         videoInfo = new HashMap<String, String>();
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
         this.handleContentWarning(br);
-        collectMapsFromPlayerResponse(ytPlayerConfig != null ? (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "args/player_response") : null, br.getURL());
+        collectMapsFromPlayerResponse(map, br.getURL());
         collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         Browser apiBrowser = null;
         apiBrowser = br.cloneBrowser();
@@ -1683,6 +1666,7 @@ public class YoutubeHelper {
             collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         }
         if (fmtMaps.size() == 0) {
+            logger.info("Empty fmtMaps! try embed:" + vid.videoID);
             apiBrowser = br.cloneBrowser();
             if (true) {
                 apiBrowser.setCurrentURL(this.base + "/embed/" + vid.videoID);
@@ -1971,6 +1955,27 @@ public class YoutubeHelper {
         vid.subtitles = loadSubtitles();
     }
 
+    private String getHtml5PlayerJs() throws IOException {
+        final Map<String, Object> ytPlayerConfig = getYtPlayerConfig();
+        String ret = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "assets/js");
+        if (ret == null) {
+            ret = (String) JavaScriptEngineFactory.walkJson(ytPlayerConfig, "jsUrl");
+        }
+        if (ret != null) {
+            ret = ret.replace("\\/", "/");
+            return br.getURL(ret).toString();
+        }
+        ret = br.getMatch("src\\s*=\\s*\"((https?:)?//[^\"<>]*?/base.js)\"[^<>]*name=\"player\\\\?/base");
+        if (ret == null) {
+            ret = br.getMatch("src\\s*=\\s*\"([^\"<>]*?/base.js)\"[^<>]*n");
+        }
+        if (ret != null) {
+            return br.getURL(ret).toString();
+        } else {
+            return null;
+        }
+    }
+
     /**
      * ERROR <br />
      * LOGIN_REQUIRED <br />
@@ -1997,12 +2002,10 @@ public class YoutubeHelper {
     private boolean isStreamDataAllowed(YoutubeStreamData match) {
         if (match == null) {
             return false;
-        }
-        if (!cfg.isSegmentLoadingEnabled()) {
+        } else if (!cfg.isSegmentLoadingEnabled()) {
             if (match.getSegments() != null && match.getSegments().length > 0) {
                 return false;
-            }
-            if (match.getUrl() != null && match.getUrl().contains("hls_playlist")) {
+            } else if (match.getUrl() != null && match.getUrl().contains("hls_playlist")) {
                 return false;
             }
         }
@@ -2040,15 +2043,13 @@ public class YoutubeHelper {
 
     private void collectFmtMap(String htmlCode, String regex, String src) {
         String map = new Regex(htmlCode, regex).getMatch(0);
-        if (map == null) {
-            return;
-        }
-        map = JSonStorage.restoreFromString(map, TypeRef.STRING);
-        if (StringUtils.isNotEmpty(map)) {
-            // map = Encoding.urlDecode(map, false);
-            if (!fmtMaps.contains(map)) {
-                System.out.println("Add FMT Map html " + regex + "- " + map);
-                fmtMaps.add(new StreamMap(map, src));
+        if (map != null) {
+            map = JSonStorage.restoreFromString(map, TypeRef.STRING);
+            if (StringUtils.isNotEmpty(map)) {
+                // map = Encoding.urlDecode(map, false);
+                if (!fmtMaps.contains(map)) {
+                    fmtMaps.add(new StreamMap(map, src));
+                }
             }
         }
     }
@@ -2198,16 +2199,25 @@ public class YoutubeHelper {
             } else if (StringUtils.equalsIgnoreCase(projectionType, "EQUIRECTANGULAR")) {
                 // TODO
             } else {
-                System.out.println("TODO");
+                // TODO
             }
             return ret;
         }
         return null;
     }
 
-    private void collectMapsFromPlayerResponse(String playerResponse, String src) {
+    private int collectMapsFromPlayerResponse(String playerResponse, String src) {
         if (playerResponse != null) {
             final Map<String, Object> map = JSonStorage.restoreFromString(playerResponse, TypeRef.HASHMAP);
+            return collectMapsFromPlayerResponse(map, src);
+        } else {
+            return 0;
+        }
+    }
+
+    private int collectMapsFromPlayerResponse(Map<String, Object> map, String src) {
+        int ret = 0;
+        if (map != null) {
             final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
             if (adaptiveFmtsEnabled && streamingData != null && streamingData.containsKey("adaptiveFormats")) {
                 final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
@@ -2217,6 +2227,7 @@ public class YoutubeHelper {
                         final YoutubeStreamData data = convert(format, dataSrc);
                         if (data != null) {
                             fmtMaps.add(new StreamMap(data, dataSrc));
+                            ret++;
                         }
                     }
                 }
@@ -2229,11 +2240,13 @@ public class YoutubeHelper {
                         final YoutubeStreamData data = convert(format, dataSrc);
                         if (data != null) {
                             fmtMaps.add(new StreamMap(data, dataSrc));
+                            ret++;
                         }
                     }
                 }
             }
         }
+        return ret;
     }
 
     private void collectMapsFromVideoInfo(String queryString, String src) throws MalformedURLException {
@@ -3337,9 +3350,12 @@ public class YoutubeHelper {
             }
         }
         {
-            String ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});\\s*ytplayer\\.load").getMatch(0);
+            String ytplayerConfig = br.getRegex("ytplayer\\.(?:web_player_context_)?config\\s*=\\s*\\s*(\\{.*?\\});\\s*ytplayer\\.load").getMatch(0);
             if (ytplayerConfig == null) {
-                ytplayerConfig = br.getRegex("ytplayer\\.config\\s*=\\s*\\s*(\\{.*?\\});\\s*\\(\\s*function\\s*playerBootstrap").getMatch(0);
+                ytplayerConfig = br.getRegex("ytplayer\\.(?:web_player_context_)?config\\s*=\\s*\\s*(\\{.*?\\});\\s*\\(\\s*function\\s*playerBootstrap").getMatch(0);
+                if (ytplayerConfig == null) {
+                    ytplayerConfig = br.getRegex("ytplayer\\.(?:web_player_context_)?config\\s*=\\s*\\s*(\\{.*?\\});").getMatch(0);
+                }
             }
             if (ytplayerConfig != null) {
                 this.ytPlayerConfig = JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);

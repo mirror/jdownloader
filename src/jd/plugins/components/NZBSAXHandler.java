@@ -200,7 +200,7 @@ public class NZBSAXHandler extends DefaultHandler {
                 nameBySubject = new Regex(subject, "( \"|^\"?)([^\"]*?\\.[a-z0-9]{2,4})\"").getMatch(1);
                 if (nameBySubject == null) {
                     // XXX - NNNNNNNN - XXX XXX - NNNNNN - [0001 of 0100] - XX - 100.52 Kb - Filename.jpg (1/1)
-                    nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
+                    nameBySubject = new Regex(subject, "(.+ |^)(.*?)\\s*\\(\\s*[0]*1\\s*/\\s*\\d+").getMatch(1);
                 }
             }
             if (nameBySubject == null) {
@@ -215,11 +215,11 @@ public class NZBSAXHandler extends DefaultHandler {
             currentFile.setName(nameBySubject);
             if (subject.contains(" yEnc ")) {
                 isyEnc = true;
-                final String parts = new Regex(subject, "\\s*?yEnc\\s*?\\(1/(\\d+)\\)$").getMatch(0);
+                final String parts = new Regex(subject, "\\s*yEnc\\s*\\(\\s*[0]*1\\s*/\\s*(\\d+)\\s*\\)$").getMatch(0);
                 if (parts != null) {
                     currentFile.setNumSegments(Integer.parseInt(parts));
                 }
-                String fileSize = new Regex(subject, "\\s*yEnc\\s*\\(1/\\d+\\)\\s*?\\[([0-9\\.,]+\\s*?(kb|mb|gb|b))").getMatch(0);
+                String fileSize = new Regex(subject, "\\s*yEnc\\s*\\(\\s*[0]*1\\s*/\\s*(\\d+)\\s*\\)\\s*\\[([0-9\\.,]+\\s*(kb|mb|gb|b))").getMatch(0);
                 if (fileSize != null) {
                     currentFile.setSize(SizeFormatter.getSize(fileSize));
                 } else {

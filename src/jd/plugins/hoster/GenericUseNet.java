@@ -88,7 +88,7 @@ public class GenericUseNet extends UseNet {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         try {
-            verifyUseNetLogins(account);
+            verifyUseNetLogins(convertNNTPLoginURI(account));
             final AccountInfo ai = new AccountInfo();
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             ai.setStatus("Generic usenet:maxDownloads(current)=" + account.getMaxSimultanDownloads());
@@ -186,24 +186,22 @@ public class GenericUseNet extends UseNet {
 
     @Override
     protected UsenetServer getUseNetServer(Account account) throws Exception {
-        GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
+        final GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
         final boolean ssl = cfg.isSSLEnabled();
-        int port = cfg.getPort();
-        if (port <= 0) {
-            port = ssl ? 563 : 119;
-        }
+        final int port = cfg.getPort();
         final String host = cfg.getHost();
         if (host == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "No usenet host set!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            final UsenetServer server = new UsenetServer(host, port, ssl);
+            return server;
         }
-        final UsenetServer server = new UsenetServer(host, port, ssl);
-        return server;
     }
 
     @Override
     public String getHost(final DownloadLink link, Account account) {
         if (account != null) {
-            GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
+            final GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
             final String host = cfg.getHost();
             if (host != null) {
                 return Browser.getHost(host, true);
