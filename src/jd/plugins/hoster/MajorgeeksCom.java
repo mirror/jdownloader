@@ -139,6 +139,7 @@ public class MajorgeeksCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final boolean downloadFromExternalSite = br.containsHTML(">\\s*Download@Authors Site");
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null || true) {
             final String fid = this.getFID(link);
@@ -167,8 +168,12 @@ public class MajorgeeksCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            /* 2020-01-29: Some downloads are just broken */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download failure");
+            if (downloadFromExternalSite) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Downloading from external sources is impossible");
+            } else {
+                /* 2020-01-29: Some downloads are just broken */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download failure");
+            }
         }
         String final_filename = Plugin.getFileNameFromURL(new URL(dllink));
         if (final_filename != null) {

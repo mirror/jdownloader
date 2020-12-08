@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -173,20 +174,33 @@ public class DebridplanetCom extends PluginForHost {
         final String premiumExpiredate = br.getRegex("until (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
         if (premiumExpiredate == null) {
             account.setType(AccountType.FREE);
+            /*
+             * 2020-12-08: Free Accounts can download from some hosts (see websites' host list) but we just won't allow free account
+             * downloads at all.
+             */
             ai.setTrafficLeft(0);
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpiredate, "dd/MM/yy", Locale.ENGLISH), br);
             account.setType(AccountType.PREMIUM);
+            ai.setUnlimitedTraffic();
         }
         /*
          * Get list of supported hosts.
          */
         /* 2020-12-08: Their status page is broken */
         br.getPage("/status");
-        // final String[] hosts = br.getRegex("(TODO_FIXME)").getColumn(0);
-        /* 2020-12-08: Static list for testing */
-        final String[] hosts = { "uploaded.net" };
-        ai.setMultiHostSupport(this, Arrays.asList(hosts));
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String[] supportedHostsHTMLs = br.getRegex("<td(.*?domain=.*?)</td>").getColumn(0);
+        for (final String supportedHostHTML : supportedHostsHTMLs) {
+            final String host = new Regex(supportedHostHTML, "domain=([^\"]+)").getMatch(0);
+            final boolean hostIsActive = new Regex(supportedHostHTML, ">(Supported|Unstable)").matches();
+            if (!hostIsActive) {
+                logger.info("Skipping inactive host: " + host);
+            } else {
+                supportedHosts.add(host);
+            }
+        }
+        ai.setMultiHostSupport(this, supportedHosts);
         account.setConcurrentUsePossible(true);
         return ai;
     }
