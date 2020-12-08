@@ -26,6 +26,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
 
 import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
@@ -77,6 +78,37 @@ public class UseNet extends antiDDoSForHost {
 
     protected int getAutoRetryMessageNotFound() {
         return 2;
+    }
+
+    protected Account convertNNTPLoginURI(Account account) throws Exception {
+        final String nntpLoginURI[] = new Regex(account.getUser(), "nntp(s)?://(.*?)(:(.*?))?@([^:/]*?)(:(\\d+))?/?(\\d+)?$").getRow(0);
+        if (nntpLoginURI != null && nntpLoginURI.length == 8) {
+            final boolean isSSL = "s".equals(nntpLoginURI[0]);
+            final String username = nntpLoginURI[1];
+            if (StringUtils.isEmpty(username)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Usenet account username is missing", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            final String password = nntpLoginURI[3];
+            if (StringUtils.isAllEmpty(password, account.getPass())) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Usenet account password is missing", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            final String host = nntpLoginURI[4];
+            if (StringUtils.isEmpty(host)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Usenet account host is missing", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            final String port = nntpLoginURI[6];
+            final String connections = nntpLoginURI[7];
+            final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
+            config.setSSLEnabled(isSSL);
+            config.setHost(host);
+            config.setPort(port != null ? Integer.parseInt(port) : -1);
+            account.setMaxSimultanDownloads(connections != null ? Integer.parseInt(connections) : 1);
+            account.setUser(username);
+            if (StringUtils.isNotEmpty(password)) {
+                account.setPass(password);
+            }
+        }
+        return account;
     }
 
     protected void verifyUseNetLogins(Account account) throws Exception, InvalidAuthException {
@@ -211,8 +243,18 @@ public class UseNet extends antiDDoSForHost {
         synchronized (account) {
             final UsenetAccountConfigInterface config = getAccountJsonConfig(account);
             UsenetServer server = new UsenetServer(config.getHost(), config.getPort(), config.isSSLEnabled());
-            if (server == null || !server.validate() || !getAvailableUsenetServer().contains(server)) {
-                server = getAvailableUsenetServer().get(0);
+            final List<UsenetServer> serverList = getAvailableUsenetServer();
+            if (server == null || !server.validate() || !serverList.contains(server)) {
+                server = null;
+                for (UsenetServer entry : serverList) {
+                    if (entry.isSSL() == config.isSSLEnabled()) {
+                        server = entry;
+                        break;
+                    }
+                }
+                if (server == null) {
+                    server = getAvailableUsenetServer().get(0);
+                }
                 config.setHost(server.getHost());
                 config.setPort(server.getPort());
                 config.setSSLEnabled(server.isSSL());
@@ -225,8 +267,9 @@ public class UseNet extends antiDDoSForHost {
     public boolean isResumeable(DownloadLink link, Account account) {
         if (isUsenetLink(link)) {
             return true;
+        } else {
+            return super.isResumeable(link, account);
         }
-        return super.isResumeable(link, account);
     }
 
     @Override

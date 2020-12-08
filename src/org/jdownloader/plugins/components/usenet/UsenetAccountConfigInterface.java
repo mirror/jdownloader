@@ -4,7 +4,6 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
 import org.appwork.storage.config.annotations.CustomValueGetter;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -26,10 +25,6 @@ public interface UsenetAccountConfigInterface extends AccountConfigInterface {
             return "";
         }
 
-        public String getConnections_description() {
-            return "";
-        }
-
         public String getPort_label() {
             return _JDT.T.lit_port();
         }
@@ -40,10 +35,6 @@ public interface UsenetAccountConfigInterface extends AccountConfigInterface {
 
         public String getSSLEnabled_label() {
             return _JDT.T.lit_ssl_enabled();
-        }
-
-        public String getConnections_label() {
-            return _JDT.T.lit_connections();
         }
     }
 
@@ -78,18 +69,10 @@ public interface UsenetAccountConfigInterface extends AccountConfigInterface {
     int getPort();
 
     @DescriptionForConfigEntry("Usenet SSL enabled NOTE: host port and ssl must be a valid combination")
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @AboutConfig
     @Order(30)
     void setSSLEnabled(boolean b);
 
     boolean isSSLEnabled();
-
-    @AboutConfig
-    @DefaultIntValue(1)
-    @Order(40)
-    void setConnections(int con);
-
-    int getConnections();
-
 }
