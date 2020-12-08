@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -27,7 +30,6 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,22 +42,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "" })
-public class ZapiszSe extends PluginForHost {
-    private static final String          WEBSITE_BASE = "https://zapisz.se";
-    private static MultiHosterManagement mhm          = new MultiHosterManagement("zapisz.se");
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
+public class DebridplanetCom extends PluginForHost {
+    private static final String          WEBSITE_BASE = "https://debridplanet.com";
+    private static MultiHosterManagement mhm          = new MultiHosterManagement("debridplanet.com");
     private static final boolean         resume       = true;
     private static final int             maxchunks    = -10;
 
     @SuppressWarnings("deprecation")
-    public ZapiszSe(PluginWrapper wrapper) {
+    public DebridplanetCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(WEBSITE_BASE + "/premium.html");
+        this.enablePremium(WEBSITE_BASE + "/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return WEBSITE_BASE + "/terms.html";
+        return WEBSITE_BASE + "/tos";
     }
 
     private Browser newBrowser() {
@@ -110,16 +112,21 @@ public class ZapiszSe extends PluginForHost {
         br.setFollowRedirects(true);
         if (dllink == null) {
             this.loginWebsite(account, false);
-            br.getPage(WEBSITE_BASE + "/addfiles.html");
-            br.postPage(br.getURL(), "addfiles_hash=&list=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
-            final String[] urls = HTMLParser.getHttpLinks(br.toString(), br.getURL());
-            for (final String url : urls) {
-                if (Encoding.htmlDecode(url).contains(link.getName())) {
-                    logger.info("Found possible downloadurl: " + url);
-                    dllink = url;
-                    break;
-                }
+            final UrlQuery query = new UrlQuery();
+            query.appendEncoded("urllist", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+            if (link.getDownloadPassword() != null) {
+                query.appendEncoded("passe", link.getDownloadPassword());
+            } else {
+                query.add("passe", "undefined");
+            }
+            query.add("enable_https", "1");
+            query.add("boxlinklist", "0");
+            query.add("seckey", "undefined");
+            query.add("seckey2", "undefined");
+            br.postPage(WEBSITE_BASE + "/debrider/gen_process_link.php", query);
+            dllink = br.getRegex("\"(https://[^\"]+/dl/[^\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("id=\"linklist1\"[^>]*>(https://[^<>\"]+)").getMatch(0);
             }
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
@@ -159,43 +166,26 @@ public class ZapiszSe extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/profile.html")) {
-            br.getPage(WEBSITE_BASE + "/profile.html");
+        if (!br.getURL().contains("/account")) {
+            br.getPage("/account");
         }
-        /* 2020-10-20: I wasn't able to determine any kind of account type ... */
-        account.setType(AccountType.PREMIUM);
         ai.setStatus("Premium account");
-        // final String premiumDaysStr = br.getRegex("VIP\\sexpires\\sin\\s*(\\d+)\\s*<small").getMatch(0);
-        // String trafficleftStr = br.getRegex("</small>((<b>(\\d+(\\.|)\\d{1,2}
-        // [A-Za-z]+)</b>)|<strong>([A-Za-zé]+)</strong>)").getMatch(0);
-        // if (premiumDaysStr == null) {
-        // /* Free or plugin failure */
-        // /*
-        // * account.setType(AccountType.FREE); ai.setTrafficMax("10 GB"); ai.setStatus("Free Account");
-        // * account.setMaxSimultanDownloads(account_FREE_maxdownloads); account.setValid(true);
-        // */
-        // // 2020.03.27 : phg : Free Accounts are not allowed for this plugin
-        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Plugin for premium accounts only");
-        // } else {
-        // /* Premium */
-        // account.setType(AccountType.PREMIUM);
-        // ai.setStatus("Premium account");
-        // account.setMaxSimultanDownloads(account_PREMIUM_maxdownloads);
-        // ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(premiumDaysStr) * 24 * 60 * 60 * 1000l, this.br);
-        // }
-        // if (trafficleftStr == null) {
-        // /* Downloads are not possible if the traffic has not be retrieved */
-        // ai.setTrafficLeft(0);
-        // } else if (trafficleftStr.contains("Unlimited")) {
-        // ai.setUnlimitedTraffic();
-        // } else {
-        // ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
-        // }
+        final String premiumExpiredate = br.getRegex("until (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+        if (premiumExpiredate == null) {
+            account.setType(AccountType.FREE);
+            ai.setTrafficLeft(0);
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpiredate, "dd/MM/yy", Locale.ENGLISH), br);
+            account.setType(AccountType.PREMIUM);
+        }
         /*
          * Get list of supported hosts.
          */
-        br.getPage("/addfiles.html");
-        final String[] hosts = br.getRegex("<div class=\"col-1-6 host-item\"><img src=\"https?://[^\"]+/img/server/([^\"]+)\\.png\" />").getColumn(0);
+        /* 2020-12-08: Their status page is broken */
+        br.getPage("/status");
+        // final String[] hosts = br.getRegex("(TODO_FIXME)").getColumn(0);
+        /* 2020-12-08: Static list for testing */
+        final String[] hosts = { "uploaded.net" };
         ai.setMultiHostSupport(this, Arrays.asList(hosts));
         account.setConcurrentUsePossible(true);
         return ai;
@@ -205,6 +195,7 @@ public class ZapiszSe extends PluginForHost {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
+                br.getPage(WEBSITE_BASE + "/account");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Trying to login via cookies");
@@ -213,7 +204,7 @@ public class ZapiszSe extends PluginForHost {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    br.getPage(WEBSITE_BASE + "/profile.html");
+                    br.getPage(WEBSITE_BASE + "/account");
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -223,14 +214,15 @@ public class ZapiszSe extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage(WEBSITE_BASE + "/index.html");
-                final Form loginform = br.getFormbyKey("password");
+                br.getPage(WEBSITE_BASE + "/login.php");
+                final Form loginform = br.getFormbyActionRegex(".*/login.*");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "ON");
+                // loginform.remove("loginformused");
+                loginform.put("loginformused", "1");
                 br.submitForm(loginform);
                 if (!isLoggedIN()) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -246,7 +238,7 @@ public class ZapiszSe extends PluginForHost {
     }
 
     private boolean isLoggedIN() throws PluginException {
-        return br.containsHTML("/logout\\.html");
+        return br.containsHTML("sitelokaction=logout");
     }
 
     @Override
