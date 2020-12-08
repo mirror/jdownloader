@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.google.GoogleHelper;
@@ -70,8 +69,7 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final boolean tryAPI = true;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && tryAPI) {
+        if (jd.plugins.hoster.GoogleDrive.useAPI()) {
             return this.crawlAPI(param);
         } else {
             return this.crawlWebsite(param);
@@ -109,7 +107,7 @@ public class GoogleDrive extends PluginForDecrypt {
          */
         queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
         /* API key for testing */
-        queryFolder.appendEncoded("key", "YourAPIKey");
+        queryFolder.appendEncoded("key", jd.plugins.hoster.GoogleDrive.getAPIKey());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String nameOfCurrentFolder = null;
         int page = 0;
