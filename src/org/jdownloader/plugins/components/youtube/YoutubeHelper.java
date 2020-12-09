@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -2055,13 +2056,15 @@ public class YoutubeHelper {
     }
 
     private void collectMapsFormHtmlSource(String html, String src) {
-        final String captionTracks = new Regex(html, "captionTracks\\\\\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
-        if (captionTracks != null) {
-            String decoded = captionTracks.replaceAll("\\\\u", "\\u");
-            decoded = Encoding.unicodeDecode(decoded).replaceAll("\\\\", "");
-            subtitleUrls.add(decoded);
+        if (subtitleUrls.size() == 0) {
+            String captionTracks = new Regex(html, "captionTracks\\\\\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
+            if (captionTracks != null) {
+                String decoded = captionTracks.replaceAll("\\\\u", "\\u");
+                decoded = Encoding.unicodeDecode(decoded).replaceAll("\\\\", "");
+                subtitleUrls.add(decoded);
+            }
+            collectSubtitleUrls(html, "['\"]TTS_URL['\"]\\s*:\\s*(['\"][^'\"]+['\"])");
         }
-        collectSubtitleUrls(html, "['\"]TTS_URL['\"]\\s*:\\s*(['\"][^'\"]+['\"])");
         if (fmtMapEnabled) {
             collectFmtMap(html, REGEX_FMT_MAP_FROM_JSPLAYER_SETUP, "fmtMapJSPlayer." + src);
         }
@@ -2076,15 +2079,16 @@ public class YoutubeHelper {
         }
     }
 
-    private void collectSubtitleUrls(String html, String pattern) {
+    private boolean collectSubtitleUrls(String html, String pattern) {
         String json = new Regex(html, pattern).getMatch(0);
-        if (json == null) {
-            return;
-        }
-        json = JSonStorage.restoreFromString(json, TypeRef.STRING);
         if (json != null) {
-            subtitleUrls.add(json);
+            json = JSonStorage.restoreFromString(json, TypeRef.STRING);
+            if (json != null) {
+                subtitleUrls.add(json);
+                return true;
+            }
         }
+        return false;
     }
 
     /** Wrapper */
@@ -2218,6 +2222,10 @@ public class YoutubeHelper {
     private int collectMapsFromPlayerResponse(Map<String, Object> map, String src) {
         int ret = 0;
         if (map != null) {
+            final List<Map<String, Object>> captionTracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(map, "captions/playerCaptionsTracklistRenderer/captionTracks");
+            if (captionTracks != null) {
+                subtitleUrls.add(JSonStorage.toString(captionTracks));
+            }
             final Map<String, Object> streamingData = (Map<String, Object>) map.get("streamingData");
             if (adaptiveFmtsEnabled && streamingData != null && streamingData.containsKey("adaptiveFormats")) {
                 final List<Map<String, Object>> adaptiveFormats = (List<Map<String, Object>>) streamingData.get("adaptiveFormats");
@@ -2595,42 +2603,44 @@ public class YoutubeHelper {
         }
     }
 
+    private boolean getThumbnailSize(Browser br, YoutubeStreamData match) {
+        final Browser check = br.cloneBrowser();
+        check.setFollowRedirects(true);
+        try {
+            final URLConnectionAdapter con = check.openHeadConnection(match.getUrl());
+            try {
+                if (con.isOK() && (con.isContentDisposition() || StringUtils.contains(con.getContentType(), "image"))) {
+                    if (con.getCompleteContentLength() > 0) {
+                        match.setContentLength(con.getCompleteContentLength());
+                    }
+                    return true;
+                }
+            } finally {
+                con.disconnect();
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+        }
+        return false;
+    }
+
     private List<YoutubeStreamData> loadThumbnails() {
         final StreamCollection ret = new StreamCollection();
         final String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX, null));
-        if (isStreamDataAllowed(match)) {
-            final Browser check = br.cloneBrowser();
-            check.setFollowRedirects(true);
-            try {
-                check.openHeadConnection(match.getUrl()).disconnect();
-                final URLConnectionAdapter con = check.getHttpConnection();
-                if (con.isOK() && (con.isContentDisposition() || StringUtils.contains(con.getContentType(), "image"))) {
+        final LinkedHashMap<String, YoutubeITAG> thumbnails = new LinkedHashMap<String, YoutubeITAG>();
+        thumbnails.put("maxresdefault.jpg", YoutubeITAG.IMAGE_MAX);
+        thumbnails.put("hqdefault.jpg", YoutubeITAG.IMAGE_HQ);
+        thumbnails.put("mqdefault.jpg", YoutubeITAG.IMAGE_MQ);
+        thumbnails.put("default.jpg", YoutubeITAG.IMAGE_LQ);
+        for (Entry<String, YoutubeITAG> thumbnail : thumbnails.entrySet()) {
+            final YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/" + thumbnail.getKey(), thumbnail.getValue(), null));
+            if (isStreamDataAllowed(match)) {
+                if (getThumbnailSize(br.cloneBrowser(), match)) {
                     ret.add(match);
                 }
-            } catch (final Exception e) {
-                logger.log(e);
-            }
-        }
-        match = new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ, null);
-        if (isStreamDataAllowed(match)) {
-            ret.add(match);
-            if (best != null && best.equals("default.jpg")) {
-                return ret;
-            }
-        }
-        match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ, null));
-        if (isStreamDataAllowed(match)) {
-            ret.add(match);
-            if (best != null && best.equals("mqdefault.jpg")) {
-                return ret;
-            }
-        }
-        match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ, null));
-        if (isStreamDataAllowed(match)) {
-            ret.add(match);
-            if (best != null && best.equals("hqdefault.jpg")) {
-                return ret;
+                if (ret.size() > 0 && StringUtils.equalsIgnoreCase(thumbnail.getKey(), best)) {
+                    return ret;
+                }
             }
         }
         return ret;

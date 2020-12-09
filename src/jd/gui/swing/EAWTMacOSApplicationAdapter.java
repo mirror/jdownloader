@@ -211,6 +211,7 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
                                             return new IconBadgePainter(NewTheme.I().getImage("logo/jd_logo_128_128", 128)).getImage(finalpercent, finalpercent + "");
                                         }
                                     }.getReturnValue();
+                                    // interrupt will return null
                                     imageCache.put(finalpercent, image);
                                 }
                                 if (image != null) {
