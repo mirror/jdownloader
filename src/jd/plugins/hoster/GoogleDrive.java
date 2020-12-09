@@ -894,14 +894,14 @@ public class GoogleDrive extends PluginForHost {
      */
     private void originalFileDownloadTempUnavailableAndOrOnlyViaAccount(final Account account) throws PluginException {
         if (account != null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or add GDrive API key or import the file into your account and dl it from there or try again with a different account", 2 * 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or import the file into your account and dl it from there or try again with a different account", 2 * 60 * 60 * 1000);
         } else {
             /* 2020-03-10: No warranties that a download will work via account but most times it will! */
             /*
              * 2020-08-10: Updated Exception - rather wait and try again later because such file may be downloadable without account again
              * after some time!
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or add GDrive API key or add Google account and retry", 2 * 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or add Google account and retry", 2 * 60 * 60 * 1000);
             // throw new AccountRequiredException();
         }
     }
