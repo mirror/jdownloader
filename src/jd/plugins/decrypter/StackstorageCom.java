@@ -30,6 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stackstorage.com" }, urls = { "https?://([a-z0-9]+)\\.stackstorage\\.com/s/([A-Za-z0-9]+)(\\?dir=([^\\&]+)\\&node\\-id=(\\d+))?" })
 public class StackstorageCom extends antiDDoSForDecrypt {
@@ -42,7 +44,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 503) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -63,7 +65,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
         }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(csrftoken)) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int offset = 0;
         int page = 0;
@@ -77,9 +79,6 @@ public class StackstorageCom extends antiDDoSForDecrypt {
         br.getHeaders().put("Omit-Authentication-Header", "true");
         boolean isSingleFile = false;
         do {
-            if (this.isAbort()) {
-                break;
-            }
             getPage(String.format("https://%s.stackstorage.com/public-share/%s/list?public=true&token=%s&type=folder&offset=%d&limit=%d&sortBy=default&order=asc&query=&dir=%s&_=%s", subdomain, folderID, folderID, offset, maxItemsPerRequest, subdir, System.currentTimeMillis()));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -161,7 +160,7 @@ public class StackstorageCom extends antiDDoSForDecrypt {
             }
             hasNext = ressourcelist.size() >= maxItemsPerRequest;
             page++;
-        } while (hasNext);
+        } while (!this.isAbort() && hasNext);
         return decryptedLinks;
     }
 }
