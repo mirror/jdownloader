@@ -21,9 +21,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -42,6 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "whatboyswant.com" }, urls = { "https://(?:www\\.)?whatboyswant\\.com/(?:babes|movies|cars)/show/\\d+|https?://(?:www\\.)?whatboyswant\\.com/videos/[a-z0-9\\-]+/[a-z0-9\\-]+\\-\\d+" })
 public class WhatBoysWantCom extends PluginForHost {
@@ -162,14 +162,17 @@ public class WhatBoysWantCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br.setFollowRedirects(true);
                 con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (looksLikeDownloadableContent(con)) {
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
@@ -251,7 +254,9 @@ public class WhatBoysWantCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -353,12 +358,18 @@ public class WhatBoysWantCom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        if (link.getFinalFileName() == null && dl.getConnection().isContentDisposition()) {
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
