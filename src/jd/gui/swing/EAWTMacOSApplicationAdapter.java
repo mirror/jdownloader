@@ -213,14 +213,16 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
                                     }.getReturnValue();
                                     imageCache.put(finalpercent, image);
                                 }
-                                final Image finalImage = image;
-                                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                                    @Override
-                                    protected Void run() throws RuntimeException {
-                                        com.apple.eawt.Application.getApplication().setDockIconImage(finalImage);
-                                        return null;
-                                    }
-                                });
+                                if (image != null) {
+                                    final Image finalImage = image;
+                                    TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                        @Override
+                                        protected Void run() throws RuntimeException {
+                                            com.apple.eawt.Application.getApplication().setDockIconImage(finalImage);
+                                            return null;
+                                        }
+                                    });
+                                }
                             } catch (final Throwable e) {
                                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
                             }
