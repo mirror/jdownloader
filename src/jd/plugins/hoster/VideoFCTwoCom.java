@@ -63,6 +63,7 @@ public class VideoFCTwoCom extends PluginForHost {
 
     private String        finalURL              = null;
     private long          finalURLType          = -1;
+    private String        trailerURL            = null;
     private boolean       server_issues         = false;
     private final boolean fastLinkCheck_default = true;
     private final String  fastLinkCheck         = "fastLinkCheck";
@@ -203,8 +204,12 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (finalURL == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (StringUtils.isEmpty(this.finalURL)) {
+            if (!StringUtils.isEmpty(this.trailerURL)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Only trailer available", 10 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (onlyForPremiumUsers(downloadLink)) {
             if (account != null && !account.getBooleanProperty("free", false)) {
@@ -261,13 +266,13 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.finalURL = null;
         this.finalURLType = -1;
         this.server_issues = false;
-        correctDownloadLink(downloadLink);
-        String dllink = downloadLink.getDownloadURL();
-        final String linkid = getLinkID(downloadLink);
+        correctDownloadLink(link);
+        String dllink = link.getDownloadURL();
+        final String linkid = getLinkID(link);
         // this comes first, due to subdoman issues and cached cookie etc.
         Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
@@ -317,10 +322,11 @@ public class VideoFCTwoCom extends PluginForHost {
             br.getPage("http://video.fc2.com/api/v3/videoplaylist/" + linkid + "?sh=1&fs=0");
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
-            finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
+            this.finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
             if (finalURL == null) {
                 finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/nq");
             }
+            this.trailerURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/sample");
             if (!StringUtils.isEmpty(finalURL) && finalURL.startsWith("/")) {
                 finalURL = br.getURL(finalURL).toString();
             }
@@ -350,7 +356,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 }
             }
             /* get url */
-            downloadLink.setProperty("ONLYFORPREMIUM", false);
+            link.setProperty("ONLYFORPREMIUM", false);
             final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
             final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
             final String version = "WIN%2015%2C0%2C0%2C189";
@@ -392,7 +398,7 @@ public class VideoFCTwoCom extends PluginForHost {
                     logger.info("video.fc2.com: reconnect is needed!");
                     aError = AvailableStatus.TRUE;
                 case 603:
-                    downloadLink.setProperty("ONLYFORPREMIUM", true);
+                    link.setProperty("ONLYFORPREMIUM", true);
                     break;
                 default:
                     logger.info("video.fc2.com: Unknown error code: " + error);
@@ -417,7 +423,7 @@ public class VideoFCTwoCom extends PluginForHost {
             filename = filename.trim();
             filename = filename.replaceAll("(:|,|\\s)", "_");
             filename += ".mp4";
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+            link.setFinalFileName(Encoding.htmlDecode(filename));
         }
         if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null && finalURLType != 2) {
             br.getHeaders().put("Referer", null);
@@ -426,7 +432,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 con = br.openHeadConnection(finalURL);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                        link.setDownloadSize(con.getCompleteContentLength());
                     }
                 } else {
                     server_issues = true;
