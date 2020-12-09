@@ -766,6 +766,7 @@ public class YetiShareCore extends antiDDoSForHost {
         /* 2020-02-26: Example without 'http': cnubis.com */
         String ret = br.getRegex("(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         if (StringUtils.isEmpty(ret)) {
+            /* 2020-12-09: TODO: Which websites are using this pattern? It can lead to false positives e.g. zupload.me */
             ret = br.getRegex("\"(https?://[^\"]+/files/[^\"]+)\"").getMatch(0);
         }
         if (isDownloadlink(ret)) {

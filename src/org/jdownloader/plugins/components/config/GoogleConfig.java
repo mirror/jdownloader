@@ -20,13 +20,6 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     public void setUserAgent(String userAgent);
 
-    /** 2020-12-09: Just an idea */
-    // @AboutConfig
-    // @DefaultStringValue("JDownloader")
-    // @DescriptionForConfigEntry("Enter User-Agent which will be used for all Google Drive API requests")
-    // @Order(13)
-    // String getUserAgentAPI();
-    // public void setUserAgentAPI(String apikey);
     @AboutConfig
     @DefaultStringValue("")
     @DescriptionForConfigEntry("Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.")
