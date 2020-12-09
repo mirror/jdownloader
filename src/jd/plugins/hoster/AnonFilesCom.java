@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.UnknownHostingScriptCore;
+import org.jdownloader.plugins.components.config.AnonFilesComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -69,7 +71,7 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeDownloads();
     }
 
     @Override
@@ -112,5 +114,10 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
 
     public static String[] getAnnotationUrls() {
         return UnknownHostingScriptCore.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public Class<? extends AnonFilesComConfig> getConfigInterface() {
+        return AnonFilesComConfig.class;
     }
 }
