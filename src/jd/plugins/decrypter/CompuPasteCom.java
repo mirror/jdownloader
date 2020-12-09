@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -27,9 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "http://(www\\.)?compupaste\\.com/\\?v=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "compupaste.com" }, urls = { "https?://(?:www\\.)?compupaste\\.com/\\?v=\\d+" })
 public class CompuPasteCom extends PluginForDecrypt {
     public CompuPasteCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,8 +39,8 @@ public class CompuPasteCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("no existe<")) {
-            logger.info("Link offline: " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("no existe<")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
@@ -61,13 +61,17 @@ public class CompuPasteCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
+        String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
+        if (links.length == 0) {
+            /* 2020-12-09 */
+            links = br.getRegex("Opcion\\s*\\d+\\s*</strong>([^<>\"]+)<").getColumn(0);
+        }
         if (links == null || links.length == 0) {
             logger.info("Link offline (no links found): " + parameter);
             return decryptedLinks;
         }
         for (final String singleLink : links) {
-            if (!singleLink.contains("compupaste.com/")) {
+            if (!this.canHandle(singleLink)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }

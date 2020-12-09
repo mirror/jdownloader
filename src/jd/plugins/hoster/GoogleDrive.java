@@ -512,6 +512,10 @@ public class GoogleDrive extends PluginForHost {
         synchronized (CAPTCHA_LOCK) {
             if (account != null) {
                 /* Uses a slightly different request than when not logged in but answer is the same. */
+                /*
+                 * E.g. also possible (reduces number of available video qualities):
+                 * https://docs.google.com/get_video_info?formats=android&docid=<fuid>
+                 */
                 br.getPage("https://drive.google.com/u/0/get_video_info?docid=" + this.getFID(link));
             } else {
                 br.getPage("https://drive.google.com/get_video_info?docid=" + this.getFID(link));
