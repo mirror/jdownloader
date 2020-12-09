@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -67,6 +68,7 @@ public class WhatBoysWantCom extends PluginForHost {
     private static final String  TYPE_BABE                    = "h.+/babes/show/\\d+";
     private static final String  TYPE_CAR                     = ".+/car/show/\\d+";
     private static final String  TYPE_MOVIE                   = ".+/(?:movies/show/\\d+|videos/.+)";
+    private static final String  TYPE_VIDEOS                  = "https?://[^/]+/videos/[^/]+/([a-z0-9\\-]+)-(\\d+)";
     private static final String  default_EXT_video            = ".mp4";
     private static final String  default_EXT_photo            = ".jpg";
     /* don't touch the following! */
@@ -101,13 +103,16 @@ public class WhatBoysWantCom extends PluginForHost {
             if (filename == null) {
                 filename = fid;
             }
-            if (link.getDownloadURL().matches(TYPE_MOVIE)) {
+            if (link.getPluginPatternMatcher().matches(TYPE_VIDEOS)) {
+                filename = this.getURLTitle(link).replace("-", " ");
+                filename += default_EXT_video;
+            } else if (link.getDownloadURL().matches(TYPE_MOVIE)) {
                 filename += default_EXT_video;
             } else {
                 filename += default_EXT_photo;
             }
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -119,23 +124,34 @@ public class WhatBoysWantCom extends PluginForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(link);
-        if (link.getDownloadURL().matches(TYPE_MOVIE)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             dllink = br.getRegex("\"(/picture/(?:babe|car)/" + fid + "/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* 2020-12-09 */
+                dllink = br.getRegex("\"(/stream/videos[^\"]+)").getMatch(0);
+            }
+            if (dllink == null) {
+                if (link.getPluginPatternMatcher().matches(TYPE_MOVIE)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dllink = "https://whatboyswant.com" + dllink;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        if (link.getFinalFileName() == null && dl.getConnection().isContentDisposition()) {
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
@@ -172,6 +188,14 @@ public class WhatBoysWantCom extends PluginForHost {
             fid = new Regex(dl.getDownloadURL(), "/show/(\\d+)").getMatch(0);
         }
         return fid;
+    }
+
+    private String getURLTitle(final DownloadLink dl) {
+        if (dl.getPluginPatternMatcher().matches(TYPE_VIDEOS)) {
+            return new Regex(dl.getPluginPatternMatcher(), TYPE_VIDEOS).getMatch(0);
+        } else {
+            return null;
+        }
     }
 
     private String getTYPE(final DownloadLink dl) {
