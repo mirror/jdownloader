@@ -266,10 +266,7 @@ public class FlexShareCore extends antiDDoSForHost {
         }
     }
 
-    private static final String PREMIUMLIMIT  = "out of 1024\\.00 TB</td>";
-    private static final String NOPREMIUMTEXT = "title\\s*=\\s*\"Get a premium account now";
-
-    protected void login(final Account account, boolean force) throws Exception {
+    protected void login(final Account account, final AccountInfo accountInfo, boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(false);
@@ -281,7 +278,7 @@ public class FlexShareCore extends antiDDoSForHost {
                     getPage(getMainPage() + "/members/myfiles.php");
                     loggedIN = isLoggedIN();
                     if (loggedIN) {
-                        updateAccountType(br, account);
+                        updateAccountType(br, account, accountInfo);
                         logger.info("Successfully loggedin via cookies:" + account.getType());
                     }
                 }
@@ -320,6 +317,8 @@ public class FlexShareCore extends antiDDoSForHost {
                     if (!isLoggedIN()) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                    updateAccountType(br, account, accountInfo);
+                    logger.info("Successfully loggedin:" + account.getType());
                 }
                 account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
@@ -357,19 +356,32 @@ public class FlexShareCore extends antiDDoSForHost {
         return br.getCookie(br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null;
     }
 
-    protected void updateAccountType(final Browser br, final Account account) throws Exception {
-        if (br.getURL() == null || !br.getURL().contains("/members/myfiles.php")) {
-            getPage("/members/myfiles.php");
+    protected void updateAccountType(final Browser br, final Account account, AccountInfo accountInfo) throws Exception {
+        if (br.getURL() == null || !br._getURL().getPath().matches("^/?$")) {
+            getPage(getMainPage());
         }
         synchronized (account) {
-            if (br.containsHTML(NOPREMIUMTEXT) || !br.containsHTML(PREMIUMLIMIT)) {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } else {
+            if (accountInfo == null) {
+                accountInfo = account.getAccountInfo();
+                if (accountInfo == null) {
+                    accountInfo = new AccountInfo();
+                }
+            }
+            accountInfo.setUnlimitedTraffic();
+            if (br.containsHTML(">\\s*Premium Member\\s*<")) {
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(20);
                 account.setConcurrentUsePossible(true);
+                final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
+                if (validUntil != null) {
+                    accountInfo.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+                }
+                accountInfo.setStatus("Premium Account");
+            } else {
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+                accountInfo.setStatus("Free Account");
             }
         }
     }
@@ -377,35 +389,14 @@ public class FlexShareCore extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        updateAccountType(br, account);
-        String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
-        if (hostedFiles != null) {
-            ai.setFilesNum(Integer.parseInt(hostedFiles));
-        }
-        final String space_used = br.getRegex("<td>Spaced Used:</td>\\s*<td>\\s*(\\d+(?:\\.\\d+{1,2})? [A-Za-z]{2,5}) ").getMatch(0);
-        if (space_used != null) {
-            ai.setUsedSpace(space_used.trim());
-        }
-        ai.setUnlimitedTraffic();
-        if (AccountType.FREE.equals(account.getType())) {
-            // free accounts can still have captcha.
-            ai.setStatus("Free Account");
-        } else {
-            ai.setStatus("Premium Account");
-            getPage(getMainPage());
-            final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
-            if (validUntil != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
-            }
-        }
+        login(account, ai, true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, null, false);
         br.setFollowRedirects(false);
         getPage(link.getPluginPatternMatcher());
         if (AccountType.FREE.equals(account.getType())) {
