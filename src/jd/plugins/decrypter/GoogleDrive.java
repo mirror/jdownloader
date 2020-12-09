@@ -91,12 +91,14 @@ public class GoogleDrive extends PluginForDecrypt {
          * TODO: Find a way to get the name of the folder we're currently in. In website mode, we obtain this from HTML - we don't want to
          * do this here!
          */
-        final String fid = getFolderID(param.getCryptedUrl());
-        if (fid == null) {
+        final String folderID = getFolderID(param.getCryptedUrl());
+        if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String subfolderPath = this.getAdoptedCloudFolderStructure();
+        String nameOfCurrentFolder = null;
         final UrlQuery queryFolder = new UrlQuery();
-        queryFolder.appendEncoded("q", "'" + fid + "' in parents");
+        queryFolder.appendEncoded("q", "'" + folderID + "' in parents");
         queryFolder.add("supportsAllDrives", "true");
         queryFolder.add("includeItemsFromAllDrives", "true");
         /* Returns up to 1000 items per request (default = 100) */
@@ -109,12 +111,46 @@ public class GoogleDrive extends PluginForDecrypt {
         /* API key for testing */
         queryFolder.appendEncoded("key", jd.plugins.hoster.GoogleDrive.getAPIKey());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String nameOfCurrentFolder = null;
         int page = 0;
         do {
             logger.info("Working on pagination page " + (page + 1));
             br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
-            /* TODO: Add check for empty / offline folder */
+            /* TODO: Check what happens if user adds folder and is missing permission to access it! */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* Folder offline */
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+                return decryptedLinks;
+            }
+            if (page == 0 && subfolderPath == null) {
+                /* Leave this in the loop! It doesn't really belong here but it's only a workaround and only executed once! */
+                logger.info("Trying to find title of current folder");
+                try {
+                    /**
+                     * 2020-12-09: psp: This is a workaround because API doesn't return name of the current folder or I'm just too stupid
+                     * ... </br>
+                     * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
+                     */
+                    final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+                    final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
+                    final Browser websiteBR = new Browser();
+                    if (aa != null) {
+                        login(websiteBR, aa);
+                    } else {
+                        /* Respect users' plugin settings (e.g. custom User-Agent) */
+                        ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(websiteBR);
+                    }
+                    websiteBR.getPage(param.getCryptedUrl());
+                    nameOfCurrentFolder = getCurrentFolderTitleWebsite(websiteBR);
+                    if (!StringUtils.isEmpty(nameOfCurrentFolder)) {
+                        logger.info("Successfully found title of current folder: " + nameOfCurrentFolder);
+                    } else {
+                        logger.warning("Failed to find title of current folder");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("Folder title workaround failed");
+                }
+            }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             // if (page == 0) {
             // String parentFolderID = null;
@@ -153,12 +189,17 @@ public class GoogleDrive extends PluginForDecrypt {
                 logger.warning("WTF");
             }
             this.parseFolderJsonAPI(decryptedLinks, entries, this.getAdoptedCloudFolderStructure(), nameOfCurrentFolder);
+            if (page == 0 && decryptedLinks.size() == 0) {
+                /* Empty folder */
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + folderID, "EMPTY_FOLDER " + folderID));
+                return decryptedLinks;
+            }
             String nextPageToken = (String) entries.get("nextPageToken");
             if (StringUtils.isEmpty(nextPageToken)) {
                 logger.info("Stopping because nextPageToken is null");
                 break;
             }
-            /* TODO: Check if this is needed or of add() replaces the previous value */
+            /* TODO: Check if this is needed or if add() replaces the previous value */
             queryFolder.remove("nextPageToken");
             queryFolder.appendEncoded("nextPageToken", nextPageToken);
             page++;
@@ -248,18 +289,13 @@ public class GoogleDrive extends PluginForDecrypt {
                 throw new AccountRequiredException("You need an account to access URL");
             }
         }
-        String currentFolderTitle = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
+        String currentFolderTitle = getCurrentFolderTitleWebsite(this.br);
         if (currentFolderTitle == null) {
-            currentFolderTitle = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
-            if (currentFolderTitle == null) {
-                currentFolderTitle = br.getRegex("<title>([^<>\"]*?) – Google Drive</title>").getMatch(0);
-                if (currentFolderTitle == null) {
-                    currentFolderTitle = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-                }
+            /* Final fallback */
+            currentFolderTitle = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            if (!StringUtils.isEmpty(currentFolderTitle)) {
+                currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim()).trim();
             }
-        }
-        if (!StringUtils.isEmpty(currentFolderTitle)) {
-            currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim());
         }
         String[] results = null;
         // old type
@@ -376,6 +412,22 @@ public class GoogleDrive extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private static String getCurrentFolderTitleWebsite(final Browser br) {
+        String currentFolderTitle = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
+        if (currentFolderTitle == null) {
+            currentFolderTitle = br.getRegex("<title>([^<>\"]*?) - Google Drive</title>").getMatch(0);
+            if (currentFolderTitle == null) {
+                currentFolderTitle = br.getRegex("<title>([^<>\"]*?) – Google Drive</title>").getMatch(0);
+            }
+        }
+        if (!StringUtils.isEmpty(currentFolderTitle)) {
+            currentFolderTitle = Encoding.htmlDecode(currentFolderTitle.trim()).trim();
+            return currentFolderTitle;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * There are differences between website- and API json e.g. we cannot request all fields we can get via API from website and the
      * filesize field is "fileSize" via website and "size" via API.
@@ -448,7 +500,10 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         FilePackage fp = null;
         /* 2020-12-07: Workaround: Use path as packagename as long as we're unable to get the name of the folder we're currently in! */
-        if (subfolder != null) {
+        if (currentFolderTitle != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(currentFolderTitle);
+        } else if (subfolder != null) {
             fp = FilePackage.getInstance();
             fp.setName(subfolder);
         }
@@ -482,7 +537,9 @@ public class GoogleDrive extends PluginForDecrypt {
                         dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
                     }
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
-                    dl._setFilePackage(fp);
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
                 }
             } else {
                 /* Folder */
@@ -495,8 +552,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folder_path);
             }
             decryptedLinks.add(dl);
-            /* TODO: 2020-12-04 */
-            // this.distribute(dl);
+            this.distribute(dl);
         }
     }
 

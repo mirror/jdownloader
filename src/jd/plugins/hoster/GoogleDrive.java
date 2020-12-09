@@ -176,6 +176,11 @@ public class GoogleDrive extends PluginForHost {
         return pbr;
     }
 
+    public static Browser prepBrowserAPI(final Browser br) {
+        /* TODO: Set default UA or set user defined UA or add extra setting for API UA */
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -195,12 +200,14 @@ public class GoogleDrive extends PluginForHost {
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        prepBrowserAPI(this.br);
         final UrlQuery queryFile = new UrlQuery();
         queryFile.appendEncoded("fileId", fid);
         queryFile.add("supportsAllDrives", "true");
         queryFile.appendEncoded("fields", getFieldsAPI());
         queryFile.appendEncoded("key", getAPIKey());
         br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
+        this.handleErrorsAPI(this.br, link, null);
         /* TODO: 2020-12-07: Check offline detection */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -216,13 +223,11 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public static final boolean useAPI() {
-        final boolean reallyUseAPI = false;
-        return reallyUseAPI && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        return !StringUtils.isEmpty(getAPIKey()) && DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }
 
     public static final String getAPIKey() {
-        return "YourApiKeyHere";
-        // return "";
+        return PluginJsonConfig.get(GoogleConfig.class).getGoogleDriveAPIKey();
     }
 
     public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> entries) {
@@ -362,7 +367,7 @@ public class GoogleDrive extends PluginForHost {
                 logger.info("Official download is impossible because quota has been reached");
                 fileHasReachedServersideQuota = true;
                 if (isDownload) {
-                    downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                    originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
                 } else {
                     /* Continue so other handling can find filename and/or filesize! */
                 }
@@ -377,7 +382,7 @@ public class GoogleDrive extends PluginForHost {
                 logger.info("Official download is impossible because quota has been reached2");
                 fileHasReachedServersideQuota = true;
                 if (isDownload) {
-                    downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                    originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
                 } else {
                     /* Continue so other handling can find filename and/or filesize! */
                 }
@@ -540,7 +545,7 @@ public class GoogleDrive extends PluginForHost {
                 // } else {
                 // return AvailableStatus.TRUE;
                 // }
-                downloadTempUnavailableAndOrOnlyViaAccount(account, true);
+                streamDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else {
                 logger.info("Streaming download impossible because: " + errorcodeStr + " | " + errorReason);
                 return null;
@@ -684,6 +689,10 @@ public class GoogleDrive extends PluginForHost {
             maxChunks = 1;
         }
         String streamDownloadlink = null;
+        /*
+         * TODO: Add another setting: API keys cannot just download an unlimited amount - they're still quota-limited like an anonymous (not
+         * logged-in) user!
+         */
         if (useAPI()) {
             /* Additionally check via API if allowed */
             this.requestFileInformationAPI(link, true);
@@ -708,7 +717,7 @@ public class GoogleDrive extends PluginForHost {
             if (privatefile) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else if (fileHasReachedServersideQuota) {
-                downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (StringUtils.isEmpty(this.dllink)) {
                 /* Last chance errorhandling */
                 if (specialError403) {
@@ -743,7 +752,7 @@ public class GoogleDrive extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 /* Most likely quota error or "Missing permissions" error. */
-                downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (dl.getConnection().getResponseCode() == 416) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
@@ -756,12 +765,12 @@ public class GoogleDrive extends PluginForHost {
             }
             if (br.containsHTML("error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
                 // so its not possible to download at this time.
-                downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (br.containsHTML("class=\"uc\\-error\\-caption\"")) {
                 /*
                  * 2017-02-06: This could also be another error but we catch it by the classname to make this more language independant!
                  */
-                downloadTempUnavailableAndOrOnlyViaAccount(account, false);
+                originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
@@ -812,6 +821,9 @@ public class GoogleDrive extends PluginForHost {
 
     private void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) {
         /* TODO: Add functionality */
+        /* TODO: Add errorhandling for invalid APIKey */
+        /* TODO: Add errorhandling for quota reached */
+        /* TODO: Add errorhandling for file offline */
     }
 
     private boolean requiresSpecialCaptcha(final Browser br) {
@@ -867,29 +879,29 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    /** Similar to {@link #originalFileDownloadTempUnavailableAndOrOnlyViaAccount(Account)} but in stream download handling! */
+    private void streamDownloadTempUnavailableAndOrOnlyViaAccount(final Account account) throws PluginException {
+        if (account != null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream-Download impossible - Workarounds: Retry later or import the file into your account and dl it from there or disable stream-download or try again with a different account", 2 * 60 * 60 * 1000);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream-Download impossible - Workarounds: Add Google account and retry or retry later or disable stream-download", 2 * 60 * 60 * 1000);
+        }
+    }
+
     /**
      * Use this for response 403 or messages like 'file can not be downloaded at this moment'. Such files will usually be downloadable via
      * account.
      */
-    private void downloadTempUnavailableAndOrOnlyViaAccount(final Account account, final boolean isStreamDownload) throws PluginException {
-        final String errorMaxWithAccount;
-        final String errorMsgWithoutAccount;
-        if (isStreamDownload) {
-            errorMaxWithAccount = "Stream-Download impossible - wait and retry later, import the file into your account and dl it from there, disable stream-download or try again with a different account";
-            errorMsgWithoutAccount = "Stream-Download impossible - add Google account and retry, wait and retry later or disable stream-download";
-        } else {
-            errorMaxWithAccount = "Download impossible - wait and retry later, import the file into your account and dl it from there or try again with a different account";
-            errorMsgWithoutAccount = "Download impossible - add Google account and retry or wait and retry later";
-        }
+    private void originalFileDownloadTempUnavailableAndOrOnlyViaAccount(final Account account) throws PluginException {
         if (account != null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMaxWithAccount, 2 * 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or add GDrive API key or import the file into your account and dl it from there or try again with a different account", 2 * 60 * 60 * 1000);
         } else {
             /* 2020-03-10: No warranties that a download will work via account but most times it will! */
             /*
              * 2020-08-10: Updated Exception - rather wait and try again later because such file may be downloadable without account again
              * after some time!
              */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgWithoutAccount, 2 * 60 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - Workarounds: Retry later or add GDrive API key or add Google account and retry", 2 * 60 * 60 * 1000);
             // throw new AccountRequiredException();
         }
     }

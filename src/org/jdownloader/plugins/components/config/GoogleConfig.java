@@ -14,11 +14,26 @@ import org.jdownloader.plugins.config.Type;
 public interface GoogleConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")
-    @DescriptionForConfigEntry("Enter the User-Agent which should be used for all Google related http requests")
+    @DescriptionForConfigEntry("Enter User-Agent which will be used for all Google website http requests")
     @Order(10)
     String getUserAgent();
 
     public void setUserAgent(String userAgent);
+
+    /** 2020-12-09: Just an idea */
+    // @AboutConfig
+    // @DefaultStringValue("JDownloader")
+    // @DescriptionForConfigEntry("Enter User-Agent which will be used for all Google Drive API requests")
+    // @Order(13)
+    // String getUserAgentAPI();
+    // public void setUserAgentAPI(String apikey);
+    @AboutConfig
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry("Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nThis API key will be used for GDrive folder crawling, linkchecking and downloading.")
+    @Order(15)
+    String getGoogleDriveAPIKey();
+
+    public void setGoogleDriveAPIKey(String apikey);
 
     public static enum PreferredQuality implements LabelInterface {
         ORIGINAL {
