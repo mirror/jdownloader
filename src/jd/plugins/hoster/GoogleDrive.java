@@ -184,6 +184,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public static Browser prepBrowserAPI(final Browser br) {
+        br.setAllowedResponseCodes(new int[] { 400 });
         return br;
     }
 
@@ -932,7 +933,6 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        /* TODO: Add errorhandling for invalid APIKey */
         /*
          * E.g. {"error":{"errors":[{"domain":"global","reason":"downloadQuotaExceeded",
          * "message":"The download quota for this file has been exceeded."}],"code":403,
@@ -941,6 +941,9 @@ public class GoogleDrive extends PluginForHost {
         /*
          * {"error":{"errors":[{"domain":"global","reason":"notFound","message":"File not found: <fileID>."
          * ,"locationType":"parameter","location":"fileId"}],"code":404,"message":"File not found: <fileID>."}}
+         */
+        /*
+         * {"error":{"errors":[{"domain":"usageLimits","reason":"keyInvalid","message":"Bad Request"}],"code":400,"message":"Bad Request"}}
          */
         Map<String, Object> errormap = null;
         List<Object> errorsO = null;
@@ -968,6 +971,8 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (reason.equalsIgnoreCase("downloadQuotaExceeded")) {
                 originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
+            } else if (reason.equalsIgnoreCase("keyInvalid")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API key invalid", 3 * 60 * 60 * 1000l);
             }
             /* Now either continue to the next error or handle it as unknown error if it's the last one in our Array of errors */
             logger.info("Unknown error detected: " + message);
