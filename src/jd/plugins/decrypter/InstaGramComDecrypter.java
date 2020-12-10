@@ -255,14 +255,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         final PluginForHost hostplugin = getNewPluginForHostInstance(getHost());
         boolean logged_in = false;
-        final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
-        if (aa != null) {
+        final Account account = AccountController.getInstance().getValidAccount(hostplugin);
+        if (account != null) {
             /* Login whenever possible */
             try {
-                ((jd.plugins.hoster.InstaGramCom) hostplugin).login(aa, false);
+                ((jd.plugins.hoster.InstaGramCom) hostplugin).login(account, false);
                 logged_in = true;
             } catch (final PluginException e) {
-                handleAccountException(aa, e);
+                handleAccountException(account, e);
             }
         }
         if (isPrivate && !logged_in) {

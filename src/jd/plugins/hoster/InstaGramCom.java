@@ -23,6 +23,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +44,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,12 +55,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "instagrammdecrypted://[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?" })
 public class InstaGramCom extends PluginForHost {
@@ -403,6 +404,8 @@ public class InstaGramCom extends PluginForHost {
         /* New trait 2020-11-26 */
         if (br.getURL() != null && br.getURL().matches("https?://[^/]+/accounts/login.*")) {
             throw new AccountRequiredException();
+        } else if (br.getURL() != null && br.getURL().matches("https?://[^/]+/challenge/.*")) {
+            handleLoginChallenge(br);
         } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -566,64 +569,9 @@ public class InstaGramCom extends PluginForHost {
                     }
                     final String page = PluginJSonUtils.getJsonValue(br, "checkpoint_url");
                     br.getPage(page);
-                    final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
-                    if (json != null) {
-                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            /* 2020-10-07: Unfinished code */
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                        final ArrayList<Object> challenges = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge");
-                        boolean foundKnownChallenge = false;
-                        for (final Object challengeO : challenges) {
-                            entries = (Map<String, Object>) challengeO;
-                            final String challengeType = (String) entries.get("challengeType");
-                            if (StringUtils.isEmpty(challengeType)) {
-                                continue;
-                            }
-                            if (challengeType.equalsIgnoreCase("SelectVerificationMethodForm")) {
-                                foundKnownChallenge = true;
-                                /* Take the simplest way: Auto-select first option and ask user for verification code */
-                                entries = (Map<String, Object>) entries.get("fields");
-                                /* Assume it's mail verification */
-                                final String email = (String) entries.get("email");
-                                if (StringUtils.isEmpty(email)) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                                PostRequest loginChoiceRequest = new PostRequest(br.getURL());
-                                loginChoiceRequest.setHeaders(ajaxHeaders);
-                                loginChoiceRequest.setContentType("application/x-www-form-urlencoded");
-                                post.setPostDataString("choice=1");
-                                br.getPage(loginChoiceRequest);
-                                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                                final Object twoFaTextO = JavaScriptEngineFactory.walkJson(entries, "extraData/content/{1}/text");
-                                final String twoFaText;
-                                if (twoFaTextO != null && twoFaTextO instanceof String) {
-                                    twoFaText = (String) twoFaTextO;
-                                } else {
-                                    twoFaText = "2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account";
-                                }
-                                final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
-                                final String code = getUserInput(twoFaText, dummyLink);
-                                if (code == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response format", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                }
-                                post.setPostDataString("security_code=" + code);
-                                br.getPage(post);
-                                entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                                final String status = (String) entries.get("status");
-                                if (!"success".equalsIgnoreCase(status)) {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n2FA login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                }
-                                /* TODO: Fully implement this */
-                            } else {
-                                /* Unknown challenge-type */
-                            }
-                        }
-                        if (!foundKnownChallenge) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown login challenge: Try cookie login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    } else {
+                    handleLoginChallenge(this.br);
+                    final boolean tryOldChallengeHandling = false;
+                    if (tryOldChallengeHandling) {
                         // verify by email.
                         Form f = br.getFormBySubmitvalue("Verify+by+Email");
                         if (f == null) {
@@ -660,6 +608,74 @@ public class InstaGramCom extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    public static void handleLoginChallenge(final Browser br) throws AccountUnavailableException {
+        final String json = br.getRegex("window._sharedData = (\\{.*?\\})</script>").getMatch(0);
+        if (json != null) {
+            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final String possibleErrormessage = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge/{0}/extraData/content/{0}/title");
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2020-10-07: Unfinished code */
+                if (!StringUtils.isEmpty(possibleErrormessage)) {
+                    throw new AccountUnavailableException("Login challenge required: Complete in browser and try again or try cookie login: " + possibleErrormessage, 5 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Login challenge required: Complete in browser and try again or try cookie login", 5 * 60 * 1000l);
+                }
+            }
+            // final ArrayList<Object> challenges = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "entry_data/Challenge");
+            // boolean foundKnownChallenge = false;
+            // for (final Object challengeO : challenges) {
+            // entries = (Map<String, Object>) challengeO;
+            // final String challengeType = (String) entries.get("challengeType");
+            // if (StringUtils.isEmpty(challengeType)) {
+            // continue;
+            // }
+            // if (challengeType.equalsIgnoreCase("SelectVerificationMethodForm")) {
+            // foundKnownChallenge = true;
+            // /* Take the simplest way: Auto-select first option and ask user for verification code */
+            // entries = (Map<String, Object>) entries.get("fields");
+            // /* Assume it's mail verification */
+            // final String email = (String) entries.get("email");
+            // if (StringUtils.isEmpty(email)) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // PostRequest loginChoiceRequest = new PostRequest(br.getURL());
+            // loginChoiceRequest.setHeaders(ajaxHeaders);
+            // loginChoiceRequest.setContentType("application/x-www-form-urlencoded");
+            // post.setPostDataString("choice=1");
+            // br.getPage(loginChoiceRequest);
+            // entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            // final Object twoFaTextO = JavaScriptEngineFactory.walkJson(entries, "extraData/content/{1}/text");
+            // final String twoFaText;
+            // if (twoFaTextO != null && twoFaTextO instanceof String) {
+            // twoFaText = (String) twoFaTextO;
+            // } else {
+            // twoFaText = "2 Factor Authenication\r\nPlease enter in the 6 digit code within your Instagram linked email account";
+            // }
+            // final DownloadLink dummyLink = new DownloadLink(null, "Account 2 Factor Auth", MAINPAGE, br.getURL(), true);
+            // final String code = getUserInput(twoFaText, dummyLink);
+            // if (code == null) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2 Factor response format",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
+            // post.setPostDataString("security_code=" + code);
+            // br.getPage(post);
+            // entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            // final String status = (String) entries.get("status");
+            // if (!"success".equalsIgnoreCase(status)) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n2FA login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
+            // /* TODO: Fully implement this */
+            // } else {
+            // /* Unknown challenge-type */
+            // }
+            // }
+            // if (!foundKnownChallenge) {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown login challenge: Try cookie login",
+            // PluginException.VALUE_ID_PREMIUM_DISABLE);
+            // }
         }
     }
 
