@@ -150,12 +150,14 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private static final String PROPERTY_USED_QUALITY = "USED_QUALITY";
+    private static final String PROPERTY_USED_QUALITY             = "USED_QUALITY";
+    private static final String PROPERTY_GOOGLE_DOCUMENT          = "IS_GOOGLE_DOCUMENT";
+    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL = "FORCED_FINAL_DOWNLOADURL";
     /* Packagizer property */
-    public static final String  PROPERTY_ROOT_DIR     = "root_dir";
-    public String               agent                 = null;
-    private boolean             isStreamable          = false;
-    private String              dllink                = null;
+    public static final String  PROPERTY_ROOT_DIR                 = "root_dir";
+    public String               agent                             = null;
+    private boolean             isStreamable                      = false;
+    private String              dllink                            = null;
 
     /** Only call this if the user is not logged in! */
     public Browser prepBrowser(Browser pbr) {
@@ -180,6 +182,10 @@ public class GoogleDrive extends PluginForHost {
         return br;
     }
 
+    private boolean isGoogleDocument(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -187,7 +193,7 @@ public class GoogleDrive extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         /* TODO: Decide whether to use website- or API here. */
-        if (useAPI()) {
+        if (canUseAPI()) {
             return this.requestFileInformationAPI(link, isDownload);
         } else {
             return this.requestFileInformationWebsite(link, null, isDownload);
@@ -214,10 +220,25 @@ public class GoogleDrive extends PluginForHost {
 
     /** Contains all fields we need for file/folder API requests. */
     public static final String getFieldsAPI() {
-        return "kind,mimeType,id,name,size,description,md5Checksum";
+        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks";
     }
 
-    public static final boolean useAPI() {
+    /** Multiple factors decide whether or not we want to prefer using the API for downloading. */
+    private boolean useAPIForDownloading(final DownloadLink link, final Account account) {
+        if (!canUseAPI()) {
+            return false;
+        } else if (this.isGoogleDocument(link)) {
+            /* 2020-12-10: Website mode cannot handle gdocs downloads (yet). */
+            return true;
+        } else if (account != null) {
+            /* For all other downloads: Prefer download via website with account to avoid "quota reached" errors. */
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public static final boolean canUseAPI() {
         return !StringUtils.isEmpty(getAPIKey());
     }
 
@@ -226,11 +247,30 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> entries) {
+        final String mimeType = (String) entries.get("mimeType");
         final String filename = (String) entries.get("name");
         final String md5Checksum = (String) entries.get("md5Checksum");
         final long fileSize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         final String description = (String) entries.get("description");
-        if (!StringUtils.isEmpty(filename)) {
+        /* E.g. application/vnd.google-apps.document | application/vnd.google-apps.spreadsheet */
+        final boolean isGoogleDriveDocument = mimeType != null && mimeType.matches("application/vnd\\.google-apps\\..+");
+        if (isGoogleDriveDocument) {
+            /*
+             * Google Drive documents: They don't really have any base format - we'll try to export them as .zip files or in the future,
+             * maybe in a user preferred format.
+             */
+            link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
+            if (!StringUtils.isEmpty(filename)) {
+                link.setFinalFileName(filename + ".zip");
+            }
+            if (entries.containsKey("exportLinks")) {
+                final Map<String, Object> exportFormatDownloadurls = (Map<String, Object>) entries.get("exportLinks");
+                if (exportFormatDownloadurls.containsKey("application/zip")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+                }
+            }
+            /* TODO: Check if .zip is always given and/or add selection for preferred format */
+        } else if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
         if (fileSize > 0) {
@@ -480,11 +520,15 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private boolean streamShouldBeAvailable(final DownloadLink link) {
-        String filename = link.getFinalFileName();
-        if (filename == null) {
-            filename = link.getName();
+        if (this.isGoogleDocument(link)) {
+            return false;
+        } else {
+            String filename = link.getFinalFileName();
+            if (filename == null) {
+                filename = link.getName();
+            }
+            return this.isStreamable || isVideoFile(filename);
         }
-        return this.isStreamable || isVideoFile(filename);
     }
 
     /** Returns user preferred stream quality if user prefers stream download else returns null. */
@@ -688,32 +732,40 @@ public class GoogleDrive extends PluginForHost {
          * TODO: Add another setting: API keys cannot just download an unlimited amount - they're still quota-limited like an anonymous (not
          * logged-in) user!
          */
-        /* Only use API for downloading if no account is available! In an attempt to prevent "quota reached" errors! */
         boolean checkForAPIErrors = false;
-        if (useAPI() && account == null) {
+        if (useAPIForDownloading(link, account)) {
             /* Additionally check via API if allowed */
             this.requestFileInformationAPI(link, true);
-            streamDownloadlink = this.handleStreamQualitySelection(link, account);
-            if (streamDownloadlink != null) {
+            if (this.isGoogleDocument(link)) {
                 /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
-                this.dllink = streamDownloadlink;
+                this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, null);
+                if (StringUtils.isEmpty(this.dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This GDoc is not downloadable or not in format .zip");
+                }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
             } else {
-                /* Only check for API errors if */
-                checkForAPIErrors = true;
-                final UrlQuery queryFile = new UrlQuery();
-                queryFile.appendEncoded("fileId", this.getFID(link));
-                queryFile.add("supportsAllDrives", "true");
-                // queryFile.appendEncoded("fields", getFieldsAPI());
-                queryFile.appendEncoded("key", getAPIKey());
-                queryFile.appendEncoded("alt", "media");
-                /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
-                this.dllink = jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
+                streamDownloadlink = this.handleStreamQualitySelection(link, account);
+                if (streamDownloadlink != null) {
+                    /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
+                    this.dllink = streamDownloadlink;
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
+                } else {
+                    /* Only check for API errors if */
+                    checkForAPIErrors = true;
+                    final UrlQuery queryFile = new UrlQuery();
+                    queryFile.appendEncoded("fileId", this.getFID(link));
+                    queryFile.add("supportsAllDrives", "true");
+                    // queryFile.appendEncoded("fields", getFieldsAPI());
+                    queryFile.appendEncoded("key", getAPIKey());
+                    queryFile.appendEncoded("alt", "media");
+                    /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
+                    this.dllink = jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, maxChunks);
+                }
             }
         } else {
             /* Additionally use API for availablecheck if possible. */
-            if (useAPI()) {
+            if (canUseAPI()) {
                 this.requestFileInformationAPI(link, true);
             }
             requestFileInformationWebsite(link, account, true);

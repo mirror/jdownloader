@@ -1083,13 +1083,14 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
-    public void login(Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
+    public void login(final Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
             br.setCookiesExclusive(true);
             prepBrowser(br, false);
             br.setFollowRedirects(true);
             this.vkID = account.getStringProperty("vkid");
             final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
             try {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
@@ -1098,37 +1099,27 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* We trust these cookies --> Do not check them */
                         logger.info("Trust login cookies as they're not yet that old");
                         return;
-                    }
-                    /* Check cookies */
-                    logger.info("Trying cookie login");
-                    br.getPage(getBaseURL());
-                    // non language, check
-                    if (br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
-                        logger.info("Cookie login successful");
-                        // language set in user profile, so after 'login' OR 'login check' it could be changed!
-                        if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
-                            br.setCookie(DOMAIN, "remixlang", "3");
+                    } else {
+                        logger.info("Attempting cookie login");
+                        if (checkCookieLogin(br, account)) {
+                            return;
                         }
-                        this.vkID = regExVKAccountID(br);
-                        /* Refresh timestamp */
-                        account.saveCookies(br.getCookies(DOMAIN), "");
-                        return;
                     }
-                    /* Delete cookies / Headers to perform a full login */
-                    logger.info("Cookie login failed");
-                    br = prepBrowser(new Browser(), false);
+                }
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    br.setCookies(DOMAIN, userCookies);
+                    if (checkCookieLogin(br, account)) {
+                        return;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 logger.info("Performing full login");
                 br.getPage(getBaseURL() + "/");
                 final Form login = br.getFormbyProperty("id", "quick_login_form");
                 if (login == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 login.put("email", Encoding.urlEncode(account.getUser()));
                 login.put("pass", Encoding.urlEncode(account.getPass()));
@@ -1141,20 +1132,16 @@ public class VKontakteRuHoster extends PluginForHost {
                     br.getPage(br.getURL());
                 }
                 /* Do NOT check based on cookies as they sometimes change them! */
-                if (!br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls du die zweistufige Authentifizierung aktiviert hast, deaktiviere diese und versuche es erneut.\r\n2. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n3. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. In case you have 2 factor authentification activated, deactivate it and try again.\r\n2. If your password contains special characters, change it (remove them) and try again!\r\n3. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedinHTML(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* Finish login if needed */
-                final Form lol = br.getFormbyProperty("name", "login");
-                if (lol != null) {
-                    lol.put("email", Encoding.urlEncode(account.getUser()));
-                    lol.put("pass", Encoding.urlEncode(account.getPass()));
-                    lol.put("expire", "0");
-                    br.submitForm(lol);
+                final Form finalLoginStep = br.getFormbyProperty("name", "login");
+                if (finalLoginStep != null) {
+                    finalLoginStep.put("email", Encoding.urlEncode(account.getUser()));
+                    finalLoginStep.put("pass", Encoding.urlEncode(account.getPass()));
+                    finalLoginStep.put("expire", "0");
+                    br.submitForm(finalLoginStep);
                 }
                 this.vkID = regExVKAccountID(br);
                 /* Save cookies */
@@ -1169,6 +1156,32 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
         }
+    }
+
+    private boolean checkCookieLogin(final Browser br, final Account account) throws IOException {
+        br.getPage(getBaseURL());
+        // non language, check
+        if (isLoggedinHTML(br)) {
+            logger.info("Cookie login successful");
+            // language set in user profile, so after 'login' OR 'login check' it could be changed!
+            if (!"3".equals(br.getCookie(DOMAIN, "remixlang"))) {
+                br.setCookie(DOMAIN, "remixlang", "3");
+            }
+            this.vkID = regExVKAccountID(br);
+            /* Refresh timestamp */
+            account.saveCookies(br.getCookies(DOMAIN), "");
+            return true;
+        } else {
+            /* Delete cookies / Headers to perform a full login */
+            logger.info("Cookie login failed");
+            br.clearAll();
+            prepBrowser(br, false);
+            return false;
+        }
+    }
+
+    private static boolean isLoggedinHTML(final Browser br) {
+        return br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"");
     }
 
     private String regExVKAccountID(final Browser br) {
