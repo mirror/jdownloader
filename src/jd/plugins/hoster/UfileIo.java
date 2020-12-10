@@ -104,6 +104,10 @@ public class UfileIo extends antiDDoSForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
+        if (filename == null && filesize == null && !br.containsHTML("class=\"download\"")) {
+            /* 2020-12-10: E.g. https://ufile.io/about */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 

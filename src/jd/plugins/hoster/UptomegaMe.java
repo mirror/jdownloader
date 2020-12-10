@@ -18,17 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UptomegaCom extends XFileSharingProBasic {
-    public UptomegaCom(final PluginWrapper wrapper) {
+public class UptomegaMe extends XFileSharingProBasic {
+    public UptomegaMe(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -56,8 +56,14 @@ public class UptomegaCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptomega.com" });
+        ret.add(new String[] { "uptomega.me", "uptomega.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2020-12-10: Main domain has changed from uptomega.com to uptomega.me */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     @Override
