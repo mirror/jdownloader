@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
@@ -53,6 +56,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
@@ -153,6 +157,7 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_USED_QUALITY             = "USED_QUALITY";
     private static final String PROPERTY_GOOGLE_DOCUMENT          = "IS_GOOGLE_DOCUMENT";
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL = "FORCED_FINAL_DOWNLOADURL";
+    private static final String PROPERTY_CAN_DOWNLOAD             = "CAN_DOWNLOAD";
     /* Packagizer property */
     public static final String  PROPERTY_ROOT_DIR                 = "root_dir";
     public String               agent                             = null;
@@ -184,6 +189,10 @@ public class GoogleDrive extends PluginForHost {
 
     private boolean isGoogleDocument(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
+    }
+
+    private boolean canDownload(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_CAN_DOWNLOAD, true);
     }
 
     @Override
@@ -220,7 +229,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Contains all fields we need for file/folder API requests. */
     public static final String getFieldsAPI() {
-        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks";
+        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload)";
     }
 
     /** Multiple factors decide whether or not we want to prefer using the API for downloading. */
@@ -252,21 +261,57 @@ public class GoogleDrive extends PluginForHost {
         final String md5Checksum = (String) entries.get("md5Checksum");
         final long fileSize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
         final String description = (String) entries.get("description");
+        final boolean canDownload = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "capabilities/canDownload")).booleanValue();
         /* E.g. application/vnd.google-apps.document | application/vnd.google-apps.spreadsheet */
-        final boolean isGoogleDriveDocument = mimeType != null && mimeType.matches("application/vnd\\.google-apps\\..+");
-        if (isGoogleDriveDocument) {
-            /*
-             * Google Drive documents: They don't really have any base format - we'll try to export them as .zip files or in the future,
-             * maybe in a user preferred format.
+        final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
+        if (googleDriveDocumentType != null) {
+            /**
+             * Google Drive documents: Either created directly on Google Drive or user added a "real" document-file to GDrive and converted
+             * it into a GDoc later. </br>
+             * In this case, the "filename" is more like a title no matter whether or not it contains a file-extension.</br>
+             * If it contains a file-extension we will try to find download the output format accordingly. </br>
+             * For GDocs usually there is no filesize given because there is no "original" file anymore. The filesize depends on the format
+             * we chose to download the file in.
              */
             link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
-            if (!StringUtils.isEmpty(filename)) {
-                link.setFinalFileName(filename + ".zip");
-            }
-            if (entries.containsKey("exportLinks")) {
+            /* Assume that a filename/title is always given. */
+            if (entries.containsKey("exportLinks") && !StringUtils.isEmpty(filename)) {
                 final Map<String, Object> exportFormatDownloadurls = (Map<String, Object>) entries.get("exportLinks");
-                if (exportFormatDownloadurls.containsKey("application/zip")) {
-                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+                String docDownloadURL = null;
+                String fileExtension = Plugin.getFileNameExtensionFromString(filename);
+                if (fileExtension != null) {
+                    fileExtension = fileExtension.toLowerCase(Locale.ENGLISH).replace(".", "");
+                    final Iterator<Entry<String, Object>> iterator = exportFormatDownloadurls.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final String docDownloadURLCandidate = (String) iterator.next().getValue();
+                        if (docDownloadURLCandidate.toLowerCase(Locale.ENGLISH).contains("exportformat=" + fileExtension)) {
+                            docDownloadURL = docDownloadURLCandidate;
+                            break;
+                        }
+                    }
+                }
+                if (!StringUtils.isEmpty(docDownloadURL)) {
+                    /* We found an export format suiting our filename-extension --> Prefer that */
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, docDownloadURL);
+                    link.setFinalFileName(filename);
+                } else if (googleDriveDocumentType.equalsIgnoreCase("document")) {
+                    /* Download in OpenDocument format. */
+                    link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".odt"));
+                    if (exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
+                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
+                    }
+                } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
+                    /* Download in OpenDocument format. */
+                    link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".ods"));
+                    if (exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
+                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
+                    }
+                } else {
+                    /* Unknown document type: Fallback - try to download .zip */
+                    if (exportFormatDownloadurls.containsKey("application/zip")) {
+                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+                    }
+                    link.setFinalFileName(filename + ".zip");
                 }
             }
             /* TODO: Check if .zip is always given and/or add selection for preferred format */
@@ -284,6 +329,7 @@ public class GoogleDrive extends PluginForHost {
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
+        link.setProperty(PROPERTY_CAN_DOWNLOAD, canDownload);
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
@@ -736,6 +782,9 @@ public class GoogleDrive extends PluginForHost {
         if (useAPIForDownloading(link, account)) {
             /* Additionally check via API if allowed */
             this.requestFileInformationAPI(link, true);
+            if (!this.canDownload(link)) {
+                cannotDownload();
+            }
             if (this.isGoogleDocument(link)) {
                 /* Yeah it's silly but we keep using this variable as it is required for website mode download. */
                 this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, null);
@@ -767,6 +816,11 @@ public class GoogleDrive extends PluginForHost {
             /* Additionally use API for availablecheck if possible. */
             if (canUseAPI()) {
                 this.requestFileInformationAPI(link, true);
+                if (!this.canDownload(link)) {
+                    cannotDownload();
+                } else if (this.isGoogleDocument(link)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "GDocs are only downloadable when API key is provided");
+                }
             }
             requestFileInformationWebsite(link, account, true);
             if (privatefile) {
@@ -878,7 +932,6 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        /* TODO: Add functionality */
         /* TODO: Add errorhandling for invalid APIKey */
         /*
          * E.g. {"error":{"errors":[{"domain":"global","reason":"downloadQuotaExceeded",
@@ -1009,6 +1062,10 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Retry later or add Google account and retry", 2 * 60 * 60 * 1000);
             // throw new AccountRequiredException();
         }
+    }
+
+    private void cannotDownload() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Download not allowed");
     }
 
     private boolean login(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
