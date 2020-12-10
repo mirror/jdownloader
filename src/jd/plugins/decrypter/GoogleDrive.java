@@ -69,7 +69,7 @@ public class GoogleDrive extends PluginForDecrypt {
     private static final String FOLDER_CURRENT = "https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[^/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        if (jd.plugins.hoster.GoogleDrive.useAPI()) {
+        if (jd.plugins.hoster.GoogleDrive.canUseAPI()) {
             return this.crawlAPI(param);
         } else {
             return this.crawlWebsite(param);
