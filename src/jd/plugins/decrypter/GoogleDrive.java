@@ -95,6 +95,8 @@ public class GoogleDrive extends PluginForDecrypt {
         if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final String subfolderPath = this.getAdoptedCloudFolderStructure();
         String nameOfCurrentFolder = null;
         final UrlQuery queryFolder = new UrlQuery();
@@ -103,10 +105,6 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.add("includeItemsFromAllDrives", "true");
         /* Returns up to 1000 items per request (default = 100) */
         queryFolder.add("pageSize", "200");
-        /*
-         * Only request the fields we actually need! TODO: Check what's up when capabilities(isDownload) == false --> Maybe for "special"
-         * docs??
-         */
         queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
         /* API key for testing */
         queryFolder.appendEncoded("key", jd.plugins.hoster.GoogleDrive.getAPIKey());
@@ -115,10 +113,11 @@ public class GoogleDrive extends PluginForDecrypt {
         do {
             logger.info("Working on pagination page " + (page + 1));
             br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
-            /* TODO: Check what happens if user adds folder and is missing permission to access it! */
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                /* Folder offline */
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+            ((jd.plugins.hoster.GoogleDrive) hostPlugin).handleErrorsAPI(br, null, account);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            /* 2020-12-10: Will return empty array for private items too! */
+            if (!entries.containsKey("files") || ((List<Object>) entries.get("files")).size() == 0) {
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_OR_PRIVATE_FOLDER " + folderID, "EMPTY_OR_PRIVATE_FOLDER " + folderID));
                 return decryptedLinks;
             }
             if (page == 0 && subfolderPath == null) {
@@ -130,11 +129,9 @@ public class GoogleDrive extends PluginForDecrypt {
                      * ... </br>
                      * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
                      */
-                    final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-                    final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
                     final Browser websiteBR = new Browser();
-                    if (aa != null) {
-                        login(websiteBR, aa);
+                    if (account != null) {
+                        login(websiteBR, account);
                     } else {
                         /* Respect users' plugin settings (e.g. custom User-Agent) */
                         ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(websiteBR);
@@ -151,7 +148,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     logger.info("Folder title workaround failed");
                 }
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             // if (page == 0) {
             // String parentFolderID = null;
             // try {
