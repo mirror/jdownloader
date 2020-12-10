@@ -71,6 +71,7 @@ public class MegaDpUa extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Файл не найден")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

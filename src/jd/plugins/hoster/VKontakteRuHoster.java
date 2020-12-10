@@ -778,12 +778,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (final PluginException e) {
-            logger.info("Login failed!");
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Free Account");
         account.setType(AccountType.FREE);

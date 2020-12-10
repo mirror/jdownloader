@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -29,16 +31,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nbc.com" }, urls = { "https?://(?:www\\.)?nbc\\.com/.+" })
 public class NbcCom extends PluginForHost {
-
     public NbcCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -50,7 +47,6 @@ public class NbcCom extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -66,28 +62,24 @@ public class NbcCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 503 });
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_title = new Regex(link.getDownloadURL(), "https?://[^/]+/(.+)").getMatch(0).replace("/", "_");
         final String json_source = this.br.getRegex("refluxPreload=(\\{.*?)</script>").getMatch(0);
-
         if (json_source == null) {
             /* Probably not a video */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
         entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "resolved/Clip/video");
-
         final String type = (String) entries.get("type");
         if (!"videos".equals(type)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         entries = (LinkedHashMap<String, Object>) entries.get("attributes");
-
         String description = (String) entries.get("description");
         String date = (String) entries.get("airdate");
         String title = (String) entries.get("title");
@@ -98,9 +90,7 @@ public class NbcCom extends PluginForHost {
             /* Fallback */
             title = url_title;
         }
-
         final String date_formatted = StringUtils.isEmpty(date) ? null : new Regex(date, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-
         String filename = date_formatted != null ? date_formatted + "_" : "";
         filename += "nbc_" + title;
         dllink = (String) entries.get("mediaUrl");
@@ -138,11 +128,9 @@ public class NbcCom extends PluginForHost {
             /* We cannot be sure whether we have the correct extension or not! */
             link.setName(filename);
         }
-
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(description);
         }
-
         return AvailableStatus.TRUE;
     }
 

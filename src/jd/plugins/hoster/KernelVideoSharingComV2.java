@@ -1111,6 +1111,10 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                     result = result + "/" + string;
                 }
             }
+            /* 2020-12-10: E.g. porndr.com */
+            if (videoUrl.endsWith("/") && !result.endsWith("/")) {
+                result += "/";
+            }
         }
         return result;
     }
