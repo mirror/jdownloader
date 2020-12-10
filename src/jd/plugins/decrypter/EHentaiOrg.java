@@ -90,8 +90,12 @@ public class EHentaiOrg extends PluginForDecrypt {
         br.setCookie(Browser.getHost(parameter), "nw", "1");
         br.getPage(parameter);
         if (!this.canHandle(br.getURL()) && !br.getURL().contains(galleryid)) {
+            /* 2020-12-10: Bughunting: https://board.jdownloader.org/showthread.php?t=86125 */
             logger.info("Redirect to mainpage? Accessing gallery URL again ...");
             br.getPage(parameter);
+            if (!br.getURL().contains(galleryid)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect to mainpage? Login failure?");
+            }
         }
         if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
