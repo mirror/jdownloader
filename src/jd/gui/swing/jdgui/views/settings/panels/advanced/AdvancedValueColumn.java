@@ -433,6 +433,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     }
 
     private void register(ExtColumn<AdvancedConfigEntry> col) {
+        col.setClickcount(1);// edit mode on first click
         columns.add(col);
     }
 
