@@ -53,6 +53,7 @@ public class SegmentDownloader extends DownloadInterface {
     private PluginException                         caughtPluginException;
     private final Browser                           obr;
     private final List<Segment>                     segments          = new ArrayList<Segment>();
+    private int                                     skipBytes         = 0;
 
     public SegmentDownloader(final Plugin plugin, final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
         this.obr = br2.cloneBrowser();
@@ -125,11 +126,15 @@ public class SegmentDownloader extends DownloadInterface {
                         while (!abort.get()) {
                             final int len = meteredThrottledInputStream.read(readWriteBuffer);
                             if (len > 0) {
-                                loaded += len;
+                                int offset = 0;
+                                if (this.skipBytes > loaded) {
+                                    offset = (int) (this.skipBytes - loaded);
+                                }
                                 localIO = true;
-                                outputStream.write(readWriteBuffer, 0, len);
+                                outputStream.write(readWriteBuffer, offset, len - offset);
                                 localIO = false;
-                                bytesWritten += len;
+                                loaded += len;
+                                bytesWritten += len - offset;
                                 downloadable.setDownloadBytesLoaded(bytesWritten);
                             } else if (len == -1) {
                                 break;
@@ -362,5 +367,9 @@ public class SegmentDownloader extends DownloadInterface {
     @Override
     public boolean isResumedDownload() {
         return false;
+    }
+
+    public void setSkipBytes(int skip) {
+        this.skipBytes = skip;
     }
 }
