@@ -31,19 +31,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -64,6 +51,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidgator.net" }, urls = { "https?://(?:www\\.)?(?:rapidgator\\.net|rapidgator\\.asia|rg\\.to)/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)" })
 public class RapidGatorNet extends antiDDoSForHost {
@@ -459,7 +460,11 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
             }
             // wasn't needed for raz, but psp said something about a redirect)
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             final long timeBeforeCaptchaInput = System.currentTimeMillis();
             Form captcha = null;
             if (br.containsHTML("data-sitekey")) {
@@ -579,7 +584,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
         }
         /* 2020-03-17: Content-Disposition should always be given */
-        if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text") || !dl.getConnection().isContentDisposition() || !dl.getConnection().isOK()) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -600,17 +605,18 @@ public class RapidGatorNet extends antiDDoSForHost {
                 if (!resume) {
                     /* Resume was already disabled? Then we cannot do anything about it --> Wait and retry later */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown resume related server error");
+                } else {
+                    /* Reset progress and try again */
+                    logger.info("Resume impossible, disabling it for the next try");
+                    /*
+                     * Special: Save directurl although we have an error --> It should be 're-usable' because this failed attempt does not
+                     * count as download attempt serverside.
+                     */
+                    link.setProperty(getDirectlinkProperty(account), finalDownloadURL);
+                    /* Disable resume on next attempt */
+                    link.setResumeable(false);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                /* Reset progress and try again */
-                logger.info("Resume impossible, disabling it for the next try");
-                /*
-                 * Special: Save directurl although we have an error --> It should be 're-usable' because this failed attempt does not count
-                 * as download attempt serverside.
-                 */
-                link.setProperty(getDirectlinkProperty(account), finalDownloadURL);
-                /* Disable resume on next attempt */
-                link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(false));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.containsHTML("<div class=\"error\">\\s*Error\\. Link expired\\. You have reached your daily limit of downloads\\.")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
@@ -632,8 +638,9 @@ public class RapidGatorNet extends antiDDoSForHost {
          * Always allow resume again for next attempt as a "failed" attempt will still get us a usable direct-URL thus no time- or captcha
          * attempt gets wasted!
          */
-        if (resume && link.getBooleanProperty(DownloadLink.PROPERTY_RESUMEABLE, false) == false) {
-            link.setProperty(DownloadLink.PROPERTY_RESUMEABLE, Boolean.valueOf(true));
+        if (!StringUtils.containsIgnoreCase(dl.getConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
+            logger.info("Resume disabled: missing Accept-Ranges response!");
+            link.setResumeable(false);
         }
         link.setProperty(getDirectlinkProperty(account), finalDownloadURL);
         try {
@@ -686,7 +693,12 @@ public class RapidGatorNet extends antiDDoSForHost {
             try {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
                 con = dl.getConnection();
-                if (!con.isOK() || StringUtils.containsIgnoreCase(con.getContentType(), "text") || con.getLongContentLength() == -1) {
+                if (!looksLikeDownloadableContent(con)) {
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     link.setProperty(directlinkproperty, Property.NULL);
                     return null;
                 } else {
@@ -1320,7 +1332,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(account));
         dl.setFilenameFix(FIX_FILENAMES);
-        if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
@@ -1524,7 +1536,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
             dl.setFilenameFix(FIX_FILENAMES);
-            if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);

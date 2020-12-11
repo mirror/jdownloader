@@ -24,23 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -61,6 +44,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -817,11 +819,14 @@ public class UpToBoxCom extends antiDDoSForHost {
         try {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             errorMsg = (String) entries.get("message");
-        } catch (final Throwable e) {
-            logger.log(e);
-            logger.warning("API did not return json?");
+        } catch (final JSonMapperException jsone) {
             /* Assume we got html code and check for errors in html code */
-            this.checkErrorsWebsite(link, account);
+            try {
+                this.checkErrorsWebsite(link, account);
+            } catch (PluginException e) {
+                throw Exceptions.addSuppressed(e, jsone);
+            }
+            logger.log(jsone);
             /* TODO: Throw exception here? */
             // if (link == null) {
             // throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000l);

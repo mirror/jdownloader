@@ -13,21 +13,17 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import jd.gui.swing.dialog.AboutDialog;
+
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.gui.swing.dialog.AboutDialog;
-
 public class AboutAction extends CustomizableAppAction {
-
     private static final long serialVersionUID = -353145605693194634L;
 
     public AboutAction() {
@@ -35,14 +31,9 @@ public class AboutAction extends CustomizableAppAction {
         setName(_GUI.T.action_aboutaction());
         setIconKey(IconKey.ICON_ABOUT);
         setTooltipText(_GUI.T.action_aboutaction_tooltip());
-
     }
 
     public void actionPerformed(ActionEvent e) {
-        try {
-            Dialog.getInstance().showDialog(new AboutDialog());
-        } catch (DialogNoAnswerException e1) {
-        }
+        AboutDialog.showNonBlocking();
     }
-
 }

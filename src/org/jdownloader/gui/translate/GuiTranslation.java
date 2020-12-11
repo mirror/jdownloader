@@ -1957,6 +1957,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Core:" })
     String jd_gui_swing_components_AboutDialog_core();
 
+    @Default(lngs = { "en" }, values = { "Environment:" })
+    String jd_gui_swing_components_AboutDialog_environment();
+
+    @Default(lngs = { "en" }, values = { "Hardware:" })
+    String jd_gui_swing_components_AboutDialog_hardware();
+
     @Default(lngs = { "en" }, values = { "AppWork Utilities:" })
     String jd_gui_swing_components_AboutDialog_appworkutilities();
 

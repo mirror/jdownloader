@@ -5,11 +5,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.gui.swing.jdgui.views.settings.panels.reconnect.ReconnectDialog;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -27,6 +29,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
 
 public class ReconnectAction extends AbstractToolBarAction {
     private final GenericConfigEventListener<String> listener;
@@ -74,7 +77,23 @@ public class ReconnectAction extends AbstractToolBarAction {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), _GUI.T.gui_reconnect_confirm(), new AbstractIcon(IconKey.ICON_RECONNECT, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
+                String dialogMessage = null;
+                for (final SingleDownloadController con : DownloadWatchDog.getInstance().getRunningDownloadLinks()) {
+                    if (con.isAlive()) {
+                        dialogMessage = _JDT.T.DownloadWatchDog_onShutdownRequest_();
+                        final DownloadInterface dl = con.getDownloadInstance();
+                        if (dl != null && !con.getDownloadLink().isResumeable()) {
+                            dialogMessage = _JDT.T.DownloadWatchDog_onShutdownRequest_nonresumable();
+                            break;
+                        }
+                    }
+                }
+                if (dialogMessage == null) {
+                    dialogMessage = _GUI.T.gui_reconnect_confirm();
+                } else {
+                    dialogMessage = "\r\n" + _GUI.T.gui_reconnect_confirm();
+                }
+                final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI.T.lit_are_you_sure(), dialogMessage, new AbstractIcon(IconKey.ICON_RECONNECT, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
                     @Override
                     public ModalityType getModalityType() {
                         return ModalityType.MODELESS;

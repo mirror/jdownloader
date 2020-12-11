@@ -278,22 +278,7 @@ public class AWTMacOSApplicationAdapter {
                 final Object aboutHandler = java.lang.reflect.Proxy.newProxyInstance(desktop.getClass().getClassLoader(), new Class[] { setAboutHandler​.getParameterTypes()[0] }, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
-                        System.out.println(method.getName());
-                        final Thread thread = new Thread("java.awt.desktop.AboutHandler") {
-                            public void run() {
-                                new EDTRunner() {
-                                    @Override
-                                    protected void runInEDT() {
-                                        try {
-                                            Dialog.getInstance().showDialog(new AboutDialog());
-                                        } catch (DialogNoAnswerException e1) {
-                                        }
-                                    }
-                                };
-                            };
-                        };
-                        thread.setDaemon(true);
-                        thread.start();
+                        AboutDialog.showNonBlocking();
                         return null;
                     }
                 });
