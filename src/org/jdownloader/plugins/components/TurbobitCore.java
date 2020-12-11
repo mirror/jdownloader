@@ -9,17 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,6 +31,17 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -101,9 +101,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -328,7 +328,7 @@ public class TurbobitCore extends antiDDoSForHost {
         String expire = br.getRegex(">Turbo access till\\s*(.*?)\\s*</span>").getMatch(0);
         if (expire == null) {
             /* 2019-05-22: hitfile.net */
-            expire = br.getRegex("'/premium'\\s*>\\s*(\\d+\\.\\d+\\.\\d+)\\s*<").getMatch(0);
+            expire = br.getRegex("'/premium(?:/info)?'\\s*>\\s*(\\d+\\.\\d+\\.\\d+)\\s*<").getMatch(0);
         }
         if (expire != null) {
             if (br.containsHTML("<span class='glyphicon glyphicon-ok banturbo'>") || ((br.containsHTML("You have reached") && br.containsHTML("limit of premium downloads")))) {
