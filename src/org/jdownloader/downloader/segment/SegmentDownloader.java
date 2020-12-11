@@ -21,15 +21,14 @@ import jd.http.requests.GetRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
@@ -41,61 +40,45 @@ import org.jdownloader.translate._JDT;
 
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class SegmentDownloader extends DownloadInterface {
-    private volatile long                           bytesWritten   = 0l;
+    private volatile long                           bytesWritten      = 0l;
     private final Downloadable                      downloadable;
     private final DownloadLink                      link;
-    private long                                    startTimeStamp = -1;
+    private long                                    startTimeStamp    = -1;
     private final LogInterface                      logger;
     private volatile URLConnectionAdapter           currentConnection;
-    private final ManagedThrottledConnectionHandler connectionHandler;
+    private final ManagedThrottledConnectionHandler connectionHandler = new ManagedThrottledConnectionHandler();
     private File                                    outputCompleteFile;
     private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
     private PluginException                         caughtPluginException;
     private final Browser                           obr;
-    private final List<Segment>                     segments       = new ArrayList<Segment>();
+    private final List<Segment>                     segments          = new ArrayList<Segment>();
 
-    public SegmentDownloader(final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
+    public SegmentDownloader(final Plugin plugin, final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
+        this.obr = br2.cloneBrowser();
+        this.link = link;
+        logger = plugin.getLogger();
         for (final String segment : segments) {
             this.segments.add(new Segment(URLHelper.parseLocation(baseURL, segment)));
         }
-        connectionHandler = new ManagedThrottledConnectionHandler();
         if (dashDownloadable == null) {
             this.downloadable = new DownloadLinkDownloadable(link) {
                 @Override
                 public boolean isResumable() {
+                    // TODO: maybe resume at last written Segment, save index and position
                     return false;
-                }
-
-                @Override
-                public void setResumeable(boolean value) {
-                    // link.setProperty("RESUME", value);
-                    super.setResumeable(value);
                 }
             };
         } else {
             this.downloadable = dashDownloadable;
         }
         downloadable.setDownloadInterface(this);
-        this.obr = br2.cloneBrowser();
-        this.link = link;
-        logger = initLogger(link);
-    }
-
-    public LogInterface initLogger(final DownloadLink link) {
-        PluginForHost plg = link.getLivePlugin();
-        if (plg == null) {
-            plg = link.getDefaultPlugin();
-        }
-        return plg == null ? null : plg.getLogger();
     }
 
     protected void terminate() {
         if (terminated.getAndSet(true) == false) {
             if (!externalDownloadStop()) {
-                if (logger != null) {
-                    logger.severe("A critical Downloaderror occured. Terminate...");
-                }
+                logger.severe("A critical Downloaderror occured. Terminate...");
             }
         }
     }
@@ -245,7 +228,7 @@ public class SegmentDownloader extends DownloadInterface {
                 try {
                     downloadable.free(reservation);
                 } catch (final Throwable e) {
-                    LogSource.exception(logger, e);
+                    logger.log(e);
                 }
                 try {
                     final long startTimeStamp = getStartTimeStamp();
@@ -273,7 +256,7 @@ public class SegmentDownloader extends DownloadInterface {
             if (externalDownloadStop()) {
                 return;
             }
-            LogSource.exception(logger, pluginException);
+            logger.log(pluginException);
             if (caughtPluginException == null) {
                 caughtPluginException = pluginException;
             }
@@ -300,13 +283,13 @@ public class SegmentDownloader extends DownloadInterface {
         if (externalDownloadStop()) {
             return false;
         }
-        for (final Segment segment : segments) {
-            if (!segment.isLoaded()) {
-                // ignore index>0 as it is not supported yet
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
-        }
         if (caughtPluginException == null) {
+            for (final Segment segment : segments) {
+                if (!segment.isLoaded()) {
+                    // ignore index>0 as it is not supported yet
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                }
+            }
             downloadable.setLinkStatus(LinkStatus.FINISHED);
             final long fileSize = outputCompleteFile.length();
             downloadable.setDownloadBytesLoaded(fileSize);
@@ -320,9 +303,7 @@ public class SegmentDownloader extends DownloadInterface {
     private void createOutputChannel() throws SkipReasonException {
         try {
             final String fileOutput = downloadable.getFileOutput();
-            if (logger != null) {
-                logger.info("createOutputChannel for " + fileOutput);
-            }
+            logger.info("createOutputChannel for " + fileOutput);
             final String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
@@ -330,7 +311,7 @@ public class SegmentDownloader extends DownloadInterface {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
         } catch (Exception e) {
-            LogSource.exception(logger, e);
+            logger.log(e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
     }
@@ -343,9 +324,7 @@ public class SegmentDownloader extends DownloadInterface {
     @Override
     public void stopDownload() {
         if (abort.getAndSet(true) == false) {
-            if (logger != null) {
-                logger.info("externalStop recieved");
-            }
+            logger.info("externalStop recieved");
             terminate();
         }
         final URLConnectionAdapter lCurrentConnection = currentConnection;
