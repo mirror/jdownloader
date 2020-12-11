@@ -905,8 +905,8 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             if (estimatedFileSize > 0) {
                 ret.setDownloadSize(estimatedFileSize);
-                ret.setAvailableStatus(AvailableStatus.TRUE);
             }
+            ret.setAvailableStatus(AvailableStatus.TRUE);
             return ret;
         } catch (Exception e) {
             getLogger().log(e);
