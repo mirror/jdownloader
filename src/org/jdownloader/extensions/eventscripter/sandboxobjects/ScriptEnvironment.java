@@ -622,6 +622,11 @@ public class ScriptEnvironment {
         return clazzes;
     }
 
+    @ScriptAPI(description = "Get current timestamp in ms")
+    public static long getCurrentTimeStamp() {
+        return System.currentTimeMillis();
+    }
+
     @ScriptAPI(description = "Get a list of all running downloadlinks")
     public static DownloadLinkSandBox[] getRunningDownloadLinks() {
         final Set<SingleDownloadController> list = DownloadWatchDog.getInstance().getRunningDownloadLinks();
