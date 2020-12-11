@@ -199,7 +199,7 @@ public class SingleFilterResultTableModel extends ExtTableModel<CrawledLink> {
                 if (domain == null) {
                     return null;
                 }
-                return domain.getFavIcon();
+                return domain.getFavIcon(false);
             }
 
             @Override

@@ -153,7 +153,7 @@ public class HosterRuleTableModel extends ExtTableModel<AccountUsageRule> {
 
             @Override
             protected Icon getIcon(AccountUsageRule value) {
-                return DomainInfo.getInstance(value.getHoster()).getFavIcon();
+                return DomainInfo.getInstance(value.getHoster()).getFavIcon(false);
             }
 
             @Override

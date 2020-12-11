@@ -213,7 +213,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
                         return null;
                     }
                 }
-                return domain.getFavIcon();
+                return domain.getFavIcon(false);
             }
 
             @Override
