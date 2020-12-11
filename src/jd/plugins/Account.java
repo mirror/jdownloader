@@ -24,12 +24,6 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -40,6 +34,12 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL              = "VALID_UNTIL";
@@ -596,7 +596,7 @@ public class Account extends Property {
         }
     }
 
-    /** In which intervall (milliseconds) will this account get checked? Min. = 5 minutes, default = 30 minutes. */
+    /** In which interval (milliseconds) will this account get checked? Min. = 5 minutes, default = 30 minutes. */
     public long getRefreshTimeout() {
         /* default refresh timeout is 30 mins */
         long defaultRefreshTimeout = 30 * 60 * 1000l;
@@ -611,7 +611,7 @@ public class Account extends Property {
         return timeout;
     }
 
-    /* Defines the check-interval of this account. */
+    /** In which interval (milliseconds) will this account get checked? Min. = 5 minutes, default = 30 minutes. */
     public void setRefreshTimeout(long refresh_timeout) {
         this.setProperty(PROPERTY_REFRESH_TIMEOUT, refresh_timeout);
     }

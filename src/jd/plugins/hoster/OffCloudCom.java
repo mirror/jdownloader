@@ -43,11 +43,13 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -65,7 +67,8 @@ public class OffCloudCom extends UseNet {
     private static final String                   PROPERTY_DOWNLOADTYPE_instant             = "instant";
     private static final String                   PROPERTY_DOWNLOADTYPE_cloud               = "cloud";
     /* Other constants & properties */
-    private static final String                   DOMAIN                                    = "https://offcloud.com/api/";
+    private static final String                   API_BASE                                  = "https://offcloud.com/api/";
+    private static final String                   WEBSITE_BASE                              = "https://offcloud.com/";
     private static final String                   NICE_HOST                                 = "offcloud.com";
     private static final String                   NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                   NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
@@ -120,6 +123,8 @@ public class OffCloudCom extends UseNet {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setAllowedResponseCodes(500);
+        /* 2020-12-10: List of supported websites can be HUGE! */
+        // br.setLoadLimit(2 * br.getLoadLimit());
         return br;
     }
 
@@ -131,22 +136,17 @@ public class OffCloudCom extends UseNet {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
-        final String logincookie = getLoginCookie();
-        if (logincookie != null) {
-            logger.info("logincookie SET");
-            br.setCookie(NICE_HOST, "connect.sid", logincookie);
-        }
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
         }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
-            final String currentHost = correctHost(downloadLink.getHost());
+            final String currentHost = correctHost(link.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
@@ -163,7 +163,7 @@ public class OffCloudCom extends UseNet {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -204,7 +204,7 @@ public class OffCloudCom extends UseNet {
                 }
             }
             setConstants(account, link);
-            loginCheck();
+            this.login(account, false);
             String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
             if (dllink == null) {
                 if (cloudOnlyHosts.contains(link.getHost())) {
@@ -231,7 +231,7 @@ public class OffCloudCom extends UseNet {
                     dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
                 } else {
                     link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
-                    this.postAPISafe(DOMAIN + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
+                    this.postAPISafe(API_BASE + "instant/download", "proxyId=&url=" + JSonUtils.escape(this.currDownloadLink.getDownloadURL()));
                     requestID = PluginJSonUtils.getJsonValue(br, "requestId");
                     if (requestID == null) {
                         /* Should never happen */
@@ -278,20 +278,23 @@ public class OffCloudCom extends UseNet {
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Resume impossible, disabling it for the next try");
-                link.setChunksProgress(null);
-                link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
-                // New V2 chunk errorhandling
-                /* unknown error, we disable multiple chunks */
-                link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html") || contenttype.contains("json")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 416) {
+                    logger.info("Resume impossible, disabling it for the next try");
+                    link.setChunksProgress(null);
+                    link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
+                    // New V2 chunk errorhandling
+                    /* unknown error, we disable multiple chunks */
+                    link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 updatestatuscode();
                 handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknowndlerror", 50, 5 * 60 * 1000l);
@@ -334,28 +337,27 @@ public class OffCloudCom extends UseNet {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
@@ -375,11 +377,7 @@ public class OffCloudCom extends UseNet {
         }
         logger.info("last_deleted_complete_download_history_time_ago: " + TimeFormatter.formatMilliSeconds(last_deleted_complete_download_history_time_ago, 0));
         /* Only do a full login if either we have no login cookie at all or it is expired */
-        if (getLoginCookie() != null) {
-            this.loginCheck();
-        } else {
-            login();
-        }
+        this.login(account, true);
         br.postPage("https://offcloud.com/stats/usage-left", "");
         String remaininglinksnum = PluginJSonUtils.getJsonValue(br, "links");
         postAPISafe("https://offcloud.com/stats/addons", "");
@@ -477,6 +475,7 @@ public class OffCloudCom extends UseNet {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
+        account.setRefreshTimeout(15 * 60 * 1000l);
         getAndSetChunklimits();
         /* Let's handle some settings stuff. */
         if (cfg.isClearAllowedIpAddressesEnabled()) {
@@ -506,29 +505,33 @@ public class OffCloudCom extends UseNet {
      *
      * @throws InterruptedException
      */
-    private void login() throws IOException, PluginException, InterruptedException {
-        postAPISafe(DOMAIN + "login/classic", "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass()));
-        final String logincookie = br.getCookie(this.getHost(), "connect.sid");
+    private void login(final Account account, final boolean validateCookies) throws IOException, PluginException, InterruptedException {
+        final Cookies cookies = account.loadCookies("");
+        if (cookies != null) {
+            br.setCookies(WEBSITE_BASE, cookies);
+            if (!validateCookies) {
+                logger.info("Trust cookies without check");
+                return;
+            } else {
+                this.postAPISafe(API_BASE + "login/check", "");
+                if ("1".equals(PluginJSonUtils.getJsonValue(br, "loggedIn"))) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(br.getURL());
+                }
+            }
+        }
+        logger.info("Performing full login");
+        postAPISafe(API_BASE + "login/classic", "username=" + Encoding.urlEncode(currAcc.getUser()) + "&password=" + Encoding.urlEncode(currAcc.getPass()));
+        final String logincookie = br.getCookie(this.getHost(), "connect.sid", Cookies.NOTDELETEDPATTERN);
         if (logincookie == null) {
             /* This should never happen as we got errorhandling for invalid logindata */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new AccountUnavailableException("Unknown login error", 5 * 60 * 1000l);
         }
-        this.currAcc.setProperty("offcloudlogincookie", logincookie);
-    }
-
-    /**
-     * Checks if we're logged in --> If not, re-login (errorhandling will throw error if something is not right with our account)
-     *
-     * @throws InterruptedException
-     */
-    private void loginCheck() throws IOException, PluginException, InterruptedException {
-        this.postAPISafe("https://offcloud.com/api/login/check", "");
-        if ("1".equals(PluginJSonUtils.getJsonValue(br, "loggedIn"))) {
-            logger.info("loginCheck successful");
-        } else {
-            logger.info("loginCheck failed --> re-logging in");
-            login();
-        }
+        account.saveCookies(br.getCookies(br.getHost()), "");
     }
 
     /**
@@ -708,10 +711,6 @@ public class OffCloudCom extends UseNet {
             type = PROPERTY_DOWNLOADTYPE_instant;
         }
         return type;
-    }
-
-    private String getLoginCookie() {
-        return currAcc.getStringProperty("offcloudlogincookie", null);
     }
 
     /* Returns the time difference between now and the last time the complete download history has been deleted. */
