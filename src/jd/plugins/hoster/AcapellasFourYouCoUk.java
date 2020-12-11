@@ -13,11 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -32,16 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "acapellas4u.co.uk" }, urls = { "http://(www\\.)?acapellas4u\\.co\\.uk/\\d+\\-[a-z0-9\\-_]+" })
 public class AcapellasFourYouCoUk extends antiDDoSForHost {
-
     private static final String MAINPAGE = "http://www.acapellas4u.co.uk/";
-
     private static Object       LOCK     = new Object();
-
     private static final String USERTEXT = "Only downloadable for registered users!";
 
     public AcapellasFourYouCoUk(PluginWrapper wrapper) {
@@ -166,7 +163,6 @@ public class AcapellasFourYouCoUk extends antiDDoSForHost {
                     loginurl += "&sid=" + sid;
                     postdata += "&sid=" + sid;
                 }
-
                 postPage(loginurl, postdata);
             }
             if ((br.getCookie(MAINPAGE, "acas4u_sevulx_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevulx_u"))) && (br.getCookie(MAINPAGE, "acas4u_sevul_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevul_u")))) {
@@ -187,6 +183,7 @@ public class AcapellasFourYouCoUk extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
         this.setBrowserExclusive();
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
@@ -197,6 +194,8 @@ public class AcapellasFourYouCoUk extends antiDDoSForHost {
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (br.getURL().contains("/download_list.php") || br.containsHTML("<title>ACAPELLAS4U \\&bull; Browse Artists</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>ACAPELLAS4U \\&bull; File Download \\&bull; (.*?)</title>").getMatch(0);
@@ -225,5 +224,4 @@ public class AcapellasFourYouCoUk extends antiDDoSForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

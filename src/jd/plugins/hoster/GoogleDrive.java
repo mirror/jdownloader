@@ -266,56 +266,8 @@ public class GoogleDrive extends PluginForHost {
         /* E.g. application/vnd.google-apps.document | application/vnd.google-apps.spreadsheet */
         final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
         if (googleDriveDocumentType != null) {
-            /**
-             * Google Drive documents: Either created directly on Google Drive or user added a "real" document-file to GDrive and converted
-             * it into a GDoc later. </br>
-             * In this case, the "filename" is more like a title no matter whether or not it contains a file-extension.</br>
-             * If it contains a file-extension we will try to find download the output format accordingly. </br>
-             * For GDocs usually there is no filesize given because there is no "original" file anymore. The filesize depends on the format
-             * we chose to download the file in.
-             */
-            link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
-            /* Assume that a filename/title is always given. */
-            if (entries.containsKey("exportLinks") && !StringUtils.isEmpty(filename)) {
-                final Map<String, Object> exportFormatDownloadurls = (Map<String, Object>) entries.get("exportLinks");
-                String docDownloadURL = null;
-                String fileExtension = Plugin.getFileNameExtensionFromString(filename);
-                if (fileExtension != null) {
-                    fileExtension = fileExtension.toLowerCase(Locale.ENGLISH).replace(".", "");
-                    final Iterator<Entry<String, Object>> iterator = exportFormatDownloadurls.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final String docDownloadURLCandidate = (String) iterator.next().getValue();
-                        if (docDownloadURLCandidate.toLowerCase(Locale.ENGLISH).contains("exportformat=" + fileExtension)) {
-                            docDownloadURL = docDownloadURLCandidate;
-                            break;
-                        }
-                    }
-                }
-                if (!StringUtils.isEmpty(docDownloadURL)) {
-                    /* We found an export format suiting our filename-extension --> Prefer that */
-                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, docDownloadURL);
-                    link.setFinalFileName(filename);
-                } else if (googleDriveDocumentType.equalsIgnoreCase("document")) {
-                    /* Download in OpenDocument format. */
-                    link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".odt"));
-                    if (exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
-                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
-                    }
-                } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
-                    /* Download in OpenDocument format. */
-                    link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".ods"));
-                    if (exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
-                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
-                    }
-                } else {
-                    /* Unknown document type: Fallback - try to download .zip */
-                    if (exportFormatDownloadurls.containsKey("application/zip")) {
-                        link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
-                    }
-                    link.setFinalFileName(filename + ".zip");
-                }
-            }
-            /* TODO: Check if .zip is always given and/or add selection for preferred format */
+            final Map<String, Object> exportFormatDownloadurls = entries.containsKey("") ? (Map<String, Object>) entries.get("exportLinks") : null;
+            parseGoogleDocumentProperties(link, filename, googleDriveDocumentType, exportFormatDownloadurls);
         } else if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
@@ -331,6 +283,59 @@ public class GoogleDrive extends PluginForHost {
             link.setComment(description);
         }
         link.setProperty(PROPERTY_CAN_DOWNLOAD, canDownload);
+    }
+
+    /** Sets filename- and required parameters for GDocs files. */
+    public static void parseGoogleDocumentProperties(final DownloadLink link, final String filename, final String googleDriveDocumentType, final Map<String, Object> exportFormatDownloadurls) {
+        /**
+         * Google Drive documents: Either created directly on Google Drive or user added a "real" document-file to GDrive and converted it
+         * into a GDoc later. </br>
+         * In this case, the "filename" is more like a title no matter whether or not it contains a file-extension.</br>
+         * If it contains a file-extension we will try to find download the output format accordingly. </br>
+         * For GDocs usually there is no filesize given because there is no "original" file anymore. The filesize depends on the format we
+         * chose to download the file in.
+         */
+        link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
+        /* Assume that a filename/title has to be given. */
+        if (filename != null) {
+            String docDownloadURL = null;
+            String fileExtension = Plugin.getFileNameExtensionFromString(filename);
+            if (fileExtension != null && exportFormatDownloadurls != null) {
+                fileExtension = fileExtension.toLowerCase(Locale.ENGLISH).replace(".", "");
+                final Iterator<Entry<String, Object>> iterator = exportFormatDownloadurls.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final String docDownloadURLCandidate = (String) iterator.next().getValue();
+                    if (docDownloadURLCandidate.toLowerCase(Locale.ENGLISH).contains("exportformat=" + fileExtension)) {
+                        docDownloadURL = docDownloadURLCandidate;
+                        break;
+                    }
+                }
+            }
+            if (!StringUtils.isEmpty(docDownloadURL)) {
+                /* We found an export format suiting our filename-extension --> Prefer that */
+                link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, docDownloadURL);
+                link.setFinalFileName(filename);
+            } else if (googleDriveDocumentType.equalsIgnoreCase("document")) {
+                /* Download in OpenDocument format. */
+                link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".odt"));
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
+                }
+            } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
+                /* Download in OpenDocument format. */
+                link.setFinalFileName(Plugin.applyFilenameExtension(filename, ".ods"));
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
+                }
+            } else {
+                /* Unknown document type: Fallback - try to download .zip */
+                /* TODO: Check if .zip is always given and/or add selection for preferred format */
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/zip")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+                }
+                link.setFinalFileName(filename + ".zip");
+            }
+        }
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, Account account, final boolean isDownload) throws Exception {

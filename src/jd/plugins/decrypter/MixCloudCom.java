@@ -89,12 +89,10 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404 Error page|class=\"message-404\"|class=\"record-error record-404")) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         /* TODO: Fix thumbnail support */
@@ -138,7 +136,10 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     /* 2020-06-02 */
                     entries = (LinkedHashMap<String, Object>) jsonO;
                     final Object cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
-                    if (cloudcastLookupO != null) {
+                    if (cloudcastLookupO == null) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    } else {
                         audio_objects.add(cloudcastLookupO);
                     }
                 } else {

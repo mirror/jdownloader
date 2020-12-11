@@ -439,11 +439,12 @@ public class GoogleDrive extends PluginForDecrypt {
         for (final Object item : items) {
             entries = (Map<String, Object>) item;
             // kind within entries, returns false positives 20170709-raz
-            final String kind = entries.get("mimeType") != null && ((String) entries.get("mimeType")).contains(".folder") ? "folder" : (String) entries.get("kind");
-            String title = (String) entries.get("title");
-            if (title != null) {
-                title = title.replace("의 사본", "");
-            }
+            final String mimeType = (String) entries.get("mimeType");
+            final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
+            final String title = (String) entries.get("title");
+            // if (title != null) {
+            // title = title.replace("의 사본", "");
+            // }
             final String id = (String) entries.get("id");
             if (kind == null || title == null || id == null) {
                 /* This should never happen */
@@ -453,12 +454,19 @@ public class GoogleDrive extends PluginForDecrypt {
             String folder_path = null;
             if (kind.contains("#file")) {
                 /* Single file */
-                /* TODO: Maybe put parts of this in a static method in host plugin */
                 final long fileSize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), 0);
                 /* Single file */
                 dl = createDownloadlink("https://drive.google.com/file/d/" + id);
-                dl.setName(title);
-                dl.setDownloadSize(fileSize);
+                final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
+                if (googleDriveDocumentType != null) {
+                    jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(dl, title, googleDriveDocumentType, null);
+                } else {
+                    dl.setName(title);
+                }
+                if (fileSize > 0) {
+                    dl.setDownloadSize(fileSize);
+                    dl.setVerifiedFileSize(fileSize);
+                }
                 dl.setAvailable(true);
                 if (subfolder != null) {
                     folder_path = subfolder;
