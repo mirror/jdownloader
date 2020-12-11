@@ -212,7 +212,7 @@ public class PreFilesCom extends XFileSharingProBasic {
             return dllink;
         } else {
             /* 2020-12-11: They're using simple redirectors here e.g. "pro.sh" */
-            return new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>Click here to Download<i").getMatch(0);
+            return new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Click here to Download").getMatch(0);
         }
     }
 }
