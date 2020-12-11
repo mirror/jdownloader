@@ -1297,7 +1297,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
         final String[] segments = streamData.getSegments();
         if (segments != null) {
-            dl = new SegmentDownloader(dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments);
+            dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments);
         } else {
             final GetRequest request = new GetRequest(streamData.getBaseUrl());
             final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());
