@@ -475,6 +475,7 @@ public class OffCloudCom extends UseNet {
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
+        /* 2020-12-11: Check this account more often */
         account.setRefreshTimeout(15 * 60 * 1000l);
         getAndSetChunklimits();
         /* Let's handle some settings stuff. */
