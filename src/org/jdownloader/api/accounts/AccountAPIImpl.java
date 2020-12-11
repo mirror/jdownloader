@@ -135,9 +135,9 @@ public class AccountAPIImpl implements AccountAPI {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-            LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
+            final LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
             if (plugin != null) {
-                ImageProvider.writeImage(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
+                ImageProvider.writeImage(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon(false)), "png", out);
             }
         } catch (IOException e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);

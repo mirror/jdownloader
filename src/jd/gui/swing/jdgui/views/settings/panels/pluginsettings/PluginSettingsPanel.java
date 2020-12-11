@@ -94,7 +94,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 if (value == null) {
                     return null;
                 } else {
-                    final Icon favIcon = DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
+                    final Icon favIcon = DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
                     if (value instanceof LazyHostPlugin) {
                         return favIcon;
                     } else {
@@ -374,11 +374,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                             if (selectedItem instanceof LazyHostPlugin) {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
                                 // IconIO.
-                                Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon();
+                                Icon fav = DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon(false);
                                 header.setIcon(fav);
                             } else {
                                 header.setText(_GUI.T.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                                Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon();
+                                Icon fav = DomainInfo.getInstance(((LazyCrawlerPlugin) selectedItem).getDisplayName()).getFavIcon(false);
                                 if (fav == null) {
                                     header.setIcon(decryterIcon);
                                 } else {

@@ -133,16 +133,18 @@ public class BuyAction extends AbstractAction {
                                         protected Icon getIconForValue(LazyHostPlugin value) {
                                             if (value == null) {
                                                 return null;
+                                            } else {
+                                                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
                                             }
-                                            return DomainInfo.getInstance(value.getDisplayName()).getFavIcon();
                                         }
 
                                         @Override
                                         protected String getTextForValue(LazyHostPlugin value) {
                                             if (value == null) {
                                                 return null;
+                                            } else {
+                                                return value.getDisplayName();
                                             }
-                                            return value.getDisplayName();
                                         }
                                     };
                                     final ComboBoxDialog _this = this;
@@ -166,7 +168,7 @@ public class BuyAction extends AbstractAction {
                                                 _this.setIcon(new ImageIcon(IconIO.getScaledInstance(ic, Math.min(ic.getWidth(null), 32), Math.min(ic.getHeight(null), 32), Interpolation.BILINEAR, true)));
                                                 return;
                                             } else {
-                                                _this.setIcon(domainInfo.getFavIcon());
+                                                _this.setIcon(domainInfo.getFavIcon(false));
                                             }
                                         }
                                     });

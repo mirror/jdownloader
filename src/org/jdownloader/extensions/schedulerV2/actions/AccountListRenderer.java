@@ -11,7 +11,6 @@ import jd.plugins.Account;
 import org.jdownloader.DomainInfo;
 
 public class AccountListRenderer implements ListCellRenderer<Object> {
-
     final ListCellRenderer<Object> original;
 
     public AccountListRenderer(ListCellRenderer<Object> original) {
@@ -21,10 +20,11 @@ public class AccountListRenderer implements ListCellRenderer<Object> {
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         if (!(value instanceof Account)) {
             return new JLabel("?");
+        } else {
+            final Account acc = (Account) value;
+            final JLabel label = (JLabel) original.getListCellRendererComponent(list, acc.getUser(), index, isSelected, cellHasFocus);
+            label.setIcon(DomainInfo.getInstance(acc.getHoster()).getIcon(16));
+            return label;
         }
-        Account acc = (Account) value;
-        JLabel label = (JLabel) original.getListCellRendererComponent(list, acc.getUser(), index, isSelected, cellHasFocus);
-        label.setIcon(DomainInfo.getInstance(acc.getHoster()).getIcon(16));
-        return label;
     }
 }

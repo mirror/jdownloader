@@ -730,7 +730,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         });
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("keep2share.cc")));
+                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("k2s.cc")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("uploaded.to")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("ddownload.com")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
@@ -817,7 +817,7 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
             } else {
                 customURL = null;
             }
-            final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+            final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon(false);
             final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
             final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI.T.lit_continue(), _GUI.T.lit_close()) {
                 @Override

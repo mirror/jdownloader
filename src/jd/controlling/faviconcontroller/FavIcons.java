@@ -133,6 +133,10 @@ public class FavIcons {
     }
 
     public static Icon getFavIcon(String host, FavIconRequestor requestor) {
+        return getFavIcon(host, requestor, true);
+    }
+
+    public static Icon getFavIcon(String host, FavIconRequestor requestor, boolean updatePermission) {
         if (host == null) {
             return null;
         }
@@ -157,7 +161,9 @@ public class FavIcons {
                             final long lastModified = file.lastModified();
                             if ((lastModified > 0 && System.currentTimeMillis() - lastModified > REFRESH_TIMEOUT) && file.exists()) {
                                 file.setLastModified(System.currentTimeMillis());// avoid retry before expired
-                                add(host, requestor);
+                                if (updatePermission) {
+                                    add(host, requestor);
+                                }
                             }
                         }
                     }
@@ -168,14 +174,14 @@ public class FavIcons {
                 return image;
             }
         }
-        if (image == null) {
+        if (image == null && updatePermission) {
             /* add to queue list */
             image = add(host, requestor);
         }
         return image;
     }
 
-    private static ImageIcon getDefaultIcon(String host, boolean clearAfterGet) {
+    public static ImageIcon getDefaultIcon(String host, boolean clearAfterGet) {
         ImageIcon ret = null;
         synchronized (LOCK) {
             ret = DEFAULT_ICONS.get(host);

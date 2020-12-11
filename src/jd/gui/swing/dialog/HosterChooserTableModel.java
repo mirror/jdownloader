@@ -30,7 +30,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
-
     /**
      *
      */
@@ -41,7 +40,6 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     public HosterChooserTableModel(List<LazyHostPlugin> plugins) {
         super("HosterChooserTableModel");
         this.allPlugins = plugins;
-
     }
 
     @Override
@@ -96,11 +94,9 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     public List<LazyHostPlugin> sort(List<LazyHostPlugin> data, ExtColumn<LazyHostPlugin> column) {
         if (StringUtils.isEmpty(text)) {
             final Comparator<LazyHostPlugin> compar = new Comparator<LazyHostPlugin>() {
-
                 @Override
                 public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
                     return o1.getHost().compareToIgnoreCase(o2.getHost());
-
                 }
             };
             Collections.sort(data, compar);
@@ -142,9 +138,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
     protected void initColumns() {
         addColumn(new ExtIconColumn<LazyHostPlugin>(_GUI.T.HosterChooserTableModel_column_icon()) {
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
                 final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
                     private static final long serialVersionUID = 3938290423337000265L;
 
                     @Override
@@ -178,7 +172,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
 
             @Override
             protected Icon getIcon(LazyHostPlugin value) {
-                return DomainInfo.getInstance(value.getHost()).getIcon(16);
+                return DomainInfo.getInstance(value.getDisplayName()).getFavIcon(false);
             }
         });
         addColumn(new ExtTextColumn<LazyHostPlugin>(_GUI.T.HosterChooserTableModel_column_domain()) {
@@ -197,7 +191,6 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                 return value.getDisplayName();
             }
         });
-
         addColumn(new ExtTextColumn<LazyHostPlugin>(_GUI.T.HosterChooserTableModel_column_features()) {
             @Override
             public boolean isHidable() {
@@ -240,5 +233,4 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
             }
         });
     }
-
 }

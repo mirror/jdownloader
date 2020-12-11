@@ -22,7 +22,7 @@ public class ContentAPIImpl implements ContentAPI {
     @Deprecated
     public void favicon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws FileNotFoundException, InternalApiException {
         DomainInfo info = DomainInfo.getInstance(hostername);
-        Icon favIcon = info.getFavIcon();
+        Icon favIcon = info.getFavIcon(false);
         if (favIcon == null) {
             throw new FileNotFoundException();
         }

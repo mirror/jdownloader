@@ -7,17 +7,17 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.controlling.faviconcontroller.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIcons;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-
-import jd.controlling.faviconcontroller.FavIconRequestor;
-import jd.controlling.faviconcontroller.FavIcons;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
@@ -33,8 +33,8 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
         HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
-    private static final int WIDTH  = 16;
-    private static final int HEIGHT = 16;
+    private static final int                     WIDTH             = 16;
+    private static final int                     HEIGHT            = 16;
 
     private DomainInfo(String tld) {
         if (Application.getJavaVersion() >= Application.JAVA17) {
@@ -61,22 +61,31 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
      *
      * @return
      */
-    public Icon getFavIcon() {
+    public Icon getFavIcon(final boolean updatePermission) {
         Icon icon = hosterIcon;
         if (icon == null) {
             final String hardcodedFavIcon = HARDCODEDFAVICONS.get(tld);
             if (hardcodedFavIcon != null) {
                 icon = NewTheme.I().getIcon(hardcodedFavIcon, -1);
             } else {
-                icon = FavIcons.getFavIcon(tld, this);
+                icon = FavIcons.getFavIcon(tld, this, updatePermission);
+                if (icon == null && !updatePermission) {
+                    icon = FavIcons.getDefaultIcon(tld, false);
+                }
             }
             if (icon != null) {
                 icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
                 icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
             }
-            hosterIcon = icon;
+            if (updatePermission) {
+                hosterIcon = icon;
+            }
         }
         return icon;
+    }
+
+    public Icon getFavIcon() {
+        return getFavIcon(true);
     }
 
     public Icon setFavIcon(Icon icon) {
@@ -131,6 +140,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
      * @return
      */
     public Icon getIcon(int size) {
+        return getIcon(size, true);
+    }
+
+    public Icon getIcon(int size, final boolean updatePermission) {
         Icon ret = null;
         final String tld = getTld();
         if (NewTheme.I().hasIcon("fav/big." + tld)) {
@@ -146,9 +159,12 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
         if (hardcodedFavIcon != null) {
             ret = NewTheme.I().getIcon(hardcodedFavIcon, -1);
         } else {
-            ret = FavIcons.getFavIcon(tld, null);
+            ret = FavIcons.getFavIcon(tld, null, updatePermission);
+            if (ret == null && !updatePermission) {
+                ret = FavIcons.getDefaultIcon(tld, false);
+            }
         }
-        if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
+        if (ret != null && (ret.getIconHeight() >= size && ret.getIconWidth() >= size)) {
             return IconIO.getScaledInstance(ret, size, size);
         }
         return null;

@@ -19,7 +19,6 @@ import org.jdownloader.extensions.schedulerV2.translate.T;
 
 @ScheduleActionIDAnnotation("DISABLE_ACCOUNT")
 public class DisableAccountAction extends AbstractScheduleAction<AccountActionConfig> {
-
     private final ComboBox<Account> cbAccounts = new ComboBox<Account>();
     private final JLabel            noAccLabel = new JLabel(T.T.addScheduleEntryDialog_noAccount());
     protected boolean               setBoolean = false;
@@ -48,24 +47,19 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
     @Override
     protected void createPanel() {
         panel.put(new JLabel(T.T.addScheduleEntryDialog_account() + ":"), "gapleft 10,");
-
         panel.put(cbAccounts, "");
         panel.put(noAccLabel, "");
-
         updateAccounts();
         cbAccounts.setRenderer(new AccountListRenderer(cbAccounts.getRenderer()));
         cbAccounts.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (cbAccounts.getSelectedItem() != null && !update.get()) {
                     getConfig().setHoster(cbAccounts.getSelectedItem().getHoster());
                     getConfig().setUser(cbAccounts.getSelectedItem().getUser());
                 }
             }
         });
-
     };
 
     @Override
@@ -85,7 +79,6 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
     }
 
     private void updateAccounts() {
-
         List<Account> accs = AccountController.getInstance().list(null);
         if (accs == null || accs.size() == 0) {
             noAccLabel.setVisible(true);
@@ -96,7 +89,6 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
         for (Account acc : accs) {
             cbAccounts.addItem(acc);
         }
-
         // set default host
         if (getConfig() != null && getConfig().getHoster().length() > 0) {
             for (Account acc : accs) {
@@ -107,7 +99,6 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
             }
         }
         update.set(false);
-
         noAccLabel.setVisible(false);
         cbAccounts.setVisible(true);
     }
@@ -116,7 +107,9 @@ public class DisableAccountAction extends AbstractScheduleAction<AccountActionCo
     public Icon getParameterIcon() {
         if (getConfig() == null) {
             return null;
+        } else {
+            final String hoster = getConfig().getHoster();
+            return DomainInfo.getInstance(hoster).getFavIcon(false);
         }
-        return DomainInfo.getInstance(getConfig().getHoster()).getIcon(16);
     }
 }

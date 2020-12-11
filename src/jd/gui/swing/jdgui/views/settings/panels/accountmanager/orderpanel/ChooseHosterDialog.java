@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel;
 
 import javax.swing.Icon;
@@ -27,21 +26,17 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 
 public class ChooseHosterDialog extends SearchComboBoxDialog<DomainInfo> {
-
     public ChooseHosterDialog(final String string, DomainInfo[] domainInfos) {
-
         super(UserIO.NO_ICON, _GUI.T.NewRuleAction_actionPerformed_choose_hoster_(), string, domainInfos, null, null, _AWU.T.lit_continue(), null);
-
     }
 
     @Override
     protected Icon getIconByValue(DomainInfo value) {
-        return value.getFavIcon();
+        return value.getFavIcon(false);
     }
 
     @Override
     public JComponent layoutDialogContent() {
-
         return super.layoutDialogContent();
     }
 
@@ -49,5 +44,4 @@ public class ChooseHosterDialog extends SearchComboBoxDialog<DomainInfo> {
     protected String getStringByValue(DomainInfo value) {
         return value.getTld();
     }
-
 }
