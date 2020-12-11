@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +25,10 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.segment.SegmentDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account.AccountType;
@@ -146,65 +145,28 @@ public class NinjastreamTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            br.getPage("https://" + this.getHost() + "/download/" + this.getFID(link));
-            String json = br.getRegex("v-bind:stream=\"([^\"]+)").getMatch(0);
-            if (Encoding.isHtmlEntityCoded(json)) {
-                json = Encoding.htmlDecode(json);
-            }
-            final String host = PluginJSonUtils.getJson(json, "host");
-            final String hash = PluginJSonUtils.getJson(json, "hash");
-            if (StringUtils.isEmpty(host) || StringUtils.isEmpty(hash)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = host + hash + "/" + this.getFID(link) + ".mp4_0.part0";
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        br.getPage("https://" + this.getHost() + "/download/" + this.getFID(link));
+        String json = br.getRegex("v-bind:stream=\"([^\"]+)").getMatch(0);
+        if (Encoding.isHtmlEntityCoded(json)) {
+            json = Encoding.htmlDecode(json);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
+        final String host = PluginJSonUtils.getJson(json, "host");
+        final String hash = PluginJSonUtils.getJson(json, "hash");
+        if (StringUtils.isEmpty(host) || StringUtils.isEmpty(hash)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
+        String playlist = br.getRegex("v-bind:playlist=\"([^\"]+)\"").getMatch(0);
+        if (Encoding.isHtmlEntityCoded(playlist)) {
+            playlist = Encoding.htmlDecode(playlist);
         }
-        return dllink;
+        String[] segments = PluginJSonUtils.getJsonResultsFromArray(playlist);
+        dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments);
+        ((SegmentDownloader) dl).setSkipBytes(0x78); // Skip static PNG data
+        dl.startDownload();
     }
 
     @Override
