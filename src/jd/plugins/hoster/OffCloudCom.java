@@ -18,11 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.simplejson.JSonUtils;
@@ -32,7 +34,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -69,10 +70,8 @@ public class OffCloudCom extends UseNet {
     /* Other constants & properties */
     private static final String                   API_BASE                                  = "https://offcloud.com/api/";
     private static final String                   WEBSITE_BASE                              = "https://offcloud.com/";
-    private static final String                   NICE_HOST                                 = "offcloud.com";
-    private static final String                   NICE_HOSTproperty                         = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                   NOCHUNKS                                  = NICE_HOSTproperty + "NOCHUNKS";
-    private static final String                   NORESUME                                  = NICE_HOSTproperty + "NORESUME";
+    private static final String                   NOCHUNKS                                  = "NOCHUNKS";
+    private static final String                   NORESUME                                  = "NORESUME";
     /* Connection limits */
     private static final boolean                  ACCOUNT_PREMIUM_RESUME                    = true;
     private static final int                      ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
@@ -94,14 +93,10 @@ public class OffCloudCom extends UseNet {
     public static ArrayList<String>               cloudOnlyHosts                            = new ArrayList<String>();
     private Account                               currAcc                                   = null;
     private DownloadLink                          currDownloadLink                          = null;
-    public static Object                          ACCLOCK                                   = new Object();
     private static Object                         CTRLLOCK                                  = new Object();
     private static AtomicInteger                  maxPrem                                   = new AtomicInteger(1);
     private long                                  deletedDownloadHistoryEntriesNum          = 0;
     private static MultiHosterManagement          mhm                                       = new MultiHosterManagement("offcloud.com");
-
-    public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
-    };
 
     public OffCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -143,23 +138,24 @@ public class OffCloudCom extends UseNet {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
-        }
-        /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
-        synchronized (hostRunningDlsNumMap) {
-            final String currentHost = correctHost(link.getHost());
-            if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
-                final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
-                final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
-                if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    /*
-                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
-                     * this case - wait and retry!
-                     */
-                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
+        } else {
+            /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
+            synchronized (hostRunningDlsNumMap) {
+                final String currentHost = link.getHost();
+                if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
+                    final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
+                    final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
+                    if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
+                        /*
+                         * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage
+                         * for this case - wait and retry!
+                         */
+                        throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 15 * 1000, null));
+                    }
                 }
             }
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -199,13 +195,13 @@ public class OffCloudCom extends UseNet {
              */
             synchronized (CTRLLOCK) {
                 if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
-                    logger.info("Performing full login to set individual host limits");
+                    logger.info("Performing accountcheck to set individual host limits");
                     this.fetchAccountInfo(account);
                 }
             }
             setConstants(account, link);
             this.login(account, false);
-            String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+            String dllink = checkDirectLink(link, this.getHost() + "directlink");
             if (dllink == null) {
                 if (cloudOnlyHosts.contains(link.getHost())) {
                     final long timeStarted = System.currentTimeMillis();
@@ -267,7 +263,7 @@ public class OffCloudCom extends UseNet {
             }
         }
         /* Then check if chunks failed before. */
-        if (link.getBooleanProperty(NICE_HOSTproperty + NOCHUNKS, false)) {
+        if (link.getBooleanProperty(this.getHost() + NOCHUNKS, false)) {
             maxChunks = 1;
         }
         boolean resume = ACCOUNT_PREMIUM_RESUME;
@@ -275,7 +271,7 @@ public class OffCloudCom extends UseNet {
             resume = false;
             link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(false));
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -289,10 +285,10 @@ public class OffCloudCom extends UseNet {
                     link.setChunksProgress(null);
                     link.setProperty(OffCloudCom.NORESUME, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
+                } else if (dl.getConnection().getResponseCode() == 503 && link.getBooleanProperty(this.getHost() + OffCloudCom.NOCHUNKS, false) == false) {
                     // New V2 chunk errorhandling
                     /* unknown error, we disable multiple chunks */
-                    link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                    link.setProperty(this.getHost() + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 updatestatuscode();
@@ -309,8 +305,8 @@ public class OffCloudCom extends UseNet {
                     } catch (final Throwable e) {
                     }
                     /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
-                        link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                    if (link.getBooleanProperty(this.getHost() + OffCloudCom.NOCHUNKS, false) == false) {
+                        link.setProperty(this.getHost() + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 } else if (PluginJsonConfig.get(jd.plugins.hoster.OffCloudCom.OffCloudComPluginConfigInterface.class).isDeleteDownloadHistorySingleLinkEnabled()) {
@@ -321,8 +317,8 @@ public class OffCloudCom extends UseNet {
                 e.printStackTrace();
                 // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(this.getHost() + OffCloudCom.NOCHUNKS, false) == false) {
+                    link.setProperty(this.getHost() + OffCloudCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw e;
@@ -332,7 +328,7 @@ public class OffCloudCom extends UseNet {
                 controlSlot(-1);
             }
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
@@ -385,13 +381,13 @@ public class OffCloudCom extends UseNet {
          * Basically, at the moment we got 3 account types: Premium, Free account with generate-links feature, Free Account without
          * generate-links feature (used free account, ZERO traffic)
          */
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-        ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        List<Object> ressourcelist = (List) entries.get("data");
         String packagetype = null;
         String activeTill = null;
         boolean foundPackage = false;
         for (final Object packageO : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) packageO;
+            entries = (Map<String, Object>) packageO;
             packagetype = (String) entries.get("type");
             activeTill = (String) entries.get("activeTill");
             /*
@@ -435,16 +431,17 @@ public class OffCloudCom extends UseNet {
         }
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final ArrayList<String> supportedHostStates = new ArrayList<String>();
-        supportedHostStates.add("cloud only");
-        supportedHostStates.add("healthy");
-        supportedHostStates.add("fragile");
-        supportedHostStates.add("limited");
+        final List<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> allowedHostStates = new ArrayList<String>();
+        final List<String> supportedHostsTmp = new ArrayList<String>();
+        allowedHostStates.add("cloud only");
+        allowedHostStates.add("healthy");
+        allowedHostStates.add("fragile");
+        allowedHostStates.add("limited");
         if (cfg.isShowHostersWithStatusAwaitingDemand()) {
-            supportedHostStates.add("awaiting demand");
+            allowedHostStates.add("awaiting demand");
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         ressourcelist = (ArrayList) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
@@ -455,23 +452,33 @@ public class OffCloudCom extends UseNet {
          */
         cloudOnlyHosts.clear();
         for (final Object domaininfo_o : ressourcelist) {
-            final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
+            final Map<String, Object> domaininfo = (Map<String, Object>) domaininfo_o;
             String status = (String) domaininfo.get("isActive");
-            String realhost = (String) domaininfo.get("displayName");
-            if (realhost == null || status == null) {
+            String domain = (String) domaininfo.get("displayName");
+            if (StringUtils.isEmpty(domain) || StringUtils.isEmpty(status)) {
+                /* Akip invalid objects */
                 continue;
             }
-            status = status.toLowerCase();
-            realhost = realhost.toLowerCase();
-            final boolean addToArrayOfSupportedHosts = supportedHostStates.contains(status);
-            logger.info("offcloud.com status of host " + realhost + ": " + status);
-            if (addToArrayOfSupportedHosts) {
-                supportedHosts.add(realhost);
-                if (status.equals("cloud only")) {
-                    cloudOnlyHosts.add(realhost);
-                }
-            } else {
-                logger.info("NOT adding this host as it is inactive at the moment: " + realhost);
+            status = status.toLowerCase(Locale.ENGLISH);
+            domain = domain.toLowerCase(Locale.ENGLISH);
+            final boolean hostStatusIsAllowed = allowedHostStates.contains(status);
+            if (!hostStatusIsAllowed) {
+                logger.info("NOT adding this host because of non allowed status: " + domain + " | Status: " + status);
+                continue;
+            }
+            // logger.info("status of host " + domain + ": " + status);
+            supportedHostsTmp.clear();
+            supportedHostsTmp.add(domain);
+            ai.setMultiHostSupport(this, supportedHostsTmp);
+            /* Workaround to get real/mapped domain */
+            final List<String> realHostArrayTmp = ai.getMultiHostSupport();
+            if (realHostArrayTmp == null || realHostArrayTmp.isEmpty()) {
+                logger.info("Skipping host because it's not supported by JD: " + domain);
+                continue;
+            }
+            supportedHosts.add(realHostArrayTmp.get(0));
+            if (status.equals("cloud only")) {
+                cloudOnlyHosts.add(domain);
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
@@ -539,16 +546,16 @@ public class OffCloudCom extends UseNet {
      * Set chunklimits if possible. Do NOT yet use this list as supported host array as it maybe also contains dead hosts - we want to try
      * to only add the ones which they say are working at the moment.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     private void getAndSetChunklimits() {
         try {
             hostMaxchunksMap.clear();
             hostMaxdlsMap.clear();
             this.getAPISafe("https://offcloud.com/api/sites/chunks");
-            final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
             for (final Object o : ressourcelist) {
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) o;
-                final String host = correctHost((String) entries.get("host"));
+                final Map<String, Object> entries = (Map<String, Object>) o;
+                final String host = (String) entries.get("host");
                 final Object maxdls_object = entries.get("maxChunksGlobal");
                 final int maxchunks = ((Number) entries.get("maxChunks")).intValue();
                 hostMaxchunksMap.put(host, this.correctChunks(maxchunks));
@@ -615,10 +622,10 @@ public class OffCloudCom extends UseNet {
             do {
                 logger.info("Decrypting requestIDs of page: " + page);
                 this.postRawAPISafe("https://offcloud.com/" + downloadtype + "/history", "{\"page\":" + page + "}");
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final ArrayList<Object> history = (ArrayList) entries.get("history");
                 for (final Object historyentry_object : history) {
-                    final LinkedHashMap<String, Object> historyentry = (LinkedHashMap<String, Object>) historyentry_object;
+                    final Map<String, Object> historyentry = (Map<String, Object>) historyentry_object;
                     final String status = (String) historyentry.get("status");
                     /* Do not delete e.g. cloud-downloads which are still to be completely downloaded! */
                     if (!status.equals("downloading")) {
@@ -1012,11 +1019,11 @@ public class OffCloudCom extends UseNet {
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
+                logger.info(this.getHost() + ": Unknown API error");
                 mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, statusMessage, 50, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            logger.info(this.getHost() + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
     }
@@ -1054,14 +1061,6 @@ public class OffCloudCom extends UseNet {
         }
         /* Else we should have a valid value! */
         return maxdls;
-    }
-
-    /** Performs slight domain corrections. */
-    private String correctHost(String host) {
-        if (host.equals("uploaded.to") || host.equals("uploaded.net")) {
-            host = "uploaded.net";
-        }
-        return host;
     }
 
     /**
@@ -1245,7 +1244,7 @@ public class OffCloudCom extends UseNet {
          * Sometimes saved offcloud directlinks cause problems, are very slow or time out so this gives us a higher chance of a working
          * download after a reset.
          */
-        link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+        link.setProperty(this.getHost() + "directlink", Property.NULL);
         link.setProperty("offcloudrequestId", Property.NULL);
     }
 
@@ -1257,4 +1256,8 @@ public class OffCloudCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("usenet.offcloud.com", true, 563));
         return ret;
     }
+    // @Override
+    // public Class<? extends OffCloudComPluginConfigInterface> getConfigInterface() {
+    // return OffCloudComPluginConfigInterface.class;
+    // }
 }

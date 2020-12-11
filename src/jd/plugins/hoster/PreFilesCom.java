@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -202,5 +203,16 @@ public class PreFilesCom extends XFileSharingProBasic {
     protected String getRelativeAccountInfoURL() {
         /* 2020-11-13 */
         return "/my-account";
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        final String dllink = super.getDllink(link, account, br, src);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            /* 2020-12-11: They're using simple redirectors here e.g. "pro.sh" */
+            return new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>Click here to Download<i").getMatch(0);
+        }
     }
 }
