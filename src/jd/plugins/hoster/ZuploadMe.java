@@ -18,16 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ZuploadMe extends YetiShareCore {
@@ -106,17 +105,8 @@ public class ZuploadMe extends YetiShareCore {
     }
 
     @Override
-    protected String getDllink(final Browser br) {
-        /* 2020-12-09: Default returns false positive! */
-        String ret = br.getRegex("(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
-        if (isDownloadlink(ret)) {
-            return ret;
-        } else if (ret != null) {
-            logger.info("isDownloadlink false:" + ret);
-            return null;
-        } else {
-            return null;
-        }
+    public boolean isDownloadlink(String url) {
+        return url != null && !url.matches("(?ihttps?://[^\"]+/files/[^\"]+") && super.isDownloadlink(url);
     }
 
     @Override

@@ -45,8 +45,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.swing.EDTHelper;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.AggregatedNumbers;
@@ -303,10 +301,7 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
     }
 
     public void handleAbout(AboutEvent e) {
-        try {
-            Dialog.getInstance().showDialog(new AboutDialog());
-        } catch (DialogNoAnswerException e1) {
-        }
+        AboutDialog.showNonBlocking();
     }
 
     public void appReOpened(AppReOpenedEvent e) {

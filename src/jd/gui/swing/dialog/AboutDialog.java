@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.gui.swing.dialog;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -60,6 +61,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.Docker;
+import org.appwork.utils.os.Snap;
+import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -88,6 +92,24 @@ public class AboutDialog extends AbstractDialog<Integer> {
     @Override
     protected boolean isResizable() {
         return false;
+    }
+
+    public static void showNonBlocking() {
+        final AboutDialog aboutDialog = new AboutDialog();
+        aboutDialog.setModalityType(ModalityType.MODELESS);
+        new Thread("AboutDialog") {
+            {
+                setDaemon(true);
+            }
+
+            @Override
+            public void run() {
+                try {
+                    Dialog.getInstance().showDialog(aboutDialog);
+                } catch (DialogNoAnswerException e1) {
+                }
+            }
+        }.start();
     }
 
     @Override
@@ -248,6 +270,21 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     CrossSystem.openFile(directory);
                 }
             });
+            if (Snap.isInsideSnap() || Docker.isInsideDocker() || HardwareType.getHardware() != null) {
+                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_environment()), "spanx");
+                if (HardwareType.getHardware() != null) {
+                    stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_hardware()), "gapleft 10");
+                    stats.add(disable(HardwareType.getHardware().toString()));
+                }
+                if (Snap.isInsideSnap()) {
+                    stats.add(new JLabel("Snap:"), "gapleft 10");
+                    stats.add(disable(Snap.getSnapInstanceName()));
+                }
+                if (Docker.isInsideDocker()) {
+                    stats.add(new JLabel("Docker:"), "gapleft 10");
+                    stats.add(disable(Docker.getDockerContainerID()));
+                }
+            }
             if (map != null) {
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
                 stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "gapleft 10");
