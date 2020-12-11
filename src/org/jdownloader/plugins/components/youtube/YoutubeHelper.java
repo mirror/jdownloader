@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components.youtube;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -35,13 +34,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -109,11 +101,8 @@ import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.FilterList.Type;
 import org.jdownloader.updatev2.UpdateController;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
@@ -1788,8 +1777,7 @@ public class YoutubeHelper {
                 } catch (Throwable e) {
                     logger.log(e);
                 }
-            }
-            if (StringUtils.isNotEmpty(fmt.mapData)) {
+            } else if (StringUtils.isNotEmpty(fmt.mapData)) {
                 for (final String line : fmt.mapData.split(",")) {
                     try {
                         final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
@@ -1816,7 +1804,8 @@ public class YoutubeHelper {
                     if (StringUtils.isEmpty(mpdUrl.mapData)) {
                         continue;
                     }
-                    Browser clone = br.cloneBrowser();
+                    final Browser clone = br.cloneBrowser();
+                    clone.setFollowRedirects(true);
                     String newv = mpdUrl.mapData;
                     String scrambledSign = new Regex(mpdUrl.mapData, "/s/(.*?)/").getMatch(0);
                     if (StringUtils.isNotEmpty(scrambledSign)) {
@@ -1896,23 +1885,17 @@ public class YoutubeHelper {
                                 lst.add(vsd);
                             }
                         }
-                    } else {
-                        DocumentBuilder docBuilder = createXMLParser();
-                        Document doc = docBuilder.parse(new InputSource(new StringReader(xml)));
-                        NodeList representations = doc.getElementsByTagName("Representation");
-                        for (int r = 0; r < representations.getLength(); r++) {
-                            Element representation = (Element) representations.item(r);
-                            Element baseUrlElement = (Element) representation.getElementsByTagName("BaseURL").item(0);
-                            String contentLength = baseUrlElement.getAttribute("yt:contentLength");
-                            String url = baseUrlElement.getTextContent();
-                            String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
-                            final UrlQuery query = Request.parseQuery(url);
-                            if (params != null) {
-                                for (int i = 1; i < params.length; i++) {
-                                    query.addAndReplace(params[i][0], Encoding.htmlDecode(params[i][1]));
+                    } else if (dashMpdEnabled) {
+                        final List<YoutubeStreamData> datas = parseDashManifest(mpdUrl.src, br, br.getURL(newv).toString());
+                        for (YoutubeStreamData data : datas) {
+                            if (isStreamDataAllowed(data)) {
+                                StreamCollection lst = ret.get(data.getItag());
+                                if (lst == null) {
+                                    lst = new StreamCollection();
+                                    ret.put(data.getItag(), lst);
                                 }
+                                lst.add(data);
                             }
-                            handleQuery(representation, ret, url, query, mpdUrl);
                         }
                     }
                 } catch (InterruptedException e) {
@@ -2253,6 +2236,95 @@ public class YoutubeHelper {
                     }
                 }
             }
+            if (dashMpdEnabled && streamingData != null && streamingData.containsKey("dashManifestUrl")) {
+                final String url = (String) streamingData.get("dashManifestUrl");
+                if (StringUtils.isNotEmpty(url)) {
+                    try {
+                        final String dataSrc = "new_dashManifestUrl." + src;
+                        final List<YoutubeStreamData> datas = parseDashManifest(dataSrc, br, br.getURL(url).toString());
+                        for (YoutubeStreamData data : datas) {
+                            fmtMaps.add(new StreamMap(data, dataSrc));
+                            ret++;
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    private List<YoutubeStreamData> parseDashManifest(final String src, Browser br, final String dashManifestURL) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        brc.getPage(dashManifestURL);
+        if (brc.getHttpConnection().getResponseCode() != 200 || !brc.containsHTML("<?xml")) {
+            throw new Exception("no xml response");
+        }
+        final List<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
+        final DocumentBuilder docBuilder = createXMLParser();
+        final Document doc = docBuilder.parse(new InputSource(new StringReader(brc.toString())));
+        final NodeList representations = doc.getElementsByTagName("Representation");
+        for (int r = 0; r < representations.getLength(); r++) {
+            final Element representation = (Element) representations.item(r);
+            final Long itagID = JavaScriptEngineFactory.toLong(representation.getAttribute("id"), -1);
+            final Long width = JavaScriptEngineFactory.toLong(representation.getAttribute("width"), -1);
+            final Long height = JavaScriptEngineFactory.toLong(representation.getAttribute("height"), -1);
+            final Long bitrate = JavaScriptEngineFactory.toLong(representation.getAttribute("bandwidth"), -1);
+            final Long fps = JavaScriptEngineFactory.toLong(representation.getAttribute("frameRate"), -1);
+            final Element baseUrlElement = (Element) representation.getElementsByTagName("BaseURL").item(0);
+            final String baseURL = baseUrlElement.getTextContent();
+            final YoutubeITAG itag = YoutubeITAG.get(itagID.intValue(), width.intValue(), height.intValue(), fps.intValue(), null, null, this.vid != null ? vid.datePublished : null);
+            if (itag == null) {
+                logger.info("UNSUPPORTED/UNKNOWN?");
+                try {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
+                        Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+                continue;
+            } else if (Boolean.FALSE.equals(isSupported(itag))) {
+                this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
+                continue;
+            }
+            final List<String> segments = new ArrayList<String>();
+            final NodeList segmentList = representation.getElementsByTagName("SegmentList").item(0).getChildNodes();
+            for (int i = 0; i < segmentList.getLength(); i++) {
+                final Element segment = (Element) segmentList.item(i);
+                if ("Initialization".equals(segment.getNodeName())) {
+                    final String sourceURL = segment.getAttribute("sourceURL");
+                    if (StringUtils.isNotEmpty(sourceURL)) {
+                        segments.add(sourceURL);
+                    }
+                } else if ("SegmentURL".equals(segment.getNodeName())) {
+                    final String media = segment.getAttribute("media");
+                    if (StringUtils.isNotEmpty(media)) {
+                        segments.add(media);
+                    }
+                }
+            }
+            if (segments.size() == 0) {
+                logger.info("UNSUPPORTED/UNKNOWN?");
+                continue;
+            }
+            final YoutubeStreamData data = new YoutubeStreamData(src, vid, baseURL, itag, null);
+            data.setSegments(segments.toArray(new String[0]));
+            if (height > 0) {
+                data.setHeight(height.intValue());
+            }
+            if (width > 0) {
+                data.setWidth(width.intValue());
+            }
+            if (fps > 0) {
+                data.setFps(fps.toString());
+            }
+            if (bitrate > 0) {
+                data.setBitrate(bitrate.intValue());
+            }
+            ret.add(data);
         }
         return ret;
     }
@@ -2294,190 +2366,29 @@ public class YoutubeHelper {
         // if StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true"), the manifest url uses a unknown signature.
         // anyway. it seems that these manifest files do not contain any new information.
         if (dashMpdEnabled && !StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true")) {
-            String dashmpd = videoInfo.get("dashmpd");
+            final String dashmpd = videoInfo.get("dashmpd");
             if (StringUtils.isNotEmpty(dashmpd)) {
-                final String url = dashmpd;
-                if (url != null) {
-                    mpdUrls.add(new StreamMap(url, "dashmpd." + src));
-                }
+                mpdUrls.add(new StreamMap(dashmpd, "dashmpd." + src));
             }
         }
         if (hlsEnabled & !StringUtils.equalsIgnoreCase(videoInfo.get("use_cipher_signature"), "true")) {
-            String hlsvp = videoInfo.get("hlsvp");
+            final String hlsvp = videoInfo.get("hlsvp");
             if (StringUtils.isNotEmpty(hlsvp)) {
-                final String url = hlsvp;
-                if (url != null) {
-                    mpdUrls.add(new StreamMap(url, "hlsvp." + src));
-                }
+                mpdUrls.add(new StreamMap(hlsvp, "hlsvp." + src));
             }
         }
     }
 
     private void collectMpdMap(String htmlCode, String regex, String src) {
         String map = new Regex(htmlCode, regex).getMatch(0);
-        if (map == null) {
-            return;
-        }
-        map = JSonStorage.restoreFromString(map, TypeRef.STRING);
-        if (StringUtils.isNotEmpty(map)) {
-            final String url = map;
-            if (url != null) {
-                mpdUrls.add(new StreamMap(url, src));
-            }
-        }
-    }
-
-    /**
-     * @param ret
-     * @param url
-     * @param query
-     * @param src
-     *            TODO
-     * @param vid
-     * @param html5PlayerJs
-     * @param r
-     * @throws IOException
-     * @throws PluginException
-     */
-    private void handleQuery(Element representation, final Map<YoutubeITAG, StreamCollection> ret, String url, final UrlQuery query, StreamMap src) throws IOException, PluginException {
-        String r = null;
-        r = xmlNodeToString(representation);
-        NamedNodeMap ats = representation.getAttributes();
-        for (int a = 0; a < ats.getLength(); a++) {
-            Attr at = (Attr) ats.item(a);
-            query.addAndReplace(at.getName(), at.getValue());
-        }
-        query.addIfNoAvailable("type", query.get("codecs") + "-" + query.get("mime"));
-        query.addIfNoAvailable("fps", query.get("frameRate"));
-        if (query.containsKey("width") && query.containsKey("height")) {
-            query.addIfNoAvailable("size", query.get("width") + "x" + query.get("height"));
-        }
-        if (query.containsKey("signature")) {
-            url = url + "&signature=" + query.get("signature");
-        } else if (query.containsKey("sig")) {
-            url = url + "&signature=" + query.get("sig");
-        } else if (query.containsKey("s")) {
-            String encrypted_sig = query.get("s");
-            encrypted_sig = URLDecoder.decode(encrypted_sig, "UTF-8");
-            final String signature = this.descrambleSignature(encrypted_sig);
-            if (query.containsKey("sp")) {
-                url = url + "&" + query.get("sp") + "=" + Encoding.urlEncode(signature);
-            } else {
-                url = url + "&signature=" + Encoding.urlEncode(signature);
-            }
-        }
-        if (StringUtils.equals(query.get("stream_type"), "3")) {
-            logger.info("UNSUPPORTED OTF:" + query);
-            return;
-        }
-        String size = query.get("size");
-        int width = -1;
-        int height = -1;
-        if (StringUtils.isNotEmpty(size)) {
-            String[] splitted = size.split("\\s*x\\s*");
-            if (splitted != null && splitted.length == 2) {
-                width = Integer.parseInt(splitted[0]);
-                height = Integer.parseInt(splitted[1]);
-            }
-        }
-        int projectionType = -1;
-        try {
-            String v = query.get("projection_type");
-            projectionType = v == null ? -1 : Integer.parseInt(v);
-        } catch (Throwable e) {
-            logger.log(e);
-        }
-        String fps = query.get("fps");
-        String type = query.get("type");
-        if (StringUtils.isNotEmpty(type)) {
-            type = Encoding.urlDecode(type, false);
-        }
-        final int itagID = Integer.parseInt(query.get("itag"));
-        final YoutubeITAG itag = YoutubeITAG.get(itagID, width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, query, vid.datePublished);
-        if (itag == null) {
-            this.logger.info("Unknown Line: " + r);
-            this.logger.info("Unknown ITAG: " + query.get("itag"));
-            this.logger.info(url + "");
-            this.logger.info(query + "");
-            try {
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !Application.isJared(null)) {
-                    Dialog.getInstance().showMessageDialog("Unknown ITag found: " + itagID + "\r\nAsk Coalado to Update the ItagHelper for Video ID: " + vid.videoID);
+        if (map != null) {
+            map = JSonStorage.restoreFromString(map, TypeRef.STRING);
+            if (StringUtils.isNotEmpty(map)) {
+                final String url = map;
+                if (url != null) {
+                    mpdUrls.add(new StreamMap(url, src));
                 }
-            } catch (Exception e) {
-                logger.log(e);
             }
-            return;
-        } else if (Boolean.FALSE.equals(isSupported(itag))) {
-            this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
-            return;
-        }
-        logger.info(Encoding.urlDecode(JSonStorage.toString(query.list()), false));
-        NodeList segmentListNodes = representation.getElementsByTagName("SegmentList");
-        ArrayList<String> segmentsList = new ArrayList<String>();
-        if (segmentListNodes != null && segmentListNodes.getLength() > 0) {
-            // we have segments
-            Node segments = segmentListNodes.item(0);
-            NodeList childs = segments.getChildNodes();
-            for (int c = 0; c < childs.getLength(); c++) {
-                String seg = ((Element) childs.item(c)).getAttribute("sourceURL");
-                if (StringUtils.isEmpty(seg)) {
-                    seg = ((Element) childs.item(c)).getAttribute("media");
-                    String testUrl = url + seg;
-                    // try {
-                    // getBr().openHeadConnection(testUrl);
-                    // System.out.println(getBr().getHttpConnection());
-                    // getBr().getHttpConnection().disconnect();
-                    // if (getBr().getHttpConnection().getResponseCode() != 200) {
-                    // System.out.println("ERROR");
-                    // System.out.println(getBr().getHttpConnection());
-                    // }
-                    // } catch (Throwable e) {
-                    // e.printStackTrace();
-                    // }
-                }
-                segmentsList.add(seg);
-            }
-        }
-        if (url != null) {
-            final YoutubeStreamData vsd = new YoutubeStreamData(src.src, vid, url, itag, query);
-            vsd.setHeight(height);
-            vsd.setWidth(width);
-            vsd.setFps(fps);
-            if (segmentsList.size() > 0) {
-                vsd.setSegments(segmentsList.toArray(new String[] {}));
-            }
-            if (isStreamDataAllowed(vsd)) {
-                StreamCollection lst = ret.get(itag);
-                if (lst == null) {
-                    lst = new StreamCollection();
-                    ret.put(itag, lst);
-                }
-                lst.add(vsd);
-            }
-        }
-    }
-
-    private String xmlNodeToString(Node representation) {
-        try {
-            String r;
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer;
-            transformer = transformerFactory.newTransformer();
-            transformer.setURIResolver(new URIResolver() {
-                @Override
-                public Source resolve(String href, String base) throws TransformerException {
-                    return null;
-                }
-            });
-            DOMSource source = new DOMSource(representation);
-            ByteArrayOutputStream bao;
-            StreamResult result = new StreamResult(bao = new ByteArrayOutputStream());
-            transformer.transform(source, result);
-            // r = result.getWriter().toString();
-            r = new String(bao.toByteArray(), "ASCII");
-            return r;
-        } catch (Throwable e1) {
-            return representation + "";
         }
     }
 
@@ -3255,66 +3166,64 @@ public class YoutubeHelper {
     }
 
     protected void extendedDataLoadingDemuxAudioBitrate(VariantInfo v, List<VariantInfo> variants) {
-        if (!CFG_YOUTUBE.CFG.isDoExtendedAudioBitrateLookupEnabled()) {
-            return;
-        }
-        YoutubeITAG itagVideo = v.getVariant().getiTagVideo();
-        if (itagVideo == null) {
-            return;
-        }
-        switch (itagVideo.getITAG()) {
-        case 22:
-        case 18:
-        case 82:
-        case 84:
-            int bitrate = v.getVideoStreams().getAudioBitrate();
-            if (bitrate <= 0) {
-                logger.info("Load Stream Probe for " + itagVideo + " - " + itagVideo.getITAG());
-                main: for (YoutubeStreamData vStream : v.getVideoStreams()) {
-                    try {
-                        if (vStream.getSegments() != null && vStream.getSegments().length > 0) {
-                            System.out.println("HLS");
-                        } else {
-                            Browser clone = br.cloneBrowser();
-                            List<HTTPProxy> proxies;
-                            proxies = br.selectProxies(new URL("https://youtube.com"));
-                            if (proxies != null && proxies.size() > 0) {
-                                clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
-                            }
-                            FFprobe ffmpeg = new FFprobe(clone) {
-                                @Override
-                                public LogInterface getLogger() {
-                                    return YoutubeHelper.this.logger;
-                                }
-                            };
-                            // probe.isAvailable()
-                            checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
-                            StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());
-                            if (streamInfo != null) {
-                                for (Stream stream : streamInfo.getStreams()) {
-                                    if ("audio".equals(stream.getCodec_type())) {
-                                        int aBitrate = (int) (Double.parseDouble(stream.getBit_rate()) / 1000);
-                                        if (aBitrate > 0) {
-                                            bitrate = aBitrate;
-                                            v.getVideoStreams().setAudioBitrate(aBitrate);
-                                            break main;
+        if (CFG_YOUTUBE.CFG.isDoExtendedAudioBitrateLookupEnabled()) {
+            final YoutubeITAG itagVideo = v.getVariant().getiTagVideo();
+            if (itagVideo != null) {
+                switch (itagVideo.getITAG()) {
+                case 22:
+                case 18:
+                case 82:
+                case 84:
+                    int bitrate = v.getVideoStreams().getAudioBitrate();
+                    if (bitrate <= 0) {
+                        logger.info("Load Stream Probe for " + itagVideo + " - " + itagVideo.getITAG());
+                        main: for (YoutubeStreamData vStream : v.getVideoStreams()) {
+                            try {
+                                if (vStream.getSegments() != null && vStream.getSegments().length > 0) {
+                                    System.out.println("HLS");
+                                } else {
+                                    final Browser clone = br.cloneBrowser();
+                                    final List<HTTPProxy> proxies = br.selectProxies(new URL("https://youtube.com"));
+                                    if (proxies != null && proxies.size() > 0) {
+                                        clone.setProxySelector(new StaticProxySelector(proxies.get(0)));
+                                    }
+                                    final FFprobe ffmpeg = new FFprobe(clone) {
+                                        @Override
+                                        public LogInterface getLogger() {
+                                            return YoutubeHelper.this.logger;
+                                        }
+                                    };
+                                    // probe.isAvailable()
+                                    checkFFProbe(ffmpeg, "Detect the actual Audio Bitrate");
+                                    StreamInfo streamInfo = ffmpeg.getStreamInfo(vStream.getUrl());
+                                    if (streamInfo != null) {
+                                        for (Stream stream : streamInfo.getStreams()) {
+                                            if ("audio".equals(stream.getCodec_type())) {
+                                                int aBitrate = (int) (Double.parseDouble(stream.getBit_rate()) / 1000);
+                                                if (aBitrate > 0) {
+                                                    bitrate = aBitrate;
+                                                    v.getVideoStreams().setAudioBitrate(aBitrate);
+                                                    break main;
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                            } catch (Throwable e) {
+                                e.printStackTrace();
                             }
                         }
-                    } catch (Throwable e) {
-                        e.printStackTrace();
                     }
-                }
-            }
-            if (bitrate > 0) {
-                for (VariantInfo av : variants) {
-                    if (av.getVariant().getiTagVideo() == itagVideo) {
-                        if (av.getVariant().getGenericInfo() instanceof GenericAudioInfo) {
-                            ((GenericAudioInfo) av.getVariant().getGenericInfo()).setaBitrate(bitrate);
+                    if (bitrate > 0) {
+                        for (VariantInfo av : variants) {
+                            if (av.getVariant().getiTagVideo() == itagVideo) {
+                                if (av.getVariant().getGenericInfo() instanceof GenericAudioInfo) {
+                                    ((GenericAudioInfo) av.getVariant().getGenericInfo()).setaBitrate(bitrate);
+                                }
+                            }
                         }
                     }
+                    break;
                 }
             }
         }
@@ -3369,10 +3278,17 @@ public class YoutubeHelper {
             }
             if (ytplayerConfig != null) {
                 this.ytPlayerConfig = JavaScriptEngineFactory.jsonToJavaMap(ytplayerConfig);
-                if (this.ytInitialPlayerResponse == null && this.ytPlayerConfig != null) {
+                if (this.ytPlayerConfig != null) {
                     final Object playerResponse = JavaScriptEngineFactory.walkJson(this.ytPlayerConfig, "args/player_response");
                     if (playerResponse instanceof String) {
-                        this.ytInitialPlayerResponse = JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+                        final Map<String, Object> ytInitialPlayerResponse = JavaScriptEngineFactory.jsonToJavaMap(playerResponse.toString());
+                        if (this.ytInitialPlayerResponse == null) {
+                            this.ytInitialPlayerResponse = ytInitialPlayerResponse;
+                        } else {
+                            logger.info("Merge ytInitialPlayerResponse");
+                            // merge
+                            this.ytInitialPlayerResponse.putAll(ytInitialPlayerResponse);
+                        }
                     }
                 }
             } else {

@@ -392,10 +392,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     boolean isExternMultimediaToolUsageEnabled();
 
     @DefaultBooleanValue(false)
-    @AboutConfig
-    boolean isFastLinkCheckEnabled();
-
-    @DefaultBooleanValue(false)
     @Deprecated
     /**
      * @deprecated use proxy and whitelist instead
@@ -462,8 +458,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setExternMultimediaToolUsageEnabled(boolean b);
 
     void setExtraSubtitles(ArrayList<String> list);
-
-    void setFastLinkCheckEnabled(boolean b);
 
     @Deprecated
     void setFilenamePattern(String name);
