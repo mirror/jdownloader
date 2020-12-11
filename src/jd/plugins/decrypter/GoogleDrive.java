@@ -442,9 +442,6 @@ public class GoogleDrive extends PluginForDecrypt {
             final String mimeType = (String) entries.get("mimeType");
             final String kind = mimeType != null && mimeType.contains(".folder") ? "folder" : (String) entries.get("kind");
             final String title = (String) entries.get("title");
-            // if (title != null) {
-            // title = title.replace("의 사본", "");
-            // }
             final String id = (String) entries.get("id");
             if (kind == null || title == null || id == null) {
                 /* This should never happen */

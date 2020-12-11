@@ -466,16 +466,16 @@ public class OffCloudCom extends UseNet {
                 logger.info("NOT adding this host because of non allowed status: " + domain + " | Status: " + status);
                 continue;
             }
-            // logger.info("status of host " + domain + ": " + status);
+            /* Workaround to get real/mapped domain */
             supportedHostsTmp.clear();
             supportedHostsTmp.add(domain);
             ai.setMultiHostSupport(this, supportedHostsTmp);
-            /* Workaround to get real/mapped domain */
             final List<String> realHostArrayTmp = ai.getMultiHostSupport();
             if (realHostArrayTmp == null || realHostArrayTmp.isEmpty()) {
                 logger.info("Skipping host because it's not supported by JD: " + domain);
                 continue;
             }
+            /* Add real host to full list of supported hosts */
             supportedHosts.add(realHostArrayTmp.get(0));
             if (status.equals("cloud only")) {
                 cloudOnlyHosts.add(domain);
