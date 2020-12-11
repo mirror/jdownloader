@@ -29,6 +29,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -51,8 +52,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "hulkload.com", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
             /** file-up.org domains */
             "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
-    /* This list contains all hosts which need special Patterns (see below) - most XFS hosts will have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com" };
+    /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
+    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -94,6 +95,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         ret.add("https?://spaceforfiles\\.com/dir/[a-z0-9]+");
         /* prefiles.com */
         ret.add("https?://(?:www\\.)?prefiles\\.com/folder/\\d+[A-Za-z0-9\\-_]+");
+        /* imagetwist.com (image galleries) */
+        ret.add("https?://(?:www\\.)?imagetwist\\.com/p/[^/]+/\\d+/[^/]+");
         return ret.toArray(new String[0]);
     }
 
@@ -121,7 +124,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         postData = null;
         i = 1;
         parameter = param.toString();
-        host = new Regex(parameter, "https?://(www\\.)?([^:/]+)").getMatch(1);
+        host = Browser.getHost(parameter);
         if (host == null) {
             logger.warning("Failure finding HOST : " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -207,16 +210,22 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             fp.setName(fpName.trim());
         }
         dupe.add(parameter);
-        // count value prevents continuous loop.
-        int count = 0;
+        /* prevents continuous loop. */
+        int lastArraySize = 0;
         do {
-            count = decryptedLinks.size();
-            parsePage();
-        } while (!this.isAbort() && decryptedLinks.size() > count && parseNextPage());
+            lastArraySize = decryptedLinks.size();
+            final boolean foundNewItems = parsePage();
+            if (!foundNewItems) {
+                /* Fail-safe */
+                logger.info("Stopping because failed to find new items");
+                break;
+            }
+        } while (!this.isAbort() && decryptedLinks.size() > lastArraySize && accessNextPage());
         return decryptedLinks;
     }
 
-    private void parsePage() throws PluginException {
+    private boolean parsePage() throws PluginException {
+        boolean foundNewItems = false;
         final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(host) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
             for (final String link : links) {
@@ -227,6 +236,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                      * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be
                      * online!
                      */
+                    foundNewItems = true;
                     final DownloadLink dl = createDownloadlink(link);
                     /* Works for e.g. world-files.com, brupload.net */
                     /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
@@ -295,6 +305,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
                 final boolean folderIsChildFolder = cleanedUpFoundFolderLink.length() > cleanedUpAddedFolderLink.length();
                 if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupe.contains(folderlink) && folderIsChildFolder) {
+                    foundNewItems = true;
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
                     decryptedLinks.add(dlfolder);
                     distribute(dlfolder);
@@ -302,20 +313,27 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 }
             }
         }
+        return foundNewItems;
     }
 
     private int    i        = 1;
     private String postData = null;
 
-    private boolean parseNextPage() throws Exception {
+    private boolean accessNextPage() throws Exception {
         // not sure if this is the same for normal folders, but the following
         // picks up users/username/*, 2019-02-08: will also work for photo galleries ('host.tld/g/bla')
         /* Increment page */
         i++;
-        String nextPage = br.getRegex("<div class=(\"|')paging\\1>[^\r\n]+<a href=('|\")([^']+\\&amp;page=\\d+|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>Next").getMatch(2);
+        /* Make sure to get the next page so we don't accidently parse the same page multiple times! */
+        String nextPage = br.getRegex("<div class=(\"|')paging\\1>.*?<a href=('|\")([^']+\\&amp;page=" + i + "|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>").getMatch(2);
         if (nextPage != null) {
             nextPage = HTMLEntities.unhtmlentities(nextPage);
             nextPage = Request.getLocation(nextPage, br.getRequest());
+            // final String pageStr = UrlQuery.parse(nextPage).get("page");
+            // if (pageStr != null && !pageStr.equalsIgnoreCase(i + "")) {
+            // logger.info("NextPage doesn't match expected page: Next = " + pageStr + " Expected = " + i);
+            // return false;
+            // }
             getPage(nextPage);
             return true;
         }
