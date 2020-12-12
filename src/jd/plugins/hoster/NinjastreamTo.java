@@ -25,6 +25,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.segment.SegmentDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -150,6 +151,16 @@ public class NinjastreamTo extends PluginForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         br.getPage("https://" + this.getHost() + "/download/" + this.getFID(link));
+        if (br.getHttpConnection().getResponseCode() != 200) {
+            // Fallback through the watch page
+            br.getPage("https://" + this.getHost() + "/watch/" + this.getFID(link));
+        }
+        // Check for Errors
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        }
         String json = br.getRegex("v-bind:stream=\"([^\"]+)").getMatch(0);
         if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
@@ -160,12 +171,22 @@ public class NinjastreamTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String playlist = br.getRegex("v-bind:playlist=\"([^\"]+)\"").getMatch(0);
-        if (Encoding.isHtmlEntityCoded(playlist)) {
-            playlist = Encoding.htmlDecode(playlist);
+        if (playlist != null && !playlist.isEmpty()) {
+            // If there is an available playlist, fetch the files from there
+            if (Encoding.isHtmlEntityCoded(playlist)) {
+                playlist = Encoding.htmlDecode(playlist);
+            }
+            String[] segments = PluginJSonUtils.getJsonResultsFromArray(playlist);
+            dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments);
+            ((SegmentDownloader) dl).setSkipBytes(0x78); // Skip static PNG data
+        } else if (false) {
+            // Otherwise, use the m3u8 playlist
+            // This only works if M3U8Playlist.X_BYTERANGE_SUPPORT is available (and therefore disabled for now)
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, host + hash + "/2_720p.m3u8");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available download options", 60 * 60 * 1000l);
         }
-        String[] segments = PluginJSonUtils.getJsonResultsFromArray(playlist);
-        dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments);
-        ((SegmentDownloader) dl).setSkipBytes(0x78); // Skip static PNG data
         dl.startDownload();
     }
 
