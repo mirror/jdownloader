@@ -106,7 +106,7 @@ public class ZuploadMe extends YetiShareCore {
 
     @Override
     public boolean isDownloadlink(String url) {
-        return url != null && !url.matches("(?ihttps?://[^\"]+/files/[^\"]+") && super.isDownloadlink(url);
+        return url != null && !url.matches("(?i)https?://[^\"]+/files/[^\"]+") && super.isDownloadlink(url);
     }
 
     @Override
