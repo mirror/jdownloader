@@ -3324,7 +3324,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean validatedCookies = false;
                 if (cookies != null) {
                     logger.info("Stored login-Cookies are available");
                     br.setCookies(getMainPage(), cookies);
@@ -3335,86 +3334,87 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(getMainPage() + getRelativeAccountInfoURL());
-                    validatedCookies = isLoggedin();
+                    if (isLoggedin()) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(br.getCookies(getMainPage()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
                 }
-                if (validatedCookies) {
-                    /* No additional check required --> We know cookies are valid and we're logged in --> Done! */
-                    logger.info("Successfully logged in via cookies");
-                } else {
-                    /*
-                     * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a
-                     * captcha. Example: filejoker.net
-                     */
-                    int login_counter = 0;
-                    final int login_counter_max = 2;
-                    br.clearCookies(getMainPage());
-                    do {
-                        login_counter++;
-                        logger.info("Performing full login attempt: " + login_counter);
-                        Form loginForm = findLoginform(this.br);
+                /*
+                 * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
+                 * Example: filejoker.net
+                 */
+                int login_counter = 0;
+                final int login_counter_max = 2;
+                br.clearCookies(getMainPage());
+                do {
+                    login_counter++;
+                    logger.info("Performing full login attempt: " + login_counter);
+                    Form loginForm = findLoginform(this.br);
+                    if (loginForm == null) {
+                        // some sites (eg filejoker) show login captcha AFTER first login attempt, so only reload getLoginURL(without
+                        // captcha) if required
+                        getPage(getLoginURL());
+                        if (br.getHttpConnection().getResponseCode() == 404) {
+                            /* Required for some XFS setups - use as common fallback. */
+                            getPage(getMainPage() + "/login");
+                        }
+                        loginForm = findLoginform(this.br);
                         if (loginForm == null) {
-                            // some sites (eg filejoker) show login captcha AFTER first login attempt, so only reload getLoginURL(without
-                            // captcha) if required
-                            getPage(getLoginURL());
-                            if (br.getHttpConnection().getResponseCode() == 404) {
-                                /* Required for some XFS setups - use as common fallback. */
-                                getPage(getMainPage() + "/login");
-                            }
-                            loginForm = findLoginform(this.br);
-                            if (loginForm == null) {
-                                logger.warning("Failed to find loginform");
-                                /* E.g. 503 error during login */
-                                checkResponseCodeErrors(br.getHttpConnection());
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
+                            logger.warning("Failed to find loginform");
+                            /* E.g. 503 error during login */
+                            checkResponseCodeErrors(br.getHttpConnection());
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (loginForm.hasInputFieldByName("email")) {
-                            /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
-                            loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                    }
+                    if (loginForm.hasInputFieldByName("email")) {
+                        /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
+                        loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                    } else {
+                        loginForm.put("login", Encoding.urlEncode(account.getUser()));
+                    }
+                    loginForm.put("password", Encoding.urlEncode(account.getPass()));
+                    /* Handle login-captcha if required */
+                    final DownloadLink dlinkbefore = this.getDownloadLink();
+                    try {
+                        final DownloadLink dl_dummy;
+                        if (dlinkbefore != null) {
+                            dl_dummy = dlinkbefore;
                         } else {
-                            loginForm.put("login", Encoding.urlEncode(account.getUser()));
+                            dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                            this.setDownloadLink(dl_dummy);
                         }
-                        loginForm.put("password", Encoding.urlEncode(account.getPass()));
-                        /* Handle login-captcha if required */
-                        final DownloadLink dlinkbefore = this.getDownloadLink();
-                        try {
-                            final DownloadLink dl_dummy;
-                            if (dlinkbefore != null) {
-                                dl_dummy = dlinkbefore;
-                            } else {
-                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                                this.setDownloadLink(dl_dummy);
-                            }
-                            handleCaptcha(dl_dummy, loginForm);
-                        } finally {
-                            this.setDownloadLink(dlinkbefore);
-                        }
-                        submitForm(loginForm);
-                        if (!this.allows_multiple_login_attempts_in_one_go()) {
-                            break;
-                        }
-                    } while (!this.isLoggedin() && login_counter <= login_counter_max);
-                    if (!this.isLoggedin()) {
-                        if (correctedBR.contains("op=resend_activation")) {
-                            /* User entered correct logindata but hasn't activated his account yet. */
-                            throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
-                        }
-                        if (this.allows_multiple_login_attempts_in_one_go()) {
-                            logger.info("Login failed although there were two attempts");
-                        } else {
-                            logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
-                        }
-                        /*
-                         * TODO 2020-04-20: Modify text and only include the "or login captcha" part if user was actually asked to enter a
-                         * login captcha or completely remove that.
-                         */
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                        handleCaptcha(dl_dummy, loginForm);
+                    } finally {
+                        this.setDownloadLink(dlinkbefore);
+                    }
+                    submitForm(loginForm);
+                    if (!this.allows_multiple_login_attempts_in_one_go()) {
+                        break;
+                    }
+                } while (!this.isLoggedin() && login_counter <= login_counter_max);
+                if (!this.isLoggedin()) {
+                    if (correctedBR.contains("op=resend_activation")) {
+                        /* User entered correct logindata but hasn't activated his account yet. */
+                        throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
+                    }
+                    if (this.allows_multiple_login_attempts_in_one_go()) {
+                        logger.info("Login failed although there were two attempts");
+                    } else {
+                        logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
+                    }
+                    /*
+                     * TODO 2020-04-20: Modify text and only include the "or login captcha" part if user was actually asked to enter a login
+                     * captcha or completely remove that.
+                     */
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");

@@ -120,6 +120,49 @@ public class FlorenfileCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             }
         }
+        /* 2020-12-14: Typo on website thus a different errormessage than what our template can handle. Happened in premium mode. */
+        final String preciseWaittime = new Regex(correctedBR, "((You have reached download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+        if (preciseWaittime != null) {
+            /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
+            final String tmphrs = new Regex(preciseWaittime, "\\s*(\\d+)\\s*hours?").getMatch(0);
+            final String tmpmin = new Regex(preciseWaittime, "\\s*(\\d+)\\s*minutes?").getMatch(0);
+            final String tmpsec = new Regex(preciseWaittime, "\\s*(\\d+)\\s*seconds?").getMatch(0);
+            final String tmpdays = new Regex(preciseWaittime, "\\s*(\\d+)\\s*days?").getMatch(0);
+            int waittime;
+            if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
+                /* This should not happen! This is an indicator of developer-failure! */
+                logger.info("Waittime RegExes seem to be broken - using default waittime");
+                waittime = 60 * 60 * 1000;
+            } else {
+                int minutes = 0, seconds = 0, hours = 0, days = 0;
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            }
+            logger.info("Detected reconnect waittime (milliseconds): " + waittime);
+            /* Not enough wait time to reconnect -> Wait short and retry */
+            if (waittime < 180000) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
+            } else if (account != null) {
+                /*
+                 * 2020-04-17: Some hosts will have trafficlimit and e.g. only allow one file every X minutes so his errormessage might be
+                 * confusing to some users. Now it should cover both cases at the same time.
+                 */
+                throw new AccountUnavailableException("Download limit reached or wait until next download can be started", waittime);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            }
+        }
     }
 
     @Override

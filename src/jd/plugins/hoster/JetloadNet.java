@@ -28,8 +28,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|d/|e|p|#\\!/v)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetload.net" }, urls = { "https?://(?:www\\.)?jetload\\.net/(?:#\\!/d|d|e|p|#\\!/v)/([A-Za-z0-9]+)" })
 public class JetloadNet extends PluginForHost {
     public JetloadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -179,14 +181,16 @@ public class JetloadNet extends PluginForHost {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         /* 2019-05-08: Very similar to their API but not exactly the same */
         if (useNewWay2020) {
+            br.setAllowedResponseCodes(new int[] { 429 });
             final String fid = this.getFID(link);
             br.getPage("https://" + this.getHost() + "/d/" + fid);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*404 File not found or has been removed")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filename = br.getRegex(">File:([^<>\"]+)<").getMatch(0);
+            String filename = br.getRegex(">File:([^<>\"]+)<").getMatch(0);
             final String filesize = br.getRegex(">Size:\\s*(\\d+)\\s*<").getMatch(0);
             if (!StringUtils.isEmpty(filename)) {
+                filename = Encoding.htmlDecode(filename);
                 link.setName(filename);
             }
             if (!StringUtils.isEmpty(filesize)) {
@@ -197,9 +201,24 @@ public class JetloadNet extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 429) {
+                /* 2020-12-14 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests", 5 * 60 * 1000l);
+            }
             /* 2020-01-22: Hardcoded reCaptchaV2 key */
             final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, "6Lc90MkUAAAAAOrqIJqt4iXY_fkXb7j3zwgRGtUI").getToken();
-            final String postData = String.format("{\"token\":\"%s\",\"stream_code\":\"%s\"}", recaptchaV2Response, fid);
+            final String postData = String.format("{\"stream_code\":\"%s\",\"token\":\"%s\"}", fid, recaptchaV2Response);
+            /*
+             * 2020-12-14: New: Some special headers are required now otherwise all we get as a response will be: invalid request (but along
+             * with http response 200)
+             */
+            final String token = br.getCookie(br.getHost(), "XSRF-TOKEN", Cookies.NOTDELETEDPATTERN);
+            if (token != null) {
+                /* 2020-12-14 */
+                br.getHeaders().put("x-xsrf-token", token);
+            }
+            br.getHeaders().put("Origin", "https://" + this.getHost());
+            br.getHeaders().put("Accept", "application/json, text/plain, */*");
             br.postPageRaw("https://" + this.getHost() + "/jet_secure", postData);
             final String errorMsg = PluginJSonUtils.getJson(br, "err");
             if (errorMsg != null) {

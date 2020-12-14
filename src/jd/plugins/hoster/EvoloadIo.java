@@ -22,15 +22,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -112,8 +114,12 @@ public class EvoloadIo extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private boolean usedAPIDuringAvailablecheck = false;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* They're hosting video content only. */
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
@@ -121,38 +127,107 @@ public class EvoloadIo extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("title>Evoload - Download ([^<>\"]+)</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("class=\"kt-subheader__title\">([^<>\"]+)<").getMatch(0);
+        /* 2020-12-14: API works without apikey though a key is required according to their docs lol: https://evoload.dev/ */
+        final boolean tryAPI = true;
+        if (tryAPI) {
+            try {
+                br.getPage("https://" + this.getHost() + "/v1/EvoAPI/-/file-check/" + this.getFID(link));
+                usedAPIDuringAvailablecheck = true;
+                /* 2020-12-14: E.g. offline: {"status":400,"msg":"File does not exists!"} */
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String status = (String) entries.get("status");
+                if (status != null && !status.equals("Online")) {
+                    return AvailableStatus.FALSE;
+                } else {
+                    final String filename = (String) entries.get("original_name");
+                    final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                    if (!StringUtils.isEmpty(filename)) {
+                        link.setFinalFileName(filename);
+                    }
+                    if (size > 0) {
+                        link.setDownloadSize(size);
+                    }
+                    return AvailableStatus.TRUE;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("API Availablecheck failed");
+            }
         }
-        String filesize = br.getRegex("File Size\\s*:\\s*<small>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        final boolean canDetermineRealStatusWithoutCaptcha = false;
+        // String filename = br.getRegex("title>Evoload - Download ([^<>\"]+)</title>").getMatch(0);
+        // if (StringUtils.isEmpty(filename)) {
+        // filename = br.getRegex("class=\"kt-subheader__title\">([^<>\"]+)<").getMatch(0);
+        // }
+        // if (!StringUtils.isEmpty(filename)) {
+        // filename = Encoding.htmlDecode(filename).trim();
+        // link.setName(filename);
+        // }
+        String filesize = br.getRegex("File Size\\s*:\\s*<small>\\s*(\\d+[^<>\"]+)<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        return AvailableStatus.TRUE;
+        if (canDetermineRealStatusWithoutCaptcha) {
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link));
+            }
+            return AvailableStatus.TRUE;
+        } else {
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        final AvailableStatus status = requestFileInformation(link);
+        if (status == AvailableStatus.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            if (this.usedAPIDuringAvailablecheck) {
+                br.getPage(link.getPluginPatternMatcher());
+            }
+            final String recaptchaV2Response;
+            final String reCaptchaKey = br.getRegex("recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
+            if (reCaptchaKey != null) {
+                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+            } else {
+                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            }
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("code", this.getFID(link));
             postdata.put("token", recaptchaV2Response);
             br.getHeaders().put("Accept", "application/json, text/plain, */*");
-            br.postPageRaw("/EvoSecure", JSonStorage.serializeToJson(postdata));
+            final boolean doExtraRequest = false;
+            if (doExtraRequest) {
+                br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdata));
+                final String xstatus = PluginJSonUtils.getJson(this.br, "xstatus");
+                if (!StringUtils.isEmpty(xstatus)) {
+                    /* E.g. status "del" */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String original_name = PluginJSonUtils.getJson(this.br, "original_name");
+                if (!StringUtils.isEmpty(original_name)) {
+                    link.setFinalFileName(original_name);
+                }
+            }
+            br.postPageRaw("/SecurePlayer", JSonStorage.serializeToJson(postdata));
+            final String xstatus = PluginJSonUtils.getJson(this.br, "xstatus");
+            if (!StringUtils.isEmpty(xstatus)) {
+                /* E.g. status "del" */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             dllink = PluginJSonUtils.getJson(br, "src");
+            /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
+            final String name = PluginJSonUtils.getJson(this.br, "name");
+            if (!StringUtils.isEmpty(name) && link.getFinalFileName() == null) {
+                link.setFinalFileName(name);
+            }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -178,13 +253,17 @@ public class EvoloadIo extends PluginForHost {
         dl.startDownload();
     }
 
-    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
-        return new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, final String reCaptchaKey) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey) {
             @Override
             public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
                 return TYPE.INVISIBLE;
             }
         };
+    }
+
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return this.getCaptchaHelperHostPluginRecaptchaV2(plugin, br, null);
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
