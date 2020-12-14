@@ -104,6 +104,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
     public static final String   PROPERTY_is_part_of_story                   = "is_part_of_story";
     public static final String   PROPERTY_DIRECTURL                          = "directurl";
+    public static final String   PROPERTY_private_url                        = "private_url";
     /* Settings default values */
     public static final boolean  defaultPREFER_SERVER_FILENAMES              = false;
     public static final boolean  defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY = false;
@@ -113,7 +114,6 @@ public class InstaGramCom extends PluginForHost {
     public static final boolean  defaultHASHTAG_CRAWLER_FIND_USERNAMES       = false;
     public static final boolean  defaultONLY_GRAB_X_ITEMS                    = false;
     public static final int      defaultONLY_GRAB_X_ITEMS_NUMBER             = 25;
-    private boolean              is_private_url                              = false;
 
     public void correctDownloadLink(final DownloadLink link) {
         String newurl = link.getPluginPatternMatcher().replace("instagrammdecrypted://", "https://www.instagram.com/p/");
@@ -125,15 +125,14 @@ public class InstaGramCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         this.correctDownloadLink(link);
         dllink = null;
         server_issues = false;
-        is_private_url = link.getBooleanProperty("private_url", false);
         this.setBrowserExclusive();
         /*
          * Decrypter can set this status - basically to be able to handle private urls correctly in host plugin in case users' account gets
@@ -141,20 +140,13 @@ public class InstaGramCom extends PluginForHost {
          */
         prepBRWebsite(this.br);
         boolean isLoggedIN = false;
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            try {
-                login(aa, false);
-                isLoggedIN = true;
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
+        if (account == null) {
+            /* No specific account given -> Grab any account available */
+            account = AccountController.getInstance().getValidAccount(this);
         }
-        if (this.is_private_url && !isLoggedIN) {
-            link.getLinkStatus().setStatusText("Login required to download this content");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (canGrabOriginalQualityDownloadurlViaAltAPI(link, isLoggedIN) && !link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false)) {
+        if (this.userWantsToDownloadOriginalQuality() && canGrabOriginalQualityDownloadurlViaAltAPI(link) && !hasTriedToCrawlOriginalQuality(link) && account != null) {
+            login(account, false);
+            isLoggedIN = true;
             this.dllink = this.getHighesQualityDownloadlinkAltAPI(link, true);
         } else {
             this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
@@ -162,7 +154,7 @@ public class InstaGramCom extends PluginForHost {
         this.dllink = this.checkLinkAndSetFilesize(link, this.dllink);
         if (this.dllink == null) {
             /* This will also act as a fallback in case that "original quality" handling fails */
-            this.dllink = this.getFreshDirecturl(link, isLoggedIN);
+            this.dllink = this.getFreshDirecturl(link, account, isLoggedIN);
             if (this.dllink == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
@@ -221,7 +213,7 @@ public class InstaGramCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean canGrabOriginalQualityDownloadurlViaAltAPI(final DownloadLink link, final boolean is_logged_in) {
+    private boolean canGrabOriginalQualityDownloadurlViaAltAPI(final DownloadLink link) {
         // final String resolution_inside_url = new Regex(dllink, "(/s\\d+x\\d+/)").getMatch(0);
         /*
          * 2017-04-28: By removing the resolution inside the picture URL, we can download the original image - usually, resolution will be
@@ -231,12 +223,23 @@ public class InstaGramCom extends PluginForHost {
         // String drlink = dllink.replace(resolution_inside_url, "/");
         final String imageid = link.getStringProperty("postid");
         /* Avoids doing an extra http request for video files as they're never available in "original" quality (?) */
-        final boolean userWantsToDownloadOriginalQuality = this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
-        return userWantsToDownloadOriginalQuality && is_logged_in && !isVideo(link) && imageid != null;
+        return !isVideo(link) && imageid != null;
+    }
+
+    private static boolean hasTriedToCrawlOriginalQuality(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_has_tried_to_crawl_original_url, false);
+    }
+
+    private boolean userWantsToDownloadOriginalQuality() {
+        return this.getPluginConfig().getBooleanProperty(ATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY, defaultATTEMPT_TO_DOWNLOAD_ORIGINAL_QUALITY);
     }
 
     private boolean isVideo(final DownloadLink link) {
         return link.getBooleanProperty("isvideo", false) || (link.getFinalFileName() != null && link.getFinalFileName().contains(".mp4"));
+    }
+
+    private static boolean isPartOfStory(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_is_part_of_story, false);
     }
 
     /**
@@ -343,14 +346,19 @@ public class InstaGramCom extends PluginForHost {
         return dllink;
     }
 
-    private String getFreshDirecturl(final DownloadLink link, final boolean isLoggedIN) throws IOException, PluginException {
+    private String getFreshDirecturl(final DownloadLink link, final Account account, final boolean isLoggedIN) throws Exception {
         String directurl = null;
         logger.info("Trying to refresh directurl");
         /* Story elements can only be refreshed by ID and thus we need to use the other API for those! */
-        final boolean forceOriginalQualitDownload = isLoggedIN && link.getBooleanProperty(PROPERTY_is_part_of_story, false);
-        if (canGrabOriginalQualityDownloadurlViaAltAPI(link, isLoggedIN) || forceOriginalQualitDownload) {
+        final boolean useBestQualityDownload = canGrabOriginalQualityDownloadurlViaAltAPI(link) || isPartOfStory(link);
+        if (useBestQualityDownload && account != null) {
             logger.info("Tring to obtain fresh original quality downloadurl");
+            if (!isLoggedIN) {
+                this.login(account, false);
+            }
             directurl = getHighesQualityDownloadlinkAltAPI(link, true);
+        } else if (isPartOfStory(link)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot refresh direct url of story elements without account");
         } else {
             logger.info("Trying to obtain fresh downloadurl via crawler");
             final PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt(this.getHost());
@@ -458,10 +466,8 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (this.is_private_url) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } else if (server_issues) {
+        requestFileInformation(link, null, true);
+        if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -703,8 +709,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, true);
-        /* We're already logged in - no need to login again here! */
+        requestFileInformation(link, account, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
