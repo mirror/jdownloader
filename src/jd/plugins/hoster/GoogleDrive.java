@@ -97,15 +97,6 @@ public class GoogleDrive extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        final String id = getFID(link);
-        if (id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            link.setPluginPatternMatcher("https://drive.google.com/file/d/" + id);
-        }
-    }
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String id = getFID(link);
@@ -126,6 +117,7 @@ public class GoogleDrive extends PluginForHost {
     private static final int    FREE_MAXDOWNLOADS             = 20;
     private static Object       CAPTCHA_LOCK                  = new Object();
     public static final String  API_BASE                      = "https://www.googleapis.com/drive/v3";
+    private static final String PATTERN_GDOC                  = "https?://[^/]+/document/d/([a-zA-Z0-9\\-_]+)";
 
     @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink link) {
@@ -138,15 +130,21 @@ public class GoogleDrive extends PluginForHost {
         // https://video.google.com/get_player?docid=0B2vAVBc_577958658756vEo2eUk
         if (link == null) {
             return null;
+        } else if (link.getDownloadURL() == null) {
+            return null;
         } else {
-            String id = new Regex(link.getDownloadURL(), "/(?:file|document)/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
-            if (id == null) {
-                id = new Regex(link.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
+            if (link.getDownloadURL().matches(PATTERN_GDOC)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_GDOC).getMatch(0);
+            } else {
+                String id = new Regex(link.getDownloadURL(), "/file/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
                 if (id == null) {
-                    id = new Regex(link.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+                    id = new Regex(link.getDownloadURL(), "video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)").getMatch(0);
+                    if (id == null) {
+                        id = new Regex(link.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+                    }
                 }
+                return id;
             }
-            return id;
         }
     }
 
@@ -189,7 +187,15 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private boolean isGoogleDocument(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
+        /* Use result by property if existant */
+        if (link.hasProperty(PROPERTY_GOOGLE_DOCUMENT)) {
+            return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_GDOC)) {
+            /* URL looks like GDoc */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private boolean canDownload(final DownloadLink link) {
@@ -266,7 +272,7 @@ public class GoogleDrive extends PluginForHost {
         /* E.g. application/vnd.google-apps.document | application/vnd.google-apps.spreadsheet */
         final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
         if (googleDriveDocumentType != null) {
-            final Map<String, Object> exportFormatDownloadurls = entries.containsKey("") ? (Map<String, Object>) entries.get("exportLinks") : null;
+            final Map<String, Object> exportFormatDownloadurls = entries.containsKey("exportLinks") ? (Map<String, Object>) entries.get("exportLinks") : null;
             parseGoogleDocumentProperties(link, filename, googleDriveDocumentType, exportFormatDownloadurls);
         } else if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
@@ -404,41 +410,52 @@ public class GoogleDrive extends PluginForHost {
              */
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(constructDownloadUrl(link));
-                if (con.getResponseCode() == 403) {
-                    /*
-                     * 2020-09-14: E.g. "Sorry[...] but your computer or network may be sending automated queries"[2020-09-14: Retry with
-                     * active Google account can 'fix' this.] or rights-issue ...
-                     */
-                    specialError403 = true;
-                    /*
-                     * Do not throw exception here! Continue so fallback handling below can run through and e.g. at least find the filename!
-                     */
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
-                    br.followConnection();
-                } else if (con.getResponseCode() == 404) {
-                    /* 2020-09-14: File should be offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.isContentDisposition()) {
+                if (this.isGoogleDocument(link)) {
+                    if (link.hasProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL)) {
+                        this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL);
+                    } else {
+                        this.dllink = "https://docs.google.com/feeds/download/documents/export/Export?id=" + this.getFID(link) + "&exportFormat=zip";
+                    }
+                    con = br.openGetConnection(this.dllink);
+                } else {
+                    con = br.openGetConnection(constructDownloadUrl(link));
+                }
+                if (this.looksLikeDownloadableContent(con)) {
                     logger.info("Direct download active");
-                    String fileName = getFileNameFromHeader(con);
+                    final String fileName = getFileNameFromHeader(con);
                     if (!StringUtils.isEmpty(fileName)) {
                         link.setFinalFileName(fileName);
                     }
                     if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     dllink = con.getURL().toString();
                     return AvailableStatus.TRUE;
                 } else {
                     br.followConnection();
-                    filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
-                    if (filename != null) {
-                        link.setName(Encoding.htmlDecode(filename).trim());
-                    }
-                    filesizeStr = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
-                    if (filesizeStr != null) {
-                        link.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
+                    if (this.isGoogleDocument(link)) {
+                        this.handleErrors(this.br, link, account);
+                        /* Document which is not direct-downloadable --> Must be offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (con.getResponseCode() == 403) {
+                        /*
+                         * 2020-09-14: E.g. "Sorry[...] but your computer or network may be sending automated queries"[2020-09-14: Retry
+                         * with active Google account can 'fix' this.] or rights-issue ...
+                         */
+                        specialError403 = true;
+                    } else if (con.getResponseCode() == 404) {
+                        /* 2020-09-14: File should be offline */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+                        if (filename != null) {
+                            link.setName(Encoding.htmlDecode(filename).trim());
+                        }
+                        filesizeStr = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
+                        if (filesizeStr != null) {
+                            link.setDownloadSize(SizeFormatter.getSize(filesizeStr + "B"));
+                        }
                     }
                 }
             } finally {
@@ -478,7 +495,7 @@ public class GoogleDrive extends PluginForHost {
                 dllink = br.getRegex("\"([^\"]*?/uc\\?export=download[^<>\"]+)\"").getMatch(0);
                 if (dllink != null) {
                     dllink = HTMLEntities.unhtmlentities(dllink);
-                    logger.info("Direct download active");
+                    logger.info("File is too big for Google v_rus scan but looks like it is downloadable");
                     return AvailableStatus.TRUE;
                 } else {
                     logger.info("Direct download inactive --> Download Overview");
