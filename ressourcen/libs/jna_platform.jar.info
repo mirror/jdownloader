@@ -1,0 +1,5 @@
+jna
+version 5.6.0
+lgpl
+https://github.com/java-native-access/jna
+https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/5.6.0/jna-platform-5.6.0.jar
