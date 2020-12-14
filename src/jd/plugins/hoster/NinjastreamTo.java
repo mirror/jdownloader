@@ -15,21 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account.AccountType;
@@ -40,6 +35,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.Segment;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NinjastreamTo extends PluginForHost {
@@ -82,13 +86,13 @@ public class NinjastreamTo extends PluginForHost {
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 20;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -161,7 +165,7 @@ public class NinjastreamTo extends PluginForHost {
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
         }
-        String json = br.getRegex("v-bind:stream=\"([^\"]+)").getMatch(0);
+        String json = br.getRegex("v-bind:stream\\s*=\\s*\"([^\"]+)").getMatch(0);
         if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
         }
@@ -170,22 +174,31 @@ public class NinjastreamTo extends PluginForHost {
         if (StringUtils.isEmpty(host) || StringUtils.isEmpty(hash)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String playlist = br.getRegex("v-bind:playlist=\"([^\"]+)\"").getMatch(0);
+        String playlist = br.getRegex("v-bind:playlist\\s*=\\s*\"([^\"]+)\"").getMatch(0);
         if (playlist != null && !playlist.isEmpty()) {
             // If there is an available playlist, fetch the files from there
             if (Encoding.isHtmlEntityCoded(playlist)) {
                 playlist = Encoding.htmlDecode(playlist);
             }
-            String[] segments = PluginJSonUtils.getJsonResultsFromArray(playlist);
-            dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments);
-            ((SegmentDownloader) dl).setSkipBytes(0x78); // Skip static PNG data
+            final String[] segments = PluginJSonUtils.getJsonResultsFromArray(playlist);
+            if (segments == null || segments.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments) {
+                @Override
+                protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException {
+                    final InputStream ret = super.getInputStream(segment, connection);
+                    new DataInputStream(ret).readFully(new byte[0x78]);// Skip static PNG data
+                    return ret;
+                }
+            };
         } else if (false) {
             // Otherwise, use the m3u8 playlist
             // This only works if M3U8Playlist.X_BYTERANGE_SUPPORT is available (and therefore disabled for now)
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, host + hash + "/2_720p.m3u8");
         } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No available download options", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

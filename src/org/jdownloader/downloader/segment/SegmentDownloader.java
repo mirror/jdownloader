@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,6 @@ public class SegmentDownloader extends DownloadInterface {
     private PluginException                         caughtPluginException;
     private final Browser                           obr;
     private final List<Segment>                     segments          = new ArrayList<Segment>();
-    private int                                     skipBytes         = 0;
 
     public SegmentDownloader(final Plugin plugin, final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
         this.obr = br2.cloneBrowser();
@@ -93,6 +93,26 @@ public class SegmentDownloader extends DownloadInterface {
         }
     }
 
+    protected URLConnectionAdapter openSegmentConnection(Segment segment) throws IOException {
+        final Browser br = obr.cloneBrowser();
+        final Request getRequest = createSegmentRequest(segment);
+        final URLConnectionAdapter ret = br.openRequestConnection(getRequest);
+        if (ret.getResponseCode() != 200) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            throw new IOException("Invalid responseCode:" + ret.getResponseCode() + "|Segment:" + segment.getUrl());
+        } else {
+            return ret;
+        }
+    }
+
+    protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException {
+        return connection.getInputStream();
+    }
+
     public void run() throws Exception {
         link.setDownloadSize(-1);
         final MeteredThrottledInputStream meteredThrottledInputStream = new MeteredThrottledInputStream(new NullInputStream(), new AverageSpeedMeter(10));
@@ -113,28 +133,19 @@ public class SegmentDownloader extends DownloadInterface {
             }
             for (final Segment segment : segments) {
                 if (!abort.get()) {
-                    final Browser br = obr.cloneBrowser();
-                    final Request getRequest = createSegmentRequest(segment);
                     long loaded = 0;
                     try {
-                        currentConnection = br.openRequestConnection(getRequest);
-                        if (currentConnection.getResponseCode() != 200) {
-                            throw new IOException("Invalid responseCode:" + currentConnection.getResponseCode() + "|Segment:" + segment.getUrl());
-                        }
+                        currentConnection = openSegmentConnection(segment);
                         segment.setLoaded(true);
-                        meteredThrottledInputStream.setInputStream(currentConnection.getInputStream());
+                        meteredThrottledInputStream.setInputStream(getInputStream(segment, currentConnection));
                         while (!abort.get()) {
                             final int len = meteredThrottledInputStream.read(readWriteBuffer);
                             if (len > 0) {
-                                int offset = 0;
-                                if (this.skipBytes > loaded) {
-                                    offset = (int) (this.skipBytes - loaded);
-                                }
-                                localIO = true;
-                                outputStream.write(readWriteBuffer, offset, len - offset);
-                                localIO = false;
                                 loaded += len;
-                                bytesWritten += len - offset;
+                                localIO = true;
+                                outputStream.write(readWriteBuffer, 0, len);
+                                localIO = false;
+                                bytesWritten += len;
                                 downloadable.setDownloadBytesLoaded(bytesWritten);
                             } else if (len == -1) {
                                 break;
@@ -367,9 +378,5 @@ public class SegmentDownloader extends DownloadInterface {
     @Override
     public boolean isResumedDownload() {
         return false;
-    }
-
-    public void setSkipBytes(int skip) {
-        this.skipBytes = skip;
     }
 }
