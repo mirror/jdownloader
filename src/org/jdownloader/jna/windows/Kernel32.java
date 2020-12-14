@@ -15,14 +15,9 @@ package org.jdownloader.jna.windows;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 public interface Kernel32 extends com.sun.jna.platform.win32.Kernel32 {
-    public static Kernel32 INSTANCE = (Kernel32) com.sun.jna.Native.loadLibrary("kernel32", Kernel32.class);
-
-    void SetThreadExecutionState(int value);
-
-    int ES_DISPLAY_REQUIRED = 0x00000002;
-    int ES_SYSTEM_REQUIRED  = 0x00000001;
-    int ES_CONTINUOUS       = 0x80000000;
-
+    public static Kernel32 INSTANCE            = com.sun.jna.Native.load("kernel32", Kernel32.class);
+    int                    ES_DISPLAY_REQUIRED = 0x00000002;
+    int                    ES_SYSTEM_REQUIRED  = 0x00000001;
+    int                    ES_CONTINUOUS       = 0x80000000;
 }

@@ -16,9 +16,7 @@ public class JDFileUtils extends Files {
         try {
             if (CrossSystem.isWindows()) {
                 return com.sun.jna.platform.win32.W32FileUtils.getInstance().hasTrash();
-            } else if (CrossSystem.isMac() && CrossSystem.getOS().isMaximum(CrossSystem.OperatingSystem.MAC_CATALINA)) {
-                // BigSur causes java.lang.UnsatisfiedLinkError: Unable to load library 'CoreServices':
-                // https://svn.jdownloader.org/issues/89044
+            } else if (CrossSystem.isMac()) {
                 return com.sun.jna.platform.mac.MacFileUtils.getInstance().hasTrash();
             } else {
                 return false;
