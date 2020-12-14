@@ -24,7 +24,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "https?://(?:www\\.)?desixnxx2?\\.net/[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "desixnxx.net" }, urls = { "https?://(?:www\\.)?(desixnxx2?\\.net|masalabin\\.com)/[a-z0-9\\-]+/" })
 public class DesixnxxNet extends PluginForDecrypt {
     public DesixnxxNet(PluginWrapper wrapper) {
         super(wrapper);
