@@ -121,8 +121,9 @@ public class EHentaiOrg extends antiDDoSForHost {
 
     private Browser prepBR(final Browser br, final DownloadLink link) {
         br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie(Browser.getHost(link.getPluginPatternMatcher()), "nw", "1");
         // br.setConnectTimeout(3 * 60 * 1000);
+        /* TODO: 2020-12-14: What does this do? */
+        br.setCookie(Browser.getHost(link.getPluginPatternMatcher()), "nw", "1");
         return br;
     }
 
@@ -146,12 +147,8 @@ public class EHentaiOrg extends antiDDoSForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         boolean loggedin = false;
         if (account != null) {
-            try {
-                login(this.br, account, false);
-                loggedin = true;
-            } catch (final Throwable e) {
-                loggedin = false;
-            }
+            login(this.br, account, false);
+            loggedin = true;
         } else if (ENABLE_RANDOM_UA) {
             /* Be sure only to use random UA when an account is not used! */
             /*
@@ -170,7 +167,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             /* Account archive download */
             if (account == null) {
                 /* Cannot check without account */
-                return AvailableStatus.UNCHECKABLE;
+                throw new AccountRequiredException();
             }
             final String galleryid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(0);
             final String galleryhash = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(1);
@@ -262,9 +259,10 @@ public class EHentaiOrg extends antiDDoSForHost {
                     }
                 }
             }
-        } else {
-            if (link.getPluginPatternMatcher().contains("exhentai") && account == null) {
-                return AvailableStatus.UNCHECKABLE;
+        } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE)) {
+            /* TYPE_SINGLE_IMAGE */
+            if (this.requiresAccount(link) && account == null) {
+                throw new AccountRequiredException();
             }
             /* TYPE_SINGLE_IMAGE e-hentai.org and exhentai.org */
             String dllink_fullsize = null;
@@ -279,6 +277,9 @@ public class EHentaiOrg extends antiDDoSForHost {
             if (link.getPluginPatternMatcher().contains("exhentai") && !this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
                 logger.info("Redirect to mainpage? Accessing gallery URL again ...");
                 br.getPage(mainlink);
+                if (!this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect to mainpage? Login failure?", 3 * 60 * 1000l);
+                }
             }
             if (br.toString().length() <= 100) {
                 /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
@@ -433,6 +434,10 @@ public class EHentaiOrg extends antiDDoSForHost {
                     }
                 }
             }
+        } else {
+            /* This should never happen */
+            logger.warning("Unsupported URL");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
     }
