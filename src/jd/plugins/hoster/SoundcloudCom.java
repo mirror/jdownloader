@@ -15,24 +15,26 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -43,7 +45,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
@@ -101,6 +102,8 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_playlist_id                        = "playlist_id";
     public static final String   PROPERTY_track_id                           = "track_id";
     public static final String   PROPERTY_directurl                          = "";
+    /* Account properties */
+    private static final String  PROPERTY_ACCOUNT_oauthtoken                 = "oauthtoken";
     /* API base URLs */
     public static final String   API_BASEv2                                  = "https://api-v2.soundcloud.com";
 
@@ -604,10 +607,13 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
+    public static final String useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
+
     private Browser prepBR(final Browser br) {
         /* E.g. accessing invalid urls, their servers will return 503. */
         br.setAllowedResponseCodes(new int[] { 503 });
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", useragent);
         return br;
     }
 
@@ -615,145 +621,176 @@ public class SoundcloudCom extends PluginForHost {
         synchronized (account) {
             try {
                 prepBR(br);
-                /* TODO: Check/fix login and remove leftover APIv1 stuff */
-                final boolean useAPIv2 = true;
-                String oauthtoken = null;
-                // Load cookies
+                String oauthtoken = account.getStringProperty(PROPERTY_ACCOUNT_oauthtoken, null);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
+                final boolean allowFullLogin = false;
+                if (cookies != null && oauthtoken != null) {
                     br.setCookies(this.getHost(), cookies);
-                    oauthtoken = account.getStringProperty("oauthtoken", null);
-                    if (oauthtoken != null) {
-                        br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                    br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                    if (!force) {
+                        logger.info("Trust cookies without checking");
+                        return;
+                    }
+                    if (this.cookieCheck(br)) {
+                        return;
                     }
                 }
-                boolean fulllogin = true;
-                if (!force) {
-                    return;
-                } else if (cookies != null && force && !useAPIv2) {
-                    // Prevent full login to prevent login captcha
-                    boolean browserexception = false;
-                    try {
-                        br.getPage("https://api.soundcloud.com/me/messages/unread?limit=3&offset=0&linked_partitioning=1&client_id=" + getClientId(null) + "&app_version=" + SoundcloudCom.getAppVersion(null));
-                    } catch (final BrowserException ebr) {
-                        browserexception = true;
+                if (userCookies != null) {
+                    logger.info("Attempting user cookie login");
+                    if (userCookies.get("oauth_token") == null) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed: Oauth token missing", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
-                        fulllogin = true;
-                    } else if (browserexception) {
-                        fulllogin = true;
+                    br.setCookies(this.getHost(), userCookies);
+                    oauthtoken = userCookies.get("oauth_token").getValue();
+                    br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                    if (this.cookieCheck(br)) {
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        account.setProperty(PROPERTY_ACCOUNT_oauthtoken, oauthtoken);
+                        return;
                     } else {
-                        fulllogin = false;
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (fulllogin) {
-                    br.clearCookies(this.getHost());
-                    if (useAPIv2) {
-                        /* TODO: Add cookie/oauth check for v2 to prevent full login attempts! */
-                        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.1");
-                        br.getHeaders().put("Content-Type", "application/json");
-                        br.getPage(API_BASEv2 + "/sign-in/identifier?q=" + Encoding.urlEncode(account.getUser()) + "&recaptcha_response=&client_id=" + getClientIdV2() + "&%5Bobject%20Object%5D=&app_version=" + getAppVersionV2() + "&app_locale=de");
-                        final String status = PluginJSonUtils.getJson(br, "status");
-                        if (!"in_use".equalsIgnoreCase(status)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        final String userAgent = "\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36\"";
-                        final String signature = "\"TODO\"";
-                        final String deviceid = "\"TODO\"";
-                        final String requesturl = API_BASEv2 + "/sign-in/password?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de";
-                        final String postdata = "{\"client_id\":\"" + getClientIdV2() + "\",\"scope\":\"fast-connect non-expiring purchase signup upload\",\"recaptcha_pubkey\":\"6LeAxT8UAAAAAOLTfaWhndPCjGOnB54U1GEACb7N\",\"recaptcha_response\":null,\"credentials\":{\"identifier\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"signature\":" + signature + ",\"device_id\":" + deviceid + ",\"user_agent\":" + userAgent + ",\"display_locale\":\"de\"}";
-                        final PostRequest loginReq = br.createJSonPostRequest(requesturl, postdata);
-                        br.openRequestConnection(loginReq);
-                        br.loadConnection(null);
-                        final String error = PluginJSonUtils.getJson(br, "error");
-                        if (!StringUtils.isEmpty(error)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        oauthtoken = PluginJSonUtils.getJson(br, "access_token");
-                        if (StringUtils.isEmpty(oauthtoken)) {
-                            logger.info("Could not find oauth token");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
-                    } else {
-                        br.setAllowedResponseCodes(new int[] { 422 });
-                        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
-                        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-                        br.getPage("https://soundcloud.com/connect?client_id=" + getClientId(null) + "&response_type=token&scope=non-expiring%20fast-connect%20purchase%20upload&display=next&redirect_uri=https%3A//soundcloud.com/soundcloud-callback.html");
-                        br.setFollowRedirects(false);
-                        URLConnectionAdapter con = null;
-                        try {
-                            con = br.openPostConnection("https://soundcloud.com/connect/login", "remember_me=on&redirect_uri=https%3A%2F%2Fsoundcloud.com%2Fsoundcloud-callback.html&response_type=token&scope=non-expiring+fast-connect+purchase+upload&display=next&client_id=" + getClientId(null) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                            if (con.getResponseCode() == 422) {
-                                br.followConnection();
-                                final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
-                                if (rcID == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login function broken, please contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                                }
-                                final Recaptcha rc = new Recaptcha(br, this);
-                                rc.setId(rcID);
-                                rc.load();
-                                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                                final DownloadLink dummyLink = new DownloadLink(this, "Account", "soundcloud.com", "http://soundcloud.com", true);
-                                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                                con = br.openPostConnection("https://soundcloud.com/connect/login", "remember_me=on&redirect_uri=https%3A%2F%2Fsoundcloud.com%2Fsoundcloud-callback.html&response_type=token&scope=non-expiring+fast-connect+purchase+upload&display=next&client_id=" + getClientId(null) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                                br.followConnection();
-                            }
-                        } finally {
-                            try {
-                                con.disconnect();
-                            } catch (Throwable e) {
-                            }
-                        }
-                        oauthtoken = br.getRegex("access_token=([^<>\"]*?)\\&").getMatch(0);
-                        if (StringUtils.isEmpty(oauthtoken)) {
-                            logger.info("Could not find oauth token");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
-                        String continueLogin = br.getRegex("\"(https://soundcloud\\.com/soundcloud\\-callback\\.html[^<>\"]*?)\"").getMatch(0);
-                        if (continueLogin == null) {
-                            continueLogin = br.getRedirectLocation();
-                        }
-                        if (continueLogin == null || !"free".equals(br.getCookie("https://soundcloud.com/", "c"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                        br.getPage(continueLogin);
-                    }
-                    account.setProperty("oauthtoken", oauthtoken);
-                    account.saveCookies(br.getCookies(br.getHost()), "");
+                logger.info("Full login required");
+                if (!allowFullLogin) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                br.clearAuthentications();
+                br.clearCookies(this.getHost());
+                br.getPage("https://soundcloud.com/");
+                br.getPage("https://secure.soundcloud.com/web-auth?client_id=" + getClientIdV2() + "&device_id=TODO");
+                final String loginbase = "https://api-auth.soundcloud.com";
+                /* TODO: Add cookie/oauth check for v2 to prevent full login attempts! */
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.1");
+                br.getHeaders().put("Content-Type", "application/json");
+                /* TODO */
+                br.getHeaders().put("sec-ch-ua", "\"Google Chrome\";v=\"87\", \" Not;A Brand\";v=\"99\", \"Chromium\";v=\"87\"");
+                /* This one is stored in a JD file - URL is available after "secure.soundcloud.com/web-auth/" ... */
+                br.getHeaders().put("X-Csrf-Token", "TODO");
+                br.getHeaders().put("sec-ch-ua-mobile", "?0");
+                br.getHeaders().put("Origin", "https://secure.soundcloud.com");
+                br.getPage(loginbase + "/web-auth/identifier?" + Encoding.urlEncode(account.getUser()) + "&client_id=" + getClientIdV2());
+                /* First check if users' E-Mail address exists */
+                // final String identifier = PluginJSonUtils.getJson(br, "identifier");
+                final String status = PluginJSonUtils.getJson(br, "status");
+                if (!"in_use".equalsIgnoreCase(status)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final String requesturl = loginbase + "/web-auth/sign-in/password?client_id=" + getClientIdV2();
+                final Map<String, Object> data_credentials = new HashMap<String, Object>();
+                data_credentials.put("identifier", account.getUser());
+                data_credentials.put("password", account.getPass());
+                final Map<String, Object> data = new HashMap<String, Object>();
+                data.put("device_id", "TODO");
+                data.put("client_id", getClientIdV2());
+                /* Date: 2020-12-15 */
+                data.put("recaptcha_pubkey", "6Ld72JcUAAAAAItDloUGqg6H38KK5j08VuQlegV1");
+                data.put("recaptcha_response", null);
+                data.put("signature", "TODO");
+                data.put("user_agent", useragent);
+                data.put("credentials", data_credentials);
+                final PostRequest loginReq = br.createJSonPostRequest(requesturl, JSonStorage.serializeToJson(data));
+                br.openRequestConnection(loginReq);
+                br.followConnection();
+                // br.loadConnection(null);
+                final String error = PluginJSonUtils.getJson(br, "error");
+                if (!StringUtils.isEmpty(error)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                oauthtoken = PluginJSonUtils.getJson(br, "access_token");
+                if (StringUtils.isEmpty(oauthtoken)) {
+                    logger.info("Could not find oauth token -> Wrong password?");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                account.setProperty(PROPERTY_ACCOUNT_oauthtoken, oauthtoken);
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                    account.removeProperty(PROPERTY_ACCOUNT_oauthtoken);
+                }
                 throw e;
             }
+        }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Soundcloud - Login";
+                        message += "Hallo liebe(r) Soundcloud NutzerIn\r\n";
+                        message += "Um deinen Soundcloud Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Soundcloud - Login";
+                        message += "Hello dear Soundcloud user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    private boolean cookieCheck(final Browser br) throws IOException {
+        br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de");
+        if (br.getHttpConnection().getResponseCode() == 200) {
+            logger.info("Cookie login successful");
+            return true;
+        } else {
+            logger.info("Cookie login failed");
+            return false;
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            throw e;
-        }
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         String acctype = null;
-        try {
-            br.getPage(API_BASEv2 + "/me?client_id=CoeTA81rlM4PNaXs33YeRXZZAixneGwv&app_version=1549538778&app_locale=de");
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
-        } catch (final Throwable e) {
+        if (br.getURL() == null || !br.getURL().contains(API_BASEv2 + "/me")) {
+            br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de");
         }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        /*
+         * 2020-12-15: At this moment only cookie login is possible which means in theory, user can enter anything in the username field ->
+         * Let's fix that
+         */
+        final String email = (String) entries.get("primary_email");
+        acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
         if ("free".equalsIgnoreCase(acctype)) {
             ai.setStatus("Registered (free) account");
             account.setType(AccountType.FREE);
         } else {
             ai.setStatus("Premium account");
             account.setType(AccountType.PREMIUM);
+        }
+        if (!StringUtils.isEmpty(email)) {
+            account.setUser(email);
         }
         return ai;
     }
