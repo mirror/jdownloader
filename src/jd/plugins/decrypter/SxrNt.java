@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,7 +49,15 @@ public class SxrNt extends PluginForDecrypt {
         }
         final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         String fpName = url_name.replace("-", " ");
-        final String[] links = br.getRegex("target=\"_blank\" href=\"(https?://[^\"]+)\" class=\"btn vertab\"").getColumn(0);
+        String[] links = br.getRegex("target=\"_blank\" href=\"(https?://[^\"]+)\" class=\"btn vertab\"").getColumn(0);
+        if (links.length == 0) {
+            /* 2020-12-15 */
+            links = br.getRegex("target=\"_blank\" href=\"(http[^\"]+)\"[^>]*>\\d+").getColumn(0);
+        }
+        if (links.length == 0) {
+            /* Fallback */
+            links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+        }
         String extractionPassword = br.getRegex("<strong>Password file</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -62,6 +71,10 @@ public class SxrNt extends PluginForDecrypt {
             extractionPassword_s.add(extractionPassword);
         }
         for (final String singleLink : links) {
+            /* Ship items which would be handled by this crawler again! */
+            if (this.canHandle(singleLink)) {
+                continue;
+            }
             final DownloadLink dl = createDownloadlink(singleLink);
             if (extractionPassword_s != null) {
                 dl.setSourcePluginPasswordList(extractionPassword_s);

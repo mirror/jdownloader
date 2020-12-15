@@ -26,10 +26,15 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.GoogleConfig;
 import org.jdownloader.plugins.components.config.GoogleConfig.PreferredQuality;
@@ -152,15 +157,19 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private static final String PROPERTY_USED_QUALITY             = "USED_QUALITY";
-    private static final String PROPERTY_GOOGLE_DOCUMENT          = "IS_GOOGLE_DOCUMENT";
-    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL = "FORCED_FINAL_DOWNLOADURL";
-    private static final String PROPERTY_CAN_DOWNLOAD             = "CAN_DOWNLOAD";
+    private static final String PROPERTY_USED_QUALITY                          = "USED_QUALITY";
+    private static final String PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
+    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
+    private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
     /* Packagizer property */
-    public static final String  PROPERTY_ROOT_DIR                 = "root_dir";
-    public String               agent                             = null;
-    private boolean             isStreamable                      = false;
-    private String              dllink                            = null;
+    public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
+    /* Account properties */
+    private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
+    private static final String PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
+    private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
+    public String               agent                                          = null;
+    private boolean             isStreamable                                   = false;
+    private String              dllink                                         = null;
 
     /** Only call this if the user is not logged in! */
     public Browser prepBrowser(Browser pbr) {
@@ -252,14 +261,6 @@ public class GoogleDrive extends PluginForHost {
         } else {
             return true;
         }
-    }
-
-    public static final boolean canUseAPI() {
-        return !StringUtils.isEmpty(getAPIKey());
-    }
-
-    public static final String getAPIKey() {
-        return PluginJsonConfig.get(GoogleConfig.class).getGoogleDriveAPIKey();
     }
 
     public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> entries) {
@@ -1095,18 +1096,168 @@ public class GoogleDrive extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download not allowed");
     }
 
-    private boolean login(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
-        final GoogleHelper helper = new GoogleHelper(br);
-        helper.setLogger(this.getLogger());
-        return helper.login(account, forceLoginValidation);
+    public void login(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            loginAPI(br, account);
+        } else {
+            final GoogleHelper helper = new GoogleHelper(br);
+            helper.setLogger(this.getLogger());
+            final boolean loggedIN = helper.login(account, forceLoginValidation);
+            if (!loggedIN) {
+                throw new AccountUnavailableException("Login failed", 2 * 60 * 60 * 1000l);
+            }
+        }
+    }
+
+    /** TODO: Add settings for apiID and apiSecret */
+    private void loginAPI(final Browser br, final Account account) throws IOException, InterruptedException, PluginException {
+        /* https://developers.google.com/identity/protocols/oauth2/limited-input-device */
+        br.setAllowedResponseCodes(new int[] { 428 });
+        String access_token = account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
+        int auth_expires_in = 0;
+        String refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN);
+        final long tokenTimeLeft = account.getLongProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP, 0) - System.currentTimeMillis();
+        Map<String, Object> entries = null;
+        if (account.hasProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP) && tokenTimeLeft <= 2 * 60 * 1000l) {
+            logger.info("Token refresh required");
+            final UrlQuery refreshTokenQuery = new UrlQuery();
+            refreshTokenQuery.appendEncoded("client_id", getClientID());
+            refreshTokenQuery.appendEncoded("client_secret", getClientSecret());
+            refreshTokenQuery.appendEncoded("grant_type", refresh_token);
+            refreshTokenQuery.appendEncoded("refresh_token", refresh_token);
+            br.postPage("https://oauth2.googleapis.com/token", refreshTokenQuery);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            access_token = (String) entries.get("access_token");
+            auth_expires_in = ((Number) entries.get("expires_in")).intValue();
+            if (StringUtils.isEmpty(access_token)) {
+                /* Permanently disable account */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Token refresh failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            logger.info("Successfully obtained new access_token");
+            account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, refresh_token);
+            account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP, System.currentTimeMillis() + auth_expires_in * 1000l);
+            br.getHeaders().put("Authorization", "Bearer " + access_token);
+            return;
+        } else if (access_token != null) {
+            logger.info("Trust existing token without check");
+            br.getHeaders().put("Authorization", "Bearer " + access_token);
+            return;
+        }
+        logger.info("Performing full API login");
+        final UrlQuery deviceCodeQuery = new UrlQuery();
+        deviceCodeQuery.appendEncoded("client_id", getClientID());
+        /*
+         * We're using a recommended scope - we don't want to get permissions which we don't make use of:
+         * https://developers.google.com/drive/api/v2/about-auth
+         */
+        deviceCodeQuery.appendEncoded("scope", "https://www.googleapis.com/auth/drive.file");
+        br.postPage("https://oauth2.googleapis.com/device/code", deviceCodeQuery);
+        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String device_code = (String) entries.get("device_code");
+        final String user_code = (String) entries.get("user_code");
+        final int user_code_expires_in = ((Number) entries.get("expires_in")).intValue();
+        final int interval = ((Number) entries.get("interval")).intValue();
+        final String verification_url = (String) entries.get("verification_url");
+        int waitedSeconds = 0;
+        /* 2020-12-15: Google allows the user to react within 30 minutes - we only allow 5. */
+        int maxTotalSeconds = 5 * 60;
+        if (user_code_expires_in < maxTotalSeconds) {
+            maxTotalSeconds = user_code_expires_in;
+        }
+        final Thread dialog = showPINLoginInformation(verification_url, user_code);
+        try {
+            /* Polling */
+            final UrlQuery pollingQuery = new UrlQuery();
+            pollingQuery.appendEncoded("client_id", getClientID());
+            pollingQuery.appendEncoded("client_secret", getClientSecret());
+            pollingQuery.appendEncoded("device_code", device_code);
+            pollingQuery.appendEncoded("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
+            do {
+                Thread.sleep(interval * 1000l);
+                br.postPage("https://oauth2.googleapis.com/token", pollingQuery);
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                if (entries.containsKey("error")) {
+                    logger.info("User hasn't yet confirmed auth");
+                    continue;
+                } else {
+                    access_token = (String) entries.get("access_token");
+                    refresh_token = (String) entries.get("refresh_token");
+                    auth_expires_in = ((Number) entries.get("expires_in")).intValue();
+                    break;
+                }
+            } while (waitedSeconds < maxTotalSeconds);
+        } finally {
+            dialog.interrupt();
+        }
+        if (StringUtils.isEmpty(access_token)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authorization failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.getHeaders().put("Authorization", "Bearer " + access_token);
+        account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, access_token);
+        account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, refresh_token);
+        account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP, System.currentTimeMillis() + auth_expires_in * 1000l);
+    }
+
+    private Thread showPINLoginInformation(final String pairingURL, final String confirmCode) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Google Drive - Login";
+                        message += "Hallo liebe(r) Google Drive NutzerIn\r\n";
+                        message += "Um deinen Google Drive Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + pairingURL + "'\t\r\n";
+                        message += "2. Gib folgenden Code im Browser ein: " + confirmCode + "\r\n";
+                        message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
+                    } else {
+                        title = "Google Drive - Login";
+                        message += "Hello dear Google Drive user\r\n";
+                        message += "In order to use your Google Drive account in JDownloader, you need to follow these steps:\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + pairingURL + "'\t\r\n";
+                        message += "2. Enter this confirmation code in your browser: " + confirmCode + "\r\n";
+                        message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(5 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(pairingURL);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    public static final boolean canUseAPI() {
+        return !StringUtils.isEmpty(getAPIKey());
+    }
+
+    public static final String getAPIKey() {
+        return PluginJsonConfig.get(GoogleConfig.class).getGoogleDriveAPIKey();
+    }
+
+    public static final String getClientID() {
+        return null;
+        // return "blah";
+    }
+
+    public static final String getClientSecret() {
+        return null;
+        // return "blah";
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (!login(br, account, true)) {
-            throw new AccountUnavailableException("Login failed", 2 * 60 * 60 * 1000l);
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* Free accounts cannot have captchas */

@@ -25,7 +25,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -130,12 +129,13 @@ public class GoogleDrive extends PluginForDecrypt {
                      * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
                      */
                     final Browser websiteBR = new Browser();
-                    if (account != null) {
-                        login(websiteBR, account);
-                    } else {
-                        /* Respect users' plugin settings (e.g. custom User-Agent) */
-                        ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(websiteBR);
-                    }
+                    /* TODO: Login when API login is active! */
+                    // if (account != null) {
+                    // login(websiteBR, account);
+                    // } else {
+                    // /* Respect users' plugin settings (e.g. custom User-Agent) */
+                    // ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(websiteBR);
+                    // }
                     websiteBR.getPage(param.getCryptedUrl());
                     nameOfCurrentFolder = getCurrentFolderTitleWebsite(websiteBR);
                     if (!StringUtils.isEmpty(nameOfCurrentFolder)) {
@@ -216,6 +216,7 @@ public class GoogleDrive extends PluginForDecrypt {
          * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders was broken
          * anyways: https://svn.jdownloader.org/issues/88600
          */
+        /* TODO: Allow login if account is given and API login is active */
         final boolean allowLogin = false;
         boolean loggedin = false;
         if (aa != null && allowLogin) {
@@ -557,10 +558,9 @@ public class GoogleDrive extends PluginForDecrypt {
         }
     }
 
-    public boolean login(final Browser br, final Account account) throws Exception {
-        final GoogleHelper helper = new GoogleHelper(br);
-        helper.setLogger(this.getLogger());
-        return helper.login(account, false);
+    public void login(final Browser br, final Account account) throws Exception {
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        ((jd.plugins.hoster.GoogleDrive) plg).login(this.br, account, false);
     }
 
     /* NO OVERRIDE!! */
