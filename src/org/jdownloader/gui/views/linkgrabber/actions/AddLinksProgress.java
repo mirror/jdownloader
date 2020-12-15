@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.actions;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.concurrent.atomic.AtomicReference;
@@ -11,12 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.Timer;
-
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
@@ -31,17 +24,19 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-public class AddLinksProgress extends AbstractDialog<Object> {
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.gui.swing.jdgui.JDGui;
 
+public class AddLinksProgress extends AbstractDialog<Object> {
     private CircledProgressBar                 progress;
     private JLabel                             duration;
     private JLabel                             old;
-
     private JLabel                             header;
-
     private Timer                              updateTimer;
     private long                               startTime;
-
     private final LinkCollectingJob            job;
     private final AtomicReference<LinkCrawler> lcReference = new AtomicReference<LinkCrawler>();
     private JLabel                             filtered;
@@ -63,11 +58,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
     }
 
     @Override
-    public Window getOwner() {
-        return super.getOwner();
-    }
-
-    @Override
     public JComponent layoutDialogContent() {
         MigPanel p = new MigPanel("ins 0,wrap 9", "[][][][][][][][][]", "[grow,fill]");
         progress = new CircledProgressBar();
@@ -75,7 +65,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         progress.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_LINKGRABBER, 26), 1.0f));
         ((ImagePainter) progress.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getValueClipPainter()).setForeground(Color.GREEN);
-
         progress.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_LINKGRABBER, 26), 0.5f));
         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.GREEN);
@@ -85,7 +74,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         String stz = getSearchInText();
         header.setText(_GUI.T.AddLinksProgress_layoutDialogContent_header_(stz.substring(0, Math.min(45, stz.length()))));
         p.add(label(_GUI.T.AddLinksProgress_layoutDialogContent_duration()));
-
         p.add(duration = new JLabel(), "width 50:n:n,growx");
         p.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         p.add(label(_GUI.T.AddLinksProgress_found()));
@@ -94,16 +82,13 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         p.add(lbl = new JLabel(new AbstractIcon(IconKey.ICON_FILTER, 18)));
         lbl.setToolTipText(_GUI.T.AddLinksProgress_filter());
         p.add(filtered = new JLabel(), "alignx right,sg 1");
-
         startTime = System.currentTimeMillis();
         updateTimer = new Timer(500, new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
                 final LinkCrawler lc = lcReference.get();
                 old.setText("" + (lc == null ? 0 : lc.getCrawledLinksFoundCounter()));
                 filtered.setText("" + (lc == null ? 0 : lc.getFilteredLinks().size()));
-
             }
         });
         old.setText("0");
@@ -116,7 +101,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
 
     public Thread getAddLinksDialogThread(final LinkCollectingJob job, final AtomicReference<LinkCrawler> lcReference) {
         return new Thread("AddLinksDialogThread:" + job.getOrigin().getOrigin()) {
-
             public void run() {
                 try {
                     final Thread thread = LinkCollector.getInstance().getAddLinksThread(job, lcReference);
@@ -142,7 +126,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         } else {
             return ret;
         }
-
     }
 
     @Override
@@ -175,5 +158,4 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         ret.setEnabled(false);
         return ret;
     }
-
 }
