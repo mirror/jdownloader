@@ -45,11 +45,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SoundcloudCom;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -139,12 +137,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             /* Login if possible, helps to get links which need the user to be logged in */
             final List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs != null && accs.size() > 0) {
-                try {
-                    final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-                    ((jd.plugins.hoster.SoundcloudCom) hostPlugin).login(this.br, accs.get(0), false);
-                } catch (final PluginException e) {
-                    logger.log(e);
-                }
+                final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+                ((jd.plugins.hoster.SoundcloudCom) hostPlugin).login(this.br, accs.get(0), false);
             }
             try {
                 /* Correct added links */
