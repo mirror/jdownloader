@@ -517,14 +517,19 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         final TopRightPainter topRightPainter = getTopRightPainter();
         final Rectangle specialDealBounds = this.specialDealBounds;
         if (topRightPainter != null && topRightPainter.isVisible()) {
+            final boolean repaint;
             if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver) {
                 specialDealMouseOver = true;
                 topRightPainter.onMouseOver(e);
-                repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
+                repaint = true;
             } else if (specialDealMouseOver && (specialDealBounds == null || !specialDealBounds.contains(e.getPoint()))) {
                 specialDealMouseOver = false;
                 topRightPainter.onMouseOut(e);
-                // setCursor(null);
+                repaint = true;
+            } else {
+                repaint = false;
+            }
+            if (repaint && specialDealBounds != null) {
                 repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
             }
         }

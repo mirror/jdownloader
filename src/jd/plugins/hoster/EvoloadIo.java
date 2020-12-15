@@ -21,14 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,6 +34,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvoloadIo extends PluginForHost {
@@ -93,13 +93,13 @@ public class EvoloadIo extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = -2;
     private static final int     FREE_MAXDOWNLOADS = 1;
+
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -135,20 +135,22 @@ public class EvoloadIo extends PluginForHost {
                 usedAPIDuringAvailablecheck = true;
                 /* 2020-12-14: E.g. offline: {"status":400,"msg":"File does not exists!"} */
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                final String status = (String) entries.get("status");
-                if (status != null && !status.equals("Online")) {
-                    return AvailableStatus.FALSE;
-                } else {
-                    final String filename = (String) entries.get("original_name");
-                    final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                    if (!StringUtils.isEmpty(filename)) {
-                        link.setFinalFileName(filename);
-                    }
-                    if (size > 0) {
-                        link.setDownloadSize(size);
-                    }
-                    return AvailableStatus.TRUE;
+                final String filename = (String) entries.get("original_name");
+                final long size = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                if (!StringUtils.isEmpty(filename)) {
+                    link.setFinalFileName(filename);
                 }
+                if (size > 0) {
+                    link.setDownloadSize(size);
+                }
+                final String status = (String) entries.get("status");
+                if (StringUtils.equalsIgnoreCase("Online", status)) {
+                    return AvailableStatus.TRUE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (final PluginException e) {
+                throw e;
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("API Availablecheck failed");
@@ -163,7 +165,7 @@ public class EvoloadIo extends PluginForHost {
         // filename = Encoding.htmlDecode(filename).trim();
         // link.setName(filename);
         // }
-        String filesize = br.getRegex("File Size\\s*:\\s*<small>\\s*(\\d+[^<>\"]+)<").getMatch(0);
+        final String filesize = br.getRegex("File Size\\s*:\\s*<small>\\s*(\\d+[^<>\"]+)<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -234,7 +236,7 @@ public class EvoloadIo extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -246,8 +248,9 @@ public class EvoloadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -274,9 +277,10 @@ public class EvoloadIo extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (looksLikeDownloadableContent(con)) {
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);

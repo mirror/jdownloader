@@ -98,6 +98,11 @@ public enum ArchiveType {
         protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
             return RAR_SINGLE.isMultiPart(archiveFile, false);
         }
+
+        @Override
+        public String getIconExtension() {
+            return RAR_SINGLE.getIconExtension();
+        }
     },
     /**
      * Multipart RAR Archive (.000.rar, .001.rar...) 000-999 -> max 1000 parts
@@ -184,6 +189,11 @@ public enum ArchiveType {
         @Override
         protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
             return RAR_SINGLE.isMultiPart(archiveFile, false);
+        }
+
+        @Override
+        public String getIconExtension() {
+            return RAR_SINGLE.getIconExtension();
         }
     },
     /**
@@ -295,6 +305,11 @@ public enum ArchiveType {
         @Override
         protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
             return RAR_SINGLE.isMultiPart(archiveFile, false);
+        }
+
+        @Override
+        public String getIconExtension() {
+            return RAR_SINGLE.getIconExtension();
         }
     },
     /**
@@ -421,6 +436,11 @@ public enum ArchiveType {
             }
             return verifiedResult ? false : null;
         }
+
+        @Override
+        public String getIconExtension() {
+            return "rar";
+        }
     },
     /**
      * Multipart 7Zip Archive (.7z.001, 7z.002...) 0-9999 -> max 1000 parts
@@ -486,6 +506,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".7z." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex);
+        }
+
+        @Override
+        public String getIconExtension() {
+            return SEVENZIP_SINGLE.getIconExtension();
         }
     },
     /**
@@ -572,6 +597,11 @@ public enum ArchiveType {
                 return matches[0] + ".z" + String.format(Locale.US, "%0" + partStringLength + "d", partIndex);
             }
         }
+
+        @Override
+        public String getIconExtension() {
+            return ZIP_SINGLE.getIconExtension();
+        }
     },
     /**
      * Multipart Zip Archive (.zip.001, .zip.002...) 0-999 -> max 1000 parts
@@ -638,6 +668,11 @@ public enum ArchiveType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".zip." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex);
         }
+
+        @Override
+        public String getIconExtension() {
+            return ZIP_SINGLE.getIconExtension();
+        }
     },
     /**
      * SinglePart 7zip Archive (.7z)
@@ -702,6 +737,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".7z";
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "7z";
         }
     },
     /**
@@ -768,6 +808,11 @@ public enum ArchiveType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".zip";
         }
+
+        @Override
+        public String getIconExtension() {
+            return "zip";
+        }
     },
     /**
      * SinglePart LZH Archive (.lzh or .lha)
@@ -832,6 +877,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + "." + matches[1];
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "lzh";
         }
     },
     /**
@@ -898,6 +948,11 @@ public enum ArchiveType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".tar";
         }
+
+        @Override
+        public String getIconExtension() {
+            return "tar";
+        }
     },
     /**
      * SinglePart ARJ Archive (.arj)
@@ -962,6 +1017,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".arj";
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "arj";
         }
     },
     /**
@@ -1028,6 +1088,11 @@ public enum ArchiveType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".cpio";
         }
+
+        @Override
+        public String getIconExtension() {
+            return "cpio";
+        }
     },
     /**
      * SinglePart Tar.GZ Archive (.tgz)
@@ -1092,6 +1157,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".tgz";
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "tgz";
         }
     },
     /**
@@ -1158,6 +1228,11 @@ public enum ArchiveType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".gz";
         }
+
+        @Override
+        public String getIconExtension() {
+            return "gz";
+        }
     },
     /**
      * SinglePart BZIP2 Archive (.bz2)
@@ -1222,6 +1297,11 @@ public enum ArchiveType {
         @Override
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + ".bz2";
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "bz2";
         }
     },
     /**
@@ -1309,6 +1389,11 @@ public enum ArchiveType {
         protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
             return RAR_SINGLE.isValidPart(partIndex, archiveFile, false);
         }
+
+        @Override
+        public String getIconExtension() {
+            return RAR_SINGLE.getIconExtension();
+        }
     };
     protected String escapeRegex(String input) {
         if (input.length() == 0) {
@@ -1363,6 +1448,8 @@ public enum ArchiveType {
     protected Boolean isMultiPart(final ArchiveFile archiveFile, boolean verifiedResult) {
         return null;
     }
+
+    public abstract String getIconExtension();
 
     public static ArchiveFile getLastArchiveFile(final Archive archive) {
         final ArchiveType type = archive.getArchiveType();

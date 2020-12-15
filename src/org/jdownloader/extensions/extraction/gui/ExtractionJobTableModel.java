@@ -24,11 +24,14 @@ import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class ExtractionJobTableModel extends ExtTableModel<ExtractionController> {
-
     /**
      *
      */
@@ -48,7 +51,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
     @Override
     protected void initColumns() {
-
         addColumn(new ExtTextColumn<ExtractionController>(T.T.tooltip_NameColumn()) {
             /**
              *
@@ -75,14 +77,30 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return 200;
             }
 
+            Object lastType = null;
+            Icon   lastIcon = null;
+
             @Override
             protected Icon getIcon(ExtractionController value) {
-                try {
-                    return (CrossSystem.getMime().getFileIcon(value.getArchive().getName(), 16, 16));
-                } catch (Throwable e) {
-                    e.printStackTrace();
+                Object type = value.getArchive().getArchiveType();
+                if (type == null) {
+                    type = value.getArchive().getSplitType();
                 }
-                return null;
+                if (lastType != type) {
+                    lastType = type;
+                    try {
+                        if (type instanceof ArchiveType) {
+                            lastIcon = CrossSystem.getMime().getFileIcon(((ArchiveType) type).getIconExtension(), 16, 16);
+                        } else if (type instanceof SplitType) {
+                            lastIcon = CrossSystem.getMime().getFileIcon(((SplitType) type).getIconExtension(), 16, 16);
+                        } else {
+                            lastIcon = NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 16);
+                        }
+                    } catch (Throwable e) {
+                        lastIcon = NewTheme.I().getIcon(IconKey.ICON_EXTRACT, 16);
+                    }
+                }
+                return lastIcon;
             }
 
             @Override
@@ -90,15 +108,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return value.getArchive().getName();
             }
         });
-
         addColumn(new ExtTextColumn<ExtractionController>(_GUI.T.lit_status()) {
             /**
              *
              */
             private static final long serialVersionUID = -5325290576078384961L;
-
             {
-
             }
 
             @Override
@@ -114,17 +129,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public int getDefaultWidth() {
                 return 150;
-            }
-
-            public int getMaxWidth() {
-                return getDefaultWidth();
-            }
-
-            /**
-             * @return
-             */
-            public int getMinWidth() {
-                return getDefaultWidth();
             }
 
             @Override
@@ -157,10 +161,11 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         return T.T.plugins_optional_extraction_status_notenoughspace();
                     case FILE_NOT_FOUND:
                         return T.T.plugins_optional_extraction_filenotfound();
+                    default:
+                        return "";
                     }
                 }
                 return "";
-
             }
         });
         ExtCircleProgressColumn<ExtractionController> sorter;
@@ -172,22 +177,18 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             private RendererMigPanel  panel;
             private RenderLabel       label;
             private DecimalFormat     format;
-
             {
                 determinatedRenderer = new CircledProgressBar();
                 renderer = determinatedRenderer;
                 determinatedRenderer.setForeground(textColor);
                 determinatedRenderer.setValueClipPainter(new IconPainter() {
-
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                         g2.setColor(textColor);
                         // g2.fillRect(0, 0, 10, 10);
                         final Area a = new Area(shape);
                         a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
-
                         g2.fill(a);
-
                     }
 
                     private Dimension dimension;
@@ -200,15 +201,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         return dimension;
                     }
                 });
-
                 determinatedRenderer.setNonvalueClipPainter(new IconPainter() {
-
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                         g2.setColor(back);
                         final Area a = new Area(shape);
                         a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
-
                         g2.fill(a);
                     }
 
@@ -222,7 +220,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                         return dimension;
                     }
                 });
-
                 panel = new RendererMigPanel("ins 0", "[][grow,fill]", "[]");
                 panel.add(determinatedRenderer, "width 20!,height 20!");
                 label = new RenderLabel();
@@ -255,10 +252,8 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public void resetRenderer() {
                 super.resetRenderer();
-
                 determinatedRenderer.setForeground(textColor);
                 this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 1));
-
             }
 
             @Override
@@ -267,13 +262,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
 
             public int getMaxWidth() {
-                return getDefaultWidth();
-            }
-
-            /**
-             * @return
-             */
-            public int getMinWidth() {
                 return getDefaultWidth();
             }
 
@@ -287,7 +275,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return value.getProcessedBytes();
             }
         });
-
         setSortColumn(sorter);
     }
 }

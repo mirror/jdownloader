@@ -24,12 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +45,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -635,7 +635,20 @@ public class PornHubCom extends PluginForDecrypt {
         if ((qualities == null || qualities.isEmpty()) && br.containsHTML(jd.plugins.hoster.PornHubCom.html_purchase_only)) {
             logger.info("Debug info: This video has to be purchased separately: " + parameter);
             throw new AccountRequiredException();
+        } else if (isFlagged(br)) {
+            logger.info("Debug info: flagged: " + parameter);
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("(Flagged)viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (isGeoRestricted(br)) {
+            logger.info("Debug info: geo_blocked: " + parameter);
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("(GeoBlocked)viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         } else if (isOfflineVideo(br)) {
+            logger.info("Debug info: offline: " + parameter);
             final DownloadLink dl = createOfflinelink(parameter);
             dl.setFinalFileName("viewkey=" + viewkey);
             decryptedLinks.add(dl);
@@ -759,8 +772,16 @@ public class PornHubCom extends PluginForDecrypt {
         }
     }
 
+    public static boolean isGeoRestricted(final Browser br) {
+        return br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<");
+    }
+
+    public static boolean isFlagged(final Browser br) {
+        return br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<");
+    }
+
     public static boolean isOfflineVideo(final Browser br) {
-        return !br.containsHTML("\\'embedSWF\\'") || isOfflineGeneral(br);
+        return !br.containsHTML("\\'embedSWF\\'") || br.containsHTML("<span>\\s*Video has been removed at the request of") || isOfflineGeneral(br);
     }
 
     public static boolean isOfflineGeneral(final Browser br) {

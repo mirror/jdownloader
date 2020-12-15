@@ -73,6 +73,11 @@ public enum SplitType {
         protected String buildMissingPart(String[] matches, int partIndex, int partStringLength) {
             return matches[0] + "." + String.format(Locale.US, "%0" + partStringLength + "d", partIndex) + ".xtm";
         }
+
+        @Override
+        public String getIconExtension() {
+            return "xtm";
+        }
     },
     /**
      * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz -> max 676 parts
@@ -160,6 +165,11 @@ public enum SplitType {
                 }
             }
             return false;
+        }
+
+        @Override
+        public String getIconExtension() {
+            return "aa";
         }
     },
     /**
@@ -288,6 +298,11 @@ public enum SplitType {
             }
             return true;
         }
+
+        @Override
+        public String getIconExtension() {
+            return "001";
+        }
     },
     /**
      * Multipart Hacha-Split Archive (.0, .1 ...), 0-999 -> max 1000 parts
@@ -398,6 +413,11 @@ public enum SplitType {
                 return true;
             }
         }
+
+        @Override
+        public String getIconExtension() {
+            return "001";
+        }
     };
     protected String escapeRegex(String input) {
         if (input.length() == 0) {
@@ -428,6 +448,8 @@ public enum SplitType {
     protected boolean looksLikeAnArchive(BitSet bitset) {
         return bitset.size() != 0;
     }
+
+    public abstract String getIconExtension();
 
     protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
         return true;
