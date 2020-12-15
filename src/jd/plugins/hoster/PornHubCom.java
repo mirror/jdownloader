@@ -245,6 +245,18 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
+    private void checkAvailability(final DownloadLink link, final Browser br) throws PluginException {
+        if (br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been flagged");
+        } else if (br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This content is unavailable in your country", 24 * 60 * 60 * 1000l);
+        } else if (br.containsHTML("<span>\\s*Video has been removed at the request of")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been removed");
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "static-access" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -278,9 +290,7 @@ public class PornHubCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 }
             }
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Video has been removed")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkAvailability(link, br);
             String ext = null;
             final String gifVideoAsMp4 = br.getRegex("<video class=\"centerImageVid\"[^>]*>\\s+<source src=\"(https://[^\"]+)").getMatch(0);
             if (gifVideoAsMp4 != null) {
@@ -309,9 +319,7 @@ public class PornHubCom extends PluginForHost {
             link.setName(viewKey + ".webm");
             br.setFollowRedirects(true);
             getPage(br, createPornhubGifLink(viewKey, null));
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkAvailability(link, br);
             String title = br.getRegex("class=\"gifTitle\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
             if (title == null) {
                 html_filename = viewKey;
