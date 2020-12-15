@@ -36,7 +36,7 @@ public class PandafilesCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2020-12-15: Premium untested, set default XFS premium limits <br />
      * captchatype-info: 2020-12-07: null<br />
      * other:<br />
      */
@@ -80,28 +80,28 @@ public class PandafilesCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return -10;
+            return -2;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -10;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -10;
+            return -2;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
     }
 }

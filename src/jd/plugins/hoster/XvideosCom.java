@@ -69,7 +69,7 @@ public class XvideosCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es", "xvideos.red" });
+        ret.add(new String[] { "xvideos.com", "xvideos.es", "xvideos2.com", "xvideos2.es", "xvideos3.com", "xvideos3.es", "xvideos4.com", "xvideos5.com", "xvideos.red" });
         /* 2020-10-05: I've decided, not to add their "premium domain" as an extra host. */
         // ret.add(new String[] { "xvideos.red" });
         return ret;
@@ -214,7 +214,7 @@ public class XvideosCom extends PluginForHost {
              * 2019-09-30: Only set new URL if it is valid. E.g. when using xvideos2.com (= for india) in germany, it will only redirect us
              * to their mainpage!
              */
-            if (new Regex(redirect, this.getSupportedLinks()).matches()) {
+            if (this.canHandle(redirect)) {
                 link.setPluginPatternMatcher(br.getRedirectLocation());
             }
             br.getPage(redirect);
@@ -224,6 +224,9 @@ public class XvideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Content offline by response code 404");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* 2020-12-15: E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\"video_title_ori\"\\s*:\\s*\"(.*?)\"").getMatch(0);
