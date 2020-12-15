@@ -191,6 +191,7 @@ public class NinjastreamTo extends PluginForHost {
                     return ret;
                 }
             };
+            //
         } else if (false) {
             // Otherwise, use the m3u8 playlist
             // This only works if M3U8Playlist.X_BYTERANGE_SUPPORT is available (and therefore disabled for now)
