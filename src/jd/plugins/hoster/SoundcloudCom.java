@@ -30,6 +30,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.os.CrossSystem;
@@ -607,13 +608,15 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
-    public static final String useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
+    public static final String testUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36";
 
     private Browser prepBR(final Browser br) {
         /* E.g. accessing invalid urls, their servers will return 503. */
         br.setAllowedResponseCodes(new int[] { 503 });
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", useragent);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            br.getHeaders().put("User-Agent", testUserAgent);
+        }
         return br;
     }
 
@@ -691,7 +694,7 @@ public class SoundcloudCom extends PluginForHost {
                 data.put("recaptcha_pubkey", "6Ld72JcUAAAAAItDloUGqg6H38KK5j08VuQlegV1");
                 data.put("recaptcha_response", null);
                 data.put("signature", "TODO");
-                data.put("user_agent", useragent);
+                data.put("user_agent", testUserAgent);
                 data.put("credentials", data_credentials);
                 final PostRequest loginReq = br.createJSonPostRequest(requesturl, JSonStorage.serializeToJson(data));
                 br.openRequestConnection(loginReq);
