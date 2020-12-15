@@ -560,6 +560,7 @@ public class GoogleDrive extends PluginForDecrypt {
 
     public void login(final Browser br, final Account account) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        plg.setBrowser(br);
         ((jd.plugins.hoster.GoogleDrive) plg).login(this.br, account, false);
     }
 
