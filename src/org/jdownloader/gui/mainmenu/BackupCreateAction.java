@@ -16,9 +16,12 @@
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
@@ -28,8 +31,9 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.LimitedInputStream;
+import org.appwork.utils.net.NullInputStream;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -43,7 +47,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.ForcedRestartRequest;
 import org.jdownloader.updatev2.RestartController;
-import org.seamless.util.io.IO;
 
 public class BackupCreateAction extends CustomizableAppAction {
     public static final String HIDE_ON_MAC = "HideOnMac";
@@ -130,6 +133,7 @@ public class BackupCreateAction extends CustomizableAppAction {
             if (!auto.getParentFile().exists()) {
                 auto.getParentFile().mkdirs();
             }
+            final StringBuilder incompleteList = new StringBuilder();
             zipper = new ZipIOWriter(auto) {
                 @Override
                 protected void addDirectoryInternal(File addDirectory, boolean compress, String path) throws ZipIOException, IOException {
@@ -156,6 +160,8 @@ public class BackupCreateAction extends CustomizableAppAction {
                     }
                 }
 
+                final byte[] buf = new byte[32 * 1024];
+
                 @Override
                 public synchronized void addFile(final File addFile, final boolean compress, final String fullPath) throws ZipIOException, IOException, FileNotFoundException {
                     if (addFile == null) {
@@ -164,36 +170,83 @@ public class BackupCreateAction extends CustomizableAppAction {
                     if (isFiltered(addFile)) {
                         return;
                     }
-                    boolean zipEntryAdded = false;
                     try {
-                        final byte[] bytes;
+                        FileInputStream fis = new FileInputStream(addFile);
                         try {
-                            bytes = IO.readBytes(addFile);
-                        } catch (final FileNotFoundException e) {
-                            throw e;
-                        } catch (final IOException e) {
-                            if (!addFile.exists()) {
-                                throw new FileNotFoundException(addFile.getAbsolutePath());
-                            } else {
-                                throw e;
+                            InputStream is = fis;
+                            long remaining = addFile.length();
+                            ZipEntry entry = null;
+                            try {
+                                if (remaining == 0) {
+                                    entry = new ZipEntry(fullPath);
+                                    entry.setSize(remaining);
+                                    entry.setMethod(ZipEntry.DEFLATED);
+                                    this.zipStream.putNextEntry(entry);
+                                } else {
+                                    long written = 0;
+                                    while (remaining > 0) {
+                                        final int read;
+                                        try {
+                                            read = is.read(buf);
+                                            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && new Random().nextInt(100) > 20 && is instanceof
+                                            // FileInputStream) {
+                                            // throw new IOException("Random");
+                                            // }
+                                            if (read == -1) {
+                                                throw new EOFException();
+                                            }
+                                        } catch (IOException e) {
+                                            e = new IOException(written + "/" + remaining + "|" + addFile.getAbsolutePath(), e);
+                                            LogV3.defaultLogger().log(e);
+                                            if (entry == null) {
+                                                // nothing written yet, ignore
+                                                return;
+                                            } else if (is instanceof FileInputStream) {
+                                                incompleteList.append(addFile.getAbsolutePath()).append("\r\n");
+                                                // continue with NullInputstream to keep zip file intact
+                                                try {
+                                                    fis.close();
+                                                } catch (IOException ignore) {
+                                                    LogV3.defaultLogger().log(ignore);
+                                                } finally {
+                                                    fis = null;
+                                                }
+                                                is = new LimitedInputStream(new NullInputStream(), remaining);
+                                                continue;
+                                            } else {
+                                                throw e;
+                                            }
+                                        }
+                                        if (read > 0) {
+                                            if (entry == null) {
+                                                entry = new ZipEntry(fullPath);
+                                                entry.setSize(remaining);
+                                                entry.setMethod(ZipEntry.DEFLATED);
+                                                this.zipStream.putNextEntry(entry);
+                                            }
+                                            this.zipStream.write(buf, 0, read);
+                                            written += read;
+                                            remaining -= read;
+                                            notify(entry, read, written);
+                                        }
+                                    }
+                                }
+                            } finally {
+                                if (entry != null) {
+                                    this.zipStream.closeEntry();
+                                }
+                            }
+                        } finally {
+                            try {
+                                if (fis != null) {
+                                    fis.close();
+                                }
+                            } catch (IOException ignore) {
+                                LogV3.defaultLogger().log(ignore);
                             }
                         }
-                        final ZipEntry zipAdd = new ZipEntry(fullPath);
-                        final long size = bytes.length;
-                        zipAdd.setSize(size);
-                        if (compress) {
-                            zipAdd.setMethod(ZipEntry.DEFLATED);
-                        } else {
-                            zipAdd.setMethod(ZipEntry.STORED);
-                            zipAdd.setCompressedSize(size);
-                            /* STORED must have a CRC32! */
-                            zipAdd.setCrc(Hash.getCRC32(bytes));
-                        }
-                        this.zipStream.putNextEntry(zipAdd);
-                        zipEntryAdded = true;
-                        this.zipStream.write(bytes);
-                        notify(zipAdd, size, size);
                     } catch (FileNotFoundException e) {
+                        incompleteList.append(addFile.getAbsolutePath()).append("\r\n");
                         LogV3.defaultLogger().log(e);
                         if (addFile.exists() == false) {
                             if (throwExceptionOnFileGone(addFile)) {
@@ -207,14 +260,13 @@ public class BackupCreateAction extends CustomizableAppAction {
                     } catch (IOException e) {
                         LogV3.defaultLogger().log(e);
                         throw e;
-                    } finally {
-                        if (zipEntryAdded) {
-                            this.zipStream.closeEntry();
-                        }
                     }
                 }
             };
             zipper.addDirectory(Application.getResource("cfg"), false, null);
+            if (incompleteList.length() > 0) {
+                zipper.addByteArry(incompleteList.toString().getBytes("UTF-8"), true, "cfg", "IncompleteBackupFiles.txt");
+            }
             bad = false;
         } finally {
             try {
