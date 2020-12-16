@@ -111,7 +111,7 @@ public class CloudMailRu extends PluginForHost {
             /** TODO: Remove this */
             /* Check if main-folder still exists */
             if (link.getBooleanProperty("noapi", false)) {
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(getContentURL(link));
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -199,7 +199,7 @@ public class CloudMailRu extends PluginForHost {
                 br.postPage(API_BASE + "/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(this.getWeblink(link)) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = PluginJSonUtils.getJsonValue(br, "body");
             } else if (link.getBooleanProperty("noapi", false)) {
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(getContentURL(link));
                 final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -224,7 +224,7 @@ public class CloudMailRu extends PluginForHost {
                 logger.info("Failed to use saved dllink, trying to generate new link");
                 String dataserver = null;
                 String pageid = null;
-                this.br.getPage(link.getPluginPatternMatcher());
+                this.br.getPage(getContentURL(link));
                 final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
                 if (web_json != null) {
                     // using linkedhashmap here will result in exception
@@ -285,6 +285,17 @@ public class CloudMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
         return dllink;
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        if (link.hasProperty("mainlink")) {
+            /*
+             * "Backwards compatibility": TODO: Remove this workaround - it is only required for older items. Remove in 2021-04-XX
+             */
+            return link.getStringProperty("mainlink");
+        } else {
+            return link.getPluginPatternMatcher();
+        }
     }
 
     private String getWeblink(final DownloadLink dl) {
