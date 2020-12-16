@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -85,12 +86,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         } else {
             id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
             main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
-            final String id_url_encoded = Encoding.urlEncode(id);
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
+            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
             String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
             String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
             String limit = nfolders + nfiles;
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + id_url_encoded + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
+            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -231,5 +231,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);
+        br.setAllowedResponseCodes(new int[] { 400 });
     }
 }

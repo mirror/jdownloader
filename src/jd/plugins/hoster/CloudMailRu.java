@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,12 +23,12 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -88,9 +89,12 @@ public class CloudMailRu extends PluginForHost {
             final String dlink = getdllink(link, "free_directlink");
             try {
                 con = br.openGetConnection(dlink);
-                if (!con.getContentType().contains("html")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -125,9 +129,9 @@ public class CloudMailRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, boolean resume, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -144,8 +148,12 @@ public class CloudMailRu extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("plain_directlink", dllink);
@@ -196,7 +204,7 @@ public class CloudMailRu extends PluginForHost {
                 if (request_id == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + Encoding.urlEncode(request_id) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
+                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(request_id) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = PluginJSonUtils.getJsonValue(br, "body");
             } else if (link.getBooleanProperty("noapi", false)) {
                 br.getPage(getMainlink(link));
@@ -269,15 +277,13 @@ public class CloudMailRu extends PluginForHost {
                 }
                 if (dataserver != null) {
                     /* TODO: Check for encoding problems here! */
-                    String encoded_unique_id = Encoding.urlEncode(unique_id);
+                    // String encoded_unique_id = Encoding.urlEncode(unique_id);
                     /* We need the "/" so let's encode them back. */
-                    // if(Encoding.isHtmlEntityCoded(encoded_unique_id)) {
-                    // encoded_unique_id = Encoding.htmlDecode(encoded_unique_id);
-                    // }
                     /* 2020-06-18: Don't touch this - it magically works! */
-                    encoded_unique_id = encoded_unique_id.replace("%2F", "/");
-                    encoded_unique_id = encoded_unique_id.replace("+", "%20");
-                    dllink = dataserver + "/" + encoded_unique_id;
+                    // encoded_unique_id = encoded_unique_id.replace("%2F", "/");
+                    // encoded_unique_id = encoded_unique_id.replace("+", "%20");
+                    // final String compare = URLEncode.encodeURIComponent(encoded_unique_id);
+                    dllink = dataserver + "/" + URLEncode.encodeURIComponent("");
                     if (!StringUtils.isEmpty(token)) {
                         dllink += "?key=" + token;
                     }
@@ -312,23 +318,27 @@ public class CloudMailRu extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
