@@ -110,6 +110,7 @@ public class DDLMscrg extends antiDDoSForDecrypt {
             }
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
             logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
+            br.setFollowRedirects(true);
             getPage(parameter);
             String fpName = br.getRegex("<title>DDL\\-Music v3.0 // ([^<>\"]*?) // Download</title>").getMatch(0);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Download nicht gefunden")) {
