@@ -1097,7 +1097,8 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public void login(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        final boolean loginAPI = false;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && loginAPI) {
             loginAPI(br, account);
         } else {
             final GoogleHelper helper = new GoogleHelper(br);

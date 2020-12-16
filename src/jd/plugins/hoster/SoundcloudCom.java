@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,6 +33,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -156,6 +158,10 @@ public class SoundcloudCom extends PluginForHost {
 
     private static String getAppVersionV2() {
         return "1549538778";
+    }
+
+    private static String getAppLocaleV2() {
+        return "en";
     }
 
     private static void initValues(final Browser obr) throws Exception {
@@ -510,7 +516,6 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public static String getDirectlink(final Plugin plugin, final DownloadLink link, final Browser browser, final Map<String, Object> json) throws InterruptedException {
-        String finallink = null;
         try {
             // try {
             // json = getStartJsonMap(browser.toString());
@@ -530,20 +535,17 @@ public class SoundcloudCom extends PluginForHost {
             UrlQuery basicQuery = new UrlQuery();
             basicQuery.append("client_id", getClientId(null), true);
             basicQuery.append("app_version", SoundcloudCom.getAppVersion(null), false);
-            basicQuery.append("app_locale", "de", false);
+            basicQuery.append("app_locale", getAppLocaleV2(), false);
             if (!StringUtils.isEmpty(secret_token)) {
                 /* Untested for video downloads */
                 basicQuery.append("secret_token", secret_token, true);
             }
             if (is_downloadable) {
                 /* Track is officially downloadable (download version = highest quality) */
-                /* TODO: Use UrlQuery */
                 /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
                 // finallink = toString(json.get("download_url"));
-                finallink = SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString();
-                browser.getPage(finallink);
-                finallink = PluginJSonUtils.getJson(browser, "redirectUri");
-                return finallink;
+                browser.getPage(SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString());
+                return PluginJSonUtils.getJson(browser, "redirectUri");
             } else {
                 final Map<String, Object> media = (Map<String, Object>) json.get("media");
                 if (media != null && media.containsKey("transcodings")) {
@@ -568,7 +570,7 @@ public class SoundcloudCom extends PluginForHost {
                         streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
                         br2.getPage(streamUrl);
                         final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
-                        finallink = (String) urlMap.get("url");
+                        final String finallink = (String) urlMap.get("url");
                         if (!StringUtils.isEmpty(finallink)) {
                             return finallink;
                         }
@@ -759,7 +761,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     private boolean cookieCheck(final Browser br) throws IOException {
-        br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de");
+        br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
         if (br.getHttpConnection().getResponseCode() == 200) {
             logger.info("Cookie login successful");
             return true;
@@ -774,26 +776,45 @@ public class SoundcloudCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        String acctype = null;
+        final boolean checkViaProfilePage = false;
         if (br.getURL() == null || !br.getURL().contains(API_BASEv2 + "/me")) {
-            br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=de");
+            br.getPage(API_BASEv2 + "/me?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         /*
          * 2020-12-15: At this moment only cookie login is possible which means in theory, user can enter anything in the username field ->
          * Let's fix that
          */
         final String email = (String) entries.get("primary_email");
-        acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
-        if ("free".equalsIgnoreCase(acctype)) {
-            ai.setStatus("Registered (free) account");
-            account.setType(AccountType.FREE);
-        } else {
-            ai.setStatus("Premium account");
-            account.setType(AccountType.PREMIUM);
-        }
         if (!StringUtils.isEmpty(email)) {
             account.setUser(email);
+        }
+        if (checkViaProfilePage) {
+            String acctype = null;
+            acctype = (String) JavaScriptEngineFactory.walkJson(entries, "consumer_subscription/product/id");
+            if ("free".equalsIgnoreCase(acctype)) {
+                /* 2020-12-16: E.g. "consumer-high-tier" */
+                ai.setStatus("Registered (free) account");
+                account.setType(AccountType.FREE);
+            } else {
+                ai.setStatus("Premium account");
+                account.setType(AccountType.PREMIUM);
+            }
+        } else {
+            br.getPage(API_BASEv2 + "/payments/quotations/consumer-subscription?client_id=" + getClientIdV2() + "&app_version=" + getAppVersionV2() + "&app_locale=" + getAppLocaleV2());
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("active_subscription");
+            final String expires_at = (String) entries.get("expires_at");
+            final String packageName = (String) JavaScriptEngineFactory.walkJson(entries, "package/name");
+            if (!StringUtils.isEmpty(packageName)) {
+                if (!StringUtils.isEmpty(expires_at)) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expires_at, "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH), this.br);
+                }
+                ai.setStatus(packageName);
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
+            }
         }
         return ai;
     }
