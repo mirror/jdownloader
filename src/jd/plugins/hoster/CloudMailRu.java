@@ -283,7 +283,7 @@ public class CloudMailRu extends PluginForHost {
                     // encoded_unique_id = encoded_unique_id.replace("%2F", "/");
                     // encoded_unique_id = encoded_unique_id.replace("+", "%20");
                     // final String compare = URLEncode.encodeURIComponent(encoded_unique_id);
-                    dllink = dataserver + "/" + URLEncode.encodeURIComponent("");
+                    dllink = dataserver + "/" + URLEncode.encodeURIComponent(unique_id);
                     if (!StringUtils.isEmpty(token)) {
                         dllink += "?key=" + token;
                     }
@@ -408,9 +408,13 @@ public class CloudMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
