@@ -16,11 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -29,6 +26,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -47,6 +45,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Last updated: 2020-12-16 */
     public static final String  BUILD            = "cloudweb-11674-72-8-0.202012151755";
     /* Max .zip filesize = 4 GB // 2018: 10 MB // 20180223 back to 4194304 (4 MB) * 1024 for testing by user */
     private static final double MAX_ZIP_FILESIZE = 4194304;
@@ -68,12 +67,13 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             subfolder = "";
         }
         String id;
-        final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        /* 2020-12-16: TODO: Check .zip handling */
+        final DownloadLink main = createDownloadlink(parameter);
         if (parameter.matches(TYPE_APIV2)) {
             id = new Regex(parameter, "([A-Z0-9]{32})$").getMatch(0);
             main.setName(parameter);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://cloud.mail.ru/api/v2/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
+            br.postPage(CloudMailRu.API_BASE + "/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
             /* Offline|Empty folder */
             if (br.containsHTML("\"status\":400|\"count\":\\{\"folders\":0,\"files\":0\\}")) {
                 main.setFinalFileName(id);
@@ -85,11 +85,11 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         } else {
             id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
             main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
+            br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
             String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
             String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
             String limit = nfolders + nfiles;
-            br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
+            br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
                 main.setAvailable(false);
                 main.setProperty("offline", true);
@@ -97,20 +97,14 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        main.setProperty("plain_request_id", id);
-        main.setProperty("mainlink", parameter);
+        // main.setProperty("plain_request_id", id);
         json = br.toString();
-        String fsize = PluginJSonUtils.getJsonValue(json, "size");
-        String mainName = PluginJSonUtils.getJsonValue(json, "name");
-        if (mainName == null) {
-            mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
-        }
-        if (mainName == null) {
-            mainName = id;
-        }
-        mainName = Encoding.htmlDecode(mainName.trim());
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
         entries = (Map<String, Object>) entries.get("body");
+        long completeFolderSize = 0;
+        if (entries.containsKey("size")) {
+            completeFolderSize = ((Number) entries.get("size")).longValue();
+        }
         final String title_of_current_folder = (String) entries.get("name");
         if (!StringUtils.isEmpty(title_of_current_folder) && StringUtils.isEmpty(subfolder)) {
             subfolder = title_of_current_folder;
@@ -120,9 +114,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        long totalSize = 0;
-        boolean folderContainsSubfolder = false;
-        final HashMap<String, List<DownloadLink>> results = new HashMap<String, List<DownloadLink>>();
+        FilePackage fp = null;
+        if (!StringUtils.isEmpty(subfolder)) {
+            fp = FilePackage.getInstance();
+            fp.setName(subfolder);
+            fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
+        }
         for (final Object fileo : ressourcelist) {
             entries = (Map<String, Object>) fileo;
             final String type = (String) entries.get("kind");
@@ -133,7 +130,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 continue;
             }
             if ("folder".equals(type)) {
-                folderContainsSubfolder = true;
                 weblink = Encoding.htmlDecode(weblink);
                 String encoded_weblink = Encoding.urlEncode(weblink);
                 /* We need the "/" so let's encode them back. */
@@ -152,20 +148,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl.setDownloadSize(filesize);
-                totalSize += filesize;
                 dl.setFinalFileName(itemTitle);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty(CloudMailRu.PROPERTY_WEBLINK, weblink);
                 /** TODO: Remove this */
                 if (parameter.matches(TYPE_APIV2)) {
                     dl.setProperty("noapi", true);
-                }
-                /* Cut that */
-                final String weblink_cut = new Regex(weblink, "([^<>\"]*?)/[^<>\"/]+").getMatch(0);
-                List<DownloadLink> result = results.get(weblink_cut);
-                if (result == null) {
-                    result = new ArrayList<DownloadLink>();
-                    results.put(weblink_cut, result);
                 }
                 dl.setAvailable(true);
                 // String incompletePathWithoutRootFolder = new Regex(weblink, "^[A-Za-z0-9]+/[A-Za-z0-9]+/(.+)").getMatch(0);
@@ -178,40 +166,24 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(subfolder)) {
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
                 }
-                result.add(dl);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
+                decryptedLinks.add(dl);
             }
         }
-        if (folderContainsSubfolder) {
-            for (final Entry<String, List<DownloadLink>> entry : results.entrySet()) {
-                final List<DownloadLink> downloadLinks = entry.getValue();
-                if (downloadLinks.size() > 1 && entry.getKey() != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(entry.getKey());
-                    fp.setProperty("ALLOW_MERGE", true);
-                    fp.addLinks(new ArrayList<DownloadLink>(downloadLinks));
-                }
-                decryptedLinks.addAll(downloadLinks);
-            }
-        } else {
-            /* No subfolders --> Use mainName for all items so they all go into one package. */
-            for (final Entry<String, List<DownloadLink>> entry : results.entrySet()) {
-                final List<DownloadLink> downloadLinks = entry.getValue();
-                if (downloadLinks.size() > 1 && entry.getKey() != null) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(mainName);
-                    fp.setProperty("ALLOW_MERGE", true);
-                    fp.addLinks(new ArrayList<DownloadLink>(downloadLinks));
-                }
-                decryptedLinks.addAll(downloadLinks);
-            }
-        }
-        if (decryptedLinks.size() > 1 && Double.valueOf(fsize) <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+        if (decryptedLinks.size() > 1 && completeFolderSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
-            final String main_name = mainName + ".zip";
-            main.setProperty("plain_name", main_name);
+            if (!StringUtils.isEmpty(title_of_current_folder)) {
+                main.setFinalFileName(title_of_current_folder + ".zip");
+            } else {
+                /* Fallback */
+                main.setFinalFileName(id + ".zip");
+            }
             // main.setProperty("plain_size", Long.toString(totalSize));
-            main.setProperty("plain_size", fsize);
-            main.setProperty("complete_folder", true);
+            main.setProperty(CloudMailRu.PROPERTY_COMPLETE_FOLDER, true);
+            main.setProperty(CloudMailRu.PROPERTY_WEBLINK, id);
+            main.setDownloadSize(completeFolderSize);
             decryptedLinks.add(main);
         }
         return decryptedLinks;

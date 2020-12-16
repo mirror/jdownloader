@@ -58,6 +58,7 @@ public class CloudMailRu extends PluginForHost {
     private static final String  TYPE_HOTLINK              = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
     private static final String  NOCHUNKS                  = "NOCHUNKS";
     private static final String  DOWNLOAD_ZIP              = "DOWNLOAD_ZIP_2";
+    public static final String   API_BASE                  = "https://cloud.mail.ru/api/v2";
     /* Connection stuff */
     private static final boolean FREE_RESUME               = true;
     private static final int     FREE_MAXCHUNKS            = 0;
@@ -69,6 +70,7 @@ public class CloudMailRu extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     /* DownloadLink properties */
     public static final String   PROPERTY_WEBLINK          = "cloudmailru_weblink";
+    public static final String   PROPERTY_COMPLETE_FOLDER  = "complete_folder";
 
     @Override
     public String getAGBLink() {
@@ -109,12 +111,12 @@ public class CloudMailRu extends PluginForHost {
             /** TODO: Remove this */
             /* Check if main-folder still exists */
             if (link.getBooleanProperty("noapi", false)) {
-                br.getPage(getMainlink(link));
+                br.getPage(link.getPluginPatternMatcher());
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
-                br.getPage("https://cloud.mail.ru/api/v2/folder?weblink=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
+                br.getPage(API_BASE + "/folder?weblink=" + Encoding.urlEncode(getWeblink(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=500&api=2&build=" + BUILD);
                 if (br.containsHTML("\"status\":400")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -194,14 +196,10 @@ public class CloudMailRu extends PluginForHost {
             if (link.getDownloadURL().matches(TYPE_HOTLINK)) {
                 dllink = link.getDownloadURL();
             } else if (isCompleteFolder(link)) {
-                final String request_id = link.getStringProperty("plain_request_id", null);
-                if (request_id == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.postPage("https://cloud.mail.ru/api/v2/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(request_id) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
+                br.postPage(API_BASE + "/zip", "weblink_list=%5B%22" + URLEncode.encodeURIComponent(this.getWeblink(link)) + "%22%5D&name=" + Encoding.urlEncode(link.getName()) + "&cp866=false&api=2&build=" + BUILD);
                 dllink = PluginJSonUtils.getJsonValue(br, "body");
             } else if (link.getBooleanProperty("noapi", false)) {
-                br.getPage(getMainlink(link));
+                br.getPage(link.getPluginPatternMatcher());
                 final String json = br.getRegex("(\\{\\s*\"tree\":.*?)\\);").getMatch(0);
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -224,10 +222,9 @@ public class CloudMailRu extends PluginForHost {
                 }
             } else {
                 logger.info("Failed to use saved dllink, trying to generate new link");
-                final String mainlink = getMainlink(link);
                 String dataserver = null;
                 String pageid = null;
-                this.br.getPage(mainlink);
+                this.br.getPage(link.getPluginPatternMatcher());
                 final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
                 if (web_json != null) {
                     // using linkedhashmap here will result in exception
@@ -249,7 +246,7 @@ public class CloudMailRu extends PluginForHost {
                  * 2020-06-18: Seems like this API does not work anymore as it would always return 403 but we can download without token
                  * parameter ...
                  */
-                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid + "&email=anonym&x-email=anonym&_=" + System.currentTimeMillis());
+                br.postPage(API_BASE + "/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid + "&email=anonym&x-email=anonym&_=" + System.currentTimeMillis());
                 final String token = PluginJSonUtils.getJsonValue(br, "token");
                 if (dataserver == null) {
                     /* Usually this should not be needed! */
@@ -290,16 +287,20 @@ public class CloudMailRu extends PluginForHost {
         return dllink;
     }
 
-    private String getID(final DownloadLink dl) {
-        return dl.getStringProperty("plain_request_id", null);
-    }
-
-    private String getMainlink(final DownloadLink dl) {
-        return dl.getStringProperty("mainlink", null);
+    private String getWeblink(final DownloadLink dl) {
+        if (dl.hasProperty("plain_request_id")) {
+            /*
+             * "Backwards compatibility": TODO: Remove this workaround - it is only required for older items. Remove in 2021-04-XX
+             */
+            return dl.getStringProperty("plain_request_id");
+        } else {
+            /* New 2020-12-18 */
+            return dl.getStringProperty(PROPERTY_WEBLINK);
+        }
     }
 
     private boolean isCompleteFolder(final DownloadLink dl) {
-        return dl.getBooleanProperty("complete_folder", false);
+        return dl.getBooleanProperty(PROPERTY_COMPLETE_FOLDER, false);
     }
 
     private void prepBR() {
@@ -339,7 +340,12 @@ public class CloudMailRu extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
+                    logger.info("Trust cookies without check");
                     return;
+                }
+                if (true) {
+                    /* 2020-12-16: Login is broken */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.setFollowRedirects(false);
                 final String mail_domain = account.getUser().split("@")[1];
