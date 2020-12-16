@@ -34,7 +34,6 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -47,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "http://clouddecrypted\\.mail\\.ru/\\d+|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/a13a79fc6e6f/[^<>\"/]+/[^<>\"/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://cloud\\.mail\\.ru/public/[A-Za-z0-9]+/[A-Za-z0-9]+.*|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+" })
 public class CloudMailRu extends PluginForHost {
     public CloudMailRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +54,7 @@ public class CloudMailRu extends PluginForHost {
         this.enablePremium("https://cloud.mail.ru/");
     }
 
-    private static final String  TYPE_FROM_DECRYPTER       = "http://clouddecrypted\\.mail\\.ru/\\d+";
+    private static final String  TYPE_FROM_DECRYPTER       = "https?://cloud\\.mail\\.ru/public/[A-Za-z0-9]+/[A-Za-z0-9].*";
     private static final String  TYPE_HOTLINK              = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
     private static final String  NOCHUNKS                  = "NOCHUNKS";
     private static final String  DOWNLOAD_ZIP              = "DOWNLOAD_ZIP_2";
@@ -68,6 +67,8 @@ public class CloudMailRu extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = -1;
     private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    /* DownloadLink properties */
+    public static final String   PROPERTY_WEBLINK          = "cloudmailru_weblink";
 
     @Override
     public String getAGBLink() {
@@ -117,12 +118,6 @@ public class CloudMailRu extends PluginForHost {
                 if (br.containsHTML("\"status\":400")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-            }
-            final String filename = link.getStringProperty("plain_name", null);
-            final String filesize = link.getStringProperty("plain_size", null);
-            if (filename != null && filesize != null) {
-                link.setFinalFileName(filename);
-                link.setDownloadSize(Long.parseLong(filesize));
             }
         }
         return AvailableStatus.TRUE;
@@ -194,7 +189,6 @@ public class CloudMailRu extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     private String getdllink(final DownloadLink link, final String directlinkproperty) throws Exception {
-        final String unique_id = link.getStringProperty("unique_id", null);
         String dllink = checkDirectLink(link, "plain_directlink");
         if (dllink == null) {
             if (link.getDownloadURL().matches(TYPE_HOTLINK)) {
@@ -233,10 +227,6 @@ public class CloudMailRu extends PluginForHost {
                 final String mainlink = getMainlink(link);
                 String dataserver = null;
                 String pageid = null;
-                String linkpart = new Regex(mainlink, "/public/([^/]+/[^/]+)").getMatch(0);
-                if (linkpart == null || (unique_id != null && unique_id.contains("#"))) {
-                    linkpart = unique_id;
-                }
                 this.br.getPage(mainlink);
                 final String web_json = this.br.getRegex("window\\[\"__configObject[^<>\"]+\"\\] =(\\{.*?\\});<").getMatch(0);
                 if (web_json != null) {
@@ -259,15 +249,12 @@ public class CloudMailRu extends PluginForHost {
                  * 2020-06-18: Seems like this API does not work anymore as it would always return 403 but we can download without token
                  * parameter ...
                  */
-                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid);
+                br.postPage("https://cloud.mail.ru/api/v2/tokens/download", "api=2&build=" + BUILD + "&x-page-id=" + pageid + "&email=anonym&x-email=anonym&_=" + System.currentTimeMillis());
                 final String token = PluginJSonUtils.getJsonValue(br, "token");
-                if (StringUtils.isEmpty(token)) {
-                    logger.warning("Failed to find token");
-                }
                 if (dataserver == null) {
                     /* Usually this should not be needed! */
                     logger.info("Trying to find dataserver");
-                    br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&_=" + System.currentTimeMillis());
+                    br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&x-page-id=" + pageid + "&email=anonym&x-email=anonym&_=" + System.currentTimeMillis());
                     final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "body/weblink_get/{0}/url");
                     /*
@@ -276,16 +263,20 @@ public class CloudMailRu extends PluginForHost {
                      */
                 }
                 if (dataserver != null) {
-                    /* TODO: Check for encoding problems here! */
-                    // String encoded_unique_id = Encoding.urlEncode(unique_id);
-                    /* We need the "/" so let's encode them back. */
-                    /* 2020-06-18: Don't touch this - it magically works! */
-                    // encoded_unique_id = encoded_unique_id.replace("%2F", "/");
-                    // encoded_unique_id = encoded_unique_id.replace("+", "%20");
-                    // final String compare = URLEncode.encodeURIComponent(encoded_unique_id);
-                    dllink = dataserver + "/" + URLEncode.encodeURIComponent(unique_id);
                     if (!StringUtils.isEmpty(token)) {
+                        /* Old way - won't work as long as the "/tokens/download" API request is broken! */
+                        dllink = dataserver + "/" + URLEncode.encodeURIComponent(link.getStringProperty(PROPERTY_WEBLINK));
                         dllink += "?key=" + token;
+                    } else {
+                        if (link.getPluginPatternMatcher().matches("http://clouddecrypted\\.mail\\.ru/\\d+")) {
+                            /*
+                             * "Backwards compatibility": TODO: Remove this workaround - it is only required for older items. Remove in
+                             * 2021-04-XX
+                             */
+                            dllink = dataserver + "/" + URLEncode.encodeURIComponent(link.getStringProperty("unique_id"));
+                        } else {
+                            dllink = dataserver + "/" + link.getStringProperty(PROPERTY_WEBLINK);
+                        }
                     }
                 } else {
                     logger.warning("Failed to find dataserver for finallink");
