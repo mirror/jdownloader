@@ -18,10 +18,17 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -34,7 +41,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -42,11 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -86,7 +90,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (prepBr == null) {
             prepBr = new Browser();
         }
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
         prepBr.setCustomCharset("utf-8");
         return prepBr;
     }
@@ -116,62 +120,96 @@ public class VideoFCTwoCom extends PluginForHost {
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
      */
-    @SuppressWarnings("deprecation")
     private AccountInfo login(Account account, boolean force, final AccountInfo iai) throws Exception {
         synchronized (account) {
             final AccountInfo ai = iai != null ? iai : account.getAccountInfo();
-            try {
-                // Load cookies
-                prepareBrowser(br);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    return ai;
-                }
-                // for debug purposes
-                // br = prepareBrowser(new Browser());
-                final boolean ifr = br.isFollowingRedirects();
-                br.setFollowRedirects(true);
-                br.getPage("http://fc2.com/en/login.php");
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                // Thread.sleep(4000l);
-                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&done=");
-                String loginDone = br.getRegex("(http[^<>]+login=done)").getMatch(0);
-                if (loginDone == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                br.getPage(loginDone);
-                br.getPage("http://id.fc2.com");
-                final String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
-                if (userinfo != null) {
-                    br.getPage(userinfo);
-                }
-                ai.setUnlimitedTraffic();
-                String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-                if (expire != null) {
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
-                    ai.setStatus("Premium Account");
-                    account.setProperty("free", false);
-                } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
-                    ai.setStatus("Premium Account");
-                    account.setProperty("free", false);
-                } else {
-                    ai.setValidUntil(-1);
-                    ai.setStatus("Free Account");
-                    account.setProperty("free", true);
-                }
-                account.setValid(true);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                br.setFollowRedirects(ifr);
-            } catch (PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            this.login(account, true);
+            br.getPage("https://id.fc2.com");
+            final String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
+            if (userinfo != null) {
+                br.getPage(userinfo);
+            }
+            ai.setUnlimitedTraffic();
+            String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+            if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
+                ai.setStatus("Premium Account");
+                account.setProperty("free", false);
+            } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
+                account.setType(AccountType.PREMIUM);
+            } else {
+                account.setType(AccountType.FREE);
             }
             return ai;
         }
+    }
+
+    private void login(final Account account, final boolean verifyCookies) throws IOException, PluginException, InterruptedException {
+        prepareBrowser(br);
+        br.setCookiesExclusive(true);
+        final Cookies cookies = account.loadCookies("");
+        if (cookies != null) {
+            this.br.setCookies(this.getHost(), cookies);
+            if (!verifyCookies) {
+                logger.info("Trust cookies without login");
+                return;
+            } else {
+                br.getPage("https://video.fc2.com/a/");
+                if (isLoggedINVideoFC2()) {
+                    logger.info("Cookie login successful");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                }
+            }
+        }
+        br.setFollowRedirects(true);
+        br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
+        final Form loginform = br.getFormbyProperty("name", "form_login");
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        loginform.put("email", Encoding.urlEncode(account.getUser()));
+        loginform.put("Submit.x", new Random().nextInt(100) + "");
+        loginform.put("Submit.y", new Random().nextInt(100) + "");
+        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        loginform.remove("keep_login");
+        /* TODO: "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. */
+        // loginform.put("keep_login", "1");
+        if (loginform.hasInputFieldByName("recaptcha")) {
+            final DownloadLink dlinkbefore = this.getDownloadLink();
+            try {
+                final DownloadLink dl_dummy;
+                if (dlinkbefore != null) {
+                    dl_dummy = dlinkbefore;
+                } else {
+                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                    this.setDownloadLink(dl_dummy);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+            } finally {
+                this.setDownloadLink(dlinkbefore);
+            }
+        }
+        br.submitForm(loginform);
+        if (!isLoggedINFC2()) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.getPage("https://video.fc2.com/a/");
+        if (!isLoggedINVideoFC2()) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "fc2 Account is valid but service 'video.fc2.com' has not been added yet.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        account.saveCookies(this.br.getCookies(this.getHost()), "");
+    }
+
+    private boolean isLoggedINFC2() {
+        return br.containsHTML("/logout\\.php");
+    }
+
+    private boolean isLoggedINVideoFC2() {
+        return br.containsHTML("/logoff\\.php");
     }
 
     @Override
@@ -179,7 +217,7 @@ public class VideoFCTwoCom extends PluginForHost {
         return login(account, true, new AccountInfo());
     }
 
-    private void doDownload(final Account account, final DownloadLink downloadLink) throws Exception {
+    private void doDownload(final Account account, final DownloadLink link) throws Exception {
         /* OLD-API handling */
         final String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
         if (error != null) {
@@ -196,7 +234,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 logger.info("video.fc2.com: reconnect is needed!");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading");
             case 603:
-                downloadLink.setProperty("ONLYFORPREMIUM", true);
+                link.setProperty("ONLYFORPREMIUM", true);
                 break;
             default:
                 logger.info("video.fc2.com: Unknown error code: " + error);
@@ -211,22 +249,22 @@ public class VideoFCTwoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        if (onlyForPremiumUsers(downloadLink)) {
+        if (onlyForPremiumUsers(link)) {
             if (account != null && !account.getBooleanProperty("free", false)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "premium only requirement, when premium account has been used!");
             }
-            if (downloadLink.getDownloadSize() > 0) {
+            if (link.getDownloadSize() > 0) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
         }
         if (finalURLType == 2) {
             br.getPage(finalURL);
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, finalURL);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, finalURL);
             dl.startDownload();
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, -4);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalURL, true, -4);
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
                 try {
                     br.followConnection(true);
@@ -252,17 +290,17 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doDownload(null, downloadLink);
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doDownload(null, link);
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         br = new Browser();
         login(account, true, null);
-        requestFileInformation(downloadLink);
-        doDownload(account, downloadLink);
+        requestFileInformation(link);
+        doDownload(account, link);
     }
 
     @Override
@@ -435,6 +473,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     server_issues = true;
