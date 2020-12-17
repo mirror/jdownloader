@@ -90,7 +90,10 @@ public class TiktokCom extends PluginForDecrypt {
         } else if (jd.plugins.hoster.TiktokCom.isBotProtectionActive(this.br)) {
             throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items of user " + username_url, null, null);
         }
-        final String websiteJson = br.getRegex("window\\.__INIT_PROPS__ = (\\{.*?\\})</script>").getMatch(0);
+        String websiteJson = br.getRegex("window\\.__INIT_PROPS__ = (\\{.*?\\})</script>").getMatch(0);
+        if (websiteJson == null) {
+            websiteJson = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"[^>]*>\\s*(\\{.*?\\})\\s*</script>").getMatch(0);
+        }
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
         entries = (Map<String, Object>) entries.get("/@:uniqueId");
         final Map<String, Object> user_data = (Map<String, Object>) entries.get("userData");
