@@ -23,9 +23,12 @@ import java.util.Arrays;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -37,11 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.(com|org)/\\?(?:d=)?[\\w]+(/.*?)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?[\\w]+(/.*?)?" })
 public class Shareplacecom extends PluginForHost {
     public Shareplacecom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -76,16 +75,16 @@ public class Shareplacecom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String url = downloadLink.getDownloadURL();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        String url = link.getDownloadURL();
         if (StringUtils.containsIgnoreCase(url, ".com/")) {
-            convert(downloadLink);
-            url = downloadLink.getDownloadURL();
+            convert(link);
+            url = link.getDownloadURL();
         }
         setBrowserExclusive();
         prepBR(this.br);
         getPage(url);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         if (br.getRedirectLocation() == null) {
             final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
             if (iframe != null) {
@@ -108,11 +107,11 @@ public class Shareplacecom extends PluginForHost {
             if (!inValidate(filename)) {
                 /* Let's check if we can trust the results ... */
                 filename = Encoding.htmlDecode(filename.trim());
-                downloadLink.setFinalFileName(filename);
+                link.setFinalFileName(filename);
             } else {
-                downloadLink.setName(fid);
+                link.setName(fid);
             }
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -128,26 +127,29 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink link) throws Exception {
         String dllink = null;
+        final boolean checkResult = true;
         /* 2016-08-23: Added captcha implementation */
         if (this.br.containsHTML(html_captcha)) {
-            final String code = this.getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
+            final String code = this.getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), link);
             this.br.postPage(this.br.getURL(), "captchacode=" + Encoding.urlEncode(code));
             if (this.br.containsHTML(html_captcha)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            /* 2020-12-17: Pre-download wiattime can be skipped */
+            // this.sleep(15 * 1001l, link);
         }
         for (final String[] s : br.getRegex("<script language=\"Javascript\">(.*?)</script>").getMatches()) {
             if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
                 continue;
             }
-            dllink = rhino(s[0]);
+            dllink = rhino(link, s[0], checkResult);
             if (dllink != null) {
                 break;
             }
@@ -158,23 +160,29 @@ public class Shareplacecom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("dllink doesn't seem to be a file...");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (!checkResult) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("dllink doesn't seem to be a file...");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error", 15 * 60 * 1000l);
+            }
         }
         /* Workaround für fehlerhaften Filename Header */
         final String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) {
-            downloadLink.setFinalFileName(Encoding.deepHtmlDecode(name));
+            link.setFinalFileName(Encoding.deepHtmlDecode(name));
         }
         dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
@@ -189,7 +197,7 @@ public class Shareplacecom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private String rhino(final String s) {
+    private String rhino(final DownloadLink link, final String s, final boolean checkResult) {
         final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
         final String[] vars = new Regex(s, "<a href=\"[a-z0-9 \\+]*'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
         if (vars != null) {
@@ -219,22 +227,25 @@ public class Shareplacecom extends PluginForHost {
                 if (result == null || (result.contains("jdownloader") && !result.startsWith("http"))) {
                     continue;
                 }
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = null;
-                try {
-                    con = br2.openHeadConnection(result);
-                    if (!con.isOK() || con.getContentType().contains("text")) {
-                        continue;
-                    }
-                } catch (final Exception e) {
-                    logger.log(e);
-                } finally {
+                if (checkResult) {
                     try {
-                        con.disconnect();
-                    } catch (final Throwable t) {
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, result);
+                        if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                            return result;
+                        } else {
+                            logger.info("Skipping potential final downloadurl: " + result);
+                            try {
+                                dl.getConnection().disconnect();
+                            } catch (final Throwable t) {
+                            }
+                            continue;
+                        }
+                    } catch (final Exception e) {
+                        logger.log(e);
                     }
+                } else {
+                    return result;
                 }
-                return result;
             }
         }
         return null;
