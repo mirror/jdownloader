@@ -21,6 +21,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -35,9 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://[A-Za-z0-9]+\\.tiktok\\.com/.+" })
 public class TiktokCom extends PluginForDecrypt {
@@ -95,32 +95,46 @@ public class TiktokCom extends PluginForDecrypt {
             websiteJson = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"[^>]*>\\s*(\\{.*?\\})\\s*</script>").getMatch(0);
         }
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(websiteJson);
-        entries = (Map<String, Object>) entries.get("/@:uniqueId");
-        final Map<String, Object> user_data = (Map<String, Object>) entries.get("userData");
+        final Map<String, Object> user_data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/userInfo/user");
         final String secUid = (String) user_data.get("secUid");
-        final String userId = (String) user_data.get("userId");
+        final String userId = (String) user_data.get("id");
         final String username = (String) user_data.get("uniqueId");
         // final String username = new Regex(parameter, "/@([^/\\?\\&]+)").getMatch(0);
         if (StringUtils.isEmpty(secUid) || StringUtils.isEmpty(userId) || StringUtils.isEmpty(username)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
         List<Object> ressourcelist;
-        final boolean api_broken = true;
-        if (api_broken) {
+        final boolean paginationBroken = true;
+        if (paginationBroken) {
             logger.warning("Plugin not yet finished, API signing is missing");
             /* We can only return the elements we find on their website when we cannot use their API! */
-            ressourcelist = (ArrayList<Object>) entries.get("itemList");
+            ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/items");
             for (final Object videoO : ressourcelist) {
-                final String videoURL = (String) videoO;
-                if (!StringUtils.isEmpty(videoURL)) {
-                    decryptedLinks.add(this.createDownloadlink(videoURL));
+                entries = (Map<String, Object>) videoO;
+                final String videoID = (String) entries.get("id");
+                if (StringUtils.isEmpty(videoID)) {
+                    /* Skip invalid items */
+                    continue;
                 }
+                /* Mimic filenames which host plugin would set */
+                final String description = (String) entries.get("desc");
+                final long createTime = ((Number) entries.get("createTime")).longValue();
+                SimpleDateFormat target_format = new SimpleDateFormat("yyyy-MM-dd");
+                /* Timestamp */
+                final Date theDate = new Date(createTime * 1000);
+                final String dateFormatted = target_format.format(theDate);
+                final String videoURL = "https://www.tiktok.com/@" + username_url + "/video/" + videoID;
+                final DownloadLink dl = this.createDownloadlink(videoURL);
+                dl.setName(dateFormatted + "_@" + username_url + "_" + videoID + ".mp4");
+                dl.setComment(description);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
             }
             return decryptedLinks;
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username);
-        fp.addLinks(decryptedLinks);
         boolean hasMore = true;
         int index = 0;
         int page = 1;
