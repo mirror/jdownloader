@@ -191,9 +191,32 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         br.submitForm(loginform);
         /*
-         * 2FA login: Redirect to: https://secure.id.fc2.com/login_authentication.php --> Get Form by action
-         * login_authentication.php?act=execute --> Add field code=<2FAcode> -> Submit --> Check if loggedIN
+         * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
          */
+        final Form twoFactorLogin = br.getFormbyActionRegex(".*login_authentication\\.php.*");
+        if (twoFactorLogin != null) {
+            logger.info("2FA login required");
+            final DownloadLink dl_dummy;
+            if (this.getDownloadLink() != null) {
+                dl_dummy = this.getDownloadLink();
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+            }
+            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+            if (twoFACode != null) {
+                twoFACode = twoFACode.trim();
+            }
+            if (twoFACode == null || !twoFACode.matches("[A-Za-z0-9]{6}")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            logger.info("Submitting 2FA code");
+            twoFactorLogin.put("code", twoFACode);
+            br.submitForm(twoFactorLogin);
+        }
         if (!isLoggedINFC2()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }

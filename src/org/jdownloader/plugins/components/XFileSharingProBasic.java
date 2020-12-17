@@ -3371,6 +3371,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     if (isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(br.getCookies(getMainPage()), "");
+                        String cookiesUsername = br.getCookie(br.getHost(), "login", Cookies.NOTDELETEDPATTERN);
+                        if (cookiesUsername == null) {
+                            cookiesUsername = br.getCookie(br.getHost(), "email", Cookies.NOTDELETEDPATTERN);
+                        }
+                        /*
+                         * During cookie login, user can enter whatever he wants into username field. Most users will enter their real
+                         * username but to be sure to have unique usernames we don't trust them and try to get the real username out of our
+                         * cookies.
+                         */
+                        if (!StringUtils.isEmpty(cookiesUsername) && !account.getUser().equals(cookiesUsername)) {
+                            account.setUser(cookiesUsername);
+                        }
                         return true;
                     } else {
                         logger.info("Cookie login failed");
