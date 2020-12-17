@@ -33,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jizzbunker.com" }, urls = { "https?://(?:www\\.)?jizzbunker\\.com/[a-z]{2}/\\d+/[a-z0-9\\-]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jizzbunker.com" }, urls = { "https?://(?:www\\.)?jizzbunker\\.com/(?:[a-z]{2}/)?(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class JizzbunkerCom extends PluginForHost {
     public JizzbunkerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,6 +57,20 @@ public class JizzbunkerCom extends PluginForHost {
         return "http://jizzbunker.com/de/terms";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -65,13 +79,13 @@ public class JizzbunkerCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(".html")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)\\.html$").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<h1 class=\"font\\-smoothing gallery\\-item\\-title\">([^<>\"]+)</h1>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+            filename = url_filename.replace("-", " ");
         }
         /* RegExes sometimes used for streaming */
         final String jssource = br.getRegex("sources[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
@@ -118,7 +132,7 @@ public class JizzbunkerCom extends PluginForHost {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
-            dllink = br.getRegex("sources\\.push\\(\\{type:\\'video/mp4\\',src:\\'(http[^<>\"]+)\\'\\}").getMatch(0);
+            dllink = br.getRegex("sources\\.push\\(\\{type:\\'video/mp4\\',src:\\'(http[^<>\"\\']+)").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -136,9 +150,9 @@ public class JizzbunkerCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
+                    link.setVerifiedFileSize(con.getLongContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -156,21 +170,25 @@ public class JizzbunkerCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

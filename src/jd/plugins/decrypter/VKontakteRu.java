@@ -1468,6 +1468,7 @@ public class VKontakteRu extends PluginForDecrypt {
         int offset = 0;
         int page = 0;
         int totalItemsCrawledFromThisPost = 0;
+        int totalNumberOfItems = 0;
         logger.info("Crawling single wall post");
         do {
             final int foundItemsOld = decryptedLinks.size();
@@ -1486,12 +1487,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Stopping because there is not more than 1 page");
                 break;
             } else {
-                if (numberofItemsAddedThisLoop == 0) {
-                    /*
-                     * TODO: This will also get triggered if a post contains a lot of comments without any media objects followed by more
-                     * posts containing media!
-                     */
-                    logger.info("Stopping because: Failed to find any items on current page");
+                /* Fail-safe */
+                if (totalNumberOfItems > 0 && offset >= totalNumberOfItems) {
+                    logger.info("Stopping because offset >= " + totalNumberOfItems);
                     break;
                 }
                 sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
@@ -1512,15 +1510,28 @@ public class VKontakteRu extends PluginForDecrypt {
                 // this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, "61532"));
                 try {
                     final String json = br.getRegex("(\\{.*\\})").getMatch(0);
-                    final Object obj = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    // final Object obj = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    final Map<String, Object> paginationInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{2}");
+                    if (totalNumberOfItems == 0) {
+                        totalNumberOfItems = ((Number) paginationInfo.get("count")).intValue();
+                        logger.info("Found total number of items: " + totalNumberOfItems);
+                    }
+                    final String html = (String) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{0}");
+                    if (html == null) {
+                        logger.info("Stopping because failed to find html inside json");
+                        break;
+                    }
+                    br.getRequest().setHtmlCode(html);
                 } catch (final Throwable e) {
                     /* Fail-safe */
-                    logger.info("Stopping because response != parsable json");
+                    logger.log(e);
+                    logger.info("Stopping because failed to parse json response");
                     break;
                 }
                 /* TODO: Add proper json parsing along with stop-condition */
                 /* HTML is inside json --> Unescape this */
-                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+                // br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
             }
         } while (!this.isAbort());
         logger.info("Found " + totalItemsCrawledFromThisPost + " items");

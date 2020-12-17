@@ -21,13 +21,11 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Cookies;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -127,63 +125,7 @@ public class XubsterCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
-        synchronized (account) {
-            final boolean followRedirects = br.isFollowingRedirects();
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                /* 2020-12-14: Workaround because they're using hcaptcha for login. */
-                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
-                if (userCookies == null) {
-                    /* Fallback */
-                    return super.loginWebsite(account, validateCookies);
-                }
-                if (cookies != null) {
-                    logger.info("Stored login-Cookies are available");
-                    br.setCookies(getMainPage(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust login-cookies without checking as they should still be fresh");
-                        return false;
-                    }
-                    logger.info("Verifying login-cookies");
-                    if (verifyCookies()) {
-                        logger.info("Successfully logged in via cookies");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
-                }
-                logger.info("Verifying user-login-cookies");
-                br.clearCookies(this.getHost());
-                br.setCookies(getMainPage(), userCookies);
-                if (verifyCookies()) {
-                    logger.info("Successfully logged in via user-cookies");
-                    return true;
-                } else {
-                    logger.info("User-Cookie login failed");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
-            } finally {
-                br.setFollowRedirects(followRedirects);
-            }
-        }
-    }
-
-    private boolean verifyCookies() throws Exception {
-        getPage(getMainPage() + getRelativeAccountInfoURL());
-        if (isLoggedin()) {
-            return true;
-        } else {
-            logger.info("Cookie login failed");
-            return false;
-        }
+    protected boolean requiresCookieLogin() {
+        return true;
     }
 }
