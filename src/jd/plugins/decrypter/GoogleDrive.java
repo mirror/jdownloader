@@ -129,7 +129,10 @@ public class GoogleDrive extends PluginForDecrypt {
                      * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
                      */
                     final Browser websiteBR = new Browser();
-                    /* TODO: Login when API login is active! */
+                    /*
+                     * TODO Login when API once API login is possible -> Then we'd be able to crawl private folders which are restricted to
+                     * specified accounts.
+                     */
                     // if (account != null) {
                     // login(websiteBR, account);
                     // } else {
@@ -401,11 +404,6 @@ public class GoogleDrive extends PluginForDecrypt {
             logger.info("Found nothing to download: " + parameter);
             return decryptedLinks;
         }
-        if (currentFolderTitle != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(currentFolderTitle);
-            fp.addLinks(decryptedLinks);
-        }
         return decryptedLinks;
     }
 
@@ -435,6 +433,14 @@ public class GoogleDrive extends PluginForDecrypt {
         if (!StringUtils.isEmpty(currentFolderTitle) && StringUtils.isEmpty(subfolder)) {
             /* Begin subfolder structure if not given already */
             subfolder = currentFolderTitle;
+        }
+        FilePackage fp = null;
+        if (subfolder != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(subfolder);
+        } else if (currentFolderTitle != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(currentFolderTitle);
         }
         final List<Object> items = (List<Object>) entries.get("items");
         for (final Object item : items) {
@@ -466,6 +472,9 @@ public class GoogleDrive extends PluginForDecrypt {
                     dl.setVerifiedFileSize(fileSize);
                 }
                 dl.setAvailable(true);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
                 if (subfolder != null) {
                     folder_path = subfolder;
                 }
@@ -502,12 +511,12 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         FilePackage fp = null;
         /* 2020-12-07: Workaround: Use path as packagename as long as we're unable to get the name of the folder we're currently in! */
-        if (currentFolderTitle != null) {
-            fp = FilePackage.getInstance();
-            fp.setName(currentFolderTitle);
-        } else if (subfolder != null) {
+        if (subfolder != null) {
             fp = FilePackage.getInstance();
             fp.setName(subfolder);
+        } else if (currentFolderTitle != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(currentFolderTitle);
         }
         /* TODO: Add FilePackage handling */
         final List<Object> items = (List<Object>) entries.get("files");
