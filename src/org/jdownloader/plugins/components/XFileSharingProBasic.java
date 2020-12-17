@@ -39,12 +39,17 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -451,6 +456,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * default: false
      */
     protected boolean enable_account_api_only_mode() {
+        return false;
+    }
+
+    /** If needed, this can be used to enforce cookie login e.g. if an unsupported captcha type is required for login. */
+    protected boolean requiresCookieLogin() {
         return false;
     }
 
@@ -1711,6 +1721,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             handleRecaptchaV2(link, captchaForm);
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
         } else if (captchaForm.containsHTML("hcaptcha\\.com/") || captchaForm.containsHTML("class=\"h-captcha\"")) {
+            /*
+             * TODO: 2020-12-17: Automatically display cookie login dialog in this case if this unsupported captcha type is required during
+             * login process.
+             */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
         } else {
             if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
@@ -3346,12 +3360,33 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * 2019-08-20: Some hosts (rare case) will fail on the first attempt even with correct logindata and then demand a captcha.
                  * Example: filejoker.net
                  */
+                logger.info("Full login required");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                if (userCookies != null) {
+                    /* Fallback */
+                    logger.info("Verifying user-login-cookies");
+                    br.clearCookies(this.getHost());
+                    br.setCookies(getMainPage(), userCookies);
+                    getPage(getMainPage() + getRelativeAccountInfoURL());
+                    if (isLoggedin()) {
+                        logger.info("Successfully logged in via cookies");
+                        account.saveCookies(br.getCookies(getMainPage()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                } else if (this.requiresCookieLogin()) {
+                    /* Ask user to login via exported browser cookies. */
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 int login_counter = 0;
                 final int login_counter_max = 2;
                 br.clearCookies(getMainPage());
                 do {
                     login_counter++;
-                    logger.info("Performing full login attempt: " + login_counter);
+                    logger.info("Performing full website login attempt: " + login_counter);
                     Form loginForm = findLoginform(this.br);
                     if (loginForm == null) {
                         // some sites (eg filejoker) show login captcha AFTER first login attempt, so only reload getLoginURL(without
@@ -3428,6 +3463,43 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 br.setFollowRedirects(followRedirects);
             }
         }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final String host = this.getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Login";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = host + " - Login";
+                        message += "Hello dear " + host + " user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     /**
