@@ -1462,8 +1462,8 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         final FilePackage fp = FilePackage.getInstance();
+        /* Set ID of current wall-post as packagename. */
         fp.setName(wall_post_ID);
-        // decryptSingleWallPostAndComments_Website(wall_post_ID, this.br.toString(), fp);
         final int maxEntriesPerRequest = 20;
         int offset = 0;
         int page = 0;
@@ -1472,7 +1472,6 @@ public class VKontakteRu extends PluginForDecrypt {
         do {
             final int foundItemsOld = decryptedLinks.size();
             logger.info("Crawling (comments of) single wall post page: " + page);
-            // decryptWallPostHTMLWebsite(wall_post_ID, br.toString(), fp);
             websiteCrawlContent(wall_post_ID, br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
             final int numberofItemsAddedThisLoop = decryptedLinks.size() - foundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
@@ -1519,7 +1518,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Stopping because response != parsable json");
                     break;
                 }
-                /* TODO: Add proper json parsing */
+                /* TODO: Add proper json parsing along with stop-condition */
                 /* HTML is inside json --> Unescape this */
                 br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
             }
