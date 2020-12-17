@@ -126,24 +126,42 @@ public class VideoFCTwoCom extends PluginForHost {
     private void login(final Account account, final boolean verifyCookies) throws IOException, PluginException, InterruptedException {
         prepareBrowser(br);
         br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
+        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
         if (cookies != null) {
             this.br.setCookies(this.getHost(), cookies);
             if (!verifyCookies) {
                 logger.info("Trust cookies without login");
                 return;
             } else {
+                logger.info("Attempting cookie login");
                 br.getPage("https://video.fc2.com/a/");
                 if (isLoggedINVideoFC2()) {
                     logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
                 } else {
                     logger.info("Cookie login failed");
                 }
             }
         }
-        br.setFollowRedirects(true);
-        br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
+        if (userCookies != null) {
+            logger.info("Attempting user-cookie login");
+            this.br.setCookies(this.getHost(), userCookies);
+            br.getPage("https://video.fc2.com/a/");
+            if (isLoggedINVideoFC2()) {
+                logger.info("Cookie user-login successful");
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return;
+            } else {
+                logger.info("Cookie user-login failed");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        /* 2020-12-17: TODO: Fix this - it doesn't work! */
+        // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
+        br.getPage("https://fc2.com/en/login.php?switch_language=en");
         final Form loginform = br.getFormbyProperty("name", "form_login");
         if (loginform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -151,7 +169,7 @@ public class VideoFCTwoCom extends PluginForHost {
         loginform.put("email", Encoding.urlEncode(account.getUser()));
         loginform.put("Submit.x", new Random().nextInt(100) + "");
         loginform.put("Submit.y", new Random().nextInt(100) + "");
-        loginform.put("password", Encoding.urlEncode(account.getPass()));
+        loginform.put("pass", Encoding.urlEncode(account.getPass()));
         loginform.remove("keep_login");
         /* TODO: "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. */
         // loginform.put("keep_login", "1");
