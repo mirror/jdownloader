@@ -190,6 +190,10 @@ public class VideoFCTwoCom extends PluginForHost {
             }
         }
         br.submitForm(loginform);
+        /*
+         * 2FA login: Redirect to: https://secure.id.fc2.com/login_authentication.php --> Get Form by action
+         * login_authentication.php?act=execute --> Add field code=<2FAcode> -> Submit --> Check if loggedIN
+         */
         if (!isLoggedINFC2()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -224,7 +228,7 @@ public class VideoFCTwoCom extends PluginForHost {
             if (expire != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
                 ai.setStatus("Premium Account");
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
             } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
                 account.setType(AccountType.PREMIUM);
             } else {
@@ -267,8 +271,8 @@ public class VideoFCTwoCom extends PluginForHost {
             }
         }
         if (onlyForPremiumUsers(link)) {
-            if (account != null && !account.getBooleanProperty("free", false)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "premium only requirement, when premium account has been used!");
+            if (account != null && account.getType() == AccountType.PREMIUM) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "premium only requirement while premium account has been used!");
             }
             if (link.getDownloadSize() > 0) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
@@ -409,7 +413,7 @@ public class VideoFCTwoCom extends PluginForHost {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Charset", null);
             /* Extra step is only needed for premium accounts. */
-            if (account != null && !account.getBooleanProperty("free", true)) {
+            if (account != null && account.getType() == AccountType.PREMIUM) {
                 if (tk == null || from == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
