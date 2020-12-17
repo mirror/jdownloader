@@ -1506,11 +1506,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* 2020-12-17: No idea what it is -> Request works without that too */
                 // getRepliesQuery.add("prev_id", "201");
                 this.postPageSafe("/al_wall.php", getRepliesQuery.toString());
-                /* Old request */
-                // this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, "61532"));
                 try {
                     final String json = br.getRegex("(\\{.*\\})").getMatch(0);
-                    // final Object obj = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                     final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                     final Map<String, Object> paginationInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{2}");
                     if (totalNumberOfItems == 0) {
@@ -1529,9 +1526,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     logger.info("Stopping because failed to parse json response");
                     break;
                 }
-                /* TODO: Add proper json parsing along with stop-condition */
-                /* HTML is inside json --> Unescape this */
-                // br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
             }
         } while (!this.isAbort());
         logger.info("Found " + totalItemsCrawledFromThisPost + " items");

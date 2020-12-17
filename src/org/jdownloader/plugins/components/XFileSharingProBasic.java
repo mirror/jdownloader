@@ -3377,7 +3377,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else if (this.requiresCookieLogin()) {
-                    /* Ask user to login via exported browser cookies. */
+                    /* Ask user to login via exported browser cookies e.g. xubster.com. */
                     showCookieLoginInformation();
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
