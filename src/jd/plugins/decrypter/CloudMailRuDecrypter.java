@@ -67,33 +67,24 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             subfolder = "";
         }
         String id;
-        /* 2020-12-16: TODO: Check .zip handling */
-        final DownloadLink main = createDownloadlink(parameter);
         if (parameter.matches(TYPE_APIV2)) {
             id = new Regex(parameter, "([A-Z0-9]{32})$").getMatch(0);
-            main.setName(parameter);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(CloudMailRu.API_BASE + "/batch", "files=" + id + "&batch=%5B%7B%22method%22%3A%22folder%2Ftree%22%7D%2C%7B%22method%22%3A%22folder%22%7D%5D&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=2&build=" + BUILD);
             /* Offline|Empty folder */
             if (br.containsHTML("\"status\":400|\"count\":\\{\"folders\":0,\"files\":0\\}")) {
-                main.setFinalFileName(id);
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                decryptedLinks.add(main);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
         } else {
             id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
-            main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
             br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=0&api=2&build=" + BUILD);
             String nfolders = PluginJSonUtils.getJsonValue(br.toString(), "folders");
             String nfiles = PluginJSonUtils.getJsonValue(br.toString(), "files");
             String limit = nfolders + nfiles;
             br.getPage(CloudMailRu.API_BASE + "/folder?weblink=" + URLEncode.encodeURIComponent(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&offset=0&limit=" + limit + "&api=2&build=" + BUILD);
             if (br.containsHTML("\"status\":(400|404)") || br.getHttpConnection().getResponseCode() == 404) {
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                decryptedLinks.add(main);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
         }
@@ -174,6 +165,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks.size() > 1 && completeFolderSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
+            final DownloadLink main = createDownloadlink(parameter);
             if (!StringUtils.isEmpty(title_of_current_folder)) {
                 main.setFinalFileName(title_of_current_folder + ".zip");
             } else {
@@ -184,6 +176,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             main.setProperty(CloudMailRu.PROPERTY_COMPLETE_FOLDER, true);
             main.setProperty(CloudMailRu.PROPERTY_WEBLINK, id);
             main.setDownloadSize(completeFolderSize);
+            if (!StringUtils.isEmpty(subfolder)) {
+                main.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolder);
+            }
+            if (fp != null) {
+                main._setFilePackage(fp);
+            }
             decryptedLinks.add(main);
         }
         return decryptedLinks;
