@@ -51,33 +51,28 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
         final int min_entries_per_page = 15;
         int entries_per_page_current = 0;
         do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
-            }
             if (page_counter > 1) {
                 this.br.getPage(url_part + "&page=" + page_counter);
             }
             logger.info("Decrypting: " + this.br.getURL());
-            final String[] linkids = br.getRegex("id=\"post_(\\d+)\"").getColumn(0);
-            if (linkids == null || linkids.length == 0) {
+            final String[] contentIDs = br.getRegex("id=\"post_(\\d+)\"").getColumn(0);
+            if (contentIDs == null || contentIDs.length == 0) {
                 logger.warning("Decrypter might be broken for link: " + parameter);
                 break;
             }
-            entries_per_page_current = linkids.length;
-            for (final String linkid : linkids) {
-                final String link = "http://" + this.getHost() + "/posts/" + linkid;
+            entries_per_page_current = contentIDs.length;
+            for (final String contentID : contentIDs) {
+                final String link = "http://" + this.getHost() + "/posts/" + contentID;
                 final DownloadLink dl = createDownloadlink(link);
-                dl.setLinkID(linkid);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpg");
+                dl.setName(contentID);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 offset++;
             }
             page_counter++;
-        } while (entries_per_page_current >= min_entries_per_page);
+        } while (!this.isAbort() && entries_per_page_current >= min_entries_per_page);
         return decryptedLinks;
     }
 

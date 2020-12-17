@@ -13,13 +13,16 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,9 +33,8 @@ import jd.plugins.PluginForDecrypt;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dclinks.info" }, urls = { "https?://(?:www\\.)?dclinks\\.info/index\\.php\\?v=\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dclinks.info" }, urls = { "https?://(?:www\\.)?dclinks\\.info/(?:index\\.php)?\\?v=\\d+" })
 public class DcLnkIfo extends PluginForDecrypt {
-
     public DcLnkIfo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,6 +48,14 @@ public class DcLnkIfo extends PluginForDecrypt {
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        final Form continueform = br.getFormBySubmitvalue("Continuar");
+        if (continueform != null) {
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            br.submitForm(continueform);
         }
         final String[] links = br.getRegex("href=('|\")(http.*?)\\1").getColumn(1);
         if (links == null || links.length == 0) {
@@ -62,9 +72,7 @@ public class DcLnkIfo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
-
 }
