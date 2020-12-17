@@ -282,14 +282,16 @@ public class DdownloadCom extends XFileSharingProBasic {
                 throw e;
             }
             logger.info("2FA code required");
-            final DownloadLink dlinkbefore = this.getDownloadLink();
             final DownloadLink dl_dummy;
-            if (dlinkbefore != null) {
-                dl_dummy = dlinkbefore;
+            if (this.getDownloadLink() != null) {
+                dl_dummy = this.getDownloadLink();
             } else {
                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
             }
-            final String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+            if (twoFACode != null) {
+                twoFACode = twoFACode.trim();
+            }
             if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
