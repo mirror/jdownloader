@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -350,7 +352,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /**
                  * Single posts of wall links: https://vk.com/wall-28122291_906
                  */
-                decryptWallPost();
+                crawlWallPost();
                 if (decryptedLinks.size() == 0) {
                     logger.info("Check your plugin settings -> They affect the results!");
                     logger.info("Also make sure that you have to rights to access this content e.g. sometimes an account is required.");
@@ -360,7 +362,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } else {
                 /* Wall link or unsupported link! */
                 // no requests have been made yet, why are we checking for this? -raztoki20160809
-                decryptWallLink();
+                crawlWallLink();
                 logger.info("Decrypted " + decryptedLinks.size() + " total links out of a wall-link");
                 if (decryptedLinks.size() == 0) {
                     logger.info("Check your plugin settings -> They affect the results!");
@@ -1187,11 +1189,12 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private void decryptWallLink() throws Exception {
+    /** Handles complete walls */
+    private void crawlWallLink() throws Exception {
         if (vkwall_use_api) {
-            decryptWallLink_API();
+            crawlWallLinkAPI();
         } else {
-            decryptWall_Website();
+            crawlWallWebsite();
         }
     }
 
@@ -1200,7 +1203,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * TODO: Add support for crawling comments (media/URLs in comments)
      */
     @SuppressWarnings("unchecked")
-    private void decryptWallLink_API() throws Exception {
+    private void crawlWallLinkAPI() throws Exception {
         long total_numberof_entries;
         final String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
@@ -1220,7 +1223,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (this.getCurrentAPIErrorcode() == 15) {
                     /* Access denied --> We have to be logged in via API --> Try website-fallback */
                     logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
-                    decryptWall_Website();
+                    crawlWallWebsite();
                     return;
                 }
                 throw e;
@@ -1422,7 +1425,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     add_url = posted_url.matches(vkwall_graburlsinsideposts_regex);
                     logger.info("User-Defined wall-post-url-RegEx seems to be correct");
                 } catch (final Throwable e) {
-                    logger.warning("User-Defined wall-post-url-RegEx seems to be wrong");
+                    logger.warning("User-Defined wall-post-url-RegEx seems to be invalid");
                     /* Probably user entered invalid RegEx --> Fallback to default RegEx */
                     add_url = posted_url.matches(vkwall_graburlsinsideposts_regex_default);
                 }
@@ -1443,16 +1446,85 @@ public class VKontakteRu extends PluginForDecrypt {
         return ((Number) entry.get("id")).longValue();
     }
 
-    private void decryptWallPost() throws Exception {
+    private void crawlWallPost() throws Exception {
         if (vkwall_use_api) {
-            decryptWallPost_API();
+            crawlWallPostAPI();
         } else {
-            final String wall_post_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/wall(-?\\d+_\\d+)").getMatch(0);
-            this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(wall_post_id);
-            decryptSingleWallPostAndComments_Website(wall_post_id, this.br.toString(), fp);
+            crawlWallPostWebsite();
         }
+    }
+
+    private void crawlWallPostWebsite() throws Exception {
+        final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/wall(-?\\d+)").getMatch(0);
+        final String wall_post_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/wall(-?\\d+_\\d+)").getMatch(0);
+        if (owner_id == null || wall_post_ID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(wall_post_ID);
+        // decryptSingleWallPostAndComments_Website(wall_post_ID, this.br.toString(), fp);
+        final int maxEntriesPerRequest = 20;
+        int offset = 0;
+        int page = 0;
+        int totalItemsCrawledFromThisPost = 0;
+        logger.info("Crawling single wall post");
+        do {
+            final int foundItemsOld = decryptedLinks.size();
+            logger.info("Crawling (comments of) single wall post page: " + page);
+            // decryptWallPostHTMLWebsite(wall_post_ID, br.toString(), fp);
+            websiteCrawlContent(wall_post_ID, br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
+            final int numberofItemsAddedThisLoop = decryptedLinks.size() - foundItemsOld;
+            logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
+            offset += maxEntriesPerRequest;
+            logger.info("Number of NEW added items: " + numberofItemsAddedThisLoop);
+            totalItemsCrawledFromThisPost += numberofItemsAddedThisLoop;
+            /* Avoid this sleep time if we stop after the current */
+            if (!this.vkwall_comments_grab_comments) {
+                logger.info("Stopping because user does not want to crawl items from replies to single posts");
+                break;
+            } else if (page == 0 && !br.containsHTML("class=\"replies_next replies_next_main\"")) {
+                logger.info("Stopping because there is not more than 1 page");
+                break;
+            } else {
+                if (numberofItemsAddedThisLoop == 0) {
+                    /*
+                     * TODO: This will also get triggered if a post contains a lot of comments without any media objects followed by more
+                     * posts containing media!
+                     */
+                    logger.info("Stopping because: Failed to find any items on current page");
+                    break;
+                }
+                sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
+                page++;
+                /* Everything after the first request --> We only have replies */
+                final UrlQuery getRepliesQuery = new UrlQuery();
+                getRepliesQuery.add("act", "get_post_replies");
+                getRepliesQuery.add("al", "1");
+                getRepliesQuery.add("count", maxEntriesPerRequest + "");
+                getRepliesQuery.add("item_id", "2");
+                getRepliesQuery.add("offset", offset + "");
+                getRepliesQuery.add("order", "asc");
+                getRepliesQuery.add("owner_id", owner_id);
+                /* 2020-12-17: No idea what it is -> Request works without that too */
+                // getRepliesQuery.add("prev_id", "201");
+                this.postPageSafe("/al_wall.php", getRepliesQuery.toString());
+                /* Old request */
+                // this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, "61532"));
+                try {
+                    final String json = br.getRegex("(\\{.*\\})").getMatch(0);
+                    final Object obj = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                } catch (final Throwable e) {
+                    /* Fail-safe */
+                    logger.info("Stopping because response != parsable json");
+                    break;
+                }
+                /* TODO: Add proper json parsing */
+                /* HTML is inside json --> Unescape this */
+                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+            }
+        } while (!this.isAbort());
+        logger.info("Found " + totalItemsCrawledFromThisPost + " items");
     }
 
     /**
@@ -1460,7 +1532,7 @@ public class VKontakteRu extends PluginForDecrypt {
      * 2019-08-05: Requires authorization!
      */
     @SuppressWarnings("unchecked")
-    private void decryptWallPost_API() throws Exception {
+    private void crawlWallPostAPI() throws Exception {
         if (!this.isKnownType()) {
             /* owner_id not given --> We need to find the owner_id */
             final String url_owner = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/([^\\?\\&=]+)").getMatch(0);
@@ -1491,13 +1563,13 @@ public class VKontakteRu extends PluginForDecrypt {
         try {
             apiGetPageSafe("https://api.vk.com/method/wall.getById?posts=" + postIDWithOwnerID + "&extended=0&copy_history_depth=2");
         } catch (final DecrypterException e) {
-            if (this.getCurrentAPIErrorcode() == 15) {
-                /* Access denied --> We have to be logged in via API --> Try website-fallback */
-                logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
-                this.getPageSafe("https://vk.com/wall" + postIDWithOwnerID);
-                decryptSingleWallPostAndComments_Website(postIDWithOwnerID, br.toString(), null);
-                return;
-            }
+            // if (this.getCurrentAPIErrorcode() == 15) {
+            // /* Access denied --> We have to be logged in via API --> Try website-fallback */
+            // logger.info("API wall decryption failed because of 'Access denied' --> Trying via website");
+            // this.getPageSafe("https://vk.com/wall" + postIDWithOwnerID);
+            // decryptSingleWallPostAndComments_Website(postIDWithOwnerID, br.toString(), null);
+            // return;
+            // }
             throw e;
         }
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
@@ -1521,7 +1593,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /** Using Website */
-    private void decryptWall_Website() throws Exception {
+    private void crawlWallWebsite() throws Exception {
         long total_numberof_entries = -1;
         String ownerID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         int currentOffset = 0;
@@ -1538,44 +1610,9 @@ public class VKontakteRu extends PluginForDecrypt {
             total_numberof_entries = Long.parseLong(urlMaxoffsetStr);
             currentOffset = Integer.parseInt(urlCurrentOffsetStr);
             logger.info("PATTERN_WALL_LOOPBACK_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
+            this.apiGetPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         } else {
-            if (ownerID == null) {
-                /* We need to find the owner_id - without it we would only be able to find all entries from the first page. */
-                this.apiGetPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
-                json_source = br.getRegex("window\\[\\'public\\'\\]\\.init\\((\\{.*?)</script>").getMatch(0);
-                if (json_source == null) {
-                    json_source = br.getRegex("Profile\\.init\\((\\{.*?)</script>").getMatch(0);
-                }
-                if (json_source == null) {
-                    /* Public groups */
-                    json_source = br.getRegex("Groups\\.init\\((\\{.*?)</script>").getMatch(0);
-                    if (json_source != null) {
-                        ownerID = PluginJSonUtils.getJson(json_source, "group_id");
-                    }
-                }
-                if (StringUtils.isEmpty(ownerID)) {
-                    ownerID = PluginJSonUtils.getJson(json_source, "public_id");
-                }
-                postvalue_fixed = PluginJSonUtils.getJson(json_source, "fixed_post_id");
-                if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
-                    /* ownerID is given as double value --> Correct that */
-                    ownerID = PluginJSonUtils.getJson(json_source, "user_id");
-                    if (!StringUtils.isEmpty(ownerID) && ownerID.matches("\\d+\\.\\d+")) {
-                        ownerID = ownerID.split("\\.")[0];
-                    }
-                }
-                if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
-                    logger.warning("Failed to find owner_id --> Can only crawl first page");
-                }
-                /* Correct crawled values */
-                ownerID = "-" + ownerID;
-                if (StringUtils.isEmpty(postvalue_fixed)) {
-                    postvalue_fixed = "";
-                }
-            } else {
-                /* Be aware! The parameter 'own=0|1' may decide whether we can access the URL or not! Do NOT remove it! */
-                this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
-            }
+            this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
             /* 2020-02-07: This is most likely not given but we have other fail safes in place to stop once we're done. */
             json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
             if (json_source != null) {
@@ -1583,6 +1620,40 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
             } else {
                 logger.info("PATTERN_WALL_LINK has a max offset of UNKNOWN and a current offset of " + currentOffset);
+            }
+        }
+        if (ownerID == null) {
+            /* We need to find the owner_id - without it we would only be able to find all entries from the first page. */
+            json_source = br.getRegex("window\\[\\'public\\'\\]\\.init\\((\\{.*?)</script>").getMatch(0);
+            if (json_source == null) {
+                json_source = br.getRegex("Profile\\.init\\((\\{.*?)</script>").getMatch(0);
+            }
+            if (json_source == null) {
+                /* Public groups */
+                json_source = br.getRegex("Groups\\.init\\((\\{.*?)</script>").getMatch(0);
+                if (json_source != null) {
+                    ownerID = PluginJSonUtils.getJson(json_source, "group_id");
+                }
+            }
+            if (StringUtils.isEmpty(ownerID)) {
+                ownerID = PluginJSonUtils.getJson(json_source, "public_id");
+            }
+            postvalue_fixed = PluginJSonUtils.getJson(json_source, "fixed_post_id");
+            if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
+                /* ownerID is given as double value --> Correct that */
+                ownerID = PluginJSonUtils.getJson(json_source, "user_id");
+                if (!StringUtils.isEmpty(ownerID) && ownerID.matches("\\d+\\.\\d+")) {
+                    ownerID = ownerID.split("\\.")[0];
+                }
+            }
+            if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
+                logger.warning("Failed to find owner_id --> Can only crawl first page");
+            } else {
+                /* Correct crawled values */
+                ownerID = "-" + ownerID;
+            }
+            if (postvalue_fixed == null) {
+                postvalue_fixed = "";
             }
         }
         FilePackage fp = FilePackage.getInstance();
@@ -1593,7 +1664,6 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final int max_pages_without_downloadable_content_in_a_row = 5;
         int pages_without_downloadable_content_in_a_row = 0;
-        boolean stop_because_no_more_new_content = false;
         boolean stop_because_all_items_found = false;
         do {
             counter_items_found_in_current_offset = 0;
@@ -1607,7 +1677,18 @@ public class VKontakteRu extends PluginForDecrypt {
                 this.br.getRequest().setHtmlCode(JSonUtils.unescape(br.toString()));
             }
             final int numberof_items_old = this.decryptedLinks.size();
-            decryptSingleWallPostAndComments_Website(null, br.toString(), fp);
+            if (this.vkwall_comments_grab_comments) {
+                logger.info("User wants content of comments --> First adding comment URLs during wall-crawling");
+                final String[] singleWallPostIDs = br.getRegex("wall(" + ownerID + "_\\d+)").getColumn(0);
+                for (final String singleWallpostID : singleWallPostIDs) {
+                    final DownloadLink dl = this.createDownloadlink("https://vk.com/wall" + singleWallpostID);
+                    decryptedLinks.add(dl);
+                }
+            } else {
+                logger.info("Crawling items inside single post as part of a wall");
+                // decryptWallPostHTMLWebsite(wall_post_ID, br.toString(), fp);
+                websiteCrawlContent(br.getURL(), br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
+            }
             final int numberof_items_new = this.decryptedLinks.size();
             counter_items_found_in_current_offset = numberof_items_new - numberof_items_old;
             if (counter_items_found_in_current_offset == 0) {
@@ -1618,13 +1699,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 pages_without_downloadable_content_in_a_row = 0;
             }
             logger.info("Found " + decryptedLinks.size() + " items so far");
-            /* Stop conditions are placed here and not in the while loops' footer on purpose to place loggers and have a better overview! */
-            stop_because_no_more_new_content = pages_without_downloadable_content_in_a_row >= max_pages_without_downloadable_content_in_a_row;
+            /*
+             * Stop conditions are placed here and not in the while loops' footer on purpose to place loggers and get to know the exact stop
+             * reason!
+             */
             stop_because_all_items_found = total_numberof_entries != -1 && currentOffset >= total_numberof_entries;
             /* Increase counters */
             currentOffset += offset_increase;
             counter_wall_start_from += 10;
-            if (stop_because_no_more_new_content) {
+            if (pages_without_downloadable_content_in_a_row >= max_pages_without_downloadable_content_in_a_row) {
                 logger.info(String.format("Stopping because: Failed to find more items for %d times in the row", pages_without_downloadable_content_in_a_row));
                 break;
             } else if (stop_because_all_items_found) {
@@ -1646,85 +1729,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Using Website, finds and adds contents of a single wall post and, if wished by the user, contents inside comments/replies as well.
-     * <br />
-     * Keep in mind that this may require a lot of time as single posts can have huge amounts of comments!<br />
-     *
-     * @param wall_post_ID
-     *            : ID of the wall post e.g.
-     * @param html
-     *            : html containing post / comments information
-     *
-     *            Both parameters can be null which would then mean that wall URL will get accessed for the first time and IDs will be found
-     *            during crawl process.
-     */
-    private void decryptSingleWallPostAndComments_Website(String wall_post_ID, String html, final FilePackage fp) throws Exception {
-        final String rndVer = "61532";
-        if (wall_post_ID == null && html != null) {
-            /* E.g. happens when crawling a complete wall. */
-            wall_post_ID = wallPostHTMLGetPostID(html);
-        }
-        if (wall_post_ID == null) {
-            /* This should never happen! */
-            logger.info("Cannot continue single wall post decryption: wall_post_ID is null");
-            return;
-        }
-        final int maxEntriesPerRequest = 20;
-        int offset = 0;
-        int requestNum = 1;
-        int foundItemsTemp = 0;
-        int total_numberof_added_items = 0;
-        /*
-         * If enabled, we will first grab all post URLs from the wall --> They all go back into the decrypter --> Then post-content &
-         * comments will be crawled!
-         */
-        if (this.vkwall_comments_grab_comments && !isSingleWallPost(this.CRYPTEDLINK_FUNCTIONAL)) {
-            final DownloadLink dl = this.createDownloadlink(String.format("https://vk.com/wall%s", wall_post_ID));
-            decryptedLinks.add(dl);
-            return;
-        }
-        do {
-            final int foundItemsOld = decryptedLinks.size();
-            try {
-                if (offset == 0) {
-                    if (isSingleWallPost(this.CRYPTEDLINK_FUNCTIONAL)) {
-                        logger.info("Crawling single post");
-                        decryptWallPostHTMLWebsite(wall_post_ID, html, fp);
-                    } else {
-                        logger.info("Crawling single post as part of a wall");
-                        decryptWallPostHTMLWebsite(wall_post_ID, html, fp);
-                        break;
-                    }
-                } else if (offset > 0) {
-                    /* Everything after the first request --> We only have comments/replies */
-                    this.getPageSafe(String.format("/wall%s?al=-1&local=1&offset=%d&_rndVer=%s", wall_post_ID, offset, rndVer));
-                    /* HTML is inside json --> Unescape this */
-                    br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-                    html = br.toString();
-                }
-                /* --> Crawl comments only */
-                logger.info("Crawling comments of single wall post");
-                websiteCrawlContent(wall_post_ID, html, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls);
-                foundItemsTemp = decryptedLinks.size() - foundItemsOld;
-                logger.info("Offset " + offset + " contained " + foundItemsTemp + " replies (this is NOT the number of crawled items)");
-                requestNum++;
-                offset += maxEntriesPerRequest;
-                /* Avoid this sleep time if we stop after the current */
-                if (this.vkwall_comments_grab_comments) {
-                    sleep(this.cfg.getLongProperty(VKontakteRuHoster.SLEEP_PAGINATION_GENERAL, VKontakteRuHoster.defaultSLEEP_PAGINATION_GENERAL), this.CRYPTEDLINK);
-                    /* Only continue if user wants comments inside posts at all! */
-                }
-            } finally {
-                final int added_items_in_this_loop = decryptedLinks.size() - foundItemsOld;
-                logger.info("Number of NEW added items: " + added_items_in_this_loop);
-                total_numberof_added_items += added_items_in_this_loop;
-            }
-        } while (foundItemsTemp > 0 && this.vkwall_comments_grab_comments && !this.isAbort());
-        logger.info("Found " + total_numberof_added_items + " items");
-    }
-
-    /**
-     * Decrypts media of single Website html-post snippets.
+     * Decrypts media of single Website html-post snippets. </br>
+     * Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source
@@ -1784,7 +1790,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 photo_list_id = "album" + id_of_current_album;
             }
             photo_module = "photos";
-        } else if (url_source != null && url_source.matches("(?:\\-)?\\d+_\\d+")) {
+        } else if (url_source != null && url_source.matches("^(?:\\-)?\\d+_\\d+$")) {
             /* url_source = not an URL but our wall_IDs */
             isContentFromWall = true;
             photo_module = "wall";
@@ -1976,10 +1982,6 @@ public class VKontakteRu extends PluginForDecrypt {
         if (grabURLsInsideText && isContentFromWall) {
             crawlUrlsInsidePosts(wall_post_text);
         }
-    }
-
-    private String wallPostHTMLGetPostID(final String html) {
-        return new Regex(html, "data\\-post\\-id=\"((?:\\-)?\\d+_\\d+)\"").getMatch(0);
     }
 
     /** Works offline, simply converts the added link into a DownloadLink for the host plugin and sets required properties. */

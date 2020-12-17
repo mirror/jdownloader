@@ -40,7 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?[\\w]+(/.*?)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "https?://[\\w\\.]*?shareplace\\.(?:com|org)/\\?(?:d=)?([\\w]+)(/.*?)?" })
 public class Shareplacecom extends PluginForHost {
     public Shareplacecom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -73,6 +73,20 @@ public class Shareplacecom extends PluginForHost {
     private static final String html_captcha = "/captcha\\.php";
     private String              correctedBR  = null;
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -83,39 +97,38 @@ public class Shareplacecom extends PluginForHost {
         }
         setBrowserExclusive();
         prepBR(this.br);
+        br.setFollowRedirects(true);
         getPage(url);
-        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        if (br.getRedirectLocation() == null) {
-            final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-            if (iframe != null) {
-                br.getPage(iframe);
-            }
-            if (new Regex(correctedBR, "Your requested file is not found").matches() || !br.containsHTML("Filename:<")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
-            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
-            if (inValidate(filename)) {
-                filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            }
-            if (filesize == null) {
-                filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            }
-            if (filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!inValidate(filename)) {
-                /* Let's check if we can trust the results ... */
-                filename = Encoding.htmlDecode(filename.trim());
-                link.setFinalFileName(filename);
-            } else {
-                link.setName(fid);
-            }
-            link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            return AvailableStatus.TRUE;
-        } else {
+        if (!this.br.getURL().contains(this.getFID(link))) {
+            /* E.g. redirect to mainpage or errorpage. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+        if (iframe != null) {
+            br.getPage(iframe);
+        }
+        if (new Regex(correctedBR, "Your requested file is not found").matches() || !br.containsHTML("Filename:<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
+        String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+        if (inValidate(filename)) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
+        }
+        if (!inValidate(filename)) {
+            /* Let's check if we can trust the results ... */
+            filename = Encoding.htmlDecode(filename.trim());
+            link.setFinalFileName(filename);
+        } else if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
+        return AvailableStatus.TRUE;
     }
 
     private boolean inValidate(final String s) {
@@ -134,7 +147,7 @@ public class Shareplacecom extends PluginForHost {
 
     private void doFree(final DownloadLink link) throws Exception {
         String dllink = null;
-        final boolean checkResult = true;
+        final boolean checkDirecturlCandidates = true;
         /* 2016-08-23: Added captcha implementation */
         if (this.br.containsHTML(html_captcha)) {
             final String code = this.getCaptchaCode("mhfstandard", "/captcha.php?rand=" + System.currentTimeMillis(), link);
@@ -149,7 +162,7 @@ public class Shareplacecom extends PluginForHost {
             if (!new Regex(s[0], "(vvvvvvvvv|teletubbies|zzipitime)").matches()) {
                 continue;
             }
-            dllink = rhino(link, s[0], checkResult);
+            dllink = rhino(link, s[0], checkDirecturlCandidates);
             if (dllink != null) {
                 break;
             }
@@ -160,7 +173,7 @@ public class Shareplacecom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!checkResult) {
+        if (!checkDirecturlCandidates) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("dllink doesn't seem to be a file...");

@@ -125,7 +125,7 @@ public class DebridplanetCom extends PluginForHost {
             query.add("seckey", "undefined");
             query.add("seckey2", "undefined");
             br.postPage(WEBSITE_BASE + "/debrider/gen_process_link.php", query);
-            dllink = br.getRegex("\"(https://[^\"]+/dl/[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("id=\"linklist1\"[^>]*>(https://[^<>\"]+)").getMatch(0);
             }
