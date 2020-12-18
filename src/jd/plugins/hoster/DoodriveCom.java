@@ -133,8 +133,10 @@ public class DoodriveCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.submitForm(dlform0);
                 dllink = br.getRedirectLocation();
-            } else {
+            }
+            if (dllink == null) {
                 /* [Optional] Step 2 - Captcha & Pre-download-waittime (10 seconds - unsure if those are skippable) */
+                br.setFollowRedirects(true);
                 Form dlform = br.getFormbyActionRegex(".*file-download");
                 if (dlform == null) {
                     dlform = br.getForm(0);

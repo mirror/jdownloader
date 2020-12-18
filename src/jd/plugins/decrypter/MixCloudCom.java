@@ -17,10 +17,12 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -42,9 +44,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/(widget/iframe/\\?.+|[^/]+/[^/]+/)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/(widget/iframe/\\?.+|[^/]+/?([^/]+/)?)" })
 public class MixCloudCom extends antiDDoSForDecrypt {
     public MixCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -55,15 +56,18 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         return true;
     }
 
+    private static final String TYPE_SINGLE_AUDIO         = "^https?://[^/]+/[^/]+/[^/]+/?$";
+    private static final String TYPE_SINGLE_AUDIO_IFRAME_ = "https?://[^/]+/widget/iframe/\\?.*feed=.+";
+    private static final String TYPE_CHANNEL              = "^https?://[^/]+/([^/]+)/?$";
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> tempLinks = new ArrayList<String>();
         String parameter = param.toString().replace("http://", "https://");
         if (parameter.matches("https?://(?:www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (parameter.matches(".+/widget/iframe/.+")) {
+        } else if (parameter.matches(TYPE_SINGLE_AUDIO_IFRAME_)) {
             /* Correct URL leading to embedded content --> Normal URL */
             final UrlQuery query = new UrlQuery().parse(parameter);
             String urlpart = query.get("feed");
@@ -81,11 +85,97 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         }
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
-            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-            plg.setBrowser(this.br);
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.MixCloudCom) plg).login(account, false);
-            // plg.fetchAccountInfo(account);
         }
+        if (parameter.matches(TYPE_SINGLE_AUDIO)) {
+            return this.crawlSingleAudio(param, parameter);
+        } else if (parameter.matches(TYPE_CHANNEL)) {
+            return this.crawlUsername(param);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlUsername(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+            return decryptedLinks;
+        }
+        final String username = new Regex(param.getCryptedUrl(), TYPE_CHANNEL).getMatch(0);
+        if (username == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        this.getPage(param.getCryptedUrl());
+        final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+        if (csrftoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.getHeaders().put("x-csrftoken", csrftoken);
+        br.getHeaders().put("accept", "application/json");
+        br.getHeaders().put("content-type", "application/json");
+        br.postPageRaw("/graphql",
+                "{\"query\":\"query UserProfileHeaderQuery(  $lookup: UserLookup!) {  user: userLookup(lookup: $lookup) {    id    displayName    username    isBranded    isStaff    isFollowing    isViewer    followers {      totalCount    }    hasCoverPicture    hasPremiumFeatures    hasProFeatures    picture {      primaryColor      ...UGCImage_picture    }    coverPicture {      urlRoot    }    ...UserBadge_user    ...ProfileNavigation_user    ...ShareUserButton_user    ...ProfileRegisterUpsellComponent_user    ...FollowButton_user    ...SelectUpsellButton_user  }  viewer {    ...ProfileRegisterUpsellComponent_viewer    ...FollowButton_viewer    id  }}fragment FollowButton_user on User {  id  isFollowed  isFollowing  isViewer  followers {    totalCount  }  username  displayName}fragment FollowButton_viewer on Viewer {  me {    id  }}fragment ProfileNavigation_user on User {  id  username  stream {    totalCount  }  favorites {    totalCount  }  listeningHistory {    totalCount  }  uploads {    totalCount  }  posts {    totalCount  }  profileNavigation {    menuItems {      __typename      ... on NavigationItemInterface {        __isNavigationItemInterface: __typename        inDropdown      }      ... on HideableNavigationItemInterface {        __isHideableNavigationItemInterface: __typename        hidden      }      ... on PlaylistNavigationItem {        count        playlist {          id          name          slug        }      }    }  }}fragment ProfileRegisterUpsellComponent_user on User {  id  displayName  followers {    totalCount  }}fragment ProfileRegisterUpsellComponent_viewer on Viewer {  me {    id  }}fragment SelectUpsellButton_user on User {  username  isSelect  isSubscribedTo  selectUpsell {    planInfo {      displayAmount    }  }}fragment ShareUserButton_user on User {  biog  username  displayName  id  isUploader  picture {    urlRoot  }}fragment UGCImage_picture on Picture {  urlRoot  primaryColor}fragment UserBadge_user on User {  username  hasProFeatures  hasPremiumFeatures  isStaff  isSelect}\",\"variables\":{\"lookup\":{\"username\":\""
+                        + username + "\"}}}");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+        final String userIDb64 = (String) entries.get("id");
+        final int totalItems = ((Number) JavaScriptEngineFactory.walkJson(entries, "uploads/totalCount")).intValue();
+        if (totalItems <= 0) {
+            logger.info("This user does not own any uploads");
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
+            return decryptedLinks;
+        } else if (StringUtils.isEmpty(userIDb64)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<String> dupes = new ArrayList<String>();
+        final String query = "query UserUploadsQuery(  $lookup: UserLookup!  $orderBy: CloudcastOrderByEnum) {  user: userLookup(lookup: $lookup) {    id    username    displayName    ...UserUploadsPage_user_7FfCv    ...Drafts_user  }  viewer {    ...UserUploadsPage_viewer    ...Drafts_viewer    id  }}fragment AudioCardActions_cloudcast on Cloudcast {  id  isPublic  isExclusive  owner {    id    username    isViewer    isSubscribedTo  }  ...AudioCardFavoriteButton_cloudcast  ...AudioCardRepostButton_cloudcast  ...AudioCardShareButton_cloudcast  ...AudioCardAddToButton_cloudcast  ...AudioCardHighlightButton_cloudcast  ...AudioCardBoostButton_cloudcast  ...AudioCardStats_cloudcast}fragment AudioCardActions_viewer on Viewer {  ...AudioCardFavoriteButton_viewer  ...AudioCardRepostButton_viewer  ...AudioCardHighlightButton_viewer}fragment AudioCardAddToButton_cloudcast on Cloudcast {  id  isUnlisted  isPublic}fragment AudioCardBoostButton_cloudcast on Cloudcast {  id  isPublic  owner {    id    isViewer  }}fragment AudioCardFavoriteButton_cloudcast on Cloudcast {  id  isFavorited  isPublic  hiddenStats  favorites {    totalCount  }  slug  owner {    id    isFollowing    username    isSelect    displayName    isViewer  }}fragment AudioCardFavoriteButton_viewer on Viewer {  me {    id  }  experiments {    experiment(name: \\\"growth_chained_actions\\\") {      name      alternative    }  }}fragment AudioCardHighlightButton_cloudcast on Cloudcast {  id  isPublic  isHighlighted  owner {    isViewer    id  }}fragment AudioCardHighlightButton_viewer on Viewer {  me {    id    hasProFeatures    highlighted {      totalCount    }  }}fragment AudioCardPlayButton_cloudcast on Cloudcast {  id  restrictedReason  owner {    displayName    country    username    isSubscribedTo    isViewer    id  }  slug  isAwaitingAudio  isDraft  isPlayable  streamInfo {    hlsUrl    dashUrl    url    uuid  }  audioLength  currentPosition  proportionListened  repeatPlayAmount  hasPlayCompleted  seekRestriction  previewUrl  isExclusivePreviewOnly  isExclusive}fragment AudioCardProgress_cloudcast on Cloudcast {  id  proportionListened}fragment AudioCardRepostButton_cloudcast on Cloudcast {  id  isReposted  isPublic  hiddenStats  reposts {    totalCount  }  owner {    isViewer    id  }}fragment AudioCardRepostButton_viewer on Viewer {  me {    id  }}fragment AudioCardShareButton_cloudcast on Cloudcast {  id  isUnlisted  isPublic  slug  description  picture {    urlRoot  }  owner {    displayName    isViewer    username    id  }}fragment AudioCardStats_cloudcast on Cloudcast {  isDraft  hiddenStats  plays  publishDate  qualityScore  listenerMinutes  tags(country: \\\"GLOBAL\\\") {    tag {      name      slug      id    }  }  ...AudioCardTags_cloudcast}fragment AudioCardTags_cloudcast on Cloudcast {  tags(country: \\\"GLOBAL\\\") {    tag {      name      slug      id    }  }}fragment AudioCardTitle_cloudcast on Cloudcast {  id  slug  name  isUnlisted  isLiveRecording  isExclusive  owner {    id    displayName    username    ...Hovercard_user    ...RebrandUserBadge_user  }  ...AudioCardPlayButton_cloudcast  ...ExclusiveCloudcastBadgeContainer_cloudcast}fragment AudioCard_cloudcast on Cloudcast {  id  slug  name  isAwaitingAudio  isDraft  isScheduled  restrictedReason  publishDate  waveformUrl  audioLength  isLiveRecording  owner {    username    id  }  picture {    ...UGCImage_picture  }  ...AudioCardTitle_cloudcast  ...AudioCardProgress_cloudcast  ...AudioCardActions_cloudcast  ...QuantcastCloudcastTracking_cloudcast}fragment AudioCard_viewer on Viewer {  ...AudioCardActions_viewer}fragment Drafts_user on User {  drafts(first: 100) {    edges {      node {        ...AudioCard_cloudcast        id      }    }  }}fragment Drafts_viewer on Viewer {  ...AudioCard_viewer}fragment ExclusiveCloudcastBadgeContainer_cloudcast on Cloudcast {  isExclusive  isExclusivePreviewOnly  slug  id  owner {    username    id  }}fragment Hovercard_user on User {  id}fragment QuantcastCloudcastTracking_cloudcast on Cloudcast {  owner {    quantcastTrackingPixel    id  }}fragment RebrandUserBadge_user on User {  username  hasProFeatures  isSelect}fragment UGCImage_picture on Picture {  urlRoot  primaryColor}fragment UserUploadsPage_user_7FfCv on User {  id  displayName  username  uploads(first: 10, orderBy: $orderBy) {    edges {      node {        ...AudioCard_cloudcast        id        __typename      }      cursor    }    pageInfo {      endCursor      hasNextPage    }  }}fragment UserUploadsPage_viewer on Viewer {  ...AudioCard_viewer}";
+        final String queryPagination = "query UserUploadsPageQuery(  $count: Int!  $cursor: String  $orderBy: CloudcastOrderByEnum  $userID: ID!) {  user(id: $userID) {    ...UserUploadsPage_user_32czeo    id  }}fragment AudioCardActions_cloudcast on Cloudcast {  id  isPublic  isExclusive  owner {    id    username    isViewer    isSubscribedTo  }  ...AudioCardFavoriteButton_cloudcast  ...AudioCardRepostButton_cloudcast  ...AudioCardShareButton_cloudcast  ...AudioCardAddToButton_cloudcast  ...AudioCardHighlightButton_cloudcast  ...AudioCardBoostButton_cloudcast  ...AudioCardStats_cloudcast}fragment AudioCardAddToButton_cloudcast on Cloudcast {  id  isUnlisted  isPublic}fragment AudioCardBoostButton_cloudcast on Cloudcast {  id  isPublic  owner {    id    isViewer  }}fragment AudioCardFavoriteButton_cloudcast on Cloudcast {  id  isFavorited  isPublic  hiddenStats  favorites {    totalCount  }  slug  owner {    id    isFollowing    username    isSelect    displayName    isViewer  }}fragment AudioCardHighlightButton_cloudcast on Cloudcast {  id  isPublic  isHighlighted  owner {    isViewer    id  }}fragment AudioCardPlayButton_cloudcast on Cloudcast {  id  restrictedReason  owner {    displayName    country    username    isSubscribedTo    isViewer    id  }  slug  isAwaitingAudio  isDraft  isPlayable  streamInfo {    hlsUrl    dashUrl    url    uuid  }  audioLength  currentPosition  proportionListened  repeatPlayAmount  hasPlayCompleted  seekRestriction  previewUrl  isExclusivePreviewOnly  isExclusive}fragment AudioCardProgress_cloudcast on Cloudcast {  id  proportionListened}fragment AudioCardRepostButton_cloudcast on Cloudcast {  id  isReposted  isPublic  hiddenStats  reposts {    totalCount  }  owner {    isViewer    id  }}fragment AudioCardShareButton_cloudcast on Cloudcast {  id  isUnlisted  isPublic  slug  description  picture {    urlRoot  }  owner {    displayName    isViewer    username    id  }}fragment AudioCardStats_cloudcast on Cloudcast {  isDraft  hiddenStats  plays  publishDate  qualityScore  listenerMinutes  tags(country: \\\"GLOBAL\\\") {    tag {      name      slug      id    }  }  ...AudioCardTags_cloudcast}fragment AudioCardTags_cloudcast on Cloudcast {  tags(country: \\\"GLOBAL\\\") {    tag {      name      slug      id    }  }}fragment AudioCardTitle_cloudcast on Cloudcast {  id  slug  name  isUnlisted  isLiveRecording  isExclusive  owner {    id    displayName    username    ...Hovercard_user    ...RebrandUserBadge_user  }  ...AudioCardPlayButton_cloudcast  ...ExclusiveCloudcastBadgeContainer_cloudcast}fragment AudioCard_cloudcast on Cloudcast {  id  slug  name  isAwaitingAudio  isDraft  isScheduled  restrictedReason  publishDate  waveformUrl  audioLength  isLiveRecording  owner {    username    id  }  picture {    ...UGCImage_picture  }  ...AudioCardTitle_cloudcast  ...AudioCardProgress_cloudcast  ...AudioCardActions_cloudcast  ...QuantcastCloudcastTracking_cloudcast}fragment ExclusiveCloudcastBadgeContainer_cloudcast on Cloudcast {  isExclusive  isExclusivePreviewOnly  slug  id  owner {    username    id  }}fragment Hovercard_user on User {  id}fragment QuantcastCloudcastTracking_cloudcast on Cloudcast {  owner {    quantcastTrackingPixel    id  }}fragment RebrandUserBadge_user on User {  username  hasProFeatures  isSelect}fragment UGCImage_picture on Picture {  urlRoot  primaryColor}fragment UserUploadsPage_user_32czeo on User {  id  displayName  username  uploads(first: $count, after: $cursor, orderBy: $orderBy) {    edges {      node {        ...AudioCard_cloudcast        id        __typename      }      cursor    }    pageInfo {      endCursor      hasNextPage    }  }}";
+        // final Map<String, Object> varLookup = new HashMap<String, Object>();
+        // varLookup.put("username", username);
+        // final Map<String, Object> variables = new HashMap<String, Object>();
+        // variables.put("lookup", varLookup);
+        // variables.put("orderBy", "LATEST");
+        // final Map<String, Object> jsonData = new HashMap<String, Object>();
+        // jsonData.put("query", query);
+        // jsonData.put("variables", variables);
+        br.postPageRaw("/graphql", "{\"query\":\"" + query + "\",\"variables\":{\"lookup\":{\"username\":\"" + username + "\"},\"orderBy\":\"LATEST\"}}");
+        final int maxItemsPerPage = 10;
+        int page = 0;
+        do {
+            logger.info("Crawling page: " + page);
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/uploads");
+            final Map<String, Object> pageInfo = (Map<String, Object>) entries.get("pageInfo");
+            final List<Object> audioObjects = (List<Object>) entries.get("edges");
+            this.crawlAudioObjects(decryptedLinks, audioObjects, dupes);
+            final String lastCursor = (String) ((Map<String, Object>) audioObjects.get(audioObjects.size() - 1)).get("cursor");
+            if (audioObjects.size() < maxItemsPerPage) {
+                logger.info("Stopping because current page contains less than " + maxItemsPerPage + " items");
+                break;
+            } else if (!((Boolean) pageInfo.get("hasNextPage")).booleanValue()) {
+                logger.info("Stopping because current page is the last page");
+                break;
+            } else if (StringUtils.isEmpty(lastCursor)) {
+                logger.info("Stopping because endCursor is missing");
+                break;
+            }
+            br.postPageRaw("/graphql", "{\"query\":\"" + queryPagination + "\",\"variables\":{\"count\":20,\"cursor\":\"" + lastCursor + "\",\"orderBy\":\"LATEST\",\"userID\":\"" + userIDb64 + "\"}}");
+            page++;
+        } while (!this.isAbort());
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        fp.addLinks(decryptedLinks);
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlSingleAudio(final CryptedLink param, final String parameter) throws Exception {
+        final ArrayList<String> tempLinks = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
@@ -119,14 +209,13 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 "{\"id\":\"q13\",\"query\":\"query HeaderQuery($lookup_0:CloudcastLookup!,$lighten_1:Int!,$alpha_2:Float!) {cloudcastLookup(lookup:$lookup_0) {id,...Fn}} fragment F0 on Cloudcast {picture {urlRoot,primaryColor},id} fragment F1 on Cloudcast {id,name,slug,owner {username,id}} fragment F2 on Cloudcast {owner {id,displayName,followers {totalCount}},id} fragment F3 on Cloudcast {restrictedReason,owner {displayName,country,username,isSubscribedTo,isViewer,id},slug,id,isAwaitingAudio,isDraft,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},audioLength,currentPosition,proportionListened,repeatPlayAmount,hasPlayCompleted,seekRestriction,previewUrl,isExclusivePreviewOnly,isExclusive,picture {primaryColor,isLight,_primaryColor2pfPSM:primaryColor(lighten:$lighten_1),_primaryColor3Yfcks:primaryColor(alpha:$alpha_2)}} fragment F4 on Node {id,__typename} fragment F5 on Cloudcast {id,isFavorited,isPublic,hiddenStats,favorites {totalCount},slug,owner {id,isFollowing,username,isSelect,displayName,isViewer}} fragment F6 on Cloudcast {id,isUnlisted,isPublic} fragment F7 on Cloudcast {id,isReposted,isPublic,hiddenStats,reposts {totalCount},owner {isViewer,id}} fragment F8 on Cloudcast {id,isUnlisted,isPublic,slug,description,picture {urlRoot},owner {displayName,isViewer,username,id}} fragment F9 on Cloudcast {id,slug,isSpam,owner {username,isViewer,id}} fragment Fa on Cloudcast {owner {isViewer,isSubscribedTo,username,hasProFeatures,isBranded,id},sections {__typename,...F4},id,slug,isExclusive,isUnlisted,isShortLength,...F5,...F6,...F7,...F8,...F9} fragment Fb on Cloudcast {qualityScore,listenerMinutes,id} fragment Fc on Cloudcast {slug,plays,publishDate,hiddenStats,owner {username,id},id,...Fb} fragment Fd on User {id} fragment Fe on User {username,hasProFeatures,hasPremiumFeatures,isStaff,isSelect,id} fragment Ff on User {id,isFollowed,isFollowing,isViewer,followers {totalCount},username,displayName} fragment Fg on Cloudcast {isExclusive,isExclusivePreviewOnly,slug,id,owner {username,id}} fragment Fh on Cloudcast {isExclusive,owner {id,username,displayName,...Fd,...Fe,...Ff},id,...Fg} fragment Fi on Cloudcast {id,streamInfo {uuid,url,hlsUrl,dashUrl},audioLength,seekRestriction,currentPosition} fragment Fj on Cloudcast {owner {displayName,isSelect,username,id},seekRestriction,id} fragment Fk on Cloudcast {id,waveformUrl,previewUrl,audioLength,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},restrictedReason,seekRestriction,currentPosition,...Fj} fragment Fl on Cloudcast {__typename,isExclusivePreviewOnly,isExclusive,owner {isSelect,isSubscribedTo,username,displayName,isViewer,id},id} fragment Fm on Cloudcast {owner {username,displayName,isSelect,id},id} fragment Fn on Cloudcast {id,name,picture {isLight,primaryColor,urlRoot,primaryColor},owner {displayName,isViewer,isBranded,selectUpsell {text},id},repeatPlayAmount,restrictedReason,seekRestriction,...F0,...F1,...F2,...F3,...Fa,...Fc,...Fh,...Fi,...Fk,...Fl,...Fm}\",\"variables\":{\"lookup_0\":{\"username\":\"%s\",\"slug\":\"%s\"},\"lighten_1\":15,\"alpha_2\":0.3}}",
                 username, slug);
         this.postPageRaw("/graphql", postdata);
-        String comment = "";
         int page = 0;
         boolean hasMore = false;
         final ArrayList<String> dupes = new ArrayList<String>();
         do {
             /* Find Array with stream-objects */
-            LinkedHashMap<String, Object> entries = null;
-            ArrayList<Object> audio_objects = new ArrayList<Object>();
+            Map<String, Object> entries = null;
+            List<Object> audioObjects = new ArrayList<Object>();
             /* Find correct json ArrayList */
             if (page == 0) {
                 String json = br.toString();
@@ -134,18 +223,18 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 final Object jsonO = JavaScriptEngineFactory.jsonToJavaObject(json);
                 if (jsonO instanceof Map) {
                     /* 2020-06-02 */
-                    entries = (LinkedHashMap<String, Object>) jsonO;
+                    entries = (Map<String, Object>) jsonO;
                     final Object cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
                     if (cloudcastLookupO == null) {
                         decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;
                     } else {
-                        audio_objects.add(cloudcastLookupO);
+                        audioObjects.add(cloudcastLookupO);
                     }
                 } else {
-                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) jsonO;
+                    final List<Object> ressourcelist = (List<Object>) jsonO;
                     for (final Object audioO : ressourcelist) {
-                        entries = (LinkedHashMap<String, Object>) audioO;
+                        entries = (Map<String, Object>) audioO;
                         /* All items of a user? */
                         Object userLookup = JavaScriptEngineFactory.walkJson(entries, "user/data/userLookup");
                         if (userLookup == null) {
@@ -159,21 +248,21 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                             cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
                         }
                         if (cloudcastLookupO != null) {
-                            audio_objects.add(cloudcastLookupO);
+                            audioObjects.add(cloudcastLookupO);
                         } else if (userLookup != null) {
-                            entries = (LinkedHashMap<String, Object>) userLookup;
+                            entries = (Map<String, Object>) userLookup;
                             Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                             while (iterator.hasNext()) {
                                 final Entry<String, Object> entry = iterator.next();
                                 final String keyName = entry.getKey();
                                 if (keyName.matches("_stream.+")) {
-                                    entries = (LinkedHashMap<String, Object>) entry.getValue();
+                                    entries = (Map<String, Object>) entry.getValue();
                                     break;
                                 }
                             }
                             final Object audio_objects_o = entries.get("edges");
-                            if (audio_objects_o != null && audio_objects_o instanceof ArrayList) {
-                                audio_objects = (ArrayList<Object>) audio_objects_o;
+                            if (audio_objects_o != null && audio_objects_o instanceof List) {
+                                audioObjects = (List<Object>) audio_objects_o;
                                 /* Only set this boolean if we at least found our array */
                                 try {
                                     hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
@@ -220,14 +309,14 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 downloadReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.openRequestConnection(downloadReq);
                 br.loadConnection(null);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
                 Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
                     final String keyName = entry.getKey();
                     if (keyName.matches("_user.+")) {
-                        entries = (LinkedHashMap<String, Object>) entry.getValue();
+                        entries = (Map<String, Object>) entry.getValue();
                         break;
                     }
                 }
@@ -236,95 +325,23 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     final Entry<String, Object> entry = iterator.next();
                     final String keyName = entry.getKey();
                     if (keyName.matches("_stream.+")) {
-                        entries = (LinkedHashMap<String, Object>) entry.getValue();
+                        entries = (Map<String, Object>) entry.getValue();
                         break;
                     }
                 }
-                audio_objects = (ArrayList<Object>) entries.get("edges");
-                if (audio_objects == null) {
+                audioObjects = (ArrayList<Object>) entries.get("edges");
+                if (audioObjects == null) {
                     return null;
                 }
                 /* Only set this boolean if we at least found our array */
                 hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
             }
-            for (final Object edgeO : audio_objects) {
-                entries = (LinkedHashMap<String, Object>) edgeO;
-                final Object node = entries.get("node");
-                if (node != null && node instanceof LinkedHashMap) {
-                    /* E.g. decryption of multiple items (all items of user) */
-                    entries = (LinkedHashMap<String, Object>) node;
-                }
-                if (entries == null) {
-                    /* Skip invalid objects */
-                    continue;
-                }
-                final LinkedHashMap<String, Object> ownerInfo = (LinkedHashMap<String, Object>) entries.get("owner");
-                final String uploaderName = (String) ownerInfo.get("displayName");
-                final String id = (String) entries.get("id");
-                final String title = (String) entries.get("name");
-                final String url_preview = (String) entries.get("previewUrl");
-                // final Object isExclusiveO = entries.get("isExclusive");
-                // final boolean isExclusive = isExclusiveO != null ? ((Boolean) isExclusiveO).booleanValue() : false;
-                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(title) || StringUtils.isEmpty(uploaderName)) {
-                    /* Skip invalid objects */
-                    continue;
-                } else if (dupes.contains(id)) {
-                    logger.info("Skip dupe object: " + id);
-                    continue;
-                }
-                final Object cloudcastStreamInfo = entries.get("streamInfo");
-                if (cloudcastStreamInfo == null && StringUtils.isEmpty(url_preview)) {
-                    /* Skip invalid objects */
-                    continue;
-                }
-                dupes.add(id);
-                String filename_prefix = "";
-                String downloadurl = null;
-                if (cloudcastStreamInfo == null && !StringUtils.isEmpty(url_preview)) {
-                    downloadurl = url_preview;
-                    filename_prefix = "[preview] ";
-                } else {
-                    /* We should have found the correct object here! */
-                    // final String url_mp3_preview = (String) entries.get("previewUrl");
-                    entries = (LinkedHashMap<String, Object>) cloudcastStreamInfo;
-                    /*
-                     * 2017-11-15: We can chose between dash, http or hls
-                     */
-                    downloadurl = (String) entries.get("url");
-                    if (downloadurl == null) {
-                        /* Skip objects without streams */
-                        continue;
-                    }
-                    downloadurl = decode(downloadurl);
-                    if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
-                        /* Skip teststreams */
-                        continue;
-                    }
-                }
-                final String ext = getFileNameExtensionFromString(downloadurl, ".mp3");
-                if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
-                    /* Skip unsupported extensions. */
-                    continue;
-                }
-                final DownloadLink dlink = createDownloadlink(downloadurl);
-                if (!StringUtils.isEmpty(comment)) {
-                    dlink.setComment(comment);
-                }
-                dlink.setFinalFileName(filename_prefix + uploaderName + " - " + title + ext);
-                /* Packagizer tags */
-                dlink.setProperty("title", title);
-                dlink.setProperty("uploader", uploaderName);
-                dlink.setAvailable(true);
-                decryptedLinks.add(dlink);
-            }
+            crawlAudioObjects(decryptedLinks, audioObjects, dupes);
             page++;
         } while (hasMore);
         /* Add thumbnail if possible. */
         if (!StringUtils.isEmpty(url_thumbnail)) {
             final DownloadLink dlink = createDownloadlink(url_thumbnail);
-            if (!StringUtils.isEmpty(comment)) {
-                dlink.setComment(comment);
-            }
             dlink.setFinalFileName(theName + ".jpeg");
             decryptedLinks.add(dlink);
         }
@@ -340,6 +357,77 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    private void crawlAudioObjects(final ArrayList<DownloadLink> decryptedLinks, final List<Object> audio_objects, final ArrayList<String> dupes) {
+        Map<String, Object> entries;
+        for (final Object edgeO : audio_objects) {
+            entries = (Map<String, Object>) edgeO;
+            final Object node = entries.get("node");
+            if (node != null && node instanceof Map) {
+                /* E.g. decryption of multiple items (all items of user) */
+                entries = (Map<String, Object>) node;
+            }
+            if (entries == null) {
+                /* Skip invalid objects */
+                continue;
+            }
+            final Map<String, Object> ownerInfo = (Map<String, Object>) entries.get("owner");
+            final String uploaderName = (String) ownerInfo.get("displayName");
+            final String id = (String) entries.get("id");
+            final String title = (String) entries.get("name");
+            final String url_preview = (String) entries.get("previewUrl");
+            // final Object isExclusiveO = entries.get("isExclusive");
+            // final boolean isExclusive = isExclusiveO != null ? ((Boolean) isExclusiveO).booleanValue() : false;
+            if (StringUtils.isEmpty(id) || StringUtils.isEmpty(title) || StringUtils.isEmpty(uploaderName)) {
+                /* Skip invalid objects */
+                continue;
+            } else if (dupes.contains(id)) {
+                logger.info("Skip dupe object: " + id);
+                continue;
+            }
+            final Object cloudcastStreamInfo = entries.get("streamInfo");
+            if (cloudcastStreamInfo == null && StringUtils.isEmpty(url_preview)) {
+                /* Skip invalid objects */
+                continue;
+            }
+            dupes.add(id);
+            String filename_prefix = "";
+            String downloadurl = null;
+            if (cloudcastStreamInfo == null && !StringUtils.isEmpty(url_preview)) {
+                downloadurl = url_preview;
+                filename_prefix = "[preview] ";
+            } else {
+                /* We should have found the correct object here! */
+                // final String url_mp3_preview = (String) entries.get("previewUrl");
+                entries = (Map<String, Object>) cloudcastStreamInfo;
+                /*
+                 * 2017-11-15: We can chose between dash, http or hls
+                 */
+                downloadurl = (String) entries.get("url");
+                if (downloadurl == null) {
+                    /* Skip objects without streams */
+                    continue;
+                }
+                downloadurl = decode(downloadurl);
+                if (StringUtils.isEmpty(downloadurl) || downloadurl.contains("test")) {
+                    /* Skip teststreams */
+                    continue;
+                }
+            }
+            final String ext = getFileNameExtensionFromString(downloadurl, ".mp3");
+            if (!StringUtils.endsWithCaseInsensitive(ext, ".mp3") && !StringUtils.endsWithCaseInsensitive(ext, ".m4a")) {
+                /* Skip unsupported extensions. */
+                continue;
+            }
+            final DownloadLink dlink = createDownloadlink(downloadurl);
+            dlink.setFinalFileName(filename_prefix + uploaderName + " - " + title + ext);
+            /* Packagizer tags */
+            dlink.setProperty("title", title);
+            dlink.setProperty("uploader", uploaderName);
+            dlink.setAvailable(true);
+            decryptedLinks.add(dlink);
+        }
     }
 
     private String decode(String playInfo) {
