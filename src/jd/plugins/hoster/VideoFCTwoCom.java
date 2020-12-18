@@ -89,12 +89,10 @@ public class VideoFCTwoCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?:i=|content/)(.+)").getMatch(0);
     }
 
-    private Browser prepareBrowser(Browser prepBr) {
-        if (prepBr == null) {
-            prepBr = new Browser();
-        }
+    private Browser prepareBrowser(final Browser prepBr) {
         prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
         prepBr.setCustomCharset("utf-8");
+        prepBr.setCookie(this.getHost(), "language", "en");
         return prepBr;
     }
 
@@ -124,7 +122,7 @@ public class VideoFCTwoCom extends PluginForHost {
      */
 
     private void login(final Account account, final boolean verifyCookies) throws IOException, PluginException, InterruptedException {
-        prepareBrowser(br);
+        prepareBrowser(this.br);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         final Cookies cookies = account.loadCookies("");
@@ -136,7 +134,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 return;
             } else {
                 logger.info("Attempting cookie login");
-                br.getPage("https://video.fc2.com/a/");
+                br.getPage("http://video.fc2.com/payment/premium/");
                 if (isLoggedINVideoFC2()) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
@@ -161,15 +159,27 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         /* 2020-12-17: TODO: Fix this - it doesn't work! */
         // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
-        br.getPage("https://fc2.com/en/login.php?switch_language=en");
+        // br.getPage("https://fc2.com/en/login.php?switch_language=en");
+        // br.getPage("https://video.fc2.com/");
+        br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
+        /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
+        final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
+        // https://fc2.com/en/login.php?ref=video
+        // br.getPage("/en/login.php?ref=video");
         final Form loginform = br.getFormbyProperty("name", "form_login");
         if (loginform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         loginform.put("email", Encoding.urlEncode(account.getUser()));
-        loginform.put("Submit.x", new Random().nextInt(100) + "");
-        loginform.put("Submit.y", new Random().nextInt(100) + "");
         loginform.put("pass", Encoding.urlEncode(account.getPass()));
+        // loginform.put("Submit.x", new Random().nextInt(100) + "");
+        // loginform.put("Submit.y", new Random().nextInt(100) + "");
+        loginform.put("image.x", new Random().nextInt(100) + "");
+        loginform.put("image.y", new Random().nextInt(100) + "");
+        // loginform.remove("image");
         loginform.remove("keep_login");
         /* TODO: "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. */
         // loginform.put("keep_login", "1");
@@ -217,10 +227,19 @@ public class VideoFCTwoCom extends PluginForHost {
             twoFactorLogin.put("code", twoFACode);
             br.submitForm(twoFactorLogin);
         }
-        if (!isLoggedINFC2()) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        /*
+         * If everything goes as planned, we should be redirected to video.fc2.com but in case we're not we'll also check logged in state
+         * for their main portal fc2.com.
+         */
+        if (br.getHost(true).equals("fc2.com")) {
+            logger.info("Automatic redirect to video.fc2.com after login failed");
+            if (!isLoggedINFC2()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            br.getPage("https://video.fc2.com/a/");
+        } else {
+            logger.info("Automatic redirect to video.fc2.com after login successful");
         }
-        br.getPage("https://video.fc2.com/a/");
         if (!isLoggedINVideoFC2()) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "fc2 Account is valid but service 'video.fc2.com' has not been added yet.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -241,21 +260,35 @@ public class VideoFCTwoCom extends PluginForHost {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
             this.login(account, true);
-            br.getPage("https://id.fc2.com");
-            final String userinfo = br.getRegex("(http://video\\.fc2\\.com(/[a-z]{2})?/mem_login\\.php\\?uid=[^\"]+)").getMatch(0);
-            if (userinfo != null) {
-                br.getPage(userinfo);
+            /* Switch to english language */
+            final String userSelectedLanguage = br.getCookie(this.getHost(), "language", Cookies.NOTDELETEDPATTERN);
+            if (!StringUtils.equalsIgnoreCase(userSelectedLanguage, "en")) {
+                br.getPage("/a/language_change.php?lang=en");
             }
-            ai.setUnlimitedTraffic();
-            String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-            if (expire != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
+            if (!br.getURL().contains("/payment/premium/")) {
+                br.getPage("/payment/premium/");
+            }
+            /* Check for multiple traits - we want to make sure that we correctly recognize premium accounts! */
+            boolean isPremium = br.containsHTML("class=\"c-header_main_mamberType\"[^>]*><span[^>]*>Premium|>\\s*Contract Extension|>\\s*Premium Member account information");
+            String expire = br.getRegex("(\\d{4}/\\d{2}/\\d{2})[^>]*Automatic renewal date").getMatch(0);
+            if (!isPremium) {
+                isPremium = expire != null;
+            }
+            if (isPremium) {
+                /* Only set expire date if we find one */
+                if (expire != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH), this.br);
+                }
                 ai.setStatus("Premium Account");
-                account.setType(AccountType.PREMIUM);
-            } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
                 account.setType(AccountType.PREMIUM);
             } else {
                 account.setType(AccountType.FREE);
+            }
+            ai.setUnlimitedTraffic();
+            /* Switch back to users' previously set language if that != en */
+            if (userSelectedLanguage != null && !userSelectedLanguage.equalsIgnoreCase("en")) {
+                logger.info("Switching back to users preferred language: " + userSelectedLanguage);
+                br.getPage("/a/language_change.php?lang=" + userSelectedLanguage);
             }
             return ai;
         }
@@ -341,21 +374,25 @@ public class VideoFCTwoCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        br = new Browser();
-        this.login(account, false);
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         doDownload(account, link);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
         this.finalURL = null;
         this.finalURLType = -1;
         this.server_issues = false;
         String dllink = link.getDownloadURL();
         final String fid = getFID(link);
-        // this comes first, due to subdoman issues and cached cookie etc.
-        Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        /* Prefer pre-given account but fallback to *any* valid account. */
+        if (account == null) {
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+        }
         if (account != null) {
             this.login(account, false);
         }
