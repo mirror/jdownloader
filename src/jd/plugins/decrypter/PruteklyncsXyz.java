@@ -18,9 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -55,16 +57,31 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             if (StringUtils.isEmpty(nonce) || StringUtils.isEmpty(post_id)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage("/wp-admin/admin-ajax.php", "action=validate_input&nonce=" + nonce + "&captcha=success&post_id=" + post_id + "&type=captcha&protection=full&elementor_content=");
+            final UrlQuery query = new UrlQuery();
+            query.add("action", "validate_input");
+            query.add("nonce", nonce);
+            query.add("captcha", "success");
+            query.add("post_id", post_id);
+            query.add("type", "captcha");
+            query.add("protection", "");
+            query.add("elementor_content", "");
+            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            br.postPage("/wp-admin/admin-ajax.php", query);
             br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
         }
-        final String[] links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        String[] links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"").getColumn(0);
+        if (links.length == 0) {
+            /* Fallback */
+            links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+        }
+        if (links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+            if (!this.canHandle(singleLink)) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
         return decryptedLinks;
     }
