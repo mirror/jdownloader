@@ -9,7 +9,7 @@ public class YoutubeStreamData {
 
     @Override
     public String toString() {
-        return "Itag" + itag.getITAG();
+        return "Itag" + itag.getITAG() + "(" + itag + ")";
     }
 
     public void setClip(YoutubeClipData clip) {

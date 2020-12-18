@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.awt.Dialog.ModalityType;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -649,7 +650,7 @@ public class ScriptEnvironment {
         return ret;
     }
 
-    @ScriptAPI(description = "Create a Checksum for a file. Types: e.g. CRC32, md5, SHA-1, SHA-256")
+    @ScriptAPI(description = "Create a Checksum for a file. Types: e.g. CRC32, MD5, SHA-1, SHA-256")
     public static String getChecksum(String type, String path) throws EnvironmentException {
         askForPermission("Create Checksum of local file");
         try {
@@ -658,9 +659,28 @@ public class ScriptEnvironment {
                 rel = Application.getResource(path);
             }
             if (StringUtils.equalsIgnoreCase("CRC32", type)) {
-                return Hash.getCRC32(rel) + "";
+                return String.valueOf(Hash.getCRC32(rel));
+            } else {
+                return Hash.getFileHash(rel, type);
             }
-            return Hash.getFileHash(rel, type);
+        } catch (Throwable e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
+    @ScriptAPI(description = "Create a Checksum for a String. Types: e.g. CRC32, MD5, SHA-1, SHA-256")
+    public static String getStringChecksum(String type, String string) throws EnvironmentException {
+        try {
+            if (string == null) {
+                return null;
+            } else {
+                final byte[] bytes = string.getBytes("UTF-8");
+                if (StringUtils.equalsIgnoreCase("CRC32", type)) {
+                    return String.valueOf(Hash.getCRC32(bytes));
+                } else {
+                    return Hash.getHash(new ByteArrayInputStream(bytes), type, -1, true);
+                }
+            }
         } catch (Throwable e) {
             throw new EnvironmentException(e);
         }

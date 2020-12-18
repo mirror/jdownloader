@@ -476,10 +476,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     continue;
                 }
             }
-            // get best video resolution
-            if (!cfg.isExternMultimediaToolUsageEnabled()) {
-                getLogger().info("isDashEnabledEnabled=false");
-            }
             final List<AbstractVariant> enabledVariants = new ArrayList<AbstractVariant>(AbstractVariant.listVariants());
             final HashSet<VariantGroup> enabledVariantGroups = new HashSet<VariantGroup>();
             {

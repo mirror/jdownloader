@@ -21,11 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -43,7 +38,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "https?://(?:www\\.)?(?:[a-z]{2}\\.)?spankbang\\.com/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/([^/]+)?)" })
 public class SpankBangCom extends PluginForDecrypt {
@@ -64,6 +63,7 @@ public class SpankBangCom extends PluginForDecrypt {
     private static final String           ALLOW_720p     = "ALLOW_720p";
     private static final String           ALLOW_1080p    = "ALLOW_1080p";
     private static final String           ALLOW_4k       = "ALLOW_4k";
+    private PluginForHost                 plugin         = null;
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -71,12 +71,12 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     private void getPage(final String page) throws Exception {
-        final PluginForHost plugin = JDUtilities.getPluginForHost("spankbang.com");
         if (plugin == null) {
-            throw new IllegalStateException("Plugin not found!");
+            plugin = getNewPluginForHostInstance(getHost());
+            if (plugin == null) {
+                throw new IllegalStateException("Plugin not found!");
+            }
         }
-        // set cross browser support
-        ((jd.plugins.hoster.SpankBangCom) plugin).setBrowser(br);
         ((jd.plugins.hoster.SpankBangCom) plugin).getPage(page);
     }
 
@@ -107,11 +107,16 @@ public class SpankBangCom extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
         /* 2020-05-11: Prefer filenames from inside URL as they are always 'good'. */
-        String title = new Regex(parameter, "/video/(.+)").getMatch(0);
-        if (title != null) {
-            title = Encoding.urlDecode(title, false);
-        } else {
-            title = br.getRegex("<title>(?:Watch\\s*)?([^<>\"]*?)( free HD Porn Video)? - SpankBang.*?</title>").getMatch(0);
+        String title = br.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<meta\\s*name\\s*=\\s*\"twitter:description\"\\s*content\\s*=\\s*\"(?:\\s*Watch\\s*)?([^<>\"]+)\\s+on SpankBang now").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\"").getMatch(0);
+                if (title == null) {
+                    title = new Regex(parameter, "/video/(.+)").getMatch(0);
+                    title = Encoding.urlDecode(title, false);
+                }
+            }
         }
         final String fid = getFid(parameter);
         foundQualities = findQualities(this.br, parameter);

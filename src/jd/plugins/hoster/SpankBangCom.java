@@ -15,11 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,6 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://spankbangdecrypted\\.com/\\d+" })
 public class SpankBangCom extends antiDDoSForHost {
@@ -79,6 +80,16 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     @Override
+    public void getPage(String page) throws Exception {
+        super.getPage(page);
+    }
+
+    @Override
+    public void setBrowser(Browser brr) {
+        super.setBrowser(brr);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         server_issues = false;
@@ -95,8 +106,10 @@ public class SpankBangCom extends antiDDoSForHost {
             try {
                 // this request isn't behind cloudflare.
                 con = br.openHeadConnection(dllink);
-                if (con.isOK() && !con.getContentType().contains("text")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                     return AvailableStatus.TRUE;
                 } else {
                     final String mainlink = link.getStringProperty("mainlink", null);
@@ -117,8 +130,10 @@ public class SpankBangCom extends antiDDoSForHost {
                     }
                     if (dllink != null) {
                         con = br.openHeadConnection(dllink);
-                        if (!con.getContentType().contains("html")) {
-                            link.setDownloadSize(con.getLongContentLength());
+                        if (looksLikeDownloadableContent(con)) {
+                            if (con.getCompleteContentLength() > 0) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            }
                             /* Save new directlink */
                             link.setProperty("plain_directlink", dllink);
                             return AvailableStatus.TRUE;
@@ -140,16 +155,6 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     @Override
-    public void getPage(String page) throws Exception {
-        super.getPage(page);
-    }
-
-    @Override
-    public void setBrowser(Browser brr) {
-        super.setBrowser(brr);
-    }
-
-    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (server_issues) {
@@ -163,8 +168,12 @@ public class SpankBangCom extends antiDDoSForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
