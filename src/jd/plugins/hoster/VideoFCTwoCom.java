@@ -44,6 +44,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -64,15 +65,19 @@ public class VideoFCTwoCom extends PluginForHost {
         return new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" };
     }
 
-    private String        finalURL              = null;
-    private long          finalURLType          = -1;
-    private String        trailerURL            = null;
-    private boolean       server_issues         = false;
-    private final boolean fastLinkCheck_default = true;
-    private final String  fastLinkCheck         = "fastLinkCheck";
+    private String              finalURL                     = null;
+    private long                finalURLType                 = -1;
+    private String              trailerURL                   = null;
+    private boolean             server_issues                = false;
+    private static final String fastLinkCheck                = "fastLinkCheck";
+    private final boolean       fastLinkCheck_default        = true;
+    private static final String allowTrailerDownload         = "allowTrailerDownload";
+    private final boolean       allowTrailerDownload_default = false;
+    private static final String PROPERTY_PREMIUMONLY         = "PREMIUMONLY";
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), fastLinkCheck, "Enable fast linkcheck, doesn't perform filesize checks! Filesize will be updated when download starts.").setDefaultValue(fastLinkCheck_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), allowTrailerDownload, "Download trailer if full video is not available?").setDefaultValue(allowTrailerDownload_default));
     }
 
     @Override
@@ -92,7 +97,6 @@ public class VideoFCTwoCom extends PluginForHost {
     private Browser prepareBrowser(final Browser prepBr) {
         prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36");
         prepBr.setCustomCharset("utf-8");
-        prepBr.setCookie(this.getHost(), "language", "en");
         return prepBr;
     }
 
@@ -116,12 +120,207 @@ public class VideoFCTwoCom extends PluginForHost {
         final boolean subContent = new Regex(link.getDownloadURL(), "/a/content/").matches();
         link.setUrlDownload("http://video.fc2.com/en/" + (subContent ? "a/content/" : "content/") + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0));
     }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
+        this.finalURL = null;
+        this.finalURLType = -1;
+        this.server_issues = false;
+        // String dllink = link.getDownloadURL();
+        final String fid = getFID(link);
+        /* Prefer pre-given account but fallback to *any* valid account. */
+        if (account == null) {
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+        }
+        if (account != null) {
+            this.login(account, true, link.getPluginPatternMatcher());
+        } else {
+            prepareBrowser(br);
+            br.setFollowRedirects(true);
+            br.getPage(link.getPluginPatternMatcher());
+        }
+        if (isOffline(fid)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String newAPIVideotoken = br.getRegex("\\'ae\\'\\s*?,\\s*?\\'([a-f0-9]{32})\\'").getMatch(0);
+        String filename = null;
+        String uploadername = null;
+        /**
+         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br>
+         * 2020-12-18: TODO: re-check this statement - new API should be used for all videos by now!
+         */
+        // final boolean useNewAPI = account == null && newAPIVideotoken != null;
+        String filenamePrefix = "";
+        if (newAPIVideotoken != null) {
+            Map<String, Object> entries;
+            br.getHeaders().put("X-FC2-Video-Access-Token", newAPIVideotoken);
+            br.getPage("http://video.fc2.com/api/v3/videoplayer/" + fid + "?" + newAPIVideotoken + "=1&tk=&fs=0");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            filename = (String) entries.get("title");
+            uploadername = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
+            if (StringUtils.isEmpty(filename)) {
+                /* Fallback */
+                filename = fid;
+            }
+            br.getPage("http://video.fc2.com/api/v3/videoplaylist/" + fid + "?sh=1&fs=0");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
+            this.finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
+            if (finalURL == null) {
+                finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/nq");
+            }
+            this.trailerURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/sample");
+            if (StringUtils.isEmpty(this.finalURL) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(allowTrailerDownload, allowTrailerDownload_default)) {
+                logger.info("Trailer download is allowed and trailer is available");
+                this.finalURL = this.trailerURL;
+                filenamePrefix = "TRAILER_";
+            }
+            // if (!StringUtils.isEmpty(finalURL) && finalURL.startsWith("/")) {
+            // finalURL = br.getURL(finalURL).toString();
+            // }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* TODO: Check if the below code is still useful */
+            // // capturing the title in this manner reduces lazy regex scope to just this found string vs entire document.
+            // uploadername = br.getRegex("Submitter : <a href=\"[^\"]+\" rel=\"nofollow\">([^<>\"]+)</a>").getMatch(0);
+            // filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            // if (filename != null) {
+            // filename = new Regex(filename, ".*?◎?(.*?) \\-.*?").getMatch(0);
+            // }
+            // if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
+            // filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
+            // }
+            // if (dllink.endsWith("/")) {
+            // dllink = dllink.substring(0, dllink.length() - 1);
+            // }
+            // String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
+            // String gk = getKey();
+            // if (upid == null || gk == null) {
+            // // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also
+            // // present in
+            // // ALL pages just doesn't contain text when not valid...
+            // if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") ||
+            // br._getURL().getPath().equals("/404.php") || br.containsHTML("class=\"errmsg\"") ||
+            // br.getURL().endsWith("://video.fc2.com/")) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // } else {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // }
+            // /* get url */
+            // link.setProperty(PROPERTY_PREMIUMONLY, false);
+            // final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
+            // final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
+            // final String version = "WIN%2015%2C0%2C0%2C189";
+            // final String encodedlink = Encoding.urlEncode(br.getURL()).replaceAll("\\.", "%2E").replaceFirst("%2F$", "");
+            // br.getHeaders().put("Accept", "*/*");
+            // br.getHeaders().put("Accept-Charset", null);
+            // /* Extra step is only needed for premium accounts. */
+            // if (account != null && account.getType() == AccountType.PREMIUM) {
+            // if (tk == null || from == null) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from +
+            // "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
+            // } else {
+            // br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version +
+            // "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
+            // }
+            // if (br.getHttpConnection() == null) {
+            // throw new PluginException(LinkStatus.ERROR_RETRY);
+            // } else if ("23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // }
+            // String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
+            // if (br.getRegex("\\&charge_second=\\d+").matches()) {
+            // error = "603";
+            // }
+            // AvailableStatus aError = null;
+            // if (error != null) {
+            // switch (Integer.parseInt(error)) {
+            // case 403:
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // case 503:
+            // // :-)
+            // break;
+            // case 601:
+            // /* reconnect */
+            // logger.info("video.fc2.com: reconnect is needed!");
+            // aError = AvailableStatus.TRUE;
+            // case 602:
+            // /* reconnect */
+            // logger.info("video.fc2.com: reconnect is needed!");
+            // aError = AvailableStatus.TRUE;
+            // case 603:
+            // link.setProperty(PROPERTY_PREMIUMONLY, true);
+            // break;
+            // default:
+            // logger.info("video.fc2.com: Unknown error code: " + error);
+            // aError = AvailableStatus.UNCHECKABLE;
+            // }
+            // }
+            // // return aError
+            // if (aError != null) {
+            // return aError;
+            // }
+            // finalURL = br.getRegex("filepath=(https?://.*?)$").getMatch(0);
+            // prepareFinalLink();
+        }
+        // prevent NPE
+        if (!StringUtils.isEmpty(filename)) {
+            if (!StringUtils.isEmpty(uploadername)) {
+                filename = uploadername + "_" + filename;
+            }
+            filename = filenamePrefix + filename;
+            filename = filename.replaceAll("\\p{Z}", " ");
+            // why do we do this?? http://board.jdownloader.org/showthread.php?p=304933#post304933
+            // filename = filename.replaceAll("[\\.\\d]{3,}$", "");
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = filename.replaceAll("(:|,|\\s)", "_");
+            filename += ".mp4";
+            link.setFinalFileName(filename);
+        } else if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(fid + ".mp4");
+        }
+        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null && finalURLType != 2) {
+            br.getHeaders().put("Referer", null);
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(finalURL);
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
     /*
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
      */
 
-    private void login(final Account account, final boolean verifyCookies) throws IOException, PluginException, InterruptedException {
+    private void login(final Account account, final boolean verifyCookies, final String checkURL) throws IOException, PluginException, InterruptedException {
         prepareBrowser(this.br);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
@@ -134,7 +333,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 return;
             } else {
                 logger.info("Attempting cookie login");
-                br.getPage("http://video.fc2.com/payment/premium/");
+                br.getPage(checkURL);
                 if (isLoggedINVideoFC2()) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
@@ -180,9 +379,12 @@ public class VideoFCTwoCom extends PluginForHost {
         loginform.put("image.x", new Random().nextInt(100) + "");
         loginform.put("image.y", new Random().nextInt(100) + "");
         // loginform.remove("image");
-        loginform.remove("keep_login");
-        /* TODO: "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. */
-        // loginform.put("keep_login", "1");
+        /*
+         * "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. --> Let's try
+         * it anyways and hope it makes our cookies valid for a longer period of time!
+         */
+        // loginform.remove("keep_login");
+        loginform.put("keep_login", "1");
         if (loginform.hasInputFieldByName("recaptcha")) {
             final DownloadLink dlinkbefore = this.getDownloadLink();
             try {
@@ -236,9 +438,13 @@ public class VideoFCTwoCom extends PluginForHost {
             if (!isLoggedINFC2()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            br.getPage("https://video.fc2.com/a/");
+            br.getPage(checkURL);
         } else {
             logger.info("Automatic redirect to video.fc2.com after login successful");
+        }
+        if (!br.getURL().equals(checkURL)) {
+            logger.info("Accessing target URL: " + checkURL);
+            br.getPage(checkURL);
         }
         if (!isLoggedINVideoFC2()) {
             /* This should never happen */
@@ -256,10 +462,10 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
-            this.login(account, true);
+            this.login(account, true, "http://video.fc2.com/payment/premium/");
             /* Switch to english language */
             final String userSelectedLanguage = br.getCookie(this.getHost(), "language", Cookies.NOTDELETEDPATTERN);
             if (!StringUtils.equalsIgnoreCase(userSelectedLanguage, "en")) {
@@ -311,29 +517,25 @@ public class VideoFCTwoCom extends PluginForHost {
                 logger.info("video.fc2.com: reconnect is needed!");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading");
             case 603:
-                link.setProperty("ONLYFORPREMIUM", true);
+                link.setProperty(PROPERTY_PREMIUMONLY, true);
                 break;
             default:
                 logger.info("video.fc2.com: Unknown error code: " + error);
             }
         }
-        if (server_issues) {
+        if (this.server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(this.finalURL)) {
             if (!StringUtils.isEmpty(this.trailerURL)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Only trailer available", 10 * 60 * 1000l);
+                /* Even premium accounts won't be able to watch such content - it has to be bought separately! */
+                logger.info("This content needs to be purchased individually otherwise only a trailer is available!");
+                // throw new AccountRequiredException();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Only trailer available. Enable trailer download in settings to allow trailer downloads.");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        if (onlyForPremiumUsers(link)) {
-            if (account != null && account.getType() == AccountType.PREMIUM) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "premium only requirement while premium account has been used!");
-            }
-            if (link.getDownloadSize() > 0) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This is a sample video. Full video is only downloadable for Premium Users!");
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for Premium Users!");
+        } else if (onlyForPremiumUsers(link)) {
+            throw new AccountRequiredException();
         }
         if (finalURLType == 2) {
             br.getPage(finalURL);
@@ -376,187 +578,6 @@ public class VideoFCTwoCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
         doDownload(account, link);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
-    }
-
-    private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
-        this.finalURL = null;
-        this.finalURLType = -1;
-        this.server_issues = false;
-        String dllink = link.getDownloadURL();
-        final String fid = getFID(link);
-        /* Prefer pre-given account but fallback to *any* valid account. */
-        if (account == null) {
-            account = AccountController.getInstance().getValidAccount(this.getHost());
-        }
-        if (account != null) {
-            this.login(account, false);
-        }
-        if (account == null) {
-            // no accounts prepareBrowser wouldn't have happened!
-            prepareBrowser(br);
-        }
-        br.setFollowRedirects(true);
-        br.getPage(dllink);
-        if (isOffline(fid)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String newAPIVideotoken = br.getRegex("\\'ae\\'\\s*?,\\s*?\\'([a-f0-9]{32})\\'").getMatch(0);
-        String filename = null;
-        String uploadername = null;
-        /* 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! */
-        final boolean useNewAPI = account == null && newAPIVideotoken != null;
-        if (useNewAPI) {
-            /* 2019-01-28: New way, does not yet have (premium) account support! */
-            Map<String, Object> entries;
-            if (newAPIVideotoken == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getHeaders().put("X-FC2-Video-Access-Token", newAPIVideotoken);
-            br.getPage("http://video.fc2.com/api/v3/videoplayer/" + fid + "?" + newAPIVideotoken + "=1&tk=&fs=0");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            filename = (String) entries.get("title");
-            uploadername = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
-            if (StringUtils.isEmpty(filename)) {
-                /* Fallback */
-                filename = fid;
-            }
-            br.getPage("http://video.fc2.com/api/v3/videoplaylist/" + fid + "?sh=1&fs=0");
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
-            this.finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
-            if (finalURL == null) {
-                finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/nq");
-            }
-            this.trailerURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/sample");
-            if (!StringUtils.isEmpty(finalURL) && finalURL.startsWith("/")) {
-                finalURL = br.getURL(finalURL).toString();
-            }
-        } else {
-            // capturing the title in this manner reduces lazy regex scope to just this found string vs entire document.
-            uploadername = br.getRegex("Submitter : <a href=\"[^\"]+\" rel=\"nofollow\">([^<>\"]+)</a>").getMatch(0);
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            if (filename != null) {
-                filename = new Regex(filename, ".*?◎?(.*?) \\-.*?").getMatch(0);
-            }
-            if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
-                filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
-            }
-            if (dllink.endsWith("/")) {
-                dllink = dllink.substring(0, dllink.length() - 1);
-            }
-            String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
-            String gk = getKey();
-            if (upid == null || gk == null) {
-                // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also
-                // present in
-                // ALL pages just doesn't contain text when not valid...
-                if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") || br._getURL().getPath().equals("/404.php") || br.containsHTML("class=\"errmsg\"") || br.getURL().endsWith("://video.fc2.com/")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            /* get url */
-            link.setProperty("ONLYFORPREMIUM", false);
-            final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
-            final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
-            final String version = "WIN%2015%2C0%2C0%2C189";
-            final String encodedlink = Encoding.urlEncode(br.getURL()).replaceAll("\\.", "%2E").replaceFirst("%2F$", "");
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Accept-Charset", null);
-            /* Extra step is only needed for premium accounts. */
-            if (account != null && account.getType() == AccountType.PREMIUM) {
-                if (tk == null || from == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from + "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
-            } else {
-                br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version + "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
-            }
-            if (br.getHttpConnection() == null) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if ("23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
-            if (br.getRegex("\\&charge_second=\\d+").matches()) {
-                error = "603";
-            }
-            AvailableStatus aError = null;
-            if (error != null) {
-                switch (Integer.parseInt(error)) {
-                case 403:
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                case 503:
-                    // :-)
-                    break;
-                case 601:
-                    /* reconnect */
-                    logger.info("video.fc2.com: reconnect is needed!");
-                    aError = AvailableStatus.TRUE;
-                case 602:
-                    /* reconnect */
-                    logger.info("video.fc2.com: reconnect is needed!");
-                    aError = AvailableStatus.TRUE;
-                case 603:
-                    link.setProperty("ONLYFORPREMIUM", true);
-                    break;
-                default:
-                    logger.info("video.fc2.com: Unknown error code: " + error);
-                    aError = AvailableStatus.UNCHECKABLE;
-                }
-            }
-            // return aError
-            if (aError != null) {
-                return aError;
-            }
-            finalURL = br.getRegex("filepath=(https?://.*?)$").getMatch(0);
-            prepareFinalLink();
-        }
-        // prevent NPE
-        if (filename != null) {
-            if (!StringUtils.isEmpty(uploadername)) {
-                filename = uploadername + "_" + filename;
-            }
-            filename = filename.replaceAll("\\p{Z}", " ");
-            // why do we do this?? http://board.jdownloader.org/showthread.php?p=304933#post304933
-            // filename = filename.replaceAll("[\\.\\d]{3,}$", "");
-            filename = filename.trim();
-            filename = filename.replaceAll("(:|,|\\s)", "_");
-            filename += ".mp4";
-            link.setFinalFileName(Encoding.htmlDecode(filename));
-        }
-        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null && finalURLType != 2) {
-            br.getHeaders().put("Referer", null);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(finalURL);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
     }
 
     private boolean isOffline(final String linkid) {
@@ -604,8 +625,8 @@ public class VideoFCTwoCom extends PluginForHost {
         }
     }
 
-    private boolean onlyForPremiumUsers(DownloadLink downloadLink) {
-        return downloadLink.getBooleanProperty("ONLYFORPREMIUM", false);
+    private boolean onlyForPremiumUsers(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_PREMIUMONLY, false);
     }
 
     /**
