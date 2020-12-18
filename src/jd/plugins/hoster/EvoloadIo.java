@@ -196,10 +196,10 @@ public class EvoloadIo extends PluginForHost {
             }
             final String recaptchaV2Response;
             final String reCaptchaKey = br.getRegex("recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
-            if (reCaptchaKey != null) {
+            if (StringUtils.isNotEmpty(reCaptchaKey)) {
                 recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
             } else {
-                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, null).getToken();
             }
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("code", this.getFID(link));
@@ -263,10 +263,6 @@ public class EvoloadIo extends PluginForHost {
                 return TYPE.INVISIBLE;
             }
         };
-    }
-
-    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
-        return this.getCaptchaHelperHostPluginRecaptchaV2(plugin, br, null);
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {

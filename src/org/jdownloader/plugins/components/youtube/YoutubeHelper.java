@@ -1592,6 +1592,25 @@ public class YoutubeHelper {
         refreshVideo(vid);
     }
 
+    private boolean addYoutubeStreamData(Map<YoutubeITAG, StreamCollection> map, YoutubeStreamData match) {
+        if (!isSegmentLoadingAllowed(match)) {
+            logger.info("itag not allowed(segments):" + match.toString());
+            return false;
+        } else if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
+            logger.info("itag not allowed(dash):" + match.toString());
+            return false;
+        } else {
+            logger.info("add:" + match.toString());
+            StreamCollection lst = map.get(match.getItag());
+            if (lst == null) {
+                lst = new StreamCollection();
+                map.put(match.getItag(), lst);
+            }
+            lst.add(match);
+            return true;
+        }
+    }
+
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
         loggedIn = login(logger, false);
         this.vid = vid;
@@ -1643,7 +1662,7 @@ public class YoutubeHelper {
         videoInfo = new HashMap<String, String>();
         vid.ageCheck = br.containsHTML("\"status\"\\s*:\\s*\"LOGIN_REQUIRED\"");
         this.handleContentWarning(br);
-        collectMapsFromPlayerResponse(map, br.getURL());
+        logger.info("found collectMapsFromPlayerResponse(refreshVideo):" + collectMapsFromPlayerResponse(map, br.getURL()));
         collectMapsFormHtmlSource(br.getRequest().getHtmlCode(), "base");
         Browser apiBrowser = null;
         apiBrowser = br.cloneBrowser();
@@ -1651,7 +1670,8 @@ public class YoutubeHelper {
         if (StringUtils.isEmpty(sts)) {
             sts = "";
         }
-        if (unavailableReason == null || !StringUtils.equals(unavailableReason, "Sign in to confirm your age")) {
+        if (fmtMaps.size() == 0 && (unavailableReason == null || !StringUtils.equals(unavailableReason, "Sign in to confirm your age"))) {
+            logger.info("Empty fmtMaps! try get_video_info:" + vid.videoID);
             apiBrowser.getPage(this.base + "/get_video_info?&video_id=" + vid.videoID + "&hl=en&sts=" + sts + "&disable_polymer=true&gl=US");
             collectMapsFromVideoInfo(apiBrowser.toString(), apiBrowser.getURL());
         }
@@ -1759,21 +1779,11 @@ public class YoutubeHelper {
         }
         doFeedScan();
         doUserAPIScan();
-        fmtLoop: for (StreamMap fmt : fmtMaps) {
+        for (StreamMap fmt : fmtMaps) {
             if (fmt.streamData != null) {
                 try {
                     final YoutubeStreamData match = fmt.streamData;
-                    if (isStreamDataAllowed(match)) {
-                        if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
-                            continue;
-                        }
-                        StreamCollection lst = ret.get(match.getItag());
-                        if (lst == null) {
-                            lst = new StreamCollection();
-                            ret.put(match.getItag(), lst);
-                        }
-                        lst.add(match);
-                    }
+                    addYoutubeStreamData(ret, match);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -1781,24 +1791,16 @@ public class YoutubeHelper {
                 for (final String line : fmt.mapData.split(",")) {
                     try {
                         final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
-                        if (isStreamDataAllowed(match)) {
-                            if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) {
-                                continue;
-                            }
-                            StreamCollection lst = ret.get(match.getItag());
-                            if (lst == null) {
-                                lst = new StreamCollection();
-                                ret.put(match.getItag(), lst);
-                            }
-                            lst.add(match);
-                        }
+                        addYoutubeStreamData(ret, match);
                     } catch (Throwable e) {
                         logger.log(e);
                     }
                 }
             }
         }
-        if (cfg.isExternMultimediaToolUsageEnabled()) {
+        if (!cfg.isExternMultimediaToolUsageEnabled()) {
+            logger.info("ExternMultimediaToolUsageEnabled:disabled");
+        } else {
             mpd: for (StreamMap mpdUrl : mpdUrls) {
                 try {
                     if (StringUtils.isEmpty(mpdUrl.mapData)) {
@@ -1863,39 +1865,25 @@ public class YoutubeHelper {
                                 this.logger.info("FFmpeg support for Itag'" + itag + "' is missing");
                                 continue;
                             }
-                            final YoutubeStreamData vsd = new YoutubeStreamData(mpdUrl.src, vid, c.getDownloadurl(), itag, query);
+                            final YoutubeStreamData match = new YoutubeStreamData(mpdUrl.src, vid, c.getDownloadurl(), itag, query);
                             try {
-                                vsd.setHeight(Integer.parseInt(query.get("height")));
+                                match.setHeight(Integer.parseInt(query.get("height")));
                             } catch (Throwable e) {
                             }
                             try {
-                                vsd.setWidth(Integer.parseInt(query.get("width")));
+                                match.setWidth(Integer.parseInt(query.get("width")));
                             } catch (Throwable e) {
                             }
                             try {
-                                vsd.setFps(query.get("fps"));
+                                match.setFps(query.get("fps"));
                             } catch (Throwable e) {
                             }
-                            if (isStreamDataAllowed(vsd)) {
-                                StreamCollection lst = ret.get(itag);
-                                if (lst == null) {
-                                    lst = new StreamCollection();
-                                    ret.put(itag, lst);
-                                }
-                                lst.add(vsd);
-                            }
+                            addYoutubeStreamData(ret, match);
                         }
                     } else if (dashMpdEnabled) {
                         final List<YoutubeStreamData> datas = parseDashManifest(mpdUrl.src, br, br.getURL(newv).toString());
-                        for (YoutubeStreamData data : datas) {
-                            if (isStreamDataAllowed(data)) {
-                                StreamCollection lst = ret.get(data.getItag());
-                                if (lst == null) {
-                                    lst = new StreamCollection();
-                                    ret.put(data.getItag(), lst);
-                                }
-                                lst.add(data);
-                            }
+                        for (YoutubeStreamData match : datas) {
+                            addYoutubeStreamData(ret, match);
                         }
                     }
                 } catch (InterruptedException e) {
@@ -1916,15 +1904,8 @@ public class YoutubeHelper {
                 logger.warning("Ignore Error:" + unavailableReason);
             }
         }
-        for (YoutubeStreamData sd : loadThumbnails()) {
-            if (isStreamDataAllowed(sd)) {
-                StreamCollection lst = ret.get(sd.getItag());
-                if (lst == null) {
-                    lst = new StreamCollection();
-                    ret.put(sd.getItag(), lst);
-                }
-                lst.add(sd);
-            }
+        for (YoutubeStreamData match : loadThumbnails()) {
+            addYoutubeStreamData(ret, match);
         }
         for (Entry<YoutubeITAG, StreamCollection> es : ret.entrySet()) {
             Collections.sort(es.getValue(), new Comparator<YoutubeStreamData>() {
@@ -1983,7 +1964,7 @@ public class YoutubeHelper {
         return result;
     }
 
-    private boolean isStreamDataAllowed(YoutubeStreamData match) {
+    private boolean isSegmentLoadingAllowed(YoutubeStreamData match) {
         if (match == null) {
             return false;
         } else if (!cfg.isSegmentLoadingEnabled()) {
@@ -2339,7 +2320,7 @@ public class YoutubeHelper {
             subtitleUrls.add(ttsurl);
         }
         if (videoInfo.containsKey("player_response")) {
-            collectMapsFromPlayerResponse(videoInfo.get("player_response"), src);
+            logger.info("found collectMapsFromPlayerResponse(collectMapsFromVideoInfo):" + collectMapsFromPlayerResponse(videoInfo.get("player_response"), src));
         }
         final String captionTracks = new Regex(videoInfo.get("player_response"), "captionTracks\"\\s*:(\\[.*?\\])\\s*,").getMatch(0);
         if (StringUtils.isNotEmpty(captionTracks)) {
@@ -2545,13 +2526,11 @@ public class YoutubeHelper {
         thumbnails.put("default.jpg", YoutubeITAG.IMAGE_LQ);
         for (Entry<String, YoutubeITAG> thumbnail : thumbnails.entrySet()) {
             final YoutubeStreamData match = (new YoutubeStreamData(null, vid, "https://i.ytimg.com/vi/" + vid.videoID + "/" + thumbnail.getKey(), thumbnail.getValue(), null));
-            if (isStreamDataAllowed(match)) {
-                if (getThumbnailSize(br.cloneBrowser(), match)) {
-                    ret.add(match);
-                }
-                if (ret.size() > 0 && StringUtils.equalsIgnoreCase(thumbnail.getKey(), best)) {
-                    return ret;
-                }
+            if (getThumbnailSize(br.cloneBrowser(), match)) {
+                ret.add(match);
+            }
+            if (ret.size() > 0 && StringUtils.equalsIgnoreCase(thumbnail.getKey(), best)) {
+                return ret;
             }
         }
         return ret;
