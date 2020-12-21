@@ -450,10 +450,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
                     final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("qualities");
                     for (final Object qualities_o : qualities) {
-                        /* Extra abort handling within here to abort hls decryption as it also needs http requests. */
-                        if (this.isAbort()) {
-                            return;
-                        }
                         entries = (LinkedHashMap<String, Object>) qualities_o;
                         final String quality = (String) entries.get("quality");
                         if (inValidate(quality)) {
@@ -565,6 +561,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                 setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                                 all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, quality, language, audio_class, all_found_languages), dl);
                             }
+                        }
+                        /** Extra abort handling within here to abort hls crawling as it also needs one http request for each quality. */
+                        if (this.isAbort()) {
+                            return;
                         }
                     }
                 }

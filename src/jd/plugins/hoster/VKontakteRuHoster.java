@@ -69,10 +69,9 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:\\-)?\\d+_\\d+|videolink/[\\d\\-]+)|https?://(?:new\\.)?vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip).+|[rz][0-9]{2}.+)" })
 public class VKontakteRuHoster extends PluginForHost {
-    /* 2019-08-17: E.g. used for plugin settings */
-    public static String        STATIC_HOST                                                                 = "vkontakte.ru";
+    /* Current main domain */
     private static final String DOMAIN                                                                      = "vk.com";
     private static final String TYPE_AUDIOLINK                                                              = "https?://vkontaktedecrypted\\.ru/audiolink/((?:\\-)?\\d+)_(\\d+)";
     private static final String TYPE_VIDEOLINK                                                              = "https?://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
@@ -122,7 +121,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              finalUrl                                                                    = null;
     private String              ownerID                                                                     = null;
     private String              contentID                                                                   = null;
-    private String              mainlink                                                                    = null;
     private static final String ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
     private String              vkID                                                                        = null;
     /* Properties */
@@ -151,9 +149,9 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
         /* 2019-08-06: Do not allow multihost downloads as it makes no sense */
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
@@ -179,6 +177,15 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         }
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if (host == null || host.equalsIgnoreCase("vkontakte.ru")) {
+            return this.getHost();
+        } else {
+            return super.rewriteHost(host);
+        }
     }
 
     @Override
@@ -1060,7 +1067,7 @@ public class VKontakteRuHoster extends PluginForHost {
      */
     public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) throws MalformedURLException {
         final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
-        final PluginForHost plg = JDUtilities.getPluginForHost(STATIC_HOST);
+        final PluginForHost plg = JDUtilities.getPluginForHost(DOMAIN);
         if (finalfilename != null) {
             /* Do nothing - final filename has already been set (usually this is NOT the case). */
         } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
@@ -1540,7 +1547,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private void setConstants(final DownloadLink dl) {
         this.ownerID = getOwnerID(dl);
         this.contentID = getContentID(dl);
-        this.mainlink = dl.getStringProperty("mainlink", null);
         this.docs_add_unique_id = this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID);
     }
 
