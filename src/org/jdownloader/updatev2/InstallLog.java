@@ -26,7 +26,6 @@ public class InstallLog {
     }
 
     private Collection<String> modifiedFiles;
-
     private Collection<String> modifiedPlugins;
     private Collection<String> modifiedDirects;
 
@@ -49,7 +48,6 @@ public class InstallLog {
     private Collection<String> modifiedRestartRequiredFiles;
     private Collection<String> modifiedExtensionFiles;
     public static final String FILE_EXT_JARSIGNATURE    = ".jarSignature";
-
     public static final String FILE_EXT_UPDATESIGNATURE = ".updateSignature";
     public static final String FILE_EXT_REMOVEDFILE     = ".removed";
     public static final String FILE_EXT_JAR             = ".jar";
@@ -57,8 +55,11 @@ public class InstallLog {
     public static final String SERVER_OPTIONS           = ".serverOptions";
 
     public void add(String relPath) {
-        if (relPath.endsWith(FILE_EXT_UPDATESIGNATURE)) return;
-        if (relPath.endsWith(FILE_EXT_JARSIGNATURE)) return;
+        if (relPath.endsWith(FILE_EXT_UPDATESIGNATURE)) {
+            return;
+        } else if (relPath.endsWith(FILE_EXT_JARSIGNATURE)) {
+            return;
+        }
         modifiedFiles.add(relPath);
         String check = relPath;
         if (check.endsWith(CLIENT_OPTIONS)) {
@@ -70,24 +71,16 @@ public class InstallLog {
         }
         if (check.equals("build.json")) {
             modifiedDirects.add(relPath);
-            return;
-        }
-        if (check.endsWith(".lng")) {
+        } else if (check.endsWith(".lng")) {
             modifiedDirects.add(relPath);
-            return;
-        }
-
-        if (check.endsWith(".class") && check.toLowerCase(Locale.ENGLISH).startsWith("jd/plugins")) {
+        } else if (check.endsWith(".class") && check.toLowerCase(Locale.ENGLISH).startsWith("jd/plugins")) {
             modifiedPlugins.add(relPath);
-            return;
-        }
-
-        if (relPath.startsWith("extensions/")) {
+        } else if (relPath.startsWith("extensions/")) {
             modifiedExtensionFiles.add(relPath);
             modifiedRestartRequiredFiles.add(relPath);
-            return;
+        } else {
+            modifiedRestartRequiredFiles.add(relPath);
         }
-        modifiedRestartRequiredFiles.add(relPath);
     }
 
     public void merge(InstallLog installLog) {
@@ -97,5 +90,4 @@ public class InstallLog {
         modifiedExtensionFiles.addAll(installLog.modifiedExtensionFiles);
         modifiedRestartRequiredFiles.addAll(installLog.modifiedRestartRequiredFiles);
     }
-
 }
