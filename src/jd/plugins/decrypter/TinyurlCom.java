@@ -37,12 +37,13 @@ public class TinyurlCom extends PluginForDecrypt {
         br.getPage(parameter);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("tinyurl.com/errorb\\.php\\?") || br.containsHTML(">Error: TinyURL redirects to a TinyURL|>The URL you followed redirects back to a TinyURL") || br.containsHTML(">Error: Unable to find site\\'s URL to redirect to|>Please check that the URL entered is correct")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("tinyurl\\.com/errorb\\.php\\?") || br.containsHTML(">Error: TinyURL redirects to a TinyURL|>The URL you followed redirects back to a TinyURL") || br.containsHTML(">Error: Unable to find site\\'s URL to redirect to|>Please check that the URL entered is correct")) {
+                logger.info("Safe offline");
+            } else {
+                logger.info("Probably offline offline");
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
