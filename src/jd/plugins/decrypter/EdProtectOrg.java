@@ -26,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ed-protect.org" }, urls = { "https?://(?:www\\.)?ed\\-protect\\.org/([A-Za-z0-9]+)" })
@@ -41,14 +43,21 @@ public class EdProtectOrg extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Le lien demandé n\\'existe pas")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (!br.containsHTML("submit_captcha")) {
-            /* 2020-12-21: E.g. unsupported URLs such as: http://ed-protect.org/FAQ */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&submit_captcha=VALIDER");
+        final CaptchaHelperCrawlerPluginRecaptchaV2 reCaptchaV2 = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br);
+        final String siteKey = reCaptchaV2.getSiteKey();
+        if (siteKey == null) {
+            /* Only check for bad URL (= bad user input) if captcha is not available. */
+            if (!br.containsHTML("submit_captcha")) {
+                /* 2020-12-21: E.g. unsupported URLs such as: http://ed-protect.org/FAQ */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        final String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(reCaptchaV2.getToken()) + "&submit_captcha=VALIDER");
         final String[] links = br.getRegex("class=\"lien\"\\s*>\\s*<a target=\"_blank\"\\s*href=\"(https?[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

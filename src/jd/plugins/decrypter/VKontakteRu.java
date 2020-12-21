@@ -1844,7 +1844,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     photo_html = photo_html.replace("'", "");
                     final String[] photoInfoArray = photo_html.split(", ");
                     final String photo_list_id_tmp = photoInfoArray[1];
-                    if (photo_list_id_tmp.matches("wall-\\d+_\\d+")) {
+                    if (photo_list_id_tmp.matches("wall-?\\d+_\\d+")) {
                         photo_list_id = photo_list_id_tmp;
                         final String wall_post_reply_content_idTmp = new Regex(photo_list_id_tmp, "(\\d+)$").getMatch(0);
                         if (html.contains("?reply=" + wall_post_reply_content_idTmp)) {

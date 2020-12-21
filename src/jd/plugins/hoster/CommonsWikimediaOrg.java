@@ -13,14 +13,19 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,16 +37,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+:.+" })
 public class CommonsWikimediaOrg extends PluginForHost {
-
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: https
@@ -51,10 +51,10 @@ public class CommonsWikimediaOrg extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private static final boolean use_api           = true;
-
     private String               dllink            = null;
+    private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.wikimedia\\.org/wiki/(File:.+)";
+    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9]+:.+)";
 
     @Override
     public String getAGBLink() {
@@ -71,27 +71,38 @@ public class CommonsWikimediaOrg extends PluginForHost {
         String filename = null;
         long filesize = 0;
         String filesize_str = null;
-        final String host = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([^/]+)/").getMatch(0);
-        String url_filename = new Regex(link.getDownloadURL(), "/wiki/(?:[^/]+/media/)?([A-Za-z0-9]+.+)").getMatch(0);
-        if (url_filename == null) {
-            url_filename = new Regex(link.getDownloadURL(), "/(File:.+)").getMatch(0);
+        final String host = Browser.getHost(link.getPluginPatternMatcher());
+        String url_title;
+        if (link.getPluginPatternMatcher().matches(TYPE_WIKIPEDIA_1)) {
+            url_title = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_1).getMatch(0);
+        } else {
+            url_title = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_2).getMatch(2);
         }
-        url_filename = Encoding.urlDecode(url_filename, false);
+        url_title = Encoding.urlDecode(url_title, false);
         if (use_api) {
-            br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_filename) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
+            /* Docs: https://www.mediawiki.org/wiki/API:Query */
+            br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_title) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
             if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"invalid\"")) { // ""missing" too?
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = new Regex(url_filename, "[A-Za-z]+:(.+)").getMatch(0);
-            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
-            filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
-            if (filename == null || dllink == null) {
-                if (!this.br.containsHTML("\"height\"")) {
-                    /* Probably not an image --> No downloadable content */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Object batchcomplete = entries.get("batchcomplete");
+            if (batchcomplete == null) {
+                /* No success response */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            filename = new Regex(url_title, "[A-Za-z]+:(.+)").getMatch(0);
+            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            if (StringUtils.isEmpty(dllink)) {
+                if (!link.getPluginPatternMatcher().matches(TYPE_WIKIPEDIA_2)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_2);
+                /* Fallback to PDF download */
+                this.dllink = "https://" + urlinfo.getMatch(0) + ".wikipedia.org/api/rest_v1/page/pdf/" + Encoding.urlEncode(urlinfo.getMatch(2));
+                filename += ".pdf";
+            }
+            filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
             if (filesize_str != null) {
                 filesize = Long.parseLong(filesize_str);
             }
@@ -104,10 +115,9 @@ public class CommonsWikimediaOrg extends PluginForHost {
              * URL is different for every country e.g. https://en.wikipedia.org/wiki/File:Krak%C3%B3w_G%C5%82%C3%B3wny_(budynek_dworca).JPG,
              * https://pl.wikipedia.org/wiki/Plik:Dworzec_Krak%C3%B3w_G%C5%82%C3%B3wny.jpg
              */
-
             filename = br.getRegex("\"wgTitle\":\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
-                filename = url_filename;
+                filename = url_title;
             }
             filesize_str = this.br.getRegex("file size: (\\d+(?:\\.\\d{1,2})? [A-Za-z]+)").getMatch(0);
             if (filesize_str == null) {
@@ -142,22 +152,14 @@ public class CommonsWikimediaOrg extends PluginForHost {
             if (filesize_str != null) {
                 filesize = SizeFormatter.getSize(filesize_str);
             } else {
-                final Browser br2 = br.cloneBrowser();
-                // In case the link redirects to the finallink
-                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
                 try {
-                    try {
-                        con = br2.openHeadConnection(dllink);
-                    } catch (final BrowserException e) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (!con.getContentType().contains("html")) {
-                        filesize = con.getLongContentLength();
+                    con = br.openHeadConnection(dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        filesize = con.getCompleteContentLength();
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    link.setProperty("directlink", dllink);
                 } finally {
                     try {
                         con.disconnect();
@@ -169,26 +171,31 @@ public class CommonsWikimediaOrg extends PluginForHost {
         link.setFinalFileName(filename);
         if (filesize > 0) {
             link.setDownloadSize(filesize);
+            link.setVerifiedFileSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error occured");
         }
         dl.startDownload();
     }
