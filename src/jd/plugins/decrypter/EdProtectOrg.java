@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,9 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ed-protect.org" }, urls = { "https?://(?:www\\.)?ed\\-protect\\.org/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ed-protect.org" }, urls = { "https?://(?:www\\.)?ed\\-protect\\.org/([A-Za-z0-9]+)" })
 public class EdProtectOrg extends PluginForDecrypt {
     public EdProtectOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,6 +39,10 @@ public class EdProtectOrg extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Le lien demandé n\\'existe pas")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (!br.containsHTML("submit_captcha")) {
+            /* 2020-12-21: E.g. unsupported URLs such as: http://ed-protect.org/FAQ */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
