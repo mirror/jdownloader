@@ -1610,6 +1610,8 @@ public class RapidGatorNet extends antiDDoSForHost {
     private void handleErrorsBasic() throws PluginException {
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 30 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*An unexpected error occurred\\s*\\.?\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "An unexpected error occurred", 15 * 60 * 1000l);
         }
     }
 
