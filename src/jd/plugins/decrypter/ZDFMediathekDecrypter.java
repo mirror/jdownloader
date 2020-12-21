@@ -26,6 +26,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,13 +46,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -421,6 +421,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) priority_o;
                 final ArrayList<Object> formitaeten = (ArrayList<Object>) entries.get("formitaeten");
                 for (final Object formitaet_o : formitaeten) {
+                    /* 2020-12-21: Skips (two) lower http qualities - just a test */
+                    // final String facet = (String) JavaScriptEngineFactory.walkJson(entries, "facets/{0}");
+                    // if ("restriction_useragent".equalsIgnoreCase(facet)) {
+                    // continue;
+                    // }
                     entries = (LinkedHashMap<String, Object>) formitaet_o;
                     final boolean isAdaptive = ((Boolean) entries.get("isAdaptive")).booleanValue();
                     final String type = (String) entries.get("type");
@@ -536,18 +541,21 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             } else {
                                 /* http download */
                                 final_download_url = uri;
+                                /*
+                                 * 2020-12-21: Some tests: There are higher http qualities available than what we get via API (see also
+                                 * mediathekview) ...
+                                 */
+                                /* Do NOT alter official downloadurls such as "http://downloadzdf-a.akamaihd.net/..." */
+                                if (final_download_url.matches("https?://rodlzdf-a\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
+                                    /* Improve "veryhigh" */
+                                    final_download_url = final_download_url.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
+                                    /* Improve "high/medium" */
+                                    final_download_url = final_download_url.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
+                                    /* Improve "low" */
+                                    final_download_url = final_download_url.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
+                                }
                                 linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
                                 final_filename = encodeUnicode(String.format(final_filename_format, filename_packagename_base_title, protocol, quality, language, audio_class_user_readable, ext));
-                                /* TODO: Check if this might still be useful ... */
-                                // boolean isHBBTV = false;
-                                // final String fixme = new Regex(uri,
-                                // "https?://(?:www\\.)?metafilegenerator\\.de/ondemand/zdf/hbbtv/([A-Za-z0-9]+/zdf/\\d+/\\d+/[^<>\"]+\\.mp4)").getMatch(0);
-                                // if (fixme != null) {
-                                // /* E.g. http://rodl.zdf.de/none/zdf/16/03/160304_top_mom_2328k_p35v12.mp4 */
-                                // /* Fix invalid / unauthorized hbbtv urls so that we get downloadable http urls */
-                                // uri = "http://rodl.zdf.de/" + fixme;
-                                // isHBBTV = true;
-                                // }
                                 dl = createDownloadlink(final_download_url);
                                 /* Usually the filesize is only given for the official downloads. */
                                 if (filesize > 0) {

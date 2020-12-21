@@ -372,6 +372,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 /* Skip invalid objects */
                 continue;
             }
+            final String description = (String) entries.get("description");
             final Map<String, Object> ownerInfo = (Map<String, Object>) entries.get("owner");
             final String uploaderName = (String) ownerInfo.get("displayName");
             final String id = (String) entries.get("id");
@@ -425,6 +426,9 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             /* Packagizer tags */
             dlink.setProperty("title", title);
             dlink.setProperty("uploader", uploaderName);
+            if (!StringUtils.isEmpty(description)) {
+                dlink.setComment(description);
+            }
             dlink.setAvailable(true);
             decryptedLinks.add(dlink);
         }
