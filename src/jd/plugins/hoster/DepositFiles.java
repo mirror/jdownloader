@@ -29,13 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +56,13 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepositFiles extends antiDDoSForHost {
     private final String                  UA                           = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36";
@@ -76,7 +76,6 @@ public class DepositFiles extends antiDDoSForHost {
     private final Pattern                 FILE_INFO_NAME               = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
     private final Pattern                 FILE_INFO_SIZE               = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
     private static Object                 PREMLOCK                     = new Object();
-    private static Object                 LOCK                         = new Object();
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger          totalMaxSimultanFreeDownload = new AtomicInteger(20);
     /* don't touch the following! */
@@ -523,40 +522,25 @@ public class DepositFiles extends antiDDoSForHost {
         logger.info("finallink = " + finallink);
         finallink = fixLinkSSL(finallink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 1);
-        final URLConnectionAdapter con = dl.getConnection();
-        if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
-            if (!con.isContentDisposition()) {
-                con.disconnect();
-                if (con.getHeaderField("Guest-Limit") != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-        }
-        if (!con.isContentDisposition()) {
-            if (con.getHeaderField("Guest-Limit") != null) {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        if (con.getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The finallink doesn't lead to a file, following connection...");
-            if (con.getHeaderField("Guest-Limit") != null) {
-                con.disconnect();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (dl.getConnection().getHeaderField("Guest-Limit") != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
-            }
-            br.followConnection();
-            if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
+            } else if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String name = Plugin.getFileNameFromHeader(con);
+        String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null && name.contains("?")) {
             /* fix invalid filenames */
             String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
@@ -634,8 +618,8 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     // post login check
-    public boolean isFreeAccountPost() throws Exception {
-        synchronized (LOCK) {
+    public boolean isFreeAccountPost(final Account account) throws Exception {
+        synchronized (account) {
             setLangtoGer();
             if (!br.getURL().contains("/gold/")) {
                 final boolean ifr = br.isFollowingRedirects();
@@ -667,7 +651,7 @@ public class DepositFiles extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
         AccountInfo ai = new AccountInfo();
-        synchronized (LOCK) {
+        synchronized (account) {
             // via /api/
             if (useAPI.get()) {
                 ai = apiFetchAccountInfo(account);
@@ -682,7 +666,7 @@ public class DepositFiles extends antiDDoSForHost {
     private AccountInfo webFetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         webLogin(account, true);
-        if (isFreeAccountPost()) {
+        if (isFreeAccountPost(account)) {
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
             account.setType(AccountType.FREE);
@@ -724,7 +708,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private void webLogin(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 setLangtoGer();
@@ -849,7 +833,7 @@ public class DepositFiles extends antiDDoSForHost {
             checkErrors();
             link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
             if (link == null) {
-                synchronized (LOCK) {
+                synchronized (account) {
                     account.clearCookies("");
                     account.setType(AccountType.UNKNOWN);
                 }
@@ -857,18 +841,22 @@ public class DepositFiles extends antiDDoSForHost {
             }
             link = fixLinkSSL(link);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, link, true, 0);
-            final URLConnectionAdapter con = dl.getConnection();
-            if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
-                if (!con.isContentDisposition()) {
-                    con.disconnect();
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The finallink doesn't lead to a file, following connection...");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getHeaderField("Guest-Limit") != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                } else if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>)")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (!con.isContentDisposition()) {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-            }
-            String name = Plugin.getFileNameFromHeader(con);
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
             if (name != null && name.contains("?")) {
                 /* fix invalid filenames */
                 String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
