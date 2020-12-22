@@ -73,7 +73,6 @@ public class OneFichierCom extends PluginForHost {
     private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_HOTLINK             = "hotlink";
     private final String         PROPERTY_PREMLINK            = "premLink";
-    private static final String  MAINPAGE                     = "https://1fichier.com/";
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
     public static final String   API_BASE                     = "https://api.1fichier.com/v1";
     private boolean              pwProtected                  = false;
@@ -336,52 +335,52 @@ public class OneFichierCom extends PluginForHost {
 
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
-    public void doFree(final Account account, final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
         checkDownloadable(account);
         // to prevent wasteful requests.
         int i = 0;
         /* The following code will cover saved hotlinks */
-        String dllink = downloadLink.getStringProperty(PROPERTY_HOTLINK, null);
+        String dllink = link.getStringProperty(PROPERTY_HOTLINK, null);
         if (dllink != null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 dl.getConnection().disconnect();
                 // link has expired... but it could be for any reason! dont care!
                 // clear saved final link
-                downloadLink.setProperty(PROPERTY_HOTLINK, Property.NULL);
+                link.setProperty(PROPERTY_HOTLINK, Property.NULL);
                 br = new Browser();
                 prepareBrowserWebsite(br);
             } else {
                 /* resume download */
-                downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
+                link.setProperty(PROPERTY_HOTLINK, dllink);
                 dl.startDownload();
                 return;
             }
         }
         // retry/resume of cached free link!
-        dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, null);
+        dllink = link.getStringProperty(PROPERTY_FREELINK, null);
         if (dllink != null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free, maxchunks_free);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 dl.getConnection().disconnect();
                 // link has expired... but it could be for any reason! dont care!
                 // clear saved final link
-                downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
+                link.setProperty(PROPERTY_FREELINK, Property.NULL);
                 br = new Browser();
                 prepareBrowserWebsite(br);
             } else {
                 /* resume download */
-                downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+                link.setProperty(PROPERTY_FREELINK, dllink);
                 dl.startDownload();
                 return;
             }
         }
         // this covers virgin downloads which end up been hot link-able...
-        dllink = getDownloadlinkNEW(downloadLink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
-        if (!dl.getConnection().getContentType().contains("html")) {
+        dllink = getDownloadlinkNEW(link);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
+        if (this.looksLikeDownloadableContent(dl.getConnection())) {
             /* resume download */
-            downloadLink.setProperty(PROPERTY_HOTLINK, dllink);
+            link.setProperty(PROPERTY_HOTLINK, dllink);
             dl.startDownload();
             return;
         }
@@ -399,10 +398,10 @@ public class OneFichierCom extends PluginForHost {
             if (i > 1) {
                 br.setFollowRedirects(true);
                 // no need to do this link twice as it's been done above.
-                br.getPage(this.getDownloadlinkNEW(downloadLink));
+                br.getPage(this.getDownloadlinkNEW(link));
                 br.setFollowRedirects(false);
             }
-            errorHandling(downloadLink, account, br);
+            errorHandling(link, account, br);
             if (pwProtected || br.containsHTML(HTML_PASSWORDPROTECTED)) {
                 handlePasswordWebsite();
                 dllink = br.getRedirectLocation();
@@ -425,10 +424,10 @@ public class OneFichierCom extends PluginForHost {
                 // }
                 // a1.remove(null);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                sleep(2000, downloadLink);
+                sleep(2000, link);
                 // br2.submitForm(a1);
                 br2.postPageRaw(br.getURL(), "");
-                errorHandling(downloadLink, account, br2);
+                errorHandling(link, account, br2);
                 if (br2.containsHTML("not possible to unregistered users")) {
                     final Account aa = AccountController.getInstance().getValidAccount(this);
                     if (aa != null) {
@@ -456,9 +455,9 @@ public class OneFichierCom extends PluginForHost {
                     a2.remove("save");
                     final Browser br3 = br.cloneBrowser();
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                    sleep(2000, downloadLink);
+                    sleep(2000, link);
                     br3.submitForm(a2);
-                    errorHandling(downloadLink, account, br3);
+                    errorHandling(link, account, br3);
                     if (dllink == null) {
                         dllink = br3.getRedirectLocation();
                     }
@@ -472,7 +471,7 @@ public class OneFichierCom extends PluginForHost {
                         String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
                         if (wait != null && retried == false) {
                             retried = true;
-                            sleep(1000 * Long.parseLong(wait), downloadLink);
+                            sleep(1000 * Long.parseLong(wait), link);
                             continue;
                         }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -484,14 +483,18 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free, maxchunks_free);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            errorHandling(downloadLink, account, br);
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            errorHandling(link, account, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+        link.setProperty(PROPERTY_FREELINK, dllink);
         dl.startDownload();
     }
 
@@ -855,7 +858,7 @@ public class OneFichierCom extends PluginForHost {
 
     /** Checks whether we're logged in via API. */
     private boolean checkSID(Browser br) {
-        final String sid = br.getCookie(MAINPAGE, "SID");
+        final String sid = br.getCookie(this.getHost(), "SID");
         return !StringUtils.isEmpty(sid) && !StringUtils.equalsIgnoreCase(sid, "deleted");
     }
 
@@ -864,29 +867,38 @@ public class OneFichierCom extends PluginForHost {
             try {
                 /* Load cookies */
                 prepareBrowserWebsite(br);
-                Cookies cookies = account.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
+                    logger.info("Attempting cookie login");
+                    br.setCookies(this.getHost(), cookies);
                     if (!force) {
+                        logger.info("Trust cookies without check");
                         setBasicAuthHeader(br, account);
                         return;
                     } else {
                         br.getPage("https://1fichier.com/console/index.pl");
-                        if (!checkSID(br)) {
-                            cookies = null;
-                            br.clearCookies(MAINPAGE);
+                        if (checkSID(br)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(getHost()), "");
+                            setBasicAuthHeader(br, account);
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearCookies(this.getHost());
                         }
                     }
                 }
-                if (cookies == null) {
-                    logger.info("Using site login because API is either wrong or no free credits...");
-                    br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                    if (!checkSID(br)) {
-                        if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
-                            throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
-                        }
-                        logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentification enabled!\r\nIf you are a premium user and you have 2-factor-authentification enabled, you have to use your API Key to login in JDownloader.\r\nFirst enable API Key login for JD via Settings -> Plugins -> 1fichier.com,\r\nthen get your API Key and enable 2-factor-authentification see here: 1fichier.com/console/params.pl", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                logger.info("Using full website login because API is either wrong or no free credits...");
+                br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (!checkSID(br)) {
+                    if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
+                        throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
+                    }
+                    logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language")) && !true) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Zwei-Faktor-Authentifizierung aktiviert!\r\nFalls du die Zwei-Faktor-Authentifizierung aktiviert hast, kannst du diese deaktivieren und es erneut versuchen.\r\nPremium Benutzer können die Zwei-Faktor-Authentifizierung aktiviert lassen und es per API Login erneut versuchen.\r\nErklärung des Logins per API (nur premium Benutzer):\r\n1. Login per API in den JD Einstellungen aktivieren: Einstellungen -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Deinen API Key von der 1fichier Webseite kopieren: 1fichier.com/console/params.pl\r\n3. Erneut versuchen, deinen 1fichier Account in JD hinzuzufügen und dabei den API Key eingeben.\r\nFalls du myjdownloader verwendest, gib deinen API Key in das Benutzername- & Passwort Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentication enabled!\r\nIf you have 2-factor-authentication enabled, you have to disable it and try again.\r\nPremium users can leave 2FA login enabled and try again via API login:\r\nHow to login in JD via API key (premium users only):\r\n1. Enable API Key login for JD via Settings -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Get your API Key from the following webpage: 1fichier.com/console/params.pl\r\n3. Open this add-account-dialog again and enter your API key to add your account to JD.\r\nIn case you are using myjdownloader, enter your API Key in both the username- and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
@@ -957,7 +969,7 @@ public class OneFichierCom extends PluginForHost {
                     logger.info("Download failed because: " + e.getMessage());
                     throw e;
                 }
-                if (dl.getConnection().getContentType().contains("html")) {
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
                         dl.getConnection().disconnect();
                         if (i + 1 == 2) {
@@ -966,6 +978,11 @@ public class OneFichierCom extends PluginForHost {
                         continue;
                     }
                     logger.warning("The final dllink seems not to be a file!");
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     br.followConnection();
                     errorHandling(link, account, br);
                     /** TODO: Check this */
@@ -1108,36 +1125,23 @@ public class OneFichierCom extends PluginForHost {
         br.loadConnection(null);
     }
 
-    /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
-     */
-    public String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
-                    /* Failure */
-                    dllink = null;
-                    return dllink;
-                } else {
-                    /* Ok */
+                if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 }
             } catch (final Exception e) {
-                /* Failure */
                 logger.log(e);
-                dllink = null;
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
-                }
-                if (dllink == null) {
-                    downloadLink.setProperty(property, Property.NULL);
                 }
             }
         }

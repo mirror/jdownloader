@@ -1334,6 +1334,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 logger.info("Performing full login");
                 getPage(this.getProtocol() + this.getHost() + "/login.html");
                 Form loginform;
+                /*
+                 * TODO: Optimize recognition of required login type see all plugins that override enforce_old_login_method (not many - low
+                 * priority)
+                 */
                 if (br.containsHTML("flow\\-login\\.js") && !enforce_old_login_method()) {
                     final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                     /* New (ajax) login method - mostly used - example: iosddl.net */

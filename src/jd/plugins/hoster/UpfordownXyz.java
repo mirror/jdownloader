@@ -107,4 +107,11 @@ public class UpfordownXyz extends YetiShareCore {
         /* 2020-04-14: Special */
         return false;
     }
+
+    @Deprecated
+    @Override
+    protected boolean enforce_old_login_method() {
+        /* 2020-12-22 */
+        return true;
+    }
 }
