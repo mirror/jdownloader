@@ -29,6 +29,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +53,7 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,13 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepositFiles extends antiDDoSForHost {
@@ -391,21 +392,21 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         logger.info("Free @ Guest :: Web download method in use");
         setConstants();
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
-        String passCode = downloadLink.getStringProperty("pass", null);
-        String finallink = checkDirectLink(downloadLink);
+    private void doFree(final DownloadLink link) throws Exception {
+        String passCode = link.getStringProperty("pass", null);
+        String finallink = checkDirectLink(link);
         if (finallink == null) {
-            String link = downloadLink.getDownloadURL();
+            String contentURL = link.getDownloadURL();
             if (br.getRedirectLocation() != null) {
-                link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
-                br.getPage(link);
+                contentURL = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
+                br.getPage(contentURL);
                 // If we can't change the language lets just use the forced language (e.g. links change to "/es/" links)!
                 if (br.getRedirectLocation() != null) {
                     br.getPage(br.getRedirectLocation());
@@ -416,17 +417,17 @@ public class DepositFiles extends antiDDoSForHost {
             if (!StringUtils.isEmpty(dllink)) {
                 dllink = fixLinkSSL(dllink);
                 // handling for txt file downloadlinks, dunno why they made a completely different page for txt files
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
                 final URLConnectionAdapter con = dl.getConnection();
                 if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
                     con.disconnect();
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (!con.isContentDisposition()) {
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     con.disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
                 }
-                downloadLink.setProperty("finallink", dllink);
+                link.setProperty("finallink", dllink);
                 dl.startDownload();
                 return;
             } else {
@@ -455,7 +456,7 @@ public class DepositFiles extends antiDDoSForHost {
                 if (br.containsHTML("\"file_password\"")) {
                     logger.info("This file seems to be password protected.");
                     if (passCode == null) {
-                        passCode = getUserInput(null, downloadLink);
+                        passCode = getUserInput(null, link);
                     }
                     br.postPage(br.getURL().replaceFirst("https?://", protocol), "file_password=" + passCode);
                     logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
@@ -463,7 +464,7 @@ public class DepositFiles extends antiDDoSForHost {
                         logger.info("The entered password (" + passCode + ") was wrong, retrying...");
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
-                    downloadLink.setProperty("pass", passCode);
+                    link.setProperty("pass", passCode);
                 }
                 String fid = br.getRegex("var\\s*fid\\s*=\\s*\\'(.*?)\\'").getMatch(0);
                 if (fid == null) {
@@ -474,7 +475,7 @@ public class DepositFiles extends antiDDoSForHost {
                 }
                 final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
                 // wait required here before ajax
-                sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1001l) - (System.currentTimeMillis() - timeBefore), downloadLink);
+                sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1001l) - (System.currentTimeMillis() - timeBefore), link);
                 // // ajax request, here they give you more html && js. Think this is where the captcha type is determined.
                 ajaxGetPage("/get_file.php?abspeed=0&fid=" + fid);
                 if (ajax.containsHTML("But currently no free download slots for")) {
@@ -496,7 +497,7 @@ public class DepositFiles extends antiDDoSForHost {
                             }
                             throw e;
                         }
-                        final String code = getCaptchaCode("solvemedia", cf, downloadLink);
+                        final String code = getCaptchaCode("solvemedia", cf, link);
                         final String chid = sm.getChallenge(code);
                         if (chid == null) {
                             if (i + 1 != 3) {
@@ -521,9 +522,9 @@ public class DepositFiles extends antiDDoSForHost {
         }
         logger.info("finallink = " + finallink);
         finallink = fixLinkSSL(finallink);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finallink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 1);
         if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+            link.setProperty("pass", passCode);
         }
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The finallink doesn't lead to a file, following connection...");
@@ -544,9 +545,9 @@ public class DepositFiles extends antiDDoSForHost {
         if (name != null && name.contains("?")) {
             /* fix invalid filenames */
             String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
-            downloadLink.setFinalFileName(fixedName);
+            link.setFinalFileName(fixedName);
         }
-        downloadLink.setProperty("finallink", finallink);
+        link.setProperty("finallink", finallink);
         try {
             /* add a download slot */
             controlFree(+1);
@@ -1054,9 +1055,9 @@ public class DepositFiles extends antiDDoSForHost {
     private boolean apiResumes = true;
     private int     apiChunks  = 0;
 
-    private void apiHandlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void apiHandlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
-        String pass = downloadLink.getStringProperty("pass", null);
+        String pass = link.getStringProperty("pass", null);
         if (account.getType() == AccountType.FREE) {
             logger.info(account.getUser() + " @ Free Account :: API download method in use");
             apiResumes = true;
@@ -1067,27 +1068,27 @@ public class DepositFiles extends antiDDoSForHost {
             apiChunks = 0;
         }
         // atm they share the same dl routine that I can see. Download program indicates captcha!
-        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : ""));
+        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(link) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : ""));
         if ("FileIsPasswordProtected".equalsIgnoreCase(getError())) {
             logger.info("This file seems to be password protected.");
             for (int i = 0; i <= 2; i++) {
                 if (pass == null) {
-                    pass = getUserInput(null, downloadLink);
+                    pass = getUserInput(null, link);
                 }
                 if (pass == null || pass.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download requires valid password");
                 }
-                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + "&file_password=" + pass);
+                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(link) + "&" + apiKeyVal() + "&file_password=" + pass);
                 if ("FilePasswordIsIncorrect".equalsIgnoreCase(getError())) {
                     pass = null;
                     continue;
                 } else {
-                    downloadLink.setProperty("pass", pass);
+                    link.setProperty("pass", pass);
                     break;
                 }
             }
         }
-        handleErrorsApi();
+        handleErrorsApi(link, account);
         if (account.getType() == AccountType.FREE) {
             String mode = PluginJSonUtils.getJsonValue(br, "mode");
             String delay = PluginJSonUtils.getJsonValue(br, "delay");
@@ -1096,7 +1097,7 @@ public class DepositFiles extends antiDDoSForHost {
                 logger.warning("api epic fail");
                 // if (useAPI.getAndSet(false) == true) {
                 // return;
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response");
                 // }
             }
             // download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download there
@@ -1106,20 +1107,20 @@ public class DepositFiles extends antiDDoSForHost {
                 apiChunks = 0;
             } else {
                 int deley = Integer.parseInt(delay);
-                sleep(deley * 1001, downloadLink);
-                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken);
+                sleep(deley * 1001, link);
+                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(link) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken);
                 if ("CaptchaRequired".equalsIgnoreCase(getError())) {
                     for (int i = 0; i <= 2; i++) {
                         final Recaptcha rc = new Recaptcha(br, this);
                         rc.setId("6LdRTL8SAAAAAE9UOdWZ4d0Ky-aeA7XfSqyWDM2m");
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                        String c = getCaptchaCode("recaptcha", cf, link);
                         if (c == null || c.equals("")) {
                             logger.warning("User aborted/cancelled captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(link) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                         if ("CaptchaInvalid".equalsIgnoreCase(getError())) {
                             logger.info("Invalid Captcha response!");
                         } else {
@@ -1127,7 +1128,7 @@ public class DepositFiles extends antiDDoSForHost {
                         }
                     }
                 }
-                handleErrorsApi();
+                handleErrorsApi(link, account);
             }
         }
         String dllink = PluginJSonUtils.getJsonValue(br, "download_url");
@@ -1135,14 +1136,14 @@ public class DepositFiles extends antiDDoSForHost {
             logger.warning("Could not find 'dllink'");
             // if (useAPI.getAndSet(false) == true) {
             // return;
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");
             // }
         }
         // for now limit to premium accounts
         // if (!account.getBooleanProperty("free", false)) {
         dllink = fixLinkSSL(dllink);
         // }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, apiResumes, apiChunks);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             if (!con.isContentDisposition()) {
@@ -1150,20 +1151,19 @@ public class DepositFiles extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+        final String name = Plugin.getFileNameFromHeader(con);
         if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        }
-        String name = Plugin.getFileNameFromHeader(con);
-        if (name != null && name.contains("?")) {
+        } else if (name != null && name.contains("?")) {
             /* fix invalid filenames */
             String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
-            downloadLink.setFinalFileName(fixedName);
+            link.setFinalFileName(fixedName);
         }
         dl.startDownload();
     }
 
-    private void handleErrorsApi() throws PluginException {
+    private void handleErrorsApi(final DownloadLink link, final Account account) throws PluginException {
         final String status = PluginJSonUtils.getJsonValue(br, "status");
         if ("Error".equalsIgnoreCase(status)) {
             final String error = getError();
@@ -1175,6 +1175,14 @@ public class DepositFiles extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "File Password protected!");
             } else if ("CaptchaInvalid".equalsIgnoreCase(error)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                /* Unknown error -> Should never happen */
+                /* E.g. 2020-12-22: {"status":"Error","status_code":0,"error":"","error_code":0} */
+                if (link == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error: " + error);
+                } else {
+                    throw new AccountUnavailableException("Unknown API error: " + error, 5 * 60 * 1000l);
+                }
             }
         }
     }
