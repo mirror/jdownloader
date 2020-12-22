@@ -17,6 +17,7 @@ import java.net.Socket;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Vector;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamInterface;
@@ -199,6 +201,20 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         }
 
         @Override
+        public ProtocolVersion[] getProtocolVersions() {
+            final ProtocolVersion[] ret = super.getProtocolVersions();
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
+                if (!protocolVersions.contains(ProtocolVersion.TLSv13)) {
+                    protocolVersions.add(0, ProtocolVersion.TLSv13);
+                }
+                return protocolVersions.toArray(new ProtocolVersion[0]);
+            } else {
+                return ret;
+            }
+        }
+
+        @Override
         protected int[] getSupportedCipherSuites() {
             return TlsUtils.getSupportedCipherSuites(getCrypto(), enabledCipherSuites);
         }
@@ -219,8 +235,10 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         public Hashtable getClientExtensions() throws IOException {
             final Hashtable clientExtensions = super.getClientExtensions();
             if (clientExtensions != null) {
-                // only possible with TLS1.3/block ciphers, see TlsClientProtocol.processServerHelloMessage
-                clientExtensions.remove(TlsExtensionsUtils.EXT_encrypt_then_mac);
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE || !Arrays.asList(getProtocolVersions()).contains(ProtocolVersion.TLSv13)) {
+                    // only possible with TLS1.3/block ciphers, see TlsClientProtocol.processServerHelloMessage
+                    clientExtensions.remove(TlsExtensionsUtils.EXT_encrypt_then_mac);
+                }
                 // do not request OCP
                 clientExtensions.remove(TlsExtensionsUtils.EXT_status_request);
                 clientExtensions.remove(TlsExtensionsUtils.EXT_status_request_v2);
