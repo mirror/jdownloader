@@ -6,8 +6,10 @@ import java.awt.event.ActionListener;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
@@ -19,12 +21,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-
 public class SpeedLimitator extends AbstractDialog<Object> {
-
     private AbstractNode                 contextObject;
     private ExtCheckBox                  enabledBox;
     private SizeSpinner                  spinner;
@@ -47,17 +44,18 @@ public class SpeedLimitator extends AbstractDialog<Object> {
         super.setReturnmask(b);
         if (b) {
             for (AbstractNode n : inteliSelect) {
-                DownloadLink link = null;
+                final DownloadLink link;
                 if (n instanceof CrawledLink) {
                     link = ((CrawledLink) n).getDownloadLink();
                 } else if (n instanceof DownloadLink) {
                     link = (DownloadLink) n;
+                } else {
+                    continue;
                 }
                 if (link != null) {
                     link.setCustomSpeedLimit((int) (enabledBox.isSelected() ? spinner.getLongValue() : 0));
                 }
             }
-
         }
     }
 
@@ -70,34 +68,21 @@ public class SpeedLimitator extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         MigPanel ret = new MigPanel("ins 2,wrap 2", "[][grow,fill]", "[]");
         ret.setOpaque(false);
-
         JLabel lbl = getLbl(_GUI.T.CustomSpeedLimitator_SpeedlimitEditor__lbl(), new AbstractIcon(IconKey.ICON_SPEED, 18));
         ret.add(SwingUtils.toBold(lbl), "spanx");
-
         spinner = new SizeSpinner(1, Long.MAX_VALUE, 1024) {
             /**
-            *
-            */
+             *
+             */
             private static final long serialVersionUID = 1L;
 
             protected String longToText(long longValue) {
-
                 return _GUI.T.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
             }
         };
-
-        enabledBox = new ExtCheckBox(spinner);
+        enabledBox = new ExtCheckBox();
         ret.add(enabledBox);
-        spinner.addChangeListener(new ChangeListener() {
-
-            @Override
-            public void stateChanged(ChangeEvent e) {
-
-            }
-        });
-
         enabledBox.addActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!enabledBox.isSelected()) {
@@ -117,6 +102,5 @@ public class SpeedLimitator extends AbstractDialog<Object> {
             enabledBox.setSelected(false);
         }
         return ret;
-
     }
 }
