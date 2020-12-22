@@ -2,6 +2,8 @@ package org.jdownloader.gui.views.downloads.table;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -9,15 +11,11 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 
-import jd.controlling.packagecontroller.AbstractNode;
-
 public class SpeedLimitAction extends AppAction {
-
-    private java.util.List<AbstractNode> inteliSelect;
-    private AbstractNode                 context;
+    private final java.util.List<AbstractNode> inteliSelect;
+    private final AbstractNode                 context;
 
     public SpeedLimitAction(AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
-
         setName(_GUI.T.ContextMenuFactory_createPopup_speed());
         setIconKey(IconKey.ICON_SPEED);
         this.context = contextObject;
@@ -26,7 +24,6 @@ public class SpeedLimitAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         try {
             Dialog.getInstance().showDialog(new SpeedLimitator(context, inteliSelect));
         } catch (DialogClosedException e1) {
@@ -35,5 +32,4 @@ public class SpeedLimitAction extends AppAction {
             e1.printStackTrace();
         }
     }
-
 }
