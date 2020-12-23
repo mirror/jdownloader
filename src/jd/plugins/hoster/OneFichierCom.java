@@ -26,19 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -66,6 +53,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -344,7 +344,11 @@ public class OneFichierCom extends PluginForHost {
         if (dllink != null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                dl.getConnection().disconnect();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 // link has expired... but it could be for any reason! dont care!
                 // clear saved final link
                 link.setProperty(PROPERTY_HOTLINK, Property.NULL);
@@ -362,7 +366,11 @@ public class OneFichierCom extends PluginForHost {
         if (dllink != null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free, maxchunks_free);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                dl.getConnection().disconnect();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 // link has expired... but it could be for any reason! dont care!
                 // clear saved final link
                 link.setProperty(PROPERTY_FREELINK, Property.NULL);
@@ -970,20 +978,18 @@ public class OneFichierCom extends PluginForHost {
                     throw e;
                 }
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
-                        dl.getConnection().disconnect();
-                        if (i + 1 == 2) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-                        }
-                        continue;
-                    }
                     logger.warning("The final dllink seems not to be a file!");
                     try {
                         br.followConnection(true);
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    br.followConnection();
+                    if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
+                        if (i + 1 == 2) {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
+                        }
+                        continue;
+                    }
                     errorHandling(link, account, br);
                     /** TODO: Check this */
                     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1094,7 +1100,7 @@ public class OneFichierCom extends PluginForHost {
         try {
             errorIpBlockedHandling(br);
         } catch (PluginException e) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l, e);
         }
         if (dllink == null) {
             /* The link is always SSL - based on user setting it will redirect to either https or http. */
@@ -1135,6 +1141,8 @@ public class OneFichierCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 logger.log(e);

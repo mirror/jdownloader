@@ -53,6 +53,7 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
@@ -89,6 +90,7 @@ import org.jdownloader.controlling.ffmpeg.FFprobe;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
+import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment.X_KEY_METHOD;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.logging.LogController;
@@ -134,7 +136,6 @@ public class HLSDownloader extends DownloadInterface {
     private volatile Map<String, File>           fileMap              = new HashMap<String, File>();
     private final AtomicInteger                  currentPlayListIndex = new AtomicInteger(0);
     private final HashMap<String, SecretKeySpec> aes128Keys           = new HashMap<String, SecretKeySpec>();
-    private final boolean                        isJared              = Application.isJared(HLSDownloader.class);
 
     public CONCATSOURCE getConcatSource() {
         return CONCATSOURCE.HTTP;
@@ -235,27 +236,39 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     public boolean isEncrypted() {
-        if (isJared) {
-            if (m3u8Playlists != null) {
-                for (final M3U8Playlist playlist : m3u8Playlists) {
-                    if (playlist.isEncrypted()) {
-                        return true;
-                    }
+        return !isEncryptionSupported(getEncryptionMethod());
+    }
+
+    public X_KEY_METHOD getEncryptionMethod() {
+        if (m3u8Playlists != null) {
+            for (final M3U8Playlist playlist : m3u8Playlists) {
+                final X_KEY_METHOD encryptionMethod = playlist.getEncryptionMethod();
+                if (!X_KEY_METHOD.NONE.equals(encryptionMethod)) {
+                    return encryptionMethod;
                 }
             }
         }
-        return false;
+        return X_KEY_METHOD.NONE;
+    }
+
+    private boolean isEncryptionSupported(X_KEY_METHOD method) {
+        switch (method) {
+        case AES_128:
+            return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        case SAMPLE_AES:
+        default:
+            return false;
+        case NONE:
+            return true;
+        }
     }
 
     protected boolean isSupported(M3U8Playlist m3u8) {
-        if (isJared) {
-            if (m3u8 != null && m3u8.isEncrypted()) {
-                return false;
-            } else {
-                return !isEncrypted();
-            }
+        if (m3u8 != null && !isEncryptionSupported(m3u8.getEncryptionMethod())) {
+            return false;
+        } else {
+            return !isEncrypted();
         }
-        return true;
     }
 
     public LogInterface initLogger(final DownloadLink link) {
@@ -1449,7 +1462,7 @@ public class HLSDownloader extends DownloadInterface {
     @Override
     public boolean startDownload() throws Exception {
         if (isEncrypted()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + getEncryptionMethod() + ") is not supported!");
         }
         final List<File> requiredFiles = new ArrayList<File>();
         try {

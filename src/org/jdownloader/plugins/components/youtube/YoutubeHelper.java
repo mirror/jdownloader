@@ -2707,36 +2707,38 @@ public class YoutubeHelper {
     }
 
     private static Set<AbstractFFmpegBinary.FLAG> FFMPEG_SUPPORTED_FLAGS = null;
+    private final static Object                   FFMPEG_LOCK            = new Object();
 
-    private synchronized static Boolean isSupported(YoutubeITAG itag) {
+    private Boolean isSupported(final YoutubeITAG itag) {
         if (itag != null) {
-            if (FFMPEG_SUPPORTED_FLAGS == null) {
-                final LogInterface logger = LogController.CL(true);
-                final FFmpeg ffmpeg = new FFmpeg(null) {
-                    @Override
-                    public LogInterface getLogger() {
-                        return logger;
-                    }
-                };
-                if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
-                    FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
-                }
-            }
-            if (FFMPEG_SUPPORTED_FLAGS != null) {
-                if (itag.getVideoCodec() != null) {
-                    switch (itag.getVideoCodec()) {
-                    case AV1:
-                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.AV1);
+            synchronized (FFMPEG_LOCK) {
+                if (FFMPEG_SUPPORTED_FLAGS == null) {
+                    final FFmpeg ffmpeg = new FFmpeg(null) {
+                        @Override
+                        public LogInterface getLogger() {
+                            return logger;
+                        }
+                    };
+                    if (ffmpeg.isAvailable() && ffmpeg.isCompatible()) {
+                        FFMPEG_SUPPORTED_FLAGS = ffmpeg.getSupportedFlags();
                     }
                 }
-                if (itag.getAudioCodec() != null) {
-                    switch (itag.getAudioCodec()) {
-                    case OPUS:
-                    case OPUS_SPATIAL:
-                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
-                    case VORBIS:
-                    case VORBIS_SPATIAL:
-                        return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+                if (FFMPEG_SUPPORTED_FLAGS != null) {
+                    if (itag.getVideoCodec() != null) {
+                        switch (itag.getVideoCodec()) {
+                        case AV1:
+                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.AV1);
+                        }
+                    }
+                    if (itag.getAudioCodec() != null) {
+                        switch (itag.getAudioCodec()) {
+                        case OPUS:
+                        case OPUS_SPATIAL:
+                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.OPUS);
+                        case VORBIS:
+                        case VORBIS_SPATIAL:
+                            return FFMPEG_SUPPORTED_FLAGS.contains(AbstractFFmpegBinary.FLAG.VORBIS);
+                        }
                     }
                 }
             }

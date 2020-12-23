@@ -10,15 +10,18 @@ import jd.http.Browser;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment.X_KEY_METHOD;
 
 public class M3U8Playlist {
     public static class M3U8Segment {
         public static enum X_KEY_METHOD {
+            // https://tools.ietf.org/html/draft-pantos-hls-rfc8216bis-02#section-4.4.2.4
             // Media Segments are not encrypted
             NONE("NONE"),
             // 128-bit key, Cipher Block Chaining, and PKCS7 padding
             AES_128("AES-128"),
             // SAMPLE-AES means that the Media Segments contain media samples, such as audio or video, that are encrypted
+            // https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/HLS_Sample_Encryption/Encryption/Encryption.html
             SAMPLE_AES("SAMPLE-AES");
             private final String method;
 
@@ -202,7 +205,7 @@ public class M3U8Playlist {
 
     @Override
     public String toString() {
-        return "M3U8:Encrypted:" + isEncrypted() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
+        return "M3U8:Encrypted:" + getEncryptionMethod() + "|Segments:" + size() + "|Duration:" + getEstimatedDuration() + "ms|Estimated Size:" + getEstimatedSize();
     }
 
     private final static boolean X_BYTERANGE_SUPPORT = false;
@@ -384,13 +387,13 @@ public class M3U8Playlist {
         return segments.indexOf(segment);
     }
 
-    public boolean isEncrypted() {
+    public X_KEY_METHOD getEncryptionMethod() {
         for (final M3U8Segment segment : segments) {
             if (!M3U8Segment.X_KEY_METHOD.NONE.equals(segment.getxKeyMethod())) {
-                return true;
+                return segment.getxKeyMethod();
             }
         }
-        return false;
+        return M3U8Segment.X_KEY_METHOD.NONE;
     }
 
     public long getSegmentLoaded(final int index) {

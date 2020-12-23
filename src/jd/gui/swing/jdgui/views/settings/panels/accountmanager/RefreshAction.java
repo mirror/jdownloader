@@ -5,15 +5,15 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 
-import org.appwork.utils.event.queue.QueueAction;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-
 import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
 import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
+
+import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 
 public class RefreshAction extends AbstractAction {
     /**
@@ -40,7 +40,6 @@ public class RefreshAction extends AbstractAction {
             return;
         }
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (selection == null) {
@@ -68,8 +67,8 @@ public class RefreshAction extends AbstractAction {
     public boolean isEnabled() {
         if (ignoreSelection) {
             return true;
+        } else {
+            return selection != null && selection.size() > 0;
         }
-        return selection != null && selection.size() > 0;
     }
-
 }
