@@ -20,9 +20,9 @@ import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.utils.swing.SwingUtils;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.Header;
+import org.jdownloader.extensions.StartException;
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
@@ -30,11 +30,11 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
-    public TrayConfigPanel(TrayExtension trayExtension) {
+    public TrayConfigPanel(final TrayExtension trayExtension) {
         super(trayExtension, true);
         /*
          * Override default implementation of MigLayout layout manager and use one more suitable to this panel
-         * 
+         *
          * Useful resources: http://www.migcalendar.com/miglayout/mavensite/apidocs/index.html
          * http://www.migcalendar.com/miglayout/mavensite/docs/cheatsheet.pdf
          */
@@ -64,9 +64,10 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
                     final boolean enabled = Boolean.TRUE.equals(newValue);
                     extension.setEnabled(enabled);
                     updateHeaders(enabled);
-                } catch (Exception e1) {
-                    org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e1);
-                    Dialog.getInstance().showExceptionDialog("Error", e1.getMessage(), e1);
+                } catch (StartException e) {
+                    extension.getLogger().log(e);
+                } catch (Exception e) {
+                    extension.getLogger().log(e);
                 }
             }
 
