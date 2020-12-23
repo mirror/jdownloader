@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -940,7 +939,7 @@ public class TbCmV2 extends PluginForDecrypt {
      */
     public ArrayList<YoutubeClipData> parsePlaylist(final String playlistID) throws Exception {
         // this returns the html5 player
-        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+        final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
             if (!helper.getLoggedIn()) {
                 /*
@@ -972,7 +971,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 String jsonPage = null, nextPage = null;
                 checkErrors(pbr);
                 // this will speed up searches. we know this wont be present..
-                String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
+                final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
                 int before = playListDupes.size();
                 if (videos != null && videos.length > 0) {
                     for (String relativeUrl : videos) {
@@ -987,11 +986,12 @@ public class TbCmV2 extends PluginForDecrypt {
                 } else {
                     isJson = true;
                     if (round == 0) {
-                        if (helper.getYtInitialData() != null) {
-                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(helper.getYtInitialData(), "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                        final Map<String, Object> ytInitialData = helper.getYtInitialData();
+                        if (ytInitialData != null) {
+                            final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
                             if (pl != null) {
                                 for (final Object p : pl) {
-                                    final LinkedHashMap<String, Object> vid = (LinkedHashMap<String, Object>) p;
+                                    final Map<String, Object> vid = (Map<String, Object>) p;
                                     final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
                                     if (id != null) {
                                         playListDupes.add(id);
@@ -999,7 +999,7 @@ public class TbCmV2 extends PluginForDecrypt {
                                     }
                                 }
                                 // continuation
-                                final LinkedHashMap<String, Object> c = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(helper.getYtInitialData(), "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/continuations/{0}/nextContinuationData");
+                                final Map<String, Object> c = (Map<String, Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/continuations/{0}/nextContinuationData");
                                 if (c != null) {
                                     final String ctoken = (String) c.get("continuation");
                                     final String itct = (String) c.get("clickTrackingParams");
@@ -1050,7 +1050,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         if (map != null) {
-                            final ArrayList<Object> pl = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
+                            final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
                             if (pl != null) {
                                 for (final Object p : pl) {
                                     final Map<String, Object> vid = (Map<String, Object>) p;
