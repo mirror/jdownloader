@@ -15,12 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bibeltv.de" }, urls = { "https?://(?:www\\.)?bibeltv\\.de/mediathek/(videos/crn/\\d+|videos/([a-z0-9\\-]+-\\d+|\\d+-[a-z0-9\\-]+))" })
 public class BibeltvDe extends PluginForHost {
@@ -161,12 +162,14 @@ public class BibeltvDe extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
+        boolean hasURLs = false;
         try {
             /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
             final ArrayList<Object> ressourcelist = (ArrayList) entries.get("urls");
             long max_width = 0;
             long max_width_temp = 0;
             for (final Object videoo : ressourcelist) {
+                hasURLs = true;
                 entries = (LinkedHashMap<String, Object>) videoo;
                 final String dllink_tmp = (String) entries.get("url");
                 max_width_temp = JavaScriptEngineFactory.toLong(entries.get("width"), 0);
@@ -188,8 +191,10 @@ public class BibeltvDe extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -200,7 +205,12 @@ public class BibeltvDe extends PluginForHost {
                 }
             }
         }
-        return AvailableStatus.TRUE;
+        if (hasURLs) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "DRM protected");
+        } else {
+            tempunavailable = true;
+            return AvailableStatus.UNCHECKED;
+        }
     }
 
     @Override
@@ -218,18 +228,19 @@ public class BibeltvDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, failureReason);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
