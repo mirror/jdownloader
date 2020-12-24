@@ -26,6 +26,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -53,19 +66,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -903,7 +903,7 @@ public class OneFichierCom extends PluginForHost {
                         throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
                     }
                     logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language")) && !true) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Zwei-Faktor-Authentifizierung aktiviert!\r\nFalls du die Zwei-Faktor-Authentifizierung aktiviert hast, kannst du diese deaktivieren und es erneut versuchen.\r\nPremium Benutzer können die Zwei-Faktor-Authentifizierung aktiviert lassen und es per API Login erneut versuchen.\r\nErklärung des Logins per API (nur premium Benutzer):\r\n1. Login per API in den JD Einstellungen aktivieren: Einstellungen -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Deinen API Key von der 1fichier Webseite kopieren: 1fichier.com/console/params.pl\r\n3. Erneut versuchen, deinen 1fichier Account in JD hinzuzufügen und dabei den API Key eingeben.\r\nFalls du myjdownloader verwendest, gib deinen API Key in das Benutzername- & Passwort Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentication enabled!\r\nIf you have 2-factor-authentication enabled, you have to disable it and try again.\r\nPremium users can leave 2FA login enabled and try again via API login:\r\nHow to login in JD via API key (premium users only):\r\n1. Enable API Key login for JD via Settings -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Get your API Key from the following webpage: 1fichier.com/console/params.pl\r\n3. Open this add-account-dialog again and enter your API key to add your account to JD.\r\nIn case you are using myjdownloader, enter your API Key in both the username- and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
