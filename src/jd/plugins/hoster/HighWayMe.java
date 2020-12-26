@@ -40,7 +40,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -160,16 +159,20 @@ public class HighWayMe extends UseNet {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     filesize = Long.parseLong(filesize_str);
+                    link.setDownloadSize(filesize);
                     break;
                 } else {
                     try {
                         con = br.openHeadConnection(dlink);
-                        if (!con.getContentType().contains("html")) {
-                            filesize = con.getLongContentLength();
+                        if (this.looksLikeDownloadableContent(con)) {
+                            filesize = con.getCompleteContentLength();
                             if (filesize <= 0) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            } else {
+                                filename = getFileNameFromHeader(con);
+                                link.setDownloadSize(filesize);
+                                link.setVerifiedFileSize(filesize);
                             }
-                            filename = getFileNameFromHeader(con);
                         }
                     } finally {
                         try {
@@ -180,9 +183,6 @@ public class HighWayMe extends UseNet {
                     break;
                 }
             }
-            if (filesize > -1) {
-                link.setDownloadSize(filesize);
-            }
             /* 2017-05-18: Even via json API, filenames are often html encoded --> Fix that */
             filename = Encoding.htmlDecode(filename);
             link.setFinalFileName(filename);
@@ -191,15 +191,16 @@ public class HighWayMe extends UseNet {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getDownloadURL());
-                if (con.getContentType().contains("html")) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final long filesize = con.getLongContentLength();
+                final long filesize = con.getCompleteContentLength();
                 if (filesize <= 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setDownloadSize(filesize);
+                link.setVerifiedFileSize(filesize);
             } finally {
                 try {
                     con.disconnect();
@@ -211,8 +212,8 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (account != null && downloadLink.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account != null && link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             /* This is the only linktype which is downloadable via account */
             return true;
         } else if (account == null) {
@@ -221,7 +222,7 @@ public class HighWayMe extends UseNet {
         }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (UPDATELOCK) {
-            final String currentHost = this.correctHost(downloadLink.getHost());
+            final String currentHost = this.correctHost(link.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
@@ -238,17 +239,22 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, defaultMAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, defaultMAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            this.br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -261,15 +267,20 @@ public class HighWayMe extends UseNet {
             return;
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, defaultMAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
                 }
-                logger.warning("The final dllink seems not to be a file!");
-                this.br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
             }
             dl.startDownload();
         }
@@ -307,8 +318,13 @@ public class HighWayMe extends UseNet {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         jd.plugins.hoster.SimplyPremiumCom.handle503(this.br, responsecode);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl.setFilenameFix(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             /* 2020-06-03: E.g. cache/serverside download handling/status */
             final String retry_in_secondsStr = PluginJSonUtils.getJson(br, "retry_in_seconds");
             if (retry_in_secondsStr != null && retry_in_secondsStr.matches("\\d+")) {
@@ -407,23 +423,27 @@ public class HighWayMe extends UseNet {
         handleAPIErrors(this.br, account);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
