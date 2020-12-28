@@ -335,7 +335,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1241,7 +1241,7 @@ public class VKontakteRuHoster extends PluginForHost {
             br.setDebug(true);
             br.setVerbose(true);
         }
-        String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, "");
+        String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, "");
         if (StringUtils.isEmpty(useragent) || useragent.length() <= 3) {
             useragent = null;
         }
