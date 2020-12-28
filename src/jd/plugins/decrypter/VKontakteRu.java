@@ -26,15 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -60,7 +51,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -220,7 +219,7 @@ public class VKontakteRu extends PluginForDecrypt {
         };
         br.setFollowRedirects(true);
         /* Set settings */
-        cfg = SubConfiguration.getConfig("vkontakte.ru");
+        cfg = SubConfiguration.getConfig("vk.com");
         fastcheck_photo = cfg.getBooleanProperty(FASTLINKCHECK_PICTURES, false);
         fastcheck_audio = cfg.getBooleanProperty(FASTLINKCHECK_AUDIO, false);
         vkwall_grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
@@ -1733,8 +1732,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br>
-     * Wrapper for websiteCrawlContent
+     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source
@@ -2452,23 +2450,23 @@ public class VKontakteRu extends PluginForDecrypt {
     /** Log in via hoster plugin */
     @SuppressWarnings("deprecation")
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
         if (account == null) {
-            account = AccountController.getInstance().getValidAccount(hostPlugin);
+            account = AccountController.getInstance().getValidAccount(getHost());
             if (account == null) {
                 logger.warning("There is no account available, continuing without logging in (if possible)");
                 return false;
             }
         }
+        final PluginForHost hostPlugin = getNewPluginForHostInstance(getHost());
         try {
             ((jd.plugins.hoster.VKontakteRuHoster) hostPlugin).login(this.br, account, false);
+            logger.info("Logged in successfully");
+            return true;
         } catch (final PluginException e) {
-            logger.warning("Login failed - continuing without login");
-            account.setValid(false);
+            handleAccountException(hostPlugin, account, e);
+            logger.exception("Login failed - continuing without login", e);
             return false;
         }
-        logger.info("Logged in successfully");
-        return true;
     }
 
     /**

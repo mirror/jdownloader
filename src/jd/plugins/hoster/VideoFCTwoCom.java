@@ -364,7 +364,8 @@ public class VideoFCTwoCom extends PluginForHost {
             }
             /* 2020-12-17: TODO: Fix this - it doesn't work! */
             // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
-            // br.getPage("https://fc2.com/en/login.php?switch_language=en");
+            br.getPage("https://fc2.com");
+            br.getPage("https://fc2.com/en/login.php?switch_language=en");
             // br.getPage("https://video.fc2.com/");
             br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
             /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */

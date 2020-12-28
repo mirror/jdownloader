@@ -26,19 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -66,6 +53,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -1171,7 +1171,7 @@ public class OneFichierCom extends PluginForHost {
          * USER HAS TO ENTER API_KEY INSTEAD OF USERNAME:PASSWORD (or APIKEY:APIKEY)!!
          */
         final boolean useAPI_setting = PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled();
-        return account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.UNKNOWN) && useAPI_setting;
+        return account != null && useAPI_setting && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.UNKNOWN);
     }
 
     /** Required to authenticate via API. */
