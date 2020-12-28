@@ -57,7 +57,7 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML("passster-captcha-js")) {
+        if (br.containsHTML("passster-captcha-js") && br.containsHTML(">\\s*Protected Area\\s*<")) {
             /* 2020-10-26: Cheap clientside captcha */
             final String nonce = PluginJSonUtils.getJson(br, "nonce");
             final String post_id = PluginJSonUtils.getJson(br, "post_id");

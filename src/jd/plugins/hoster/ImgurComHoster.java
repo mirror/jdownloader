@@ -20,20 +20,6 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
@@ -59,6 +45,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -799,14 +799,24 @@ public class ImgurComHoster extends PluginForHost {
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("data");
+        // https://api.imgur.com/models/account_settings
         final Object pro_expiration = entries.get("pro_expiration");
-        String accountStatus = null;
-        if (pro_expiration != null && ((Boolean) pro_expiration).booleanValue() == false) {
+        final String accountStatus;
+        if (pro_expiration == null || Boolean.FALSE.equals(pro_expiration)) {
             account.setType(AccountType.FREE);
             accountStatus = "Free user";
+        } else if (pro_expiration instanceof Number) {
+            ai.setValidUntil(((Number) pro_expiration).intValue() * 1000);
+            if (ai.isExpired()) {
+                account.setType(AccountType.FREE);
+                accountStatus = "Free user";
+            } else {
+                account.setType(AccountType.PREMIUM);
+                accountStatus = "Premium user";
+            }
         } else {
-            account.setType(AccountType.PREMIUM);
-            accountStatus = "Premium user";
+            account.setType(AccountType.FREE);
+            accountStatus = "Free user";
         }
         // final long token_first_usage_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, 0);
         // final long token_valid_until = account.getLongProperty(PROPERTY_ACCOUNT_valid_until, 0);
