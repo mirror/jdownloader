@@ -24,12 +24,6 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,6 +46,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -150,8 +151,8 @@ public class VideoFCTwoCom extends PluginForHost {
         String filename = null;
         String uploadername = null;
         /**
-         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br>
-         * 2020-12-18: TODO: re-check this statement - new API should be used for all videos by now!
+         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br> 2020-12-18:
+         * TODO: re-check this statement - new API should be used for all videos by now!
          */
         // final boolean useNewAPI = account == null && newAPIVideotoken != null;
         String filenamePrefix = "";
@@ -315,142 +316,148 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
+
     /*
      * IMPORTANT NOTE: Free (unregistered) Users can watch (&download) videos up to 2 hours in length - if videos are longer, users can only
      * watch the first two hours of them - afterwards they will get this message: http://i.snag.gy/FGl1E.jpg
      */
-
     private void login(final Account account, final boolean verifyCookies, final String checkURL) throws IOException, PluginException, InterruptedException {
-        prepareBrowser(this.br);
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        final Cookies cookies = account.loadCookies("");
-        final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
-        if (cookies != null) {
-            this.br.setCookies(this.getHost(), cookies);
-            if (!verifyCookies) {
-                logger.info("Trust cookies without login");
-                return;
-            } else {
-                logger.info("Attempting cookie login");
-                br.getPage(checkURL);
+        synchronized (account) {
+            if (!StringUtils.contains(account.getUser(), "@")) {
+                // >XYZ is not an e-mail address.<
+                throw new AccountInvalidException("Please enter your E-Mail address as username!");
+            }
+            prepareBrowser(this.br);
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (!verifyCookies) {
+                    logger.info("Trust cookies without login");
+                    return;
+                } else {
+                    logger.info("Attempting cookie login");
+                    br.getPage(checkURL);
+                    if (isLoggedINVideoFC2()) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+            }
+            if (userCookies != null) {
+                logger.info("Attempting user-cookie login");
+                this.br.setCookies(this.getHost(), userCookies);
+                br.getPage("https://video.fc2.com/a/");
                 if (isLoggedINVideoFC2()) {
-                    logger.info("Cookie login successful");
+                    logger.info("Cookie user-login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
                 } else {
-                    logger.info("Cookie login failed");
+                    logger.info("Cookie user-login failed");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-        }
-        if (userCookies != null) {
-            logger.info("Attempting user-cookie login");
-            this.br.setCookies(this.getHost(), userCookies);
-            br.getPage("https://video.fc2.com/a/");
-            if (isLoggedINVideoFC2()) {
-                logger.info("Cookie user-login successful");
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                return;
-            } else {
-                logger.info("Cookie user-login failed");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* 2020-12-17: TODO: Fix this - it doesn't work! */
+            // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
+            // br.getPage("https://fc2.com/en/login.php?switch_language=en");
+            // br.getPage("https://video.fc2.com/");
+            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
+            /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
+            final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
+            if (redirect != null) {
+                br.getPage(redirect);
             }
-        }
-        /* 2020-12-17: TODO: Fix this - it doesn't work! */
-        // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
-        // br.getPage("https://fc2.com/en/login.php?switch_language=en");
-        // br.getPage("https://video.fc2.com/");
-        br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
-        /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
-        final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
-        // https://fc2.com/en/login.php?ref=video
-        // br.getPage("/en/login.php?ref=video");
-        final Form loginform = br.getFormbyProperty("name", "form_login");
-        if (loginform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        loginform.put("email", Encoding.urlEncode(account.getUser()));
-        loginform.put("pass", Encoding.urlEncode(account.getPass()));
-        // loginform.put("Submit.x", new Random().nextInt(100) + "");
-        // loginform.put("Submit.y", new Random().nextInt(100) + "");
-        loginform.put("image.x", new Random().nextInt(100) + "");
-        loginform.put("image.y", new Random().nextInt(100) + "");
-        // loginform.remove("image");
-        /*
-         * "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. --> Let's try
-         * it anyways and hope it makes our cookies valid for a longer period of time!
-         */
-        // loginform.remove("keep_login");
-        loginform.put("keep_login", "1");
-        if (loginform.hasInputFieldByName("recaptcha")) {
-            final DownloadLink dlinkbefore = this.getDownloadLink();
-            try {
+            // https://fc2.com/en/login.php?ref=video
+            // br.getPage("/en/login.php?ref=video");
+            final Form loginform = br.getFormbyProperty("name", "form_login");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("email", Encoding.urlEncode(account.getUser()));
+            loginform.put("pass", Encoding.urlEncode(account.getPass()));
+            // loginform.put("Submit.x", new Random().nextInt(100) + "");
+            // loginform.put("Submit.y", new Random().nextInt(100) + "");
+            loginform.put("image.x", new Random().nextInt(100) + "");
+            loginform.put("image.y", new Random().nextInt(100) + "");
+            // loginform.remove("image");
+            /*
+             * "Keep login" functionality is serverside broken? I'm not able to select this on their website/it doesn't get set. --> Let's
+             * try it anyways and hope it makes our cookies valid for a longer period of time!
+             */
+            // loginform.remove("keep_login");
+            loginform.put("keep_login", "1");
+            if (loginform.hasInputFieldByName("recaptcha")) {
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                try {
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+                } finally {
+                    this.setDownloadLink(dlinkbefore);
+                }
+            }
+            br.submitForm(loginform);
+            /*
+             * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
+             */
+            final Form twoFactorLogin = br.getFormbyActionRegex(".*login_authentication\\.php.*");
+            if (twoFactorLogin != null) {
+                logger.info("2FA login required");
                 final DownloadLink dl_dummy;
-                if (dlinkbefore != null) {
-                    dl_dummy = dlinkbefore;
+                if (this.getDownloadLink() != null) {
+                    dl_dummy = this.getDownloadLink();
                 } else {
                     dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                    this.setDownloadLink(dl_dummy);
                 }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                loginform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
-            } finally {
-                this.setDownloadLink(dlinkbefore);
+                String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
+                if (twoFACode != null) {
+                    twoFACode = twoFACode.trim();
+                }
+                if (twoFACode == null || !twoFACode.matches("[A-Za-z0-9]{6}")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                logger.info("Submitting 2FA code");
+                twoFactorLogin.put("code", twoFACode);
+                br.submitForm(twoFactorLogin);
             }
-        }
-        br.submitForm(loginform);
-        /*
-         * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
-         */
-        final Form twoFactorLogin = br.getFormbyActionRegex(".*login_authentication\\.php.*");
-        if (twoFactorLogin != null) {
-            logger.info("2FA login required");
-            final DownloadLink dl_dummy;
-            if (this.getDownloadLink() != null) {
-                dl_dummy = this.getDownloadLink();
+            /*
+             * If everything goes as planned, we should be redirected to video.fc2.com but in case we're not we'll also check logged in
+             * state for their main portal fc2.com.
+             */
+            if (br.getHost(true).equals("fc2.com")) {
+                logger.info("Automatic redirect to video.fc2.com after login failed");
+                if (!isLoggedINFC2()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.getPage(checkURL);
             } else {
-                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                logger.info("Automatic redirect to video.fc2.com after login successful");
             }
-            String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
-            if (twoFACode != null) {
-                twoFACode = twoFACode.trim();
+            if (!br.getURL().equals(checkURL)) {
+                logger.info("Accessing target URL: " + checkURL);
+                br.getPage(checkURL);
             }
-            if (twoFACode == null || !twoFACode.matches("[A-Za-z0-9]{6}")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+            if (!isLoggedINVideoFC2()) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "fc2 Account is valid but service 'video.fc2.com' has not been added yet.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            logger.info("Submitting 2FA code");
-            twoFactorLogin.put("code", twoFACode);
-            br.submitForm(twoFactorLogin);
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
-        /*
-         * If everything goes as planned, we should be redirected to video.fc2.com but in case we're not we'll also check logged in state
-         * for their main portal fc2.com.
-         */
-        if (br.getHost(true).equals("fc2.com")) {
-            logger.info("Automatic redirect to video.fc2.com after login failed");
-            if (!isLoggedINFC2()) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            br.getPage(checkURL);
-        } else {
-            logger.info("Automatic redirect to video.fc2.com after login successful");
-        }
-        if (!br.getURL().equals(checkURL)) {
-            logger.info("Accessing target URL: " + checkURL);
-            br.getPage(checkURL);
-        }
-        if (!isLoggedINVideoFC2()) {
-            /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "fc2 Account is valid but service 'video.fc2.com' has not been added yet.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        account.saveCookies(this.br.getCookies(this.getHost()), "");
     }
 
     private boolean isLoggedINFC2() {

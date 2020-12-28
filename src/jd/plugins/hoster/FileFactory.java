@@ -42,6 +42,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -471,8 +472,7 @@ public class FileFactory extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         if (!isMail(account.getUser())) {
-            ai.setStatus("Please enter your E-Mail address as username!");
-            return ai;
+            throw new AccountInvalidException("Please enter your E-Mail address as username!");
         }
         if (useAPI.get()) {
             ai = fetchAccountInfo_API(account, ai);
