@@ -41,11 +41,11 @@ public class PruteklyncsXyz extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">\\s*Page Not Found\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String iframeURL = br.getRegex("<iframe src=\"(https?://[^\"]+)\">").getMatch(0);
+        final String iframeURL = br.getRegex("<iframe src\\s*=\\s*\"(https?://[^\"]+)\">").getMatch(0);
         if (iframeURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (StringUtils.containsIgnoreCase(br.getHost(), "dirtybandit")) {
@@ -53,6 +53,10 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(iframeURL);
+        if (br.containsHTML(">\\s*Page Not Found\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (br.containsHTML("passster-captcha-js")) {
             /* 2020-10-26: Cheap clientside captcha */
             final String nonce = PluginJSonUtils.getJson(br, "nonce");

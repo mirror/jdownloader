@@ -17,9 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
+
+import com.formdev.flatlaf.util.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VideocelebsNet extends KernelVideoSharingComV2 {
@@ -37,6 +40,16 @@ public class VideocelebsNet extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    protected String regexNormalTitle() {
+        final String ret = br.getRegex(Pattern.compile("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"/>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (StringUtils.isEmpty(ret)) {
+            return super.regexNormalTitle();
+        } else {
+            return ret;
+        }
     }
 
     @Override
