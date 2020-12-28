@@ -141,6 +141,14 @@ public abstract class PluginForDecrypt extends Plugin {
     protected PluginForHost getNewPluginForHostInstance(final String host) throws PluginException {
         final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
         if (lazyHostPlugin != null) {
+            return getNewPluginForHostInstance(lazyHostPlugin);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find PluginForHost:" + host);
+        }
+    }
+
+    protected PluginForHost getNewPluginForHostInstance(LazyHostPlugin lazyHostPlugin) throws PluginException {
+        if (lazyHostPlugin != null) {
             try {
                 final PluginForHost pluginForHost = lazyHostPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
                 pluginInstances.add(pluginForHost);
@@ -149,10 +157,11 @@ public abstract class PluginForDecrypt extends Plugin {
                 pluginForHost.init();
                 return pluginForHost;
             } catch (UpdateRequiredClassNotFoundException e) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to load PluginForHost:" + host, e);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to load PluginForHost:" + lazyHostPlugin, e);
             }
+        } else {
+            throw new IllegalArgumentException();
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find PluginForHost:" + host);
     }
 
     /**
@@ -334,7 +343,13 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected void handleAccountException(Account account, Throwable throwable) throws Exception {
-        final PluginForHost plugin = account.getPlugin().getLazyP().newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+        handleAccountException(null, account, throwable);
+    }
+
+    protected void handleAccountException(PluginForHost plugin, Account account, Throwable throwable) throws Exception {
+        if (plugin == null || !StringUtils.equals(account.getHosterByPlugin(), plugin.getHost())) {
+            plugin = getNewPluginForHostInstance(account.getPlugin().getLazyP());
+        }
         final LogInterface logger = getLogger();
         plugin.handleAccountException(account, logger, throwable);
     }
