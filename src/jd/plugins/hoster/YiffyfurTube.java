@@ -15,16 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,15 +31,20 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube", "animalporn.rocks", "beastialitytube.link" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?animalporn\\.rocks/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?beastialitytube\\.link/video/(\\d+)/([A-Za-z0-9\\-]+)" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube", "animalporn.ch", "beastialitytube.link" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?animalporn\\.ch/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?beastialitytube\\.link/video/(\\d+)/([A-Za-z0-9\\-]+)" })
 public class YiffyfurTube extends antiDDoSForHost {
     public YiffyfurTube(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     // Tags: Porn plugin
     // other:
-
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
@@ -212,11 +214,13 @@ public class YiffyfurTube extends antiDDoSForHost {
             /* Do not check URL if user wants to download otherwise we'll get an error 403. */
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                if (!looksLikeDownloadableContent(con)) {
                     server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
+                } else if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -237,18 +241,19 @@ public class YiffyfurTube extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

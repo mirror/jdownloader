@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamtapeCom extends PluginForHost {
@@ -112,12 +112,12 @@ public class StreamtapeCom extends PluginForHost {
         if (StringUtils.isEmpty(filename)) {
             filename = this.getFID(link);
         }
-        final String filesize = br.getRegex("<p class=\"subheading\">([^<>\"]+)</p>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
+        final String filesize = br.getRegex("<p class=\"subheading\">([^<>\"]+)</p>").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -138,7 +138,7 @@ public class StreamtapeCom extends PluginForHost {
              * 2020-10-15: New. Do NOT use the first URL inside html matching the (above) pattern. This will lead to a fake video which
              * advises the user to disable his adblocker!
              */
-            dllink = br.getRegex("document\\.getElementById\\('videolink'\\);elem\\['innerHTML'\\]='([^\"\\']+)").getMatch(0);
+            dllink = br.getRegex("document\\.getElementById\\((?:'|\")videolink(?:'|\")\\)(?:;elem\\['innerHTML'\\]|\\.innerHTML)\\s*=\\s*(?:'|\")([^\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
