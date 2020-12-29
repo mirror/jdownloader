@@ -402,7 +402,10 @@
 
 			</fileset>
 
-
+			<fileset dir="${dep.jdupdateclient}/src">
+						<include name="resources/**/*" />
+						<exclude name="**/*.java" />
+					</fileset>
 			<fileset dir="themes">
 				<include name="themes/standard/**/images/dialog/**/*" />
 				<include name="themes/standard/**/images/update*" />
