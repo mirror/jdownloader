@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
-import com.formdev.flatlaf.util.StringUtils;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VideocelebsNet extends KernelVideoSharingComV2 {
