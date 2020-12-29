@@ -817,6 +817,10 @@ public class PornHubCom extends PluginForHost {
                         }
                     } else {
                         getPage(br, (getProtocolFree() + "www." + PORNHUB_FREE));
+                        if (br.containsHTML("/authenticate/goToLoggedIn\"\\s*>\\s*Access your Pornhub Premium")) {
+                            // 2020-12-29 - no auto redirect to pornhub premium
+                            getPage(br, "/authenticate/goToLoggedIn");
+                        }
                         if (isLoggedInHtmlFree(br)) {
                             setAccountType(account, AccountType.FREE);
                             plugin.getLogger().info("Verified(slow) free->free login cookies:" + account.getType());
@@ -861,6 +865,7 @@ public class PornHubCom extends PluginForHost {
                 br.submitForm(loginform);
                 // final String success = PluginJSonUtils.getJsonValue(br, "success");
                 final String redirect = PluginJSonUtils.getJsonValue(br, "redirect");
+                final String username = PluginJSonUtils.getJsonValue(br, "username");
                 if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                     /* Required to get the (premium) cookies (multiple redirects). */
                     final boolean premiumExpired = redirect.contains(PORNHUB_PREMIUM) && redirect.contains("expired");
@@ -876,8 +881,14 @@ public class PornHubCom extends PluginForHost {
                         }
                     }
                 }
-                if (!br.containsHTML("class=\"signOut\"|/premium/lander\">Logout<")) {
+                if (!isLoggedInHtml(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (StringUtils.isEmpty(username)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (br.containsHTML("/authenticate/goToLoggedIn\"\\s*>\\s*Access your Pornhub Premium")) {
+                    // 2020-12-29 - no auto redirect to pornhub premium
+                    getPage(br, "/authenticate/goToLoggedIn");
                 }
                 if (isLoggedInHtmlPremium(br)) {
                     setAccountType(account, AccountType.PREMIUM);
@@ -898,7 +909,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isLoggedInHtml(final Browser br) {
-        return br != null && br.containsHTML("class\\s*=\\s*\"signOut\"");
+        return br != null && br.containsHTML("class\\s*=\\s*\"signOut\"|/premium/lander\"\\s*>\\s*Logout\\s*<");
     }
 
     public static boolean isLoggedInHtmlPremium(final Browser br) {
