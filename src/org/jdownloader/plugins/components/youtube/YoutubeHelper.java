@@ -89,7 +89,6 @@ import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
 import org.jdownloader.plugins.components.youtube.variants.AudioInterface;
 import org.jdownloader.plugins.components.youtube.variants.SubtitleVariant;
-import org.jdownloader.plugins.components.youtube.variants.VariantBase;
 import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoInterface;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
@@ -2414,12 +2413,6 @@ public class YoutubeHelper {
         String googleID = clone.getRegex("<yt\\:googlePlusUserId>(.*?)</yt\\:googlePlusUserId>").getMatch(0);
         if (StringUtils.isNotEmpty(googleID)) {
             vid.userGooglePlusID = googleID;
-        }
-    }
-
-    public static void main(String[] args) {
-        for (VariantBase tag : VariantBase.values()) {
-            System.out.println("<li>" + tag.getType() + " : " + tag.name() + "</li>");
         }
     }
 
