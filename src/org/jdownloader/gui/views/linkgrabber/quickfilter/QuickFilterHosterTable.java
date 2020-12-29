@@ -20,7 +20,6 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.images.NewTheme;
 
 public class QuickFilterHosterTable extends FilterTable {
-
     /**
      *
      */
@@ -30,7 +29,6 @@ public class QuickFilterHosterTable extends FilterTable {
 
     public QuickFilterHosterTable(Header hosterFilter, LinkGrabberTable table) {
         super(hosterFilter, table, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED);
-
     }
 
     @Override
@@ -92,19 +90,15 @@ public class QuickFilterHosterTable extends FilterTable {
 
     private String getID(CrawledLink link) {
         final DomainInfo info = link.getDomainInfo();
-        final String linkID;
-        final String linkHOST;
         if (link.isDirectHTTP()) {
-            linkHOST = Browser.getHost(link.getURL());
-            linkID = "http_".concat(linkHOST);
+            final String linkHOST = Browser.getHost(link.getURL());
+            return linkHOST != null ? "http_".concat(linkHOST) : "http_unknown";
         } else if (link.isFTP()) {
-            linkHOST = Browser.getHost(link.getURL());
-            linkID = "ftp_".concat(linkHOST);
+            final String linkHOST = Browser.getHost(link.getURL());
+            return linkHOST != null ? "ftp_".concat(linkHOST) : "ftp_unknown";
         } else {
-            linkHOST = info.getTld();
-            linkID = linkHOST;
+            return info.getTld();
         }
-        return linkID;
     }
 
     private Filter getFilter(CrawledLink link, AtomicBoolean newDisabledFilters) {
@@ -152,7 +146,6 @@ public class QuickFilterHosterTable extends FilterTable {
                     super.setEnabled(enabled);
                     QuickFilterHosterTable.this.setEnabled(enabled, this, ID);
                 }
-
             };
             if (favIcon != null) {
                 ret.setIcon(favIcon);
@@ -190,5 +183,4 @@ public class QuickFilterHosterTable extends FilterTable {
     public int getComplexity() {
         return 0;
     }
-
 }

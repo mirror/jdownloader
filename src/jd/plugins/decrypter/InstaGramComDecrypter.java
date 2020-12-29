@@ -253,9 +253,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             parameter = parameter.replace("?private_url=true", "");
             if (account == null) {
                 throw new AccountRequiredException();
+            } else {
+                ((jd.plugins.hoster.InstaGramCom) hostplugin).login(account, false);
+                loggedIN = true;
             }
-            ((jd.plugins.hoster.InstaGramCom) hostplugin).login(account, false);
-            loggedIN = true;
         }
         if (!parameter.endsWith("/")) {
             /* Add slash to the end to prevent 302 redirect to speed up the crawl process a tiny bit. */
@@ -329,7 +330,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private void crawlGallery(final CryptedLink param, final Account account, boolean loggedIN) throws Exception {
         final String galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
         getPage(param, br, parameter, null, null);
-        InstaGramCom.checkErrors(this.br);
+        try {
+            InstaGramCom.checkErrors(this.br);
+        } catch (AccountRequiredException e) {
+            if (account == null) {
+                // fail fast
+                throw e;
+            }
+        }
         if (!br.getURL().contains(galleryID)) {
             /*
              * E.g. private gallery and we're not logged in or we're not logged in with an account with the required permissions -> Redirect
@@ -342,7 +350,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 ((jd.plugins.hoster.InstaGramCom) hostplugin).login(account, false);
                 loggedIN = true;
                 getPage(param, br, parameter, null, null);
-                InstaGramCom.checkErrors(this.br);
+                try {
+                    InstaGramCom.checkErrors(this.br);
+                } catch (AccountRequiredException ignore) {
+                }
                 if (!br.getURL().contains(galleryID)) {
                     logger.info("Logged in but gallery still isn't accessible");
                     throw new AccountRequiredException();

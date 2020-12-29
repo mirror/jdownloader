@@ -16,13 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,6 +40,10 @@ import jd.plugins.LetitBitAccountBuilderImpl;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "https?://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/\\d+" })
 public class OldGamesCom extends PluginForHost {
@@ -113,14 +115,20 @@ public class OldGamesCom extends PluginForHost {
             dllink = getFinalDownloadlink();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -131,13 +139,13 @@ public class OldGamesCom extends PluginForHost {
         return "http://www.old-games.com/getfile/" + this.fuid;
     }
 
-    private String getFinalDownloadlink() throws PluginException {
-        String dllink = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD").getMatch(0);
+    private String getFinalDownloadlink() throws PluginException, MalformedURLException {
+        String dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.old\\-games\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.old\\-games\\.com/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD").getMatch(0);
+            if (dllink == null || new URL(dllink).getPath().length() < 5) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         return dllink;
     }
@@ -148,16 +156,15 @@ public class OldGamesCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (looksLikeDownloadableContent(con)) {
+                    return dllink;
                 } else {
-                    con = br2.openHeadConnection(dllink);
-                }
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    throw new IOException();
                 }
             } catch (final Exception e) {
+                logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
@@ -170,21 +177,16 @@ public class OldGamesCom extends PluginForHost {
         return dllink;
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
 
     private static final String MAINPAGE = "http://old-games.com";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -221,7 +223,9 @@ public class OldGamesCom extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.setProperty("cookies", Property.NULL);
+                }
                 throw e;
             }
         }
@@ -231,21 +235,12 @@ public class OldGamesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        try {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setConcurrentUsePossible(true);
         ai.setStatus("Premium account");
         account.setValid(true);
         return ai;
@@ -259,15 +254,20 @@ public class OldGamesCom extends PluginForHost {
         br.getPage(getGetfileURL());
         final String dllink = getFinalDownloadlink();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         link.setProperty("premium_directlink", dllink);
