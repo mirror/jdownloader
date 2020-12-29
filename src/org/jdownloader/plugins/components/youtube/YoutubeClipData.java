@@ -118,11 +118,11 @@ public class YoutubeClipData {
         // from yt player js
         if ("1".equals(approxThreedLayout)) {
             return true;
-        } else if (keywords != null && keywords.contains("3D")) {
-            return true;
         } else if (keywords3D != null) {
             final String enable = keywords3D.get("enable");
-            if (StringUtils.equals(enable, "true")) {
+            if (enable == null) {
+                return false;
+            } else if (StringUtils.equals(enable, "true")) {
                 return true;
             } else if (StringUtils.equals(enable, "LR")) {
                 return true;
