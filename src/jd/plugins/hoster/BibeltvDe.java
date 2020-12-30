@@ -207,6 +207,7 @@ public class BibeltvDe extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
                     }
+                    return AvailableStatus.TRUE;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -217,7 +218,10 @@ public class BibeltvDe extends PluginForHost {
                 }
             }
         }
-        if (StringUtils.isAllEmpty(hlsURL, mp4URL)) {
+        final Object drm = JavaScriptEngineFactory.walkJson(entries, "drm");
+        if (StringUtils.isEmpty(mp4URL) && drm != null && StringUtils.equalsIgnoreCase("true", drm.toString())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "DRM protected");
+        } else if (StringUtils.isAllEmpty(hlsURL, mp4URL)) {
             String failureReason = (String) JavaScriptEngineFactory.walkJson(entries, "error/message");
             if (StringUtils.isEmpty(failureReason)) {
                 failureReason = "Unknown error";

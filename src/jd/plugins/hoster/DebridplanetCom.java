@@ -19,15 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -42,6 +38,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
 public class DebridplanetCom extends PluginForHost {
@@ -113,6 +114,7 @@ public class DebridplanetCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (dllink == null) {
             this.loginWebsite(account, false);
+            br.setCurrentURL("https://debridplanet.com/debrid.php");
             final UrlQuery query = new UrlQuery();
             query.appendEncoded("urllist", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             if (link.getDownloadPassword() != null) {
@@ -124,10 +126,16 @@ public class DebridplanetCom extends PluginForHost {
             query.add("boxlinklist", "0");
             query.add("seckey", "undefined");
             query.add("seckey2", "undefined");
-            br.postPage(WEBSITE_BASE + "/debrider/gen_process_link.php", query);
+            PostRequest post = br.createPostRequest(WEBSITE_BASE + "/debrider/gen_process_link.php", query);
+            post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            post.getHeaders().put("Origin", WEBSITE_BASE);
+            br.getPage(post);
             dllink = br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("id=\"linklist1\"[^>]*>(https://[^<>\"]+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://[^\"]+/dl\\?download=[^\"]+)\"").getMatch(0);
+                }
             }
             if (dllink == null) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
