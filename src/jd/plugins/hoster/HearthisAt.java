@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/([^/]+)/([A-Za-z0-9-]+)/?" })
 public class HearthisAt extends PluginForHost {
@@ -144,20 +144,27 @@ public class HearthisAt extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
+                /* required */
+                br2.getHeaders().put("Range", "bytes=0-");
                 /* Do NOT use HEAD request here! */
                 con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
+                if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
+                        if (con.getCompleteContentLength() != con.getLongContentLength()) {
+                            link.setProperty("ticket89269", true);
+                        } else {
+                            link.removeProperty("ticket89269");
+                        }
                     }
                     final String ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".mp3");
                     link.setFinalFileName(filename + ext);
+                    link.setProperty("directlink", dllink);
                 } else if (con.getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (!con.isOK()) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
                 }
-                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
@@ -173,9 +180,13 @@ public class HearthisAt extends PluginForHost {
         requestFileInformation(link, true);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (link.getBooleanProperty("ticket89269", false)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        // required to enforce use of range requests
+        link.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("text")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
