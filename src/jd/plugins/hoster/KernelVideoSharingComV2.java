@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -47,6 +48,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -913,6 +916,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             String video_url = br.getRegex("var\\s+video_url\\s*=\\s*(\"|')(.*?)(\"|')\\s*;").getMatch(1);
             if (video_url == null) {
                 video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
+                if (video_url == null) {
+                    // tubepornclassic.com
+                    video_url = br.getRegex("\"video_url\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    if (video_url != null) {
+                        video_url = JSonStorage.restoreFromString("\"" + video_url + "\"", TypeRef.STRING);
+                    }
+                }
             }
             // hdzog.com, hclips.com
             String video_url_append = br.getRegex("video_url\\s*\\+=\\s*(\"|')(.*?)(\"|')\\s*;").getMatch(1);
@@ -949,6 +959,17 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         }
         if (StringUtils.isEmpty(dllink)) {
+            final String query = br.getRegex("\"query\"\\s*:\\s*(\\{[^\\{\\}]*?\\})").getMatch(0);
+            if (query != null) {
+                // tubepornclassic.com
+                final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
+                final String videoID = (String) queryMap.get("video_id");
+                if (StringUtils.isNotEmpty(videoID) && queryMap.containsKey("lifetime")) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
+                    return getDllink(brc);
+                }
+            }
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
                 /* No licence key present in html and/or no player --> No video --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
