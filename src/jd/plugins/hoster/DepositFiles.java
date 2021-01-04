@@ -269,14 +269,17 @@ public class DepositFiles extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void checkErrors() throws NumberFormatException, PluginException {
-        logger.info("Checking errors...");
+    public void checkErrorsWebsite() throws NumberFormatException, PluginException {
+        logger.info("Checking website errors...");
+        /* Check for offline */
         if (br.containsHTML("Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt|Diese Datei besteht nicht, der Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt, wegen der Urheberrechtsverletzung\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("This file does not exist, the access to the following file is limited or it has been removed due to infringement of copyright")) {
+        } else if (br.containsHTML("This file does not exist, the access to the following file is limited or it has been removed due to infringement of copyright")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"no_download_msg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Check for "no free slots" */
         if (br.containsHTML("Leider, sind alle Slots f")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Free Downloadslot", 20 * 60 * 1000l);
         }
@@ -405,6 +408,7 @@ public class DepositFiles extends antiDDoSForHost {
         if (finallink == null) {
             String contentURL = link.getDownloadURL();
             if (br.getRedirectLocation() != null) {
+                /* Prefer german language */
                 contentURL = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
                 br.getPage(contentURL);
                 // If we can't change the language lets just use the forced language (e.g. links change to "/es/" links)!
@@ -412,7 +416,7 @@ public class DepositFiles extends antiDDoSForHost {
                     br.getPage(br.getRedirectLocation());
                 }
             }
-            checkErrors();
+            checkErrorsWebsite();
             String dllink = getDllink();
             if (!StringUtils.isEmpty(dllink)) {
                 dllink = fixLinkSSL(dllink);
@@ -449,7 +453,7 @@ public class DepositFiles extends antiDDoSForHost {
                 }
                 br.submitForm(form);
                 long timeBefore = System.currentTimeMillis();
-                checkErrors();
+                checkErrorsWebsite();
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
@@ -816,7 +820,7 @@ public class DepositFiles extends antiDDoSForHost {
                 link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
                 br.getPage(link);
             }
-            checkErrors();
+            checkErrorsWebsite();
             String passCode = downloadLink.getStringProperty("pass", null);
             if (br.containsHTML("\"file_password\"")) {
                 logger.info("This file seems to be password protected.");
@@ -831,7 +835,7 @@ public class DepositFiles extends antiDDoSForHost {
                 }
                 downloadLink.setProperty("pass", passCode);
             }
-            checkErrors();
+            checkErrorsWebsite();
             link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
             if (link == null) {
                 synchronized (account) {
@@ -1163,7 +1167,7 @@ public class DepositFiles extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private void handleErrorsApi(final DownloadLink link, final Account account) throws PluginException {
+    private void handleErrorsApi(final DownloadLink link, final Account account) throws PluginException, IOException {
         final String status = PluginJSonUtils.getJsonValue(br, "status");
         if ("Error".equalsIgnoreCase(status)) {
             final String error = getError();
@@ -1179,9 +1183,18 @@ public class DepositFiles extends antiDDoSForHost {
                 /* Unknown error -> Should never happen */
                 /* E.g. 2020-12-22: {"status":"Error","status_code":0,"error":"","error_code":0} */
                 if (link == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error: " + error);
-                } else {
                     throw new AccountUnavailableException("Unknown API error: " + error, 5 * 60 * 1000l);
+                } else {
+                    /*
+                     * 2021-01-04: It won't work this way as we'd have to login via website first in order to see that offline status
+                     * immediately.
+                     */
+                    // logger.info("Special offline check");
+                    // br.getPage(link.getPluginPatternMatcher());
+                    // this.checkErrorsWebsite();
+                    // /* No idea what happened? Hmm throw Exception anyways */
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error: " + error);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }

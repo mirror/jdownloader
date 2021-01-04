@@ -16,7 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,12 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
@@ -71,7 +68,11 @@ public class CommonsWikimediaOrg extends PluginForHost {
         String filename = null;
         long filesize = 0;
         String filesize_str = null;
-        final String host = Browser.getHost(link.getPluginPatternMatcher());
+        String host = Browser.getHost(link.getPluginPatternMatcher());
+        /* 2021-01-04: Small workaround RE: #89249 */
+        if (host.equalsIgnoreCase("wikimedia.org")) {
+            host = "en.wikipedia.org";
+        }
         String url_title;
         if (link.getPluginPatternMatcher().matches(TYPE_WIKIPEDIA_1)) {
             url_title = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_1).getMatch(0);
@@ -79,18 +80,20 @@ public class CommonsWikimediaOrg extends PluginForHost {
             url_title = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_2).getMatch(2);
         }
         url_title = Encoding.urlDecode(url_title, false);
+        /* TODO: Consider moving this into a crawler because theoretically we can always have multiple items. */
         if (use_api) {
             /* Docs: https://www.mediawiki.org/wiki/API:Query */
             br.getPage("https://" + host + "/w/api.php?action=query&format=json&prop=imageinfo&titles=" + Encoding.urlEncode(url_title) + "&iiprop=timestamp%7Curl%7Csize%7Cmime%7Cmediatype%7Cextmetadata&iiextmetadatafilter=DateTime%7CDateTimeOriginal%7CObjectName%7CImageDescription%7CLicense%7CLicenseShortName%7CUsageTerms%7CLicenseUrl%7CCredit%7CArtist%7CAuthorCount%7CGPSLatitude%7CGPSLongitude%7CPermission%7CAttribution%7CAttributionRequired%7CNonFree%7CRestrictions&iiextmetadatalanguage=en&uselang=content&smaxage=300&maxage=300");
             if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"invalid\"")) { // ""missing" too?
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Object batchcomplete = entries.get("batchcomplete");
-            if (batchcomplete == null) {
-                /* No success response */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            /* The code below is rubbish to recognize offline items! TODO: Improve this */
+            // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            // final Object batchcomplete = entries.get("batchcomplete");
+            // if (batchcomplete == null) {
+            // /* No success response */
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
             filename = new Regex(url_title, ".*?:(.+)").getMatch(0);
             if (filename == null) {
                 filename = url_title;
