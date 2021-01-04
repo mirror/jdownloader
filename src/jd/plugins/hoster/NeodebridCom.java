@@ -26,7 +26,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -135,12 +134,16 @@ public class NeodebridCom extends PluginForHost {
         }
         link.setProperty(this.getHost() + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, account_FREE_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 404) {
                 /* 2019-08-26: This happens quite often! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
             }
-            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
         }
         this.dl.startDownload();
@@ -161,8 +164,12 @@ public class NeodebridCom extends PluginForHost {
             maxchunks = account_FREE_maxchunks;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
                 /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
@@ -215,10 +222,12 @@ public class NeodebridCom extends PluginForHost {
         // this.loginAPI(account);
         /* Try to re-use previously generated URLs so we're not wasting traffic! */
         String internal_url = link.getStringProperty(this.getHost() + "selfhosted_free_download_url", null);
-        boolean generate_new_internal_url = internal_url == null;
+        final boolean generate_new_internal_url;
         if (internal_url != null) {
             br.getPage(internal_url);
             generate_new_internal_url = this.isOffline(this.br);
+        } else {
+            generate_new_internal_url = true;
         }
         if (generate_new_internal_url) {
             logger.info("Generating new directurl");
@@ -227,7 +236,12 @@ public class NeodebridCom extends PluginForHost {
             internal_url = br.getRegex("(https?://[^/]+/dl/[A-Z0-9]+)").getMatch(0);
             if (StringUtils.isEmpty(internal_url)) {
                 logger.warning("Failed to find generated 'internal_url'");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find generated 'internal_url' or unknown error occured");
+                if (br.toString().length() <= 100) {
+                    /* Assume that http answer == errormessage */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: " + br.toString(), 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find generated 'internal_url' or unknown error occured", 5 * 60 * 1000l);
+                }
             } else if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -266,29 +280,27 @@ public class NeodebridCom extends PluginForHost {
         return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Link not found, please re-generate your link");
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -307,6 +319,9 @@ public class NeodebridCom extends PluginForHost {
         if (expireTimestampStr != null && expireTimestampStr.matches("\\d+")) {
             validuntil = Long.parseLong(expireTimestampStr) * 1000l;
         }
+        /**
+         * 2021-01-03: Free (-Account) limits: 5 links per day (per IP and or account). 10 Minute waittime between generating direct-URLs.
+         */
         if (validuntil < System.currentTimeMillis()) {
             /* 2019-08-26: API will always return static value '1 GB' trafficleft for free accounts which is wrong! */
             /*
@@ -317,9 +332,12 @@ public class NeodebridCom extends PluginForHost {
             String accountStatus = "Free account";
             if (enable_free_account_traffic_workaround) {
                 /* Try to find correct 'trafficleft' value via website. */
+                /* 2021-01-03: Workaround for small serverside bug (returns broken website on first request after first API login) */
+                br.clearCookies(br.getHost());
+                br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
                 this.br.getPage("https://" + this.getHost() + "/home");
-                final Regex filesLeftRegex = br.getRegex(">Files per day :</b>\\s*(\\d+)\\s*/\\s*(\\d+)\\s*<br>");
-                final Regex trafficRegex = br.getRegex(">Traffic :</b>\\s*([^<>\"]+)\\s*/\\s*([^<>\"]+)<");
+                final Regex filesLeftRegex = br.getRegex(">\\s*Files per day\\s*:\\s*</b>\\s*(\\d+)\\s*/\\s*(\\d+)\\s*<br>");
+                final Regex trafficRegex = br.getRegex(">\\s*Traffic\\s*:\\s*</b>\\s*([^<>\"]+)\\s*/\\s*([^<>\"]+)<");
                 final String trafficLeftStrTmp = trafficRegex.getMatch(0);
                 final String trafficMaxStrTmp = trafficRegex.getMatch(1);
                 final String filesPerDayUsedStr = filesLeftRegex.getMatch(0);
@@ -337,7 +355,8 @@ public class NeodebridCom extends PluginForHost {
             }
             account.setType(AccountType.FREE);
             ai.setStatus(accountStatus);
-            // account.setMaxSimultanDownloads(1);
+            /* 2021-01-03: Usually 10 minutes waittime after every download */
+            account.setMaxSimultanDownloads(1);
         } else {
             /* Premium */
             /* Premium has unlimited files per day */
@@ -353,6 +372,9 @@ public class NeodebridCom extends PluginForHost {
             if (filesPerDayLeft == 0) {
                 logger.info("Setting ZERO trafficleft because filesPerDayLeft is 0");
                 ai.setTrafficLeft(0);
+            } else if (filesPerDayLeft > 0) {
+                logger.info("filesPerDayLeft > 0 so we should be able to download");
+                ai.setUnlimitedTraffic();
             } else {
                 ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
             }
@@ -408,7 +430,7 @@ public class NeodebridCom extends PluginForHost {
                     }
                 }
                 account.setProperty("api_token", api_token);
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.removeProperty("api_token");
                 }
