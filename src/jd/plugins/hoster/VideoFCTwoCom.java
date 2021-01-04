@@ -24,6 +24,12 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,12 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "https?://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia|jinniumovie\\.be)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" })
 public class VideoFCTwoCom extends PluginForHost {
@@ -151,8 +151,8 @@ public class VideoFCTwoCom extends PluginForHost {
         String filename = null;
         String uploadername = null;
         /**
-         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br> 2020-12-18:
-         * TODO: re-check this statement - new API should be used for all videos by now!
+         * 2019-01-28: Some videos are still based on their old (flash-)player and cannot be checked via their new API! </br>
+         * 2020-12-18: TODO: re-check this statement - new API should be used for all videos by now!
          */
         // final boolean useNewAPI = account == null && newAPIVideotoken != null;
         String filenamePrefix = "";
@@ -362,19 +362,13 @@ public class VideoFCTwoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            /* 2020-12-17: TODO: Fix this - it doesn't work! */
-            // br.getPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en");
-            br.getPage("https://fc2.com");
-            br.getPage("https://fc2.com/en/login.php?switch_language=en");
-            // br.getPage("https://video.fc2.com/");
-            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
+            br.getPage("https://video.fc2.com/");
+            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=de");
             /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
             final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
             if (redirect != null) {
                 br.getPage(redirect);
             }
-            // https://fc2.com/en/login.php?ref=video
-            // br.getPage("/en/login.php?ref=video");
             final Form loginform = br.getFormbyProperty("name", "form_login");
             if (loginform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -408,7 +402,17 @@ public class VideoFCTwoCom extends PluginForHost {
                     this.setDownloadLink(dlinkbefore);
                 }
             }
+            br.setFollowRedirects(false);
             br.submitForm(loginform);
+            {
+                /* 2021-01-04: Small workaround for bad redirect to wrong page on 2FA login required */
+                final boolean required2FALogin = br.getRedirectLocation() != null && br.getRedirectLocation().contains("login_authentication.php");
+                br.followRedirect();
+                br.setFollowRedirects(true);
+                if (!br.getURL().contains("login_authentication.php") && required2FALogin) {
+                    br.getPage("https://secure.id.fc2.com/login_authentication.php");
+                }
+            }
             /*
              * TODO: 2020-12-17: Check 2FA login handling below as it is untested.
              */
