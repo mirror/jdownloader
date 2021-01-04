@@ -37,7 +37,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+:.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     private static final boolean use_api           = true;
     private String               dllink            = null;
     private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.wikimedia\\.org/wiki/(File:.+)";
-    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9]+:.+)";
+    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9]+.*)";
 
     @Override
     public String getAGBLink() {
@@ -92,6 +92,9 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = new Regex(url_title, "[A-Za-z]+:(.+)").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(url_title, "([A-Za-z]+.*)").getMatch(0);
+            }
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 if (!link.getPluginPatternMatcher().matches(TYPE_WIKIPEDIA_2)) {
