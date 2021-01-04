@@ -2131,6 +2131,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             IO.writeToFile(outputFile, bytes);
             downloadable.setDownloadTotalBytes(size);
             downloadable.setDownloadBytesLoaded(size);
+            downloadable.setAvailable(AvailableStatus.TRUE);
             downloadable.setLinkStatus(LinkStatus.FINISHED);
         } finally {
             downloadable.unlockFiles(outputFile);
