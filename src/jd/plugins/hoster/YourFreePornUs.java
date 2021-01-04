@@ -27,6 +27,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "https?://(?:www\\.)?yourfreeporn\\.(?:us|tv)/video/\\d+(/[a-z0-9\\-_]+)?" })
 public class YourFreePornUs extends PluginForHost {
     private String dllink = null;
@@ -75,9 +77,18 @@ public class YourFreePornUs extends PluginForHost {
                 filename = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0);
             }
         } else {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            final String ogTitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            final String header = br.getRegex("class\\s*=\\s*\"page_title\"\\s*>\\s*(.*?)\\s*</h").getMatch(0);
+            if (StringUtils.isAllNotEmpty(header, ogTitle)) {
+                if (ogTitle.length() < header.length()) {
+                    filename = ogTitle;
+                } else {
+                    filename = header;
+                }
+            } else if (StringUtils.isNotEmpty(header)) {
+                filename = header;
+            } else {
+                filename = ogTitle;
             }
         }
         if (filename == null) {
