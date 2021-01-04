@@ -418,8 +418,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         logger.warning("Unsupported subtitle type: " + subtitleType);
                     }
                 }
-                // final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
-                // url_subtitle = subtitleO != null ? (String) subtitleO : null;
                 if (!StringUtils.isEmpty(subtitleOriginal)) {
                     this.url_subtitle = subtitleOriginal;
                     /*
