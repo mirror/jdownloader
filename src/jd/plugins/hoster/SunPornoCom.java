@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +30,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "https?://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
 public class SunPornoCom extends PluginForHost {
@@ -75,7 +75,7 @@ public class SunPornoCom extends PluginForHost {
         String betterDllink = null;
         String filename = br.getRegex("class=\"block-headline-right\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>\\s*(.*?)\\s*(?:(\\s+\\(New.*?\\))?\\s+-\\s+Sunporno.*?)?</title>").getMatch(0);
         }
         if (filename == null) {
             /* Fallback */
