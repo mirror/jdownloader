@@ -53,6 +53,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -946,7 +947,7 @@ public class OffCloudCom extends UseNet {
             case 15:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -956,7 +957,7 @@ public class OffCloudCom extends UseNet {
             case 16:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This extra errorhandling can be considered as a small workaround.
                  */
@@ -1258,8 +1259,12 @@ public class OffCloudCom extends UseNet {
         ret.addAll(UsenetServer.createServerList("usenet.offcloud.com", true, 563));
         return ret;
     }
-    // @Override
-    // public Class<? extends OffCloudComPluginConfigInterface> getConfigInterface() {
-    // return OffCloudComPluginConfigInterface.class;
-    // }
+
+    public static interface OffCloudComUsenetAccountConfig extends UsenetAccountConfigInterface {
+    }
+
+    @Override
+    public Class<? extends OffCloudComPluginConfigInterface> getConfigInterface() {
+        return OffCloudComPluginConfigInterface.class;
+    }
 }

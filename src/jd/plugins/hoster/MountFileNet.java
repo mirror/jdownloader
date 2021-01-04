@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,11 +25,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -47,6 +43,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
@@ -98,7 +99,7 @@ public class MountFileNet extends antiDDoSForHost {
         if (br.containsHTML(">File not found<") || br.getURL().equals("http://mountfile.net/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fileInfo = br.getRegex("<h2 style=\"margin:0\">([^<>\"]*?)</h2>[\t\n\r ]+<div class=\"comment\">([^<>\"]*?)</div>");
+        final Regex fileInfo = br.getRegex("<h2\\s*style\\s*=\\s*\"margin:0\"\\s*>\\s*([^<>\"]*?)\\s*</h2>\\s*<div\\s*class\\s*=\\s*\"comment\"\\s*>\\s*([0-9\\.,\\sTGKBM]+)");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) {
@@ -140,6 +141,10 @@ public class MountFileNet extends antiDDoSForHost {
             }
         }
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Unfortunately, it can be downloaded only with premium")) {
+            // <span class="error">File size is larger than 1 GB. Unfortunately, it can be downloaded only with premium</span>
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         postPage(br.getURL(), "free=Slow+download&hash=" + fid);
         final long timeBefore = System.currentTimeMillis();
         if (br.containsHTML("<div id=\"(\\w+)\".+grecaptcha\\.render\\(\\s*'\\1',")) {
@@ -159,18 +164,23 @@ public class MountFileNet extends antiDDoSForHost {
         }
         String dllink = br.getRegex("\"(https?://d\\d+\\.mountfile.net/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("not found")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
         getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
@@ -200,10 +210,8 @@ public class MountFileNet extends antiDDoSForHost {
         }
     }
 
-    private static final Object LOCK = new Object();
-
     private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -237,7 +245,9 @@ public class MountFileNet extends antiDDoSForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -254,12 +264,7 @@ public class MountFileNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
         if (expire == null) {
             expire = br.getRegex("premium till ([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
@@ -294,9 +299,9 @@ public class MountFileNet extends antiDDoSForHost {
             login(account, false);
             /* First check if user has direct download enabled. */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL(), true, 0);
-            if (!dl.getConnection().isContentDisposition()) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 /* No direct download? Manually get directurl ... */
-                br.followConnection();
+                br.followConnection(true);
                 errorhandlingPremium();
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -307,8 +312,12 @@ public class MountFileNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-                if (!dl.getConnection().isContentDisposition()) {
-                    br.followConnection();
+                if (!looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }

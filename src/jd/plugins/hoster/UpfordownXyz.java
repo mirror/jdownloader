@@ -18,13 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UpfordownXyz extends YetiShareCore {
@@ -48,6 +49,22 @@ public class UpfordownXyz extends YetiShareCore {
         return ret;
     }
 
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(Account account) throws Exception {
+        final AccountInfo ret = super.fetchAccountInfoWebsite(account);
+        if (AccountType.FREE.equals(account.getType())) {
+            // FREE USER(normal) and GUEST USER(has premium features?)
+            if (br.containsHTML(">\\s*GUEST\\s*USER\\s*<")) {
+                getPage("/account_edit.html");
+                if (br.containsHTML(">\\s*Unlimited\\s*</div>\\s*<h3>\\s*Available Storage\\s*<")) {
+                    setAccountLimitsByType(account, AccountType.PREMIUM);
+                    ret.setStatus("Guest(Premium?) account");
+                }
+            }
+        }
+        return ret;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -68,7 +85,7 @@ public class UpfordownXyz extends YetiShareCore {
             return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
             return false;
@@ -81,7 +98,7 @@ public class UpfordownXyz extends YetiShareCore {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -99,7 +116,7 @@ public class UpfordownXyz extends YetiShareCore {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
