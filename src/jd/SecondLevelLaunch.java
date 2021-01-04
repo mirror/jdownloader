@@ -219,6 +219,24 @@ public class SecondLevelLaunch {
                             }
                         }
                         try {
+                            if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_MOJAVE)) {
+                                logger.info("Try to set NSRequiresAquaSystemAppearance to NO");
+                                final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSRequiresAquaSystemAppearance", "-bool", "NO");
+                                process = p.start();
+                                final String ret = IO.readInputStreamToString(process.getInputStream());
+                                logger.info("Set NSRequiresAquaSystemAppearance::" + ret);
+                            }
+                        } catch (Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            try {
+                                if (process != null) {
+                                    process.destroy();
+                                }
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        try {
                             final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "read", cFBundleIdentifier);
                             process = p.start();
                             final String ret = IO.readInputStreamToString(process.getInputStream());
