@@ -33,13 +33,15 @@ public class SoundGasmNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+        final String user = br.getRegex("soundgasm\\.net/u/.*?\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         url = br.getRegex("(https?://media\\.soundgasm\\.net/sounds/[a-f0-9]+\\.(ogg|m4a|mp3))").getMatch(0);
-        parameter.setName(title);
+        final String fileTitle = title + " by " + user;
+        parameter.setName(fileTitle);
         if (StringUtils.isNotEmpty(url) && parameter.getFinalFileName() == null) {
-            parameter.setFinalFileName(title + getFileNameExtensionFromURL(url));
+            parameter.setFinalFileName(fileTitle + getFileNameExtensionFromURL(url));
         }
         return AvailableStatus.TRUE;
     }
