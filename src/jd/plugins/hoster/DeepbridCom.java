@@ -22,6 +22,18 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,18 +54,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -182,10 +182,11 @@ public class DeepbridCom extends antiDDoSForHost {
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
-            final boolean use_api_for_downloads = true;
-            if (use_api_for_downloads) {
+            if (account.getType() == AccountType.PREMIUM) {
+                /* Use API in premium mode */
                 this.postPage(API_BASE + "?page=api&app=jdownloader&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             } else {
+                /* Use website for free account downloads */
                 this.postPage(API_BASE + "?page=api&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             }
             dllink = PluginJSonUtils.getJsonValue(br, "link");
@@ -286,11 +287,14 @@ public class DeepbridCom extends antiDDoSForHost {
         if (!"premium".equalsIgnoreCase(is_premium)) {
             account.setType(AccountType.FREE);
             /*
-             * No downloads possible via free account via API. Via website, free accounts are possible but we were too lazy to add extra
-             * login support via website to add support for this.
+             * No downloads possible via free account via API. Via website, free downloads are possible but we were too lazy to add extra
+             * login support via website in order to allow free account downloads.
              */
             ai.setTrafficLeft(0);
             account.setMaxSimultanDownloads(0);
+            // ai.setUnlimitedTraffic();
+            /* 2021-01-03: Usually there are 15 Minutes waittime between downloads in free mode -> Do not allow simultaneous downloads */
+            // account.setMaxSimultanDownloads(1);
         } else {
             account.setType(AccountType.PREMIUM);
             if (maxDownloadsStr != null && maxDownloadsStr.matches("\\d+")) {
@@ -441,11 +445,6 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     private void handleKnownErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        /*
-         * E.g. {"error":8, "message":"You have already downloaded, wait \u003Cb\u003E 14:11 minutes\u003C\/b\u003E to download again.
-         * \u003Ca href=\"..\/signup\" target=\"_blank\"\u003EUpgrade to premium\u003C\/a\u003E and forget waiting times and enjoy unlimited
-         * features!" }
-         */
         long errorCode = 0;
         String errorMsg = null;
         try {
@@ -465,6 +464,21 @@ public class DeepbridCom extends antiDDoSForHost {
         } else if (errorCode == 3) {
             /* Link/Host not supported */
             mhm.putError(account, link, 10 * 60 * 1000l, errorMsg);
+        } else if (errorCode == 8) {
+            /* Account limit reached -> Waittime required */
+            /*
+             * E.g. {"error":8, "message":"You have already downloaded, wait \u003Cb\u003E 14:11 minutes\u003C\/b\u003E to download again.
+             * \u003Ca href=\"..\/signup\" target=\"_blank\"\u003EUpgrade to premium\u003C\/a\u003E and forget waiting times and enjoy
+             * unlimited features!" }
+             */
+            final Regex waittimeRegex = new Regex(errorMsg, ".*You have already downloaded, wait.*(\\d{1,2}):(\\d{1,2}).*minute.*");
+            final String waitMinutesStr = waittimeRegex.getMatch(0);
+            final String waitSecondsStr = waittimeRegex.getMatch(1);
+            if (waitMinutesStr != null && waitSecondsStr != null) {
+                throw new AccountUnavailableException(errorMsg, Integer.parseInt(waitMinutesStr) * 60 * 1000l + Integer.parseInt(waitSecondsStr) * 1001l);
+            } else {
+                throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+            }
         } else if (errorCode == 9) {
             /* Hosters limit reached for this day */
             mhm.putError(account, link, 10 * 60 * 1000l, errorMsg);
