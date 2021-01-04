@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileAl extends XFileSharingProBasic {
@@ -54,7 +54,7 @@ public class FileAl extends XFileSharingProBasic {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return false;
+            return true;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
