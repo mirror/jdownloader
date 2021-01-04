@@ -37,7 +37,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.URLHelper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9]+.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.wikimedia\\.org/wiki/File:.+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
     public CommonsWikimediaOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     private static final boolean use_api           = true;
     private String               dllink            = null;
     private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.wikimedia\\.org/wiki/(File:.+)";
-    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9]+.*)";
+    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9%]+.*)";
 
     @Override
     public String getAGBLink() {
@@ -91,9 +91,9 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 /* No success response */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = new Regex(url_title, "[A-Za-z]+:(.+)").getMatch(0);
+            filename = new Regex(url_title, ".*?:(.+)").getMatch(0);
             if (filename == null) {
-                filename = new Regex(url_title, "([A-Za-z]+.*)").getMatch(0);
+                filename = url_title;
             }
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             if (StringUtils.isEmpty(dllink)) {
@@ -102,7 +102,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
                 }
                 final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_2);
                 /* Fallback to PDF download */
-                this.dllink = "https://" + urlinfo.getMatch(0) + ".wikipedia.org/api/rest_v1/page/pdf/" + Encoding.urlEncode(urlinfo.getMatch(2));
+                this.dllink = "https://" + urlinfo.getMatch(0) + ".wikipedia.org/api/rest_v1/page/pdf/" + urlinfo.getMatch(2);
                 filename += ".pdf";
             }
             filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
