@@ -59,6 +59,7 @@ public class GenericYetiShareFolderSpecialOxycloud extends PluginForDecrypt {
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "oxycloud.com" });
         ret.add(new String[] { "erai-ddl3.info" });
+        ret.add(new String[] { "vishare.pl" });
         return ret;
     }
 
