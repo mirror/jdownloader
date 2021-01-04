@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.utils.StringUtils;
@@ -394,10 +395,33 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final Object captions = JavaScriptEngineFactory.walkJson(entries, "captions");
             if (grabSubtitles && (captions instanceof List) && ((List<?>) captions).size() > 0) {
                 // "captions" : []
-                /* Captions may be available in different qualities */
-                final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
-                url_subtitle = subtitleO != null ? (String) subtitleO : null;
-                if (this.url_subtitle != null) {
+                /* Captions may be available in different versions */
+                final List<Object> subtitlesO = (List<Object>) entries.get("captions");
+                String subtitleOriginal = null;
+                String subtitleForDisabledPeople = null;
+                Map<String, Object> subInfo = null;
+                for (final Object subtitleO : subtitlesO) {
+                    subInfo = (Map<String, Object>) subtitleO;
+                    final String subtitleType = (String) subInfo.get("class");
+                    final String uri = (String) subInfo.get("uri");
+                    final boolean formatIsSupported = uri != null && uri.toLowerCase(Locale.ENGLISH).contains(".xml");
+                    /* E.g. "ebu-tt-d-basic-de" or "webvtt" */
+                    // final String format = (String) subInfo.get("format");
+                    /* Skip unsupported formats */
+                    if (!formatIsSupported) {
+                        continue;
+                    } else if (subtitleType.equalsIgnoreCase("omu")) {
+                        subtitleOriginal = uri;
+                    } else if (subtitleType.equalsIgnoreCase("hoh")) {
+                        subtitleForDisabledPeople = uri;
+                    } else {
+                        logger.warning("Unsupported subtitle type: " + subtitleType);
+                    }
+                }
+                // final Object subtitleO = JavaScriptEngineFactory.walkJson(entries, "captions/{0}/uri");
+                // url_subtitle = subtitleO != null ? (String) subtitleO : null;
+                if (!StringUtils.isEmpty(subtitleOriginal)) {
+                    this.url_subtitle = subtitleOriginal;
                     /*
                      * Grab the filesize here once so if the user adds many links, JD will not check the same subtitle URL multiple times.
                      */
@@ -696,7 +720,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private void addDownloadLink(final DownloadLink dl) {
         decryptedLinks.add(dl);
-        if (grabSubtitles && this.url_subtitle != null) {
+        if (grabSubtitles && !StringUtils.isEmpty(this.url_subtitle)) {
             final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
             final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
             final String linkid = dl.getLinkID() + "_subtitle";
