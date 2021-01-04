@@ -133,12 +133,13 @@ public class StreamtapeCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            // dllink = br.getRegex("(/get_video\\?id=[^<>\"']+)").getMatch(0);
-            /*
-             * 2020-10-15: New. Do NOT use the first URL inside html matching the (above) pattern. This will lead to a fake video which
-             * advises the user to disable his adblocker!
-             */
-            dllink = br.getRegex("document\\.getElementById\\((?:'|\")videolink(?:'|\")\\)(?:;elem\\['innerHTML'\\]|\\.innerHTML)\\s*=\\s*(?:'|\")([^\"\\']+)").getMatch(0);
+            /* 2021-01-04 cat/mouse */
+            dllink = br.getRegex("(id=[^\"'&]*&expires=\\d+&ip=[^\"'&]*&token=[^\"'&]*?)('|\")\\s*;").getMatch(0);
+            if (StringUtils.isNotEmpty(dllink)) {
+                dllink = "//streamtape.com/get_video?" + dllink + "&stream=1";
+            } else {
+                dllink = br.getRegex("document\\.getElementById\\((?:'|\")videolink(?:'|\")\\)(?:;elem\\['innerHTML'\\]|\\.innerHTML)\\s*=\\s*(?:'|\")([^\"\\']+)").getMatch(0);
+            }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
