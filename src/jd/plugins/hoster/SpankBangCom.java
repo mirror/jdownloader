@@ -101,57 +101,60 @@ public class SpankBangCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(filename);
-        if (dllink != null && !dllink.contains("m3u8")) {
-            URLConnectionAdapter con = null;
-            try {
-                // this request isn't behind cloudflare.
-                con = br.openHeadConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
+        if (isValidURL(br, link, dllink)) {
+            return AvailableStatus.TRUE;
+        } else {
+            final String mainlink = link.getStringProperty("mainlink", null);
+            final String quality = link.getStringProperty("quality", null);
+            if (mainlink == null || quality == null) {
+                /* Missing property - this should not happen! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            getPage(mainlink);
+            if (jd.plugins.decrypter.SpankBangCom.isOffline(this.br)) {
+                /* Main videolink offline --> Offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Main videolink online --> Refresh directlink ... */
+            final LinkedHashMap<String, String> foundQualities = jd.plugins.decrypter.SpankBangCom.findQualities(this.br, mainlink);
+            if (foundQualities != null) {
+                dllink = foundQualities.get(quality);
+            }
+            if (dllink != null) {
+                if (isValidURL(br, link, dllink)) {
+                    link.setProperty("plain_directlink", dllink);
                     return AvailableStatus.TRUE;
                 } else {
-                    final String mainlink = link.getStringProperty("mainlink", null);
-                    final String quality = link.getStringProperty("quality", null);
-                    if (mainlink == null || quality == null) {
-                        /* Missing property - this should not happen! */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    getPage(mainlink);
-                    if (jd.plugins.decrypter.SpankBangCom.isOffline(this.br)) {
-                        /* Main videolink offline --> Offline */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    /* Main videolink online --> Refresh directlink ... */
-                    final LinkedHashMap<String, String> foundQualities = jd.plugins.decrypter.SpankBangCom.findQualities(this.br, mainlink);
-                    if (foundQualities != null) {
-                        dllink = foundQualities.get(quality);
-                    }
-                    if (dllink != null) {
-                        con = br.openHeadConnection(dllink);
-                        if (looksLikeDownloadableContent(con)) {
-                            if (con.getCompleteContentLength() > 0) {
-                                link.setDownloadSize(con.getCompleteContentLength());
-                            }
-                            /* Save new directlink */
-                            link.setProperty("plain_directlink", dllink);
-                            return AvailableStatus.TRUE;
-                        } else {
-                            /* Link is still online but our directlink does not work for whatever reason ... */
-                            server_issues = true;
-                        }
-                    }
-                    link.setDownloadSize(con.getLongContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    /* Link is still online but our directlink does not work for whatever reason ... */
+                    server_issues = true;
                 }
             }
         }
-        return AvailableStatus.TRUE;
+        return AvailableStatus.UNCHECKED;
+    }
+
+    private boolean isValidURL(final Browser br, final DownloadLink downloadLink, final String url) throws IOException {
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        // this request isn't behind cloudflare.
+        final URLConnectionAdapter con = brc.openHeadConnection(url);
+        try {
+            if (url.contains("m3u8") && con.getResponseCode() == 200) {
+                return true;
+            } else if (!url.contains("m3u8") && looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            con.disconnect();
+        }
     }
 
     @Override
