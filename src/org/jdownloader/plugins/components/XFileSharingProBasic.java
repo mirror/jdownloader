@@ -1678,6 +1678,9 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
         if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(correctedBR, "hcaptcha\\.com").matches()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type hcaptcha", 3 * 60 * 60 * 1000l);
+            }
             /* 2019-06-06: Rare case */
             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
             logger.info("Detected captcha method \"RecaptchaV2\" special-type '" + rc2.getType() + "' for this host");
