@@ -515,7 +515,27 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected String regexNormalTitle() {
-        return br.getRegex(Pattern.compile("<title>\\s*([^<>\"]*?)(?:\\s*\\-\\s*" + br.getHost() + ")?\\s*</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String best = null;
+        final String header = br.getRegex("<h(?:1|2)>\\s*(.*?)\\s*</h(?:1|2)>").getMatch(0);
+        if (StringUtils.isNotEmpty(header)) {
+            best = header;
+        }
+        final String videoInfo = br.getRegex("\"title-panel clearfix\"\\s*>\\s*<h\\d+>\\s*(.*?)\\s*</h\\d+>").getMatch(0);
+        if (best == null || (videoInfo != null && videoInfo.length() < best.length())) {
+            best = videoInfo;
+        }
+        final String ogTitle = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+        if (best == null || (ogTitle != null && ogTitle.length() < best.length())) {
+            best = ogTitle;
+        }
+        final String title = br.getRegex(Pattern.compile("<title>\\s*([^<>\"]*?)(?:\\s+[\\-/]\\s+" + br.getHost() + "\\s*|\\s+[\\-/]\\s+[^\\-/]*)?\\s*</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (best == null || (title != null && title.length() < best.length())) {
+            best = title;
+        }
+        if (best == null || (header != null && header.length() > best.length() && !header.contains(">"))) {
+            best = header;
+        }
+        return best;
     }
 
     @Override
@@ -668,7 +688,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
