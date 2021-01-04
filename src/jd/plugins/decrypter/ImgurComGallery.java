@@ -22,14 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +43,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -548,7 +548,11 @@ public class ImgurComGallery extends PluginForDecrypt {
     private void siteCrawlAlbum() throws DecrypterException, ParseException, IOException {
         final String albumID = new Regex(this.parameter, type_album).getMatch(0);
         this.fp = FilePackage.getInstance();
-        fp.setName(albumID);
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        brc.getPage(parameter);
+        final String title = brc.getRegex("<title>\\s*(.*?)\\s*-\\s*(Album on )?Imgur\\s*<").getMatch(0);
+        this.fp.setName(getFormattedPackagename(""/* only available via api */, title, albumID));
         this.br.getPage("https://" + this.getHost() + "/ajaxalbums/getimages/" + albumID + "/hit.json?all=true");
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
@@ -628,7 +632,11 @@ public class ImgurComGallery extends PluginForDecrypt {
     private void siteCrawlGallery() throws DecrypterException, ParseException, IOException {
         final String galleryID = new Regex(this.parameter, type_gallery).getMatch(0);
         this.fp = FilePackage.getInstance();
-        fp.setName(galleryID);
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        brc.getPage(parameter);
+        final String title = brc.getRegex("<title>\\s*(.*?)\\s*-\\s*(Album on )?Imgur\\s*<").getMatch(0);
+        this.fp.setName(getFormattedPackagename(""/* only available via api */, title, galleryID));
         this.br.getPage("https://" + this.getHost() + "/gallery/" + galleryID + "/album_images/hit.json?all=true");
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         final Object dataO = entries.get("data");
