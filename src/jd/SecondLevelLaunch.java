@@ -200,6 +200,8 @@ public class SecondLevelLaunch {
                                     process.destroy();
                                 }
                             } catch (final Throwable e) {
+                            } finally {
+                                process = null;
                             }
                         }
                         try {
@@ -216,10 +218,13 @@ public class SecondLevelLaunch {
                                     process.destroy();
                                 }
                             } catch (final Throwable e) {
+                            } finally {
+                                process = null;
                             }
                         }
                         try {
-                            if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_MOJAVE)) {
+                            if (false && CrossSystem.getOS().isMinimum(OperatingSystem.MAC_MOJAVE)) {
+                                // 2021-01-05 bugreport on MacMojave, maybe just set on minimum Catalina?
                                 logger.info("Try to set NSRequiresAquaSystemAppearance to NO");
                                 final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSRequiresAquaSystemAppearance", "-bool", "NO");
                                 process = p.start();
@@ -247,6 +252,8 @@ public class SecondLevelLaunch {
                                     process.destroy();
                                 }
                             } catch (final Throwable e) {
+                            } finally {
+                                process = null;
                             }
                         }
                     }
