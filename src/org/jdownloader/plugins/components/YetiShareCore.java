@@ -1222,7 +1222,7 @@ public class YetiShareCore extends antiDDoSForHost {
     public String regexWaittime() {
         String ttt = this.br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (ttt == null) {
-            ttt = this.br.getRegex("var\\s*?seconds\\s*?=\\s*?(\\d+);").getMatch(0);
+            ttt = this.br.getRegex("var\\s*?seconds\\s*=\\s*(\\d+);").getMatch(0);
         }
         return ttt;
     }
