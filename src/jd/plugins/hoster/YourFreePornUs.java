@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -26,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfreeporn.us" }, urls = { "https?://(?:www\\.)?yourfreeporn\\.(?:us|tv)/video/\\d+(/[a-z0-9\\-_]+)?" })
 public class YourFreePornUs extends PluginForHost {
@@ -57,11 +57,11 @@ public class YourFreePornUs extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage(downloadLink.getDownloadURL(), "language=en_US");
-        if (br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found")) {
+        br.postPage(link.getDownloadURL(), "language=en_US");
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error/video_missing") || br.containsHTML(">This video cannot be found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
@@ -70,11 +70,11 @@ public class YourFreePornUs extends PluginForHost {
          */
         if (br.containsHTML(HTML_PREMIUMONLY) || br.containsHTML(HTML_LIMITREACHED)) {
             if (br.containsHTML(HTML_PREMIUMONLY)) {
-                downloadLink.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
+                link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
             }
-            filename = new Regex(downloadLink.getDownloadURL(), "/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);
+            filename = new Regex(link.getDownloadURL(), "/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);
             if (filename == null) {
-                filename = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0);
+                filename = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
             }
         } else {
             final String ogTitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -94,7 +94,7 @@ public class YourFreePornUs extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
         return AvailableStatus.TRUE;
     }
 
