@@ -66,8 +66,8 @@ public class VideoFCTwoCom extends PluginForHost {
         return new String[] { "video.fc2.com", "xiaojiadianvideo.asia", "jinniumovie.be" };
     }
 
-    private String              finalURL                     = null;
-    private long                finalURLType                 = -1;
+    private String              httpDownloadurl              = null;
+    private String              hlsMaster                    = null;
     private String              trailerURL                   = null;
     private boolean             server_issues                = false;
     private static final String fastLinkCheck                = "fastLinkCheck";
@@ -128,9 +128,6 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
-        this.finalURL = null;
-        this.finalURLType = -1;
-        this.server_issues = false;
         final String fid = getFID(link);
         /* Prefer pre-given account but fallback to *any* valid account. */
         if (account == null) {
@@ -173,25 +170,23 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         br.getPage("/api/v3/videoplaylist/" + fid + "?sh=1&fs=0");
         entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
         final Map<String, Object> playlist = (Map<String, Object>) entries.get("playlist");
-        if (this.finalURLType == 1) {
-            /* HTTP Streams */
-            final String[] qualitiesInBestOrder = new String[] { "hq", "nq", "lq" };
-            for (final String possibleQuality : qualitiesInBestOrder) {
-                this.finalURL = (String) playlist.get(possibleQuality);
-                if (!StringUtils.isEmpty(this.finalURL)) {
-                    break;
-                }
+        /* HTTP Streams */
+        final String[] qualitiesInBestOrder = new String[] { "hq", "nq", "lq" };
+        for (final String possibleQuality : qualitiesInBestOrder) {
+            this.httpDownloadurl = (String) playlist.get(possibleQuality);
+            if (!StringUtils.isEmpty(this.httpDownloadurl)) {
+                break;
             }
-        } else {
-            /* HLS streams */
-            this.finalURL = (String) playlist.get("master");
         }
+        /* HLS streams */
+        this.hlsMaster = (String) playlist.get("master");
+        /* Trailer -> Also http stream */
         this.trailerURL = (String) playlist.get("sample");
-        if (StringUtils.isEmpty(this.finalURL) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(allowTrailerDownload, allowTrailerDownload_default)) {
+        if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(allowTrailerDownload, allowTrailerDownload_default)) {
             logger.info("Trailer download is allowed and trailer is available");
-            this.finalURL = this.trailerURL;
+            /* Trailers are always available as http streams */
+            this.httpDownloadurl = this.trailerURL;
             filenamePrefix = "TRAILER_";
         }
         if (!StringUtils.isEmpty(filename)) {
@@ -211,13 +206,13 @@ public class VideoFCTwoCom extends PluginForHost {
             /* Fallback */
             link.setName(fid + ".mp4");
         }
-        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && finalURL != null && finalURLType != 2) {
+        if (!this.getPluginConfig().getBooleanProperty(fastLinkCheck, fastLinkCheck_default) && !StringUtils.isEmpty(httpDownloadurl)) {
             br.getHeaders().put("Referer", null);
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(finalURL);
+                con = br2.openHeadConnection(httpDownloadurl);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
@@ -456,7 +451,7 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         if (this.server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(this.finalURL)) {
+        } else if (StringUtils.isEmpty(this.httpDownloadurl) && StringUtils.isEmpty(this.hlsMaster)) {
             if (!StringUtils.isEmpty(this.trailerURL)) {
                 /* Even premium accounts won't be able to watch such content - it has to be bought separately! */
                 logger.info("This content needs to be purchased individually otherwise only a trailer is available!");
@@ -468,13 +463,16 @@ public class VideoFCTwoCom extends PluginForHost {
         } else if (onlyForPremiumUsers(link)) {
             throw new AccountRequiredException();
         }
-        if (finalURLType == 2) {
-            br.getPage(finalURL);
+        /* Only download HLS streams if no http download is available */
+        if (StringUtils.isEmpty(this.httpDownloadurl)) {
+            /* hls download */
+            br.getPage(this.hlsMaster);
             checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, finalURL);
+            dl = new HLSDownloader(link, br, this.hlsMaster);
             dl.startDownload();
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalURL, true, -4);
+            /* http download */
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.httpDownloadurl, true, -4);
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
                 try {
                     br.followConnection(true);
@@ -545,13 +543,13 @@ public class VideoFCTwoCom extends PluginForHost {
     }
 
     private void prepareFinalLink() {
-        if (finalURL != null) {
-            finalURL = finalURL.replaceAll("\\&mid=", "?mid=");
-            String t = new Regex(finalURL, "cdnt=(\\d+)").getMatch(0);
-            String h = new Regex(finalURL, "cdnh=([0-9a-f]+)").getMatch(0);
-            finalURL = new Regex(finalURL, "(.*?)\\&sec=").getMatch(0);
+        if (httpDownloadurl != null) {
+            httpDownloadurl = httpDownloadurl.replaceAll("\\&mid=", "?mid=");
+            String t = new Regex(httpDownloadurl, "cdnt=(\\d+)").getMatch(0);
+            String h = new Regex(httpDownloadurl, "cdnh=([0-9a-f]+)").getMatch(0);
+            httpDownloadurl = new Regex(httpDownloadurl, "(.*?)\\&sec=").getMatch(0);
             if (t != null && h != null) {
-                finalURL = finalURL + "&px-time=" + t + "&px-hash=" + h;
+                httpDownloadurl = httpDownloadurl + "&px-time=" + t + "&px-hash=" + h;
             }
         }
     }
