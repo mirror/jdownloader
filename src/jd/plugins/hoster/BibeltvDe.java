@@ -220,6 +220,7 @@ public class BibeltvDe extends PluginForHost {
         }
         final Object drm = JavaScriptEngineFactory.walkJson(entries, "drm");
         if (StringUtils.isEmpty(mp4URL) && drm != null && StringUtils.equalsIgnoreCase("true", drm.toString())) {
+            link.setFinalFileName("DRM protected_" + filename + ".mp4");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "DRM protected");
         } else if (StringUtils.isAllEmpty(hlsURL, mp4URL)) {
             String failureReason = (String) JavaScriptEngineFactory.walkJson(entries, "error/message");
