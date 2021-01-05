@@ -119,7 +119,7 @@ public class VideoFCTwoCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         final boolean subContent = new Regex(link.getDownloadURL(), "/a/content/").matches();
-        link.setUrlDownload("http://video.fc2.com/en/" + (subContent ? "a/content/" : "content/") + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0));
+        link.setUrlDownload("https://video.fc2.com/en/" + (subContent ? "a/content/" : "content/") + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0));
     }
 
     @Override
@@ -131,7 +131,6 @@ public class VideoFCTwoCom extends PluginForHost {
         this.finalURL = null;
         this.finalURLType = -1;
         this.server_issues = false;
-        // String dllink = link.getDownloadURL();
         final String fid = getFID(link);
         /* Prefer pre-given account but fallback to *any* valid account. */
         if (account == null) {
@@ -148,6 +147,9 @@ public class VideoFCTwoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String newAPIVideotoken = br.getRegex("\\'ae\\'\\s*?,\\s*?\\'([a-f0-9]{32})\\'").getMatch(0);
+        if (newAPIVideotoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filename = null;
         String uploadername = null;
         /**
@@ -156,125 +158,42 @@ public class VideoFCTwoCom extends PluginForHost {
          */
         // final boolean useNewAPI = account == null && newAPIVideotoken != null;
         String filenamePrefix = "";
-        if (newAPIVideotoken != null) {
-            Map<String, Object> entries;
-            br.getHeaders().put("X-FC2-Video-Access-Token", newAPIVideotoken);
-            br.getPage("http://video.fc2.com/api/v3/videoplayer/" + fid + "?" + newAPIVideotoken + "=1&tk=&fs=0");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            filename = (String) entries.get("title");
-            uploadername = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
-            if (StringUtils.isEmpty(filename)) {
-                /* Fallback */
-                filename = fid;
-            }
-            br.getPage("http://video.fc2.com/api/v3/videoplaylist/" + fid + "?sh=1&fs=0");
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
-            this.finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/master");
-            if (finalURL == null) {
-                finalURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/nq");
-            }
-            this.trailerURL = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/sample");
-            if (StringUtils.isEmpty(this.finalURL) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(allowTrailerDownload, allowTrailerDownload_default)) {
-                logger.info("Trailer download is allowed and trailer is available");
-                this.finalURL = this.trailerURL;
-                filenamePrefix = "TRAILER_";
-            }
-            // if (!StringUtils.isEmpty(finalURL) && finalURL.startsWith("/")) {
-            // finalURL = br.getURL(finalURL).toString();
-            // }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            /* TODO: Check if the below code is still useful */
-            // // capturing the title in this manner reduces lazy regex scope to just this found string vs entire document.
-            // uploadername = br.getRegex("Submitter : <a href=\"[^\"]+\" rel=\"nofollow\">([^<>\"]+)</a>").getMatch(0);
-            // filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-            // if (filename != null) {
-            // filename = new Regex(filename, ".*?◎?(.*?) \\-.*?").getMatch(0);
-            // }
-            // if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
-            // filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
-            // }
-            // if (dllink.endsWith("/")) {
-            // dllink = dllink.substring(0, dllink.length() - 1);
-            // }
-            // String upid = dllink.substring(dllink.lastIndexOf("/") + 1);
-            // String gk = getKey();
-            // if (upid == null || gk == null) {
-            // // quite a few of these patterns are too generic, 'this content... is now in javascript variable. errmsg span is also
-            // // present in
-            // // ALL pages just doesn't contain text when not valid...
-            // if (br.containsHTML("This content has already been deleted") || br.getURL().contains("/err.php") ||
-            // br._getURL().getPath().equals("/404.php") || br.containsHTML("class=\"errmsg\"") ||
-            // br.getURL().endsWith("://video.fc2.com/")) {
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // } else {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // }
-            // /* get url */
-            // link.setProperty(PROPERTY_PREMIUMONLY, false);
-            // final String from = br.getRegex("\\&from=(\\d+)\\&").getMatch(0);
-            // final String tk = br.getRegex("\\&tk=([A-Za-z0-9]*?)\\&").getMatch(0);
-            // final String version = "WIN%2015%2C0%2C0%2C189";
-            // final String encodedlink = Encoding.urlEncode(br.getURL()).replaceAll("\\.", "%2E").replaceFirst("%2F$", "");
-            // br.getHeaders().put("Accept", "*/*");
-            // br.getHeaders().put("Accept-Charset", null);
-            // /* Extra step is only needed for premium accounts. */
-            // if (account != null && account.getType() == AccountType.PREMIUM) {
-            // if (tk == null || from == null) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // br.getPage("/ginfo_payment.php?mimi=" + getMimi(upid) + "&upid=" + upid + "&gk=" + gk + "&tk=" + tk + "&from=" + from +
-            // "&href=" + encodedlink + "&lang=en&v=" + upid + "&fversion=" + version + "&otag=0");
-            // } else {
-            // br.getPage("/ginfo.php?otag=0&tk=null&href=" + encodedlink + "&upid=" + upid + "&gk=" + gk + "&fversion=" + version +
-            // "&playid=null&lang=en&playlistid=null&mimi=" + getMimi(upid) + "&v=" + upid);
-            // }
-            // if (br.getHttpConnection() == null) {
-            // throw new PluginException(LinkStatus.ERROR_RETRY);
-            // } else if ("23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
-            // if (br.getRegex("\\&charge_second=\\d+").matches()) {
-            // error = "603";
-            // }
-            // AvailableStatus aError = null;
-            // if (error != null) {
-            // switch (Integer.parseInt(error)) {
-            // case 403:
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // case 503:
-            // // :-)
-            // break;
-            // case 601:
-            // /* reconnect */
-            // logger.info("video.fc2.com: reconnect is needed!");
-            // aError = AvailableStatus.TRUE;
-            // case 602:
-            // /* reconnect */
-            // logger.info("video.fc2.com: reconnect is needed!");
-            // aError = AvailableStatus.TRUE;
-            // case 603:
-            // link.setProperty(PROPERTY_PREMIUMONLY, true);
-            // break;
-            // default:
-            // logger.info("video.fc2.com: Unknown error code: " + error);
-            // aError = AvailableStatus.UNCHECKABLE;
-            // }
-            // }
-            // // return aError
-            // if (aError != null) {
-            // return aError;
-            // }
-            // finalURL = br.getRegex("filepath=(https?://.*?)$").getMatch(0);
-            // prepareFinalLink();
+        Map<String, Object> entries;
+        br.getHeaders().put("X-FC2-Video-Access-Token", newAPIVideotoken);
+        br.getPage("https://" + this.getHost() + "/api/v3/videoplayer/" + fid + "?" + newAPIVideotoken + "=1&tk=&fs=0");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // prevent NPE
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        filename = (String) entries.get("title");
+        uploadername = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
+        if (StringUtils.isEmpty(filename)) {
+            /* Fallback */
+            filename = fid;
+        }
+        br.getPage("/api/v3/videoplaylist/" + fid + "?sh=1&fs=0");
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        finalURLType = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "type"), -1);
+        final Map<String, Object> playlist = (Map<String, Object>) entries.get("playlist");
+        if (this.finalURLType == 1) {
+            /* HTTP Streams */
+            final String[] qualitiesInBestOrder = new String[] { "hq", "nq", "lq" };
+            for (final String possibleQuality : qualitiesInBestOrder) {
+                this.finalURL = (String) playlist.get(possibleQuality);
+                if (!StringUtils.isEmpty(this.finalURL)) {
+                    break;
+                }
+            }
+        } else {
+            /* HLS streams */
+            this.finalURL = (String) playlist.get("master");
+        }
+        this.trailerURL = (String) playlist.get("sample");
+        if (StringUtils.isEmpty(this.finalURL) && !StringUtils.isEmpty(this.trailerURL) && this.getPluginConfig().getBooleanProperty(allowTrailerDownload, allowTrailerDownload_default)) {
+            logger.info("Trailer download is allowed and trailer is available");
+            this.finalURL = this.trailerURL;
+            filenamePrefix = "TRAILER_";
+        }
         if (!StringUtils.isEmpty(filename)) {
             if (!StringUtils.isEmpty(uploadername)) {
                 filename = uploadername + "_" + filename;
@@ -363,7 +282,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 }
             }
             br.getPage("https://video.fc2.com/");
-            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=de");
+            br.getPage("https://secure.id.fc2.com/?done=video&switch_language=en");
             /* 2020-12-18: Typically a redirect to: https://fc2.com/en/login.php?ref=video */
             final String redirect = br.getRegex("http-equiv=\"Refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\"").getMatch(0);
             if (redirect != null) {
@@ -477,7 +396,7 @@ public class VideoFCTwoCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final AccountInfo ai = new AccountInfo();
-            this.login(account, true, "http://video.fc2.com/payment/premium/");
+            this.login(account, true, "https://" + this.getHost() + "/payment/premium/");
             /* Switch to english language */
             final String userSelectedLanguage = br.getCookie(this.getHost(), "language", Cookies.NOTDELETEDPATTERN);
             if (!StringUtils.equalsIgnoreCase(userSelectedLanguage, "en")) {
@@ -573,7 +492,7 @@ public class VideoFCTwoCom extends PluginForHost {
                 if (br.containsHTML("not found")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
                 }
             }
             dl.startDownload();

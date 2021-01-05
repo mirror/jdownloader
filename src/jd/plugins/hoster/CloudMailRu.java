@@ -24,6 +24,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -349,6 +350,7 @@ public class CloudMailRu extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                /* TODO: Add cookie check */
                 if (cookies != null && !force) {
                     this.br.setCookies(this.getHost(), cookies);
                     logger.info("Trust cookies without check");
@@ -358,7 +360,37 @@ public class CloudMailRu extends PluginForHost {
                     /* 2020-12-16: Login is broken */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
+                br.getPage("https://account.mail.ru/login");
+                final UrlQuery login1 = new UrlQuery();
+                login1.appendEncoded("login", account.getUser());
+                login1.add("htmlencoded", "false");
+                login1.appendEncoded("referrer", "https://cloud.mail.ru/");
+                login1.appendEncoded("email", account.getUser());
+                br.getHeaders().put("Referer", "https://account.mail.ru/");
+                br.postPage("https://auth.mail.ru/api/v1/pushauth/info", login1);
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final int status = ((Number) entries.get("status")).intValue();
+                if (status != 200) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                entries = (Map<String, Object>) entries.get("body");
+                final boolean twoStep = ((Boolean) entries.get("twostep")).booleanValue();
+                if (twoStep) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "two-factor-authentication is not yet supported!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                final UrlQuery login2 = new UrlQuery();
+                login2.appendEncoded("username", account.getUser());
+                login2.appendEncoded("Login", account.getUser());
+                login2.appendEncoded("password", account.getPass());
+                login2.appendEncoded("Password", account.getPass());
+                login2.appendEncoded("saveauth", "1");
+                login2.appendEncoded("new_auth_form", "1");
+                login2.add("FromAccount", "opener%3Daccount%26twoSteps%3D1");
+                login2.add("act_token", "TODO");
+                login2.add("page", "TODO");
+                login2.add("lang", "en_US");
+                br.postPage("https://auth.mail.ru/cgi-bin/auth", login2);
                 final String mail_domain = account.getUser().split("@")[1];
                 final String postData = "page=https%3A%2F%2Fcloud.mail.ru%2F&FailPage=&Domain=" + mail_domain + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&new_auth_form=1&saveauth=1";
                 br.postPage("https://auth.mail.ru/cgi-bin/auth?lang=ru_RU&from=authpopup", postData);
