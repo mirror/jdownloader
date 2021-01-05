@@ -91,15 +91,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -183,12 +183,13 @@ public class PornHubCom extends PluginForHost {
     /** Corrects URL based on given/not given premium account (pornhubpremium.com or pornhub.com) */
     public static String correctAddedURL(final String input) throws PluginException {
         final String viewKey = getViewkeyFromURL(input);
+        final boolean isPremium = isPremiumFromURL(input);
         if (input.matches(type_photo)) {
-            return createPornhubImageLink(viewKey, null);
+            return createPornhubImageLink(isPremium, viewKey, null);
         } else if (input.matches(type_gif_webm)) {
-            return createPornhubGifLink(viewKey, null);
+            return createPornhubGifLink(isPremium, viewKey, null);
         } else {
-            return createPornhubVideoLink(viewKey, null);
+            return createPornhubVideoLink(isPremium, viewKey, null);
         }
     }
 
@@ -262,10 +263,14 @@ public class PornHubCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String source_url = link.getStringProperty("mainlink");
         String viewKey = null;
+        Boolean isPremiumFromURL = null;
         try {
-            viewKey = getViewkeyFromURL(link.getPluginPatternMatcher());
+            final String url = link.getPluginPatternMatcher();
+            viewKey = getViewkeyFromURL(url);
+            isPremiumFromURL = isPremiumFromURL(url);
         } catch (PluginException e) {
             viewKey = getViewkeyFromURL(source_url);
+            isPremiumFromURL = isPremiumFromURL(source_url);
         }
         /* User-chosen quality, set in decrypter */
         String html_filename = null;
@@ -280,11 +285,11 @@ public class PornHubCom extends PluginForHost {
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".jpg");
             br.setFollowRedirects(true);
-            getPage(br, createPornhubImageLink(viewKey, null));
+            getPage(br, createPornhubImageLink(isPremiumFromURL, viewKey, null));
             if (br.containsHTML(html_privateimage)) {
                 final Account account = AccountController.getInstance().getValidAccount(this);
                 br.setFollowRedirects(true);
-                getFirstPageWithAccount(this, account, br, createPornhubImageLink(viewKey, account));
+                getFirstPageWithAccount(this, account, br, createPornhubImageLink(isPremiumFromURL, viewKey, account));
                 if (br.containsHTML(html_privateimage)) {
                     link.getLinkStatus().setStatusText("You're not authorized to watch/download this private image");
                     return AvailableStatus.TRUE;
@@ -318,7 +323,7 @@ public class PornHubCom extends PluginForHost {
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".webm");
             br.setFollowRedirects(true);
-            getPage(br, createPornhubGifLink(viewKey, null));
+            getPage(br, createPornhubGifLink(isPremiumFromURL, viewKey, null));
             checkAvailability(link, br);
             String title = br.getRegex("class=\"gifTitle\">\\s*?<h1>([^<>\"]+)</h1>").getMatch(0);
             if (title == null) {
@@ -348,7 +353,7 @@ public class PornHubCom extends PluginForHost {
             prepBr(br);
             final Account account = AccountController.getInstance().getValidAccount(this);
             br.setFollowRedirects(true);
-            getFirstPageWithAccount(this, account, br, createPornhubVideoLink(viewKey, account));
+            getFirstPageWithAccount(this, account, br, createPornhubVideoLink(isPremiumFromURL, viewKey, account));
             checkAvailability(link, br);
             if (br.containsHTML(html_privatevideo)) {
                 link.getLinkStatus().setStatusText("You're not authorized to watch/download this private video");
@@ -1066,8 +1071,8 @@ public class PornHubCom extends PluginForHost {
         return br;
     }
 
-    public static String createPornhubImageLink(final String viewkey, final Account acc) {
-        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+    public static String createPornhubImageLink(final Boolean isPremiumURL, final String viewkey, final Account acc) {
+        if (Boolean.TRUE.equals(isPremiumURL)) {
             /* Premium url */
             return getProtocolPremium() + "www.pornhubpremium.com/photo/" + viewkey;
         } else {
@@ -1076,8 +1081,8 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static String createPornhubGifLink(final String viewkey, final Account acc) {
-        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+    public static String createPornhubGifLink(final Boolean isPremiumURL, final String viewkey, final Account acc) {
+        if (Boolean.TRUE.equals(isPremiumURL)) {
             /* Premium url */
             return getProtocolPremium() + "www.pornhubpremium.com/gif/" + viewkey;
         } else {
@@ -1086,8 +1091,8 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    public static String createPornhubVideoLink(final String viewkey, final Account acc) {
-        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+    public static String createPornhubVideoLink(final Boolean isPremiumURL, final String viewkey, final Account acc) {
+        if (Boolean.TRUE.equals(isPremiumURL)) {
             /* Premium url */
             return getProtocolPremium() + "www.pornhubpremium.com/view_video.php?viewkey=" + viewkey;
         } else {
@@ -1101,6 +1106,14 @@ public class PornHubCom extends PluginForHost {
             return createPornhubVideoLinkEmbedPremium(viewkey);
         } else {
             return createPornhubVideoLinkEmbedFree(viewkey);
+        }
+    }
+
+    public static boolean isPremiumFromURL(final String url) {
+        if (url != null && StringUtils.containsIgnoreCase(url, "pornhubpremium.com/")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
