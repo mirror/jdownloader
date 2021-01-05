@@ -57,8 +57,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
         final String ret = super.getTooltipText(obj);
         if (StringUtils.isNotEmpty(ret)) {
             final File raw = LinkTreeUtils.getRawDownloadDirectory(obj);
-            if (raw != null) {
-                return "<html><pre>" + ret + "\r\n(" + raw.getPath().replaceAll("<", "&lt;").replaceAll(">", "&gt;") + ")</html>";
+            String rawString = null;
+            if (raw != null && (rawString = raw.getPath()).contains("<jd:")) {
+                return "<html><pre>" + ret + "\r\n(" + rawString.replaceAll("<", "&lt;").replaceAll(">", "&gt;") + ")</html>";
             }
         }
         return ret;
