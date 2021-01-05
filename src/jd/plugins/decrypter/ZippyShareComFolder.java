@@ -74,11 +74,6 @@ public class ZippyShareComFolder extends PluginForDecrypt {
                     currentFolderName = findNameOfCurrentFolder(folderID, entries);
                     if (currentFolderName != null) {
                         break;
-                        // final String folderIDTmp = (String) JavaScriptEngineFactory.walkJson(entries, "li_attr/ident");
-                        // if (folderIDTmp != null && folderIDTmp.equals(folderID)) {
-                        // currentFolderName = (String) entries.get("text");
-                        // break;
-                        // }
                     }
                 }
             } catch (final Throwable e) {
@@ -90,7 +85,6 @@ public class ZippyShareComFolder extends PluginForDecrypt {
                 logger.info("Failed to find name of current folder");
             }
         }
-        // final String[] userDir = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_,]+)(?:/([a-z0-9\\-_]+)/)?").getRow(0);
         /* Over 250 items? Check if there is more ... */
         final int pageSize = 250;
         int page = 0;
