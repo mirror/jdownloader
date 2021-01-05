@@ -53,6 +53,18 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
+    protected String getTooltipText(AbstractNode obj) {
+        final String ret = super.getTooltipText(obj);
+        if (StringUtils.isNotEmpty(ret)) {
+            final File raw = LinkTreeUtils.getRawDownloadDirectory(obj);
+            if (raw != null) {
+                return "<html><pre>" + ret + "\r\n(" + raw.getPath().replaceAll("<", "&lt;").replaceAll(">", "&gt;") + ")</html>";
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public boolean onRenameClick(MouseEvent e, AbstractNode obj) {
         SetDownloadFolderInLinkgrabberAction r = new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj));
         r.requestUpdate(this);
