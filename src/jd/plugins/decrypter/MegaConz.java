@@ -73,7 +73,7 @@ public class MegaConz extends PluginForDecrypt {
         final String folderID = getFolderID(parameter);
         final String folderNodeID = getFolderNodeID(parameter);
         final String masterKey = getMasterKey(parameter);
-        final String parentNodeID = getParentNodeID(parameter);
+        final String preferredNodeID = getParentNodeID(parameter);
         final String containerURL;
         if (StringUtils.startsWithCaseInsensitive(parameter.getCryptedUrl(), "chrome:") || StringUtils.startsWithCaseInsensitive(parameter.getCryptedUrl(), "mega:")) {
             if (folderID != null && masterKey != null) {
@@ -146,19 +146,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -200,18 +200,25 @@ public class MegaConz extends PluginForDecrypt {
                     continue;
                 }
                 final MegaFolder folder = folders.get(nodeParentID);
-                if (parentNodeID != null && folder != null) {
-                    // check parentNodeID recursive of file
-                    MegaFolder checkParent = folder;
-                    while (checkParent != null) {
-                        if (parentNodeID.equals(checkParent.id)) {
-                            break;
-                        } else {
-                            checkParent = folders.get(checkParent.parent);
+                if (StringUtils.isNotEmpty(preferredNodeID)) {
+                    // see RewriteMegaConz
+                    if (StringUtils.equals(preferredNodeID, nodeID)) {
+                        // preferred nodeID
+                        logger.info("Preferred File NodeID found:" + preferredNodeID);
+                    } else if (folder != null) {
+                        // check parentNodeID recursive of file
+                        MegaFolder checkParent = folder;
+                        while (checkParent != null) {
+                            if (preferredNodeID.equals(checkParent.id)) {
+                                logger.info("Preferred Folder NodeID found:" + preferredNodeID);
+                                break;
+                            } else {
+                                checkParent = folders.get(checkParent.parent);
+                            }
                         }
-                    }
-                    if (checkParent == null) {
-                        continue;
+                        if (checkParent == null) {
+                            continue;
+                        }
                     }
                 }
                 FilePackage fp;
@@ -275,6 +282,9 @@ public class MegaConz extends PluginForDecrypt {
                     break;
                 }
             }
+        }
+        if (!isAbort() && decryptedLinks.size() == 0 && StringUtils.isNotEmpty(preferredNodeID)) {
+            logger.info("Preferred NodeID NOT found:" + preferredNodeID);
         }
         return decryptedLinks;
     }
