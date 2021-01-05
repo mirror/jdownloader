@@ -24,6 +24,7 @@ import java.util.Scanner;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.config.Order;
@@ -44,8 +45,14 @@ import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    public static final String PROPERTY_hlsBandwidth   = "hlsBandwidth";
+    public static final String PROPERTY_streamingType  = "streamingType";
+    public static final String PROPERTY_title          = "title";
+    public static final String PROPERTY_tv_show        = "tv_show";
+    public static final String PROPERTY_date_formatted = "date_formatted";
+    public static final String PROPERTY_tv_station     = "tv_station";
+    private String             dllink                  = null;
+    private boolean            server_issues           = false;
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +88,7 @@ public class ZdfDeMediathek extends PluginForHost {
         if (dllink.contains("m3u8")) {
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-            final int hlsBandwidth = link.getIntegerProperty("hlsBandwidth", -1);
+            final int hlsBandwidth = link.getIntegerProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, -1);
             if (hlsBandwidth > 0) {
                 for (M3U8Playlist playList : downloader.getPlayLists()) {
                     playList.setAverageBandwidth(hlsBandwidth);
@@ -143,7 +150,7 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             boolean resume = true;
             int maxChunks = 0;
-            if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            if ("subtitle".equals(downloadLink.getStringProperty(PROPERTY_streamingType, null))) {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 downloadLink.setDownloadSize(0);
                 resume = false;
@@ -166,18 +173,18 @@ public class ZdfDeMediathek extends PluginForHost {
         }
     }
 
-    private void postprocess(final DownloadLink downloadLink) {
-        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
-            if (!convertSubtitle(downloadLink)) {
+    private void postprocess(final DownloadLink link) {
+        if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType, null))) {
+            if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".xml", ".srt"));
+                link.setFinalFileName(link.getName().replace(".xml", ".srt"));
             }
         }
     }
 
-    private boolean convertSubtitle(final DownloadLink downloadlink) {
-        final File source = new File(downloadlink.getFileOutput());
+    private boolean convertSubtitle(final DownloadLink link) {
+        final File source = new File(link.getFileOutput());
         final StringBuilder xml = new StringBuilder();
         final String lineseparator = System.getProperty("line.separator");
         Scanner in = null;
@@ -195,7 +202,7 @@ public class ZdfDeMediathek extends PluginForHost {
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>") || xmlContent.contains("<tts:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrDe.convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
+            success = jd.plugins.hoster.BrDe.convertSubtitleBrDe(this, link, xmlContent, 0);
         } else {
             /* Unknown subtitle type */
             success = false;
@@ -208,8 +215,8 @@ public class ZdfDeMediathek extends PluginForHost {
      *
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitleWdr(final DownloadLink downloadlink) {
-        final File source = new File(downloadlink.getFileOutput());
+    public static boolean convertSubtitleWdr(final DownloadLink link) {
+        final File source = new File(link.getFileOutput());
         BufferedWriter dest = null;
         try {
             File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
@@ -238,7 +245,7 @@ public class ZdfDeMediathek extends PluginForHost {
             /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek, NdrDe */
             final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\"[^<>]*?>(.*?)</p>").getMatches();
             try {
-                final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
+                final int starttime = Integer.parseInt(link.getStringProperty("starttime", null));
                 for (String[] match : matches) {
                     dest.write(counter++ + lineseparator);
                     final Double start = Double.valueOf(match[0]) + starttime;
@@ -362,16 +369,8 @@ public class ZdfDeMediathek extends PluginForHost {
                 return _JDT.T.lit_enable_fast_linkcheck();
             }
 
-            public String getGrabSubtitleEnabled_label() {
-                return _JDT.T.lit_add_subtitles();
-            }
-
             public String getGrabAudio_label() {
                 return _JDT.T.lit_add_audio();
-            }
-
-            public String getGrabAudioDeskription_label() {
-                return "Grab Audiodeskription?";
             }
 
             public String getGrabBESTEnabled_label() {
@@ -396,19 +395,28 @@ public class ZdfDeMediathek extends PluginForHost {
         void setFastLinkcheckEnabled(boolean b);
 
         @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry("Grab subtitle?")
         @Order(10)
         boolean isGrabSubtitleEnabled();
 
         void setGrabSubtitleEnabled(boolean b);
 
         @DefaultBooleanValue(false)
-        @Order(11)
+        @DescriptionForConfigEntry("Grab subtitle for disabled people?")
+        @Order(10)
+        boolean isGrabSubtitleForDisabledPeopleEnabled();
+
+        void setGrabSubtitleForDisabledPeopleEnabled(boolean b);
+
+        @DefaultBooleanValue(false)
+        @Order(14)
         boolean isGrabAudio();
 
         void setGrabAudio(boolean b);
 
         @DefaultBooleanValue(false)
-        @Order(12)
+        @DescriptionForConfigEntry("Grab video quality 'Audio Deskription'?")
+        @Order(15)
         boolean isGrabAudioDeskription();
 
         void setGrabAudioDeskription(boolean b);
