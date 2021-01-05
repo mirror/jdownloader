@@ -223,8 +223,7 @@ public class SecondLevelLaunch {
                             }
                         }
                         try {
-                            if (false && CrossSystem.getOS().isMinimum(OperatingSystem.MAC_MOJAVE)) {
-                                // 2021-01-05 bugreport on MacMojave, maybe just set on minimum Catalina?
+                            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8) && CrossSystem.getOS().isMinimum(OperatingSystem.MAC_MOJAVE)) {
                                 logger.info("Try to set NSRequiresAquaSystemAppearance to NO");
                                 final ProcessBuilder p = ProcessBuilderFactory.create("defaults", "write", cFBundleIdentifier, "NSRequiresAquaSystemAppearance", "-bool", "NO");
                                 process = p.start();
