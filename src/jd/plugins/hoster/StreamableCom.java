@@ -112,7 +112,7 @@ public class StreamableCom extends PluginForHost {
         final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
         String filename = (String) entries.get("title");
         final long filesize = ((Number) entries.get("size")).longValue();
-        if (filename != null) {
+        if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename + ".mp4");
         } else if (!link.isNameSet()) {
