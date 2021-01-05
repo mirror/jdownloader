@@ -261,10 +261,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 return 80;
             }
 
-            public int getMaxWidth() {
-                return getDefaultWidth();
-            }
-
             @Override
             protected long getMax(ExtractionController value) {
                 return Math.max(1, value.getCompleteBytes());
