@@ -109,7 +109,7 @@ public class SundryfilesCom extends YetiShareCore {
         String continueurl = super.getContinueLink();
         if (StringUtils.isEmpty(continueurl)) {
             /* 2019-06-07: E.g. first loop */
-            continueurl = br.getRegex("href=\\'(\\?view\\-ads=1)\\'>download / view now<").getMatch(0);
+            continueurl = br.getRegex("href=\\'(\\?view\\-ads=1)\\'>download( / view)? now<").getMatch(0);
         }
         return continueurl;
     }

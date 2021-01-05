@@ -36,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeluxemusicTv;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.tv" }, urls = { "https?://(?:www\\.)?deluxemusic\\.tv/.*|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deluxemusic.de" }, urls = { "https?://(?:www\\.)?deluxemusic\\.(?:tv|de)/.*|https?://deluxetv\\-vimp\\.mivitec\\.net/(?!video/|getMedium)[a-z0-9\\-]+(?:/\\d+)?" })
 public class DeluxemusicTvPlaylist extends PluginForDecrypt {
     public DeluxemusicTvPlaylist(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,7 +48,7 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
-        if (parameter.matches(".+deluxemusic\\.tv/.+")) {
+        if (parameter.matches(".+deluxemusic\\.(?:tv|de)/.+")) {
             /* Crawl playlist */
             String url_name = UrlQuery.parse(parameter).get("v");
             if (url_name == null) {
@@ -76,7 +76,7 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                br.getPage("https://www.deluxemusic.tv/wp-admin/admin-ajax.php?action=get_teaser_video&teaser_id=" + teaserID + "&post_id=" + postID);
+                br.getPage("https://www.deluxemusic.de/wp-admin/admin-ajax.php?action=get_teaser_video&teaser_id=" + teaserID + "&post_id=" + postID);
                 app_id = br.getRegex("applicationId\\s*:\\s*(\\d+)").getMatch(0);
                 playlist_id = br.getRegex("playlistId\\s*:\\s*(\\d+)").getMatch(0);
             }
