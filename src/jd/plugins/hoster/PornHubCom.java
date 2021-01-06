@@ -36,6 +36,15 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,15 +70,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
     /* Connection stuff */
@@ -83,23 +83,24 @@ public class PornHubCom extends PluginForHost {
     public static final boolean                   use_download_workarounds              = true;
     private static final String                   type_photo                            = "(?i).+/photo/\\d+";
     private static final String                   type_gif_webm                         = "(?i).+/(embed)?gif/\\d+";
+    private static final String                   type_modelhub                         = ".+modelhub\\.com/.+";
     public static final String                    html_privatevideo                     = "id=\"iconLocked\"";
     public static final String                    html_privateimage                     = "profile/private-lock\\.png";
-    public static final String                    html_purchase_only                    = "'Buy on video player'";
+    public static final String                    html_purchase_only                    = "'Buy on video player'|data-mixpanel-source=\"start_purchasing_video\"";
     public static final String                    html_premium_only                     = "<h2>\\s*Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                                 = null;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -184,13 +185,20 @@ public class PornHubCom extends PluginForHost {
     public static String correctAddedURL(final String input) throws PluginException {
         final String viewKey = getViewkeyFromURL(input);
         final boolean isPremium = isPremiumFromURL(input);
-        if (input.matches(type_photo)) {
+        if (input.matches(type_modelhub)) {
+            /* Do not modify modelhub URLs */
+            return input;
+        } else if (input.matches(type_photo)) {
             return createPornhubImageLink(isPremium, viewKey, null);
         } else if (input.matches(type_gif_webm)) {
             return createPornhubGifLink(isPremium, viewKey, null);
         } else {
             return createPornhubVideoLink(isPremium, viewKey, null);
         }
+    }
+
+    public static boolean requiresPremiumAccount(final String url) {
+        return url != null && url.matches(type_modelhub);
     }
 
     @Override
@@ -1110,7 +1118,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isPremiumFromURL(final String url) {
-        if (url != null && StringUtils.containsIgnoreCase(url, "pornhubpremium.com/")) {
+        if (url != null && StringUtils.containsIgnoreCase(url, "pornhubpremium.com/") || StringUtils.containsIgnoreCase(url, "modelhub.com/")) {
             return true;
         } else {
             return false;
@@ -1128,6 +1136,8 @@ public class PornHubCom extends PluginForHost {
                 ret = new Regex(url, "gif/([A-Za-z0-9\\-_]+)$").getMatch(0);
             } else if (url.matches("(?i).+/embed/.+")) {
                 ret = new Regex(url, "/embed/([a-z0-9]+)").getMatch(0);
+            } else if (url.matches(".+/video/ph[a-f0-9]+$")) {
+                ret = new Regex(url, "(ph[a-f0-9]+)").getMatch(0);
             } else {
                 ret = new Regex(url, "viewkey=([a-z0-9]+)").getMatch(0);
             }
