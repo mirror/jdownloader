@@ -75,7 +75,6 @@ public class TrainbitCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
             br.followRedirect();
-            // br.getPage(br.getRedirectLocation());
         }
         final String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         final String filesize = br.getRegex("span class=\"badge badge-success\\s*mb-3\">([^<>\"]+)</span>").getMatch(0);
