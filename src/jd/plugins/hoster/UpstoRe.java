@@ -150,7 +150,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
-    public void handleFree(DownloadLink link) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         handleErrorsHTML();
         currentIP.set(this.getIP());
@@ -283,6 +283,10 @@ public class UpstoRe extends antiDDoSForHost {
         // Same server error (displayed differently) also exists for premium users
         if (br.containsHTML(">Server with file not found<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Server with file not found'", 60 * 60 * 1000l);
+        }
+        /* 2021-01-06 */
+        if (br.containsHTML("hcaptcha\\.com")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type hcaptcha", 3 * 60 * 60 * 1000l);
         }
     }
 

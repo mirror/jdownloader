@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
@@ -84,17 +84,31 @@ public class WeTransferComFolder extends PluginForDecrypt {
         /* TODO: Handle this case */
         final boolean password_protected = map.containsKey("password_protected") && Boolean.TRUE.equals(map.get("password_protected"));
         /* E.g. okay would be "downloadable" */
-        final String state = (String) map.get("state");
+        String fpName = null;
+        // final String state = (String) map.get("state");
         for (final Object fileo : ressourcelist) {
             final Map<String, Object> entry = (Map<String, Object>) fileo;
             final String id_single = (String) entry.get("id");
-            final String filename = (String) entry.get("name");
+            final String absolutePath = (String) entry.get("name");
             final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), 0);
-            if (StringUtils.isEmpty(id_single) || StringUtils.isEmpty(filename) || filesize == 0) {
+            if (StringUtils.isEmpty(id_single) || StringUtils.isEmpty(absolutePath) || filesize == 0) {
                 continue;
             }
-            final DownloadLink dl = this.createDownloadlink(String.format("http://wetransferdecrypted/%s/%s/%s", id_main, security_hash, id_single));
+            final DownloadLink dl = this.createDownloadlink("http://wetransferdecrypted/" + id_main + "/" + security_hash + "/" + id_single);
             dl.setProperty("referer", br.getURL());
+            String filename = null;
+            if (absolutePath.contains("/")) {
+                final String[] urlSegments = absolutePath.split("/");
+                filename = urlSegments[urlSegments.length - 1];
+                final String thisPath = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                if (fpName == null) {
+                    /* Let's assume that all files are below this path */
+                    fpName = thisPath;
+                }
+            } else {
+                filename = absolutePath;
+            }
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
             dl.setContentUrl(parameter);
@@ -104,11 +118,13 @@ public class WeTransferComFolder extends PluginForDecrypt {
         if (decryptedLinks.size() > 1) {
             final String shortened_url = (String) map.get("shortened_url");
             final String id = (String) map.get("id");
-            final String fpName;
-            if (StringUtils.isNotEmpty(shortened_url)) {
-                fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
-            } else {
-                fpName = id;
+            if (fpName == null) {
+                if (StringUtils.isNotEmpty(shortened_url)) {
+                    fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
+                } else {
+                    /* Final fallback */
+                    fpName = id;
+                }
             }
             if (StringUtils.isNotEmpty(fpName)) {
                 final FilePackage fp = FilePackage.getInstance();

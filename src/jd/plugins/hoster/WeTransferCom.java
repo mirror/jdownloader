@@ -98,7 +98,8 @@ public class WeTransferCom extends PluginForHost {
             }
             final String referer = link.getStringProperty("referer");
             if (referer == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(referer);
             final String[] recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/");

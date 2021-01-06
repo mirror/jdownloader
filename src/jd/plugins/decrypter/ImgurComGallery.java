@@ -22,6 +22,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,14 +51,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -551,8 +551,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         brc.getPage(parameter);
-        final String title = brc.getRegex("<title>\\s*(.*?)\\s*-\\s*(Album on )?Imgur\\s*<").getMatch(0);
-        this.fp.setName(getFormattedPackagename(""/* only available via api */, title, albumID));
+        this.fp.setName(siteGetPackagenameForGalleryAndAlbum(brc, albumID));
         this.br.getPage("https://" + this.getHost() + "/ajaxalbums/getimages/" + albumID + "/hit.json?all=true");
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
@@ -635,8 +634,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         brc.getPage(parameter);
-        final String title = brc.getRegex("<title>\\s*(.*?)\\s*-\\s*(Album on )?Imgur\\s*<").getMatch(0);
-        this.fp.setName(getFormattedPackagename(""/* only available via api */, title, galleryID));
+        this.fp.setName(siteGetPackagenameForGalleryAndAlbum(brc, galleryID));
         this.br.getPage("https://" + this.getHost() + "/gallery/" + galleryID + "/album_images/hit.json?all=true");
         Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
         final Object dataO = entries.get("data");
@@ -657,6 +655,16 @@ public class ImgurComGallery extends PluginForDecrypt {
         this.author = (String) entries.get("author");
         entries = (Map<String, Object>) dataO;
         this.websiteCrawlJsonMultipleItems(entries);
+    }
+
+    private String siteGetPackagenameForGalleryAndAlbum(final Browser br, final String itemID) throws ParseException {
+        String title = br.getRegex("<title>\\s*(.*?)\\s*-\\s*(Album on )?Imgur\\s*<").getMatch(0);
+        if (title == null) {
+            /* Fallback in case of RegEx failure AND because not all galleries/albums have a title set! */
+            title = itemID;
+        }
+        // return null;
+        return getFormattedPackagename(""/* username is only available via api */, title, itemID);
     }
 
     /** Website- and API json are very similar. Keep the crawlers in separate methods nonetheless!! */
@@ -839,7 +847,8 @@ public class ImgurComGallery extends PluginForDecrypt {
             title = "-";
         }
         String formattedFilename = cfg.getStringProperty(ImgurComHoster.SETTING_CUSTOM_PACKAGENAME, ImgurComHoster.defaultCustomPackagename);
-        if (!formattedFilename.contains("*galleryid*")) {
+        if (!formattedFilename.contains("*galleryid*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*")) {
+            /* Fallback to default packagename pattern */
             formattedFilename = ImgurComHoster.defaultCustomPackagename;
         }
         formattedFilename = formattedFilename.replace("*galleryid*", galleryid);
