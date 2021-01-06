@@ -1,11 +1,11 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
 
 public interface LiveHeaderReconnectSettings extends ConfigInterface {
     @AboutConfig
@@ -51,7 +51,7 @@ public interface LiveHeaderReconnectSettings extends ConfigInterface {
     void setHostWhiteList(final String[] whitelist);
 
     @AboutConfig
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If False, we already tried to send this script to the colect server. Will be resetted each time we change reconnect settings.")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If False, we already tried to send this script to the collect server. Will be resetted each time we change reconnect settings.")
     @DefaultBooleanValue(false)
     boolean isAlreadySendToCollectServer3();
 
