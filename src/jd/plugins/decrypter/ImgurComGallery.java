@@ -663,7 +663,6 @@ public class ImgurComGallery extends PluginForDecrypt {
             /* Fallback in case of RegEx failure AND because not all galleries/albums have a title set! */
             title = itemID;
         }
-        // return null;
         return getFormattedPackagename(""/* username is only available via api */, title, itemID);
     }
 

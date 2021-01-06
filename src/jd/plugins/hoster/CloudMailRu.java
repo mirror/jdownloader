@@ -52,7 +52,8 @@ public class CloudMailRu extends PluginForHost {
     public CloudMailRu(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium("https://cloud.mail.ru/");
+        /* 2021-01-06: Dropped account support as it does not provide any advantages over downloading anonymously. */
+        // this.enablePremium("https://cloud.mail.ru/");
     }
 
     private static final String  TYPE_FROM_DECRYPTER       = "https?://cloud\\.mail\\.ru/public/[A-Za-z0-9]+/[A-Za-z0-9].*";
