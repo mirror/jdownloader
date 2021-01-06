@@ -24,6 +24,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -32,6 +38,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -44,12 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -66,7 +67,7 @@ public class PornHubCom extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org" });
+        ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" });
         return ret;
     }
 
@@ -92,6 +93,8 @@ public class PornHubCom extends PluginForDecrypt {
             /* Single video embeded */
             pattern += "embed/[a-z0-9]+|";
             pattern += "embed_player\\.php\\?id=\\d+|";
+            /* Single video modelhub.com 2021-01-06 */
+            pattern += "video/ph[a-f0-9]+|";
             /* All videos of a pornstar/model */
             pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/videos/paid|/videos|/from_videos)?|";
             /* All videos of a channel */
@@ -125,6 +128,9 @@ public class PornHubCom extends PluginForDecrypt {
                 handleAccountException(account, e);
                 account = null;
             }
+        }
+        if (jd.plugins.hoster.PornHubCom.requiresPremiumAccount(parameter) && (account == null || account.getType() != AccountType.PREMIUM)) {
+            throw new AccountRequiredException();
         }
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -605,7 +611,7 @@ public class PornHubCom extends PluginForDecrypt {
             if (newLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            parameter = newLink;
+            this.parameter = newLink;
             jd.plugins.hoster.PornHubCom.getPage(br, parameter);
         }
         final String username = jd.plugins.hoster.PornHubCom.getUserName(this, br);
