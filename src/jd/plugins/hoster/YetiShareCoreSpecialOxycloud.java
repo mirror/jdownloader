@@ -63,11 +63,6 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
     }
 
     @Override
-    protected boolean isPremiumAccount(final Account account, final Browser br) {
-        return false;
-    }
-
-    @Override
     protected void loginWebsite(final Account account, boolean force) throws Exception {
         loginWebsiteSpecial(account, force);
     }
@@ -90,7 +85,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                         return false;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage(this.getMainPage() + "/upgrade");
+                    getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade());
                     if (this.isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
                         /* Set/Update account-type */
