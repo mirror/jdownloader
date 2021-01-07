@@ -32,6 +32,7 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (jd.plugins.hoster.DefineBabeCom.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
