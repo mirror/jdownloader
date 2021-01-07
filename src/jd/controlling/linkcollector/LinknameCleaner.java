@@ -35,9 +35,6 @@ public class LinknameCleaner {
     }
     public static final Pattern   pat12    = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat14    = Pattern.compile("(.+)\\.+$");
-    public static final Pattern   pat15    = Pattern.compile("(.+)-+$");
-    public static final Pattern   pat16    = Pattern.compile("(.+)_+$");
     public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
     public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
@@ -151,9 +148,18 @@ public class LinknameCleaner {
             }
         }
         /* remove ending ., - , _ */
-        name = getNameMatch(name, pat14);
-        name = getNameMatch(name, pat15);
-        name = getNameMatch(name, pat16);
+        int removeIndex = -1;
+        for (int i = name.length() - 1; i >= 0; i--) {
+            final char c = name.charAt(i);
+            if (c == ',' || c == '_' || c == '-') {
+                removeIndex = i;
+            } else {
+                break;
+            }
+        }
+        if (removeIndex > 0) {
+            name = name.substring(0, removeIndex);
+        }
         /* if enabled, replace dots and _ with spaces and do further clean ups */
         if (cleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
             StringBuilder sb = new StringBuilder();

@@ -22,14 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +43,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -838,25 +838,24 @@ public class ImgurComGallery extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
         String username = params[0];
         String title = params[1];
-        final String galleryid = params[2];
-        if (username == null) {
+        String galleryid = params[2];
+        if (StringUtils.isEmpty(galleryid)) {
+            galleryid = "-";
+        }
+        if (StringUtils.isEmpty(username)) {
             username = "-";
         }
-        if (title == null) {
+        if (StringUtils.isEmpty(title)) {
             title = "-";
         }
         String formattedFilename = cfg.getStringProperty(ImgurComHoster.SETTING_CUSTOM_PACKAGENAME, ImgurComHoster.defaultCustomPackagename);
-        if (!formattedFilename.contains("*galleryid*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*")) {
+        if (StringUtils.isEmpty(formattedFilename)) {
             /* Fallback to default packagename pattern */
             formattedFilename = ImgurComHoster.defaultCustomPackagename;
         }
         formattedFilename = formattedFilename.replace("*galleryid*", galleryid);
-        if (username != null) {
-            formattedFilename = formattedFilename.replace("*username*", username);
-        }
-        if (title != null) {
-            formattedFilename = formattedFilename.replace("*title*", title);
-        }
+        formattedFilename = formattedFilename.replace("*username*", username);
+        formattedFilename = formattedFilename.replace("*title*", title);
         formattedFilename = formattedFilename.replaceFirst("^([ \\-_]+)", "").trim();
         return formattedFilename;
     }
