@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trainbit.com" }, urls = { "https?://(?:www\\.)?trainbit\\.com/files/(\\d+)/([^/]+)" })
 public class TrainbitCom extends PluginForHost {
@@ -74,7 +74,7 @@ public class TrainbitCom extends PluginForHost {
         }
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
-            br.followRedirect();
+            br.followRedirect(true);
         }
         final String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         final String filesize = br.getRegex("span class=\"badge badge-success\\s*mb-3\">([^<>\"]+)</span>").getMatch(0);
@@ -85,7 +85,7 @@ public class TrainbitCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         /* 2021-01-06: File information can be given even if file is offline! */
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">Desired file is removed")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">\\s*Desired file is removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(this.getFID(link))) {
             /* 2021-01-06: E.g. redirect to somewhere else */
