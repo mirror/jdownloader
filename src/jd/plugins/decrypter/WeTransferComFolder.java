@@ -74,7 +74,8 @@ public class WeTransferComFolder extends PluginForDecrypt {
         // }
         final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        if ("invalid".equals(map.get("state"))) {
+        final String state = (String) map.get("state");
+        if ("invalid".equals(state) || "expired".equals(state)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

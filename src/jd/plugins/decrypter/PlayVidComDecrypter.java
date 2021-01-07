@@ -236,7 +236,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                     }
                 }
             } else {
-                final String fname = filename + "_" + qualityValue + ".mp4";
+                /* Small workaround */
+                final String qualityIndicatorForFilename = qualityValue.replace("data-hls-src", "hls_");
+                final String fname = filename + "_" + qualityIndicatorForFilename + ".mp4";
                 final DownloadLink dl = new DownloadLink(JDUtilities.getPluginForHost(this.getHost()), null, this.getHost(), "http://playviddecrypted.com/" + UniqueAlltimeID.create(), true);
                 dl.setProperty("directlink", directlink);
                 dl.setProperty("qualityvalue", qualityValue);
