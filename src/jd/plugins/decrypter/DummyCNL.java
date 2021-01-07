@@ -81,8 +81,7 @@ public class DummyCNL extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String hex = new Regex(parameter, "https?://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
-        final HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
-        }, null);
+        final Map<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), TypeRef.HASHMAP_STRING);
         final String crypted = params.get("crypted");
         if (crypted == null || crypted.trim().length() == 0) {
             return decryptedLinks;

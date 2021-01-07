@@ -5,13 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -28,6 +21,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download(/[^/]*)?|download(/[^/]*)?)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
@@ -74,7 +74,7 @@ public class PutIO extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-        final HashMap<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
+        final HashMap<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final HashMap<String, Object> info = (HashMap<String, Object>) infoResponse.get("info");
         final String dateExpireStr = (String) info.get("plan_expiration_date");
         final long dateExpire = TimeFormatter.getMilliSeconds(dateExpireStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
