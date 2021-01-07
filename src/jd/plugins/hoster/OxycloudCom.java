@@ -124,10 +124,10 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
-            getPage("/upgrade");
+        if (br.getURL() == null || !br.getURL().contains(this.getAccountNameSpaceUpgrade())) {
+            getPage(this.getAccountNameSpaceUpgrade());
         }
-        if (!isPremiumAccount(br)) {
+        if (!isPremiumAccount(account, this.br)) {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
@@ -211,7 +211,7 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
     }
 
     @Override
-    protected boolean isPremiumAccount(final Browser br) {
+    protected boolean isPremiumAccount(final Account account, final Browser br) {
         return br.containsHTML("Typ Konta</strong></td>\\s*<td>Premium</td>");
     }
 
