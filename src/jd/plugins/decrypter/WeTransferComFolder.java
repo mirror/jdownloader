@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +27,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
@@ -81,7 +81,9 @@ public class WeTransferComFolder extends PluginForDecrypt {
         // return decryptedLinks;
         // }
         if (!"downloadable".equals(state)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            final DownloadLink link = this.createOfflinelink(parameter);
+            link.setName(("(") + state + ")" + link.getName());
+            decryptedLinks.add(link);
             return decryptedLinks;
         }
         final ArrayList<Object> ressourcelist = map.get("files") != null ? (ArrayList<Object>) map.get("files") : (ArrayList) map.get("items");
