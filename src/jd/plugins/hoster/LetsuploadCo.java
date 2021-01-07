@@ -135,16 +135,4 @@ public class LetsuploadCo extends YetiShareCoreSpecialOxycloud {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    /** 2019-04-25: Special */
-    // @Override
-    // public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
-    // if (supports_availablecheck_over_info_page(link)) {
-    // fileInfo[0] = br.getRegex("<span>Filename[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-    // fileInfo[1] = br.getRegex("<span>Filesize[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-    // } else {
-    // fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
-    // fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-    // }
-    // return super.scanInfo(link, fileInfo);
-    // }
 }

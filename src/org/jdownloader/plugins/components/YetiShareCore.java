@@ -1509,9 +1509,6 @@ public class YetiShareCore extends antiDDoSForHost {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        // if (br.getURL() == null || !br.getURL().contains(getAccountHomeNameSpace())) {
-        // getPage(getAccountHomeNameSpace());
-        // }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
             /* TODO: Make this work for all YetiShare websites that support their API */
@@ -1522,27 +1519,32 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         getPage(this.getAccountNameSpaceUpgrade());
-        String expireStr = regexExpireDate();
-        if (expireStr == null) {
+        if (this.isPremiumAccount(account, this.br)) {
+            final String expireStr = regexExpireDate();
+            // if (expireStr != null) {
+            // final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+            // final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
+            // /* If the premium account is expired we'll simply accept it as a free account. */
+            // if (!isPremium) {
+            // /* Expired premium == FREE */
+            // this.setAccountLimitsByType(account, AccountType.FREE);
+            // // ai.setStatus("Registered (free) user");
+            // } else {
+            // ai.setValidUntil(expire_milliseconds, this.br);
+            // this.setAccountLimitsByType(account, AccountType.PREMIUM);
+            // // ai.setStatus("Premium account");
+            // }}
             /*
-             * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
-             * which we fail to find the expire-date.
+             * 2021-01-07: Allow premium accounts without expire-date: I've never seen such accounts but let's say we're unable to parse
+             * expire-date but we are sure it is a premium account -> That case is covered now
              */
-            logger.info("Failed to find expire-date --> Probably a FREE account");
-            this.setAccountLimitsByType(account, AccountType.FREE);
-            return ai;
-        }
-        long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-        final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        if (!isPremium) {
-            /* Expired premium == FREE */
-            this.setAccountLimitsByType(account, AccountType.FREE);
-            // ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(expire_milliseconds, this.br);
+            if (expireStr != null) {
+                final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+                ai.setValidUntil(expire_milliseconds, this.br);
+            }
             this.setAccountLimitsByType(account, AccountType.PREMIUM);
-            // ai.setStatus("Premium account");
+        } else {
+            this.setAccountLimitsByType(account, AccountType.FREE);
         }
         ai.setUnlimitedTraffic();
         return ai;
