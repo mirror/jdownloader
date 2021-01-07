@@ -24,12 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +45,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -133,6 +133,10 @@ public class PornHubCom extends PluginForDecrypt {
             throw new AccountRequiredException();
         }
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(this, account, br, parameter);
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/premium/login")) {
+            logger.info("Debug info: premium required: " + parameter);
+            throw new AccountRequiredException();
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Offline because 404");
             decryptedLinks.add(createOfflinelink(parameter));
@@ -616,13 +620,6 @@ public class PornHubCom extends PluginForDecrypt {
         }
         final String username = jd.plugins.hoster.PornHubCom.getUserName(this, br);
         final String viewkey = jd.plugins.hoster.PornHubCom.getViewkeyFromURL(parameter);
-        if (!br.getURL().contains(viewkey)) {
-            /* Offline - initial URL redirected to some other URL (unsupported/offline) */
-            final DownloadLink dl = createOfflinelink(parameter);
-            dl.setFinalFileName("viewkey=" + viewkey);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         // jd.plugins.hoster.PornHubCom.getPage(br, jd.plugins.hoster.PornHubCom.createPornhubVideolink(viewkey, aa));
         final String siteTitle = jd.plugins.hoster.PornHubCom.getSiteTitle(this, br);
         final Map<String, Map<String, String>> qualities = jd.plugins.hoster.PornHubCom.getVideoLinks(this, br);
@@ -642,18 +639,24 @@ public class PornHubCom extends PluginForDecrypt {
             dl.setFinalFileName("(GeoBlocked)viewkey=" + viewkey);
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (isOfflineVideo(br)) {
-            logger.info("Debug info: offline: " + parameter);
-            final DownloadLink dl = createOfflinelink(parameter);
-            dl.setFinalFileName("viewkey=" + viewkey);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
         } else if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_privatevideo)) {
             logger.info("Debug info: html_privatevideo: " + parameter);
             throw new AccountRequiredException();
         } else if (br.containsHTML(jd.plugins.hoster.PornHubCom.html_premium_only)) {
             logger.info("Debug info: html_premium_only: " + parameter);
             throw new AccountRequiredException();
+        } else if (isOfflineVideo(br)) {
+            logger.info("Debug info: offline: " + parameter);
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("(GeoBlocked)viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        } else if (!br.getURL().contains(viewkey)) {
+            logger.info("Debug info: unknown: " + parameter);
+            final DownloadLink dl = createOfflinelink(parameter);
+            dl.setFinalFileName("(Unknown)viewkey=" + viewkey);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
         /* Try to get date only, without time */

@@ -36,15 +36,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -61,6 +52,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -69,6 +61,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
@@ -86,21 +87,21 @@ public class PornHubCom extends PluginForHost {
     private static final String                   type_modelhub                         = ".+modelhub\\.com/.+";
     public static final String                    html_privatevideo                     = "id=\"iconLocked\"";
     public static final String                    html_privateimage                     = "profile/private-lock\\.png";
-    public static final String                    html_purchase_only                    = "'Buy on video player'|data-mixpanel-source=\"start_purchasing_video\"";
+    public static final String                    html_purchase_only                    = "'Buy on video player'";
     public static final String                    html_premium_only                     = "<h2>\\s*Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
     private String                                dlUrl                                 = null;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -255,7 +256,9 @@ public class PornHubCom extends PluginForHost {
     }
 
     private void checkAvailability(final DownloadLink link, final Browser br) throws PluginException {
-        if (br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<")) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "/premium/login")) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(">\\s*Video has been flagged for verification in accordance with our trust and safety policy.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been flagged");
         } else if (br.containsHTML(">\\s*This content is unavailable in your country.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This content is unavailable in your country", 24 * 60 * 60 * 1000l);
@@ -645,12 +648,16 @@ public class PornHubCom extends PluginForHost {
                 /* 2017-02-09: For embed player - usually only 480p will be available. */
                 /* Access embed video URL. */
                 /* viewkey should never be null! */
-                final String viewkey = getViewkeyFromURL(br.getURL());
-                if (viewkey != null) {
-                    final Browser brc = br.cloneBrowser();
-                    getPage(brc, createPornhubVideoLinkEmbedFree(brc, viewkey));
-                    var_player_quality_dp = brc.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
-                    matchPlaces = new int[] { 0, 1 };
+                try {
+                    final String viewkey = getViewkeyFromURL(br.getURL());
+                    if (viewkey != null) {
+                        final Browser brc = br.cloneBrowser();
+                        getPage(brc, createPornhubVideoLinkEmbedFree(brc, viewkey));
+                        var_player_quality_dp = brc.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
+                        matchPlaces = new int[] { 0, 1 };
+                    }
+                } catch (PluginException e) {
+                    plugin.getLogger().log(e);
                 }
             }
             final int matchQuality = matchPlaces[0];
