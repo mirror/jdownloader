@@ -68,14 +68,19 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0);
+        // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0); --> is now in json: recipient_id
         // if (recepientID == null) {
         // recepientID = "";
         // }
         final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
         final String state = (String) map.get("state");
-        if ("invalid".equals(state) || "expired".equals(state)) {
+        // final int transfer_type = ((Number)map.get("transfer_type")).intValue();
+        // if ("invalid".equals(state) || "expired".equals(state)) {
+        // decryptedLinks.add(this.createOfflinelink(parameter));
+        // return decryptedLinks;
+        // }
+        if (!"downloadable".equals(state)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
