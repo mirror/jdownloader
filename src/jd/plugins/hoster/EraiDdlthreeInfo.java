@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -128,7 +129,7 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
         if (br.getURL() == null || !br.getURL().contains("/account")) {
             getPage("/account");
         }
-        if (!isPremiumAccount(br)) {
+        if (!isPremiumAccount(account, this.br)) {
             logger.info("Looks like we have a free account");
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
@@ -159,8 +160,8 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
     }
 
     @Override
-    protected String getInternalFileID(final DownloadLink link) throws PluginException {
-        final String internalFileID = super.getInternalFileID(link);
+    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
+        final String internalFileID = super.getInternalFileID(link, null);
         if (internalFileID == null) {
             /*
              * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because

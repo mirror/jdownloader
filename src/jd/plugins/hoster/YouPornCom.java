@@ -148,7 +148,7 @@ public class YouPornCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
-        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"|watchRemoved\"|class=\\'video\\-not\\-found\\'")) {
+        if (br.containsHTML("<div id=\"video-not-found-related\"|watchRemoved\"|class=\\'video-not-found\\'")) {
             /* Offline link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -160,6 +160,12 @@ public class YouPornCom extends PluginForHost {
         } else if (this.br.containsHTML("onload=\"go\\(\\)\"")) {
             /* 2017-07-26: TODO: Maybe follow that js redirect */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Temporarily blocked because of too many requests", 5 * 60 * 1000l);
+        } else if (br.containsHTML("class=\"video-not-found-header\"")) {
+            /*
+             * 2021-01-07: Also applies for ">Video has been flagged for verification" --> I guess most- or all of such videos' status will
+             * never change (?)
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
         if (filename == null) {

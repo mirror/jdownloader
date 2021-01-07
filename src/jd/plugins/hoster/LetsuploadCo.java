@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class LetsuploadCo extends YetiShareCore {
+public class LetsuploadCo extends YetiShareCoreSpecialOxycloud {
     public LetsuploadCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
@@ -137,17 +135,16 @@ public class LetsuploadCo extends YetiShareCore {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
     /** 2019-04-25: Special */
-    @Override
-    public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
-        if (supports_availablecheck_over_info_page(link)) {
-            fileInfo[0] = br.getRegex("<span>Filename[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-            fileInfo[1] = br.getRegex("<span>Filesize[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-        } else {
-            fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
-            fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
-        }
-        return super.scanInfo(link, fileInfo);
-    }
+    // @Override
+    // public String[] scanInfo(DownloadLink link, final String[] fileInfo) {
+    // if (supports_availablecheck_over_info_page(link)) {
+    // fileInfo[0] = br.getRegex("<span>Filename[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
+    // fileInfo[1] = br.getRegex("<span>Filesize[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
+    // } else {
+    // fileInfo[0] = br.getRegex("class=\"fa fa-file\\-text\"></i>([^<>\"]+)</div>").getMatch(0);
+    // fileInfo[1] = br.getRegex("size[^<]*?<p>([^<>\"]+)</p>").getMatch(0);
+    // }
+    // return super.scanInfo(link, fileInfo);
+    // }
 }

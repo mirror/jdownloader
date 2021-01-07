@@ -18,18 +18,14 @@ package jd.plugins.hoster;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -121,30 +117,12 @@ public class VisharePl extends YetiShareCoreSpecialOxycloud {
         /* 2021-01-04 */
         return false;
     }
-
-    @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/upgrade/2")) {
-            getPage("/upgrade/2");
-        }
-        if (!isPremiumAccount(br)) {
-            logger.info("Looks like we have a free account");
-            setAccountLimitsByType(account, AccountType.FREE);
-        } else {
-            final String expireStr = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
-            if (expireStr != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireStr, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH));
-            }
-        }
-        return ai;
-    }
-
-    @Override
-    protected boolean isPremiumAccount(final Browser br) {
-        return br.containsHTML("Typ Konta</strong></td>\\s*<td>Paid User</td>");
-    }
+    /* Removed override again as "/upgrade" will auto redirect to "/upgrade/2" */
+    // @Override
+    // protected String getAccountNameSpaceUpgrade() {
+    // /* 2021-01-07 */
+    // return "/upgrade/2";
+    // }
 
     @Override
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
@@ -168,11 +146,6 @@ public class VisharePl extends YetiShareCoreSpecialOxycloud {
         }
         super.checkErrors(link, account);
     }
-    // @Override
-    // public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-    // /** 2020-11-13: Seems like only premium users can download. */
-    // return account != null && account.getType() == AccountType.PREMIUM;
-    // }
 
     @Override
     public boolean supports_https() {

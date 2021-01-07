@@ -30,6 +30,24 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -54,24 +72,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -141,7 +141,10 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     // private static final boolean enable_regex_stream_url = true;
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent                     = new AtomicReference<String>(null);
+    /** See {@link #usesNewYetiShareVersion()} */
+    public static final String             PROPERTY_INTERNAL_FILE_ID = "INTERNALFILEID";
+    public static final String             PROPERTY_UPLOAD_DATE_RAW  = "UPLOADDATE_RAW";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -232,8 +235,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -281,10 +284,17 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed e.g. filemia.com </br>
+     * default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
+        return false;
+    }
+
+    /** Enable this if new YetiShare version is used. Only mandatory if auto handling fails. */
+    protected boolean usesNewYetiShareVersion() {
         return false;
     }
 
@@ -368,6 +378,7 @@ public class YetiShareCore extends antiDDoSForHost {
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         if (supports_availablecheck_over_info_page(link)) {
             final List<String> fileNameCandidates = new ArrayList<String>();
+            /* Add pre given candidate */
             if (!StringUtils.isEmpty(fileInfo[0])) {
                 fileNameCandidates.add(Encoding.htmlDecode(fileInfo[0]).trim());
             }
@@ -420,6 +431,16 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             if (StringUtils.isEmpty(fileInfo[1])) {
                 fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*</td>\\s*?<td(?:\\s*class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
+            }
+            {
+                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #usesNewYetiShareVersion()} */
+                if (supports_availablecheck_over_info_page(link)) {
+                    /* 2020-10-12: Special */
+                    final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
+                    if (!StringUtils.isEmpty(betterFilesize)) {
+                        fileInfo[1] = betterFilesize;
+                    }
+                }
             }
             try {
                 /* Language-independant attempt ... */
@@ -497,7 +518,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 /* For premium mode, we might get our final downloadurl here already. */
                 final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
-                if (this.isDownloadableContent(con)) {
+                if (this.looksLikeDownloadableContent(con)) {
                     con.disconnect();
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, con.getRequest(), resume, maxchunks);
                 } else {
@@ -515,7 +536,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 br.setFollowRedirects(true);
                 /* For premium mode, we might get our final downloadurl here already. */
                 final URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
-                if (this.isDownloadableContent(con)) {
+                if (this.looksLikeDownloadableContent(con)) {
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, con.getRequest(), resume, maxchunks);
                 } else {
                     try {
@@ -652,7 +673,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                         throw e;
                     }
-                    if (isDownloadableContent(con)) {
+                    if (looksLikeDownloadableContent(con)) {
                         success = true;
                         loopLog += " --> " + con.getURL().toString();
                         break;
@@ -694,7 +715,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             throw e;
         }
-        if (!isDownloadableContent(con)) {
+        if (!looksLikeDownloadableContent(con)) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {
@@ -1030,7 +1051,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            }/** Limit errorhandling */
+            } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1120,10 +1141,19 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    protected void loggedInOrException(final Account account) throws PluginException {
+        if (account == null) {
+            /* Programmer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!this.isLoggedin()) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        }
+    }
+
     protected void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
-        if (account != null && !this.isLoggedin()) {
-            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        if (account != null) {
+            this.loggedInOrException(account);
         } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
             /* Handle redirect to mainpage as premiumonly */
             throw new AccountRequiredException();
@@ -1183,7 +1213,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br>
+     *         Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
@@ -1251,7 +1282,7 @@ public class YetiShareCore extends antiDDoSForHost {
                      */
                     valid = true;
                     return dllink;
-                } else if (!isDownloadableContent(con)) {
+                } else if (!looksLikeDownloadableContent(con)) {
                     try {
                         br2.followConnection(true);
                     } catch (IOException e) {
@@ -1282,10 +1313,6 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
-        return looksLikeDownloadableContent(con);
-    }
-
     protected String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supports_https()) {
             return "https://";
@@ -1305,12 +1332,16 @@ public class YetiShareCore extends antiDDoSForHost {
         return br;
     }
 
-    protected String getAccountHomeNameSpace() {
+    protected String getAccountNameSpaceLogin() {
+        return "/login.html";
+    }
+
+    protected String getAccountNameSpaceHome() {
         return "/account_home.html";
     }
 
-    protected String getAccountLoginNameSpace() {
-        return "/login.html";
+    protected String getAccountNameSpaceUpgrade() {
+        return "/upgrade.html";
     }
 
     protected void loginWebsite(final Account account, boolean force) throws Exception {
@@ -1327,17 +1358,23 @@ public class YetiShareCore extends antiDDoSForHost {
                         return;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage(this.getMainPage() + getAccountHomeNameSpace());
+                    getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade());
                     if (isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        /* Set/Update account-type */
+                        if (this.isPremiumAccount(account, br)) {
+                            setAccountLimitsByType(account, AccountType.PREMIUM);
+                        } else {
+                            setAccountLimitsByType(account, AccountType.FREE);
+                        }
                         return;
                     } else {
                         logger.info("Failed to login via cookies");
                     }
                 }
                 logger.info("Performing full login");
-                getPage(this.getProtocol() + this.getHost() + getAccountLoginNameSpace());
+                getPage(this.getProtocol() + this.getHost() + getAccountNameSpaceLogin());
                 Form loginform;
                 /*
                  * TODO: Optimize recognition of required login type see all plugins that override enforce_old_login_method (not many - low
@@ -1472,9 +1509,9 @@ public class YetiShareCore extends antiDDoSForHost {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains(getAccountHomeNameSpace())) {
-            getPage(getAccountHomeNameSpace());
-        }
+        // if (br.getURL() == null || !br.getURL().contains(getAccountHomeNameSpace())) {
+        // getPage(getAccountHomeNameSpace());
+        // }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
             /* TODO: Make this work for all YetiShare websites that support their API */
@@ -1484,7 +1521,44 @@ public class YetiShareCore extends antiDDoSForHost {
                 return apiAccInfo;
             }
         }
-        getPage("/upgrade.html");
+        getPage(this.getAccountNameSpaceUpgrade());
+        String expireStr = regexExpireDate();
+        if (expireStr == null) {
+            /*
+             * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
+             * which we fail to find the expire-date.
+             */
+            logger.info("Failed to find expire-date --> Probably a FREE account");
+            this.setAccountLimitsByType(account, AccountType.FREE);
+            return ai;
+        }
+        long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+        final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
+        /* If the premium account is expired we'll simply accept it as a free account. */
+        if (!isPremium) {
+            /* Expired premium == FREE */
+            this.setAccountLimitsByType(account, AccountType.FREE);
+            // ai.setStatus("Registered (free) user");
+        } else {
+            ai.setValidUntil(expire_milliseconds, this.br);
+            this.setAccountLimitsByType(account, AccountType.PREMIUM);
+            // ai.setStatus("Premium account");
+        }
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    protected boolean isPremiumAccount(final Account account, final Browser br) {
+        final String expireStr = regexExpireDate();
+        if (expireStr == null) {
+            return false;
+        } else {
+            final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
+            return expire_milliseconds > System.currentTimeMillis();
+        }
+    }
+
+    protected String regexExpireDate() {
         String expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</td>\\s*<td>\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expireStr == null) {
             expireStr = br.getRegex("Reverts To Free Account\\s*:\\s*</span>\\s*<input[^>]*value\\s*=\\s*\"(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
@@ -1493,29 +1567,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 expireStr = br.getRegex(">\\s*(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})\\s*<").getMatch(0);
             }
         }
-        if (expireStr == null) {
-            /*
-             * 2019-03-01: As far as we know, EVERY premium account will have an expire-date given but we will still accept accounts for
-             * which we fail to find the expire-date.
-             */
-            logger.info("Failed to find expire-date --> Probably a FREE account");
-            setAccountLimitsByType(account, AccountType.FREE);
-            return ai;
-        }
-        long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-        final boolean isPremium = expire_milliseconds > System.currentTimeMillis();
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        if (!isPremium) {
-            /* Expired premium == FREE */
-            setAccountLimitsByType(account, AccountType.FREE);
-            // ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(expire_milliseconds, this.br);
-            setAccountLimitsByType(account, AccountType.PREMIUM);
-            // ai.setStatus("Premium account");
-        }
-        ai.setUnlimitedTraffic();
-        return ai;
+        return expireStr;
     }
 
     /** Tries to auto-find API keys in website HTML code and return account information from API! */
@@ -1938,7 +1990,7 @@ public class YetiShareCore extends antiDDoSForHost {
             }
             throw e;
         }
-        if (!isDownloadableContent(con)) {
+        if (!looksLikeDownloadableContent(con)) {
             try {
                 br.followConnection(true);
             } catch (IOException e) {

@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.YetiShareCore;
 
@@ -32,7 +31,6 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -43,9 +41,6 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         super(wrapper);
     }
 
-    public static final String PROPERTY_INTERNAL_FILE_ID = "INTERNALFILEID";
-    public static final String PROPERTY_UPLOAD_DATE_RAW  = "UPLOADDATE_RAW";
-
     /**
      * DEV NOTES YetiShare<br />
      ****************************
@@ -53,35 +48,22 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
      * other: Special <br />
      */
     @Override
-    public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
-        super.scanInfo(link, fileInfo);
-        if (supports_availablecheck_over_info_page(link)) {
-            /* 2020-10-12: Special */
-            final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
-            if (!StringUtils.isEmpty(betterFilesize)) {
-                fileInfo[1] = betterFilesize;
-            }
-        }
-        return fileInfo;
+    protected boolean usesNewYetiShareVersion() {
+        return true;
     }
 
     @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/upgrade")) {
-            getPage("/upgrade");
-        }
-        if (!isPremiumAccount(br)) {
-            logger.info("Looks like we have a free account");
-            setAccountLimitsByType(account, AccountType.FREE);
-        } else {
-            setAccountLimitsByType(account, AccountType.PREMIUM);
-        }
-        return ai;
+    protected String getAccountNameSpaceHome() {
+        return "/account";
     }
 
-    protected boolean isPremiumAccount(final Browser br) {
+    @Override
+    protected String getAccountNameSpaceUpgrade() {
+        return "/upgrade";
+    }
+
+    @Override
+    protected boolean isPremiumAccount(final Account account, final Browser br) {
         return false;
     }
 
@@ -109,10 +91,10 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + "/upgrade");
-                    if (isLoggedinOnUpgradePage()) {
+                    if (this.isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
                         /* Set/Update account-type */
-                        if (this.isPremiumAccount(br)) {
+                        if (this.isPremiumAccount(account, br)) {
                             setAccountLimitsByType(account, AccountType.PREMIUM);
                         } else {
                             setAccountLimitsByType(account, AccountType.FREE);
@@ -238,23 +220,17 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
 
     @Override
     protected boolean isLoggedin() {
-        return isLoggedinSpecial();
+        return this.isLoggedinSpecial();
     }
 
     public boolean isLoggedinSpecial() {
         boolean loggedIN = super.isLoggedin();
         if (!loggedIN) {
-            /* Case 1: When in account overview | Case 2: Everywhere else */
+            /*
+             * Traits depend on where user currently is: Case 1: For whenever logout button is visible (e.g. account overview) | Case 2:
+             * When logout button is not visible e.g. on "/upgrade" page.
+             */
             loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account\"");
-        }
-        return loggedIN;
-    }
-
-    /** Login-check for "/upgrade" page */
-    private boolean isLoggedinOnUpgradePage() {
-        boolean loggedIN = super.isLoggedin();
-        if (!loggedIN) {
-            loggedIN = br.containsHTML("/account\"");
         }
         return loggedIN;
     }
@@ -264,69 +240,95 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         if (this.supports_api()) {
             this.handleDownloadAPI(link, account);
         } else {
-            /* 2020-11-13: Free- and premium account download works the same way. */
             requestFileInformation(link, account, true);
             loginWebsite(account, false);
-            br.setFollowRedirects(true);
-            String dllink = checkDirectLink(link, account);
-            if (dllink != null) {
-                logger.info("Continuing with stored directURL");
+            this.handleDownloadWebsite(link, account);
+        }
+    }
+
+    @Override
+    public void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* 2020-11-13: Anonymous- & Free Account- and premium account download works the same way. */
+        br.setFollowRedirects(true);
+        String dllink = checkDirectLink(link, account);
+        if (dllink != null) {
+            logger.info("Continuing with stored directURL");
+        } else {
+            logger.info("Generating new directURL");
+            final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
+                dllink = con.getURL().toString();
             } else {
-                logger.info("Generating new directURL");
-                final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
-                if (this.looksLikeDownloadableContent(con)) {
-                    dllink = con.getURL().toString();
-                } else {
-                    br.followConnection();
-                    br.setFollowRedirects(false);
-                    Form pwProtected = getPasswordProtectedForm();
-                    if (pwProtected != null) {
-                        /* File is password protected --> Totally different download-way */
-                        String passCode = link.getDownloadPassword();
-                        if (passCode == null) {
-                            passCode = getUserInput("Password?", link);
-                        }
-                        pwProtected.put("filePassword", Encoding.urlEncode(passCode));
-                        this.submitForm(pwProtected);
-                        if (!this.isDownloadlink(br.getRedirectLocation()) || this.getPasswordProtectedForm() != null) {
-                            /* Assume that entered password is wrong! */
-                            link.setDownloadPassword(null);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                        } else {
-                            /* Entered password is correct - we can start the download. */
-                            dllink = br.getRedirectLocation();
-                            link.setDownloadPassword(passCode);
-                        }
+                br.followConnection();
+                br.setFollowRedirects(false);
+                Form pwProtected = getPasswordProtectedForm();
+                if (pwProtected != null) {
+                    /* File is password protected --> Totally different download-way */
+                    String passCode = link.getDownloadPassword();
+                    if (passCode == null) {
+                        passCode = getUserInput("Password?", link);
+                    }
+                    pwProtected.put("filePassword", Encoding.urlEncode(passCode));
+                    this.submitForm(pwProtected);
+                    if (!this.isDownloadlink(br.getRedirectLocation()) || this.getPasswordProtectedForm() != null) {
+                        /* Assume that entered password is wrong! */
+                        link.setDownloadPassword(null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                     } else {
-                        final String internalFileID = this.getInternalFileID(link);
-                        if (internalFileID == null) {
-                            this.checkErrors(link, account);
+                        /* Entered password is correct - we can start the download. */
+                        dllink = br.getRedirectLocation();
+                        link.setDownloadPassword(passCode);
+                    }
+                } else {
+                    String internalFileID = this.getInternalFileID(link, this.br);
+                    if (internalFileID == null) {
+                        /* Check for redirects before this step. E.g. letsupload.io */
+                        final String continueURL = this.getContinueLink();
+                        if (continueURL == null) {
                             checkErrorsLastResort(link, account);
                         }
-                        br.getPage("/account/direct_download/" + internalFileID);
-                        dllink = br.getRedirectLocation();
+                        this.getPage(continueURL);
+                        internalFileID = this.getInternalFileID(link, this.br);
+                        if (internalFileID == null) {
+                            /* Dead end */
+                            checkErrorsLastResort(link, account);
+                        } else {
+                            /* Save for the next time. This ID should never change! */
+                            link.setProperty(PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                        }
                     }
+                    if (internalFileID == null) {
+                        this.checkErrors(link, account);
+                        checkErrorsLastResort(link, account);
+                    }
+                    br.getPage("/account/direct_download/" + internalFileID);
+                    dllink = br.getRedirectLocation();
                 }
             }
-            if (dllink == null) {
-                this.checkErrors(link, account);
-                checkErrorsLastResort(link, account);
-            }
-            final boolean resume = this.isResumeable(link, account);
-            final int maxchunks = this.getMaxChunks(account);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-            link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
-            if (!isDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                checkErrors(link, account);
-                checkErrorsLastResort(link, account);
-            }
-            dl.startDownload();
         }
+        if (dllink == null) {
+            this.checkErrors(link, account);
+            checkErrorsLastResort(link, account);
+        }
+        final boolean resume = this.isResumeable(link, account);
+        final int maxchunks = this.getMaxChunks(account);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            checkErrors(link, account);
+            /*
+             * Do not check for logged-out state because we could easily get other errorpages here and we do not want to temp. disable
+             * accounts by mistake!
+             */
+            // checkErrorsLastResort(link, account);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error", 5 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     private Form getPasswordProtectedForm() {
@@ -358,7 +360,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         }
     }
 
-    protected String getInternalFileID(final DownloadLink link) throws PluginException {
+    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
         String internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
         if (internalFileID == null) {
             internalFileID = br.getRegex("showFileInformation\\((\\d+)\\);").getMatch(0);
