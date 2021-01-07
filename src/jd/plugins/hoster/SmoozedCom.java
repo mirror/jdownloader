@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -123,8 +122,7 @@ public class SmoozedCom extends antiDDoSForHost {
                 if (StringUtils.isNotEmpty(responseString)) {
                     try {
                         if (StringUtils.equals(Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)), account.getStringProperty(PROPERTY_ACCOUNTHASH, null))) {
-                            final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
-                            }, null);
+                            final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
                             if (responseMap != null && responseMap.size() > 0) {
                                 rewriteHosterNames(responseMap, new PluginFinder());
                                 ACCOUNTINFOS.put(account, responseMap);
@@ -160,8 +158,7 @@ public class SmoozedCom extends antiDDoSForHost {
                     account.saveCookies(this.br.getCookies(this.getHost()), "");
                 }
                 final String responseString = request.getHtmlCode();
-                final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
-                }, null);
+                final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
                 final Number user_Locked = get(responseMap, Number.class, "data", "user", "user_locked");
                 if (user_Locked.intValue() != 0) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account locked, please contact smoozed.com support", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -242,11 +239,10 @@ public class SmoozedCom extends antiDDoSForHost {
     private void apiCheck(final Account account, final String session_Key, final DownloadLink link, int round) throws Exception {
         final Request request = api(account, session_Key, "/api/check", "url=" + Encoding.urlEncode(link.getDownloadURL()));
         final String responseString = request.getHtmlCode();
-        HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
-        }, null);
+        Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
         String state = (String) responseMap.get("state");
         if ("ok".equals(state)) {
-            responseMap = (HashMap<String, Object>) responseMap.get("data");
+            responseMap = (Map<String, Object>) responseMap.get("data");
             final Number seconds = get(responseMap, Number.class, "seconds");
             if (link.getFinalFileName() == null) {
                 final String fileName = get(responseMap, String.class, "name");
@@ -439,8 +435,7 @@ public class SmoozedCom extends antiDDoSForHost {
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, "/config.js", null);
         final String responseString = request.getHtmlCode();
-        final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
-        }, null);
+        final Map<String, Object> responseMap = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
         final String new_Session_Key = get(responseMap, String.class, "data", "session_key");
         if (StringUtils.isEmpty(new_Session_Key) || "error".equalsIgnoreCase(new_Session_Key)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid session_key", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -452,8 +447,7 @@ public class SmoozedCom extends antiDDoSForHost {
 
     private void errorHandling(Request request, final Account account, final String session_Key, final String method, DownloadLink link) throws Exception {
         if (StringUtils.containsIgnoreCase(request.getResponseHeader("Content-Type"), "application/json")) {
-            final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(request.getHtmlCode(), new TypeRef<HashMap<String, Object>>() {
-            }, null);
+            final Map<String, Object> responseMap = JSonStorage.restoreFromString(request.getHtmlCode(), TypeRef.HASHMAP);
             final String state = (String) responseMap.get("state");
             final String message = (String) responseMap.get("message");
             final Number seconds = get(responseMap, Number.class, "seconds");
