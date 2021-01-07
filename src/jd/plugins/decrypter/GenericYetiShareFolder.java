@@ -131,12 +131,12 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 try {
                     final boolean validatedCookies = ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
                     br.setFollowRedirects(true);
-                    br.getPage(parameter);
+                    getPage(parameter);
                     if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedinSpecial()) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
                         ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, true);
                         br.setFollowRedirects(true);
-                        br.getPage(parameter);
+                        getPage(parameter);
                         /* Assume that we are logged in now. */
                     }
                 } catch (PluginException e) {
@@ -145,7 +145,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            getPage(parameter);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -163,7 +163,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             throw new AccountRequiredException();
         }
         final String folderPostData = "pageType=folder&nodeId=" + folderID + "&perPage=0&filterOrderBy=&additionalParams%5BsearchTerm%5D=&additionalParams%5BfilterUploadedDateRange%5D=&pageStart=";
-        br.postPage("/account/ajax/load_files", folderPostData + "1");
+        postPage("/account/ajax/load_files", folderPostData + "1");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String fpName = (String) entries.get("page_title");
         String htmlInsideJson = (String) entries.get("html");
@@ -184,7 +184,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             pwForm.setMethod(MethodType.POST);
             passCode = getUserInput("Password?", param);
             pwForm.put("folderPassword", Encoding.urlEncode(passCode));
-            br.submitForm(pwForm);
+            this.submitForm(pwForm);
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             passwordSuccess = ((Boolean) entries.get("success")).booleanValue();
             counter++;
@@ -193,7 +193,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         } else if (passCode != null) {
             /* Re-do request to access folder content */
-            br.postPage("/account/ajax/load_files", folderPostData + "1");
+            postPage("/account/ajax/load_files", folderPostData + "1");
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             htmlInsideJson = (String) entries.get("html");
             br.getRequest().setHtmlCode(htmlInsideJson);
@@ -280,7 +280,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             /* Only continue if found page matches expected page! */
             if (nextpageStr != null && nextpageStr.matches(page + 1 + "")) {
                 page++;
-                br.postPage("/account/ajax/load_files", folderPostData + page);
+                postPage("/account/ajax/load_files", folderPostData + page);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 htmlInsideJson = (String) entries.get("html");
                 br.getRequest().setHtmlCode(htmlInsideJson);
