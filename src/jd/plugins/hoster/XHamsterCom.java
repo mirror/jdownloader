@@ -199,27 +199,21 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid;
         if (link.getPluginPatternMatcher() == null) {
             return null;
-        }
-        if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
-            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            fid = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
-        } else if (link.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
-            fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(\\d+)").getMatch(0);
-            if (fid == null) {
-                /* 2018-07-19: New */
-                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[a-z0-9\\-]+\\-([a-z0-9\\-]+)(?:$|\\?)").getMatch(0);
-            }
         } else {
-            fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/(\\d+)/?").getMatch(0);
-            if (fid == null) {
-                fid = new Regex(link.getPluginPatternMatcher(), "/videos/(?:[\\w\\-]+\\-)?([a-z0-9\\-]+)(?:$|\\?)").getMatch(0);
+            final String fid;
+            if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
+                fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
+                fid = new Regex(link.getPluginPatternMatcher(), TYPE_EMBED).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
+                fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/[^/]*?([a-z0-9]+)(/|$|\\?)").getMatch(0);
+            } else {
+                fid = new Regex(link.getPluginPatternMatcher(), "(?:movies|videos)/[^/]*?([a-z0-9]+)(/|$|\\?)").getMatch(0);
             }
+            return fid;
         }
-        return fid;
     }
 
     /**
@@ -231,7 +225,7 @@ public class XHamsterCom extends PluginForHost {
         if (dl.getPluginPatternMatcher().matches(TYPE_MOBILE)) {
             linkpart = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0);
         } else if (!dl.getPluginPatternMatcher().matches(TYPE_EMBED)) {
-            linkpart = new Regex(dl.getPluginPatternMatcher(), "videos/([\\w\\-]+\\-\\d+)").getMatch(0);
+            linkpart = new Regex(dl.getPluginPatternMatcher(), "videos/([\\w\\-]+\\-[a-z0-9]+)").getMatch(0);
         }
         if (linkpart == null) {
             /* Fallback e.g. for embed URLs */
