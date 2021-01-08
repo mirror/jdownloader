@@ -129,12 +129,11 @@ public class RockFileCo extends XFileSharingProBasic {
     public void correctDownloadLink(final DownloadLink link) {
         /* 2020-03-02: Do not modify URLs at all anymore! */
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null && link.getPluginPatternMatcher().matches("https?://[^/]+/[a-z0-9]{12}")) {
+        if (fuid != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/[a-z0-9]{12}")) {
             /* 2019-07-02: Special: Some URLs require '.html' at the end!! */
             final String url_with_html_ending = getMainPage() + "/" + fuid + ".html";
             link.setPluginPatternMatcher(url_with_html_ending);
             link.setContentUrl(url_with_html_ending);
-            link.setLinkID(getHost() + "://" + fuid);
         }
     }
 
@@ -142,12 +141,16 @@ public class RockFileCo extends XFileSharingProBasic {
     public String getFUIDFromURL(final DownloadLink dl) {
         /* 2020-03-02: Special */
         try {
-            String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-z0-9]+-([a-z0-9]+)\\.html").getMatch(0);
-            if (result == null) {
-                /* Fallback to template handling */
-                result = super.getFUIDFromURL(dl);
+            if (dl != null && dl.getPluginPatternMatcher() != null) {
+                String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-z0-9]+-([a-z0-9]+)\\.html").getMatch(0);
+                if (result == null) {
+                    /* Fallback to template handling */
+                    result = super.getFUIDFromURL(dl);
+                }
+                return result;
+            } else {
+                return null;
             }
-            return result;
         } catch (MalformedURLException e) {
             logger.log(e);
         }

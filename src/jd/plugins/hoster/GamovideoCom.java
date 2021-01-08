@@ -20,14 +20,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GamovideoCom extends XFileSharingProBasic {
@@ -48,19 +48,6 @@ public class GamovideoCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "gamovideo.com" });
         return ret;
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
-            /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.]+/embed-[a-z0-9]{12,}")) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-            }
-            link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
-            link.setLinkID(getHost() + "://" + fuid);
-        }
     }
 
     public static String[] getAnnotationNames() {
@@ -89,8 +76,12 @@ public class GamovideoCom extends XFileSharingProBasic {
     public String getFUIDFromURL(final DownloadLink dl) {
         /* 2020-03-24: Special */
         try {
-            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12,})").getMatch(0);
-            return result;
+            if (dl != null && dl.getPluginPatternMatcher() != null) {
+                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12,})").getMatch(0);
+                return result;
+            } else {
+                return null;
+            }
         } catch (MalformedURLException e) {
             logger.log(e);
         }
