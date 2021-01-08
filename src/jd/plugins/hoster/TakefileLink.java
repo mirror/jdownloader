@@ -22,7 +22,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -156,25 +155,5 @@ public class TakefileLink extends XFileSharingProBasic {
             ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
-            /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-            }
-            final String protocol;
-            if (this.supports_https()) {
-                protocol = "https://";
-            } else {
-                protocol = "http://";
-            }
-            /* 2020-10-15: Special: Keep subdomain! */
-            link.setPluginPatternMatcher(protocol + Browser.getHost(link.getPluginPatternMatcher(), true) + "/" + fuid);
-            link.setLinkID(getHost() + "://" + fuid);
-        }
     }
 }
