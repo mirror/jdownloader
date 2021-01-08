@@ -305,11 +305,11 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
         contentpane.add(stats, "pushx,growx,spanx");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(disable("Copyright \u00A9 2009-2020 AppWork GmbH"));
+        stats.add(disable("Copyright \u00A9 2009-2021 AppWork GmbH"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(disable("Copyright \u00A9 2009-2020 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2021 JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(disable("Copyright \u00A9 2009-2020 JDownloader Community"));
+        stats.add(disable("Copyright \u00A9 2009-2021 JDownloader Community"));
         stats.add(new JLabel("JSON Support:"), "");
         stats.add(disable("Jackson JSON Processor 2.7.9", "https://github.com/FasterXML/jackson/"));
         stats.add(new JLabel("JNA:"), "");
