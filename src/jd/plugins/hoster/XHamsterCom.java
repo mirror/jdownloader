@@ -27,6 +27,16 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,16 +62,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -138,7 +138,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String[] FORMATS                         = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
     private boolean               friendsOnly                     = false;
     public static final String    domain_premium                  = "xhamsterpremium.com";
-    public static final String    api_base_premium                = "https://gold.xhamsterpremium.com/api";
+    public static final String    api_base_premium                = "https://xhamsterpremium.com/api";
 
     private void setConfigElements() {
         String user_text;
@@ -765,40 +765,64 @@ public class XHamsterCom extends PluginForHost {
                  * ignored and account will be accepted as free account then.
                  */
                 final Cookies cookies = account.loadCookies("");
-                final Cookies premiumCookies = account.loadCookies("premium");
-                boolean isloggedinNormal = false;
+                Cookies premiumCookies = account.loadCookies("premium");
                 boolean isloggedinPremium = false;
-                String currentDomain = null;
                 if (cookies != null) {
                     logger.info("Trying cookie login");
-                    br.getPage("https://" + account.getHoster() + "/");
-                    currentDomain = br.getHost();
-                    br.setCookies(currentDomain, cookies, true);
-                    if (premiumCookies != null) {
-                        logger.info("Found stored premium cookies");
-                        br.setCookies(domain_premium, premiumCookies);
-                    } else {
-                        logger.info("Failed to find any stored premium cookies");
-                    }
+                    br.setCookies(this.getHost(), cookies, true);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
                         /* We trust these cookies --> Do not check them */
+                        if (premiumCookies != null) {
+                            logger.info("Found stored premium cookies");
+                            br.setCookies(domain_premium, premiumCookies);
+                        }
+                        logger.info("Trust cookies without login");
                         return;
-                    }
-                    /* Try to avoid login cookie whenever possible! */
-                    br.getPage("https://" + currentDomain + "/");
-                    if (isLoggedInHTML(br)) {
-                        /* Save new cookie timestamp */
-                        isloggedinNormal = true;
                     } else {
-                        /* Reset Browser */
-                        br.clearCookies(null);
+                        /* Try to avoid login cookie whenever possible! */
+                        br.getPage("https://" + this.getHost() + "/");
+                        if (isLoggedInHTML(br)) {
+                            /* Save new cookie timestamp */
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                            logger.info("Free cookie login successful -> Checking premium cookies");
+                            if (premiumCookies != null) {
+                                /* Cookies have already been set in lines above */
+                                logger.info("Checking premium cookies");
+                                br.setCookies(domain_premium, premiumCookies);
+                                if (this.checkPremiumLogin()) {
+                                    /* Save new premium cookies if they were valid */
+                                    account.saveCookies(br.getCookies(br.getHost()), "premium");
+                                }
+                            }
+                            return;
+                        } else {
+                            /* Reset Browser */
+                            logger.info("Free cookie login failed");
+                            br.clearCookies(null);
+                        }
                     }
                 }
-                if (!isloggedinNormal) {
-                    if (currentDomain == null) {
-                        br.getPage("https://" + account.getHoster() + "/");
-                        currentDomain = br.getHost();
+                /** 2021-01-08: Free login is broken and premium works for both -> Use premium login only */
+                final boolean usePremiumLoginONLY = true;
+                if (br.getHost() == null) {
+                    br.getPage("https://" + account.getHoster() + "/");
+                }
+                if (usePremiumLoginONLY) {
+                    isloggedinPremium = this.loginPremium(account, true);
+                    premiumCookies = br.getCookies(br.getURL());
+                    br.getPage(api_base_premium + "/auth/endpoints");
+                    String xhamsterComLoginURL = PluginJSonUtils.getJson(this.br, "https://xhamster.com/premium/in");
+                    if (StringUtils.isEmpty(xhamsterComLoginURL)) {
+                        /* Fallback */
+                        xhamsterComLoginURL = br.getRegex("(https?://xhamster\\.com/premium/in\\?[^<>\"]+)").getMatch(0);
                     }
+                    if (StringUtils.isEmpty(xhamsterComLoginURL)) {
+                        logger.warning("Premium login successful but free login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    /* Now we should also be logged in as free- user! */
+                    br.getPage(xhamsterComLoginURL);
+                } else {
                     if (htmlIsOldDesign(br)) {
                         final Form login = br.getFormbyProperty("name", "loginForm");
                         if (login == null) {
@@ -819,10 +843,10 @@ public class XHamsterCom extends PluginForHost {
                         }
                         // set in login form and cookie to the correct section
                         login.put("stats", Encoding.urlEncode(xsid));
-                        br.setCookie(currentDomain, "xsid", xsid);
+                        br.setCookie(br.getHost(), "xsid", xsid);
                         // now some other fingerprint set via js, again cookie and login form
                         final String fingerprint = JDHash.getMD5(System.getProperty("user.timezone") + System.getProperty("os.name"));
-                        br.setCookie(currentDomain, "fingerprint", fingerprint);
+                        br.setCookie(br.getHost(), "fingerprint", fingerprint);
                         login.put("fingerprint", fingerprint);
                         login.put("username", Encoding.urlEncode(account.getUser()));
                         login.put("password", Encoding.urlEncode(account.getPass()));
@@ -850,7 +874,8 @@ public class XHamsterCom extends PluginForHost {
                         final String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
                         final String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
                         final String id = createID();
-                        final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"%s\"}}]";
+                        final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"g-recaptcha-response\":\"%s\"}}]";
+                        final String requestdataFormatCaptcha = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"trusted\":true,\"g-recaptcha-response\":\"%s\"}}]";
                         String requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), "");
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.postPageRaw("/x-api", requestData);
@@ -867,62 +892,27 @@ public class XHamsterCom extends PluginForHost {
                                 /* Old */
                                 recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, siteKey).getToken();
                             }
-                            requestData = String.format(requestdataFormat, id, account.getUser(), account.getPass(), recaptchaV2Response);
+                            requestData = String.format(requestdataFormatCaptcha, id, account.getUser(), account.getPass(), recaptchaV2Response);
+                            /* TODO: Fix this */
                             br.postPageRaw("/x-api", requestData);
                         }
                     }
-                    if (br.getCookie(currentDomain, "UID", Cookies.NOTDELETEDPATTERN) == null || br.getCookie(currentDomain, "_id", Cookies.NOTDELETEDPATTERN) == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                 }
-                account.saveCookies(br.getCookies(currentDomain), "");
+                /* Check whether or not we're logged in */
+                if (!isLoggedinFree()) {
+                    logger.info("Free login failed!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 logger.info("Checking premium login state");
-                if (premiumCookies != null) {
-                    /* Cookies have already been set in lines above */
-                    logger.info("Checking premium cookies");
-                    br.getPage(api_base_premium + "/subscription/get");
-                    if (br.getHttpConnection().getContentType().contains("json")) {
-                        logger.info("Successfully checked premium cookies");
-                        isloggedinPremium = true;
-                    } else {
-                        logger.info("Premium cookies seem to be invalid");
-                        isloggedinPremium = false;
-                    }
-                }
                 if (!isloggedinPremium) {
                     logger.info("Performing full premium login");
-                    br.getHeaders().put("Referer", null);
-                    /* Login premium --> Same logindata */
-                    br.getPage("https://gold.xhamsterpremium.com/");
-                    if (this.getDownloadLink() == null) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
-                        this.setDownloadLink(dummyLink);
-                    }
-                    String rcKey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
-                    if (rcKey == null) {
-                        /* Fallback: reCaptchaKey timestamp: 2020-08-04 */
-                        rcKey = "6LfoawAVAAAAADDXDc7xDBOkr1FQqdfUrEH5Z7up";
-                    }
-                    final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, this.br, rcKey).getToken();
-                    final String csrftoken = br.getRegex("data-name=\"csrf-token\" content=\"([^<>\"]+)\"").getMatch(0);
-                    if (csrftoken != null) {
-                        br.getHeaders().put("x-csrf-token", csrftoken);
-                    } else {
-                        logger.warning("Failed to find csrftoken --> Premium login might fail because of this");
-                    }
-                    br.postPageRaw("https://gold.xhamsterpremium.com/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":\"%s\",\"recaptcha\":\"%s\"}", account.getUser(), account.getPass(), recaptchaV2Response, recaptchaV2Response));
-                    final String userId = PluginJSonUtils.getJson(br, "userId");
-                    final String success = PluginJSonUtils.getJson(br, "success");
-                    if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {
-                        logger.info("Premium login successful");
-                        isloggedinPremium = true;
-                    } else {
-                        logger.info("Premium login failed");
-                    }
+                    isloggedinPremium = this.loginPremium(account, false);
+                    premiumCookies = br.getCookies(br.getURL());
                 }
                 if (isloggedinPremium) {
                     /* Only save cookies if login was successful */
-                    account.saveCookies(br.getCookies(br.getHost()), "premium");
+                    account.saveCookies(premiumCookies, "premium");
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -931,6 +921,58 @@ public class XHamsterCom extends PluginForHost {
                 throw e;
             } finally {
                 br.setFollowRedirects(frd);
+            }
+        }
+    }
+
+    private boolean isLoggedinFree() {
+        return br.getCookie(br.getHost(), "UID", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "_id", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    private boolean checkPremiumLogin() throws IOException {
+        br.getPage(api_base_premium + "/subscription/get");
+        if (br.getHttpConnection().getContentType().contains("json")) {
+            logger.info("Successfully checked premium cookies");
+            return true;
+        } else {
+            logger.info("Premium cookies seem to be invalid");
+            return false;
+        }
+    }
+
+    private boolean loginPremium(final Account account, final boolean exceptionOnFailure) throws IOException, PluginException, InterruptedException {
+        logger.info("Performing full premium login");
+        br.getHeaders().put("Referer", null);
+        /* Login premium --> Same logindata */
+        br.getPage("https://xhamsterpremium.com/");
+        if (this.getDownloadLink() == null) {
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamsterpremium.com", "http://xhamsterpremium.com", true);
+            this.setDownloadLink(dummyLink);
+        }
+        String rcKey = br.getRegex("data-site-key=\"([^\"]+)\"").getMatch(0);
+        if (rcKey == null) {
+            /* Fallback: reCaptchaKey timestamp: 2020-08-04 */
+            rcKey = "6LfoawAVAAAAADDXDc7xDBOkr1FQqdfUrEH5Z7up";
+        }
+        final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2Invisible(this, this.br, rcKey).getToken();
+        final String csrftoken = br.getRegex("data-name=\"csrf-token\" content=\"([^<>\"]+)\"").getMatch(0);
+        if (csrftoken != null) {
+            br.getHeaders().put("x-csrf-token", csrftoken);
+        } else {
+            logger.warning("Failed to find csrftoken --> Premium login might fail because of this");
+        }
+        br.postPageRaw("/api/auth/signin", String.format("{\"login\":\"%s\",\"password\":\"%s\",\"rememberMe\":\"1\",\"trackingParamsBag\":\"W10=\",\"g-recaptcha-response\":\"%s\",\"recaptcha\":\"%s\"}", account.getUser(), account.getPass(), recaptchaV2Response, recaptchaV2Response));
+        final String userId = PluginJSonUtils.getJson(br, "userId");
+        final String success = PluginJSonUtils.getJson(br, "success");
+        if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {
+            logger.info("Premium login successful");
+            return true;
+        } else {
+            logger.info("Premium login failed");
+            if (exceptionOnFailure) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                return false;
             }
         }
     }

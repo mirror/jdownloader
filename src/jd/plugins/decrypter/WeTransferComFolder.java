@@ -18,9 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -28,22 +30,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String shortPattern = "https?://(wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+";
+    private final String shortPattern = "^https?://(?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/([\\w\\-]+)$";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         jd.plugins.hoster.WeTransferCom.prepBRWebsite(this.br);
+        String shortID = null;
         if (parameter.matches(shortPattern)) {
+            shortID = new Regex(parameter, shortPattern).getMatch(0);
             br.setFollowRedirects(false);
             br.getPage(parameter);
             final String redirect = br.getRedirectLocation();
@@ -86,6 +87,13 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(link);
             return decryptedLinks;
         }
+        if (shortID == null) {
+            /* Fallback */
+            final String shortened_url = (String) map.get("shortened_url");
+            if (shortened_url != null && shortened_url.matches(shortPattern)) {
+                shortID = new Regex(shortened_url, shortPattern).getMatch(0);
+            }
+        }
         final ArrayList<Object> ressourcelist = map.get("files") != null ? (ArrayList<Object>) map.get("files") : (ArrayList) map.get("items");
         /* TODO: Handle this case */
         final boolean per_file_download_available = map.containsKey("per_file_download_available") && Boolean.TRUE.equals(map.get("per_file_download_available"));
@@ -105,40 +113,37 @@ public class WeTransferComFolder extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink("http://wetransferdecrypted/" + id_main + "/" + security_hash + "/" + id_single);
             dl.setProperty("referer", br.getURL());
             String filename = null;
+            /* Add folderID as root of the path because otherwise files could be mixed up - there is no real "base folder name" given! */
+            String thisPath;
+            if (shortID != null) {
+                thisPath = shortID + "/";
+            } else {
+                /* Fallback */
+                thisPath = id_main + "/";
+            }
             if (absolutePath.contains("/")) {
                 final String[] urlSegments = absolutePath.split("/");
                 filename = urlSegments[urlSegments.length - 1];
-                final String thisPath = absolutePath.substring(0, absolutePath.lastIndexOf("/"));
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
+                thisPath += absolutePath.substring(0, absolutePath.lastIndexOf("/"));
                 if (fpName == null) {
                     /* Let's assume that all files are below this path */
                     fpName = thisPath;
                 }
             } else {
+                /* In this case given name/path really is only the filename without path -> File of root folder */
                 filename = absolutePath;
+                /* Path == root */
             }
+            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
             dl.setFinalFileName(filename);
             dl.setDownloadSize(filesize);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
-        }
-        if (decryptedLinks.size() > 1) {
-            final String shortened_url = (String) map.get("shortened_url");
-            final String id = (String) map.get("id");
-            if (fpName == null) {
-                if (StringUtils.isNotEmpty(shortened_url)) {
-                    fpName = new Regex(shortened_url, "/([\\w\\-]+)$").getMatch(0);
-                } else {
-                    /* Final fallback */
-                    fpName = id;
-                }
-            }
-            if (StringUtils.isNotEmpty(fpName)) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
-            }
+            /* Set individual packagename per URL because every item can have a totally different file-structure! */
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(thisPath);
+            dl._setFilePackage(fp);
         }
         return decryptedLinks;
     }
