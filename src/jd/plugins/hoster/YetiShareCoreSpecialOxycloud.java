@@ -280,6 +280,7 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
                         /* Check for redirects before this step. E.g. letsupload.io */
                         final String continueURL = this.getContinueLink();
                         if (continueURL == null) {
+                            this.checkErrors(link, account);
                             checkErrorsLastResort(link, account);
                         }
                         this.getPage(continueURL);
@@ -331,16 +332,8 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
     }
 
     @Override
-    protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
-        boolean offline = super.isOfflineWebsite(link);
-        if (!offline) {
-            offline = isOfflineSpecial();
-        }
-        return offline;
-    }
-
-    protected boolean isOfflineSpecial() {
-        return br.containsHTML(">\\s*File has been removed|>\\s*File not found");
+    protected boolean isOfflineWebsiteAfterLinkcheck() {
+        return this.br.containsHTML(">Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>");
     }
 
     @Override
@@ -350,8 +343,6 @@ public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
         final String waittimeBetweenDownloadsStr = br.getRegex(">\\s*You must wait (\\d+) minutes? between downloads").getMatch(0);
         if (waittimeBetweenDownloadsStr != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
-        } else if (isOfflineSpecial()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
