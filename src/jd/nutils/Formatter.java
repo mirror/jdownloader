@@ -89,7 +89,7 @@ public class Formatter {
         if (value > 1024 && size < 5) {
             return formatFilesize(value / 1024.0, ++size);
         } else {
-            DecimalFormat c = new DecimalFormat("0.00");
+            final DecimalFormat c = new DecimalFormat("0.00");
             switch (size) {
             case 0:
                 return c.format(value) + " B";
@@ -110,20 +110,18 @@ public class Formatter {
         if (fileSize < 0) {
             fileSize = 0;
         }
-        DecimalFormat c = new DecimalFormat("0.00");
+        final DecimalFormat c = new DecimalFormat("0.00");
         if (fileSize >= (1024 * 1024 * 1024 * 1024l)) {
             return c.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
-        }
-        if (fileSize >= (1024 * 1024 * 1024l)) {
+        } else if (fileSize >= (1024 * 1024 * 1024l)) {
             return c.format(fileSize / (1024 * 1024 * 1024.0)) + " GiB";
-        }
-        if (fileSize >= (1024 * 1024l)) {
+        } else if (fileSize >= (1024 * 1024l)) {
             return c.format(fileSize / (1024 * 1024.0)) + " MiB";
-        }
-        if (fileSize >= 1024l) {
+        } else if (fileSize >= 1024l) {
             return c.format(fileSize / 1024.0) + " KiB";
+        } else {
+            return fileSize + " B";
         }
-        return fileSize + " B";
     }
 
     /**
