@@ -524,13 +524,21 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected boolean isEmbedURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}");
+        return link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}.*");
+    }
+
+    protected String buildEmbedURLPath(final String fuid) {
+        return "/embed-" + fuid + ".html";
+    }
+
+    protected String buildNormalURLPath(final String fuid) {
+        return "/" + fuid;
     }
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
+        if (fuid != null && link.getPluginPatternMatcher() != null) {
             /* link cleanup, prefer https if possible */
             try {
                 final URL url = new URL(link.getPluginPatternMatcher());
@@ -539,7 +547,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
                      * inside this URL!
                      */
-                    link.setContentUrl(url.getProtocol() + "://" + url.getHost() + "/embed-" + fuid + ".html");
+                    link.setContentUrl(url.getProtocol() + "://" + url.getHost() + buildEmbedURLPath(fuid));
                 }
                 final String protocolCorrected;
                 if (this.supports_https()) {
@@ -548,15 +556,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     protocolCorrected = "http://";
                 }
                 /* Get full host with subdomain and correct base domain. */
+                String host = getHost();
+                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive("www.", host)) {
+                    host = "www." + host;
+                }
                 final String hostCorrected;
-                if (url.getHost().equals(this.getHost())) {
+                if (StringUtils.equalsIgnoreCase(url.getHost(), host)) {
                     /* E.g. down.example.com -> down.example.com */
                     hostCorrected = url.getHost();
                 } else {
                     /* e.g. down.xx.com -> down.yy.com */
-                    hostCorrected = url.getHost().replaceFirst(Pattern.quote(Browser.getHost(url, false)) + "$", getHost());
+                    hostCorrected = url.getHost().replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", host);
                 }
-                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + "/" + fuid);
+                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(fuid));
             } catch (final MalformedURLException e) {
                 logger.log(e);
             }

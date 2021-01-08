@@ -119,10 +119,6 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (linkpart != null) {
             link.setPluginPatternMatcher(getMainPage() + "/" + linkpart);
         }
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-        if (fuid != null) {
-            link.setLinkID(getHost() + "://" + fuid);
-        }
     }
 
     @Override
