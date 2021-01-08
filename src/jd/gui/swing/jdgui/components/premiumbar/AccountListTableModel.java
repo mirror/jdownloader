@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,6 +30,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountTrafficView;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
@@ -49,6 +51,8 @@ import org.jdownloader.gui.components.ColumnButton;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class AccountListTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener, AccountControllerListener {
@@ -403,7 +407,9 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
         });
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
-            private static final long serialVersionUID = -8376056840172682617L;
+            private final SIZEUNIT      maxSizeUnit      = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+            private final DecimalFormat formatter        = new DecimalFormat("0.00");
+            private static final long   serialVersionUID = -8376056840172682617L;
             {
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
                     private int compareLong(long x, long y) {
@@ -477,10 +483,19 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                             if (accountTrafficView.isUnlimitedTraffic()) {
                                 return _GUI.T.premiumaccounttablemodel_column_trafficleft_unlimited();
                             } else {
-                                return Formatter.formatReadable(accountTrafficView.getTrafficLeft()) + "/" + Formatter.formatReadable(accountTrafficView.getTrafficMax());
+                                return getSizeString(accountTrafficView.getTrafficLeft()) + "/" + getSizeString(accountTrafficView.getTrafficMax());
                             }
                         }
                     }
+                }
+            }
+
+            private final String getSizeString(final long fileSize) {
+                if (fileSize < 0) {
+                    Formatter.formatFilesize(value, size)
+                    return _GUI.T.SizeColumn_getSizeString_zero();
+                } else {
+                    return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
                 }
             }
 
