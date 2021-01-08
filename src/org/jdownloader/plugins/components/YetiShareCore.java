@@ -390,7 +390,15 @@ public class YetiShareCore extends antiDDoSForHost {
                 link.setName(getFallbackFilename(link));
             }
         }
+        if (this.isOfflineWebsiteAfterLinkcheck()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
+    }
+
+    /** Return true for cases where filename- and size may still be present on website but URL is offline. */
+    protected boolean isOfflineWebsiteAfterLinkcheck() {
+        return false;
     }
 
     /**
@@ -1227,8 +1235,8 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new AccountRequiredException();
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
-        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found")) {
-            /* 2020-01-08: letsupload.io */
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
+            /* 2020-01-08: letsupload.io & oxycloud.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }

@@ -227,12 +227,12 @@ public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
         }
     }
 
-    @Override
-    protected boolean isOfflineSpecial() {
-        /* 2020-11-13: Special: Polish version */
-        return super.isOfflineSpecial() || br.containsHTML(">\\s*Plik został usunięty z powodu naruszenia praw autorskich");
-    }
-
+    /** 2021-01-08: Not needed anymore as it is handled by the upper errorhandling -> e=<errorInEnglish> in URL */
+    // @Override
+    // protected boolean isOfflineSpecial() {
+    // /* 2020-11-13: Special: Polish version */
+    // return super.isOfflineSpecial() || br.containsHTML(">\\s*Plik został usunięty z powodu naruszenia praw autorskich");
+    // }
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         /** 2020-11-13: Seems like only premium users can download. */
