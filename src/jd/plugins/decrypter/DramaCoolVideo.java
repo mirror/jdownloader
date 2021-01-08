@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramacool.video" }, urls = { "https?://(?:www\\d*\\.)?dramacool\\.(video|movie)/(?:.+\\.html?|drama-detail/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dramacool.video" }, urls = { "https?://(?:www\\d*\\.)?dramacool9?\\.(video|movie|so|link)/(?:.+\\.html?|drama-detail/.+)" })
 public class DramaCoolVideo extends PluginForDecrypt {
     public DramaCoolVideo(PluginWrapper wrapper) {
         super(wrapper);
