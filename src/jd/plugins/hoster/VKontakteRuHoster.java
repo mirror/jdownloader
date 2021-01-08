@@ -781,9 +781,9 @@ public class VKontakteRuHoster extends PluginForHost {
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (con.getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(con)) {
             logger.info("vk.com: Plugin broken after download-try");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
@@ -898,8 +898,8 @@ public class VKontakteRuHoster extends PluginForHost {
             } else {
                 con = br2.openGetConnection(finalUrl);
             }
-            if (!con.getContentType().contains("html") && con.isOK()) {
-                final long foundFilesize = con.getLongContentLength();
+            if (this.looksLikeDownloadableContent(con)) {
+                final long foundFilesize = con.getCompleteContentLength();
                 if (!link.isNameSet()) {
                     if (finalfilename == null) {
                         link.setFinalFileName(Encoding.htmlDecode(Plugin.getFileNameFromHeader(con)));
@@ -994,11 +994,11 @@ public class VKontakteRuHoster extends PluginForHost {
                 link.setChunksProgress(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (con.getLongContentLength() <= 100 || con.getResponseCode() == 404 || con.getResponseCode() == 502) {
+            if (con.getCompleteContentLength() <= 100 || con.getResponseCode() == 404 || con.getResponseCode() == 502) {
                 /* Photo is supposed to be online but it's not downloadable */
                 return false;
             }
-            if (con.getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(con)) {
                 return false;
             }
             finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, downloadurl);

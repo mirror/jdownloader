@@ -525,12 +525,37 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
         if (fuid != null) {
             /* link cleanup, prefer https if possible */
-            if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
-                link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
+            try {
+                final URL addedURL = new URL(link.getPluginPatternMatcher());
+                final String protocol = addedURL.getProtocol();
+                if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
+                    /*
+                     * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
+                     * inside this URL!
+                     */
+                    link.setContentUrl(protocol + "://" + addedURL.getHost() + "/embed-" + fuid + ".html");
+                }
+                final String protocolCorrected;
+                if (this.supports_https()) {
+                    protocolCorrected = "https://";
+                } else {
+                    protocolCorrected = "http://";
+                }
+                /* Get full host with subdomain and correct base domain. */
+                final String hostCorrected;
+                /* E.g. down.example.com -> down.example.com */
+                if (addedURL.getHost().equals(this.getHost())) {
+                    hostCorrected = addedURL.getHost();
+                } else {
+                    /* e.g. down.xx.com -> down.yy.com */
+                    /* TODO: Improve this */
+                    hostCorrected = addedURL.getHost().replace(Browser.getHost(link.getPluginPatternMatcher()), this.getHost());
+                }
+                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + "/" + fuid);
+                link.setLinkID(getHost() + "://" + fuid);
+            } catch (final MalformedURLException e) {
+                logger.log(e);
             }
-            /* 2020-10-15: TODO: Maybe update this to accept subdomains and never alter them (?) See plugin for takefile.link */
-            link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
-            link.setLinkID(getHost() + "://" + fuid);
         }
     }
 
@@ -545,10 +570,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return prepBr;
     }
 
-    /** Returns https?://host.tld ATTENTION: On override, make sure that current browsers' host still gets preferred over plugin host. */
+    /**
+     * Returns https?://host.tld ATTENTION: On override, make sure that current browsers' host still gets preferred over plugin host. </br>
+     * If a subdomain is required, do not use this method before making a browser request!!
+     */
     protected String getMainPage() {
         final String host;
-        final String browser_host = this.br != null ? br.getHost() : null;
+        final String browser_host = this.br != null ? br.getHost(true) : null;
         if (browser_host != null) {
             /* Has a browser request been done before? Use this domain as it could e.g. differ from the plugin set main domain. */
             host = browser_host;
@@ -2590,6 +2618,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         try {
             String result = null;
             final String url_name_RegEx = "/[a-z0-9]{12}/(.*?)(?:\\.html)?$";
+            /**
+             * It's important that we check the contentURL too as we do alter pluginPatternMatcher in { @link
+             * #correctDownloadLink(DownloadLink) }
+             */
             if (dl.getContentUrl() != null) {
                 result = new Regex(new URL(dl.getContentUrl()).getPath(), url_name_RegEx).getMatch(0);
             }

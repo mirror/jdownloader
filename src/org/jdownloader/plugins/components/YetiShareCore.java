@@ -150,15 +150,28 @@ public class YetiShareCore extends antiDDoSForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
         final String fid = getFUID(link);
-        final String protocol;
-        if (supports_https()) {
-            protocol = "https://";
-        } else {
-            protocol = "http://";
-        }
-        final String url_path = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
-        link.setPluginPatternMatcher(protocol + this.getHost() + "/" + url_path);
         link.setLinkID(this.getHost() + "://" + fid);
+        try {
+            final URL addedURL = new URL(link.getPluginPatternMatcher());
+            final String protocolCorrected;
+            if (supports_https()) {
+                protocolCorrected = "https://";
+            } else {
+                protocolCorrected = "http://";
+            }
+            final String hostCorrected;
+            /* E.g. down.example.com -> down.example.com */
+            if (addedURL.getHost().equals(this.getHost())) {
+                hostCorrected = addedURL.getHost();
+            } else {
+                /* e.g. down.xx.com -> down.yy.com */
+                /* TODO: Improve this */
+                hostCorrected = addedURL.getHost().replace(Browser.getHost(link.getPluginPatternMatcher()), this.getHost());
+            }
+            link.setPluginPatternMatcher(protocolCorrected + hostCorrected + "/" + addedURL.getPath());
+        } catch (final MalformedURLException e) {
+            logger.log(e);
+        }
     }
 
     /**
@@ -996,8 +1009,8 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
-    private void checkErrorsLanguageIndependant(final DownloadLink link, final Account account) throws PluginException {
+    /** Returns urldecoded errormessage inside current URL (parameter "e"). */
+    protected String getErrorMsgURL() {
         String errorMsgURL = null;
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
@@ -1008,6 +1021,12 @@ public class YetiShareCore extends antiDDoSForHost {
         } catch (final Throwable e) {
             logger.log(e);
         }
+        return errorMsgURL;
+    }
+
+    /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
+    private void checkErrorsLanguageIndependant(final DownloadLink link, final Account account) throws PluginException {
+        final String errorMsgURL = this.getErrorMsgURL();
         if (!StringUtils.isEmpty(errorMsgURL)) {
             logger.info("Found errormessage in current URL: " + errorMsgURL);
             final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
@@ -1165,12 +1184,13 @@ public class YetiShareCore extends antiDDoSForHost {
     @Deprecated
     /** It is intended to replace this with checkErrorsLanguageIndependant! */
     private void checkErrorsURLOld(final DownloadLink link, final Account account) throws PluginException {
+        final String errorMsgURL = this.getErrorMsgURL();
         final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (new Regex(br.getURL(), Pattern.compile(".*?e=You\\+have\\+reached\\+the\\+maximum\\+concurrent\\+downloads.*?", Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum concurrent downloads")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
-        } else if (new Regex(br.getURL(), Pattern.compile(".*e=.*Could\\+not\\+open\\+file\\+for\\+reading.*", Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Could not open file for reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         } else if (url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches()) {
             final long extraWaittimeMilliseconds = 1000;
@@ -1191,8 +1211,11 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new AccountRequiredException();
-        } else if (br.getURL().contains("You+have+reached+the+maximum+permitted+downloads+in")) {
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found")) {
+            /* 2020-01-08: letsupload.io */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 

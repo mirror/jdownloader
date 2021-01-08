@@ -26,6 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -51,15 +60,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink)[a-z0-9_/=\\.\\-\\?&%]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1732,7 +1732,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Decrypts media of single Website html-post snippets. </br> Wrapper for websiteCrawlContent
+     * Decrypts media of single Website html-post snippets. </br>
+     * Wrapper for websiteCrawlContent
      *
      * @throws DecrypterException
      * @param url_source
@@ -1975,6 +1976,30 @@ public class VKontakteRu extends PluginForDecrypt {
                     continue;
                 }
                 dl = this.createDownloadlink(this.getProtocol() + this.getHost() + "/video" + videoContentStr);
+                if (fp != null) {
+                    dl._setFilePackage(fp);
+                }
+                decryptedLinks.add(dl);
+            }
+        }
+        if (grabDocs) {
+            /* 2021-01-08 */
+            final String[] docHTMLs = br.getRegex("div class=\"page_doc_row\"[^>]*>(.*?)</div>\\s*</div>").getColumn(0);
+            for (final String docHTML : docHTMLs) {
+                final String url = new Regex(docHTML, "href=\"(/doc[^\"]+)\"").getMatch(0);
+                final String filename = new Regex(docHTML, "target=\"_blank\">([^<>\"]+)</a>").getMatch(0);
+                final String filesize = new Regex(docHTML, "class=\"page_doc_size\">([^<>\"]+)<").getMatch(0);
+                if (url == null || filename == null || filesize == null) {
+                    continue;
+                } else if (!global_dupes.add(url)) {
+                    /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
+                    logger.info("Skipping dupe: ");
+                    continue;
+                }
+                dl = this.createDownloadlink(this.getProtocol() + this.getHost() + url);
+                dl.setName(filename);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
