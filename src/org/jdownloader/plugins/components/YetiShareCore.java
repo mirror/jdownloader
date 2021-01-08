@@ -30,24 +30,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -72,6 +54,24 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -147,30 +147,40 @@ public class YetiShareCore extends antiDDoSForHost {
     public static final String             PROPERTY_UPLOAD_DATE_RAW  = "UPLOADDATE_RAW";
 
     @Override
+    public String getLinkID(DownloadLink link) {
+        final String fuid = getFUID(link);
+        if (fuid != null) {
+            return this.getHost() + "://" + fuid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* link cleanup, but respect users protocol choosing or forced protocol */
-        final String fid = getFUID(link);
-        link.setLinkID(this.getHost() + "://" + fid);
-        try {
-            final URL addedURL = new URL(link.getPluginPatternMatcher());
-            final String protocolCorrected;
-            if (supports_https()) {
-                protocolCorrected = "https://";
-            } else {
-                protocolCorrected = "http://";
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            try {
+                final URL url = new URL(link.getPluginPatternMatcher());
+                final String protocolCorrected;
+                if (supports_https()) {
+                    protocolCorrected = "https://";
+                } else {
+                    protocolCorrected = "http://";
+                }
+                /* Get full host with subdomain and correct base domain. */
+                final String hostCorrected;
+                if (url.getHost().equals(this.getHost())) {
+                    /* E.g. down.example.com -> down.example.com */
+                    hostCorrected = url.getHost();
+                } else {
+                    /* e.g. down.xx.com -> down.yy.com */
+                    hostCorrected = url.getHost().replaceFirst(Pattern.quote(Browser.getHost(url, false)) + "$", getHost());
+                }
+                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + "/" + url.getPath());
+            } catch (final MalformedURLException e) {
+                logger.log(e);
             }
-            final String hostCorrected;
-            /* E.g. down.example.com -> down.example.com */
-            if (addedURL.getHost().equals(this.getHost())) {
-                hostCorrected = addedURL.getHost();
-            } else {
-                /* e.g. down.xx.com -> down.yy.com */
-                /* TODO: Improve this */
-                hostCorrected = addedURL.getHost().replace(Browser.getHost(link.getPluginPatternMatcher()), this.getHost());
-            }
-            link.setPluginPatternMatcher(protocolCorrected + hostCorrected + "/" + addedURL.getPath());
-        } catch (final MalformedURLException e) {
-            logger.log(e);
         }
     }
 
@@ -248,8 +258,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -297,9 +307,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed e.g. filemia.com </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -819,14 +827,18 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
     protected String getFUID(final DownloadLink link) {
-        return getFUIDFromURL(link.getPluginPatternMatcher());
+        return link != null ? getFUIDFromURL(link.getPluginPatternMatcher()) : null;
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
     public String getFUIDFromURL(final String url) {
         try {
-            final String result = new Regex(new URL(url).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
-            return result;
+            if (url != null) {
+                final String result = new Regex(new URL(url).getPath(), "^/([A-Za-z0-9]+)").getMatch(0);
+                return result;
+            } else {
+                return null;
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -1070,7 +1082,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            } /** Limit errorhandling */
+            }/** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1236,8 +1248,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
