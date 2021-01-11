@@ -93,15 +93,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -394,7 +394,7 @@ public class PornHubCom extends PluginForHost {
         } else {
             link.setFinalFileName(html_filename);
         }
-        if (!verifyFinalURL(link, this.dlUrl)) {
+        if (!verifyFinalURL(link, format, this.dlUrl)) {
             if (!isVideo) {
                 /* We cannot refresh directurls of e.g. photo content - final downloadurls should be static --> WTF */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
@@ -406,22 +406,30 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
+            if (this.dlUrl == null && StringUtils.equalsIgnoreCase("mp4", format)) {
+                // 2020-01-11, only HLS available, auto check for hls
+                logger.warning("Failed to get fresh directurl:" + format + "/" + quality + "|auto check for hls");
+                format = "hls";
+                this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
+            }
             if (this.dlUrl == null) {
                 logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Last chance */
-            logger.info("Checking fresh directurl");
-            if (!verifyFinalURL(link, this.dlUrl)) {
-                logger.info("Fresh directurl did not lead to downloadable content");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+            } else {
+                /* Last chance */
+                logger.warning("Check fresh directurl:" + format + "/" + quality + "/" + dlUrl);
+                if (!verifyFinalURL(link, format, this.dlUrl)) {
+                    logger.info("Fresh directurl did not lead to downloadable content");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                } else {
+                    link.setProperty("format", format);
+                }
             }
         }
         return AvailableStatus.TRUE;
     }
 
-    public boolean verifyFinalURL(final DownloadLink link, final String url) throws Exception {
-        final String format = link.getStringProperty("format");
+    public boolean verifyFinalURL(final DownloadLink link, final String format, final String url) throws Exception {
         if (StringUtils.equalsIgnoreCase("hls", format)) {
             final Browser hlsCheck = br.cloneBrowser();
             hlsCheck.setFollowRedirects(true);
