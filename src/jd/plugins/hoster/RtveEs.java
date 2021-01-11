@@ -206,7 +206,7 @@ public class RtveEs extends PluginForHost {
         String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + mediaType + "_" + flashVars[1])), false), false);
         getEncData = getEncData.replaceAll("/", "_");
         Browser enc = br.cloneBrowser();
-        /* 2020-07-28: Higher resolutions are "hidden" in their thumbnail. */
+        /* 2020-07-28: TODO: Higher resolutions are "hidden" in their thumbnail. */
         // br.getPage("http://www.rtve.es/ztnr/movil/thumbnail/banebdyede/videos/" + "<fileID>" + ".png");
         enc.getPage("https://ztnr.rtve.es/ztnr/res/" + getEncData);
         /* Check for empty page */

@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "c-span.org" }, urls = { "https?://(?:www\\.)?c\\-span\\.org/video/\\?\\d+(?:\\-\\d+)?/[a-z0-9\\-]+" })
 public class CspanOrg extends PluginForHost {
@@ -42,8 +43,7 @@ public class CspanOrg extends PluginForHost {
     public String getAGBLink() {
         return "http://www.c-span.org/about/termsAndConditions/";
     }
-
-    private static final String app = "cfx/st";
+    // private static final String app = "cfx/st";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -64,70 +64,65 @@ public class CspanOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         // http://www.c-span.org/common/services/flashXml.php?programid=424926&version=2014-01-23
         final String progid = this.br.getRegex("name=\\'progid' value=\\'(\\d+)\\'").getMatch(0);
         if (progid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean preferMobileHTTP = false;
-        if (preferMobileHTTP) {
+        /* 2021-01-11: Old non working rtmp-endpoint: "https://www.c-span.org/common/services/flashXml.php?programid=" + progid */
+        String hlsMaster = br.getRegex("(https?://[^/]+/program/program\\." + progid + "[^<>\"]+\\.m3u8)").getMatch(0);
+        String dllink_http = null;
+        if (hlsMaster == null) {
+            /* First try to get mobile http URL */
             long bitrate_max = 0;
             long bitrate_temp = 0;
-            String dllink_http = null;
             /* 2017-05-09: Added this code as backup */
             this.br.getPage("https://www.c-span.org/assets/player/ajax-player.php?os=android&html5=program&id=" + progid);
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            /* Find highest quality */
-            final ArrayList<Object> qualities = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "video/files/{0}/qualities");
-            for (final Object fileo : qualities) {
-                entries = (LinkedHashMap<String, Object>) fileo;
-                bitrate_temp = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "bitrate/#text"), 0);
-                if (bitrate_temp > bitrate_max) {
-                    dllink_http = (String) JavaScriptEngineFactory.walkJson(entries, "file/#text");
-                }
-            }
-            if (StringUtils.isEmpty(dllink_http)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Important! */
-            dllink_http = Encoding.htmlDecode(dllink_http);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink_http, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } else {
-            br.getPage("https://www.c-span.org/common/services/flashXml.php?programid=" + progid);
-            final String rtmp_host = this.br.getRegex("name=\"url\">\\$\\(protocol\\)(://[^<>\"]*?):\\$\\(port\\)/cfx/st").getMatch(0);
-            final String playpath = this.br.getRegex("name=\"path\">(mp4:[^<>\"]*?)</string>").getMatch(0);
-            if (playpath == null || rtmp_host == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String rtmpurl = "rtmp" + rtmp_host + "/" + app;
+            hlsMaster = (String) JavaScriptEngineFactory.walkJson(entries, "video/files/{0}/path/#text");
             try {
-                dl = new RTMPDownload(this, downloadLink, rtmpurl);
-            } catch (final NoClassDefFoundError e) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+                /* Find highest http quality */
+                final ArrayList<Object> qualities = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "video/files/{0}/qualities");
+                for (final Object fileo : qualities) {
+                    entries = (LinkedHashMap<String, Object>) fileo;
+                    bitrate_temp = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "bitrate/#text"), 0);
+                    if (bitrate_temp > bitrate_max) {
+                        dllink_http = (String) JavaScriptEngineFactory.walkJson(entries, "file/#text");
+                    }
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
             }
-            /* Setup rtmp connection */
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
-            rtmp.setUrl(rtmpurl);
-            rtmp.setPlayPath(playpath);
-            rtmp.setApp(app);
-            rtmp.setFlashVer("WIN 25,0,0,171");
-            rtmp.setSwfUrl("https://www.c-span.org/assets/swf/CSPANPlayer.swf?programid=424926" + progid);
-            rtmp.setResume(true);
-            ((RTMPDownload) dl).startDownload();
+            if (dllink_http != null) {
+                /* http download */
+                /* Important! */
+                dllink_http = Encoding.htmlDecode(dllink_http);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink_http, true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    }
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl.startDownload();
+                return;
+            }
         }
+        /* hls download */
+        if (hlsMaster == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(hlsMaster);
+        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+        final String url_hls = hlsbest.getDownloadurl();
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, url_hls);
+        dl.startDownload();
     }
 
     @Override

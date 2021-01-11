@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -130,8 +132,11 @@ public class FaceBookComVideos extends PluginForHost {
             loggedIN = true;
         }
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
-        String filename = null;
         URLConnectionAdapter con = null;
+        /*
+         * 2020-01-11: Disabled to save requests as we can find all downloadURLs via website now without the need to perform embed handling!
+         */
+        final boolean developerEnforcesUsageOfEmbedHandlingToFindDownloadURLs = false;
         final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
         if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO) && is_private) {
             accountNeeded = true;
@@ -158,8 +163,9 @@ public class FaceBookComVideos extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    filename = Encoding.htmlDecode(getFileNameFromHeader(con));
-                    link.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -175,8 +181,9 @@ public class FaceBookComVideos extends PluginForHost {
                 dllink = link.getDownloadURL();
                 con = br.openGetConnection(dllink);
                 if (!con.getContentType().contains("html")) {
-                    filename = Encoding.htmlDecode(getFileNameFromHeader(con));
                     link.setDownloadSize(con.getLongContentLength());
+                    link.setVerifiedFileSize(con.getLongContentLength());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -191,6 +198,9 @@ public class FaceBookComVideos extends PluginForHost {
             final String videoID = this.getFID(link);
             /* Embed = no filenames given */
             final boolean useEmbedOnly = false;
+            String title = null;
+            String uploader = null;
+            String dateFormatted = null;
             if (useEmbedOnly) {
                 accessVideoEmbed(videoID, true);
             } else {
@@ -203,27 +213,22 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 String fallback_downloadurl = null;
                 if (this.br.getURL().contains(videoID)) {
+                    // if (!true) {
                     /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
                     /* Get standardized json object "VideoObject" */
                     String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
                     Map<String, Object> entries = null;
                     try {
                         entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                        final String title = (String) entries.get("name");
+                        title = (String) entries.get("name");
                         final String uploadDate = (String) entries.get("uploadDate");
-                        final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
-                        if (StringUtils.isAllNotEmpty(title, uploadDate, uploader)) {
-                            String date_formatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
-                            if (date_formatted == null) {
+                        uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
+                        if (!StringUtils.isEmpty(uploadDate)) {
+                            dateFormatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                            if (dateFormatted == null) {
                                 /* Fallback */
-                                date_formatted = uploadDate;
+                                dateFormatted = uploadDate;
                             }
-                            filename = date_formatted + "_";
-                            /* 2020-06-12: Uploader is not always given in json */
-                            if (uploader != null) {
-                                filename += uploader + "_";
-                            }
-                            filename += title;
                         }
                         /*
                          * 2020-06-12: We avoid using this as final downloadurl [use only as fallback] as it is lower quality than via the
@@ -266,24 +271,73 @@ public class FaceBookComVideos extends PluginForHost {
                             }
                         }
                     }
-                    if (filename == null) {
+                    if (title == null) {
                         /* Fallback - json is not always given */
-                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                        title = br.getRegex("<title>(.*?)</title>").getMatch(0);
                     }
                 } else {
                     /* Rare case */
                     logger.info("Video is unavailable on mobile page");
-                }
-                /*
-                 * 2020-06-12: Get downloadurl from embedded URL --> Best possible http quality --> Use this one only as a fallback e.g. for
-                 * content which is not available embedded because it is officially only available via MDP streaming:
-                 * https://svn.jdownloader.org/issues/88438 </br> fallback_downloadurl is generally lower quality than e.g. possible via MDP
-                 * streaming!
-                 */
-                if (StringUtils.isEmpty(fallback_downloadurl)) {
-                    fallback_downloadurl = br.getRegex("property=\"og:video\" content=\"(https?://[^<>\"]+)\"").getMatch(0);
-                    if (fallback_downloadurl != null) {
-                        fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
+                    br.getPage(link.getPluginPatternMatcher());
+                    final String[] videoJsons = br.getRegex("\"adp_CometVideoHomeInjectedLiveVideoQueryRelayPreloader_[a-f0-9]+\",(\\{\"__bbox\".*?)" + Regex.escape("]]]});});});")).getColumn(0);
+                    for (final String videoJson : videoJsons) {
+                        boolean foundVideoJson = false;
+                        try {
+                            Map<String, Object> entries = JSonStorage.restoreFromString(videoJson, TypeRef.HASHMAP);
+                            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "__bbox/result/data/video");
+                            /* Make sure we're on the way to the correct media object ... */
+                            final String videoIDTmp = (String) entries.get("id");
+                            if (!videoIDTmp.equals(videoID)) {
+                                /* Skip invalid objects */
+                                continue;
+                            } else {
+                                /* This is what we want */
+                                foundVideoJson = true;
+                                logger.info("Found correct video json object");
+                                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "creation_story/attachments/{0}/media");
+                                title = (String) entries.get("name");
+                                uploader = (String) JavaScriptEngineFactory.walkJson(entries, "owner/name");
+                                if (entries.containsKey("publish_time")) {
+                                    final long publish_time = ((Number) entries.get("publish_time")).longValue();
+                                    final Date date = new Date(publish_time * 1000);
+                                    final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                                    dateFormatted = formatter.format(date);
+                                }
+                                try {
+                                    /* Find- and set description if possible */
+                                    final String description = (String) JavaScriptEngineFactory.walkJson(entries, "savable_description/text");
+                                    if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+                                        link.setComment(description);
+                                    }
+                                } catch (final Throwable e) {
+                                }
+                                final String urlLow = (String) entries.get("playable_url");
+                                final String urlHigh = (String) entries.get("playable_url_quality_hd");
+                                if (PluginJsonConfig.get(this.getConfigInterface()).isPreferHD() && !StringUtils.isEmpty(urlHigh)) {
+                                    this.dllink = urlHigh;
+                                } else {
+                                    this.dllink = urlLow;
+                                }
+                                break;
+                            }
+                        } catch (final Throwable e) {
+                            /* Only log Exception if we did not expect it to happen! */
+                            if (foundVideoJson) {
+                                logger.log(e);
+                            }
+                        }
+                    }
+                    /*
+                     * 2020-06-12: Get downloadurl from embedded URL --> Best possible http quality --> Use this one only as a fallback e.g.
+                     * for content which is not available embedded because it is officially only available via MDP streaming:
+                     * https://svn.jdownloader.org/issues/88438 </br> fallback_downloadurl is generally lower quality than e.g. possible via
+                     * MDP streaming!
+                     */
+                    if (StringUtils.isEmpty(fallback_downloadurl)) {
+                        fallback_downloadurl = br.getRegex("property=\"og:video\" content=\"(https?://[^<>\"]+)\"").getMatch(0);
+                        if (fallback_downloadurl != null) {
+                            fallback_downloadurl = Encoding.htmlDecode(fallback_downloadurl);
+                        }
                     }
                 }
                 if (!StringUtils.isEmpty(fallback_downloadurl)) {
@@ -292,7 +346,7 @@ public class FaceBookComVideos extends PluginForHost {
                     logger.warning("Failed to find fallback_downloadurl");
                 }
                 /* Find downloadurl - only do this step if either user is about to start downloads or user has fast linkcheck disabled! */
-                if (findAndCheckDownloadurl) {
+                if (developerEnforcesUsageOfEmbedHandlingToFindDownloadURLs && findAndCheckDownloadurl) {
                     accessVideoEmbed(videoID, false);
                     if (!StringUtils.isEmpty(this.dllink)) {
                         logger.info("Successfully found downloadurl via videoembed");
@@ -303,19 +357,6 @@ public class FaceBookComVideos extends PluginForHost {
                     this.dllink = fallback_downloadurl;
                 }
             }
-            if (filename == null) {
-                /* Fallback */
-                filename = videoID;
-            }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Some filename corrections */
-            filename = Encoding.htmlDecode(filename.trim());
-            // ive seen new lines within filename!
-            filename = filename.replaceAll("[\r\n]+", " ");
-            /* 2020-07-13 */
-            filename = filename.replace(" | Facebook", "");
             if (br.containsHTML(">You must log in to continue")) {
                 accountNeeded = true;
                 if (!loggedIN) {
@@ -323,12 +364,34 @@ public class FaceBookComVideos extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            if (!filename.contains(fid)) {
-                filename = filename + "_" + fid;
+            if (title != null) {
+                /* Some filename corrections */
+                String filename;
+                if (StringUtils.isAllNotEmpty(title, dateFormatted, uploader)) {
+                    filename = dateFormatted + "_";
+                    /* 2020-06-12: Uploader is not always given in json */
+                    if (uploader != null) {
+                        filename += uploader + "_";
+                    }
+                    filename += title;
+                } else {
+                    filename = title;
+                }
+                filename = Encoding.htmlDecode(filename.trim());
+                // ive seen new lines within filename!
+                filename = filename.replaceAll("[\r\n]+", " ");
+                /* 2020-07-13 */
+                filename = filename.replace(" | Facebook", "");
+                if (!filename.contains(fid)) {
+                    filename = filename + "_" + fid;
+                }
+                filename += ".mp4";
+                link.setFinalFileName(filename);
+            } else if (!link.isNameSet()) {
+                /* Fallback */
+                link.setName(videoID + ".mp4");
             }
-            filename += ".mp4";
         }
-        link.setFinalFileName(filename);
         if (this.dllink != null && this.dllink.startsWith("http") && findAndCheckDownloadurl) {
             try {
                 con = br.openHeadConnection(this.dllink);
@@ -336,6 +399,7 @@ public class FaceBookComVideos extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -440,12 +504,12 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
-    private String getHigh() {
+    private String embedGetHighQualityStream() {
         final String result = PluginJSonUtils.getJsonValue(br, "hd_src");
         return result;
     }
 
-    private String getLow() {
+    private String embedGetLowQualityStream() {
         final String result = PluginJSonUtils.getJsonValue(br, "sd_src");
         return result;
     }
@@ -469,14 +533,14 @@ public class FaceBookComVideos extends PluginForHost {
         String dllink = null;
         final boolean preferHD = PluginJsonConfig.get(this.getConfigInterface()).isPreferHD();
         if (preferHD) {
-            dllink = getHigh();
+            dllink = embedGetHighQualityStream();
             if (dllink == null || "null".equals(dllink)) {
-                dllink = getLow();
+                dllink = embedGetLowQualityStream();
             }
         } else {
-            dllink = getLow();
+            dllink = embedGetLowQualityStream();
             if (dllink == null || "null".equals(dllink)) {
-                dllink = getHigh();
+                dllink = embedGetHighQualityStream();
             }
         }
         return dllink;
