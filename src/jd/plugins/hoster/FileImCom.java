@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "http://(www\\.)?fileim\\.com/file/[a-f0-9]{16}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "https?://(?:www\\.)?fileim\\.com/file/([a-z0-9]+)\\.html" })
 public class FileImCom extends PluginForHost {
-
     public FileImCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -42,6 +40,20 @@ public class FileImCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.fileim.com/terms.html";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -97,7 +109,6 @@ public class FileImCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         sleep(wait * 1001l, downloadLink);
-
         br2.getPage("/ajax/download/getdownservers.ashx?type=0");
         String domain = br2.getRegex("domain%3A\\'([^<>\"\\']+)\\'").getMatch(0);
         if (domain == null) {
@@ -140,5 +151,4 @@ public class FileImCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

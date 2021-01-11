@@ -25,8 +25,10 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -155,5 +157,14 @@ public class TakefileLink extends XFileSharingProBasic {
             ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + XFileSharingProBasic.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(link, account, checkAll);
+        /* 2021-01-11: Some files are "paid files": The user has to pay a fee for that single file to be able to download it. */
+        if (new Regex(correctedBR, "class=\"price\"").matches()) {
+            throw new AccountRequiredException();
+        }
     }
 }

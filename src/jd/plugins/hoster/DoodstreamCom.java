@@ -20,6 +20,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -29,10 +33,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -199,7 +199,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         setFUID(link);
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
             /* First try to get filename from Chromecast json */
-            String filename = new Regex(correctedBR, "title\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+            String filename = new Regex(correctedBR, "<title>([^<>\"]+) - DoodStream\\.com</title>").getMatch(0);
             if (filename == null) {
                 filename = new Regex(correctedBR, "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
             }
