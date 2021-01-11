@@ -161,19 +161,22 @@ public class PornHubCom extends PluginForHost {
     @Override
     public String getLinkID(DownloadLink link) {
         final String quality = link.getStringProperty("quality", null);
-        final String format = link.getStringProperty("format", null);
+        // final String format = link.getStringProperty("format", null);
         final String viewkey = link.getStringProperty("viewkey", null);
         if (quality != null && viewkey != null) {
-            StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder(32);
             sb.append("pornhub://");
             sb.append(viewkey);
-            sb.append("_");
-            if (format != null) {
-                sb.append(format);
-            } else {
-                // older links
-                sb.append("mp4");
-            }
+            // if (false) {
+            // sb.append("_");
+            // //2020-01-11, only HLS available. format no longer important
+            // if (format != null) {
+            // sb.append(format);
+            // } else {
+            // // older links
+            // sb.append("mp4");
+            // }
+            // }
             sb.append("_");
             sb.append(quality);
             return sb.toString();
