@@ -204,7 +204,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (useEmbedOnly) {
                 accessVideoEmbed(videoID, true);
             } else {
-                /* Use mobile website */
+                /* 2021-01-11: Alyways try mobile website first!! Website crawler will fail for some videos otherwise! */
                 br.setAllowedResponseCodes(new int[] { 500 });
                 br.getPage("https://m.facebook.com/watch/?v=" + videoID);
                 /* 2020-06-12: Website does never return appropriate 404 code so we have to check for strings in html :/ */
@@ -213,7 +213,6 @@ public class FaceBookComVideos extends PluginForHost {
                 }
                 String fallback_downloadurl = null;
                 if (this.br.getURL().contains(videoID)) {
-                    // if (!true) {
                     /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
                     /* Get standardized json object "VideoObject" */
                     String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);

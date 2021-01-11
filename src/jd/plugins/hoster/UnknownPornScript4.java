@@ -43,9 +43,9 @@ public class UnknownPornScript4 extends PluginForHost {
     // other:
     /* Extension which will be used if no correct extension is found */
     /** 2018-05-17: Bondagebox.com is still using rtmp + flash which often does not even work via browser! */
-    private static final String type_1            = "^https?://(?:www\\.)?[^/]+/videos/[a-z0-9\\-]+\\-\\d+\\.html$";
+    private static final String type_1            = "^https?://(?:www\\.)?[^/]+/videos/([a-z0-9\\-]+)\\-(\\d+)\\.html$";
     /* E.g. homemoviestube.com */
-    private static final String type_2            = "^https?://(?:www\\.)?[^/]+/videos/\\d+/[a-z0-9\\-]+\\.html$";
+    private static final String type_2            = "^https?://(?:www\\.)?[^/]+/videos/(\\d+)/([a-z0-9\\-]+)\\.html$";
     private static final String default_Extension = ".mp4";
     /* Connection stuff */
     private static final int    free_maxdownloads = -1;
@@ -57,15 +57,36 @@ public class UnknownPornScript4 extends PluginForHost {
         return "https://www.homemoviestube.com/tos.php";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        if (link.getPluginPatternMatcher().matches(type_1)) {
+            return new Regex(link.getPluginPatternMatcher(), type_1).getMatch(1);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), type_2).getMatch(0);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         rtmpurl = null;
-        final String host = downloadLink.getHost();
+        final String host = link.getHost();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().endsWith("/404.php")) {
             /* E.g. 404.php: http://www.bondagebox.com/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -74,11 +95,11 @@ public class UnknownPornScript4 extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String url_filename = null;
-        if (downloadLink.getDownloadURL().matches(type_1)) {
-            url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
+        if (link.getDownloadURL().matches(type_1)) {
+            url_filename = new Regex(link.getPluginPatternMatcher(), type_1).getMatch(0).replace("-", " ");
         } else {
             /* E.g. homemoviestube.com */
-            url_filename = new Regex(downloadLink.getDownloadURL(), "/videos/\\d+/([a-z0-9\\-]+)\\.html$").getMatch(0).replace("-", " ");
+            url_filename = new Regex(link.getDownloadURL(), type_2).getMatch(1).replace("-", " ");
         }
         String filename = regexStandardTitleWithHost(host);
         if (filename == null) {
@@ -116,14 +137,15 @@ public class UnknownPornScript4 extends PluginForHost {
             filename = filename.trim();
             ext = getFileNameExtensionFromString(dllink, default_Extension);
             /* Set final filename! */
-            downloadLink.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
             final Browser brc = new Browser();
             brc.setFollowRedirects(true);
             try {
                 con = brc.openHeadConnection(dllink);
-                if (con.isOK() && !con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -135,7 +157,7 @@ public class UnknownPornScript4 extends PluginForHost {
             }
         } else {
             /* Possible rtmp download or plugin failure --> Do NOT set final filename! */
-            downloadLink.setName(filename + ext);
+            link.setName(filename + ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -158,22 +180,26 @@ public class UnknownPornScript4 extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.startsWith("http")) {
             /* 99% use http - e.g. homemoviestube.com */
-            downloadLink.setFinalFileName(downloadLink.getName());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, isResumeSupported(), getMaxChunks());
-            if (dl.getConnection().getContentType().contains("html")) {
+            link.setFinalFileName(link.getName());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeSupported(), getMaxChunks());
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
@@ -196,20 +222,20 @@ public class UnknownPornScript4 extends PluginForHost {
                 /* e.g. http://www.fetishbox.com/videos/blonde-bitchy-bratty-barbie--35044.html */
                 dllink = "mp4:" + dllink;
                 /* Correct filename */
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
+                link.setFinalFileName(link.getName().replace(".flv", ".mp4"));
             } else {
                 dllink = "flv:" + dllink;
                 /* Correct filename */
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+                link.setFinalFileName(link.getName().replace(".mp4", ".flv"));
             }
             try {
-                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+                dl = new RTMPDownload(this, link, rtmpurl);
             } catch (final NoClassDefFoundError e) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
             }
             /* Setup rtmp connection */
             jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setPageUrl(link.getDownloadURL());
             rtmp.setUrl(rtmpurl);
             rtmp.setPlayPath(dllink);
             rtmp.setApp(app);

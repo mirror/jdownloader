@@ -237,10 +237,9 @@ public class TvnowDe extends PluginForDecrypt {
             logger.warning("Failed to find itemID");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        }
-        if (StringUtils.isEmpty(formatID) || StringUtils.isEmpty(url_showname)) {
+        } else if (StringUtils.isEmpty(formatID) || StringUtils.isEmpty(url_showname)) {
             logger.warning("Failed to find formatID");
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (url_singleEpisodeName != null) {
             /* Single item --> Hosterplugin */
@@ -264,8 +263,14 @@ public class TvnowDe extends PluginForDecrypt {
             numberofItemsGrabbedTmp = 0;
             br.getPage(jd.plugins.hoster.TvnowDe.API_BASE + "/movies?fields=*&filter=%7B%22FormatId%22:" + formatID + "%7D&maxPerPage=" + maxItemsPerPage + "&order=BroadcastStartDate+desc&page=" + page);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                logger.info("WTF: 404 during crawl-process");
-                return null;
+                if (decryptedLinks.isEmpty()) {
+                    /* Content offline */
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                } else {
+                    /* Unexpected error 404 during crawl process */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             if (page == 1) {
@@ -293,7 +298,7 @@ public class TvnowDe extends PluginForDecrypt {
                 }
                 if (StringUtils.isEmpty(videoSeoName) || episodeID.equals("-1")) {
                     logger.warning("Failed to find thisStationName or videoSeoName");
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // if (thisStationName.equalsIgnoreCase("none")) {
                 // /* E.g. stuff which is only available online but not on TV. */
