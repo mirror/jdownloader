@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,13 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ddebrid.com" }, urls = { "" })
 public class DdebridCom extends PluginForHost {
@@ -292,6 +292,9 @@ public class DdebridCom extends PluginForHost {
             } else if (errormsg.equalsIgnoreCase("Token not found.")) {
                 /* Existing session expired. */
                 throw new AccountUnavailableException(errormsg, 1 * 60 * 1000l);
+            } else if (errormsg.equalsIgnoreCase("Filehost not supported.")) {
+                /* 2021-01-11 */
+                mhm.putError(account, link, 1 * 60 * 1000l, errormsg);
             } else {
                 if (link == null) {
                     throw new AccountUnavailableException(errormsg, 5 * 60 * 1000l);
