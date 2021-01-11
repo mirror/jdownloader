@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -76,27 +77,27 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        final String host = downloadLink.getHost();
+        final String host = link.getHost();
         br = new Browser();
         br.setAllowedResponseCodes(new int[] { 410 });
         br.setFollowRedirects(true);
-        if (downloadLink.getDownloadURL().contains("bigcamtube.com")) {
+        if (link.getDownloadURL().contains("bigcamtube.com")) {
             br.setCookie("www.bigcamtube.com", "age_verify", "1");
             br.addAllowedResponseCodes(500);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
             /*
              * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
              * returns html.
              */
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
         }
         /* Now lets find the url_filename as a fallback in case we cannot find the filename inside the html code. */
         String url_filename = null;
-        final String[] urlparts = new Regex(downloadLink.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
+        final String[] urlparts = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
         String url_id = null;
         for (String urlpart : urlparts) {
             if (urlpart.matches("\\d+")) {
@@ -129,7 +130,7 @@ public class UnknownPornScript5 extends PluginForHost {
             /* E.g. 410: pornoxo.com (DMCA removed content) */
             if (url_filename != null) {
                 /* Offline content should at least display a name in linkgrabber instead of 'unknownFileName' */
-                downloadLink.setName(url_filename);
+                link.setName(url_filename);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -143,7 +144,7 @@ public class UnknownPornScript5 extends PluginForHost {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
             filename = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
         }
-        if (filename == null && downloadLink.getDownloadURL().matches(type_allow_title_as_filename)) {
+        if (filename == null && link.getDownloadURL().matches(type_allow_title_as_filename)) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
         if (filename == null) {
@@ -154,12 +155,12 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        downloadLink.setName(filename + default_Extension);
+        link.setName(filename + default_Extension);
         getDllink();
         logger.info("dllink: " + dllink);
         if (dllink.contains(".m3u8")) { // bigcamtube.com
             filename = filename.trim();
-            downloadLink.setFinalFileName(filename + ".mp4");
+            link.setFinalFileName(filename + ".mp4");
             br.getPage(dllink);
             // Get file size with checkFFProbe and StreamInfo fails with HTTP error 501 Not Implemented
             return AvailableStatus.TRUE;
@@ -172,7 +173,7 @@ public class UnknownPornScript5 extends PluginForHost {
                 ext = default_Extension;
             }
             /* Set final filename! */
-            downloadLink.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + ext);
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
@@ -184,8 +185,9 @@ public class UnknownPornScript5 extends PluginForHost {
                 } else {
                     con = br2.openHeadConnection(dllink);
                 }
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     if (con.getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -199,7 +201,7 @@ public class UnknownPornScript5 extends PluginForHost {
                 }
             }
         } else {
-            downloadLink.setName(filename + ext);
+            link.setName(filename + ext);
         }
         return AvailableStatus.TRUE;
     }
@@ -280,9 +282,9 @@ public class UnknownPornScript5 extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         setConstants(null);
-        requestFileInformation(downloadLink);
+        requestFileInformation(link);
         if (inValidateDllink(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (server_issues) {
@@ -301,24 +303,28 @@ public class UnknownPornScript5 extends PluginForHost {
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, hlsbest.getDownloadurl());
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             dl.startDownload();
         } else {
             if ("xogogo.com".equals(getHost())) {
                 dllink = Encoding.urlDecode(dllink, true) + "&start=0";
                 final Request gr = new GetRequest(new URL(dllink));
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, gr, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, gr, resumes, chunks);
             } else {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 }
-                br.followConnection();
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable e) {
