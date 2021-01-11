@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.crypto.BadPaddingException;
@@ -20,6 +21,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.parser.Regex;
@@ -64,7 +66,8 @@ public class MegaConz extends PluginForDecrypt {
         return null;
     }
 
-    private static Object GLOBAL_LOCK = new Object();
+    private static Object                                                           GLOBAL_LOCK = new Object();
+    private static WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>> CACHE       = new WeakHashMap<LinkCrawler, Map<String, List<Map<String, Object>>>>();
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -93,123 +96,57 @@ public class MegaConz extends PluginForDecrypt {
         br.addAllowedResponseCodes(500);
         int retryCounter = 0;
         final Map<String, FilePackage> fpMap = new HashMap<String, FilePackage>();
-        final List<Map<String, Object>> nodes = new ArrayList<Map<String, Object>>();
-        Object lock = new Object();
+        List<Map<String, Object>> folderNodes = new ArrayList<Map<String, Object>>();
+        synchronized (CACHE) {
+            LinkCrawler crawler = getCrawler();
+            if (crawler != null) {
+                crawler = crawler.getRoot();
+            }
+            if (crawler != null) {
+                Map<String, List<Map<String, Object>>> map = CACHE.get(crawler);
+                if (map == null) {
+                    map = new HashMap<String, List<Map<String, Object>>>();
+                    CACHE.put(crawler, map);
+                }
+                if (map.containsKey(folderID)) {
+                    folderNodes = map.get(folderID);
+                } else {
+                    map.put(folderID, folderNodes);
+                }
+            }
+        }
         String sn = null;
         final boolean wscSupport = false;
         String w = null;// websocket
-        while (true) {
-            synchronized (lock) {
-                final URLConnectionAdapter con;
-                if (sn != null) {
-                    if (w != null) {
-                        // blocks for longer time, waits for events
-                        con = br.openRequestConnection(br.createJSonPostRequest(w + "?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
-                    } else {
-                        if (wscSupport) {
-                            con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/wsc?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
+        synchronized (folderNodes) {
+            if (folderNodes.size() > 0) {
+                logger.info("Found Cache:Nodes" + folderNodes.size() + "|FolderID" + folderID);
+            } else {
+                List<Map<String, Object>> parsedNodes = new ArrayList<Map<String, Object>>();
+                while (!isAbort()) {
+                    final URLConnectionAdapter con;
+                    if (sn != null) {
+                        if (w != null) {
+                            // blocks for longer time, waits for events
+                            con = br.openRequestConnection(br.createJSonPostRequest(w + "?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
                         } else {
-                            con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/sc?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
-                        }
-                    }
-                } else {
-                    con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                            /*
-                             * + "&domain=meganz
-                             */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
-                    // ->
-                    // !nocache,
-                    // commands.cpp
-                }
-                if (con.getResponseCode() == 500) {
-                    br.followConnection(true);
-                    if (retryCounter < 10) {
-                        lock = GLOBAL_LOCK;
-                        sleep(5000, parameter);
-                        retryCounter++;
-                        continue;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                final Object response;
-                try {
-                    response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
-                } finally {
-                    con.disconnect();
-                }
-                if (response instanceof List && StringUtils.isEmpty(sn)) {
-                    List<Map<String, Object>> pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "{0}/f");
-                    if (pageNodes == null) {
-                        pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "{0}/a/{0}/t/f");
-                    }
-                    if (pageNodes != null) {
-                        final int nodesBefore = nodes.size();
-                        nodes.addAll(pageNodes);
-                        if (nodes.size() == nodesBefore) {
-                            logger.info("no more nodes found->stop pagination");
-                            break;
-                        }
-                    } else {
-                        logger.info("no more nodes found->abort pagination");
-                        break;
-                    }
-                    final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "{0}/sn");
-                    if (StringUtils.isEmpty(nextSN)) {
-                        logger.info("no next page");
-                        break;
-                    } else if (!StringUtils.equals(sn, nextSN)) {
-                        logger.info("next page:" + sn);
-                        sn = nextSN;
-                    } else {
-                        logger.info("same next page?:" + sn);
-                        break;
-                    }
-                } else if (response instanceof Map && StringUtils.isNotEmpty(sn)) {
-                    final List<Map<String, Object>> pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "a");
-                    if (pageNodes != null) {
-                        final int nodesBefore = nodes.size();
-                        for (Map<String, Object> pageNode : pageNodes) {
-                            final List<Map<String, Object>> additionalNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(pageNode, "t/f");
-                            if (additionalNodes != null) {
-                                nodes.addAll(additionalNodes);
+                            if (wscSupport) {
+                                con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/wsc?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
+                            } else {
+                                con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/sc?id=" + CS.incrementAndGet() + "&n=" + folderID + "&sn=" + sn, ""));
                             }
                         }
-                        if (nodes.size() == nodesBefore) {
-                            logger.info("no more nodes found->stop pagination");
-                            break;
-                        }
                     } else {
-                        logger.info("no more nodes found->abort pagination");
-                        break;
+                        con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
+                        /*
+                         * + "&domain=meganz
+                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                        // ->
+                        // !nocache,
+                        // commands.cpp
                     }
-                    final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "sn");
-                    if (StringUtils.isEmpty(nextSN)) {
-                        logger.info("no next page");
-                        break;
-                    } else if (!StringUtils.equals(sn, nextSN)) {
-                        logger.info("next page:" + sn);
-                        sn = nextSN;
-                    } else {
-                        logger.info("same next page?:" + sn);
-                        break;
-                    }
-                    if (wscSupport && w == null) {
-                        w = (String) JavaScriptEngineFactory.walkJson(response, "w");
-                        if (StringUtils.isEmpty(w)) {
-                            logger.info("wsc missing");
-                            break;
-                        } else {
-                            logger.info("next page:" + w + "|" + sn);
-                        }
-                    }
-                } else if (response instanceof Number) {
-                    logger.info("Response:" + JSonStorage.toString(response));
-                    final Number num = ((Number) response);
-                    if (num.intValue() == 0 && w != null) {
-                        // WebSocket(wsc) = empty
-                        break;
-                    } else if (num.intValue() == -3) {
+                    if (con.getResponseCode() == 500) {
+                        br.followConnection(true);
                         if (retryCounter < 10) {
                             sleep(5000, parameter);
                             retryCounter++;
@@ -217,45 +154,136 @@ public class MegaConz extends PluginForDecrypt {
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                    } else {
-                        // https://help.servmask.com/knowledgebase/mega-error-codes/
-                        // -3 for EAGAIN
-                        return decryptedLinks;
                     }
-                } else {
-                    logger.info("Response:" + JSonStorage.toString(response));
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final Object response;
+                    try {
+                        response = JSonStorage.getMapper().inputStreamToObject(con.getInputStream(), TypeRef.OBJECT);
+                    } finally {
+                        con.disconnect();
+                    }
+                    if (response instanceof List && StringUtils.isEmpty(sn)) {
+                        List<Map<String, Object>> pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "{0}/f");
+                        if (pageNodes == null) {
+                            pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "{0}/a/{0}/t/f");
+                        }
+                        if (pageNodes != null) {
+                            final int nodesBefore = parsedNodes.size();
+                            parsedNodes.addAll(pageNodes);
+                            if (parsedNodes.size() == nodesBefore) {
+                                logger.info("no more nodes found->stop pagination");
+                                break;
+                            }
+                        } else {
+                            logger.info("no more nodes found->abort pagination");
+                            break;
+                        }
+                        final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "{0}/sn");
+                        if (StringUtils.isEmpty(nextSN)) {
+                            logger.info("no next page");
+                            break;
+                        } else if (!StringUtils.equals(sn, nextSN)) {
+                            logger.info("next page:" + sn);
+                            sn = nextSN;
+                        } else {
+                            logger.info("same next page?:" + sn);
+                            break;
+                        }
+                    } else if (response instanceof Map && StringUtils.isNotEmpty(sn)) {
+                        final List<Map<String, Object>> pageNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "a");
+                        if (pageNodes != null) {
+                            final int nodesBefore = parsedNodes.size();
+                            for (Map<String, Object> pageNode : pageNodes) {
+                                final List<Map<String, Object>> additionalNodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(pageNode, "t/f");
+                                if (additionalNodes != null) {
+                                    parsedNodes.addAll(additionalNodes);
+                                }
+                            }
+                            if (parsedNodes.size() == nodesBefore) {
+                                logger.info("no more nodes found->stop pagination");
+                                break;
+                            }
+                        } else {
+                            logger.info("no more nodes found->abort pagination");
+                            break;
+                        }
+                        final String nextSN = (String) JavaScriptEngineFactory.walkJson(response, "sn");
+                        if (StringUtils.isEmpty(nextSN)) {
+                            logger.info("no next page");
+                            break;
+                        } else if (!StringUtils.equals(sn, nextSN)) {
+                            logger.info("next page:" + sn);
+                            sn = nextSN;
+                        } else {
+                            logger.info("same next page?:" + sn);
+                            break;
+                        }
+                        if (wscSupport && w == null) {
+                            w = (String) JavaScriptEngineFactory.walkJson(response, "w");
+                            if (StringUtils.isEmpty(w)) {
+                                logger.info("wsc missing");
+                                break;
+                            } else {
+                                logger.info("next page:" + w + "|" + sn);
+                            }
+                        }
+                    } else if (response instanceof Number) {
+                        logger.info("Response:" + JSonStorage.toString(response));
+                        final Number num = ((Number) response);
+                        if (num.intValue() == 0 && w != null) {
+                            // WebSocket(wsc) = empty
+                            break;
+                        } else if (num.intValue() == -3) {
+                            if (retryCounter < 10) {
+                                sleep(5000, parameter);
+                                retryCounter++;
+                                continue;
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        } else {
+                            // https://help.servmask.com/knowledgebase/mega-error-codes/
+                            // -3 for EAGAIN
+                            return decryptedLinks;
+                        }
+                    } else {
+                        logger.info("Response:" + JSonStorage.toString(response));
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                if (!isAbort()) {
+                    logger.info("Fill Cache:Nodes" + parsedNodes.size() + "|FolderID" + folderID);
+                    folderNodes.addAll(parsedNodes);
                 }
             }
         }
         /*
          * p = parent node (ID)
-         *
+         * 
          * s = size
-         *
+         * 
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         *
+         * 
          * ts = timestamp
-         *
+         * 
          * h = node (ID)
-         *
+         * 
          * u = owner
-         *
+         * 
          * a = attribute (contains name)
-         *
+         * 
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
-        for (final Map<String, Object> node : nodes) {
-            final String encryptedNodeKey = new Regex(node.get("k"), ":([^:]*?)$").getMatch(0);
+        for (final Map<String, Object> folderNode : folderNodes) {
+            final String encryptedNodeKey = new Regex(folderNode.get("k"), ":([^:]*?)$").getMatch(0);
             if (encryptedNodeKey == null) {
                 continue;
             }
             if (isAbort()) {
                 break;
             }
-            final String nodeID = (String) node.get("h");
-            final String nodeParentID = (String) node.get("p");
+            final String nodeID = (String) folderNode.get("h");
+            final String nodeParentID = (String) folderNode.get("p");
             final String nodeKey;
             try {
                 nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
@@ -264,12 +292,12 @@ public class MegaConz extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter.toString()));
                 return decryptedLinks;
             }
-            final String nodeAttr = decrypt((String) node.get("a"), nodeKey);
+            final String nodeAttr = decrypt((String) folderNode.get("a"), nodeKey);
             if (nodeAttr == null) {
                 continue;
             }
             final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
-            final String nodeType = String.valueOf(node.get("t"));
+            final String nodeType = String.valueOf(folderNode.get("t"));
             if ("1".equals(nodeType)) {
                 /* folder */
                 final MegaFolder fo = new MegaFolder(nodeID);
@@ -278,7 +306,7 @@ public class MegaConz extends PluginForDecrypt {
                 folders.put(nodeID, fo);
             } else if ("0".equals(nodeType)) {
                 /* file */
-                final Long nodeSize = JavaScriptEngineFactory.toLong(node.get("s"), -1);
+                final Long nodeSize = JavaScriptEngineFactory.toLong(folderNode.get("s"), -1);
                 if (nodeSize == -1) {
                     continue;
                 }
