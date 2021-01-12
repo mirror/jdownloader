@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -41,17 +40,13 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkspremium.download" }, urls = { "" })
 public class LinkspremiumDownload extends PluginForHost {
-    private static final String                            NICE_HOST                 = "linkspremium.download";
-    private static final String                            NICE_HOSTproperty         = NICE_HOST.replaceAll("(\\.|\\-)", "");
     /* Connection limits */
-    private static final boolean                           ACCOUNT_PREMIUM_RESUME    = false;
-    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final boolean                           USE_API                   = false;
-    private static Object                                  LOCK                      = new Object();
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currentAcc                = null;
-    private DownloadLink                                   currentLink               = null;
-    private static MultiHosterManagement                   mhm                       = new MultiHosterManagement("linkspremium.download");
+    private static final boolean         ACCOUNT_PREMIUM_RESUME    = false;
+    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean         USE_API                   = false;
+    private Account                      currentAcc                = null;
+    private DownloadLink                 currentLink               = null;
+    private static MultiHosterManagement mhm                       = new MultiHosterManagement("linkspremium.download");
 
     public LinkspremiumDownload(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,21 +105,6 @@ public class LinkspremiumDownload extends PluginForHost {
         this.br = prepBR(this.br);
         setConstants(account, link);
         mhm.runCheck(currentAcc, currentLink);
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         login(account, false);
         final String dllink = getDllink(link);
         if (StringUtils.isEmpty(dllink)) {
@@ -134,7 +114,7 @@ public class LinkspremiumDownload extends PluginForHost {
     }
 
     private String getDllink(final DownloadLink link) throws IOException, PluginException {
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
+        String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null) {
             if (USE_API) {
                 dllink = getDllinkAPI(link);
@@ -158,46 +138,43 @@ public class LinkspremiumDownload extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(this.getHost() + "directlink", dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            final String contenttype = dl.getConnection().getContentType();
-            if (contenttype.contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 updatestatuscode();
                 handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(currentAcc, currentLink, "unknowndlerror", 2, 5 * 60 * 1000l);
             }
             this.dl.startDownload();
         } catch (final Exception e) {
-            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            link.setProperty(this.getHost() + "directlink", Property.NULL);
             throw e;
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -220,14 +197,14 @@ public class LinkspremiumDownload extends PluginForHost {
          */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.containsHTML("/gerador")) {
+        if (br.getURL() == null || !br.getURL().contains("/gerador")) {
             br.getPage("/gerador");
         }
         final boolean isPremium = true;
         ArrayList<String> supportedHosts = new ArrayList<String>();
         if (isPremium) {
             account.setType(AccountType.PREMIUM);
-            final String[] hostlist = br.getRegex("publico/host_([^\"]+)\"").getColumn(0);
+            final String[] hostlist = br.getRegex("/hosts/([A-Za-z0-9]+)\\.png'").getColumn(0);
             if (hostlist != null) {
                 for (final String crippledHost : hostlist) {
                     supportedHosts.add(crippledHost);
@@ -247,7 +224,7 @@ public class LinkspremiumDownload extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             /* Load cookies */
             br.setCookiesExclusive(true);
             this.br = prepBR(this.br);
@@ -273,7 +250,7 @@ public class LinkspremiumDownload extends PluginForHost {
                     return;
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                this.br = prepBR(new Browser());
+                this.br.clearCookies(br.getHost());
             }
             br.getPage("http://" + this.getHost() + "/");
             if (br.containsHTML("<title>IP bloqueado</title>")) {
