@@ -56,9 +56,15 @@ public class CspanOrg extends PluginForHost {
         }
         String filename = br.getRegex("property=\\'og:title\\' content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = new Regex(link.getDownloadURL(), "([^/]+)$").getMatch(0);
+            /* Fallback */
+            filename = new Regex(link.getPluginPatternMatcher(), "([^/]+)$").getMatch(0);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        final String uploadDate = br.getRegex("itemprop='uploadDate'>(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (uploadDate != null) {
+            filename = uploadDate + "_" + filename;
+        }
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
