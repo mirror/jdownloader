@@ -18,7 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -82,111 +86,184 @@ public class BbcCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
         title = link.getStringProperty("decrypterfilename");
-        /* HLS - try that first as it will give us higher bitrates */
-        this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
-        if (!this.br.getHttpConnection().isOK()) {
-            /* RTMP #1 */
-            /* 403 or 404 == geoblocked|offline|needsRTMP */
-            /* Fallback e.g. vpids: p01dvmbh, b06s1fj9 */
-            /* Possible "device" strings: "pc", "iptv-all", "journalism-pc" */
-            this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/pc/vpid/" + vpid);
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String title_downloadurl = null;
-        String transferformat = null;
-        // int filesize_max = 0;
+        /* 2021-01-12: useNewRequest! */
+        final boolean useNewRequest = true;
         long filesize_temp = 0;
-        int bitrate_max = 0;
-        int bitrate_temp = 0;
-        /* Allow audio download if there is no video available at all --> We probably have a podcast then. */
-        final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
-        /* Find BEST possible quality throughout different streaming protocols. */
-        final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
-        numberofFoundMedia = media.length;
-        final HashSet<String> testedM3U8 = new HashSet<String>();
+        String title_downloadurl = null;
         final ArrayList<String> hlsMasters = new ArrayList<String>();
         HlsContainer bestHLSContainer = null;
-        for (final String mediasingle : media) {
-            final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
-            final String bitrate_str = new Regex(mediasingle, "bitrate=\"(\\d+)\"").getMatch(0);
-            final String filesize_str = new Regex(mediasingle, "media_file_size=\"(\\d+)\"").getMatch(0);
-            if (bitrate_str == null) {
-                /* Skip faulty items. */
-                continue;
-            } else if (!"video".equalsIgnoreCase(kind) && !("audio".equalsIgnoreCase(kind) && allowAudio)) {
-                /* E.g. skip 'captions' [subtitles] and skip audio content if video content is available. */
-                continue;
+        if (useNewRequest) {
+            /* 2021-01-12: Website uses "/pc/" instead of "/iptv-all/" */
+            this.br.getPage("https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/iptv-all/vpid/" + vpid + "/format/json");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
-            if (connections == null || connections.length == 0) {
-                /* Whatever - skip such a case */
-                continue;
-            }
-            bitrate_temp = Integer.parseInt(bitrate_str);
-            /* Filesize is not always given */
-            if (filesize_str != null) {
-                filesize_temp = Long.parseLong(filesize_str);
-            } else {
-                filesize_temp = 0;
-            }
-            if (bitrate_temp >= bitrate_max) {
-                bitrate_max = bitrate_temp;
-                /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
-                for (final String connection : connections) {
-                    transferformat = new Regex(connection, "transferFormat=\"([a-z]+)\"").getMatch(0);
-                    if (transferformat == null) {
-                        /* 2018-11-16: E.g. very old content (usually rtmp-only, flash-player also required via browser!) */
-                        transferformat = new Regex(connection, "protocol=\"([A-Za-z]+)\"").getMatch(0);
-                    }
-                    if (transferformat == null || (transferformat != null && transferformat.matches("hds|dash"))) {
-                        /* Skip unsupported protocols */
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final List<Object> media = (List<Object>) entries.get("media");
+            for (final Object mediaO : media) {
+                entries = (Map<String, Object>) mediaO;
+                final String kind = (String) entries.get("kind");
+                if (!kind.matches("audio|video")) {
+                    continue;
+                }
+                final List<Object> connections = (List<Object>) entries.get("connection");
+                for (final Object connectionO : connections) {
+                    entries = (Map<String, Object>) connectionO;
+                    final String transferFormat = (String) entries.get("transferFormat");
+                    final String protocol = (String) entries.get("protocol");
+                    if (!transferFormat.equalsIgnoreCase("hls")) {
+                        /* Skip dash/hds/other */
+                        continue;
+                    } else if (protocol.equalsIgnoreCase("http")) {
+                        /* Qualities are given as both http- and https URLs -> Skip http URLs */
                         continue;
                     }
-                    if (transferformat.equals("hls")) {
-                        String m3u8 = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
-                        if (m3u8 != null && testedM3U8.add(m3u8)) {
-                            m3u8 = Encoding.htmlDecode(m3u8);
-                            if (m3u8.matches(".*/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8.*")) {
-                                // rewrite to check for all available formats
+                    // final String m3u8 = (String) entries.get("c");
+                    final String m3u8 = (String) entries.get("href");
+                    if (StringUtils.isEmpty(m3u8)) {
+                        continue;
+                    }
+                    /* 2021-01-12: TODO: Why do we do this replace again? Higher quality? */
+                    if (m3u8.matches(".*/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8.*")) {
+                        // rewrite to check for all available formats
+                        /* 2021-01-12: TODO: This doesn't work anymore?! */
+                        try {
+                            final String id = new Regex(m3u8, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
+                            final String rewrite = m3u8.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
+                            final Browser brc = br.cloneBrowser();
+                            brc.setFollowRedirects(true);
+                            brc.getPage(rewrite);
+                            final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+                            final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
+                            if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                bestHLSContainer = best;
+                                hls_master = rewrite;
+                                hlsMasters.add(hls_master);
+                                continue;
+                            }
+                        } catch (final Exception e) {
+                            logger.log(e);
+                        }
+                    }
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage(m3u8);
+                        final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+                        final HlsContainer bestCandidate = HlsContainer.findBestVideoByBandwidth(containers);
+                        if (bestCandidate != null && (bestHLSContainer == null || bestCandidate.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                            bestHLSContainer = bestCandidate;
+                            hls_master = m3u8;
+                            hlsMasters.add(hls_master);
+                        }
+                    } catch (final Exception e) {
+                        logger.log(e);
+                    }
+                }
+            }
+        } else {
+            /* 2021-01-12: This code is not used anymore but please do NOT delete it! */
+            /* HLS - try that first as it will give us higher bitrates */
+            this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/" + vpid);
+            if (!this.br.getHttpConnection().isOK()) {
+                /* RTMP #1 */
+                /* 403 or 404 == geoblocked|offline|needsRTMP */
+                /* Fallback e.g. vpids: p01dvmbh, b06s1fj9 */
+                /* Possible "device" strings: "pc", "iptv-all", "journalism-pc" */
+                this.br.getPage("https://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/pc/vpid/" + vpid);
+            }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String transferformat = null;
+            // int filesize_max = 0;
+            int bitrate_max = 0;
+            int bitrate_temp = 0;
+            /* Allow audio download if there is no video available at all --> We probably have a podcast then. */
+            final boolean allowAudio = !this.br.containsHTML("kind=\"video\"");
+            /* Find BEST possible quality throughout different streaming protocols. */
+            final String media[] = this.br.getRegex("<media(.*?)</media>").getColumn(0);
+            numberofFoundMedia = media.length;
+            final HashSet<String> testedM3U8 = new HashSet<String>();
+            for (final String mediasingle : media) {
+                final String kind = new Regex(mediasingle, "kind=\"([a-z]+)\"").getMatch(0);
+                final String bitrate_str = new Regex(mediasingle, "bitrate=\"(\\d+)\"").getMatch(0);
+                final String filesize_str = new Regex(mediasingle, "media_file_size=\"(\\d+)\"").getMatch(0);
+                if (bitrate_str == null) {
+                    /* Skip faulty items. */
+                    continue;
+                } else if (!"video".equalsIgnoreCase(kind) && !("audio".equalsIgnoreCase(kind) && allowAudio)) {
+                    /* E.g. skip 'captions' [subtitles] and skip audio content if video content is available. */
+                    continue;
+                }
+                final String[] connections = new Regex(mediasingle, "(<connection.*?)/>").getColumn(0);
+                if (connections == null || connections.length == 0) {
+                    /* Whatever - skip such a case */
+                    continue;
+                }
+                bitrate_temp = Integer.parseInt(bitrate_str);
+                /* Filesize is not always given */
+                if (filesize_str != null) {
+                    filesize_temp = Long.parseLong(filesize_str);
+                } else {
+                    filesize_temp = 0;
+                }
+                if (bitrate_temp >= bitrate_max) {
+                    bitrate_max = bitrate_temp;
+                    /* Every protocol can have multiple 'mirrors' or even sub-protocols (http --> dash, hls, hds, directhttp) */
+                    for (final String connection : connections) {
+                        transferformat = new Regex(connection, "transferFormat=\"([a-z]+)\"").getMatch(0);
+                        if (transferformat == null) {
+                            /* 2018-11-16: E.g. very old content (usually rtmp-only, flash-player also required via browser!) */
+                            transferformat = new Regex(connection, "protocol=\"([A-Za-z]+)\"").getMatch(0);
+                        }
+                        if (transferformat == null || (transferformat != null && transferformat.matches("hds|dash"))) {
+                            /* Skip unsupported protocols */
+                            continue;
+                        }
+                        if (transferformat.equals("hls")) {
+                            String m3u8 = new Regex(connection, "\"(https?://[^<>\"]+\\.m3u8[^<>\"]*?)\"").getMatch(0);
+                            if (m3u8 != null && testedM3U8.add(m3u8)) {
+                                m3u8 = Encoding.htmlDecode(m3u8);
+                                if (m3u8.matches(".*/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8.*")) {
+                                    // rewrite to check for all available formats
+                                    try {
+                                        final String id = new Regex(m3u8, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
+                                        final String rewrite = m3u8.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
+                                        final Browser brc = br.cloneBrowser();
+                                        brc.setFollowRedirects(true);
+                                        brc.getPage(rewrite);
+                                        final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+                                        final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
+                                        if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                            bestHLSContainer = best;
+                                            hls_master = rewrite;
+                                            hlsMasters.add(hls_master);
+                                            continue;
+                                        }
+                                    } catch (final Exception e) {
+                                        logger.log(e);
+                                    }
+                                }
                                 try {
-                                    final String id = new Regex(m3u8, "/([^/]*?)\\.ism(\\.hlsv2\\.ism)?/").getMatch(0);
-                                    final String rewrite = m3u8.replaceFirst("/[^/]*?\\.ism(\\.hlsv2\\.ism)?/.*\\.m3u8", "/" + id + ".ism/" + id + ".m3u8");
                                     final Browser brc = br.cloneBrowser();
-                                    brc.setFollowRedirects(true);
-                                    brc.getPage(rewrite);
+                                    brc.getPage(m3u8);
                                     final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
-                                    final HlsContainer best = HlsContainer.findBestVideoByBandwidth(containers);
-                                    if (best != null && (bestHLSContainer == null || best.getBandwidth() > bestHLSContainer.getBandwidth())) {
-                                        bestHLSContainer = best;
-                                        hls_master = rewrite;
+                                    final HlsContainer bestCandidate = HlsContainer.findBestVideoByBandwidth(containers);
+                                    if (bestCandidate != null && (bestHLSContainer == null || bestCandidate.getBandwidth() > bestHLSContainer.getBandwidth())) {
+                                        bestHLSContainer = bestCandidate;
+                                        hls_master = m3u8;
                                         hlsMasters.add(hls_master);
-                                        continue;
                                     }
                                 } catch (final Exception e) {
                                     logger.log(e);
                                 }
                             }
-                            try {
-                                final Browser brc = br.cloneBrowser();
-                                brc.getPage(m3u8);
-                                final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
-                                final HlsContainer bestCandidate = HlsContainer.findBestVideoByBandwidth(containers);
-                                if (bestCandidate != null && (bestHLSContainer == null || bestCandidate.getBandwidth() > bestHLSContainer.getBandwidth())) {
-                                    bestHLSContainer = bestCandidate;
-                                    hls_master = m3u8;
-                                    hlsMasters.add(hls_master);
-                                }
-                            } catch (final Exception e) {
-                                logger.log(e);
-                            }
+                        } else if (transferformat.equals("rtmp")) {
+                            rtmp_app = new Regex(connection, "application=\"([^<>\"]+)\"").getMatch(0);
+                            rtmp_host = new Regex(connection, "server=\"([^<>\"]+)\"").getMatch(0);
+                            rtmp_playpath = new Regex(connection, "identifier=\"((?:mp4|flv):[^<>\"]+)\"").getMatch(0);
+                            rtmp_authString = new Regex(connection, "authString=\"([^<>\"]*?)\"").getMatch(0);
                         }
-                    } else if (transferformat.equals("rtmp")) {
-                        rtmp_app = new Regex(connection, "application=\"([^<>\"]+)\"").getMatch(0);
-                        rtmp_host = new Regex(connection, "server=\"([^<>\"]+)\"").getMatch(0);
-                        rtmp_playpath = new Regex(connection, "identifier=\"((?:mp4|flv):[^<>\"]+)\"").getMatch(0);
-                        rtmp_authString = new Regex(connection, "authString=\"([^<>\"]*?)\"").getMatch(0);
                     }
                 }
             }
