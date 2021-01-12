@@ -27,6 +27,27 @@ import java.util.Map.Entry;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -50,27 +71,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
@@ -97,10 +97,10 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     private static MultiHosterManagement mhm                               = new MultiHosterManagement("alldebrid.com");
-    private static String                api_base                          = "https://api.alldebrid.com/v4";
+    public static String                 api_base                          = "https://api.alldebrid.com/v4";
     // this is used by provider which calculates unique token to agent/client.
     private static final String          agent                             = "agent=JDownloader";
-    private static final String          agent_raw                         = "JDownloader";
+    public static final String           agent_raw                         = "JDownloader";
     private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
     /* New APIv4 apikey --> Replaces old token */
     private static final String          PROPERTY_apikey                   = "apiv4_apikey";
@@ -108,7 +108,7 @@ public class AllDebridCom extends antiDDoSForHost {
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
         synchronized (account) {
             try {
-                String apikey = account.getStringProperty(PROPERTY_apikey, null);
+                String apikey = getStoredApiKey(account);
                 if (apikey != null) {
                     try {
                         loginAccount(account, accountInfo, apikey);
@@ -788,7 +788,7 @@ public class AllDebridCom extends antiDDoSForHost {
 
     private String loadApikey(final Account account) throws Exception {
         synchronized (account) {
-            String ret = account.getStringProperty(PROPERTY_apikey, null);
+            String ret = getStoredApiKey(account);
             if (ret == null) {
                 ret = fetchApikey(account, null);
                 if (ret == null) {
@@ -802,7 +802,11 @@ public class AllDebridCom extends antiDDoSForHost {
         }
     }
 
-    private void showMessage(DownloadLink link, String message) {
+    public static String getStoredApiKey(final Account account) {
+        return account.getStringProperty(PROPERTY_apikey);
+    }
+
+    private void showMessage(final DownloadLink link, final String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
