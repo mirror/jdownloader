@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -138,9 +139,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -251,65 +252,92 @@ public class MegaConz extends PluginForDecrypt {
                     }
                 }
                 if (!isAbort()) {
-                    logger.info("Fill Cache:Nodes" + parsedNodes.size() + "|FolderID" + folderID);
+                    final Iterator<Map<String, Object>> it = parsedNodes.iterator();
+                    while (it.hasNext()) {
+                        final Map<String, Object> parsedNode = it.next();
+                        if (isAbort()) {
+                            throw new InterruptedException();
+                        } else {
+                            final String encryptedNodeKey = new Regex(parsedNode.remove("k"), ":([^:]*?)$").getMatch(0);
+                            if (encryptedNodeKey == null) {
+                                it.remove();
+                                logger.info("NodeKey missing:" + JSonStorage.toString(parsedNode));
+                                continue;
+                            }
+                            final String nodeKey;
+                            try {
+                                nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
+                            } catch (InvalidKeyException e) {
+                                logger.log(e);
+                                decryptedLinks.add(createOfflinelink(parameter.toString()));
+                                return decryptedLinks;
+                            }
+                            final String nodeAttr = decrypt((String) parsedNode.remove("a"), nodeKey);
+                            if (nodeAttr == null) {
+                                it.remove();
+                                logger.info("NodeAttr missing:" + JSonStorage.toString(parsedNode));
+                                continue;
+                            }
+                            final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
+                            final String nodeType = String.valueOf(parsedNode.remove("t"));
+                            if ("1".equals(nodeType)) {
+                                parsedNode.put("nodeDirectory", Boolean.TRUE);
+                            } else if ("0".equals(nodeType)) {
+                                // parsedNode.put("nodeDirectory", Boolean.FALSE);
+                                final Long nodeSize = JavaScriptEngineFactory.toLong(parsedNode.remove("s"), -1);
+                                if (nodeSize == -1) {
+                                    it.remove();
+                                    logger.info("NodeSize missing:" + JSonStorage.toString(parsedNode));
+                                    continue;
+                                } else {
+                                    parsedNode.put("nodeSize", nodeSize);
+                                }
+                            } else {
+                                it.remove();
+                                logger.info("Unknown type(" + nodeType + "):" + JSonStorage.toString(parsedNode));
+                                continue;
+                            }
+                            parsedNode.put("nodeKey", nodeKey);
+                            parsedNode.put("nodeName", nodeName);
+                        }
+                    }
+                    logger.info("Fill Cache:Nodes:" + parsedNodes.size() + "|FolderID:" + folderID);
                     folderNodes.addAll(parsedNodes);
                 }
             }
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         final HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
         for (final Map<String, Object> folderNode : folderNodes) {
-            final String encryptedNodeKey = new Regex(folderNode.get("k"), ":([^:]*?)$").getMatch(0);
-            if (encryptedNodeKey == null) {
-                continue;
-            }
             if (isAbort()) {
                 break;
             }
             final String nodeID = (String) folderNode.get("h");
             final String nodeParentID = (String) folderNode.get("p");
-            final String nodeKey;
-            try {
-                nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
-            } catch (InvalidKeyException e) {
-                logger.log(e);
-                decryptedLinks.add(createOfflinelink(parameter.toString()));
-                return decryptedLinks;
-            }
-            final String nodeAttr = decrypt((String) folderNode.get("a"), nodeKey);
-            if (nodeAttr == null) {
-                continue;
-            }
-            final String nodeName = removeEscape(new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)(?<!\\\\)\"").getMatch(0));
-            final String nodeType = String.valueOf(folderNode.get("t"));
-            if ("1".equals(nodeType)) {
-                /* folder */
+            if (folderNode.containsKey("nodeDirectory")) {
+                final String nodeName = (String) folderNode.get("nodeName");
                 final MegaFolder fo = new MegaFolder(nodeID);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
-            } else if ("0".equals(nodeType)) {
-                /* file */
-                final Long nodeSize = JavaScriptEngineFactory.toLong(folderNode.get("s"), -1);
-                if (nodeSize == -1) {
-                    continue;
-                }
+            } else {
+                final Long nodeSize = (Long) folderNode.get("nodeSize");
                 final MegaFolder folder = folders.get(nodeParentID);
                 if (StringUtils.isNotEmpty(preferredNodeID)) {
                     // see RewriteMegaConz
@@ -349,6 +377,8 @@ public class MegaConz extends PluginForDecrypt {
                 if (folderNodeID != null && !StringUtils.equalsIgnoreCase(nodeID, folderNodeID)) {
                     continue;
                 }
+                final String nodeName = (String) folderNode.get("nodeName");
+                final String nodeKey = (String) folderNode.get("nodeKey");
                 final String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
                 final DownloadLink link;
                 if (folderID == null) {
@@ -403,8 +433,9 @@ public class MegaConz extends PluginForDecrypt {
     private String removeEscape(String match) {
         if (match != null) {
             return match.replaceAll("\\\\", "");
+        } else {
+            return null;
         }
-        return null;
     }
 
     private String getRelPath(MegaFolder folder, HashMap<String, MegaFolder> folders) {

@@ -23,15 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.segment.Segment;
-import org.jdownloader.downloader.segment.SegmentDownloader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -44,6 +35,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.Segment;
+import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NinjastreamTo extends PluginForHost {
@@ -132,7 +132,7 @@ public class NinjastreamTo extends PluginForHost {
         }
         entries = (Map<String, Object>) entries.get("result");
         String filename = (String) entries.get("name");
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
         final String md5 = (String) entries.get("hash");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
@@ -140,7 +140,9 @@ public class NinjastreamTo extends PluginForHost {
             /* Fallback */
             link.setName(this.getFallbackFilename(link));
         }
-        link.setDownloadSize(filesize);
+        if (filesize > 0) {
+            link.setVerifiedFileSize(filesize);
+        }
         if (md5 != null) {
             link.setMD5Hash(md5);
         }

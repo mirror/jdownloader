@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
@@ -134,7 +136,7 @@ public class RealDebridCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal("rdeb.io", 500);
     }
 
-    private <T> T callRestAPI(final Account account, String method, UrlQuery query, TypeRef<T> type) throws Exception {
+    private <T> T callRestAPI(final Account account, String method, UrlQuery query, TypeRef<T> type) throws IOException, PluginException, APIException, InterruptedException {
         if (account == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -144,22 +146,26 @@ public class RealDebridCom extends PluginForHost {
             final T ret = callRestAPIInternal(token, "https://api.real-debrid.com/rest/1.0" + method, query, type);
             this.currentToken = token;
             return ret;
-        } catch (APIException e) {
+        } catch (final APIException e) {
             switch (e.getError()) {
             case BAD_LOGIN:
             case BAD_TOKEN:
-                // refresh Token
-                token = login(account, true);
-                final T ret = callRestAPIInternal(token, "https://api.real-debrid.com/rest/1.0" + method, query, type);
-                this.currentToken = token;
-                return ret;
+                try {
+                    // refresh Token
+                    token = login(account, true);
+                    final T ret = callRestAPIInternal(token, "https://api.real-debrid.com/rest/1.0" + method, query, type);
+                    this.currentToken = token;
+                    return ret;
+                } catch (final APIException e2) {
+                    throw handleAPIException(Exceptions.addSuppressed(e2, e), account, null);
+                }
             default:
-                throw e;
+                throw handleAPIException(e, account, null);
             }
         }
     }
 
-    protected synchronized <T> T callRestAPIInternal(TokenResponse token, String url, UrlQuery query, TypeRef<T> type) throws Exception {
+    protected synchronized <T> T callRestAPIInternal(TokenResponse token, String url, UrlQuery query, TypeRef<T> type) throws IOException, PluginException, APIException {
         if (token != null) {
             apiBrowser.getHeaders().put(AUTHORIZATION, "Bearer " + token.getAccess_token());
         }
@@ -198,10 +204,6 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
-    private <T> T callRestAPI(final Account account, String method, TypeRef<T> type) throws Exception {
-        return callRestAPI(account, method, null, type);
-    }
-
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
         if (isDirectRealDBUrl(downloadLink)) {
@@ -215,17 +217,46 @@ public class RealDebridCom extends PluginForHost {
         }
     }
 
+    private APIException handleAPIException(final APIException e, final Account account, final DownloadLink link) throws APIException, PluginException {
+        switch (e.getError()) {
+        case IP_ADRESS_FORBIDDEN:
+            if (account != null) {
+                throw new AccountUnavailableException(e, e.getMessage(), 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, e.getMessage(), 60 * 60 * 1000l, e);
+            }
+        case BAD_LOGIN:
+        case BAD_TOKEN:
+            throw new AccountInvalidException(e, e.getMessage());
+        case SERVICE_UNAVAILABLE:
+            if (account != null) {
+                throw new AccountUnavailableException(e, e.getMessage(), 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1000l, e);
+            }
+        case ACCOUNT_LOCKED:
+        case ACCOUNT_NOT_ACTIVATED:
+            if (account != null) {
+                throw new AccountInvalidException(e, e.getMessage());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            }
+        default:
+            throw e;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        final UserResponse user = callRestAPI(account, "/user", UserResponse.TYPE);
-        if ("premium".equalsIgnoreCase(user.getType())) {
+        final UserResponse user = callRestAPI(account, "/user", null, UserResponse.TYPE);
+        if (StringUtils.equalsIgnoreCase("premium", user.getType())) {
             ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
             ai.setValidUntil(TimeFormatter.getTimestampByGregorianTime(user.getExpiration()));
-            final HashMap<String, HostsResponse> hosts = callRestAPI(account, "/hosts", new TypeRef<HashMap<String, HostsResponse>>() {
+            final HashMap<String, HostsResponse> hosts = callRestAPI(account, "/hosts", null, new TypeRef<HashMap<String, HostsResponse>>() {
             });
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             for (Entry<String, HostsResponse> es : hosts.entrySet()) {
@@ -334,7 +365,7 @@ public class RealDebridCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'An error occurred while generating a premium link'", 3 * 60 * 1000l);
                 } else if (br.containsHTML("currently downloading and this hoster is limited")) {
                     // You can not download this file because you already have download(s) currently downloading and this hoster is limited.
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
+                    throw tempUnavailableHoster(null, acc, link, 15 * 60 * 1000l);
                 } else if (link.getHost().equals(this.getHost())) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -426,20 +457,18 @@ public class RealDebridCom extends PluginForHost {
             showMessage(link, "Task " + (startTaskIndex + 2) + ": Download begins!");
             try {
                 handleDL(account, link, genLnk, linkresp);
-            } catch (PluginException e1) {
-                logger.log(e1);
+            } catch (PluginException e) {
+                logger.log(e);
                 try {
                     dl.getConnection().disconnect();
-                } catch (final Throwable e) {
+                } catch (final Throwable ignore) {
                 }
                 if (br.containsHTML("An error occurr?ed while generating a premium link, please contact an Administrator")) {
                     logger.info("Error while generating premium link, removing host from supported list");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
-                if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
+                    throw tempUnavailableHoster(e, account, link, 60 * 60 * 1000l);
+                } else if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-                }
-                if (br.containsHTML("Your code is not or no longer valid")) {
+                } else if (br.containsHTML("Your code is not or no longer valid")) {
                     if (false && !currentToken._isVerified()) {
                         // seems not connected to current token
                         synchronized (account) {
@@ -452,39 +481,36 @@ public class RealDebridCom extends PluginForHost {
                             }
                         }
                     }
-                    tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-                }
-                if (br.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
-                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 && br.containsHTML(">The download server is down or banned from our server")) {
+                    throw tempUnavailableHoster(e, account, link, 30 * 60 * 1000l);
+                } else if (br.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
+                    throw tempUnavailableHoster(e, account, link, 60 * 60 * 1000l);
+                } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 && br.containsHTML(">The download server is down or banned from our server")) {
                     // <div class="alert alert-danger">An error occurred while read your file on the remote host ! Timeout of 60s exceeded
                     // !<br/>The download server is down or banned from our server, please contact an Administrator with these following
                     // informations :<br/><br/>Link: http://abc <br/>Server: 130<br/>Code: HASH</div>
-                    tempUnavailableHoster(account, link, 5 * 60 * 1000l);
+                    throw tempUnavailableHoster(e, account, link, 5 * 60 * 1000l);
+                } else {
+                    throw e;
                 }
-                throw e1;
             }
         } catch (APIException e) {
             switch (e.getError()) {
-            case IP_ADRESS_FORBIDDEN:
-                throw new PluginException(LinkStatus.ERROR_FATAL, e.getMessage());
             case FILE_UNAVAILABLE:
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.downloadlink_status_error_hoster_temp_unavailable(), 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.downloadlink_status_error_hoster_temp_unavailable(), 10 * 60 * 1000l, e);
             case UNSUPPORTED_HOSTER:
                 // logger.severe("Unsupported Hoster: " + link.getDefaultPlugin().buildExternalDownloadURL(link, this));
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported Hoster: " + link.getHost());
                 // 20170501-raztoki not unsupported url format. When this error is returned by rd, we should just jump to the next download
                 // candidate, as another link from the same host might work.
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, e.getMessage(), e);
             case HOSTER_TEMP_UNAVAILABLE:
             case HOSTER_IN_MAINTENANCE:
             case HOSTER_LIMIT_REACHED:
             case HOSTER_PREMIUM_ONLY:
-                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
-                return;
+            case TRAFFIC_EXHAUSTED:
+                throw tempUnavailableHoster(e, account, link, 30 * 60 * 1000l);
             default:
-                throw e;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), e);
             }
         }
     }
@@ -513,7 +539,7 @@ public class RealDebridCom extends PluginForHost {
         return callRestAPIInternal(null, API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
     }
 
-    private TokenResponse login(Account account, boolean force) throws Exception {
+    private TokenResponse login(Account account, boolean force) throws PluginException, IOException, APIException, InterruptedException {
         synchronized (account) {
             try {
                 // first try to use the stored token
@@ -791,8 +817,10 @@ public class RealDebridCom extends PluginForHost {
         if (isDirectRealDBUrl(link)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(link.getDownloadURL());
-                if (con.isContentDisposition() && con.isOK()) {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openGetConnection(link.getDownloadURL());
+                if (looksLikeDownloadableContent(con)) {
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(getFileNameFromHeader(con));
                     }
@@ -800,6 +828,11 @@ public class RealDebridCom extends PluginForHost {
                     link.setAvailable(true);
                     return AvailableStatus.TRUE;
                 } else {
+                    try {
+                        brc.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } catch (final PluginException e) {
@@ -808,18 +841,21 @@ public class RealDebridCom extends PluginForHost {
                 logger.log(e);
                 return AvailableStatus.UNCHECKABLE;
             } finally {
-                try {
-                    /* make sure we close connection */
-                    con.disconnect();
-                } catch (final Throwable e) {
+                if (con != null) {
+                    try {
+                        /* make sure we close connection */
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         } else {
-            final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
+            final List<Account> accounts = AccountController.getInstance().getValidAccounts(getHost());
             if (accounts != null && accounts.size() > 0) {
                 return check(accounts.get(0), link);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
@@ -850,19 +886,20 @@ public class RealDebridCom extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private PluginException tempUnavailableHoster(Exception e, Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!", e);
+        } else {
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap == null) {
+                    unavailableMap = new HashMap<String, Long>();
+                    hostUnavailableMap.put(account, unavailableMap);
+                }
+                /* wait 30 mins to retry this host */
+                unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
             }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
         }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 }
