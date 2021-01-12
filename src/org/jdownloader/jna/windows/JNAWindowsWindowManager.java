@@ -31,6 +31,8 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
                     // User32.INSTANCE.AnimateWindow(new HWND(Native.getComponentPointer(w)), 500, 0x00040000l | 0x00000004l);
                     // System.out.println(Kernel32Util.formatMessageFromLastErrorCode(Native.getLastError()));
                     return;
+                default:
+                    break;
                 }
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
