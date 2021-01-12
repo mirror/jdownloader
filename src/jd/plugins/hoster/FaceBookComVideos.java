@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -27,6 +28,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
@@ -240,6 +242,7 @@ public class FaceBookComVideos extends PluginForHost {
                         // link.setDownloadSize(SizeFormatter.getSize(contentSize));
                         // }
                     } catch (final Throwable e) {
+                        /* 2021-01-12: When user is loggedIN this is likely to happen! */
                         logger.log(e);
                         /*
                          * 2020-08-20: Very very very very rare case: Redirect to:
@@ -258,6 +261,14 @@ public class FaceBookComVideos extends PluginForHost {
                                 /* 2020-11-17: Fix sometimes double-escaped data */
                                 fallback_downloadurl = fallback_downloadurl.replace("\\", "");
                             }
+                            /* Try to get name of the uploader */
+                            if (entries.containsKey("videoURL")) {
+                                String videoURL = (String) entries.get("videoURL");
+                                if (!StringUtils.isEmpty(videoURL)) {
+                                    videoURL = PluginJSonUtils.unescape(videoURL);
+                                    uploader = new Regex(videoURL, "https?://[^/]+/([^/]+)/videos/" + videoID).getMatch(0);
+                                }
+                            }
                         } catch (final Throwable e2) {
                             e2.printStackTrace();
                             logger.info("json2 failed");
@@ -270,9 +281,33 @@ public class FaceBookComVideos extends PluginForHost {
                             }
                         }
                     }
+                    /*
+                     * Purposely do not check against empty string here! If we found an empty string inside json we will probably not find a
+                     * better result here!
+                     */
                     if (title == null) {
-                        /* Fallback - json is not always given */
+                        title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+                    }
+                    if (title == null) {
+                        title = br.getRegex("property=\"twitter:title\" content=\"([^<>\"]+)\"").getMatch(0);
+                    }
+                    if (title == null) {
+                        /* Final fallback - json is not always given and/or filename in json is not always given. */
                         title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    }
+                    if (dateFormatted == null) {
+                        /* Final fallback for uploadDate */
+                        final String dateStr = br.getRegex("photo_id\\." + videoID + "%3Astory_location\\.\\d+%3Astory_attachment_style\\.video_inline%3Atds_flgs.\\d+%3A[^\"]+\"><abbr>([^<>\"]+)").getMatch(0);
+                        if (dateStr != null) {
+                            if (dateStr.matches("\\d{1,2}\\. [A-Za-z]+ \\d{4} um \\d{2}:\\d{2}")) {
+                                final long timestamp = TimeFormatter.getMilliSeconds(dateStr, "dd'.' MMM yyyy 'um' HH:mm", Locale.GERMAN);
+                                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                                dateFormatted = formatter.format(new Date(timestamp));
+                            } else {
+                                /* TODO: Add support for other dateformats */
+                                logger.warning("Unsupported dateformat: " + dateStr);
+                            }
+                        }
                     }
                 } else {
                     /* Rare case */
@@ -365,17 +400,14 @@ public class FaceBookComVideos extends PluginForHost {
             }
             if (title != null) {
                 /* Some filename corrections */
-                String filename;
-                if (StringUtils.isAllNotEmpty(title, dateFormatted, uploader)) {
-                    filename = dateFormatted + "_";
-                    /* 2020-06-12: Uploader is not always given in json */
-                    if (uploader != null) {
-                        filename += uploader + "_";
-                    }
-                    filename += title;
-                } else {
-                    filename = title;
+                String filename = "";
+                if (dateFormatted != null) {
+                    filename += dateFormatted + "_";
                 }
+                if (uploader != null) {
+                    filename += uploader + "_";
+                }
+                filename += title;
                 filename = Encoding.htmlDecode(filename.trim());
                 // ive seen new lines within filename!
                 filename = filename.replaceAll("[\r\n]+", " ");
