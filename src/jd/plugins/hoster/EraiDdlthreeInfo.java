@@ -118,8 +118,8 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
 
     @Override
     public boolean requires_WWW() {
-        /* 2020-11-12 */
-        return false;
+        /* 2021-01-12 */
+        return true;
     }
 
     @Override
@@ -139,7 +139,7 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
     }
 
     @Override
-    public boolean isLoggedinSpecial() {
+    public boolean isLoggedin() {
         final boolean loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account/edit\"");
         return loggedIN;
     }
@@ -160,8 +160,8 @@ public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
     }
 
     @Override
-    protected String getInternalFileID(final DownloadLink link, final Browser br) throws PluginException {
-        final String internalFileID = super.getInternalFileID(link, null);
+    protected String getInternalFileIDNewWebsite(final DownloadLink link, final Browser br) throws PluginException {
+        final String internalFileID = super.getInternalFileIDNewWebsite(link, br);
         if (internalFileID == null) {
             /*
              * 2020-11-12: Cannot download without this ID! Needs to be set in crawler in beforehand! --> This should never happen because
