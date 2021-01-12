@@ -85,7 +85,7 @@ public class BbcCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vpid = new Regex(link.getDownloadURL(), "bbcdecrypted/(.+)").getMatch(0);
-        title = link.getStringProperty("decrypterfilename");
+        this.title = link.getStringProperty("decrypterfilename");
         /* 2021-01-12: useNewRequest! */
         final boolean useNewRequest = true;
         long filesize_temp = 0;
