@@ -64,6 +64,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         /* websites using the OLD style: */
         ret.add(new String[] { "upfordown.xyz" });
         ret.add(new String[] { "fireload.com" });
+        ret.add(new String[] { "easylinkz.net" });
         /* Websites using the NEW style: */
         ret.add(new String[] { "oxycloud.com" });
         ret.add(new String[] { "erai-ddl3.info" });
@@ -132,7 +133,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     final boolean validatedCookies = ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
                     br.setFollowRedirects(true);
                     getPage(parameter);
-                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedinSpecial()) {
+                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedin()) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
                         ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, true);
                         br.setFollowRedirects(true);

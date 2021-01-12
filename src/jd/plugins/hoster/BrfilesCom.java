@@ -165,7 +165,7 @@ public class BrfilesCom extends YetiShareCore {
     }
 
     @Override
-    protected boolean isLoggedin() {
+    public boolean isLoggedin() {
         return br.containsHTML("/logout/?\"");
     }
 

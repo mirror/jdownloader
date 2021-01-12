@@ -325,7 +325,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
-    /** Enable this if new YetiShare version is used. Only mandatory if auto handling fails. */
+    /** Enable this if new YetiShare version is used. Only mandatory if auto handling fails. E.g. oxycloud.com. */
     protected boolean usesNewYetiShareVersion() {
         return false;
     }
@@ -591,14 +591,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (this.dl == null) {
-                if (StringUtils.isEmpty(continue_link)) {
-                    checkErrors(link, account);
-                    continue_link = getContinueLink();
-                }
                 /* Passwords are usually before waittime. */
                 if (!this.handlePassword(link)) {
-                    /* New website layout password handling */
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && br.getFormbyKey("filePassword") != null) {
+                    /** New website layout password handling --> See {@link #usesNewYetiShareVersion()} */
+                    if (br.getFormbyKey("filePassword") != null) {
                         String passCode = link.getDownloadPassword();
                         if (passCode == null) {
                             passCode = getUserInput("Password?", link);
@@ -608,20 +604,32 @@ public class YetiShareCore extends antiDDoSForHost {
                         br.setFollowRedirects(false);
                         this.submitForm(pwform);
                         if (this.isDownloadlink(br.getRedirectLocation())) {
-                            /* Entered password is correct - we can start the download. */
+                            /*
+                             * We can start the download right away -> Entered password is correct and we're probably logged in into a
+                             * premium account.
+                             */
                             link.setDownloadPassword(passCode);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
                             dl.startDownload();
                         } else {
+                            /* No download -> Either wrong password or correct password & free download */
+                            br.setFollowRedirects(true);
                             br.followRedirect(true);
                             /* TODO: Add invalid PW detection for premium downloads! */
                             if (br.getFormbyKey("filePassword") != null) {
                                 /* Assume that entered password is wrong! */
                                 link.setDownloadPassword(null);
                                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                            } else {
+                                /* Correct password */
+                                link.setDownloadPassword(passCode);
                             }
                         }
                     }
+                }
+                if (StringUtils.isEmpty(continue_link)) {
+                    checkErrors(link, account);
+                    continue_link = getContinueLink();
                 }
                 /* Handle up to x pre-download pages before the (eventually existing) captcha */
                 final int startValue = 0;
@@ -644,19 +652,14 @@ public class YetiShareCore extends antiDDoSForHost {
                     } else {
                         /* Captcha or pre-download pages */
                         final String internalFileID = this.getInternalFileIDNewWebsite(link, this.br);
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && internalFileID != null) {
+                        if (internalFileID != null) {
                             /* New website layout handling */
-                            this.br.setFollowRedirects(false);
-                            br.getPage("/account/direct_download/" + internalFileID);
-                            final String dllink = br.getRedirectLocation();
-                            if (dllink == null) {
-                                this.checkErrors(link, account);
-                                checkErrorsLastResort(link, account);
-                            }
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + internalFileID, resume, maxchunks);
+                            break;
                         } else {
                             final Form continueform = getContinueForm(i, continue_link);
                             if (i == startValue && continueform == null) {
+                                /* First loop and no Form -> Give up */
                                 logger.info("No continue_form/continue_link available, plugin broken");
                                 checkErrorsLastResort(link, account);
                             } else if (continueform == null) {
@@ -711,7 +714,6 @@ public class YetiShareCore extends antiDDoSForHost {
                                 loopLog += " --> Form_POST";
                                 success = true;
                                 waitTime(link, timeBeforeCaptchaInput);
-                                /* Use URL instead of Form - it is all we need! */
                                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                             } else {
                                 if (continue_link == null) {
@@ -1596,7 +1598,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected boolean isLoggedin() {
+    public boolean isLoggedin() {
         return br.containsHTML("/logout\\.html\"");
     }
 
