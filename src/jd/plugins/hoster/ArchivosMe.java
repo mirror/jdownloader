@@ -99,7 +99,7 @@ public class ArchivosMe extends YetiShareCore {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -117,7 +117,8 @@ public class ArchivosMe extends YetiShareCore {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        // 2020-01-12: tested by user, more result in Error: Too many concurrent download requests.
+        return 5;
     }
 
     @Override

@@ -295,21 +295,28 @@ public class SegmentDownloader extends DownloadInterface {
     protected void cleanupDownladInterface() {
     }
 
-    private boolean handleErrors() throws PluginException {
+    protected void checkComplete(final List<Segment> segments, final long fileSize) throws PluginException {
+        for (final Segment segment : segments) {
+            if (!segment.isLoaded()) {
+                // ignore index>0 as it is not supported yet
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Segment:" + segment.getUrl() + " not loaded");
+            }
+        }
+        if (downloadable.getVerifiedFileSize() > 0 && downloadable.getVerifiedFileSize() != fileSize) {
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "Verified:" + downloadable.getVerifiedFileSize() + "!=" + fileSize);
+        }
+    }
+
+    protected boolean handleErrors() throws PluginException {
         if (externalDownloadStop()) {
             return false;
         }
         if (caughtPluginException == null) {
-            for (final Segment segment : segments) {
-                if (!segment.isLoaded()) {
-                    // ignore index>0 as it is not supported yet
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-            }
-            downloadable.setLinkStatus(LinkStatus.FINISHED);
-            final long fileSize = outputCompleteFile.length();
+            final long fileSize = outputPartFile.length();
+            checkComplete(segments, fileSize);
             downloadable.setDownloadBytesLoaded(fileSize);
             downloadable.setVerifiedFileSize(fileSize);
+            downloadable.setLinkStatus(LinkStatus.FINISHED);
             return true;
         } else {
             throw caughtPluginException;

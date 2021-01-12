@@ -139,12 +139,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /* Used variables */
     public String                 correctedBR                              = "";
     protected String              fuid                                     = null;
-    /*
-     * Note:Final value will be set later in init(). CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-     */
-    private static AtomicInteger  totalMaxSimultanFreeDownload             = new AtomicInteger(1);
     /* don't touch the following! */
-    private static AtomicInteger  maxFree                                  = new AtomicInteger(1);
+    private static AtomicInteger  freeRunning                              = new AtomicInteger(0);
     private static final String   PROPERTY_pw_required                     = "password_requested_by_website";
     protected static final String PROPERTY_captcha_required                = "captcha_requested_by_website";
     protected static final String PROPERTY_ACCOUNT_apikey                  = "apikey";
@@ -159,16 +155,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
      */
-    @Override
-    public void init() {
-        /* Errorhandling as we should not set negative values her!! */
-        if (getMaxSimultaneousFreeAnonymousDownloads() < 0) {
-            totalMaxSimultanFreeDownload.set(20);
-        } else {
-            totalMaxSimultanFreeDownload.set(getMaxSimultaneousFreeAnonymousDownloads());
-        }
-    }
-
     @Override
     public String getAGBLink() {
         return this.getMainPage() + "/tos.html";
@@ -230,7 +216,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        int max = getMaxSimultaneousFreeAnonymousDownloads();
+        if (max < 0) {
+            max = 20;
+        }
+        final int running = freeRunning.get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
     public int getMaxSimultaneousFreeAnonymousDownloads() {
@@ -2436,10 +2428,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @param num
      *            : (+1|-1)
      */
-    protected synchronized void controlFree(final int num) {
-        logger.info("maxFree was = " + maxFree.get());
-        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-        logger.info("maxFree now = " + maxFree.get());
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     @Override
@@ -3792,16 +3789,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             try {
                 /* add a download slot */
-                if (account == null) {
-                    controlFree(+1);
-                }
+                controlMaxFreeDownloads(account, link, +1);
                 /* start the dl */
                 dl.startDownload();
             } finally {
                 /* remove download slot */
-                if (account == null) {
-                    controlFree(-1);
-                }
+                controlMaxFreeDownloads(account, link, -1);
             }
         } else {
             if (StringUtils.isEmpty(dllink) || (!dllink.startsWith("http") && !dllink.startsWith("rtmp") && !dllink.startsWith("/"))) {
@@ -3835,16 +3828,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 try {
                     /* add a download slot */
-                    if (account == null) {
-                        controlFree(+1);
-                    }
+                    controlMaxFreeDownloads(account, link, +1);
                     /* start the dl */
                     ((RTMPDownload) dl).startDownload();
                 } finally {
                     /* remove download slot */
-                    if (account == null) {
-                        controlFree(-1);
-                    }
+                    controlMaxFreeDownloads(account, link, -1);
                 }
             } else if (dllink.contains(".m3u8")) {
                 /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com, vidlox.me) */
@@ -3853,16 +3842,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 dl = new HLSDownloader(link, br, dllink);
                 try {
                     /* add a download slot */
-                    if (account == null) {
-                        controlFree(+1);
-                    }
+                    controlMaxFreeDownloads(account, link, +1);
                     /* start the dl */
                     dl.startDownload();
                 } finally {
                     /* remove download slot */
-                    if (account == null) {
-                        controlFree(-1);
-                    }
+                    controlMaxFreeDownloads(account, link, -1);
                 }
             } else {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
@@ -3879,16 +3864,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 try {
                     /* add a download slot */
-                    if (account == null) {
-                        controlFree(+1);
-                    }
+                    controlMaxFreeDownloads(account, link, +1);
                     /* start the dl */
                     dl.startDownload();
                 } finally {
                     /* remove download slot */
-                    if (account == null) {
-                        controlFree(-1);
-                    }
+                    controlMaxFreeDownloads(account, link, -1);
                 }
             }
         }

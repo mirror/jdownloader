@@ -40,36 +40,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.InputDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.swing.dialog.InputDialog;
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.controlling.FileStateManager;
-import org.jdownloader.controlling.FileStateManager.FILESTATE;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -101,6 +71,36 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.InputDialog;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
     private final String USE_SSL                                                       = "USE_SSL_V3";
@@ -108,6 +108,7 @@ public class MegaConz extends PluginForHost {
     private final String USE_TMP                                                       = "USE_TMP_V2";
     private final String HIDE_APP                                                      = "HIDE_APP_V2";
     private final String ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
+    private final String ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
     private final String ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER = "ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER";
     private final String USED_PLUGIN                                                   = "usedPlugin";
     private final String encrypted                                                     = ".encrypted";
@@ -143,8 +144,7 @@ public class MegaConz extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
-                    new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
             if (uq == null) {
@@ -316,8 +316,7 @@ public class MegaConz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
-                                new Object[] { "uh"/* emailHash */, uh });
+                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
                     } catch (PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE && account.getBooleanProperty("mfa", Boolean.FALSE)) {
                             try {
@@ -325,8 +324,7 @@ public class MegaConz extends PluginForHost {
                                 mfaDialog.setTimeout(5 * 60 * 1000);
                                 final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
                                 handler.throwCloseExceptions();
-                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
-                                        new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
+                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
                                 throw Exceptions.addSuppressed(e, e2);
                             }
@@ -422,7 +420,7 @@ public class MegaConz extends PluginForHost {
                 if (requestResponseString.matches("^\\s*-?\\d+\\s*$")) {
                     errorCode = Integer.parseInt(requestResponseString);
                 } else if (requestResponseString.matches("^\\s*\\[.*")) {
-                    final List<Object> requestResponse = JSonStorage.restoreFromString(requestResponseString, TypeRef.LIST, null);
+                    final List<Object> requestResponse = JSonStorage.restoreFromString(requestResponseString, TypeRef.LIST);
                     if (requestResponse != null && requestResponse.size() == 1) {
                         final Object responseObject = requestResponse.get(0);
                         if (responseObject instanceof Map) {
@@ -1020,7 +1018,7 @@ public class MegaConz extends PluginForHost {
             /* verify if the keyString is correct */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return JSonStorage.restoreFromString(ret.substring(4), TypeRef.HASHMAP, null);
+        return JSonStorage.restoreFromString(ret.substring(4), TypeRef.HASHMAP);
     }
 
     public String getError(Browser br) {
@@ -1054,12 +1052,13 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_CONCURRENT_DECRYPTION, JDL.L("plugins.hoster.megaconz.concurrentdecryption", "Allow concurrent decryption?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry cfgMulti = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, "Allow multihoster usage?").setDefaultValue(true);
         getConfig().addEntry(cfgMulti);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER, "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.").setDefaultValue(false).setEnabledCondidtion(cfgMulti, true));
     }
 
-    private static Object         DECRYPTLOCK            = new Object();
     private volatile DownloadLink decryptingDownloadLink = null;
 
     private void decrypt(final String path, AtomicLong encryptionDone, AtomicBoolean successFulFlag, final DownloadLink link, String keyString) throws Exception {
@@ -1164,7 +1163,7 @@ public class MegaConz extends PluginForHost {
                 try {
                     message.set("Queued for decryption");
                     link.addPluginProgress(progress);
-                    synchronized (DECRYPTLOCK) {
+                    synchronized (getDecryptionLock(link)) {
                         message.set("Decrypting");
                         fis = new FileInputStream(src);
                         try {
@@ -1238,6 +1237,16 @@ public class MegaConz extends PluginForHost {
             }
         } finally {
             ShutdownController.getInstance().removeShutdownVetoListener(vetoListener);
+        }
+    }
+
+    private static Object GLOBAL_DECRYPTION_LOCK = new Object();
+
+    private Object getDecryptionLock(final DownloadLink link) {
+        if (getPluginConfig().getBooleanProperty(ALLOW_CONCURRENT_DECRYPTION, false)) {
+            return new AtomicReference<DownloadLink>(link);
+        } else {
+            return GLOBAL_DECRYPTION_LOCK;
         }
     }
 
