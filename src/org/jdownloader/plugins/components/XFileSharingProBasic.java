@@ -840,7 +840,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
-        /* 2019-05-08: 'Forum Code': Sharebox with filename & filesize (bytes), example: snowfiles.com, brupload.net, qtyfiles.com */
+        /* 2019-05-08: 'Forum Code': Sharebox with filename & filesize (bytes), example: brupload.net, qtyfiles.com */
         final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "[^\\]]*?\\]([^\"/]*?)\\s*\\-\\s*(\\d+)\\[/URL\\]";
         /* First found for pixroute.com URLs */
         final String sharebox2_without_filesize = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "/([^<>\"/\\]]*?)(?:\\.html)?\\]";
