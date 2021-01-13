@@ -1126,9 +1126,9 @@ public class YetiShareCore extends antiDDoSForHost {
             final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
             if (errorMap == null) {
                 /* Not all websites have (all) language keys present e.g. ultimbox.com */
-                logger.info("Failed to find error_key --> Trying checkErrorsURLOld");
-                checkErrorsURLOld(link, account);
-                logger.info("checkErrorsURLOld did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                logger.info("Failed to find error_key --> Trying checkErrorsURL");
+                checkErrorsURL(link, account);
+                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
             }
             final String errorkey = (String) errorMap.get("error_key");
@@ -1203,9 +1203,9 @@ public class YetiShareCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, waittime);
                 }
             } else {
-                logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURLOld");
-                checkErrorsURLOld(link, account);
-                logger.info("checkErrorsURLOld did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURL");
+                checkErrorsURL(link, account);
+                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsgURL + " | Errorkey: " + errorkey);
             }
         }
@@ -1243,7 +1243,7 @@ public class YetiShareCore extends antiDDoSForHost {
          * Old / fallback / English / additional errorhandling - please leave this here although checkErrorsLanguageIndependant should cover
          * most of all errors
          */
-        checkErrorsURLOld(link, account);
+        checkErrorsURL(link, account);
         if (br.toString().equals("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
         } else if (br.toString().equals("ERROR: Wrong IP")) {
@@ -1275,9 +1275,12 @@ public class YetiShareCore extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    @Deprecated
-    /** It is intended to replace this with checkErrorsLanguageIndependant! */
-    private void checkErrorsURLOld(final DownloadLink link, final Account account) throws PluginException {
+    /**
+     * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
+     * YetiShare are using different errors and not all have their full language keys available. Newer versions of YetiShare don't provide
+     * any language keys at all.
+     */
+    private void checkErrorsURL(final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL();
         final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
@@ -1286,9 +1289,16 @@ public class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Could not open file for reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-        } else if (url != null && new Regex(url, Pattern.compile(".*?\\?e=(You must wait |Você deve esperar).*?", Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new AccountRequiredException();
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
+            /* 2020-01-08: letsupload.io & oxycloud.com */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (errorMsgURL != null && new Regex(errorMsgURL, Pattern.compile(".*(You must wait |Você deve esperar).*", Pattern.CASE_INSENSITIVE)).matches()) {
             final long extraWaittimeMilliseconds = 1000;
-            long waittime = this.parseWaittime(url);
+            long waittime = this.parseWaittime(errorMsgURL);
             if (waittime <= 0) {
                 /* Fallback */
                 logger.info("Waittime RegExes seem to be broken - using default waittime");
@@ -1303,13 +1313,8 @@ public class YetiShareCore extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-        } else if (url != null && new Regex(url, Pattern.compile(".*?(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika|/register\\.).+", Pattern.CASE_INSENSITIVE)).matches()) {
-            throw new AccountRequiredException();
-        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 3 * 60 * 60 * 1001l);
-        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
-            /* 2020-01-08: letsupload.io & oxycloud.com */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (errorMsgURL != null) {
+            logger.info("Unidentified error happened: " + errorMsgURL);
         }
     }
 

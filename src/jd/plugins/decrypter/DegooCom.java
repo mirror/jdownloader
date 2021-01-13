@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "degoo.com" }, urls = { "https?://(?:cloud|app)\\.degoo\\.com/share/([A-Za-z0-9]+)(\\?ID=\\d+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "degoo.com" }, urls = { "https?://(?:cloud|app)\\.degoo\\.com/share/([A-Za-z0-9]+)(.*\\?ID=\\d+)?" })
 public class DegooCom extends PluginForDecrypt {
     public DegooCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,13 +80,14 @@ public class DegooCom extends PluginForDecrypt {
             entries = (HashMap<String, Object>) ressourceO;
             final String title = (String) entries.get("Name");
             final int filesize = ((Integer) entries.get("Size")).intValue();
-            final int categoryID = ((Integer) entries.get("Category")).intValue();
+            final boolean isFolder = ((Boolean) entries.get("IsContainer")).booleanValue();
+            // final int categoryID = ((Integer) entries.get("Category")).intValue();
             final String id = Long.toString(((Long) entries.get("ID")).longValue());
             if (StringUtils.isEmpty(title) || id.equals("0")) {
                 /* Skip invalid items */
                 continue;
             }
-            if (categoryID == 0) {
+            if (!isFolder) {
                 /* File */
                 final String directurl = (String) entries.get("URL");
                 final String contentURL = "https://cloud.degoo.com/share/" + folderID + "?ID=" + id;

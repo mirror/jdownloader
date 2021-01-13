@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class VisharePl extends YetiShareCoreSpecialOxycloud {
+public class VisharePl extends YetiShareCoreNew {
     public VisharePl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://" + this.getHost() + "/upgrade/2");
