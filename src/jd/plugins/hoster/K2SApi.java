@@ -372,7 +372,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     final String name = PluginJSonUtils.getJsonValue(filter, "name");
                     final String size = PluginJSonUtils.getJsonValue(filter, "size");
-                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
+                    final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");// only available for file owner
                     final String access = PluginJSonUtils.getJsonValue(filter, "access");
                     final String isFolder = PluginJSonUtils.getJsonValue(filter, "is_folder");
                     if (!dl.isNameSet()) {
