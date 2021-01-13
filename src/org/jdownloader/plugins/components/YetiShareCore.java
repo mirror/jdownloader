@@ -996,37 +996,6 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         return fallback_filename;
     }
-    /**
-     * @return true: file is password protected</br>
-     *         false: file is not password protected
-     */
-    // private boolean handlePassword(final DownloadLink dl) throws Exception {
-    // /* "Old website style" handling */
-    // /* TODO: Check password handling in premium mode! */
-    // if (br.getURL().contains("/file_password.html")) {
-    // logger.info("Current link is password protected");
-    // String passCode = dl.getStringProperty("pass", null);
-    // if (passCode == null) {
-    // passCode = Plugin.getUserInput("Password?", dl);
-    // if (passCode == null || passCode.equals("")) {
-    // logger.info("User has entered blank password, exiting handlePassword");
-    // dl.setDownloadPassword(null);
-    // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-    // }
-    // dl.setDownloadPassword(passCode);
-    // }
-    // postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFUID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
-    // if (br.getURL().contains("/file_password.html")) {
-    // logger.info("User entered incorrect password --> Retrying");
-    // dl.setDownloadPassword(null);
-    // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-    // }
-    // logger.info("User entered correct password --> Continuing");
-    // return true;
-    // } else {
-    // return false;
-    // }
-    // }
 
     /**
      * Handles pre download (pre-captcha[first attempt]) waittime.
