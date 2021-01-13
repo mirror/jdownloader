@@ -27,16 +27,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,6 +52,17 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -506,6 +507,24 @@ public class XHamsterCom extends PluginForHost {
         case 1:
             qualities.add("240p");
         }
+        try {
+            final Map<String, Object> json = JSonStorage.restoreFromString(br.getRegex(">\\s*window.initials\\s*=\\s*(\\{.*?\\})\\s*;\\s*<").getMatch(0), TypeRef.HASHMAP);
+            final List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
+            if (sources != null) {
+                for (final String quality : qualities) {
+                    for (Map<String, Object> source : sources) {
+                        if (StringUtils.equalsIgnoreCase(quality, (String) source.get("quality"))) {
+                            String url = (String) source.get("url");
+                            url = br.getURL(url).toString();
+                            logger.info("Sources:" + quality + "->" + url);
+                            return url;
+                        }
+                    }
+                }
+            }
+        } catch (JSonMapperException e) {
+            logger.log(e);
+        }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
             // new player
@@ -517,6 +536,7 @@ public class XHamsterCom extends PluginForHost {
                         final List<String> urls = (List<String>) list;
                         if (urls.size() > 0) {
                             vq = quality;
+                            logger.info("videoUrls:" + quality + "->" + quality);
                             return urls.get(0);
                         }
                     }
@@ -531,9 +551,9 @@ public class XHamsterCom extends PluginForHost {
                     url = JSonStorage.restoreFromString(url, TypeRef.STRING);
                     if (StringUtils.containsIgnoreCase(url, ".mp4")) {
                         final boolean verified = verifyURL(url);
-                        logger.info("url: " + url + "|verified:" + verified);
                         if (verified) {
                             vq = quality;
+                            logger.info("oldPlayer:" + quality + "->" + quality);
                             return url;
                         }
                     }
@@ -553,6 +573,7 @@ public class XHamsterCom extends PluginForHost {
                 }
                 if (best != null) {
                     vq = quality;
+                    logger.info("old3D" + quality + "->" + quality);
                     return best;
                 }
             }
@@ -586,6 +607,7 @@ public class XHamsterCom extends PluginForHost {
                 // Examplelink (ID): 986043
                 ret = server + "/key=" + file;
             }
+            logger.info("urlmode:" + urlmodeint + "->" + ret);
         } else {
             /* E.g. url_mode == 3 */
             /* Example-ID: 685813 */
@@ -608,6 +630,7 @@ public class XHamsterCom extends PluginForHost {
                 for (final String quality : qualities2) {
                     ret = new Regex(flashvars, "\"" + quality + "\"\\s*:\\s*\\[\"(https?[^<>\"]*?)\"\\]").getMatch(0);
                     if (ret != null) {
+                        logger.info("urlmode:" + urlmodeint + "|quality:" + quality + "->" + ret);
                         break;
                     }
                 }
@@ -619,15 +642,17 @@ public class XHamsterCom extends PluginForHost {
             if (ret == null) {
                 ret = PluginJSonUtils.getJson(br, "fallback");
                 ret = ret.replace("\\", "");
+                logger.info("urlmode(fallback):" + urlmodeint + "->" + ret);
             }
         }
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            if (ret.contains("&amp;")) {
+                ret = Encoding.htmlDecode(ret);
+            }
+            return ret;
         }
-        if (ret.contains("&amp;")) {
-            ret = Encoding.htmlDecode(ret);
-        }
-        return ret;
     }
 
     public boolean verifyURL(String url) throws IOException, PluginException {
