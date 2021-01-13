@@ -13,12 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -31,7 +31,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/(videos/watch/video|watch/video)/.+" })
 public class BingCom extends PluginForDecrypt {
-
     public BingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -62,7 +61,7 @@ public class BingCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        final SubConfiguration cfg = SubConfiguration.getConfig("video.msn.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         final ArrayList<String[]> selectedQualities = new ArrayList<String[]>();
         // 1002 == 102
@@ -145,5 +144,4 @@ public class BingCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }
