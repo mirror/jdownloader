@@ -24,8 +24,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 /** TODO: Move to JDownloader/src/jdownloader/plugins/components */
-public class YetiShareCoreSpecialOxycloud extends YetiShareCore {
-    public YetiShareCoreSpecialOxycloud(PluginWrapper wrapper) {
+public class YetiShareCoreNew extends YetiShareCore {
+    public YetiShareCoreNew(PluginWrapper wrapper) {
         super(wrapper);
     }
 

@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class EraiDdlthreeInfo extends YetiShareCoreSpecialOxycloud {
+public class EraiDdlthreeInfo extends YetiShareCoreNew {
     public EraiDdlthreeInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + this.getHost() + "/register");

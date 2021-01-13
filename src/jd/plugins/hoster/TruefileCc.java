@@ -18,16 +18,17 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class LetsuploadCo extends YetiShareCoreNew {
-    public LetsuploadCo(PluginWrapper wrapper) {
+public class TruefileCc extends YetiShareCoreNew {
+    public TruefileCc(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -36,14 +37,14 @@ public class LetsuploadCo extends YetiShareCoreNew {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-04-25: no limits at all<br />
-     * captchatype-info: 2019-04-25: null<br />
+     * limit-info: 2021-01-13: No limits at all <br />
+     * captchatype-info: 2021-01-13: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "letsupload.io", "letsupload.org", "letsupload.to", "letsupload.co" });
+        ret.add(new String[] { "truefile.cc" });
         return ret;
     }
 
@@ -52,47 +53,12 @@ public class LetsuploadCo extends YetiShareCoreNew {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        /* 2020-11-06: Main domain changed from letsupload.org to letsupload.io */
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    }
-
-    @Override
-    public boolean requires_WWW() {
-        // 07.11.2019, now redirects www. to normal domain. www domain is redirected to cloudhost.to
-        return false;
-    }
-
-    @Override
-    protected String getFUID(final DownloadLink link) {
-        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/plugins/mediaplayer/site/_embed\\.php\\?u=([A-Za-z0-9]+)");
-        final String fid = urlinfo.getMatch(0);
-        if (fid != null) {
-            return fid;
-        } else {
-            return super.getFUID(link);
-        }
-    }
-
-    public static String getDefaultAnnotationPatternPartLetsupload() {
-        return "/(plugins/mediaplayer/site/_embed\\.php\\?u=[A-Za-z0-9]+.*|(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?)";
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPartLetsupload());
-        }
-        return ret.toArray(new String[0]);
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
-        return buildAnnotationUrls(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override

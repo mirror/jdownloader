@@ -34,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class OxycloudCom extends YetiShareCoreSpecialOxycloud {
+public class OxycloudCom extends YetiShareCoreNew {
     public OxycloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + this.getHost() + "/upgrade");
