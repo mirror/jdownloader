@@ -17,14 +17,18 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -165,6 +169,45 @@ public class TakefileLink extends XFileSharingProBasic {
         /* 2021-01-11: Some files are "paid files": The user has to pay a fee for that single file to be able to download it. */
         if (new Regex(correctedBR, "class=\"price\"").matches()) {
             throw new AccountRequiredException();
+        }
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo aiNormal = super.fetchAccountInfoWebsite(account);
+        if (account.getType() == AccountType.PREMIUM) {
+            return aiNormal;
+        } else {
+            /*
+             * 2021-01-13: Special: They got accounts which are only premium when accessing their website via specified subdomain
+             * vip.takefile.link so always check both!
+             */
+            final AccountInfo aiVip = new AccountInfo();
+            logger.info("Double-checking for premium status");
+            getPage("https://vip." + this.getHost() + this.getRelativeAccountInfoURL());
+            final String validUntilStr = new Regex(correctedBR, "class=\"acc_data\">(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
+            final String trafficLeftStr = regExTrafficLeft();
+            if (trafficLeftStr != null) {
+                /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+                long trafficLeft = 0;
+                if (trafficLeftStr.startsWith("-")) {
+                    /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
+                    trafficLeft = 0;
+                } else {
+                    trafficLeft = SizeFormatter.getSize(trafficLeftStr);
+                }
+                aiVip.setTrafficLeft(trafficLeft);
+            }
+            if (validUntilStr != null) {
+                logger.info("Account is special VIP premium");
+                aiVip.setValidUntil(TimeFormatter.getMilliSeconds(validUntilStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), this.br);
+                /* Return result of 2nd check */
+                return aiVip;
+            } else {
+                logger.info("Account is free account");
+                /* Return result of first check */
+                return aiNormal;
+            }
         }
     }
 }
