@@ -62,6 +62,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -161,22 +162,21 @@ public class PornHubCom extends PluginForHost {
     @Override
     public String getLinkID(DownloadLink link) {
         final String quality = link.getStringProperty("quality", null);
-        // final String format = link.getStringProperty("format", null);
         final String viewkey = link.getStringProperty("viewkey", null);
         if (quality != null && viewkey != null) {
             final StringBuilder sb = new StringBuilder(32);
             sb.append("pornhub://");
             sb.append(viewkey);
-            // if (false) {
-            // sb.append("_");
-            // //2020-01-11, only HLS available. format no longer important
-            // if (format != null) {
-            // sb.append(format);
-            // } else {
-            // // older links
-            // sb.append("mp4");
-            // }
-            // }
+            if (true) {
+                sb.append("_");
+                final String format = link.getStringProperty("format", null);
+                if (format != null) {
+                    sb.append(format);
+                } else {
+                    // older links
+                    sb.append("mp4");
+                }
+            }
             sb.append("_");
             sb.append(quality);
             return sb.toString();
@@ -552,7 +552,7 @@ public class PornHubCom extends PluginForHost {
                 }
                 String dllink_temp = null;
                 // dllink_temp = (String) values.get("video_url");
-                final ArrayList<Object> entries = (ArrayList<Object>) values.get("mediaDefinitions");
+                final List<Object> entries = (List<Object>) values.get("mediaDefinitions");
                 if (entries.size() == 0) {
                     /*
                      * 2019-04-30: Very rare case - video is supposed to be online but ZERO qualities are available --> Video won't load in
@@ -560,22 +560,36 @@ public class PornHubCom extends PluginForHost {
                      */
                     return qualities;
                 }
-                for (Object entry : entries) {
-                    final LinkedHashMap<String, Object> e = (LinkedHashMap<String, Object>) entry;
+                final List<Object> medias = new ArrayList<Object>(entries);
+                while (medias.size() > 0) {
+                    final Map<String, Object> e = (Map<String, Object>) medias.remove(0);
                     String format = (String) e.get("format");
                     if (StringUtils.equalsIgnoreCase(format, "dash")) {
-                        plugin.getLogger().info("Dash not yet supported");
+                        plugin.getLogger().info("Dash not yet supported:" + JSonStorage.toString(e));
                         continue;
                     }
+                    dllink_temp = (String) e.get("videoUrl");
                     format = format.toLowerCase(Locale.ENGLISH);
                     final Object qualityInfo = e.get("quality");
                     if (qualityInfo == null) {
                         continue;
                     } else if (qualityInfo instanceof List) {
-                        // HLS with auto quality
+                        if (StringUtils.equalsIgnoreCase(format, "mp4")) {
+                            try {
+                                final Browser brc = br.cloneBrowser();
+                                brc.setFollowRedirects(true);
+                                final List<Object> mp4Medias = JSonStorage.restoreFromString(brc.getPage(dllink_temp), TypeRef.LIST);
+                                medias.addAll(mp4Medias);
+                            } catch (IOException ioe) {
+                                plugin.getLogger().log(ioe);
+                            } catch (JSonMapperException jme) {
+                                plugin.getLogger().log(jme);
+                            }
+                            continue;
+                        }
+                        plugin.getLogger().info("Skip:" + JSonStorage.toString(e));
                         continue;
                     }
-                    dllink_temp = (String) e.get("videoUrl");
                     final Boolean encrypted = e.get("encrypted") == null ? null : ((Boolean) e.get("encrypted")).booleanValue();
                     if (encrypted == Boolean.TRUE) {
                         final String decryptkey = (String) values.get("video_title");
