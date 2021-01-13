@@ -67,7 +67,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -596,44 +595,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (this.dl == null) {
-                /* Passwords are usually before waittime. */
-                if (br.getURL().contains("/file_password.html")) {
-                    /* "Old style" password handling */
-                    logger.info("Current link is password protected");
-                    String passCode = link.getDownloadPassword();
-                    if (passCode == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
-                        if (StringUtils.isEmpty(passCode)) {
-                            logger.info("User has entered blank password, exiting handlePassword");
-                            link.setDownloadPassword(null);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                        }
-                        /* Save password in case it is correct */
-                        link.setDownloadPassword(passCode);
-                    }
-                    br.setFollowRedirects(false);
-                    postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFUID(link) + "&filePassword=" + Encoding.urlEncode(passCode));
-                    if (this.isDownloadlink(br.getRedirectLocation())) {
-                        /*
-                         * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
-                         * account.
-                         */
-                        link.setDownloadPassword(passCode);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
-                    } else {
-                        /* No download -> Either wrong password or correct password & free download */
-                        br.setFollowRedirects(true);
-                        br.followRedirect(true);
-                        if (br.getURL().contains("/file_password.html")) {
-                            logger.info("User entered incorrect password --> Retrying");
-                            link.setDownloadPassword(null);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                        } else {
-                            logger.info("User entered correct password --> Continuing");
-                        }
-                    }
-                } else if (br.getFormbyKey("filePassword") != null) {
-                    /* "New style" password handling */
+                if (br.getFormbyKey("filePassword") != null) {
+                    /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
                     String passCode = link.getDownloadPassword();
                     if (passCode == null) {
                         passCode = getUserInput("Password?", link);
