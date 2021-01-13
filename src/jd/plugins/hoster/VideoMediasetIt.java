@@ -20,6 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,9 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?.+" })
 public class VideoMediasetIt extends PluginForHost {
@@ -55,26 +55,27 @@ public class VideoMediasetIt extends PluginForHost {
     private static final String  HTML_MS_SILVERLIGHT        = "silverlight/playerSilverlight\\.js\"";
     private static final boolean use_player_json            = true;
     private boolean              dlImpossible               = false;
+    private boolean              geoBlocked                 = false;
 
     // Important info: Can only handle normal videos, NO
     // "Microsoft Silverlight forced" videos!
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         String streamID = null;
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
-            streamID = new Regex(downloadLink.getDownloadURL(), "/[^/]+/(?:[^/]+/)(\\d+)/?$").getMatch(0);
+        if (link.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
+            streamID = new Regex(link.getDownloadURL(), "/[^/]+/(?:[^/]+/)(\\d+)/?$").getMatch(0);
             if (StringUtils.isEmpty(streamID)) {
-                br.getPage(downloadLink.getDownloadURL());
+                br.getPage(link.getDownloadURL());
                 streamID = br.getRegex("PlayerIFrame\\.shtml\\?id=(\\d+)").getMatch(0);
             }
         } else {
-            streamID = new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
+            streamID = new Regex(link.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
             if (streamID == null) {
-                streamID = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
+                streamID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
             }
         }
         if (streamID == null) {
@@ -82,13 +83,13 @@ public class VideoMediasetIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2016-06-16 TODO: Fix support for embedded URLs */
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_MEDIASET_EMBED)) {
-            br.getPage(downloadLink.getDownloadURL());
-            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        if (link.getDownloadURL().matches(TYPE_VIDEO_MEDIASET_EMBED)) {
+            br.getPage(link.getDownloadURL());
+            link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
             if (!br.getURL().matches(TYPE_VIDEO_MEDIASET_NORMAL)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setUrlDownload(br.getURL());
+            link.setUrlDownload(br.getURL());
             /* 2016-06-16 TODO: Fix support for embedded URLs! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -103,12 +104,12 @@ public class VideoMediasetIt extends PluginForHost {
             filename = PluginJSonUtils.getJsonValue(this.br, "title");
             date = PluginJSonUtils.getJsonValue(this.br, "production-date");
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Il video che stai cercando non")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (br.containsHTML(HTML_MS_SILVERLIGHT)) {
-                downloadLink.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
+                link.getLinkStatus().setStatusText("JDownloader can't download MS Silverlight videos!");
                 return AvailableStatus.TRUE;
             }
             filename = br.getRegex("content=\"([^<>]*?) \\| Video Mediaset\" name=\"title\"").getMatch(0);
@@ -159,14 +160,14 @@ public class VideoMediasetIt extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
-            downloadLink.getLinkStatus().setStatusText("JDownloader can't download this video (either blocked in your country or MS Silverlight)");
-            downloadLink.setName(filename + ".mp4");
+        if (dllink.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv") || dllink.contains("error/Not_Available.mp4")) {
+            link.setName("[GEOBLOCKED]" + filename + ".mp4");
+            this.geoBlocked = true;
             return AvailableStatus.TRUE;
         }
         dllink = Encoding.htmlDecode(dllink);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(filename + ext);
+        link.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -177,7 +178,7 @@ public class VideoMediasetIt extends PluginForHost {
                 if (con.getLongContentLength() < 200) {
                     dlImpossible = true;
                 } else {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getLongContentLength());
                 }
             } else {
                 dlImpossible = true;
@@ -192,18 +193,16 @@ public class VideoMediasetIt extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (br.containsHTML(HTML_MS_SILVERLIGHT)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download MS Silverlight videos!");
-        }
-        if (dllink.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader can't download this video (either blocked in your country or MS Silverlight)");
-        }
-        if (dlImpossible) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
+        } else if (this.geoBlocked) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked or DRM protected");
+        } else if (dlImpossible) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, try again later", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
