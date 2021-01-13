@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +60,12 @@ public class ImagetwistCom extends XFileSharingProBasic {
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    protected String getCorrectHost(DownloadLink link, URL url) {
+        // plugin also supports thumbs and correctURL rewrites to normal URLs on main domain
+        return getHost();
     }
 
     @Override
