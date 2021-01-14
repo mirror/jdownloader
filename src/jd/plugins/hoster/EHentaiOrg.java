@@ -472,7 +472,7 @@ public class EHentaiOrg extends antiDDoSForHost {
         /* 2020-03-05: I've created this workaround but it is not required anymore --> Just keep counter_max set to 0 then it'll be fine! */
         boolean limitReached = false;
         int counter = 0;
-        int counter_max = 0;
+        int counter_max = 2;
         /* URL to current image */
         final String targetURL = br.getURL();
         do {
@@ -509,7 +509,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 logger.info("Failed to find final downloadurl");
                 break;
             }
-        } while (limitReached && counter <= counter_max);
+        } while (limitReached && counter < counter_max);
         if (limitReached) {
             logger.info("Failed to get around limit - limit is definitely reached!");
             limitReached(account);
