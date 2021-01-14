@@ -13,13 +13,16 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.download;
 
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
 
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
@@ -28,17 +31,11 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.settings.GeneralSettings;
-
 abstract public class DownloadInterface {
-
     @Deprecated
     public class Chunk {
         @Deprecated
         public Chunk(long startByte, long endByte, URLConnectionAdapter connection, DownloadInterface dl) {
-
         }
 
         @Deprecated
@@ -50,14 +47,13 @@ abstract public class DownloadInterface {
         public long getEndByte() {
             return -1;
         }
-
     }
 
     protected boolean fixWrongContentDispositionHeader = false;
     protected boolean allowFilenameFromURL             = false;
-
     protected Request initialRequest                   = null;
 
+    /** Htmldecode filename from header? */
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }
@@ -152,5 +148,4 @@ abstract public class DownloadInterface {
      * @return
      */
     public abstract boolean isResumedDownload();
-
 }
