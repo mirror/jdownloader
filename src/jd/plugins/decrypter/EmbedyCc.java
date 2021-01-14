@@ -32,6 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "embedy.cc" }, urls = { "https?://(?:www\\.)?embedy\\.cc/movies/([A-Za-z0-9=]+)" })
 public class EmbedyCc extends PluginForDecrypt {
@@ -73,6 +74,8 @@ public class EmbedyCc extends PluginForDecrypt {
                     dl.setFinalFileName(fname_decrypted);
                 }
                 dl.setAvailable(true);
+                /* 2021-01-14: Chunkload will break the videofiles! */
+                dl.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
                 /* Hoster by embedy.cc and/or vk.com[vk.me] */
                 // dl.setFinalFileName(fpName + "_" + quality + ".mp4");
                 // dl.setAvailable(true);
