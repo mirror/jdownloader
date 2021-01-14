@@ -4,12 +4,15 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.defaults.AbstractDefaultFactory;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
 
 public interface InternetConnectionSettings extends ConfigInterface {
@@ -68,8 +71,15 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     String getLocalPacScript();
 
+    public static class ProxyVoleAutodetectionFactory extends AbstractDefaultFactory<Boolean> {
+        @Override
+        public Boolean getDefaultValue(KeyHandler<?> keyHandler) {
+            return !Application.isHeadless();
+        }
+    }
+
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultFactory(ProxyVoleAutodetectionFactory.class)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("Proxy Vole is used to autodetect your proxy settings. If you know how to setup your proxy, you can disable this.")
     boolean isProxyVoleAutodetectionEnabled();

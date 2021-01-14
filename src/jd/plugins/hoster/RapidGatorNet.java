@@ -1182,12 +1182,13 @@ public class RapidGatorNet extends antiDDoSForHost {
             final String lang = System.getProperty("user.language");
             String errorMessage = RapidGatorNet.readErrorStream(con);
             final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
+            final String details = new Regex(errorMessage, "details\"\\s*:\\s*\"(.*?)\"").getMatch(0);
             final long status = statusString != null ? Long.parseLong(statusString) : -1;
             if (errorMessage == null) {
                 /* 2019-12-17: This String is not allowed to be null! */
                 errorMessage = "None";
             }
-            logger.info("ErrorMessage: " + errorMessage);
+            logger.info("ErrorMessage: " + errorMessage + "|Status:" + status + "|Details:" + details);
             if (link != null && (status == 423 || errorMessage.contains("Exceeded traffic"))) {
                 /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} */
                 final AccountInfo ac = new AccountInfo();
@@ -1243,6 +1244,9 @@ public class RapidGatorNet extends antiDDoSForHost {
                 handle404API(link, account);
             } else if (status == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 500", 5 * 60 * 1000l);
+            } else if (status == 503) {
+                // {"response":null,"status":503,"details":"Download temporarily unavailable"}
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, details != null ? details : "Download temporarily unavailable", 30 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                 handleInvalidSession(link, account, null);
             } else if (errorMessage.contains("\"Error: Error e-mail or password")) {
