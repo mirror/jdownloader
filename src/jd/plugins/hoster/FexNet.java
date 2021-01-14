@@ -17,10 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fex.net" }, urls = { "https?://(?:www\\.)?fex\\.net/\\d+\\?fileId=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fex.net" }, urls = { "https?://(?:www\\.)?fex\\.net/folder/([a-z0-9]+)/file/(\\d+)" })
 public class FexNet extends PluginForHost {
     public FexNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,11 +39,15 @@ public class FexNet extends PluginForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final boolean free_resume          = false;
+    private static final int     free_maxchunks       = 1;
+    private static final int     free_maxdownloads    = -1;
+    private String               dllink               = null;
+    public static final String   PROPERTY_directurl   = "directurl";
+    public static final String   PROPERTY_token       = "authtoken";
+    private static String        cachedToken          = null;
+    private static long          cachedTokenTimestamp = 0;
+    private static Object        LOCK                 = new Object();
 
     @Override
     public String getAGBLink() {
@@ -53,28 +56,66 @@ public class FexNet extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final Regex linkidRegex = new Regex(link.getPluginPatternMatcher(), "/(\\d+)\\?fileId=(\\d+)");
-        return linkidRegex.getMatch(0) + "_" + linkidRegex.getMatch(1);
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
-        server_issues = false;
+        /* 2020-01-14: At this moment we're working with static URLs */
+        dllink = link.getStringProperty(PROPERTY_directurl);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final Regex linkidRegex = new Regex(link.getPluginPatternMatcher(), "/(\\d+)\\?fileId=(\\d+)");
-        dllink = "https://fex.net/get/" + linkidRegex.getMatch(0) + "/" + linkidRegex.getMatch(1);
+        // br.getPage("https://" + this.getHost() + "/");
+        final String thistoken;
+        /* First try to use token from API */
+        if (link.hasProperty(PROPERTY_token)) {
+            thistoken = link.getStringProperty(PROPERTY_token);
+        } else {
+            synchronized (LOCK) {
+                if (cachedToken == null || System.currentTimeMillis() - cachedTokenTimestamp > 5 * 60 * 1000l) {
+                    logger.info("Refreshing token");
+                    cachedToken = jd.plugins.decrypter.FexNet.getFreshAuthToken(this.br);
+                    cachedTokenTimestamp = System.currentTimeMillis();
+                }
+            }
+            thistoken = cachedToken;
+        }
+        br.setCookie(this.getHost(), "token", thistoken);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setFinalFileName(getFileNameFromHeader(con));
-                link.setDownloadSize(con.getLongContentLength());
+            con = br.openGetConnection(this.dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                /* Filename is usually set in crawler */
+                if (link.getFinalFileName() == null) {
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                }
+                link.setDownloadSize(con.getCompleteContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            } else if (con.getResponseCode() == 403) {
+                /* Auth token refresh needed */
+                if (link.hasProperty(PROPERTY_token)) {
+                    link.removeProperty(PROPERTY_token);
+                } else {
+                    cachedToken = null;
+                    cachedTokenTimestamp = 0;
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid auth token", 3 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                server_issues = true;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
         } finally {
             try {
@@ -86,26 +127,26 @@ public class FexNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl.setFilenameFix(true);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
         dl.startDownload();
     }
