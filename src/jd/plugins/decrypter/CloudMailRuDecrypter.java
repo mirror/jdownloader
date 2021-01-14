@@ -106,7 +106,8 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             return null;
         }
         FilePackage fp = null;
-        if (!StringUtils.isEmpty(subfolder)) {
+        /* "/" is most likely a single file inside a (theoretical) folder [root] -> Do not assign packagenames in this case! */
+        if (!StringUtils.isEmpty(subfolder) && !subfolder.equals("/")) {
             fp = FilePackage.getInstance();
             fp.setName(subfolder);
             fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
