@@ -21,6 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,10 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 /**
  *
  * @author raztoki
@@ -52,6 +52,8 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "btc4link.com", "topklink.com", "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "geistlink.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "coinlink.co", "adlink.guru", "short.es", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "bit-url.com", "adbilty.me", "linclik.com",
             "oke.io", "vivads.net", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+            /** 2021-01-14: shortzzy.com domains */
+            "shortzzy.com", "shortzzy.link", "janusnotes.com",
             /** 2020-04-20: shrinkhere.xyz domains */
             "shrinkhere.xyz",
             /** 2020-04-01: za.gl domains */
@@ -73,9 +75,9 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** 2019-10-30: exe.io domains */
             "exe.io", "exe.app", "exee.io", "iddeas.xyz", "artiicle.xyz", "techbeast.xyz", "techofaqs.com", "caat.site", "2xs.io", "wealthh.xyz", "cu6.io", "mediumarticles.com", "bolssc.com", "mealip.com",
             /** 2019-08-29: 4snip.pw domains, handles by FoursnipPw plugin */
-            /*
-             * "4snip.pw",
-             */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 /*
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  * "4snip.pw",
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  */
             /** 2019-11-13: linkjust.com domains */
             "linkjust.com", "thegreatfuture.com", "siha.xyz", "akltu.com", "rahlatt.com", "ekhtr.com",
             /** 2020-01-21: encurta.net domains */
@@ -131,7 +133,7 @@ public class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             /** adshort.co domains */
             "adshort.co", "adsrt.com", "adsrt.me", "adshort.me", "adshort.im",
             /** hitfile short links */
-            "hil.to", "hitf.to", "hitf.cc", "hif.to"            };
+            "hil.to", "hitf.to", "hitf.cc", "hif.to" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] {});
     // /** List of services for which captcha is skippable or not required. */
