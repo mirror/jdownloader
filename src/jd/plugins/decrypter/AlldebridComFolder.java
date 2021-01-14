@@ -46,7 +46,7 @@ public class AlldebridComFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "alldebrid.com" });
+        ret.add(new String[] { "alldebrid.com", "alldebrid.fr", "alldebrid.org", "alldebrid.it", "alldebrid.de", "alldebrid.es" });
         return ret;
     }
 
@@ -103,13 +103,23 @@ public class AlldebridComFolder extends PluginForDecrypt {
         } else {
             entries = (Map<String, Object>) magnetsO;
         }
-        String folderRootName = (String) entries.get("filename");
+        final String folderRoot = magnetID;
+        String torrentName = (String) entries.get("filename");
+        final String torrentNameEscaped = Regex.escape(torrentName);
         final List<Object> linksO = (List<Object>) entries.get("links");
         if (linksO.isEmpty()) {
             /* Probably unfinished torrent download */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final FilePackage fpSingle = FilePackage.getInstance();
+        fpSingle.setName(torrentName);
+        /*
+         * If the torrent contains a lot of nested files/folders they will be put into one .rar or multiple split .rar archives. This then
+         * contains a folder with the title of the torrent which then contains the complete torrent subfolder structure.
+         */
+        final FilePackage fpSpecialArchive = FilePackage.getInstance();
+        fpSpecialArchive.setName(torrentName + " - archives");
         for (final Object linkO : linksO) {
             entries = (Map<String, Object>) linkO;
             /*
@@ -122,12 +132,17 @@ public class AlldebridComFolder extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(url);
             dl.setName(filename);
             dl.setDownloadSize(filesize);
-            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRootName);
+            final boolean isSpecialRar = filename.matches("^" + torrentNameEscaped + "(\\.rar|\\.part\\d+\\.rar)$");
+            if (isSpecialRar) {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
+                dl._setFilePackage(fpSpecialArchive);
+            } else {
+                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot + "/" + torrentName);
+                dl._setFilePackage(fpSingle);
+            }
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderRootName);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }
