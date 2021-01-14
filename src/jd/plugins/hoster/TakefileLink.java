@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,7 +27,13 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -174,8 +175,16 @@ public class TakefileLink extends XFileSharingProBasic {
 
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        final AccountInfo aiNormal = super.fetchAccountInfoWebsite(account);
-        if (account.getType() == AccountType.PREMIUM) {
+        final AccountInfo aiNormal;
+        try {
+            aiNormal = super.fetchAccountInfoWebsite(account);
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                account.removeProperty("takefileVip");
+            }
+            throw e;
+        }
+        if (account.getType() == AccountType.PREMIUM && !account.hasProperty("takefileVip")) {
             return aiNormal;
         } else {
             /*
@@ -200,11 +209,13 @@ public class TakefileLink extends XFileSharingProBasic {
             }
             if (validUntilStr != null) {
                 logger.info("Account is special VIP premium");
+                account.setProperty("takefileVip", Boolean.TRUE);
                 aiVip.setValidUntil(TimeFormatter.getMilliSeconds(validUntilStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), this.br);
                 this.setAccountLimitsByType(account, AccountType.PREMIUM);
                 /* Return result of 2nd check */
                 return aiVip;
             } else {
+                account.removeProperty("takefileVip");
                 logger.info("Account is free account");
                 /* Return result of first check */
                 return aiNormal;
