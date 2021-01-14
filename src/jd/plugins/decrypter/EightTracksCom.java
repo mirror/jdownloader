@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +30,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "8tracks.com" }, urls = { "https?://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" })
 public class EightTracksCom extends PluginForDecrypt {
@@ -74,13 +75,11 @@ public class EightTracksCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        }
-        if (br.getURL().contains("/explore/")) {
+        } else if (br.getURL().contains("/explore/")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
-        }
-        if (br.containsHTML(">The mix you're looking for is currently in private mode")) {
+        } else if (br.containsHTML(">The mix you're looking for is currently in private mode")) {
             logger.info("Link offline (this is a private link): " + parameter);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -91,7 +90,7 @@ public class EightTracksCom extends PluginForDecrypt {
             final String songName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             if (artist == null || album == null || songName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String track_id = new Regex(parameter, "(\\d+)$").getMatch(0);
             final DownloadLink single_track = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
@@ -129,8 +128,9 @@ public class EightTracksCom extends PluginForDecrypt {
                 tracksInMix = this.br.getRegex("id=\"tracks_count\">(\\d+)").getMatch(0);
             }
             if (tracksInMix == null || mixid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                /* Assume content is unavailable or GEO-blocked */
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
             String trackid = null;
             String filename = null;
@@ -143,8 +143,7 @@ public class EightTracksCom extends PluginForDecrypt {
                 clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
                 playToken = PluginJSonUtils.getJsonValue(this.br, "play_token");
                 if (playToken == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /* Play one track and get the token */
                 clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
@@ -221,14 +220,14 @@ public class EightTracksCom extends PluginForDecrypt {
         return dllink;
     }
 
-    private String getFilename() {
+    private String getFilename() throws PluginException {
         String filename = null;
         final Regex name_and_artist = new Regex(clipData, "\"name\":\"([^<>\"]*?)\",\"performer\":\"([^<>\"]*?)\"");
         String album = PluginJSonUtils.getJsonValue(this.br, "release_name");
         String title = name_and_artist.getMatch(0);
         String artist = name_and_artist.getMatch(1);
         if (album == null || title == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (album.contains(":")) {
             album = album.substring(0, album.indexOf(":"));

@@ -13,15 +13,16 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,11 +37,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:www\\.)?mydirtyhobby\\.(?:com|de)/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mydirtyhobby.com" }, urls = { "https?://(?:[a-z]+\\.)?mydirtyhobby\\.(?:com|de)/profil/\\d+[A-Za-z0-9\\-]+/videos/\\d+[A-Za-z0-9\\-]+" })
 public class MydirtyhobbyCom extends PluginForHost {
-
     public MydirtyhobbyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.mydirtyhobby.com/");
@@ -58,15 +56,12 @@ public class MydirtyhobbyCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     private final String         html_buy                     = "name=\"buy\"";
     private final String         html_logout                  = "(/\\?ac=dologout|/logout\")";
     private final String         default_extension            = ".flv";
-
     private String               dllink                       = null;
     private boolean              premiumonly                  = false;
     private boolean              serverissues                 = false;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -86,10 +81,10 @@ public class MydirtyhobbyCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String username = this.br.getRegex("<dt>Hinzugefügt von</dt>[\t\n\r ]*?<dd class=\"right\">[\t\n\r ]*?<a href=\"/profil/[^\"]+\" title=\"([^<>\"]+)\"").getMatch(0);
-        if (username == null) {
-            username = "amateur";
-        }
+        String username = this.br.getRegex("class=\"fa fa-calendar fa-fw fa-dt\"></i>.*?title=\"([^<>\"]+)\">([^<>\"]+)</a>").getMatch(0);
+        // if (username == null) {
+        // username = "amateur";
+        // }
         String filename = br.getRegex("<h\\d+ class=\"page\\-title pull\\-left\">([^<>\"]+)</h\\d+>").getMatch(0);
         if (filename == null) {
             /* Fallback to url-filename */
@@ -99,7 +94,9 @@ public class MydirtyhobbyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
-        filename = username + " - " + filename;
+        if (username != null) {
+            filename = username + " - " + filename;
+        }
         if (br.containsHTML(html_buy) || aa == null) {
             /* User has an account but he did not buy this video or user does not even have an account --> No way to download it */
             link.setName(filename + default_extension);
@@ -123,13 +120,10 @@ public class MydirtyhobbyCom extends PluginForHost {
             /* Get- and set filesize */
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                con = br.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     serverissues = true;
                 }
@@ -147,7 +141,7 @@ public class MydirtyhobbyCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -157,11 +151,10 @@ public class MydirtyhobbyCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://mydirtyhobby.com";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
@@ -178,7 +171,6 @@ public class MydirtyhobbyCom extends PluginForHost {
                     this.br = prepBR(new Browser());
                 }
                 br.getPage("http://www.mydirtyhobby.com/n/login");
-
                 /*
                  * 2016-07-22: In browser it might happen too that the first login attempt will always fail with correct logindata - second
                  * attempt must not even require a captcha but will usually be successful!!
@@ -228,23 +220,16 @@ public class MydirtyhobbyCom extends PluginForHost {
     }
 
     /** There are no free- or premium accounts. Users can only watch the videos they bought. */
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(maxPrem.get());
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium account");
-        account.setValid(true);
         return ai;
     }
 
@@ -260,7 +245,12 @@ public class MydirtyhobbyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -269,7 +259,6 @@ public class MydirtyhobbyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
@@ -289,5 +278,4 @@ public class MydirtyhobbyCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

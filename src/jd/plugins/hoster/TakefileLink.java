@@ -201,6 +201,7 @@ public class TakefileLink extends XFileSharingProBasic {
             if (validUntilStr != null) {
                 logger.info("Account is special VIP premium");
                 aiVip.setValidUntil(TimeFormatter.getMilliSeconds(validUntilStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), this.br);
+                this.setAccountLimitsByType(account, AccountType.PREMIUM);
                 /* Return result of 2nd check */
                 return aiVip;
             } else {
