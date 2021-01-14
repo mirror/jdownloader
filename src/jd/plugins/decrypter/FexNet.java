@@ -31,6 +31,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -90,7 +91,7 @@ public class FexNet extends PluginForDecrypt {
                 cachedTokenTimestamp = System.currentTimeMillis();
             }
         }
-        br.setAllowedResponseCodes(new int[] { 400 });
+        br.setAllowedResponseCodes(new int[] { 400, 401 });
         br.getHeaders().put("Authorization", "Bearer " + cachedToken);
         br.getHeaders().put("Content-Type", "application/json");
         // /* Access root folder first time -> Get name of it, then continue below */
@@ -113,6 +114,7 @@ public class FexNet extends PluginForDecrypt {
         }
         /* Theirs start with 1 too */
         int page = 1;
+        String passCode = null;
         do {
             logger.info("Crawling page: " + page);
             final UrlQuery query = new UrlQuery();
@@ -130,6 +132,44 @@ public class FexNet extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
+            } else if (br.getHttpConnection().getResponseCode() == 401) {
+                /* TODO: Fix this */
+                /* 2021-01-14: E.g. {"code":2426,"status":401} */
+                logger.info("Folder is password protected");
+                boolean success = false;
+                int counter = 0;
+                do {
+                    /* Ask user for password if none is given. */
+                    if (passCode == null) {
+                        passCode = getUserInput("Password?", param);
+                    }
+                    br.postPageRaw(API_BASE + "/v2/file/share/" + folderID + "/auth", "{\"password\":\"" + passCode + "\"}");
+                    if (br.getHttpConnection().getResponseCode() == 400) {
+                        /* 2021-01-14: {"code":1056,"form":{"password":[1054]},"status":400} */
+                        passCode = null;
+                    } else {
+                        /* 2021-01-14: {"refresh_token":"b64String", "token": "b64String"} */
+                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        final String tokenNew = (String) entries.get("token");
+                        if (!StringUtils.isEmpty(tokenNew)) {
+                            cachedToken = tokenNew;
+                            cachedTokenTimestamp = System.currentTimeMillis();
+                            br.getHeaders().put("Authorization", "Bearer " + cachedToken);
+                            /* Gets auto-set */
+                            // br.setCookie(br.getHost(), "token", cachedToken);
+                        } else {
+                            /* This will probably lead to a failure! */
+                            logger.warning("Failed to get new token after password");
+                        }
+                        success = true;
+                        break;
+                    }
+                    counter++;
+                } while (!this.isAbort() && counter <= 2);
+                if (!success) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                br.getPage(url + "?" + query.toString());
             }
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> pagination = (Map<String, Object>) entries.get("pagination");
@@ -171,6 +211,9 @@ public class FexNet extends PluginForDecrypt {
                             link._setFilePackage(fp);
                         }
                         link.setProperty(jd.plugins.hoster.FexNet.PROPERTY_token, cachedToken);
+                        if (passCode != null) {
+                            link.setDownloadPassword(passCode);
+                        }
                         decryptedLinks.add(link);
                     }
                 }
@@ -182,6 +225,10 @@ public class FexNet extends PluginForDecrypt {
             }
             page++;
         } while (!this.isAbort());
+        if (decryptedLinks.isEmpty()) {
+            decryptedLinks.add(this.createOfflinelink(parameter, "Empty folder: " + folderID, "Empty folder: " + folderID));
+            return decryptedLinks;
+        }
         return decryptedLinks;
     }
 
