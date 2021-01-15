@@ -163,11 +163,12 @@ public class AlldebridComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getFilePath(final List<Object> recursiveList, String path) {
-        if (recursiveList.isEmpty()) {
+    /** Recursive function which returns the complete path to a file inside nested json arrays. */
+    private String getFilePath(final List<Object> subfolderList, String path) {
+        if (subfolderList.isEmpty()) {
             return null;
         }
-        final Map<String, Object> entries = (Map<String, Object>) recursiveList.get(0);
+        final Map<String, Object> entries = (Map<String, Object>) subfolderList.get(0);
         final Object subfolderNameO = entries.get("n");
         if (subfolderNameO == null) {
             return null;
