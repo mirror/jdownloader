@@ -20,10 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -33,6 +29,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -61,7 +61,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
     @Override
     public String rewriteHost(final String host) {
         /* 2021-01-15: Main domain has changed from doodstream.com to dood.so */
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
