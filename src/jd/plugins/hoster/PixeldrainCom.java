@@ -27,8 +27,13 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,6 +46,7 @@ import jd.plugins.components.PluginJSonUtils;
 public class PixeldrainCom extends PluginForHost {
     public PixeldrainCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://pixeldrain.com/register");
     }
 
     @Override
@@ -83,17 +89,17 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
-    public static final String   API_BASE          = "https://pixeldrain.com/api";
-
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME               = true;
+    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    public static final String   API_BASE                  = "https://pixeldrain.com/api";
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -132,6 +138,7 @@ public class PixeldrainCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    /** Shared function used by crawler & host plugin. */
     public static void setDownloadLinkInfo(final DownloadLink link, final Map<String, Object> data) {
         final boolean success = ((Boolean) data.get("success")).booleanValue();
         if (!success) {
@@ -152,28 +159,23 @@ public class PixeldrainCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        /* 2020-04-14: Content-type check is not necessary, we rely on content-disposition only. */
-        // final String expected_content_type = PluginJSonUtils.getJson(br, "mime_type");
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String dllink = API_BASE + "/file/" + this.getFID(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        // final String real_content_type = dl.getConnection().getContentType();
-        // final boolean content_type_mismatch = expected_content_type != null && real_content_type != null &&
-        // !real_content_type.equalsIgnoreCase(expected_content_type);
-        // if (!dl.getConnection().isContentDisposition() || content_type_mismatch) {
         if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.followConnection();
             /*
              * 2020-04-14: E.g. {"success": false,"value": "file_rate_limited_captcha_required","message":
              * "This file is using too much bandwidth. For anonymous downloads a captcha is required now. The captcha entry is available on the download page"
              * } ------> Was never able to get this
              */
+            /* We're using an API so let's never throw "Plugin defect" errors. */
             final String msg = PluginJSonUtils.getJson(br, "message");
             if (!StringUtils.isEmpty(msg)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 5 * 60 * 1000l);
@@ -184,9 +186,97 @@ public class PixeldrainCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
+                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("https://" + this.getHost() + "/user");
+                    if (this.isLoggedin()) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://" + this.getHost() + "/login");
+                final Form loginform = br.getFormByInputFieldKeyValue("form", "login");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                final URLConnectionAdapter con = br.openFormConnection(loginform);
+                if (con.getResponseCode() == 400) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.followConnection();
+                if (!isLoggedin()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin() {
+        return br.getCookie(this.getHost(), "pd_auth_key", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        /**
+         * 2021-01-15: (Free) Accounts = No captcha required for downloading (usually not even via anonymous files but captchas can
+         * sometimes be required for files with high traffic). </br>
+         * There are also "Donator" Accounts (at this moment we don't try to differ between them) but the download process is no different
+         * when using those!
+         */
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Registered (free) user");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        this.handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
+    }
+
     @Override
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         /* 2020-04-14: No captcha at all */
+        /*
+         * 2021-01-15: Captchas can be required for files with high traffic -> No captchas when using a free account [Captcha handling
+         * hasn't been implemented yet]
+         */
         return false;
     }
 

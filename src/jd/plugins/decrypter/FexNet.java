@@ -24,7 +24,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -94,6 +93,7 @@ public class FexNet extends PluginForDecrypt {
         br.setAllowedResponseCodes(new int[] { 400, 401 });
         br.getHeaders().put("Authorization", "Bearer " + cachedToken);
         br.getHeaders().put("Content-Type", "application/json");
+        br.setCookie(this.getHost(), "G_ENABLED_IDPS", "google");
         // /* Access root folder first time -> Get name of it, then continue below */
         // br.getPage(API_BASE + "/v2/file/share/" + folderID);
         // if (br.getHttpConnection().getResponseCode() == 404) {
@@ -115,6 +115,10 @@ public class FexNet extends PluginForDecrypt {
         /* Theirs start with 1 too */
         int page = 1;
         String passCode = null;
+        /* Subfolder of previously crawler password protected subfolder? Then we already know the password! */
+        if (param.getDownloadLink() != null) {
+            passCode = param.getDownloadLink().getDownloadPassword();
+        }
         do {
             logger.info("Crawling page: " + page);
             final UrlQuery query = new UrlQuery();
@@ -123,7 +127,13 @@ public class FexNet extends PluginForDecrypt {
             /* 2021-01-14 */
             query.add("per_page", "500");
             query.add("is_desc", "1");
-            String url = API_BASE + "/v2/file/share/children/" + folderID;
+            final String urlpart_share;
+            if (passCode != null) {
+                urlpart_share = "share/s";
+            } else {
+                urlpart_share = "share";
+            }
+            String url = API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
             if (subfolderID != null) {
                 url += "/" + subfolderID;
             }
@@ -133,7 +143,6 @@ public class FexNet extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             } else if (br.getHttpConnection().getResponseCode() == 401) {
-                /* TODO: Fix this */
                 /* 2021-01-14: E.g. {"code":2426,"status":401} */
                 logger.info("Folder is password protected");
                 boolean success = false;
@@ -147,6 +156,8 @@ public class FexNet extends PluginForDecrypt {
                     if (br.getHttpConnection().getResponseCode() == 400) {
                         /* 2021-01-14: {"code":1056,"form":{"password":[1054]},"status":400} */
                         passCode = null;
+                        counter++;
+                        continue;
                     } else {
                         /* 2021-01-14: {"refresh_token":"b64String", "token": "b64String"} */
                         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -164,10 +175,13 @@ public class FexNet extends PluginForDecrypt {
                         success = true;
                         break;
                     }
-                    counter++;
                 } while (!this.isAbort() && counter <= 2);
                 if (!success) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                url = API_BASE + "/v2/file/share/s/children/" + folderID;
+                if (subfolderID != null) {
+                    url += "/" + subfolderID;
                 }
                 br.getPage(url + "?" + query.toString());
             }
@@ -185,10 +199,15 @@ public class FexNet extends PluginForDecrypt {
                     final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
                     if (is_dir) {
                         /* Subfolder -> Goes back into crawler */
-                        final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/s/" + folderID + "#" + id);
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + name);
-                        decryptedLinks.add(dl);
+                        final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/s/" + folderID + "#" + id);
+                        link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath + "/" + name);
+                        if (passCode != null) {
+                            link.setDownloadPassword(passCode);
+                        }
+                        decryptedLinks.add(link);
+                        distribute(link);
                     } else {
+                        /* Single file */
                         final String download_url = (String) entries.get("download_url");
                         if (StringUtils.isEmpty(download_url)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -215,6 +234,7 @@ public class FexNet extends PluginForDecrypt {
                             link.setDownloadPassword(passCode);
                         }
                         decryptedLinks.add(link);
+                        distribute(link);
                     }
                 }
             }
@@ -233,9 +253,11 @@ public class FexNet extends PluginForDecrypt {
     }
 
     public static final String getFreshAuthToken(final Browser br) throws PluginException, IOException {
-        br.getPage(API_BASE + "/v1/config/anonymous");
+        // br.getPage(API_BASE + "/v1/config/anonymous");
+        // final String token = (String) JavaScriptEngineFactory.walkJson(entries, "anonymous/anonym_token");
+        br.getPage(API_BASE + "/v1/anonymous/upload-token");
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String token = (String) JavaScriptEngineFactory.walkJson(entries, "anonymous/anonym_token");
+        final String token = (String) entries.get("token");
         if (StringUtils.isEmpty(token)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
