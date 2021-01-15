@@ -190,7 +190,6 @@ public class XvideosComProfile extends PluginForDecrypt {
     private void crawlFavouritesAccount(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
         final String listID = new Regex(param.getCryptedUrl(), TYPE_FAVOURITES_ACCOUNT).getMatch(0);
         String fpname = br.getRegex("<span id=\"favListName\">([^<>\"]+)</span>").getMatch(0);
-        fpname = null;
         if (fpname == null) {
             fpname = br.getRegex("\\{\"id\":" + listID + "[^\\}]+\"name\":\"([^\"]+)\"").getMatch(0);
         }
