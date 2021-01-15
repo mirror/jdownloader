@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -103,7 +104,6 @@ public class AlldebridComFolder extends PluginForDecrypt {
         } else {
             entries = (Map<String, Object>) magnetsO;
         }
-        final String folderRoot = magnetID;
         String torrentName = (String) entries.get("filename");
         final String torrentNameEscaped = Regex.escape(torrentName);
         final List<Object> linksO = (List<Object>) entries.get("links");
@@ -112,14 +112,13 @@ public class AlldebridComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        final String folderRoot = magnetID;
+        final String torrentBaseFolder = folderRoot + "/" + torrentName;
         final FilePackage fpSingle = FilePackage.getInstance();
-        fpSingle.setName(torrentName);
-        /*
-         * If the torrent contains a lot of nested files/folders they will be put into one .rar or multiple split .rar archives. This then
-         * contains a folder with the title of the torrent which then contains the complete torrent subfolder structure.
-         */
+        fpSingle.setName(torrentBaseFolder);
         final FilePackage fpSpecialArchive = FilePackage.getInstance();
-        fpSpecialArchive.setName(torrentName + " - archives");
+        /* Use "/" so it gets replaced with "_" and looks like the other packages. */
+        fpSpecialArchive.setName(folderRoot + "/archives");
         for (final Object linkO : linksO) {
             entries = (Map<String, Object>) linkO;
             /*
@@ -134,15 +133,54 @@ public class AlldebridComFolder extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             final boolean isSpecialRar = filename.matches("^" + torrentNameEscaped + "(\\.rar|\\.part\\d+\\.rar)$");
             if (isSpecialRar) {
+                /*
+                 * If the torrent contains a lot of nested files/folders they will be put into one .rar or multiple split .rar archives.
+                 * This then contains a folder with the title of the torrent which then contains the complete torrent subfolder structure.
+                 * <br> Put this in our root folder.
+                 */
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
                 dl._setFilePackage(fpSpecialArchive);
             } else {
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot + "/" + torrentName);
-                dl._setFilePackage(fpSingle);
+                /* Check whether or not this file goes into a deeper subfolder level. */
+                String filePath = getFilePath((List<Object>) entries.get("files"), "");
+                /* Path is full path with filename at the end -> Remove that */
+                filePath = filePath.replaceAll("/" + org.appwork.utils.Regex.escape(filename) + "$", "");
+                if (!StringUtils.isEmpty(filePath)) {
+                    /* File that goes into (nested) subfolder. */
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, torrentBaseFolder + filePath);
+                    final FilePackage nestedFilePackage = FilePackage.getInstance();
+                    nestedFilePackage.setName(folderRoot + filePath);
+                    dl._setFilePackage(nestedFilePackage);
+                } else {
+                    /* File that is in the root of the torrent main folder (named after torrent name). */
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, torrentBaseFolder);
+                    dl._setFilePackage(fpSingle);
+                }
             }
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
+    }
+
+    private String getFilePath(final List<Object> recursiveList, String path) {
+        if (recursiveList.isEmpty()) {
+            return null;
+        }
+        final Map<String, Object> entries = (Map<String, Object>) recursiveList.get(0);
+        final Object subfolderNameO = entries.get("n");
+        if (subfolderNameO == null) {
+            return null;
+        }
+        final String subfolderName = (String) subfolderNameO;
+        path += "/" + subfolderName;
+        final Object nextSubFolderLevel = entries.get("e");
+        if (nextSubFolderLevel == null) {
+            /* We've reached the end */
+            return path;
+        } else {
+            /* Go deeper */
+            return this.getFilePath((List<Object>) nextSubFolderLevel, path);
+        }
     }
 }
