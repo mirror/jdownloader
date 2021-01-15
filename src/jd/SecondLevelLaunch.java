@@ -501,17 +501,22 @@ public class SecondLevelLaunch {
             if (StringUtils.isEmpty(System.getProperty(jnaNoSysKey))) {
                 System.setProperty(jnaNoSysKey, "true");
             }
-            Application.getResource("tmp/jna").mkdir();
-            System.setProperty("jna.tmpdir", Application.getResource("tmp/jna").getAbsolutePath());
-            com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
-                @Override
-                public void uncaughtException(com.sun.jna.Callback arg0, Throwable e) {
-                    final LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
-                    logger.severe("Uncaught Exception in: " + arg0 + "|" + e.getMessage());
-                    logger.log(e);
-                    logger.close();
-                }
-            });
+            final File jnaTmp = Application.getResource("tmp/jna");
+            if (!jnaTmp.isDirectory()) {
+                jnaTmp.mkdir();
+            }
+            System.setProperty("jna.tmpdir", jnaTmp.getAbsolutePath());
+            if (CrossSystem.isWindows() || CrossSystem.isMac()) {
+                com.sun.jna.Native.setCallbackExceptionHandler(new com.sun.jna.Callback.UncaughtExceptionHandler() {
+                    @Override
+                    public void uncaughtException(com.sun.jna.Callback arg0, Throwable e) {
+                        final LogSource logger = LogController.getInstance().getLogger("NativeExceptionHandler");
+                        logger.severe("Uncaught Exception in: " + arg0 + "|" + e.getMessage());
+                        logger.log(e);
+                        logger.close();
+                    }
+                });
+            }
         } catch (java.lang.UnsatisfiedLinkError e) {
             if (e.getMessage() != null && e.getMessage().contains("Can't find dependent libraries")) {
                 // probably the path contains unsupported special chars

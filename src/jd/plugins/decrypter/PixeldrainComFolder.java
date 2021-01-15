@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -30,6 +26,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixeldrain.com" }, urls = { "https?://(?:www\\.)?pixeldrain\\.com/l/([A-Za-z0-9]+)" })
 public class PixeldrainComFolder extends PluginForDecrypt {
@@ -58,7 +58,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/u/" + fileID);
-            PixeldrainCom.setDownloadLinkInfo(dl, entries);
+            PixeldrainCom.setDownloadLinkInfo(this, dl, entries);
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
