@@ -127,7 +127,7 @@ public class FexNet extends PluginForDecrypt {
             /* 2021-01-14 */
             query.add("per_page", "500");
             query.add("is_desc", "1");
-            final String urlpart_share;
+            String urlpart_share;
             if (passCode != null) {
                 urlpart_share = "share/s";
             } else {
@@ -179,7 +179,8 @@ public class FexNet extends PluginForDecrypt {
                 if (!success) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
-                url = API_BASE + "/v2/file/share/s/children/" + folderID;
+                urlpart_share = "share/s";
+                url = API_BASE + "/v2/file/" + urlpart_share + "/children/" + folderID;
                 if (subfolderID != null) {
                     url += "/" + subfolderID;
                 }
