@@ -22,6 +22,13 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,13 +52,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(?:s/[a-f0-9]{10}/\\d+-\\d+|mpv/\\d+/[a-f0-9]{10}/#page\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends antiDDoSForHost {
@@ -486,17 +486,29 @@ public class EHentaiOrg extends antiDDoSForHost {
                 /*
                  * script we require!
                  */
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                getPage(brc, MAINPAGE_ehentai + "/home.php");// before, debugging
-                String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
-                String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
-                logger.info("before:" + items_downloadedStr + "/" + items_maxStr);
-                this.getPage(brc, MAINPAGE_ehentai + "/hathperks.php");
-                getPage(brc, MAINPAGE_ehentai + "/home.php");// after,debugging
-                items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
-                items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
-                logger.info("after:" + items_downloadedStr + "/" + items_maxStr);
+                // final Browser brc = br.cloneBrowser();
+                br.setFollowRedirects(true);
+                getPage(br, MAINPAGE_ehentai + "/home.php");// before, debugging
+                // this.getPage(br, MAINPAGE_ehentai + "/hathperks.php");
+                logger.info("Credits before:");
+                this.hasCreditsLeft();
+                /*
+                 * 2021-01-15: In browser a re-login (using the still existing e-hentai cookies) worked fine and removed that limit but it
+                 * didn't help here.
+                 */
+                // /* Enforce to get new exhentai cookies */
+                // br.clearCookies(MAINPAGE_exhentai);
+                // this.getPage(br, MAINPAGE_exhentai);
+                // if (!this.isLoggedInExhentai(br)) {
+                // throw new AccountUnavailableException("Exhentai login failure", 5 * 60 * 1000);
+                // }
+                // getPage(br, MAINPAGE_ehentai + "/uiconfig.php");
+                getPage(br, MAINPAGE_ehentai + "/home.php");
+                logger.info("Credits AFTER:");
+                if (!this.hasCreditsLeft()) {
+                    logger.info("Confirmed limit reached according to remaining credits");
+                    limitReached(account);
+                }
                 this.getPage(targetURL);
             }
             final String b = br.toString();
@@ -563,7 +575,7 @@ public class EHentaiOrg extends antiDDoSForHost {
     private void doFree(final DownloadLink link, final Account account) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            this.handleErrorsLastResort(link, account, this.br);
         } else if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
@@ -597,8 +609,9 @@ public class EHentaiOrg extends antiDDoSForHost {
             } else if (br.getURL().contains("bounce_login.php")) {
                 /* Account required / re-login required */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account / Re-login required", 1 * 60 * 60 * 1000l);
+            } else {
+                this.handleErrorsLastResort(link, account, this.br);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (expectedFilesize > 0 && dl.getConnection().getLongContentLength() < expectedFilesize) {
             dl.getConnection().disconnect();
             /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
@@ -641,16 +654,21 @@ public class EHentaiOrg extends antiDDoSForHost {
                     } else {
                         // getPage(br, MAINPAGE_ehentai + "/index.php?");
                         getPage(br, MAINPAGE_ehentai + "/hathperks.php");
-                        if (this.isLoggedIn(br)) {
+                        if (this.isLoggedInEhentai(br)) {
                             getPage(br, MAINPAGE_ehentai + "/home.php");
-                            if (isLoggedIn(br)) {
+                            if (this.isLoggedInEhentai(br)) {
                                 final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
                                 final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
                                 logger.info("Successfully logged in via cookies:" + items_downloadedStr + "/" + items_maxStr);
                                 account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
                                 /* Get- and save exhentai cookies too */
                                 this.getPage(br, MAINPAGE_exhentai);
-                                account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
+                                if (this.isLoggedInEhentaiOrExhentai(br)) {
+                                    logger.info("Successfully logged in exhentai -> Saving cookies");
+                                    account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
+                                } else {
+                                    logger.info("Failed to login in exhentai -> Ignoring cookies");
+                                }
                                 return;
                             }
                         }
@@ -704,7 +722,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                         break;
                     }
                     this.submitForm(br, loginform);
-                    failed = !isLoggedIn(br);
+                    failed = !isLoggedInEhentai(br);
                     if (!failed) {
                         logger.info("Stepping out of login loop");
                         break;
@@ -712,16 +730,20 @@ public class EHentaiOrg extends antiDDoSForHost {
                 }
                 if (failed) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    /* This will set two more important cookies! */
-                    getPage(br, MAINPAGE_ehentai + "/hathperks.php");
-                    account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
-                    /*
-                     * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
-                     * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
-                     */
-                    this.getPage(br, MAINPAGE_exhentai);
+                }
+                /* This will set two more important cookies! */
+                getPage(br, MAINPAGE_ehentai + "/hathperks.php");
+                account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
+                /*
+                 * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
+                 * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
+                 */
+                this.getPage(br, MAINPAGE_exhentai);
+                if (this.isLoggedInEhentaiOrExhentai(br)) {
+                    logger.info("Successfully logged in exhentai -> Saving cookies");
                     account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
+                } else {
+                    logger.info("Failed to login in exhentai -> Ignoring cookies");
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -735,8 +757,25 @@ public class EHentaiOrg extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIn(final Browser br) {
+    private boolean isLoggedInEhentai(final Browser br) {
         return br.getCookie(MAINPAGE_ehentai, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    private boolean isLoggedInExhentai(final Browser br) {
+        return br.getCookie(MAINPAGE_exhentai, "ipb_pass_hash", Cookies.NOTDELETEDPATTERN) != null;
+    }
+
+    private boolean isLoggedInEhentaiOrExhentai(final Browser br) {
+        return isLoggedInEhentai(br) || isLoggedInExhentai(br);
+    }
+
+    /** Checks for loggedin state if account is present and throws plugin_Defect otherwise. */
+    private void handleErrorsLastResort(final DownloadLink link, final Account account, final Browser br) throws PluginException {
+        if (account != null && !isLoggedInEhentaiOrExhentai(br)) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override
@@ -764,9 +803,27 @@ public class EHentaiOrg extends antiDDoSForHost {
             logger.warning("Failed to find items_downloadedStr or items_maxStr:" + items_downloadedStr + "/" + items_maxStr);
             ai.setStatus("Free Account");
         }
+        if (!this.hasCreditsLeft()) {
+            logger.info("Account does not have any credits left --> Set remaining traffic to 0");
+            ai.setTrafficLeft(0);
+        }
         /* 2020-11-30: Experimental */
         account.setRefreshTimeout(10 * 60 * 1000l);
         return ai;
+    }
+
+    /** Access e-hentai.org/home.php before calling this! */
+    private boolean hasCreditsLeft() {
+        final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
+        final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
+        if (items_downloadedStr != null && items_maxStr != null) {
+            logger.info("Credits: Used: " + items_downloadedStr + " Max: " + items_maxStr);
+            return Integer.parseInt(items_downloadedStr) < Integer.parseInt(items_maxStr);
+        } else {
+            /* Assume true as we can't check */
+            logger.info("Failed to find remaining credits");
+            return true;
+        }
     }
 
     @Override
