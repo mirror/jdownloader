@@ -631,7 +631,7 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    private static boolean isPremium(Browser br) {
+    private static boolean isPremium(final Browser br) {
         return StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red");
     }
 

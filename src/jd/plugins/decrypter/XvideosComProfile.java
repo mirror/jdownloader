@@ -31,6 +31,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -41,7 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XvideosCom;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -73,14 +73,24 @@ public class XvideosComProfile extends PluginForDecrypt {
             sb.append("(");
             sb.append("(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?");
             sb.append("|favorite/\\d+/[a-z0-9\\_]+");
+            sb.append("|account/favorites/\\d+");
             sb.append(")");
             ret.add(sb.toString());
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_FAVOURITES = "https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
-    private static final String TYPE_USER       = "https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+$";
+    private static final String TYPE_FAVOURITES         = "https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
+    private static final String TYPE_FAVOURITES_ACCOUNT = "https?://[^/]+/account/favorites/(\\d+)";
+    private static final String TYPE_USER               = "https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+$";
+
+    private boolean requiresAccount(final CryptedLink param) {
+        return requiresPremiumAccount(param) || param.getCryptedUrl().matches(TYPE_FAVOURITES_ACCOUNT);
+    }
+
+    private boolean requiresPremiumAccount(final CryptedLink param) {
+        return Browser.getHost(param.getCryptedUrl()).equals("xvideos.red");
+    }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -95,11 +105,12 @@ public class XvideosComProfile extends PluginForDecrypt {
                 break;
             }
         }
-        final boolean premiumAccountRequired = Browser.getHost(parameter).equals("xvideos.red");
+        final boolean accountRequired = this.requiresAccount(param);
+        final boolean premiumAccountRequired = this.requiresPremiumAccount(param);
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
         Account account = AccountController.getInstance().getValidAccount(getHost());
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             try {
                 ((jd.plugins.hoster.XvideosCom) plg).login(this, account, false);
@@ -107,24 +118,32 @@ public class XvideosComProfile extends PluginForDecrypt {
                 logger.info("Login failure");
                 handleAccountException(account, e);
                 account = null;
-                if (premiumAccountRequired) {
-                    logger.warning("Account required but login failed");
-                    throw new AccountRequiredException();
-                }
             }
-        } else if (premiumAccountRequired) {
+        }
+        if (accountRequired && account == null) {
             /* Account required! */
+            throw new AccountRequiredException();
+        } else if (premiumAccountRequired && account != null && account.getType() != AccountType.PREMIUM) {
+            logger.info("Account available but free account and premium is required to crawl current URL");
             throw new AccountRequiredException();
         }
         br.getPage(parameter);
-        /* E.g. xvideos.com can redirect to xvideos.red when account is active. */
-        final boolean premiumAccountActive = this.br.getHost().equals("xvideos.red");
-        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* E.g. no permission to access private favorites list of another user. */
+            throw new AccountRequiredException();
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        /* E.g. xvideos.com can redirect to xvideos.red when account is active. */
+        final boolean premiumAccountActive = this.br.getHost().equals("xvideos.red");
         if (parameter.matches(TYPE_FAVOURITES)) {
             this.crawlFavourites(parameter, decryptedLinks);
+        } else if (parameter.matches(TYPE_FAVOURITES_ACCOUNT)) {
+            if (account == null) {
+                throw new AccountRequiredException();
+            }
+            crawlFavouritesAccount(param, decryptedLinks);
         } else if (parameter.matches(".+/photos/.+")) {
             crawlPhotos(parameter, decryptedLinks);
         } else if (parameter.matches(TYPE_USER) && premiumAccountActive) {
@@ -158,6 +177,45 @@ public class XvideosComProfile extends PluginForDecrypt {
                 distribute(dl);
             }
             nextpage = br.getRegex("href=\"(/favorite/\\d+/[^/]+/\\d+)\"[^>]*class=\"no-page next-page\"").getMatch(0);
+            if (nextpage != null) {
+                logger.info("Working on page: " + nextpage);
+                br.getPage(nextpage);
+            } else {
+                break;
+            }
+        } while (!this.isAbort());
+    }
+
+    /** Crawl favorites of account -> Account required */
+    private void crawlFavouritesAccount(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        final String listID = new Regex(param.getCryptedUrl(), TYPE_FAVOURITES_ACCOUNT).getMatch(0);
+        String fpname = br.getRegex("<span id=\"favListName\">([^<>\"]+)</span>").getMatch(0);
+        fpname = null;
+        if (fpname == null) {
+            fpname = br.getRegex("\\{\"id\":" + listID + "[^\\}]+\"name\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (fpname == null) {
+            /* Fallback */
+            fpname = listID;
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpname);
+        String nextpage = null;
+        do {
+            final String[] urls = br.getRegex("(/video\\d+/[^<>\"\\']+)").getColumn(0);
+            for (String url : urls) {
+                url = br.getURL(url).toString();
+                final String url_title = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                final DownloadLink dl = this.createDownloadlink(url);
+                /* Save http requests */
+                dl.setAvailable(true);
+                dl.setName(url_title + ".mp4");
+                dl._setFilePackage(fp);
+                decryptedLinks.add(dl);
+                distribute(dl);
+            }
+            /* TODO: Check/add pagination */
+            nextpage = null;
             if (nextpage != null) {
                 logger.info("Working on page: " + nextpage);
                 br.getPage(nextpage);
