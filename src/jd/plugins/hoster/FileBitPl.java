@@ -26,7 +26,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -59,12 +58,12 @@ public class FileBitPl extends PluginForHost {
 
     public FileBitPl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://filebit.pl/oferta");
+        this.enablePremium("https://filebit.pl/oferta");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://filebit.pl/regulamin";
+        return "https://filebit.pl/regulamin";
     }
 
     private Browser newBrowserAPI() {
@@ -126,11 +125,15 @@ public class FileBitPl extends PluginForHost {
         final int maxChunks = (int) account.getLongProperty("maxconnections", 1);
         link.setProperty("filebitpldirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 mhm.handleErrorGeneric(account, link, "403dlerror", 20);
             }
-            br.followConnection();
             if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
                 mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
             }
@@ -302,29 +305,27 @@ public class FileBitPl extends PluginForHost {
         return (String) entries.get("download");
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -565,7 +566,7 @@ public class FileBitPl extends PluginForHost {
                     }
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "http://" + account.getHoster(), true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
                     if (dlinkbefore != null) {
