@@ -489,7 +489,7 @@ public class EHentaiOrg extends antiDDoSForHost {
                 // final Browser brc = br.cloneBrowser();
                 br.setFollowRedirects(true);
                 getPage(br, MAINPAGE_ehentai + "/home.php");// before, debugging
-                // this.getPage(br, MAINPAGE_ehentai + "/hathperks.php");
+                this.getPage(br, MAINPAGE_ehentai + "/hathperks.php");
                 logger.info("Credits before:");
                 this.hasCreditsLeft();
                 /*
