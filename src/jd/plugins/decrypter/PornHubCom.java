@@ -23,12 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -51,6 +46,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -96,7 +97,7 @@ public class PornHubCom extends PluginForDecrypt {
             /* Single video modelhub.com 2021-01-06 */
             pattern += "video/ph[a-f0-9]+|";
             /* All videos of a pornstar/model */
-            pattern += "(pornstar|model)/[^/]+(/public|/videos/premium|/videos/paid|/videos|/from_videos)?|";
+            pattern += "(pornstar|model)/[^/]+(/gifs(/video|/public)?|/public|/videos(/premium|/paid|/upload|/public)?|/videos|/from_videos)?|";
             /* All videos of a channel */
             pattern += "channels/[A-Za-z0-9\\-_]+(?:/videos)?|";
             /* All videos of a user */
@@ -171,14 +172,47 @@ public class PornHubCom extends PluginForDecrypt {
         } else if (parameter.matches("(?i).*/gifs.*")) {
             logger.info("Gif");
             ret = decryptAllGifsOfAUser();
-        } else if (parameter.matches("(?i).*/(model|pornstar)/.*")) {
+        } else if (parameter.matches("(?i).*/model/.*")) {
+            final String model = new Regex(parameter, "/model/([^/]+)").getMatch(0);
+            final String mode = new Regex(parameter, "/model/[^/]+/(.+)").getMatch(0);
             /* Main profile URL --> Assume user wants to have all videos of that profile */
-            logger.info("Model/Pornstar");
-            ret = decryptAllVideosOfAPornstar(br, account, new HashSet<String>());
+            logger.info("Model:" + model + "|Mode:" + mode);
+            if (StringUtils.isEmpty(mode)) {
+                final String pages[] = br.getRegex("(/model/" + Pattern.quote(model) + "/(?:videos|gifs))").getColumn(0);
+                if (pages != null && pages.length > 0) {
+                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
+                    }
+                    ret = true;
+                } else {
+                    ret = false;
+                }
+            } else {
+                ret = decryptAllVideosOf(br, account, new HashSet<String>());
+            }
+        } else if (parameter.matches("(?i).*/pornstar/.*")) {
+            final String pornstar = new Regex(parameter, "/pornstar/([^/]+)").getMatch(0);
+            final String mode = new Regex(parameter, "/pornstar/[^/]+/(.+)").getMatch(0);
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
+            /* Main profile URL --> Assume user wants to have all videos of that profile */
+            logger.info("Pornstar:" + pornstar + "|Mode:" + mode);
+            if (StringUtils.isEmpty(mode)) {
+                final String pages[] = br.getRegex("(/pornstar/" + Pattern.quote(pornstar) + "/(?:videos|gifs))").getColumn(0);
+                if (pages != null && pages.length > 0) {
+                    for (final String page : new HashSet<String>(Arrays.asList(pages))) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(page).toString()));
+                    }
+                    ret = true;
+                } else {
+                    ret = false;
+                }
+            } else {
+                ret = decryptAllVideosOf(br, account, new HashSet<String>());
+            }
         } else if (parameter.matches("(?i).*/(?:users|channels).*")) {
             if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
                 logger.info("Users->Model|pornstar");
-                ret = decryptAllVideosOfAPornstar(br, account, new HashSet<String>());
+                ret = decryptAllVideosOf(br, account, new HashSet<String>());
             } else {
                 logger.info("Users / Channels");
                 ret = decryptAllVideosOfAUser();
@@ -195,7 +229,7 @@ public class PornHubCom extends PluginForDecrypt {
     }
 
     /** Handles pornhub.com/bla/(model|pornstar)/bla */
-    private boolean decryptAllVideosOfAPornstar(Browser br, Account account, Set<String> dupes) throws Exception {
+    private boolean decryptAllVideosOf(Browser br, Account account, Set<String> dupes) throws Exception {
         if (isOfflineGeneral(br)) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
@@ -220,13 +254,13 @@ public class PornHubCom extends PluginForDecrypt {
                     // /videos/paid contains all un-paid videos
                     final Browser brc = br.cloneBrowser();
                     jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/premium"));
-                    decryptAllVideosOfAPornstar(brc, account, dupes);
+                    decryptAllVideosOf(brc, account, dupes);
                 }
                 final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
                 if (false && fanVideosSection != null) {
                     final Browser brc = br.cloneBrowser();
                     jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/fanonly"));
-                    decryptAllVideosOfAPornstar(brc.cloneBrowser(), account, dupes);
+                    decryptAllVideosOf(brc.cloneBrowser(), account, dupes);
                 }
             }
             for (final String section : new String[] { "moreData", "mostRecentVideosSection", "pornstarsVideoSection" }) {
@@ -506,7 +540,7 @@ public class PornHubCom extends PluginForDecrypt {
                 /* Set this on first loop */
                 base_url = br.getURL();
             }
-            final String[] items = new Regex(br.toString(), "(<li\\s*id\\s*=\\s*\"gif\\d+\"\\s*>.*?</li>)").getColumn(0);
+            final String[] items = new Regex(br.toString(), "(<li\\s*id\\s*=\\s*\"gif\\d+\"[^<]*>.*?</li>)").getColumn(0);
             if (items == null || items.length == 0) {
                 break;
             }
