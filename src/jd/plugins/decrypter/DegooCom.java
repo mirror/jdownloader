@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -45,30 +46,9 @@ public class DegooCom extends PluginForDecrypt {
         final String folderID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String fileID = UrlQuery.parse(parameter).get("ID");
         br.setAllowedResponseCodes(new int[] { 400 });
-        final Map<String, Object> params = new HashMap<String, Object>();
-        params.put("HashValue", folderID);
-        params.put("FileID", fileID);
-        params.put("Limit", 100);
-        params.put("JWT", null);
-        br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
         String path = this.getAdoptedCloudFolderStructure();
         if (path == null) {
             path = "";
-        }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("Items");
-        if (ressourcelist.size() == 0) {
-            logger.info("Empty folder");
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            if (!StringUtils.isEmpty(path)) {
-                offline.setName(path);
-            }
-            decryptedLinks.add(offline);
-            return decryptedLinks;
         }
         FilePackage fp = null;
         if (!StringUtils.isEmpty(path)) {
@@ -76,52 +56,101 @@ public class DegooCom extends PluginForDecrypt {
             fp.setProperty("ALLOW_MERGE", true);
             fp.setName(path);
         }
-        for (final Object ressourceO : ressourcelist) {
-            entries = (HashMap<String, Object>) ressourceO;
-            final String title = (String) entries.get("Name");
-            final int filesize = ((Integer) entries.get("Size")).intValue();
-            final boolean isFolder = ((Boolean) entries.get("IsContainer")).booleanValue();
-            // final int categoryID = ((Integer) entries.get("Category")).intValue();
-            final String id = Long.toString(((Long) entries.get("ID")).longValue());
-            if (StringUtils.isEmpty(title) || id.equals("0")) {
-                /* Skip invalid items */
-                continue;
+        String nextPageToken = null;
+        final List<String> dupeList = new ArrayList<String>();
+        do {
+            final Map<String, Object> params = new HashMap<String, Object>();
+            params.put("HashValue", folderID);
+            params.put("FileID", fileID);
+            params.put("Limit", 100);
+            params.put("JWT", null);
+            if (nextPageToken != null) {
+                params.put("NextToken", nextPageToken);
             }
-            if (!isFolder) {
-                /* File */
-                final String directurl = (String) entries.get("URL");
-                final String contentURL = "https://cloud.degoo.com/share/" + folderID + "?ID=" + id;
-                final DownloadLink dl = this.createDownloadlink(contentURL);
-                dl.setContentUrl(contentURL);
-                dl.setAvailable(true);
-                dl.setFinalFileName(title);
-                if (!StringUtils.isEmpty(directurl)) {
-                    dl.setProperty("directurl", directurl);
-                }
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                }
-                if (!StringUtils.isEmpty(path)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
-                }
-                if (fp != null) {
-                    dl._setFilePackage(fp);
-                }
-                decryptedLinks.add(dl);
-            } else {
-                /* Folder --> Goes back into crawler */
-                final String contentURL = "https://app.degoo.com/share/" + folderID + "?ID=" + id;
-                final DownloadLink dl = this.createDownloadlink(contentURL);
-                if (!StringUtils.isEmpty(title)) {
-                    if (StringUtils.isEmpty(path)) {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, title);
-                    } else {
-                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path + "/" + title);
+            br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
+            if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            nextPageToken = (String) entries.get("NextToken");
+            final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("Items");
+            if (ressourcelist.size() == 0) {
+                if (decryptedLinks.size() == 0) {
+                    logger.info("Empty folder");
+                    final DownloadLink offline = this.createOfflinelink(parameter);
+                    if (!StringUtils.isEmpty(path)) {
+                        offline.setName(path);
                     }
+                    decryptedLinks.add(offline);
+                    return decryptedLinks;
+                } else {
+                    /* Maybe pagination failed -> Account for this */
+                    logger.info("Stopping because current page does not contain any items at all");
+                    break;
                 }
-                decryptedLinks.add(dl);
             }
-        }
+            int page = 0;
+            for (final Object ressourceO : ressourcelist) {
+                page++;
+                logger.info("Crawling page: " + page);
+                entries = (HashMap<String, Object>) ressourceO;
+                final String title = (String) entries.get("Name");
+                final int filesize = ((Integer) entries.get("Size")).intValue();
+                final boolean isFolder = ((Boolean) entries.get("IsContainer")).booleanValue();
+                // final int categoryID = ((Integer) entries.get("Category")).intValue();
+                final String id = Long.toString(((Long) entries.get("ID")).longValue());
+                if (StringUtils.isEmpty(title) || id.equals("0")) {
+                    /* Skip invalid items */
+                    continue;
+                }
+                if (!isFolder) {
+                    /* File */
+                    final String directurl = (String) entries.get("URL");
+                    final String contentURL = "https://cloud.degoo.com/share/" + folderID + "?ID=" + id;
+                    final DownloadLink dl = this.createDownloadlink(contentURL);
+                    dl.setContentUrl(contentURL);
+                    dl.setAvailable(true);
+                    dl.setFinalFileName(title);
+                    if (!StringUtils.isEmpty(directurl)) {
+                        dl.setProperty("directurl", directurl);
+                    }
+                    if (filesize > 0) {
+                        dl.setDownloadSize(filesize);
+                    }
+                    if (!StringUtils.isEmpty(path)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path);
+                    }
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                } else {
+                    /* Folder --> Goes back into crawler */
+                    final String contentURL = "https://app.degoo.com/share/" + folderID + "?ID=" + id;
+                    final DownloadLink dl = this.createDownloadlink(contentURL);
+                    if (!StringUtils.isEmpty(title)) {
+                        if (StringUtils.isEmpty(path)) {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, title);
+                        } else {
+                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, path + "/" + title);
+                        }
+                    }
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+            }
+            if (StringUtils.isEmpty(nextPageToken)) {
+                logger.info("Stopping because reached end");
+                break;
+            } else if (dupeList.contains(nextPageToken)) {
+                logger.info("Stopping because current nextPageToken has already been crawled");
+                break;
+            } else {
+                dupeList.add(nextPageToken);
+            }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 }
