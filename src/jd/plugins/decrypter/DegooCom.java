@@ -113,7 +113,7 @@ public class DegooCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl.setFinalFileName(title);
                     if (!StringUtils.isEmpty(directurl)) {
-                        dl.setProperty("directurl", directurl);
+                        dl.setProperty(jd.plugins.hoster.DegooCom.PROPERTY_DIRECTURL, directurl);
                     }
                     if (filesize > 0) {
                         dl.setDownloadSize(filesize);
