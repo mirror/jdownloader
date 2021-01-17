@@ -70,15 +70,16 @@ public class DegooCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME        = false;
+    private static final int     FREE_MAXCHUNKS     = 1;
+    private static final int     FREE_MAXDOWNLOADS  = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public static String         PROPERTY_DIRECTURL = "free_directlink";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -116,31 +117,12 @@ public class DegooCom extends PluginForHost {
         final Map<String, Object> params = new HashMap<String, Object>();
         params.put("HashValue", folderID);
         params.put("FileID", fileID);
-        params.put("Limit", 100);
-        params.put("JWT", null);
-        br.postPageRaw("https://rest-api.degoo.com/shared", JSonStorage.serializeToJson(params));
+        br.postPageRaw("https://rest-api.degoo.com/overlay", JSonStorage.serializeToJson(params));
+        /* 2021-01-17: HTTP 400: {"Error": "Not authorized!"} == File offline */
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("Items");
-        boolean foundTargetItem = false;
-        for (final Object ressourceO : ressourcelist) {
-            entries = (HashMap<String, Object>) ressourceO;
-            final String id = Long.toString(((Long) entries.get("ID")).longValue());
-            if (id.equals("0")) {
-                /* Skip invalid items */
-                continue;
-            }
-            if (fileID.equals(id)) {
-                foundTargetItem = true;
-                break;
-            }
-        }
-        if (!foundTargetItem) {
-            /* The file we're looking for has been removed from our source folder (?) */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String filename = (String) entries.get("Name");
         final int filesize = ((Integer) entries.get("Size")).intValue();
         this.dllink = (String) entries.get("URL");
@@ -149,6 +131,7 @@ public class DegooCom extends PluginForHost {
         }
         if (filesize > 0) {
             link.setDownloadSize(filesize);
+            link.setVerifiedFileSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
@@ -156,7 +139,7 @@ public class DegooCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DIRECTURL);
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -165,7 +148,7 @@ public class DegooCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -175,8 +158,17 @@ public class DegooCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 429) {
+                /**
+                 * 2021-01-17: Plaintext response: "Rate Limit" </br>
+                 * This limit sits on the files themselves and/or the uploader account. There is no way to bypass this by reconnecting!
+                 * </br>
+                 * Displayed error on website: "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
