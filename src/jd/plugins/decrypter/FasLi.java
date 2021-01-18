@@ -52,8 +52,13 @@ public class FasLi extends antiDDoSForDecrypt {
             logger.info("Failed to find captchaform");
             return null;
         }
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        /* 2021-01-18: Captcha not required anymore? */
+        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(this.br)) {
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        } else {
+            logger.info("No captcha required");
+        }
         br.setFollowRedirects(false);
         this.submitForm(continueForm);
         String finallink = br.getRedirectLocation();
@@ -74,6 +79,10 @@ public class FasLi extends antiDDoSForDecrypt {
             if (finallink == null) {
                 logger.warning("Failed to find finallink");
                 return null;
+            } else if (this.canHandle(finallink) && finallink.matches(".+/deleted$")) {
+                /* 2021-01-18 */
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
         }
         decryptedLinks.add(createDownloadlink(finallink));

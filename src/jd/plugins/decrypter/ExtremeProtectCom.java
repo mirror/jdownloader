@@ -15,11 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -27,8 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" })
 public class ExtremeProtectCom extends PluginForDecrypt {
@@ -46,27 +44,9 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("linkidwoc|mylink", "linkcheck");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        boolean failed = true;
-        for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML(RECAPTCHATEXT) && !br.containsHTML(RECAPTCHATEXT2)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final Recaptcha rc = new Recaptcha(br, this);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode("recaptcha", cf, param);
-            rc.setCode(c);
-            if (br.containsHTML("(The security code is <font color=\\'red\\'>incorrect</font>|The CAPTCHA wasn\\'t entered correctly)")) {
-                br.getPage(parameter);
-                continue;
-            }
-            failed = false;
-            break;
-        }
-        if (failed) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        final Form continueForm = br.getFormbyActionRegex(".*linkid\\.php");
+        if (continueForm != null) {
+            br.submitForm(continueForm);
         }
         if (br.containsHTML("<a href= target=_blank></a>")) {
             logger.info("Link offline: " + parameter);
@@ -80,7 +60,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         String[] links = br.getRegex("target=_blank>(.*?)</a>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
