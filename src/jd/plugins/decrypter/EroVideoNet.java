@@ -13,11 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,11 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:www\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" }) public class EroVideoNet extends PornEmbedParser {
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" })
+public class EroVideoNet extends PornEmbedParser {
     private static AtomicReference<String> DELIMITER = new AtomicReference<String>(null);
 
     public EroVideoNet(PluginWrapper wrapper) {
@@ -42,12 +42,16 @@ import org.appwork.utils.StringUtils;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("class=\"meta__title\">([^<>\"]+)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(?:Watch )?([^<>\"]*?)</title>").getMatch(0);
+        }
         if (filename == null) {
             filename = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         } else {
@@ -76,6 +80,7 @@ import org.appwork.utils.StringUtils;
                 }
             }
             if (!StringUtils.isEmpty(delimiter)) {
+                /* Old handling */
                 final String player = this.br.getRegex("evplayer\\(\"(.*?)\"").getMatch(0);
                 if (player != null) {
                     final String mcd = new Regex(player, "mcd=(.*?)(&|$)").getMatch(0);
@@ -96,6 +101,18 @@ import org.appwork.utils.StringUtils;
                         }
                     }
                 }
+            }
+            /** 2021-01-18: New */
+            final String hlsURL = br.getRegex("window\\.NMA\\.video\\.url = '(/movie/hls[^<>\"\\']+)';").getMatch(0);
+            if (hlsURL != null) {
+                br.getPage(hlsURL);
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                final DownloadLink link = this.createDownloadlink(hlsbest.getDownloadurl().replaceAll("https?://", "m3u8s://"));
+                if (filename != null) {
+                    link.setFinalFileName(filename + ".mp4");
+                }
+                link.setAvailable(true);
+                decryptedLinks.add(link);
             }
         }
         return decryptedLinks;

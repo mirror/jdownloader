@@ -60,13 +60,11 @@ public class EroProfileComGallery extends PluginForDecrypt {
         if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
             logger.info("Account needed to decrypt link: " + parameter);
             return decryptedLinks;
-        }
-        if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
+        } else if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
             logger.info("No cookies, login maybe failed: " + parameter);
             return decryptedLinks;
-        }
-        if (br.containsHTML(">Album not found<")) {
-            logger.info("Link offline: " + parameter);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);

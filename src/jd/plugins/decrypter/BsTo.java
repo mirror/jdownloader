@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,9 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bs.to" }, urls = { "https?://(?:www\\.)?(?:bs\\.to|burningseries\\.co)/(serie/.*|out/\\d+)" })
 public class BsTo extends PluginForDecrypt {
@@ -95,8 +95,12 @@ public class BsTo extends PluginForDecrypt {
                 if (security_token == null || lid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* 2019-07-26: Hardcoded reCaptchaV2Key */
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LeiZSYUAAAAAI3JZXrRnrsBzAdrZ40PmD57v_fs").getToken();
+                String rcKey = br.getRegex("<script>series\\.init\\s*\\(\\d+, \\d+, '([^<>\"\\']+)'\\);</script>").getMatch(0);
+                if (rcKey == null) {
+                    /* 2021-01-18: Hardcoded reCaptchaV2Key */
+                    rcKey = "6LfG_SYaAAAAABmtgbmBRni8SvFepX0EEun1f5-5";
+                }
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, rcKey).getToken();
                 br.postPage("/ajax/embed.php", "token=" + security_token + "&LID=" + lid + "&ticket=" + Encoding.urlEncode(recaptchaV2Response));
                 finallink = PluginJSonUtils.getJson(br, "link");
                 if (StringUtils.isEmpty(finallink) || !finallink.startsWith("http")) {
