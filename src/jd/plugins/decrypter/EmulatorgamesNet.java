@@ -32,7 +32,7 @@ public class EmulatorgamesNet extends antiDDoSForDecrypt {
         String itemStub = new Regex(parameter, "(?:/roms/(?:[^/]+/)?|/download/\\?rom=)([^/&$]+)").getMatch(0);
         String fpName = null;
         if (StringUtils.isNotEmpty(itemStub)) {
-            fpName = br.getRegex("([^<]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
+            fpName = br.getRegex("([^<>]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
             String romID = br.getRegex("<span[^>]+class\\s*=\\s*\"eg-view\"[^>]+data-type\\s*=\\s*\"rom\"[^>]+data-id\\s*=\\s*\"([^\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(romID)) {
                 getLogger().warning("Could not retrieve ROM ID required for download steps!");
