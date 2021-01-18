@@ -616,7 +616,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             protocol = "http://";
         }
         mainpage = protocol;
-        if (requires_WWW()) {
+        if (requires_WWW() && !host.startsWith("www.")) {
             mainpage += "www.";
         }
         mainpage += host;
