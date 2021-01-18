@@ -182,6 +182,7 @@ public class TvnowDe extends PluginForHost {
         if (newAPI) {
             final long code = JavaScriptEngineFactory.toLong(entries.get("code"), 0);
             final String error = (String) entries.get("error");
+            final boolean geoBlockedNew = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/geoBlocking/enabled")).booleanValue();
             // if ("User not authorized!".equalsIgnoreCase(error)) {
             if (code == 403) {
                 /* Paid content - goes along with response 403, also json will not contain anything else but the thumbnail-URL. */
@@ -195,12 +196,17 @@ public class TvnowDe extends PluginForHost {
                 geoBLOCKED = false;
             } else {
                 isFree = true;
-                isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isDrm"));
-                /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
-                // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
-                geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/source");
+                if (geoBlockedNew) {
+                    isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "videoConfig/constraints/drmPlatformIssue/enabled"));
+                    geoBLOCKED = true;
+                } else {
+                    isDRM = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isDrm"));
+                    /* TODO: Find out what this means? 1080p = DRM protected, other qualities not? */
+                    // isStrictDrm1080p = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "rights/isStrictDrm1080p"));
+                    geoBLOCKED = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "config/boards/geoBlocking/block"));
+                }
                 /* TODO: Re-Check this - this might not be the same as "broadcastDate" in the old API! */
+                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoConfig/meta");
                 date = (String) entries.get("previewStart");
                 if (StringUtils.isEmpty(formatTitle)) {
                     formatTitle = (String) entries.get("format");
@@ -328,7 +334,11 @@ public class TvnowDe extends PluginForHost {
 
     /** Returns RAW String of episodenumber from json */
     public static Object getEpisodeNumberRAW(final LinkedHashMap<String, Object> entries) {
-        return entries.get("episode");
+        if (entries.containsKey("episode")) {
+            return entries.get("episode");
+        } else {
+            return null;
+        }
     }
 
     public static boolean episodenumberHasSpecialStringFormat(final Object episodeO) {
