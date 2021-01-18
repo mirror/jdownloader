@@ -15,8 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -24,6 +27,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -54,17 +58,22 @@ public class AvxHmeW extends PluginForDecrypt {
         if (parameter.matches(".*/go/\\d+/.*")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
-            while (true) {
-                final String link = br.getRedirectLocation();
-                if (link != null && link.matches(this.getSupportedLinks().pattern()) && link.matches("^https?://.+")) {
-                    br.followRedirect();
-                } else {
-                    break;
+            followInternalRedirects();
+            String link = br.getRedirectLocation();
+            if (link == null) {
+                final Form captchaForm = br.getForm(0);
+                if (captchaForm.hasInputFieldByName("g-recaptcha-response")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
+                br.submitForm(captchaForm);
+                followInternalRedirects();
+                link = br.getRedirectLocation();
             }
-            final String link = br.getRedirectLocation();
             if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
+            } else {
+                logger.warning("Failed to find any result");
             }
             return decryptedLinks;
         }
@@ -145,6 +154,17 @@ public class AvxHmeW extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private void followInternalRedirects() throws IOException {
+        while (true) {
+            final String link = br.getRedirectLocation();
+            if (link != null && link.matches(this.getSupportedLinks().pattern()) && link.matches("^https?://.+")) {
+                br.followRedirect();
+            } else {
+                break;
+            }
+        }
     }
 
     /* NO OVERRIDE!! */
