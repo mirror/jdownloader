@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,13 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/hd\\-porn/(\\w+)(/[^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:www\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
     public String   dllink        = null;
     private String  vq            = null;
@@ -89,13 +89,13 @@ public class EPornerCom extends PluginForHost {
         // this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (!this.br.getURL().contains("porn/") || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (!this.br.getURL().contains(this.getFID(link)) || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         if (filename == null) {
             /* Filename inside current url */
-            filename = new Regex(this.br.getURL(), "eporner\\.com/hd\\-porn/\\w+/(.*?)/?$").getMatch(0);
+            filename = new Regex(this.br.getURL(), this.getSupportedLinks()).getMatch(2);
             if (filename != null) {
                 /* url filename --> Nicer url filename */
                 filename = filename.replace("-", " ");

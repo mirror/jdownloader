@@ -136,7 +136,8 @@ public class EHentaiOrg extends antiDDoSForHost {
     }
 
     /**
-     * take account from download candidate!
+     * Take account from download candidate! </br>
+     * 2021-01-18: There is an API available but it is only returning the metadata: https://ehwiki.org/wiki/API
      *
      * @param link
      * @param account

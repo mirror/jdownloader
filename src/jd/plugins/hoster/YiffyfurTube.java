@@ -18,7 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube", "animalporn.ch", "beastialitytube.link" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?animalporn\\.ch/video/(\\d+)/([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?beastialitytube\\.link/video/(\\d+)/([A-Za-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yiffyfur.tube" }, urls = { "https?://(?:www\\.)?yiffyfur\\.tube/video/(\\d+)/([A-Za-z0-9\\-]+)" })
 public class YiffyfurTube extends antiDDoSForHost {
     public YiffyfurTube(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,42 +83,18 @@ public class YiffyfurTube extends antiDDoSForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* 2020-05-25: API disabled as website seems to be more reliable */
-        final boolean use_api = false;
         ArrayList<Object> ressourcelist = null;
         String filename = null;
         String dllink_fallback = null;
         final String streamtype_fallback = "iphone";
         String streamtype = "h264";
-        boolean websiteUsed = false;
-        if (use_api) {
-            final String fid = this.getFID(link);
-            br.getPage("https://api.beastialitytube.link/api.php?ajaxFunction=video&vid=" + fid);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            if (!entries.containsKey("VID")) {
-                /* 2020-02-20: e.g. {"torrent_exists":0,"files":[{"height":"","label":null,"format":null,"file":"_."}]} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = (String) entries.get("title");
-            dllink_fallback = (String) entries.get("hd_filename");
-            if (StringUtils.isEmpty(dllink_fallback)) {
-                dllink_fallback = (String) entries.get("ipod_filename");
-            }
-            ressourcelist = (ArrayList<Object>) entries.get("files");
-        } else {
-            /* Website */
-            websiteUsed = true;
-            getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String jssource = br.getRegex("videoFilesJson(?:\")?\\s*(?::|=)\\s*(\\[.*?\\])").getMatch(0);
-            if (jssource != null) {
-                ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-            }
+        getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String jssource = br.getRegex("videoFilesJson(?:\")?\\s*(?::|=)\\s*(\\[.*?\\])").getMatch(0);
+        if (jssource != null) {
+            ressourcelist = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(jssource);
         }
         final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         if (StringUtils.isEmpty(filename)) {
@@ -194,9 +169,7 @@ public class YiffyfurTube extends antiDDoSForHost {
         link.setFinalFileName(filename);
         if (StringUtils.isNotEmpty(dllink)) {
             /* Now try to find correct host and base (2020-03-03: hardcoded ) */
-            if (!websiteUsed) {
-                br.getPage(link.getPluginPatternMatcher());
-            }
+            br.getPage(link.getPluginPatternMatcher());
             final String host = br.getRegex("h264Base\\s*=\\s*\\'(https?://[^<>\"\\']+)\\'\\s*\\+ h264Base;").getMatch(0);
             String base = br.getRegex("var h264Base\\s*=\\s*\\'([^<>\"\\']+)\\';").getMatch(0);
             /* 2020-03-03: Hardcode base! */
@@ -209,6 +182,10 @@ public class YiffyfurTube extends antiDDoSForHost {
         } else {
             /* Final fallback */
             dllink = br.getRegex("\\s+var iphoneVideoSource = \\'(http[^<>\"\\']+\\.mp4)\\';").getMatch(0);
+        }
+        if (StringUtils.isEmpty(this.dllink)) {
+            /* 2021-01-18 */
+            this.dllink = "https://www.yiffyfur.tube/static/webseed/" + this.getFID(link) + ".mp4";
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             /* Do not check URL if user wants to download otherwise we'll get an error 403. */
@@ -233,14 +210,14 @@ public class YiffyfurTube extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink, true);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);

@@ -91,6 +91,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "3movs.com" });
         /* 2021-01-12 */
         ret.add(new String[] { "camhoes.tv" });
+        /* 2020-01-18 */
+        ret.add(new String[] { "gaysearch.com" });
         return ret;
     }
 
@@ -112,6 +114,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         if (StringUtils.isEmpty(fuid) || StringUtils.isEmpty(urlTitle)) {
             return null;
         }
-        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle;
+        return "https://www." + this.getHost() + "/videos/" + fuid + "/" + urlTitle + "/";
     }
 }
