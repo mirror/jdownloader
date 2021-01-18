@@ -1780,15 +1780,15 @@ public class YetiShareCore extends antiDDoSForHost {
         String urlString = url.toString();
         if (supports_https()) {
             /* Prefer https whenever possible */
-            urlString = urlString.replaceFirst("^http://", "https://");
+            urlString = urlString.replaceFirst("^(?i)http://", "https://");
         } else {
-            urlString = urlString.replaceFirst("^https://", "http://");
+            urlString = urlString.replaceFirst("^(?i)https://", "http://");
         }
         final boolean wwwHost = StringUtils.startsWithCaseInsensitive(url.getHost(), "www.");
         if (requires_WWW() && !wwwHost) {
-            urlString = urlString.replaceFirst("//" + Pattern.quote(url.getHost()), "//www." + url.getHost());
+            urlString = urlString.replaceFirst("(?i)//" + Pattern.quote(url.getHost()), "//www." + url.getHost());
         } else if (!this.requires_WWW() && wwwHost) {
-            urlString = urlString.replaceFirst("//www\\.", "//");
+            urlString = urlString.replaceFirst("(?i)//www\\.", "//");
         }
         return urlString;
     }
@@ -1796,7 +1796,7 @@ public class YetiShareCore extends antiDDoSForHost {
     /** Returns https?://host.tld */
     protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
-        return ("http://" + hosts[0]).replaceFirst("https?://", this.supports_https() ? "https://" : "http://");
+        return ("http://" + hosts[0]).replaceFirst("(?i)https?://", this.supports_https() ? "https://" : "http://");
     }
 
     /**
