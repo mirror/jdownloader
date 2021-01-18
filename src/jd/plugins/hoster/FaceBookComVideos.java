@@ -297,15 +297,21 @@ public class FaceBookComVideos extends PluginForHost {
                     }
                     if (dateFormatted == null) {
                         /* Final fallback for uploadDate */
-                        final String dateStr = br.getRegex("photo_id\\." + videoID + "%3Astory_location\\.\\d+%3Astory_attachment_style\\.video_inline%3Atds_flgs.\\d+%3A[^\"]+\"><abbr>([^<>\"]+)").getMatch(0);
+                        final String dateStr = br.getRegex("photo_id\\." + videoID + "%3Astory_location\\.\\d+%3Astory_attachment_style\\.video_inline%3Atds_flgs\\.\\d+%3A[^\"]+\"><abbr>([^<>\"]+)").getMatch(0);
                         if (dateStr != null) {
                             if (dateStr.matches("\\d{1,2}\\. [A-Za-z]+ \\d{4} um \\d{2}:\\d{2}")) {
                                 final long timestamp = TimeFormatter.getMilliSeconds(dateStr, "dd'.' MMM yyyy 'um' HH:mm", Locale.GERMAN);
                                 final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
                                 dateFormatted = formatter.format(new Date(timestamp));
+                            } else if (dateStr.matches("[A-Za-z]+ \\d{1,2} at \\d{1,2}:\\d{1,2} (PM|AM)")) {
+                                /* 2021-01-18: Bad workaround */
+                                final long timestamp = TimeFormatter.getMilliSeconds("2021 " + dateStr, "yyyy MMM dd 'at' hh:mm aa", Locale.US);
+                                final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                                dateFormatted = formatter.format(new Date(timestamp));
                             } else {
                                 /* TODO: Add support for other dateformats */
                                 logger.warning("Unsupported dateformat: " + dateStr);
+                                dateFormatted = dateStr;
                             }
                         }
                     }

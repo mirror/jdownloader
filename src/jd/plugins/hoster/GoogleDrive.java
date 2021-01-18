@@ -950,6 +950,9 @@ public class GoogleDrive extends PluginForHost {
     private void handleErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException, IOException {
         if (requiresSpecialCaptcha(br)) {
             handleSpecialCaptcha(link, account);
+        } else if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
+            /* 2021-01-18 */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Blocked by Google");
         } else if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
         }
