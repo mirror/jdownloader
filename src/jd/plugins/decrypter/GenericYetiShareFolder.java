@@ -24,6 +24,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.components.YetiShareCoreNew;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -44,7 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-import jd.plugins.hoster.YetiShareCoreNew;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericYetiShareFolder extends antiDDoSForDecrypt {
@@ -238,7 +238,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     if (!StringUtils.isEmpty(filesizeStr)) {
                         dl.setDownloadSize(Long.parseLong(filesizeStr));
                     }
-                    dl.setProperty(jd.plugins.hoster.YetiShareCoreNew.PROPERTY_INTERNAL_FILE_ID, internalFileID);
+                    dl.setProperty(org.jdownloader.plugins.components.YetiShareCore.PROPERTY_INTERNAL_FILE_ID, internalFileID);
                     if (uploaddateStr != null) {
                         /* 2020-11-26: For Packagizer/EventScripter - not used anywhere else. */
                         dl.setProperty(YetiShareCoreNew.PROPERTY_UPLOAD_DATE_RAW, uploaddateStr);

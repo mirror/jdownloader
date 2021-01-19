@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -28,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class TruefileCc extends YetiShareCoreNew {
-    public TruefileCc(PluginWrapper wrapper) {
+public class PrzeslijCom extends YetiShareCore {
+    public PrzeslijCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -38,14 +37,14 @@ public class TruefileCc extends YetiShareCoreNew {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2021-01-13: No limits at all <br />
-     * captchatype-info: 2021-01-13: null<br />
+     * limit-info:<br />
+     * captchatype-info: 2021-01-19: reCaptchaV2<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "truefile.cc" });
+        ret.add(new String[] { "przeslij.com" });
         return ret;
     }
 
@@ -79,27 +78,27 @@ public class TruefileCc extends YetiShareCoreNew {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 1;
     }
 }

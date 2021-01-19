@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
 import jd.http.Browser;

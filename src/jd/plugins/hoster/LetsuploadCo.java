@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCoreNew;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;

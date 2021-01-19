@@ -115,7 +115,6 @@ public class GoogleDrive extends PluginForHost {
     private static final String NOCHUNKS                      = "NOCHUNKS";
     private boolean             privatefile                   = false;
     private boolean             fileHasReachedServersideQuota = false;
-    private boolean             specialError403               = false;
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
@@ -439,16 +438,11 @@ public class GoogleDrive extends PluginForHost {
                         this.handleErrors(this.br, link, account);
                         /* Document which is not direct-downloadable --> Must be offline */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (con.getResponseCode() == 403) {
-                        /*
-                         * 2020-09-14: E.g. "Sorry[...] but your computer or network may be sending automated queries"[2020-09-14: Retry
-                         * with active Google account can 'fix' this.] or rights-issue ...
-                         */
-                        specialError403 = true;
                     } else if (con.getResponseCode() == 404) {
                         /* 2020-09-14: File should be offline */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
+                        this.checkErrorBlockedByGoogle(this.br, link, account);
                         filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
                         if (filename != null) {
                             link.setName(Encoding.htmlDecode(filename).trim());
@@ -853,16 +847,8 @@ public class GoogleDrive extends PluginForHost {
                 originalFileDownloadTempUnavailableAndOrOnlyViaAccount(account);
             } else if (StringUtils.isEmpty(this.dllink)) {
                 /* Last chance errorhandling */
-                if (specialError403) {
-                    if (account != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Add Google account or try again later");
-                    }
-                } else {
-                    this.handleErrors(this.br, link, account);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                this.handleErrors(this.br, link, account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /*
              * TODO: Files can be blocked for downloading but streaming may still be possible(rare case). Usually if downloads are blocked
@@ -943,6 +929,13 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
+            /* 2021-01-18 */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Blocked by Google", 15 * 60 * 1000l);
+        }
+    }
+
     /**
      * Checks for errors that can happen at "any time". Preferably call this inside synchronized block especially if an account is available
      * in an attempt to avoid having to solve multiple captchas!
@@ -950,11 +943,10 @@ public class GoogleDrive extends PluginForHost {
     private void handleErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException, IOException {
         if (requiresSpecialCaptcha(br)) {
             handleSpecialCaptcha(link, account);
-        } else if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("but your computer or network may be sending automated queries")) {
-            /* 2021-01-18 */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Blocked by Google");
         } else if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
+        } else {
+            checkErrorBlockedByGoogle(br, link, account);
         }
     }
 
