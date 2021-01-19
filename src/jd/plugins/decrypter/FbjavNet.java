@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.net/\\w+-\\d+-[^/]+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.(?:net|com)/\\w+-\\d+[^/]*" })
 public class FbjavNet extends antiDDoSForDecrypt {
     public FbjavNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,9 +55,14 @@ public class FbjavNet extends antiDDoSForDecrypt {
             for (String[] videoSource : videoSources) {
                 String eid = videoSource[0];
                 String dtl = videoSource[1];
-                engine.eval("var res = link_decode(\"" + dtl + "\");");
-                String result = engine.get("res").toString();
-                decryptedLinks.add(createDownloadlink(result));
+                try {
+                    engine.eval("var res = link_decode(\"" + dtl + "\");");
+                    String result = engine.get("res").toString();
+                    decryptedLinks.add(createDownloadlink(result));
+                } catch (Exception e) {
+                    getLogger().log(e);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         if (StringUtils.isNotEmpty(fpName)) {
