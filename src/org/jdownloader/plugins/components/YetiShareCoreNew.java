@@ -13,9 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package jd.plugins.hoster;
-
-import org.jdownloader.plugins.components.YetiShareCore;
+package org.jdownloader.plugins.components;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -23,7 +21,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-/** TODO: Move to JDownloader/src/jdownloader/plugins/components */
 public class YetiShareCoreNew extends YetiShareCore {
     public YetiShareCoreNew(PluginWrapper wrapper) {
         super(wrapper);

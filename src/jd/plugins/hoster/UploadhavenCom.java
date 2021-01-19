@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -62,7 +64,6 @@ public class UploadhavenCom extends PluginForHost {
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = -2;
     private static final int     FREE_MAXDOWNLOADS = 1;
-
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
@@ -72,18 +73,35 @@ public class UploadhavenCom extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
+
+    private Browser prepBR(final Browser br) {
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBR(this.br);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         br.setFollowRedirects(true);
-        /* 2021-01-19: Some URLs are restricted to one particular referer-website (mainpage does the job). */
-        if (link.getReferrerUrl() != null) {
+        /**
+         * 2021-01-19: Some URLs are restricted to one particular referer-website (mainpage does the job)
+         */
+        if (!StringUtils.isEmpty(link.getDownloadPassword())) {
+            /* Prefer "Download password" --> User defined Referer value */
+            br.getHeaders().put("Referer", link.getDownloadPassword());
+        } else if (link.getReferrerUrl() != null) {
             br.getHeaders().put("Referer", link.getReferrerUrl());
         } else if (link.getContainerUrl() != null && !this.canHandle(link.getContainerUrl())) {
             br.getHeaders().put("Referer", link.getContainerUrl());
         }
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || !br.getURL().contains(this.getFID(link))) {
+        if (this.isRefererProtected()) {
+            /* We can't obtain more file information in this state! */
+            return AvailableStatus.TRUE;
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("File: ([^<>\"]+)<br>").getMatch(0);
@@ -110,6 +128,44 @@ public class UploadhavenCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
+            if (this.isRefererProtected()) {
+                /**
+                 * 2021-01-19: WTF seems like using different referers multiple times in a row, they will always allow the 3rd string as
+                 * valid Referer no matter what is used as a string?! E.g. "dfrghe".
+                 */
+                boolean success = false;
+                String userReferer = null;
+                for (int i = 0; i <= 2; i++) {
+                    br.clearAll();
+                    prepBR(this.br);
+                    userReferer = getUserInput("Enter Referer?", link);
+                    try {
+                        new URL(userReferer);
+                    } catch (final MalformedURLException e) {
+                        logger.info("Entered string is not a valid URL!");
+                        continue;
+                    }
+                    link.setDownloadPassword(userReferer);
+                    requestFileInformation(link);
+                    if (!this.isRefererProtected()) {
+                        success = true;
+                        break;
+                    }
+                }
+                if (!success) {
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong referer entered");
+                } else {
+                    logger.info("Valid referer == " + userReferer);
+                    /* Is already set in the above loop! */
+                    // link.setDownloadPassword(userReferer);
+                    if (StringUtils.isEmpty(link.getComment())) {
+                        link.setComment("DownloadPassword == Referer");
+                    }
+                }
+            }
+            while (this.isRefererProtected()) {
+            }
             final Form dlform = br.getFormbyProperty("id", "form-join");
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -145,6 +201,13 @@ public class UploadhavenCom extends PluginForHost {
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    /**
+     * @return: true: Special Referer is required to access this URL
+     */
+    private boolean isRefererProtected() {
+        return br.containsHTML(">\\s*Hotlink protection active");
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
