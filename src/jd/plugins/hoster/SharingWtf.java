@@ -199,7 +199,7 @@ public class SharingWtf extends YetiShareCore {
     }
 
     @Override
-    public void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
+    protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* 2020-02-24: Hack/Workaround --> Can skip waittimes but will eventually download items in lower quality. */
         /* 2020-06-04: Disabled for now as normal download has been fixed! */
         final boolean attemptEmbedWorkaround = false;
