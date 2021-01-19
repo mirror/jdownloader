@@ -20,13 +20,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -102,7 +104,6 @@ public class AllDebridCom extends antiDDoSForHost {
     private static final String          agent                             = "agent=JDownloader";
     public static final String           agent_raw                         = "JDownloader";
     private static final String          PROPERTY_APIKEY_CREATED_TIMESTAMP = "APIKEY_CREATED_TIMESTAMP";
-    /* New APIv4 apikey --> Replaces old token */
     private static final String          PROPERTY_apikey                   = "apiv4_apikey";
 
     public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
@@ -190,7 +191,7 @@ public class AllDebridCom extends antiDDoSForHost {
             final boolean isTrial = PluginJSonUtils.parseBoolean(PluginJSonUtils.getJson(br, "isTrial"));
             if (!isPremium) {
                 /*
-                 * Real free account (or expired trial premium [= user downloaded more than 25GB trial quota]) --> Cannot download and
+                 * "Real" free account (or expired trial premium [= user downloaded more than 25GB trial quota]) --> Cannot download and
                  * cannot even login via API officially!
                  */
                 freeAccountsAreUnsupported();
@@ -237,14 +238,14 @@ public class AllDebridCom extends antiDDoSForHost {
         fetchApikey(account, accountInfo);
         /* They got 3 arrays of types of supported websites --> We want to have the "hosts" Array only! */
         getPage(api_base + "/user/hosts?" + agent + "&hostsOnly=true");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
         final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         while (iterator.hasNext()) {
             try {
                 final Entry<String, Object> hostO = iterator.next();
-                final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) hostO.getValue();
+                final Map<String, Object> entry = (Map<String, Object>) hostO.getValue();
                 String host_without_tld = (String) entry.get("name");
                 if (StringUtils.isEmpty(host_without_tld)) {
                     host_without_tld = hostO.getKey();
@@ -276,7 +277,7 @@ public class AllDebridCom extends antiDDoSForHost {
                     continue;
                 }
                 if (domainsO != null) {
-                    final ArrayList<String> domains = (ArrayList<String>) entry.get("domains");
+                    final List<String> domains = (List<String>) entry.get("domains");
                     for (final String domain : domains) {
                         supportedHosts.add(domain);
                     }
@@ -335,17 +336,20 @@ public class AllDebridCom extends antiDDoSForHost {
         final String status = PluginJSonUtils.getJson(br, "status");
         if ("error".equalsIgnoreCase(status)) {
             return PluginJSonUtils.getJson(br, "code");
+        } else {
+            return null;
         }
-        return null;
     }
 
-    /* See https://docs.alldebrid.com/v4/#all-errors */
+    /** See https://docs.alldebrid.com/v4/#all-errors */
     private void handleErrors(final Account account, final DownloadLink link) throws PluginException, Exception {
         /* 2020-03-25: E.g. {"status": "error", "error": {"code": "AUTH_BAD_APIKEY","message": "The auth apikey is invalid"}} */
-        final String status = PluginJSonUtils.getJson(br, "status");
-        final String code = PluginJSonUtils.getJson(br, "code");
-        String message = PluginJSonUtils.getJson(br, "message");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String status = (String) entries.get("status");
         if ("error".equalsIgnoreCase(status)) {
+            entries = (Map<String, Object>) entries.get("error");
+            final String code = (String) entries.get("code");
+            String message = (String) entries.get("message");
             if (StringUtils.isEmpty(message)) {
                 /* We always want to have a human readable errormessage */
                 message = "Unknown error";
@@ -357,7 +361,7 @@ public class AllDebridCom extends antiDDoSForHost {
                      * If this happens during download attempt, temp. disable account for a very short time so next check will trigger a
                      * full login.
                      */
-                    throw new AccountUnavailableException("Session expired: " + message, 10 * 60 * 1000);
+                    throw new AccountUnavailableException("Session expired or apikey has changed: " + message, 10 * 60 * 1000);
                 } else {
                     throw new AccountInvalidException("Invalid login: " + message);
                 }
@@ -443,7 +447,7 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -508,7 +512,7 @@ public class AllDebridCom extends antiDDoSForHost {
             try {
                 /* We need the parser as some URLs may have streams available with multiple qualities and multiple downloadurls */
                 // dllink = PluginJSonUtils.getJsonValue(br, "link");
-                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("data");
                 dllink = (String) entries.get("link");
             } catch (final Throwable e) {
@@ -604,7 +608,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 this.submitForm(dlform);
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     entries = (Map<String, Object>) entries.get("data");
                     delayedStatus = (int) JavaScriptEngineFactory.toLong(entries.get("status"), 3);
                     final int tmpCurrentProgress = (int) ((Number) entries.get("progress")).doubleValue() * 100;

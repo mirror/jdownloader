@@ -72,6 +72,7 @@ public class AlldebridComFolder extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    /** API docs: https://docs.alldebrid.com/#status */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -85,7 +86,6 @@ public class AlldebridComFolder extends PluginForDecrypt {
         if (account == null) {
             throw new AccountRequiredException();
         }
-        /* API docs: https://docs.alldebrid.com/#status */
         final UrlQuery query = new UrlQuery();
         query.appendEncoded("agent", AllDebridCom.agent_raw);
         query.appendEncoded("apikey", AllDebridCom.getStoredApiKey(account));
@@ -97,6 +97,10 @@ public class AlldebridComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        /**
+         * TODO: 2021-01-19: This is supposed to always be an array. It's a small serverside bug. Update this once they've updated it
+         * serverside!
+         */
         final Object magnetsO = JavaScriptEngineFactory.walkJson(entries, "data/magnets");
         if (magnetsO instanceof List) {
             final List<Object> tmpList = (List<Object>) magnetsO;
