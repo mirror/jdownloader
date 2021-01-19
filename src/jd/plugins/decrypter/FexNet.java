@@ -117,7 +117,7 @@ public class FexNet extends PluginForDecrypt {
         String passCode = null;
         /* Subfolder of previously crawler password protected subfolder? Then we already know the password! */
         if (param.getDownloadLink() != null) {
-            passCode = param.getDownloadLink().getDownloadPassword();
+            passCode = param.getDecrypterPassword();
         }
         do {
             logger.info("Crawling page: " + page);
