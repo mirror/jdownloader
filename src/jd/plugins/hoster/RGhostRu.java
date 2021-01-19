@@ -17,9 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -30,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //rghost.ru by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rgho.st" }, urls = { "https?://(?:[a-z0-9]+\\.)?(?:rghost\\.(?:net|ru)|rgho\\.st)/.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rghost.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?(?:rghost\\.(?:net|ru)|rgho\\.st)/(.+)" })
 public class RGhostRu extends PluginForHost {
     private static final String PWTEXT              = "id=\"password_field\"";
     private static final String type_private_all    = "http://([a-z0-9]+\\.)?[^/]+/private/.+";
@@ -55,18 +57,17 @@ public class RGhostRu extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("rghost.net".equals(getHost()) || "rghost.ru".equals(getHost())) {
-            if (host == null || "rghost.net".equals(host) || "rghost.ru".equals(host)) {
-                return "rgho.st";
+    public String rewriteHost(final String host) {
+        if ("rgho.st".equals(getHost()) || "rghost.ru".equals(getHost())) {
+            if (host == null || "rgho.st".equals(host) || "rghost.ru".equals(host)) {
+                return "rghost.net";
             }
         }
         return super.rewriteHost(host);
     }
 
-    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        String newlink = link.getDownloadURL().replaceAll("((tr|pl)\\.)?rghost\\.(?:net|ru)/", "rgho.st/");
+        String newlink = link.getPluginPatternMatcher().replaceAll("([a-z0-9]+)?rghost\\.(?:net|ru)/", "rgho.st/");
         if (newlink.matches(type_private_direct) || (newlink.matches(type_normal_direct) && !newlink.matches(type_private_all))) {
             /* Directlinks --> Change to normal links */
             newlink = newlink.substring(0, newlink.lastIndexOf("/"));
@@ -76,16 +77,30 @@ public class RGhostRu extends PluginForHost {
                 newlink = newlink.substring(0, newlink.lastIndexOf("."));
             }
         }
-        link.setUrlDownload(newlink);
+        newlink = newlink.replaceFirst(Regex.escape(Browser.getHost(newlink)), this.getHost());
+        link.setPluginPatternMatcher(newlink);
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 409, 503 });
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 409) {
@@ -93,6 +108,8 @@ public class RGhostRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 Server maintenance");
+        } else if (!br.containsHTML("abuses\\?file=" + Regex.escape(getFID(link)))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]+) — RGhost — file sharing</title>").getMatch(0);
         String filesize = br.getRegex("<i class=\"nowrap\">\\(([^<>\"]+)\\)<").getMatch(0);
