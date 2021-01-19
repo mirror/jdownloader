@@ -273,7 +273,10 @@ public class YetiShareCore extends antiDDoSForHost {
         return true;
     }
 
-    /** @return default: true */
+    /**
+     * @return default: true: Availablecheck: Look for filesize inside HTML code. Disable this if filesize is not given in html and/or html
+     *         contains similar traits and wrong string gets picked up.
+     */
     protected boolean supports_availablecheck_filesize_html() {
         return true;
     }
@@ -323,12 +326,6 @@ public class YetiShareCore extends antiDDoSForHost {
         return false;
     }
 
-    @Deprecated
-    /** 2021-01-11: Not a single module is using this. */
-    protected boolean preDownloadWaittimeSkippable() {
-        return false;
-    }
-
     /** Enable this if new YetiShare version is used. Only mandatory if auto handling fails. E.g. oxycloud.com. */
     protected boolean usesNewYetiShareVersion() {
         return false;
@@ -360,8 +357,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     this.checkErrors(link, account);
                 } catch (final PluginException e) {
                     if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        /* File offline or error during download -> Always throw exception. */
                         throw e;
                     } else {
+                        /* Other error (during linkcheck - e.g. limit reached) -> Return online status - file should be online. */
                         logger.log(e);
                         return AvailableStatus.TRUE;
                     }
@@ -377,36 +376,40 @@ public class YetiShareCore extends antiDDoSForHost {
                     this.checkErrors(link, account);
                 } catch (final PluginException e) {
                     if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        /* File offline or error during download -> Always throw exception. */
                         throw e;
                     } else {
                         logger.log(e);
-                        /* File is probably online but another error happened --> Do not throw it during availablecheck! */
+                        /* Other error (during linkcheck - e.g. limit reached) -> Return online status - file should be online. */
                         return AvailableStatus.TRUE;
                     }
                 }
+                /* Offline errorhandling */
                 if (isOfflineWebsite(link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
             scanInfo(link, fileInfo);
-            if (StringUtils.isEmpty(fileInfo[0])) {
-                /* Final fallback - this should never happen! */
-                fileInfo[0] = fallback_filename;
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                link.setName(fileInfo[0]);
+            } else if (!link.isNameSet()) {
+                link.setName(fallback_filename);
             }
-            link.setName(fileInfo[0]);
             if (fileInfo[1] != null) {
                 link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
             }
         } finally {
             /* Something went seriously wrong? Use fallback filename! */
-            if (StringUtils.isEmpty(fileInfo[0])) {
+            if (StringUtils.isEmpty(fileInfo[0]) && !link.isNameSet()) {
                 link.setName(getFallbackFilename(link));
             }
         }
+        /* Additional offline check. Useful for websites which still provide filename & filesize for offline files. */
         if (this.isOfflineWebsiteAfterLinkcheck()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     /** Return true for cases where filename- and size may still be present on website but URL is offline. */
@@ -539,7 +542,7 @@ public class YetiShareCore extends antiDDoSForHost {
         handleDownloadWebsite(link, null);
     }
 
-    public void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
+    protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         final boolean resume = this.isResumeable(link, account);
         final int maxchunks = this.getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
@@ -966,39 +969,34 @@ public class YetiShareCore extends antiDDoSForHost {
     protected void waitTime(final DownloadLink link, final long timeBefore) throws PluginException {
         /* Ticket Time */
         final String waitStr = regexWaittime();
-        if (this.preDownloadWaittimeSkippable()) {
-            /* Very rare case! */
-            logger.info("Skipping pre-download waittime: " + waitStr);
+        final int extraWaitSeconds = 1;
+        int wait;
+        if (waitStr != null && waitStr.matches("\\d+")) {
+            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+            logger.info("Found waittime, parsing waittime: " + waitStr);
+            wait = Integer.parseInt(waitStr);
+            /*
+             * Check how much time has passed during eventual captcha event before this function has been called and see how much time is
+             * left to wait.
+             */
+            wait -= passedTime;
+            if (passedTime > 0) {
+                /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
+                logger.info("Total passed time during captcha: " + passedTime);
+            }
         } else {
-            final int extraWaitSeconds = 1;
-            int wait;
-            if (waitStr != null && waitStr.matches("\\d+")) {
-                int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
-                logger.info("Found waittime, parsing waittime: " + waitStr);
-                wait = Integer.parseInt(waitStr);
-                /*
-                 * Check how much time has passed during eventual captcha event before this function has been called and see how much time
-                 * is left to wait.
-                 */
-                wait -= passedTime;
-                if (passedTime > 0) {
-                    /* This usually means that the user had to solve a captcha which cuts down the remaining time we have to wait. */
-                    logger.info("Total passed time during captcha: " + passedTime);
-                }
-            } else {
-                /* No waittime at all */
-                wait = 0;
-            }
-            if (wait > 0) {
-                logger.info("Waiting final waittime: " + wait);
-                sleep(wait * 1000l, link);
-            } else if (wait < -extraWaitSeconds) {
-                /* User needed more time to solve the captcha so there is no waittime left :) */
-                logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
-            } else {
-                /* No waittime at all */
-                logger.info("Found no waittime");
-            }
+            /* No waittime at all */
+            wait = 0;
+        }
+        if (wait > 0) {
+            logger.info("Waiting final waittime: " + wait);
+            sleep(wait * 1000l, link);
+        } else if (wait < -extraWaitSeconds) {
+            /* User needed more time to solve the captcha so there is no waittime left :) */
+            logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
+        } else {
+            /* No waittime at all */
+            logger.info("Found no waittime");
         }
     }
 
@@ -2059,10 +2057,10 @@ public class YetiShareCore extends antiDDoSForHost {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
-            final boolean resume = this.isResumeable(link, account);
-            final int maxchunks = this.getMaxChunks(account);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         }
+        final boolean resume = this.isResumeable(link, account);
+        final int maxchunks = this.getMaxChunks(account);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         final URLConnectionAdapter con = dl.getConnection();
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
@@ -2105,6 +2103,11 @@ public class YetiShareCore extends antiDDoSForHost {
         /* E.g. {"message":"Username could not be found.","result":false} */
         /* {"status":"error","response":"User not found.","_datetime":"2020-09-03 13:48:46"} */
         /* {"success":false,"message":"You can`t download files of this size."} */
+        /*
+         * {"status":"error",
+         * "response":"Your account level does not have access to the file upload API. Please contact site support for more information."
+         * ,"_datetime":"2021-01-19 16:48:28"}
+         */
         boolean result = true;
         String msg = null;
         try {
