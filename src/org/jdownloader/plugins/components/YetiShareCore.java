@@ -155,8 +155,12 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    /**
+     * Returns current host with subdomain but without "www.". </br>
+     * Returns the desired host. Override is required in some cases where given host can contain unwanted subdomains.
+     */
     protected String getCorrectHost(final DownloadLink link, URL url) {
-        return url.getHost();
+        return url.getHost().replaceFirst("(?i)www\\.", "");
     }
 
     @Override
@@ -172,17 +176,17 @@ public class YetiShareCore extends antiDDoSForHost {
                 } else {
                     protocolCorrected = "http://";
                 }
-                String pluginHost = getHost();
-                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(pluginHost, "www.")) {
-                    pluginHost = "www." + pluginHost;
-                }
-                final String hostCorrected;
+                final String pluginHost = this.getHost();
+                String hostCorrected;
                 if (StringUtils.equalsIgnoreCase(urlHost, pluginHost)) {
                     /* E.g. down.example.com -> down.example.com */
                     hostCorrected = urlHost;
                 } else {
                     /* e.g. down.xx.com -> down.yy.com */
                     hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
+                }
+                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(hostCorrected, "www.")) {
+                    hostCorrected = "www." + hostCorrected;
                 }
                 link.setPluginPatternMatcher(protocolCorrected + hostCorrected + url.getPath());
             } catch (final MalformedURLException e) {

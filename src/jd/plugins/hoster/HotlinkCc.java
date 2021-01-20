@@ -198,4 +198,10 @@ public class HotlinkCc extends XFileSharingProBasic {
         final boolean premiumonly_videohost = new Regex(correctedBR, ">\\s*This video is available for Premium users only").matches();
         return premiumonly_filehost || premiumonly_videohost;
     }
+
+    @Override
+    protected int getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() {
+        /** 2021-01-20: Tested in premium mode by user */
+        return 0;
+    }
 }

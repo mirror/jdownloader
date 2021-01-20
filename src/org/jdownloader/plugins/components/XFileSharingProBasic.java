@@ -535,10 +535,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
+     * Returns current host with subdomain but without "www.". </br>
      * Returns the desired host. Override is required in some cases where given host can contain unwanted subdomains e.g. imagetwist.com.
      */
-    protected String getCorrectHost(final DownloadLink link, final URL url) {
-        return url.getHost();
+    protected String getCorrectHost(final DownloadLink link, URL url) {
+        return url.getHost().replaceFirst("(?i)www\\.", "");
     }
 
     @Override
@@ -563,17 +564,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     protocolCorrected = "http://";
                 }
                 /* Get full host with subdomain and correct base domain. */
-                String pluginHost = getHost();
-                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(pluginHost, "www.")) {
-                    pluginHost = "www." + pluginHost;
-                }
-                final String hostCorrected;
+                final String pluginHost = this.getHost();
+                String hostCorrected;
                 if (StringUtils.equalsIgnoreCase(urlHost, pluginHost)) {
                     /* E.g. down.example.com -> down.example.com */
                     hostCorrected = urlHost;
                 } else {
                     /* e.g. down.xx.com -> down.yy.com */
                     hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
+                }
+                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(hostCorrected, "www.")) {
+                    hostCorrected = "www." + hostCorrected;
                 }
                 link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(fuid));
             } catch (final MalformedURLException e) {
@@ -582,6 +583,25 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    /** New attempt TODO: Maybe move this into Plugin class */
+    // public static String correctHost(final URL urlWithOldHost, final String newHost, final boolean addWWW) {
+    // String oldHostWithSubdomains = urlWithOldHost.getHost();
+    // oldHostWithSubdomains = oldHostWithSubdomains.replaceFirst("(?i)www\\.", "");
+    // /* TODO: Check for subdomain in new host -> If there is one, simply return new host instead of doing replaces! */
+    // final String oldHostWithoutSubdomain = Browser.getHost(urlWithOldHost);
+    // String hostCorrected;
+    // if (StringUtils.equalsIgnoreCase(oldHostWithSubdomains, newHost)) {
+    // /* E.g. down.example.com -> down.example.com */
+    // hostCorrected = oldHostWithSubdomains;
+    // } else {
+    // /* e.g. down.xx.com -> down.yy.com */
+    // hostCorrected = oldHostWithSubdomains.replaceFirst("(?i)" + Pattern.quote(oldHostWithoutSubdomain) + "$", newHost);
+    // }
+    // if (addWWW && !StringUtils.startsWithCaseInsensitive(hostCorrected, "www.")) {
+    // hostCorrected = "www." + hostCorrected;
+    // }
+    // return hostCorrected;
+    // }
     @Override
     public Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -1612,10 +1632,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         try {
             /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
             this.waitTime(link, System.currentTimeMillis());
-            /* 2020-05-22: Workaround attempt for unnerving class="err">Security error< which can sometimes appear if you're too fast */
-            final int extraWaitSeconds = 5;
-            logger.info("Waiting extra wait seconds: " + extraWaitSeconds);
-            this.sleep(extraWaitSeconds * 1000l, link);
+            logger.info("Waiting extra wait seconds: " + getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds());
+            this.sleep(getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() * 1000l, link);
             getPage(brc, "/dl?op=download_orig&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
             /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
             final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
@@ -1656,6 +1674,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
+    }
+
+    /**
+     * 2020-05-22: Workaround attempt for unnerving class="err">Security error< which can sometimes appear if you're too fast in this
+     * handling. </br>
+     * This issue may have solved in newer XFS versions so we might be able to remove this extra wait in the long run.
+     */
+    protected int getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() {
+        return 5;
     }
 
     /**
