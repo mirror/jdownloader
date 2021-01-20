@@ -184,7 +184,9 @@ public class YetiShareCore extends antiDDoSForHost {
                     /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
                     hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
                 }
-                if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(hostCorrected, "www.")) {
+                final String subDomain = Browser.getSubdomain(new URL("http://" + hostCorrected), true);
+                if (requires_WWW() && subDomain == null) {
+                    // only append www when no other subDomain is set
                     hostCorrected = "www." + hostCorrected;
                 }
                 link.setPluginPatternMatcher(protocolCorrected + hostCorrected + url.getPath());

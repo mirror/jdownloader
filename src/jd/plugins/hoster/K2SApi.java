@@ -262,8 +262,17 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
+    protected boolean isSpecialFUID(final String fuid) {
+        return false;
+    }
+
     protected String getFUID(final DownloadLink link) {
-        return getFUID(link.getPluginPatternMatcher());
+        final String fileID = link.getStringProperty("fileID", null);
+        if (StringUtils.isNotEmpty(fileID)) {
+            return fileID;
+        } else {
+            return getFUID(link.getPluginPatternMatcher());
+        }
     }
 
     public String getFUID(final String link) {
@@ -347,22 +356,35 @@ public abstract class K2SApi extends PluginForHost {
                     if (links.size() == 100 || index == urls.length) {
                         break;
                     } else {
-                        links.add(urls[index]);
+                        final DownloadLink dl = urls[index];
+                        final String fuid = getFUID(dl);
+                        links.add(dl);
+                        if (sb.length() > 0) {
+                            sb.append(",");
+                        }
+                        sb.append("\"" + fuid + "\"");
                         index++;
+                        if (isSpecialFUID(fuid)) {
+                            // quick/dirty workaround for special IDs
+                            break;
+                        }
                     }
                 }
-                for (final DownloadLink dl : links) {
-                    sb.append("\"" + getFUID(dl) + "\"");
-                    sb.append(",");
-                }
-                // lets remove last ","
-                sb.delete(sb.length() - 1, sb.length());
                 postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
+                // TODO: check if response list maintains order of file IDs. optimize handling for special IDs
                 for (final DownloadLink dl : links) {
                     final String fuid = getFUID(dl);
-                    final String filter = br.getRegex("(\\{\"id\":\"" + fuid + "\",[^\\}]+\\})").getMatch(0);
+                    String filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\":\"" + fuid + "\"[^\\}]*\\})").getMatch(0);
+                    if (filter == null && isSpecialFUID(fuid) && links.size() == 1) {
+                        filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\"[^\\}]*\\})").getMatch(0);
+                    }
                     if (filter == null) {
-                        return false;
+                        continue;
+                    }
+                    final String id = PluginJSonUtils.getJsonValue(filter, "id");
+                    if (!StringUtils.equals(fuid, id)) {
+                        // convert special ID to normal ID
+                        dl.setProperty("fileID", id);
                     }
                     final String status = PluginJSonUtils.getJsonValue(filter, "is_available");
                     if ("true".equalsIgnoreCase(status)) {
