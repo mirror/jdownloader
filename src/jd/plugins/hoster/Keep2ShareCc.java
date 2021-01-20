@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9_\\-]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class Keep2ShareCc extends K2SApi {
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,6 +61,11 @@ public class Keep2ShareCc extends K2SApi {
         } else {
             return link.getPluginPatternMatcher();
         }
+    }
+
+    @Override
+    protected boolean isSpecialFUID(String fuid) {
+        return fuid.contains("-") || fuid.contains("_");
     }
 
     @Override
