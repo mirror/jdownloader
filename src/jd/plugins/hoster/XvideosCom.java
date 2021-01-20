@@ -579,7 +579,7 @@ public class XvideosCom extends PluginForHost {
                     br.getPage(redirect_domain);
                 } else {
                     /* xvideos.red PREMIUM account */
-                    br.getPage("https://www.xvideos.red/?" + premium_redirect);
+                    br.getPage(URL_BASE_PREMIUM + "/?" + premium_redirect);
                 }
                 /* Double-check! */
                 if (!isLoggedin(br)) {
