@@ -125,12 +125,13 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
-    private static final String type_normal  = "https?://[^/]+/video[0-9]+/.*";
-    private static final String type_embed   = "https?://[^/]+/embedframe/\\d+";
-    private static final String type_special = "https?://[^/]+/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
-    private static final String NOCHUNKS     = "NOCHUNKS";
-    private String              streamURL    = null;
-    private HlsContainer        hlsContainer = null;
+    private static final String type_normal      = "https?://[^/]+/video[0-9]+/.*";
+    private static final String type_embed       = "https?://[^/]+/embedframe/\\d+";
+    private static final String type_special     = "https?://[^/]+/([a-z0-9\\-\\_]+/upload/[a-z0-9\\-]+/\\d+|prof\\-video\\-click/(upload|pornstar)/[a-z0-9\\-\\_]+/\\d+)";
+    private static final String NOCHUNKS         = "NOCHUNKS";
+    private String              streamURL        = null;
+    private HlsContainer        hlsContainer     = null;
+    private static final String URL_BASE_PREMIUM = "https://www.xvideos.red";
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -583,16 +584,15 @@ public class XvideosCom extends PluginForHost {
                 /* Double-check! */
                 if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    if (isPremium(br)) {
-                        account.setType(AccountType.PREMIUM);
-                    } else {
-                        account.setType(AccountType.FREE);
-                    }
-                    account.saveCookies(br.getCookies("xvideos.com"), "");
-                    account.saveCookies(br.getCookies("xvideos.red"), "premium");
-                    return true;
                 }
+                if (premium_redirect != null && StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red")) {
+                    account.setType(AccountType.PREMIUM);
+                    account.saveCookies(br.getCookies("xvideos.red"), "premium");
+                } else {
+                    account.setType(AccountType.FREE);
+                }
+                account.saveCookies(br.getCookies("xvideos.com"), "");
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -610,8 +610,10 @@ public class XvideosCom extends PluginForHost {
             plugin.getLogger().info("Cookie login successful");
             /* Refresh cookie timestamp */
             account.saveCookies(br.getCookies("xvideos.com"), "");
-            account.saveCookies(br.getCookies("xvideos.red"), "premium");
+            /* Now check if we have a free- or a premium account */
+            br.getPage(URL_BASE_PREMIUM + "/account/premium");
             if (isPremium(br)) {
+                account.saveCookies(br.getCookies("xvideos.red"), "premium");
                 account.setType(AccountType.PREMIUM);
             } else {
                 account.setType(AccountType.FREE);
@@ -631,10 +633,12 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
+    /** Only use this when on this page: https://www.xvideos.red/account/premium */
     private static boolean isPremium(final Browser br) {
-        return StringUtils.containsIgnoreCase(br.getHost(), "xvideos.red");
+        return br.containsHTML("id=\"btn-cancel-subscription\"");
     }
 
+    /** Works for free- and premium domain! */
     private static boolean isLoggedin(Browser br) {
         return br.containsHTML("/account/signout");
     }
@@ -644,6 +648,21 @@ public class XvideosCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(this, account, true);
         ai.setUnlimitedTraffic();
+        /* 2021-01-20: Doesn't work */
+        // if (account.getType() == AccountType.PREMIUM) {
+        // /* Try to find expire-date if we know that this is a premium account */
+        // try {
+        // br.getHeaders().put("Referer", URL_BASE_PREMIUM + "/account/premium");
+        // /* Make sure it is set to English as the pattern below only works for the english version of their website. */
+        // br.getPage(URL_BASE_PREMIUM + "/change-language/en");
+        // br.getPage("/account/premium?language=en");
+        // final String expireDate = br.getRegex("Activated until ([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
+        // if (expireDate != null) {
+        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "MMM, dd, yyyy", Locale.ENGLISH), br);
+        // }
+        // } catch (final Throwable e) {
+        // }
+        // }
         return ai;
     }
 
