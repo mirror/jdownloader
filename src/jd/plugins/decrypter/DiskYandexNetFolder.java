@@ -18,9 +18,12 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -28,7 +31,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -64,19 +66,27 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
+        if (relativeDownloadPath == null) {
+            relativeDownloadPath = "";
+        }
         jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
-        String fname_url = null;
-        String baseFolderName = null;
-        String fpName = null;
         final String parameter = param.toString();
-        String path_main = new Regex(parameter, type_shortURLs_d).getMatch(1);
-        if (path_main != null) {
-            path_main = URLDecoder.decode(path_main, "UTF-8");
+        String internalPath = new Regex(parameter, type_shortURLs_d).getMatch(1);
+        if (internalPath != null) {
+            internalPath = URLDecoder.decode(internalPath, "UTF-8");
+            /* Remove parameter(s) */
+            if (internalPath.contains("?")) {
+                internalPath = internalPath.substring(0, internalPath.indexOf("?"));
+            }
+            /* No path given from previous crawler actions -> That's the best we can get. */
+            if (StringUtils.isEmpty(relativeDownloadPath)) {
+                relativeDownloadPath = internalPath;
+            }
         }
         boolean is_part_of_a_folder = false;
-        final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-        if (path_main == null) {
-            path_main = "/";
+        if (internalPath == null) {
+            /* No path given? Crawl everything starting from root. */
+            internalPath = "/";
         }
         if (parameter.matches(type_yadi_sk_album)) {
             /* Crawl albums */
@@ -100,18 +110,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 hash_long_decoded = URLDecoder.decode(hash, "UTF-8");
-                fname_url = new Regex(parm, "\\&name=([^/\\&]+)").getMatch(0);
-                if (fname_url == null) {
-                    fname_url = new Regex(hash_long_decoded, ":/([^/]+)$").getMatch(0);
-                }
-                fname_url = Encoding.htmlDecode(fname_url);
             } else if (parameter.matches(type_yadi_sk_mail)) {
                 hash_long_decoded = URLDecoder.decode(regexHashFromURL(parameter), "UTF-8");
             } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
                 getPage(parameter);
                 if (isOffline(this.br)) {
                     final DownloadLink offline = this.createOfflinelink(parameter);
-                    main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
                     decryptedLinks.add(offline);
                     return decryptedLinks;
                 }
@@ -128,32 +132,32 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final Regex hashregex = new Regex(hash_long_decoded, "(.*?):(/.+)");
                 if (StringUtils.isEmpty(hashregex.getMatch(0))) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    /* Set correct value */
-                    rawHash = hashregex.getMatch(0);
-                    path_main = hashregex.getMatch(1);
-                    is_part_of_a_folder = true;
                 }
+                /* Set correct value */
+                rawHash = hashregex.getMatch(0);
+                internalPath = hashregex.getMatch(1);
+                is_part_of_a_folder = true;
             } else {
                 rawHash = hash_long_decoded;
             }
             final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(rawHash);
             this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            main.setProperty("mainlink", addedLink);
-            main.setLinkID("copydiskyandexcom" + rawHash);
-            main.setName(hash_long_decoded);
             short offset = 0;
             final short entries_per_request = 200;
-            long numberof_entries = 0;
+            long totalNumberofEntries = 0;
             final FilePackage fp = FilePackage.getInstance();
             do {
-                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(rawHash) + "&path=" + URLEncode.encodeURIComponent(path_main));
-                if (PluginJSonUtils.getJsonValue(br, "error") != null) {
+                getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(rawHash) + "&path=" + URLEncode.encodeURIComponent(internalPath));
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                /*
+                 * 2021-01-19:
+                 * {"message":"Не удалось найти запрошенный ресурс.","description":"Resource not found.","error":"DiskNotFoundError"}
+                 */
+                if (entries.containsKey("error")) {
                     decryptedLinks.add(this.createOfflinelink(addedLink));
                     return decryptedLinks;
                 }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 final String type_main = (String) entries.get("type");
                 if (!type_main.equals(JSON_TYPE_DIR)) {
                     /* We only have a single file --> Add to downloadliste / host plugin */
@@ -162,14 +166,14 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         decryptedLinks.add(this.createOfflinelink(addedLink));
                         return decryptedLinks;
                     }
-                    decryptSingleFile(dl, entries);
+                    parseFileProperties(dl, entries);
                     if (is_part_of_a_folder) {
                         dl.setProperty("is_part_of_a_folder", is_part_of_a_folder);
                         /* 2017-04-07: Overwrite previously set path value with correct value. */
-                        dl.setProperty("path", path_main);
+                        dl.setProperty("path", internalPath);
                     }
                     dl.setProperty("mainlink", addedLink);
-                    dl.setLinkID(rawHash + path_main);
+                    dl.setLinkID(rawHash + internalPath);
                     /* Required by hoster plugin to get filepath (filename) */
                     dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
                     if (StringUtils.isNotEmpty(relativeDownloadPath)) {
@@ -179,57 +183,42 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 final String walk_string = "_embedded/items";
-                final ArrayList<Object> resource_data_list = (ArrayList) JavaScriptEngineFactory.walkJson(entries, walk_string);
+                final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, walk_string);
                 if (offset == 0) {
                     /* Set total number of entries on first loop. */
-                    final LinkedHashMap<String, Object> itemInfo = (LinkedHashMap<String, Object>) entries.get("_embedded");
-                    numberof_entries = JavaScriptEngineFactory.toLong(itemInfo.get("total"), 0);
-                    if (numberof_entries == 0) {
+                    final Map<String, Object> itemInfo = (Map<String, Object>) entries.get("_embedded");
+                    totalNumberofEntries = JavaScriptEngineFactory.toLong(itemInfo.get("total"), 0);
+                    if (totalNumberofEntries == 0) {
                         logger.info("Empty folder");
                         return decryptedLinks;
                     }
-                    baseFolderName = (String) entries.get("name");
-                    if (!StringUtils.isEmpty(baseFolderName)) {
-                        fpName = baseFolderName;
-                    } else {
-                        fpName = hash_long_decoded;
+                    String baseFolderName = (String) entries.get("name");
+                    if (StringUtils.isEmpty(baseFolderName)) {
+                        /* Fallback */
+                        baseFolderName = hash_long_decoded;
                     }
-                    fp.setName(fpName);
+                    fp.setName(baseFolderName);
+                    if (StringUtils.isEmpty(relativeDownloadPath)) {
+                        /* First time crawl of a possible folder structure -> Define root dir name */
+                        relativeDownloadPath = baseFolderName;
+                    }
                 }
-                jd.plugins.hoster.DiskYandexNet.setRawHash(main, rawHash);
-                // hash_long = Encoding.htmlDecode(hash_long);
                 for (final Object list_object : resource_data_list) {
-                    entries = (LinkedHashMap<String, Object>) list_object;
+                    entries = (Map<String, Object>) list_object;
                     final String type = (String) entries.get("type");
                     final String hash = (String) entries.get("public_key");
                     final String path = (String) entries.get("path");
                     final String md5 = (String) entries.get("md5");
                     final String url_preview = (String) entries.get("preview");
-                    if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path)) {
+                    final String name = (String) entries.get("name");
+                    if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path) || StringUtils.isEmpty(name)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String name = (String) entries.get("name");
                     if (type.equals(JSON_TYPE_DIR)) {
                         /* Subfolders go back into our decrypter! */
                         final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
                         final DownloadLink dl = createDownloadlink(folderlink);
-                        if (StringUtils.isNotEmpty(path) && !StringUtils.equals(path, "/")) {
-                            final String realPath;
-                            /*
-                             * Path starts from current folder but if that folder is path of another one this "root dir name" is not in it
-                             * --> Fix that so JD users get the expected folder structure.
-                             */
-                            if (!StringUtils.isEmpty(baseFolderName)) {
-                                if (path.startsWith("/")) {
-                                    realPath = baseFolderName + path;
-                                } else {
-                                    realPath = baseFolderName + "/" + path;
-                                }
-                            } else {
-                                realPath = path;
-                            }
-                            dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realPath);
-                        }
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
                         decryptedLinks.add(dl);
                     } else {
                         final String media_type = (String) entries.get("media_type");
@@ -238,7 +227,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                        decryptSingleFile(dl, entries);
+                        parseFileProperties(dl, entries);
                         String url_content;
                         /**
                          * TODO: remove the check for url_preview as it has nothing todo with whether a web-view is available or not.
@@ -283,11 +272,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     /* Fail safe */
                     logger.info("Stopping because current page contains less items than max. items allowed --> Should be the last page");
                     break;
-                } else if (this.isAbort()) {
-                    logger.info("Decryption aborted by user");
+                } else if (offset >= totalNumberofEntries) {
+                    logger.info("Stopping because: Reached end");
                     break;
                 }
-            } while (offset < numberof_entries);
+            } while (!this.isAbort());
             if (decryptedLinks.size() == 0) {
                 /* Should never happen! */
                 logger.info("Probably empty folder");
@@ -334,13 +323,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         do {
             addedItemsTemp = 0;
-            LinkedHashMap<String, Object> entries = null;
-            final ArrayList<Object> modelObjects;
+            Map<String, Object> entries = null;
+            final List<Object> modelObjects;
             if (offset == 0) {
                 /* First loop */
-                modelObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_of_first_page);
+                modelObjects = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_of_first_page);
                 entries = findModel(modelObjects, "album");
-                entries = (LinkedHashMap<String, Object>) entries.get("data");
+                entries = (Map<String, Object>) entries.get("data");
                 fpName = (String) entries.get("title");
                 if (StringUtils.isEmpty(fpName)) {
                     fpName = hash_short;
@@ -348,17 +337,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 fp.setName(fpName);
             } else {
                 br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + URLEncode.encodeURIComponent(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + URLEncode.encodeURIComponent(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                modelObjects = (ArrayList<Object>) entries.get("models");
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                modelObjects = (List<Object>) entries.get("models");
             }
             entries = findModel(modelObjects, "resources");
             if (entries == null) {
                 logger.warning("Failed to find resource model");
                 throw new DecrypterException();
             }
-            final ArrayList<Object> mediaObjects = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
+            final List<Object> mediaObjects = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
             for (final Object mediao : mediaObjects) {
-                entries = (LinkedHashMap<String, Object>) mediao;
+                entries = (Map<String, Object>) mediao;
                 /* Unique id e.g. '/album/<public_key>:<item_id>' */
                 final String id = (String) entries.get("id");
                 final String item_id = (String) entries.get("item_id");
@@ -385,11 +374,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     idItemLast = id;
                 }
                 dupeList.add(id);
-                if (this.isAbort()) {
-                    return;
-                }
             }
-        } while (addedItemsTemp >= maxItemsPerPage && idItemLast != null);
+        } while (!this.isAbort() && addedItemsTemp >= maxItemsPerPage && idItemLast != null);
         if (offset == 0) {
             logger.warning("Failed to find items");
             throw new DecrypterException();
@@ -405,11 +391,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return br;
     }
 
-    public static LinkedHashMap<String, Object> findModel(final ArrayList<Object> modelObjects, final String targetModelName) {
-        LinkedHashMap<String, Object> entries = null;
+    public static Map<String, Object> findModel(final List<Object> modelObjects, final String targetModelName) {
+        Map<String, Object> entries = null;
         boolean foundResourceModel = false;
         for (final Object modelo : modelObjects) {
-            entries = (LinkedHashMap<String, Object>) modelo;
+            entries = (Map<String, Object>) modelo;
             final String model = (String) entries.get("model");
             if (targetModelName.equalsIgnoreCase(model)) {
                 foundResourceModel = true;
@@ -435,7 +421,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
     }
 
-    private void decryptSingleFile(final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
+    private void parseFileProperties(final DownloadLink dl, final Map<String, Object> entries) throws Exception {
         final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheckFiles(this, dl, entries);
         dl.setAvailableStatus(status);
     }

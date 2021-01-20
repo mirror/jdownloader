@@ -18,8 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -198,7 +198,7 @@ public class DiskYandexNet extends PluginForHost {
             }
             /* Find json object for current link ... */
             final ArrayList<Object> modelObjects = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(jd.plugins.decrypter.DiskYandexNetFolder.regExJSON(this.br));
-            LinkedHashMap<String, Object> entries = jd.plugins.decrypter.DiskYandexNetFolder.findModel(modelObjects, "resources");
+            Map<String, Object> entries = jd.plugins.decrypter.DiskYandexNetFolder.findModel(modelObjects, "resources");
             if (entries == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -206,7 +206,7 @@ public class DiskYandexNet extends PluginForHost {
             boolean foundObject = false;
             final String item_id = this.albumGetID(link);
             for (final Object mediao : mediaObjects) {
-                entries = (LinkedHashMap<String, Object>) mediao;
+                entries = (Map<String, Object>) mediao;
                 final String item_id_current = (String) entries.get("item_id");
                 if (item_id.equalsIgnoreCase(item_id_current)) {
                     foundObject = true;
@@ -231,7 +231,7 @@ public class DiskYandexNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 link.setProperty("premiumonly", false);
-                return parseInformationAPIAvailablecheckFiles(this, link, (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
+                return parseInformationAPIAvailablecheckFiles(this, link, (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
             } else {
                 getPage(getMainLink(link));
                 if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
@@ -280,11 +280,11 @@ public class DiskYandexNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static AvailableStatus parseInformationAPIAvailablecheckFiles(final Plugin plugin, final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
+    public static AvailableStatus parseInformationAPIAvailablecheckFiles(final Plugin plugin, final DownloadLink dl, final Map<String, Object> entries) throws Exception {
         final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
         final String error = (String) entries.get("error");
         final String hash = (String) entries.get("public_key");
-        String filename = (String) entries.get("name");
+        final String filename = (String) entries.get("name");
         final String path = (String) entries.get("path");
         final String md5 = (String) entries.get("md5");
         final String sha256 = (String) entries.get("sha256");
@@ -292,7 +292,6 @@ public class DiskYandexNet extends PluginForHost {
             /* Whatever - our link is probably offline! */
             return AvailableStatus.FALSE;
         }
-        filename = plugin.encodeUnicode(filename);
         if (md5 != null) {
             dl.setMD5Hash(md5);
         }
@@ -307,8 +306,8 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /** Parses file info for photo/video (ALBUM) urls e.g. /album/blabla:5fffffce1939c0c46ffffffe */
-    public static AvailableStatus parseInformationAPIAvailablecheckAlbum(final Plugin plugin, final DownloadLink dl, final LinkedHashMap<String, Object> entries) throws Exception {
-        LinkedHashMap<String, Object> entriesMeta = (LinkedHashMap<String, Object>) entries.get("meta");
+    public static AvailableStatus parseInformationAPIAvailablecheckAlbum(final Plugin plugin, final DownloadLink dl, final Map<String, Object> entries) throws Exception {
+        Map<String, Object> entriesMeta = (Map<String, Object>) entries.get("meta");
         final List<Object> versions = (List<Object>) entriesMeta.get("sizes");
         final long filesize = JavaScriptEngineFactory.toLong(entriesMeta.get("size"), -1);
         final String error = (String) entries.get("error");
@@ -322,7 +321,7 @@ public class DiskYandexNet extends PluginForHost {
         dl.setDownloadSize(filesize);
         String dllink = null, dllinkAlt = null;
         for (final Object versiono : versions) {
-            entriesMeta = (LinkedHashMap<String, Object>) versiono;
+            entriesMeta = (Map<String, Object>) versiono;
             String url = (String) entriesMeta.get("url");
             final String versionName = (String) entriesMeta.get("name");
             if (StringUtils.isEmpty(url) || !url.startsWith("//") || StringUtils.isEmpty(versionName)) {
@@ -419,7 +418,7 @@ public class DiskYandexNet extends PluginForHost {
                         link.setProperty("premiumonly", true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                     }
-                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                    final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                     dllink = (String) entries.get("href");
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

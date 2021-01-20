@@ -694,9 +694,9 @@ public class PremiumTo extends UseNet {
 
     private void invalidLogin() throws PluginException {
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Zugangsdaten ungültig!\r\nBitte bedenke, dass dieser Anbieter extra Zugangsdaten für JD zur Verfügung stellt, die von denen der Webseite abweichen!\r\nSiehe premium.to Hauptseite --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Zugangsdaten ungültig!\r\nDu findest deine Zugangsdaten hier:\r\npremium.to Hauptseite --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Invalid login credentials!\r\nPlease keep in mind that this service is providing extra login credentials for JD which are different than the ones used to lgin via website!\r\nSee premium.to mainpage --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Invalid login credentials!\r\nYou can find your login credentials here:\r\npremium.to website --> Account", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
