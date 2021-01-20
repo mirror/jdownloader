@@ -19,15 +19,19 @@ public class JDClassLoaderLauncher {
             super(urls);
         }
 
+        private final boolean preferParentClassLoader(final String name) {
+            return name.equals(getClass().getName());
+        }
+
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
             synchronized (getClassLoadingLock(name)) {
                 Class<?> c = findLoadedClass(name);
                 if (c == null) {
-                    if (!getClass().getName().equals(name) && findResource(name.replace(".", "/") + ".class") != null) {
-                        c = findClass(name);
-                    } else {
+                    if (preferParentClassLoader(name) || findResource(name.replace(".", "/") + ".class") == null) {
                         return super.loadClass(name, resolve);
+                    } else {
+                        c = findClass(name);
                     }
                 }
                 if (resolve) {

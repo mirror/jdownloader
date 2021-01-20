@@ -65,6 +65,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.sunwrapper.sun.awt.shell.ShellFolderWrapper;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.tools.ide.iconsetmaker.IconSetMakerAdapter;
 import org.appwork.txtresource.TranslationFactory;
@@ -963,13 +964,18 @@ public class SecondLevelLaunch {
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         if (!Application.isHeadless()) {
             try {
-                long t = System.currentTimeMillis();
-                File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+                final long t = System.currentTimeMillis();
+                final File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
                     public File[] run() {
-                        return (File[]) sun.awt.shell.ShellFolder.get("fileChooserComboBoxFolders");
+                        try {
+                            return (File[]) ShellFolderWrapper.get("fileChooserComboBoxFolders");
+                        } catch (final Throwable e) {
+                            LoggerFactory.getDefaultLogger().log(e);
+                            return null;
+                        }
                     }
                 });
-                LoggerFactory.getDefaultLogger().info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+                LoggerFactory.getDefaultLogger().info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t + "|" + (baseFolders != null ? baseFolders.length : -1)));
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
