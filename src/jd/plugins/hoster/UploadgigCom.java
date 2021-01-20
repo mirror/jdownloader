@@ -44,6 +44,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -128,6 +129,7 @@ public class UploadgigCom extends antiDDoSForHost {
     private Browser prepBR(final Browser br) {
         /* 2020-06-15: Use old website (?) */
         br.getHeaders().put("Direct", "1");
+        br.setAllowedResponseCodes(new int[] { 406 });
         return br;
     }
 
@@ -384,6 +386,14 @@ public class UploadgigCom extends antiDDoSForHost {
             /* 2020-12-04 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server under maintenance", 5 * 60 * 1000l);
         }
+        checkAccountErrors(this.br);
+    }
+
+    private void checkAccountErrors(final Browser br) throws AccountUnavailableException {
+        if (br.getHttpConnection().getResponseCode() == 406) {
+            /* 2021-01-20: HTTP/1.1 406 Not Acceptable Content: "406 Too many tries." */
+            throw new AccountUnavailableException("406", 10 * 60 * 1000l);
+        }
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -421,6 +431,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 final Form loginform = brc.getForm(0);
                 if (loginform == null) {
                     logger.warning("Failed to find loginform");
+                    checkAccountErrors(this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
@@ -451,6 +462,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 sendRequest(request);
                 if (!isLoggedIN()) {
+                    checkAccountErrors(this.br);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
