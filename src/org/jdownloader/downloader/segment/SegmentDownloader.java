@@ -120,7 +120,7 @@ public class SegmentDownloader extends DownloadInterface {
         boolean localIO = false;
         try {
             try {
-                outputStream = new FileOutputStream(new File(downloadable.getFileOutputPart()));
+                outputStream = new FileOutputStream(outputPartFile);
             } catch (IOException e) {
                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
             }
