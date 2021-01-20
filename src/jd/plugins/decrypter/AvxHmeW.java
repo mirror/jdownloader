@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * @author typek_pb
@@ -63,7 +63,14 @@ public class AvxHmeW extends PluginForDecrypt {
             if (link == null) {
                 final Form captchaForm = br.getForm(0);
                 if (captchaForm.hasInputFieldByName("g-recaptcha-response")) {
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    final String siteURL = br.getURL("/").toString();
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                        protected String getSiteUrl() {
+                            // special handling
+                            // being logged in can result in auto redirect/no captcha
+                            return siteURL;
+                        };
+                    }.getToken();
                     captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(captchaForm);
