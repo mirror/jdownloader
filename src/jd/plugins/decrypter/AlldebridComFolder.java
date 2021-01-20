@@ -98,8 +98,8 @@ public class AlldebridComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         /**
-         * TODO: 2021-01-19: This is supposed to always be an array. It's a small serverside bug. Update this once they've updated it
-         * serverside!
+         * 2021-01-19: This is supposed to always be an array. It's a small serverside bug but they can't fix it because a lot of people are
+         * already using their API.
          */
         final Object magnetsO = JavaScriptEngineFactory.walkJson(entries, "data/magnets");
         if (magnetsO instanceof List) {
@@ -116,19 +116,11 @@ public class AlldebridComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String folderRoot = magnetID;
-        final String torrentBaseFolder = folderRoot + "/" + torrentName;
-        final FilePackage fpSingle = FilePackage.getInstance();
-        fpSingle.setName(torrentBaseFolder);
-        final FilePackage fpSpecialArchive = FilePackage.getInstance();
-        /* Use "/" so it gets replaced with "_" and looks like the other packages. */
-        fpSpecialArchive.setName(folderRoot + "/archives");
+        final String folderRoot = torrentName;
+        final FilePackage fpRoot = FilePackage.getInstance();
+        fpRoot.setName(folderRoot);
         for (final Object linkO : linksO) {
             entries = (Map<String, Object>) linkO;
-            /*
-             * Most times these will be uptobox.com URLs. Sometimes .rar files which contain parts/"the rest" of the initial torrent folder
-             * structure.
-             */
             final String url = (String) entries.get("link");
             final String filename = (String) entries.get("filename");
             final long filesize = ((Number) entries.get("size")).longValue();
@@ -137,13 +129,8 @@ public class AlldebridComFolder extends PluginForDecrypt {
             dl.setDownloadSize(filesize);
             final boolean isSpecialRar = filename.matches("^" + torrentNameEscaped + "(\\.rar|\\.part\\d+\\.rar)$");
             if (isSpecialRar) {
-                /*
-                 * If the torrent contains a lot of nested files/folders they will be put into one .rar or multiple split .rar archives.
-                 * This then contains a folder with the title of the torrent which then contains the complete torrent subfolder structure.
-                 * <br> Put this in our root folder.
-                 */
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
-                dl._setFilePackage(fpSpecialArchive);
+                dl._setFilePackage(fpRoot);
             } else {
                 /* Check whether or not this file goes into a deeper subfolder level. */
                 String filePath = getFilePath((List<Object>) entries.get("files"), "");
@@ -151,14 +138,14 @@ public class AlldebridComFolder extends PluginForDecrypt {
                 filePath = filePath.replaceAll("/" + org.appwork.utils.Regex.escape(filename) + "$", "");
                 if (!StringUtils.isEmpty(filePath)) {
                     /* File that goes into (nested) subfolder. */
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, torrentBaseFolder + filePath);
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot + filePath);
                     final FilePackage nestedFilePackage = FilePackage.getInstance();
                     nestedFilePackage.setName(folderRoot + filePath);
                     dl._setFilePackage(nestedFilePackage);
                 } else {
                     /* File that is in the root of the torrent main folder (named after torrent name). */
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, torrentBaseFolder);
-                    dl._setFilePackage(fpSingle);
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, folderRoot);
+                    dl._setFilePackage(fpRoot);
                 }
             }
             dl.setAvailable(true);
