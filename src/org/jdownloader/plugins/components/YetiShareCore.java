@@ -1787,10 +1787,10 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             urlString = urlString.replaceFirst("^(?i)https://", "http://");
         }
-        final boolean wwwHost = StringUtils.startsWithCaseInsensitive(url.getHost(), "www.");
-        if (requires_WWW() && !wwwHost) {
+        final String subDomain = Browser.getSubdomain(url, true);
+        if (requires_WWW() && subDomain == null) {
             urlString = urlString.replaceFirst("(?i)//" + Pattern.quote(url.getHost()), "//www." + url.getHost());
-        } else if (!this.requires_WWW() && wwwHost) {
+        } else if (!this.requires_WWW() && StringUtils.equalsIgnoreCase(subDomain, "www")) {
             urlString = urlString.replaceFirst("(?i)//www\\.", "//");
         }
         return urlString;
