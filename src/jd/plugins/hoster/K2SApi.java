@@ -347,7 +347,7 @@ public abstract class K2SApi extends PluginForHost {
         // required to get overrides to work
         final Browser br = prepAPI(new Browser());
         try {
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            final List<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
                 links.clear();

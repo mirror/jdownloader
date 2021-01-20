@@ -19,10 +19,6 @@ import java.util.ArrayList;
 
 import javax.script.ScriptEngine;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,6 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.(?:net|com)/\\w+-\\d+[^/]*" })
 public class FbjavNet extends antiDDoSForDecrypt {
@@ -61,7 +61,7 @@ public class FbjavNet extends antiDDoSForDecrypt {
                     decryptedLinks.add(createDownloadlink(result));
                 } catch (Exception e) {
                     getLogger().log(e);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
             }
         }
