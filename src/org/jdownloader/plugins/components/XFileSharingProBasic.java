@@ -610,7 +610,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             protocol = "http://";
         }
         final String mainpage;
-        if (requires_WWW() && !StringUtils.startsWithCaseInsensitive(host, "www.")) {
+        String subDomain = null;
+        try {
+            subDomain = Browser.getSubdomain(new URL("http://" + host), true);
+        } catch (MalformedURLException e) {
+            logger.log(e);
+        }
+        if (requires_WWW() && subDomain == null) {
+            // only append www when no other subDomain is set
             mainpage = protocol + "www." + host;
         } else {
             mainpage = protocol + host;
