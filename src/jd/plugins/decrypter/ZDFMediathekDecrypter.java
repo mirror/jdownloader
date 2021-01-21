@@ -713,30 +713,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl_subtitle);
             }
         }
-        // if (this.grabSubtitles && !StringUtils.isEmpty(this.urlSubtitle)) {
-        // final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
-        // final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
-        // final String linkid = dl.getLinkID() + "_subtitle";
-        // final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitle);
-        // setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
-        // if (filesizeSubtitle > 0) {
-        // dl_subtitle.setDownloadSize(filesizeSubtitle);
-        // dl_subtitle.setAvailable(true);
-        // }
-        // decryptedLinks.add(dl_subtitle);
-        // }
-        // if (this.grabSubtitlesForDisabledPeople && !StringUtils.isEmpty(this.urlSubtitleForDisabledPeople)) {
-        // final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
-        // final String final_filename = dl.getFinalFileName().replace(current_ext, "_disabled_people.xml");
-        // final String linkid = dl.getLinkID() + "_subtitle_disabled_people";
-        // final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitleForDisabledPeople);
-        // setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
-        // if (filesizeSubtitle > 0) {
-        // dl_subtitle.setDownloadSize(this.filesizeSubtitle);
-        // dl_subtitle.setAvailable(true);
-        // }
-        // decryptedLinks.add(dl_subtitle);
-        // }
     }
 
     private void setDownloadlinkProperties(final DownloadLink dl, final String final_filename, final String streamingType, final String linkid, final String title, final String tv_show, final String date_formatted, final String tv_station) {
