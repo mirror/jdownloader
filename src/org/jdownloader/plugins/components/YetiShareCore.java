@@ -30,6 +30,24 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -53,24 +71,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -270,8 +270,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
-     *         via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br>
+     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -322,7 +322,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
+     * Enforces old, non-ajax login-method. </br>
+     * This is only rarely needed e.g. filemia.com </br>
+     * default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -551,7 +553,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String continue_link = null;
         boolean captcha = false;
-        boolean success = false;
+        boolean captchaSuccess = false;
         long timeBeforeCaptchaInput;
         continue_link = checkDirectLink(link, account);
         if (StringUtils.isEmpty(continue_link) && this.dl == null) {
@@ -681,7 +683,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                     loopLog += " --> reCaptchaV2";
                                     captcha = true;
                                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                                    success = true;
+                                    captchaSuccess = true;
                                     waitTime(link, timeBeforeCaptchaInput);
                                     continueform.put("capcode", "false");
                                     continueform.put("g-recaptcha-response", recaptchaV2Response);
@@ -690,12 +692,12 @@ public class YetiShareCore extends antiDDoSForHost {
                                 } else if (rcID != null) {
                                     /* Dead end! */
                                     captcha = true;
-                                    success = false;
+                                    captchaSuccess = false;
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
                                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                                     loopLog += " --> SolvemediaCaptcha";
                                     captcha = true;
-                                    success = false;
+                                    captchaSuccess = false;
                                     logger.info("Detected captcha method \"solvemedia\" for this host");
                                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                                     if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
@@ -720,7 +722,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                                 } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
                                     loopLog += " --> Form_POST";
-                                    success = true;
+                                    captchaSuccess = true;
                                     waitTime(link, timeBeforeCaptchaInput);
                                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                                 } else {
@@ -764,7 +766,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             throw e;
                         }
                         if (looksLikeDownloadableContent(con)) {
-                            success = true;
+                            captchaSuccess = true;
                             loopLog += " --> " + con.getURL().toString();
                             break;
                         } else {
@@ -812,7 +814,7 @@ public class YetiShareCore extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            if (captcha && !success) {
+            if (captcha && !captchaSuccess) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             checkErrors(link, account);
@@ -1128,7 +1130,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            }/** Limit errorhandling */
+            } /** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
@@ -1204,8 +1206,7 @@ public class YetiShareCore extends antiDDoSForHost {
     public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
         checkErrorsLanguageIndependant(link, account);
         /*
-         * Old / fallback / English / additional errorhandling - please leave this here although checkErrorsLanguageIndependant should cover
-         * most of all errors
+         * Now check for errors which checkErrorsLanguageIndependant failed to handle
          */
         checkErrorsURL(link, account);
         if (br.toString().equals("unknown user")) {
@@ -1216,27 +1217,6 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
-    }
-
-    protected void loggedInOrException(final Account account) throws PluginException {
-        if (account == null) {
-            /* Programmer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!this.isLoggedin()) {
-            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
-        }
-    }
-
-    protected void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
-        logger.info("Last resort errorhandling");
-        if (account != null) {
-            this.loggedInOrException(account);
-        } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
-            /* Handle redirect to mainpage as premiumonly */
-            throw new AccountRequiredException();
-        }
-        logger.warning("Unknown error happened");
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     /**
@@ -1282,6 +1262,27 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    protected void loggedInOrException(final Account account) throws PluginException {
+        if (account == null) {
+            /* Programmer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!this.isLoggedin()) {
+            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+        }
+    }
+
+    protected void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
+        logger.info("Last resort errorhandling");
+        if (account != null) {
+            this.loggedInOrException(account);
+        } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
+            /* Handle redirect to mainpage as premiumonly */
+            throw new AccountRequiredException();
+        }
+        logger.warning("Unknown error happened");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
     /** Handles all kinds of error-responsecodes! */
     protected void checkResponseCodeErrors(final URLConnectionAdapter con) throws PluginException {
         if (con != null) {
@@ -1299,7 +1300,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br>
+     *         Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
@@ -1312,8 +1314,9 @@ public class YetiShareCore extends antiDDoSForHost {
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
         if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     protected String getCurrentURLDecoded() {
@@ -1343,58 +1346,57 @@ public class YetiShareCore extends antiDDoSForHost {
     protected String checkDirectLink(final DownloadLink link, final Account account) throws InterruptedException, PluginException {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         final String dllink = link.getStringProperty(directlinkproperty);
-        if (dllink != null) {
-            final boolean resume = this.isResumeable(link, account);
-            final int maxchunks = this.getMaxChunks(account);
-            final Browser br2 = this.br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            boolean valid = false;
-            try {
-                // con = br2.openHeadConnection(dllink);
-                this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
-                con = dl.getConnection();
-                if (br2.getHttpConnection().getResponseCode() == 429) {
-                    logger.info("Stored directurl lead to 429 | too many connections");
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    /*
-                     * Too many connections but that does not mean that our downloadlink is valid. Accept it and if it still returns 429 on
-                     * download-attempt this error will get displayed to the user.
-                     */
-                    valid = true;
-                    return dllink;
-                } else if (!looksLikeDownloadableContent(con)) {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    throw new IOException();
-                } else {
-                    valid = true;
-                    return dllink;
-                }
-            } catch (final InterruptedException e) {
-                throw e;
-            } catch (final Exception e) {
-                link.setProperty(directlinkproperty, Property.NULL);
-                logger.log(e);
-                return null;
-            } finally {
-                if (!valid) {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                    this.dl = null;
-                }
-            }
-        } else {
+        if (dllink == null) {
             return null;
+        }
+        final boolean resume = this.isResumeable(link, account);
+        final int maxchunks = this.getMaxChunks(account);
+        final Browser br2 = this.br.cloneBrowser();
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        boolean valid = false;
+        try {
+            // con = br2.openHeadConnection(dllink);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
+            con = dl.getConnection();
+            if (br2.getHttpConnection().getResponseCode() == 429) {
+                logger.info("Stored directurl lead to 429 | too many connections");
+                try {
+                    br2.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                /*
+                 * Too many connections but that does not mean that our downloadlink is invalid. Accept it and if it still returns 429 on
+                 * download-attempt this error will get displayed to the user.
+                 */
+                valid = true;
+                return dllink;
+            } else if (!looksLikeDownloadableContent(con)) {
+                try {
+                    br2.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                throw new IOException();
+            } else {
+                valid = true;
+                return dllink;
+            }
+        } catch (final InterruptedException e) {
+            throw e;
+        } catch (final Exception e) {
+            link.setProperty(directlinkproperty, Property.NULL);
+            logger.log(e);
+            return null;
+        } finally {
+            if (!valid) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+                this.dl = null;
+            }
         }
     }
 
@@ -1429,6 +1431,10 @@ public class YetiShareCore extends antiDDoSForHost {
         return "/upgrade.html";
     }
 
+    protected String getAccountNameSpaceEditAccount() {
+        return "/account_edit.html";
+    }
+
     protected void loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -1446,6 +1452,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade());
                     if (isLoggedin()) {
                         logger.info("Successfully logged in via cookies");
+                        /* Refresh stored cookies */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         /* Set/Update account-type */
                         if (this.isPremiumAccount(account, br)) {
@@ -1587,10 +1594,6 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected String getAccountEditURL() {
-        return "/account_edit.html";
-    }
-
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
@@ -1663,7 +1666,7 @@ public class YetiShareCore extends antiDDoSForHost {
         /* TODO: Make this work for all YetiShare websites that support their API */
         try {
             final Browser brc = br.cloneBrowser();
-            this.getPage(brc, getAccountEditURL());
+            this.getPage(brc, getAccountNameSpaceEditAccount());
             String key1 = null;
             String key2 = null;
             final Form[] forms = brc.getForms();
@@ -1704,7 +1707,7 @@ public class YetiShareCore extends antiDDoSForHost {
             account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             break;
         case FREE:
-            /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
+            /* All free accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
             break;
@@ -1840,18 +1843,7 @@ public class YetiShareCore extends antiDDoSForHost {
         return "https://" + this.getHost() + "/api/v2";
     }
 
-    protected String getAccountOverviewURL() {
-        return this.getMainPage() + "/account_edit.html";
-    }
-
     protected Browser prepBrowserAPI(final Browser br) {
-        // br.setAllowedResponseCodes(new int[] { 416, 429 });
-        // if (enable_random_user_agent()) {
-        // if (agent.get() == null) {
-        // agent.set(UserAgents.stringUserAgent());
-        // }
-        // br.getHeaders().put("User-Agent", agent.get());
-        // }
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
     }
@@ -1992,7 +1984,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     private Thread showAPILoginInformation() {
         final String host = this.getHost();
-        final String account_overview_url = getAccountOverviewURL();
+        final String account_overview_url = this.getAccountNameSpaceEditAccount();
         final Thread thread = new Thread() {
             public void run() {
                 try {

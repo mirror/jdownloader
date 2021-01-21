@@ -40,6 +40,37 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.InputDialog;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -71,47 +102,21 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownRequest;
-import org.appwork.shutdown.ShutdownVetoException;
-import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.InputDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.appwork.utils.swing.dialog.InputDialog;
-import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.jdownloader.controlling.FileStateManager;
-import org.jdownloader.controlling.FileStateManager.FILESTATE;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.translate._JDT;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
-    private final String USE_SSL                                                       = "USE_SSL_V3";
-    private final String CHECK_RESERVED                                                = "CHECK_RESERVED";
-    private final String USE_TMP                                                       = "USE_TMP_V2";
-    private final String HIDE_APP                                                      = "HIDE_APP_V2";
-    private final String ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
-    private final String ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
-    private final String ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER = "ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER";
-    private final String USED_PLUGIN                                                   = "usedPlugin";
-    private final String encrypted                                                     = ".encrypted";
+    private final String   USE_SSL                                                       = "USE_SSL_V3";
+    private final String   CHECK_RESERVED                                                = "CHECK_RESERVED";
+    private final String   USE_TMP                                                       = "USE_TMP_V2";
+    private final String   HIDE_APP                                                      = "HIDE_APP_V2";
+    private final String   ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
+    private final String   ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
+    private final String   LIMIT_MODE                                                    = "LIMIT_MODE";
+    private final String[] limitModes                                                    = new String[] { "Global: Wait or get new IP", "Global: wait", "Per file: Wait" };
+    private final String   MAX_LIMIT_WAITTIME                                            = "MAX_LIMIT_WAITTIME";
+    private final long     default_MAX_LIMIT_WAITTIME                                    = 30;
+    private final String   ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER = "ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER";
+    private final String   USED_PLUGIN                                                   = "usedPlugin";
+    private final String   encrypted                                                     = ".encrypted";
 
     @Override
     public String[] siteSupportedNames() {
@@ -141,12 +146,26 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
             final String sid = apiLogin(account);
-            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
+            final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 },
+                    new Object[] { "pro"/* pro */, 1 });
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
+            String statusAddition = "";
+            try {
+                final List<Object> trafficInfo = (List<Object>) uq.get("tah");
+                long bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 2)).longValue();
+                if (bandwidthUsed == 0) {
+                    /* TODO: Where are the API docs? Why are there sometimes more elements? */
+                    bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 1)).longValue();
+                }
+                final String bandwidthUsedFormatted = SizeFormatter.formatBytes(bandwidthUsed).toString();
+                statusAddition = " | Bandwidth used: " + bandwidthUsedFormatted;
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
             if (uq == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (uq.containsKey("utype")) {
@@ -210,11 +229,11 @@ public class MegaConz extends PluginForHost {
                         ai.setTrafficMax(max.longValue());
                         ai.setTrafficLeft(max.longValue() - (used.longValue() + reserved));
                     }
-                    ai.setStatus(status);
+                    ai.setStatus(status + statusAddition);
                     account.setType(AccountType.PREMIUM);
                 } else {
                     ai.setValidUntil(-1);
-                    ai.setStatus("Free Account");
+                    ai.setStatus("Free Account" + statusAddition);
                     account.setType(AccountType.FREE);
                 }
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
@@ -316,7 +335,8 @@ public class MegaConz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     try {
-                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh });
+                        response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                new Object[] { "uh"/* emailHash */, uh });
                     } catch (PluginException e) {
                         if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM && e.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE && account.getBooleanProperty("mfa", Boolean.FALSE)) {
                             try {
@@ -324,7 +344,8 @@ public class MegaConz extends PluginForHost {
                                 mfaDialog.setTimeout(5 * 60 * 1000);
                                 final InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, mfaDialog);
                                 handler.throwCloseExceptions();
-                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
+                                response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail },
+                                        new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
                                 throw Exceptions.addSuppressed(e, e2);
                             }
@@ -904,20 +925,10 @@ public class MegaConz extends PluginForHost {
                     if (timeLeftString != null && timeLeftString.matches("^\\d+$")) {
                         timeLeft = Long.parseLong(timeLeftString) * 1000l;
                     } else {
-                        timeLeft = 60 * 60 * 1000l;
+                        /* Fallback */
+                        timeLeft = minTimeLeft;
                     }
-                    if (timeLeft == 0) {
-                        // I guess that 0 means not possible even after waiting. For example filesize larger than available/possible quota
-                        if (account != null && Account.AccountType.PREMIUM.equals(account.getType())) {
-                            throw new AccountUnavailableException("Bandwidth Limit Exceeded", 24 * 60 * 60 * 1000l);
-                        } else {
-                            throw new AccountRequiredException("File larger than available quota");
-                        }
-                    } else if (account != null) {
-                        throw new AccountUnavailableException("Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
-                    }
+                    this.fileOrIPDownloadlimitReached(account, "509 Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
                     try {
@@ -947,11 +958,42 @@ public class MegaConz extends PluginForHost {
         }
     }
 
+    /**
+     * MEGA limits can be tricky: They can sit on specific files, on IP ("global limit") or also quota based (also global) e.g. 5GB per day
+     * per IP or per Free-Account. For these reasons the user can define the max wait time. The wait time given by MEGA must not be true.
+     * </br>
+     * 2021-01-21 TODO: Use this for ALL limit based errors
+     */
+    private void fileOrIPDownloadlimitReached(final Account account, final String msg, final long waitMilliseconds) throws PluginException {
+        final long userDefinedMaxWaitMilliseconds = this.getPluginConfig().getLongProperty(MAX_LIMIT_WAITTIME, default_MAX_LIMIT_WAITTIME) * 60 * 1000;
+        final int userDefinedLimitMode = this.getPluginConfig().getIntegerProperty(LIMIT_MODE, 0);
+        if (waitMilliseconds == 0) {
+            /* Special handling for zero given serverside waittime -> Old stuff - no idea whether this is still relevant */
+            /** 2021-01-21: TODO: Re-Check this account limit handling */
+            // I guess that 0 means not possible even after waiting. For example filesize larger than available/possible quota
+            if (account != null && Account.AccountType.PREMIUM.equals(account.getType())) {
+                throw new AccountUnavailableException("Bandwidth Limit Exceeded", 24 * 60 * 60 * 1000l);
+            } else {
+                throw new AccountRequiredException("File larger than available quota");
+            }
+        } else if (account != null) {
+            throw new AccountUnavailableException("Bandwidth Limit Exceeded", Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
+        } else {
+            if (userDefinedLimitMode == 0) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
+            } else if (userDefinedLimitMode == 1) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, msg, Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, Math.min(userDefinedMaxWaitMilliseconds, waitMilliseconds));
+            }
+        }
+    }
+
     public class MegaDownloadLinkDownloadable extends DownloadLinkDownloadable {
         final private Browser br;
 
-        public MegaDownloadLinkDownloadable(DownloadLink downloadLink, final Browser br) {
-            super(downloadLink);
+        public MegaDownloadLinkDownloadable(final DownloadLink link, final Browser br) {
+            super(link);
             this.br = br;
         }
 
@@ -1043,20 +1085,6 @@ public class MegaConz extends PluginForHost {
         } else {
             return "https://eu.api.mega.co.nz";
         }
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_CONCURRENT_DECRYPTION, JDL.L("plugins.hoster.megaconz.concurrentdecryption", "Allow concurrent decryption?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry cfgMulti = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, "Allow multihoster usage?").setDefaultValue(true);
-        getConfig().addEntry(cfgMulti);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER, "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.").setDefaultValue(false).setEnabledCondidtion(cfgMulti, true));
     }
 
     private volatile DownloadLink decryptingDownloadLink = null;
@@ -1497,5 +1525,22 @@ public class MegaConz extends PluginForHost {
         if (link != null) {
             link.removeProperty(USED_PLUGIN);
         }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_GLOBAL_CDN, JDL.L("plugins.hoster.megaconz.globalcdn", "Use global CDN?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Configure limit handling"));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), LIMIT_MODE, limitModes, JDL.L("plugins.hoster.megaconz.limitmode", "Set prefered limit mode")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), MAX_LIMIT_WAITTIME, JDL.L("plugins.hoster.megaconz.maxlimitwaittimeminutes", "Max. wait time on limit reached"), 10, 360, 1).setDefaultValue(default_MAX_LIMIT_WAITTIME));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry cfgMulti = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, "Allow multihoster usage?").setDefaultValue(true);
+        getConfig().addEntry(cfgMulti);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER, "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.").setDefaultValue(false).setEnabledCondidtion(cfgMulti, true));
     }
 }
