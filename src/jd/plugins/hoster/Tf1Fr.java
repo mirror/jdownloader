@@ -60,13 +60,13 @@ public class Tf1Fr extends PluginForHost {
 
     /* 2016-04-22: Changed domain from wat.tv to tf1.fr - everything else mostly stays the same */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         String filename = null;
         setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -88,7 +88,7 @@ public class Tf1Fr extends PluginForHost {
             filename = filename.replaceFirst(" \\- $", "");
         }
         filename = Encoding.htmlDecode(filename.trim());
-        downloadLink.setName(filename + ".mp4");
+        link.setName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
@@ -171,8 +171,10 @@ public class Tf1Fr extends PluginForHost {
         } else if (finallink.contains(".m3u8")) {
             // HLS
             checkFFmpeg(link, "Download a HLS Stream");
-            final String m3u8 = finallink.replaceAll("(&(min|max)_bitrate=\\d+)", "");
-            br.getPage(m3u8);
+            /* 2021-01-21: This "trick" or whatever it was doesn't work anymore */
+            // final String m3u8 = finallink.replaceAll("(&(min|max)_bitrate=\\d+)", "");
+            // br.getPage(m3u8);
+            br.getPage(finallink);
             if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked and/or account required");
             }
