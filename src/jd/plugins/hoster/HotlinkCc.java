@@ -202,6 +202,6 @@ public class HotlinkCc extends XFileSharingProBasic {
     @Override
     protected int getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() {
         /** 2021-01-20: Tested in premium mode by user */
-        return 0;
+        return 2;
     }
 }
