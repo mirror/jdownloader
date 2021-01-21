@@ -37,7 +37,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -51,22 +50,19 @@ import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
-    ArrayList<DownloadLink> decryptedLinks                    = new ArrayList<DownloadLink>();
-    private String          PARAMETER                         = null;
-    private String          PARAMETER_ORIGINAL                = null;
-    private String          urlSubtitle                       = null;
-    private String          urlSubtitleForDisabledPeople      = null;
-    private boolean         fastlinkcheck                     = false;
-    private boolean         grabBest                          = false;
-    private boolean         grabSubtitles                     = false;
-    private boolean         grabSubtitlesForDisabledPeople    = false;
-    private long            filesizeSubtitle                  = 0;
-    private long            filesizeSubtitleForDisabledPeople = 0;
-    private final String    TYPE_ZDF                          = "https?://(?:www\\.)?(?:zdf\\.de|3sat\\.de)/.+";
+    ArrayList<DownloadLink>     decryptedLinks            = new ArrayList<DownloadLink>();
+    private String              PARAMETER                 = null;
+    private String              PARAMETER_ORIGINAL        = null;
+    private boolean             fastlinkcheck             = false;
+    private boolean             grabBest                  = false;
+    private boolean             grabSubtitles             = false;
+    private final String        TYPE_ZDF                  = "https?://(?:www\\.)?(?:zdf\\.de|3sat\\.de)/.+";
     /* Not sure where these URLs come from. Probably old RSS readers via old APIs ... */
-    private final String    TYPER_ZDF_REDIRECT                = "https?://[^/]+/uri/.+";
+    private final String        TYPER_ZDF_REDIRECT        = "https?://[^/]+/uri/.+";
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
-    private List<String>    all_known_qualities;
+    private List<String>        all_known_qualities;
+    private List<String>        userSelectedSubtitleTypes = new ArrayList<String>();
+    private Map<String, String> allSubtitles              = new HashMap<String, String>();
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -213,7 +209,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         grabBest = cfg.isGrabBESTEnabled();
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
         this.grabSubtitles = cfg.isGrabSubtitleEnabled();
-        this.grabSubtitlesForDisabledPeople = cfg.isGrabSubtitleForDisabledPeopleEnabled();
+        if (cfg.isGrabSubtitleEnabled()) {
+            this.userSelectedSubtitleTypes.add("omu");
+        }
+        if (cfg.isGrabSubtitleForDisabledPeopleEnabled()) {
+            this.userSelectedSubtitleTypes.add("hoh");
+        }
         final boolean grabHlsAudio = cfg.isGrabAudio();
         final boolean grabAudioDeskription = cfg.isGrabAudioDeskription();
         if (grabHlsAudio) {
@@ -285,8 +286,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
          */
         final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720 || user_selected_nothing;
         /*
-         * 2017-02-08: The only thing download has and http stream has not == http veryhigh --> Only grab this if user has selected it
-         * explicitly!
+         * 2017-02-08: The only thing official download has and http stream has not == http veryhigh --> Only grab this if user has selected
+         * it explicitly!
          */
         boolean grabDownloadUrls = !grabBest && grabHttpMp4HD;
         final String sophoraIDSource;
@@ -370,7 +371,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         short highestHlsMasterValue = 0;
         short hlsMasterValueTemp = 0;
         int highestHlsBandwidth = 0;
-        boolean finished = false;
         boolean grabDownloadUrlsPossible = false;
         DownloadLink highestHlsDownload = null;
         do {
@@ -382,21 +382,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 /* 2nd round: Grab ffficial video download URLs if possible and wanted by the user */
                 logger.info("Crawling download URLs");
                 accessPlayerJson(apiParams[2], player_url_template, "zdf_pd_download_1");
-                finished = true;
+                break;
             } else {
                 /* Fail safe && case when there are no additional downloadlinks available. */
                 logger.info("Stopping as we've crawled all qualities");
-                finished = true;
                 break;
             }
             entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
-            /* 1. Grab subtitles if wanted by the user and if not already grabbed before */
+            /* 1. Collect subtitles if wanted by the user and if not already grabbed before */
             final Object captions = JavaScriptEngineFactory.walkJson(entries, "captions");
             if (grabSubtitles && captions instanceof List) {
                 /* Captions can be available in different versions (languages- and types) */
                 final List<Object> subtitlesO = (List<Object>) entries.get("captions");
-                String subtitleOriginal = null;
-                String subtitleForDisabledPeople = null;
                 Map<String, Object> subInfo = null;
                 for (final Object subtitleO : subtitlesO) {
                     subInfo = (Map<String, Object>) subtitleO;
@@ -408,50 +405,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* Skip unsupported formats */
                     if (!formatIsSupported) {
                         continue;
-                    } else if (subtitleType.equalsIgnoreCase("omu")) {
-                        subtitleOriginal = uri;
-                    } else if (subtitleType.equalsIgnoreCase("hoh")) {
-                        subtitleForDisabledPeople = uri;
                     } else {
-                        /* This should never happen */
-                        logger.warning("Unsupported subtitle type: " + subtitleType);
-                    }
-                }
-                this.urlSubtitle = subtitleOriginal;
-                this.urlSubtitleForDisabledPeople = subtitleForDisabledPeople;
-                /*
-                 * Grab the filesize here once for every subtitle so if the user adds many links, JD will not check the same subtitle URL
-                 * multiple times.
-                 */
-                URLConnectionAdapter con = null;
-                if (this.grabSubtitles && !StringUtils.isEmpty(this.urlSubtitle) && !this.fastlinkcheck) {
-                    try {
-                        con = this.br.openHeadConnection(this.urlSubtitle);
-                        if (con.isOK() && !con.getContentType().contains("html")) {
-                            this.filesizeSubtitle = con.getCompleteContentLength();
-                        }
-                    } finally {
-                        if (con != null) {
-                            try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
-                            }
-                        }
-                    }
-                }
-                if (this.grabSubtitlesForDisabledPeople && !StringUtils.isEmpty(this.urlSubtitleForDisabledPeople) && !this.fastlinkcheck) {
-                    try {
-                        con = this.br.openHeadConnection(this.urlSubtitleForDisabledPeople);
-                        if (con.isOK() && !con.getContentType().contains("html")) {
-                            this.filesizeSubtitleForDisabledPeople = con.getCompleteContentLength();
-                        }
-                    } finally {
-                        if (con != null) {
-                            try {
-                                con.disconnect();
-                            } catch (final Throwable e) {
-                            }
-                        }
+                        allSubtitles.put(subtitleType, uri);
                     }
                 }
             }
@@ -620,7 +575,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
             crawledDownloadTypesCounter++;
-        } while (!this.isAbort() && !finished);
+        } while (!this.isAbort());
         if (all_found_downloadlinks.isEmpty()) {
             logger.warning("Failed to find any results at all");
             return;
@@ -747,30 +702,41 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private void addDownloadLink(final DownloadLink dl) {
         decryptedLinks.add(dl);
-        if (this.grabSubtitles && !StringUtils.isEmpty(this.urlSubtitle)) {
-            final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
-            final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
-            final String linkid = dl.getLinkID() + "_subtitle";
-            final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitle);
-            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
-            if (filesizeSubtitle > 0) {
-                dl_subtitle.setDownloadSize(filesizeSubtitle);
-                dl_subtitle.setAvailable(true);
+        for (final String selectedSubtitleType : this.userSelectedSubtitleTypes) {
+            if (this.allSubtitles.containsKey(selectedSubtitleType)) {
+                final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
+                final String longSubtitleName = this.convertInternalSubtitleClassToUserReadable(selectedSubtitleType);
+                final String final_filename = dl.getFinalFileName().replace(current_ext, "_" + longSubtitleName + ".xml");
+                final String linkid = dl.getLinkID() + "_" + longSubtitleName;
+                final DownloadLink dl_subtitle = this.createDownloadlink(this.allSubtitles.get(selectedSubtitleType));
+                setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
+                decryptedLinks.add(dl_subtitle);
             }
-            decryptedLinks.add(dl_subtitle);
         }
-        if (this.grabSubtitlesForDisabledPeople && !StringUtils.isEmpty(this.urlSubtitleForDisabledPeople)) {
-            final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
-            final String final_filename = dl.getFinalFileName().replace(current_ext, "_disabled_people.xml");
-            final String linkid = dl.getLinkID() + "_subtitle_disabled_people";
-            final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitleForDisabledPeople);
-            setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
-            if (filesizeSubtitle > 0) {
-                dl_subtitle.setDownloadSize(this.filesizeSubtitle);
-                dl_subtitle.setAvailable(true);
-            }
-            decryptedLinks.add(dl_subtitle);
-        }
+        // if (this.grabSubtitles && !StringUtils.isEmpty(this.urlSubtitle)) {
+        // final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
+        // final String final_filename = dl.getFinalFileName().replace(current_ext, ".xml");
+        // final String linkid = dl.getLinkID() + "_subtitle";
+        // final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitle);
+        // setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
+        // if (filesizeSubtitle > 0) {
+        // dl_subtitle.setDownloadSize(filesizeSubtitle);
+        // dl_subtitle.setAvailable(true);
+        // }
+        // decryptedLinks.add(dl_subtitle);
+        // }
+        // if (this.grabSubtitlesForDisabledPeople && !StringUtils.isEmpty(this.urlSubtitleForDisabledPeople)) {
+        // final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
+        // final String final_filename = dl.getFinalFileName().replace(current_ext, "_disabled_people.xml");
+        // final String linkid = dl.getLinkID() + "_subtitle_disabled_people";
+        // final DownloadLink dl_subtitle = this.createDownloadlink(this.urlSubtitleForDisabledPeople);
+        // setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
+        // if (filesizeSubtitle > 0) {
+        // dl_subtitle.setDownloadSize(this.filesizeSubtitle);
+        // dl_subtitle.setAvailable(true);
+        // }
+        // decryptedLinks.add(dl_subtitle);
+        // }
     }
 
     private void setDownloadlinkProperties(final DownloadLink dl, final String final_filename, final String streamingType, final String linkid, final String title, final String tv_show, final String date_formatted, final String tv_station) {
@@ -838,6 +804,19 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         } else {
             /* This should never happen! */
             return "Ton_unbekannt";
+        }
+    }
+
+    private String convertInternalSubtitleClassToUserReadable(final String audio_class) {
+        if (audio_class == null) {
+            return null;
+        } else if (audio_class.equals("omu")) {
+            return "subtitle";
+        } else if (audio_class.equals("hoh")) {
+            return "subtitle_disabled_people";
+        } else {
+            /* This should never happen! */
+            return "subtitle_unknown";
         }
     }
 
