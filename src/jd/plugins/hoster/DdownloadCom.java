@@ -34,6 +34,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -357,11 +358,13 @@ public class DdownloadCom extends XFileSharingProBasic {
          */
         this.getPage("/?op=my_reports");
         if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches()) {
+            final String accountErrorMsg;
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Ergänze deine E-Mail Adresse unter %s/?op=my_account#settings um diesen Account verwenden zu können!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                accountErrorMsg = String.format("Ergänze deine E-Mail Adresse unter %s/?op=my_account um diesen Account verwenden zu können!", this.getHost());
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Go to %s/?op=my_account#settings and enter your e-mail in order to be able to use this account!", this.getHost()), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                accountErrorMsg = String.format("Go to %s/?op=my_account and enter your e-mail in order to be able to use this account!", this.getHost());
             }
+            throw new AccountUnavailableException(accountErrorMsg, 10 * 60 * 1000l);
         }
         return ai;
     }
