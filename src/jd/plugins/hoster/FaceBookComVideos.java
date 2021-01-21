@@ -201,7 +201,10 @@ public class FaceBookComVideos extends PluginForHost {
             /* Embed = no filenames given */
             final boolean useEmbedOnly = false;
             String title = null;
+            /* "Real" Uploader name */
             String uploader = null;
+            /* Uploader name from URL */
+            String uploaderURL = null;
             String dateFormatted = null;
             if (useEmbedOnly) {
                 accessVideoEmbed(videoID, true);
@@ -266,12 +269,15 @@ public class FaceBookComVideos extends PluginForHost {
                                 String videoURL = (String) entries.get("videoURL");
                                 if (!StringUtils.isEmpty(videoURL)) {
                                     videoURL = PluginJSonUtils.unescape(videoURL);
-                                    uploader = new Regex(videoURL, "https?://[^/]+/([^/]+)/videos/" + videoID).getMatch(0);
+                                    uploaderURL = new Regex(videoURL, "https?://[^/]+/([^/]+)/videos/" + videoID).getMatch(0);
                                 }
                             }
                         } catch (final Throwable e2) {
                             e2.printStackTrace();
                             logger.info("json2 failed");
+                        }
+                        if (StringUtils.isEmpty(uploader)) {
+                            uploader = br.getRegex("tracking_source\\.video_home%3Aphoto_id\\." + videoID + "%3Astory_location[^\"]+\">([^<]+)</a>").getMatch(0);
                         }
                         /* Hm still part of this strange edge-case ... */
                         if (StringUtils.isEmpty(fallback_downloadurl)) {
@@ -404,19 +410,18 @@ public class FaceBookComVideos extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
             }
-            if (title != null) {
+            if (!StringUtils.isEmpty(title)) {
                 /* Some filename corrections */
                 String filename = "";
                 if (dateFormatted != null) {
                     filename += dateFormatted + "_";
                 }
-                if (uploader != null) {
-                    filename += uploader + "_";
+                final String uploaderNameForFilename = !StringUtils.isEmpty(uploader) ? uploader : uploaderURL;
+                if (!StringUtils.isEmpty(uploaderNameForFilename)) {
+                    filename += uploaderNameForFilename + "_";
                 }
                 filename += title;
-                filename = Encoding.htmlDecode(filename.trim());
-                // ive seen new lines within filename!
-                filename = filename.replaceAll("[\r\n]+", " ");
+                filename = Encoding.htmlDecode(filename).trim();
                 /* 2020-07-13 */
                 filename = filename.replace(" | Facebook", "");
                 if (!filename.contains(fid)) {
