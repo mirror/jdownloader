@@ -2125,7 +2125,7 @@ public class YetiShareCore extends antiDDoSForHost {
             if (link != null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
             }
         }
     }
