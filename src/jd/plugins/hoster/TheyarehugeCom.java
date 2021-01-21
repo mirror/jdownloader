@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -33,6 +34,7 @@ import jd.plugins.PluginException;
 public class TheyarehugeCom extends KernelVideoSharingComV2 {
     public TheyarehugeCom(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://" + this.getHost() + "/");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
@@ -117,6 +119,9 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
         /* 2020-10-27: Official download available: Higher quality than streaming download! */
         String officialDownloadurl = br.getRegex("\"(https?://[^\"]+\\.mp4[^\"]*\\?download=true[^\"]*720p[^\"]*)\"").getMatch(0);
         if (officialDownloadurl != null) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                this.getDownloadLink().setComment("SelectedQuality: 720p");
+            }
             if (Encoding.isHtmlEntityCoded(officialDownloadurl)) {
                 officialDownloadurl = Encoding.htmlDecode(officialDownloadurl);
             }
