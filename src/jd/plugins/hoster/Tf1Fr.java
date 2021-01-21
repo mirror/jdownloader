@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,14 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tf1.fr" }, urls = { "https?://(?:www\\.)?(wat\\.tv/video/.*?|tf1\\.fr/.+/videos/[A-Za-z0-9\\-_]+)\\.html" })
 public class Tf1Fr extends PluginForHost {
@@ -104,8 +104,8 @@ public class Tf1Fr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         String video_id = br.getRegex("data-watid=\"(\\d+)\"").getMatch(0);
         if (video_id == null) {
             video_id = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{6,8})\">").getMatch(1);
@@ -118,8 +118,8 @@ public class Tf1Fr extends PluginForHost {
         }
         if (video_id == null) {
             final Browser br2 = br.cloneBrowser();
-            final String slug = new Regex(downloadLink.getPluginPatternMatcher(), "/videos/(.*?)\\.html").getMatch(0);
-            final String programSlug = new Regex(downloadLink.getPluginPatternMatcher(), ".*/(.*?)/videos/").getMatch(0);
+            final String slug = new Regex(link.getPluginPatternMatcher(), "/videos/(.*?)\\.html").getMatch(0);
+            final String programSlug = new Regex(link.getPluginPatternMatcher(), ".*/(.*?)/videos/").getMatch(0);
             br2.getPage("https://www.tf1.fr/graphql/web?id=cb31e88def68451cba035272e5d7f987cbff7d273fb6132d6d662cf684f8de53&variables={%22slug%22:%22" + slug + "%22,%22programSlug%22:%22" + programSlug + "%22}");
             video_id = br2.getRegex("\"streamId\"\\s*:\\s*\"(\\d{6,8})").getMatch(0);
         }
@@ -127,10 +127,6 @@ public class Tf1Fr extends PluginForHost {
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (finallink.startsWith("rtmp")) {
-            /* Old */
-            if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
-            }
             /**
              * NOT WORKING IN RTMPDUMP
              */
@@ -140,7 +136,7 @@ public class Tf1Fr extends PluginForHost {
             }
             finallink = finallink.replaceAll("^.*?:", "rtmpe:");
             finallink = finallink.replaceAll("watestreaming/", "watestreaming/#");
-            dl = new RTMPDownload(this, downloadLink, finallink);
+            dl = new RTMPDownload(this, link, finallink);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
             rtmp.setUrl(finallink.substring(0, finallink.indexOf("#")));
             rtmp.setPlayPath(finallink.substring(finallink.indexOf("#") + 1));
@@ -155,7 +151,7 @@ public class Tf1Fr extends PluginForHost {
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                final HDSContainer read = HDSContainer.read(downloadLink);
+                final HDSContainer read = HDSContainer.read(link);
                 final HDSContainer hit;
                 if (read != null) {
                     hit = HDSContainer.getBestMatchingContainer(all, read);
@@ -165,8 +161,8 @@ public class Tf1Fr extends PluginForHost {
                 if (hit == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    hit.write(downloadLink);
-                    final HDSDownloader dl = new HDSDownloader(downloadLink, br, hit.getFragmentURL());
+                    hit.write(link);
+                    final HDSDownloader dl = new HDSDownloader(link, br, hit.getFragmentURL());
                     this.dl = dl;
                     dl.setEstimatedDuration(hit.getDuration());
                     dl.startDownload();
@@ -174,17 +170,21 @@ public class Tf1Fr extends PluginForHost {
             }
         } else if (finallink.contains(".m3u8")) {
             // HLS
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            checkFFmpeg(link, "Download a HLS Stream");
             final String m3u8 = finallink.replaceAll("(&(min|max)_bitrate=\\d+)", "");
-            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
+            br.getPage(m3u8);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked and/or account required");
+            }
+            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(qualities);
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = new HLSDownloader(downloadLink, br, best.getDownloadurl());
+            dl = new HLSDownloader(link, br, best.getDownloadurl());
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
