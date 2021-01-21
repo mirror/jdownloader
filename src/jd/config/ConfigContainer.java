@@ -65,7 +65,7 @@ public class ConfigContainer implements Serializable {
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner)
      *
-     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int min, int max, int step)
      */
     public static final int                   TYPE_SPINNER        = 8;
     /**
