@@ -204,4 +204,10 @@ public class HotlinkCc extends XFileSharingProBasic {
         /** 2021-01-20: Tested in premium mode by user */
         return 2;
     }
+
+    public String[] scanInfo(final String[] fileInfo) {
+        /* 2021-01-22: Prefer this as template will pickup filename without extension */
+        fileInfo[0] = new Regex(correctedBR, "<i class=\"glyphicon glyphicon-download\"></i>([^<>\"]+)<").getMatch(0);
+        return super.scanInfo(fileInfo);
+    }
 }

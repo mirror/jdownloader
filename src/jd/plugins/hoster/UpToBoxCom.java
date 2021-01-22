@@ -24,6 +24,25 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -44,25 +63,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -815,10 +815,63 @@ public class UpToBoxCom extends antiDDoSForHost {
      * @throws PluginException
      */
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
-        String errorMsg = null;
         try {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            errorMsg = (String) entries.get("message");
+            String errorMsg = (String) entries.get("message");
+            if (StringUtils.isEmpty(errorMsg)) {
+                errorMsg = "Unknown error";
+            }
+            final int errorCode = getErrorcode();
+            switch (errorCode) {
+            case 0:
+                /* Success --> No error */
+                return;
+            case 1:
+                /*
+                 * 2020-04-07: Generic error which can have different causes. According to admin a retry is not always required which is why
+                 * I've chosen a very long retry time. We'll have to wait for user feedback to see if this is a good idea.
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000);
+            case 2:
+                invalidLogin();
+            case 5:
+                throw new AccountRequiredException(errorMsg);
+            case 7:
+                /*
+                 * E.g. {"statusCode":7,"message":"Invalid Parameter","data":"bad file_code"} --> Should never happen - will only happen if
+                 * you e.g. try to download a file_code in an invalid format e.g. too long.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 11:
+                /* "Too much fail attempt" --> Wait some more time than usually */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+            case 13:
+                /* "Invalid token" --> Permanently disable account */
+                invalidLogin();
+            case api_responsecode_password_required_or_wrong:
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            case api_responsecode_file_offline:
+                /* E.g. {"statusCode":28,"message":"File not found","data":"xxxxxxxxxxxx"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 29:
+                /* "You have reached the streaming limit for today" */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, 1 * 60 * 60 * 1000l);
+            case 30:
+                /* "Folder not found" */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            default:
+                /* E.g. 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 19, 31 */
+                /*
+                 * * Error 8 reads itself as if it was a "trafficlimit reached" error but it has nothingt todo with downloading, it is only
+                 * for their "voucher reedem API call".
+                 */
+                if (link == null) {
+                    throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
+                }
+            }
         } catch (final JSonMapperException jsone) {
             /* Assume we got html code and check for errors in html code */
             try {
@@ -833,61 +886,6 @@ public class UpToBoxCom extends antiDDoSForHost {
             // } else {
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
             // }
-            return;
-        }
-        if (StringUtils.isEmpty(errorMsg)) {
-            errorMsg = "Unknown error";
-        }
-        final int errorCode = getErrorcode();
-        switch (errorCode) {
-        case 0:
-            /* Success --> No error */
-            return;
-        case 1:
-            /*
-             * 2020-04-07: Generic error which can have different causes. According to admin a retry is not always required which is why
-             * I've chosen a very long retry time. We'll have to wait for user feedback to see if this is a good idea.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000);
-        case 2:
-            invalidLogin();
-        case 5:
-            throw new AccountRequiredException(errorMsg);
-        case 7:
-            /*
-             * E.g. {"statusCode":7,"message":"Invalid Parameter","data":"bad file_code"} --> Should never happen - will only happen if you
-             * e.g. try to download a file_code in an invalid format e.g. too long.
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 11:
-            /* "Too much fail attempt" --> Wait some more time than usually */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
-        case 13:
-            /* "Invalid token" --> Permanently disable account */
-            invalidLogin();
-        case api_responsecode_password_required_or_wrong:
-            link.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-        case api_responsecode_file_offline:
-            /* E.g. {"statusCode":28,"message":"File not found","data":"xxxxxxxxxxxx"} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 29:
-            /* "You have reached the streaming limit for today" */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsg, 1 * 60 * 60 * 1000l);
-        case 30:
-            /* "Folder not found" */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        default:
-            /* E.g. 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 19, 31 */
-            /*
-             * * Error 8 reads itself as if it was a "trafficlimit reached" error but it has nothingt todo with downloading, it is only for
-             * their "voucher reedem API call".
-             */
-            if (link == null) {
-                throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
-            }
         }
     }
 
