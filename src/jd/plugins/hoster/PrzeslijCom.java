@@ -81,7 +81,7 @@ public class PrzeslijCom extends YetiShareCore {
             return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -99,6 +99,6 @@ public class PrzeslijCom extends YetiShareCore {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return -1;
     }
 }

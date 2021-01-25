@@ -25,6 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file.al" }, urls = { "https?://(?:www\\.)?file\\.al/Public/\\d+/.+" })
 public class FileAlFolder extends PluginForDecrypt {
@@ -43,8 +44,9 @@ public class FileAlFolder extends PluginForDecrypt {
         String fpName = null;
         final String[] links = br.getRegex("(https?://[^/]+/[a-z0-9]{12}[^\"/]*)").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Empty folder?");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
@@ -55,5 +57,10 @@ public class FileAlFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 }

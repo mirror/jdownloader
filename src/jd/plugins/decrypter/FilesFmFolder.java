@@ -94,7 +94,11 @@ public class FilesFmFolder extends PluginForDecrypt {
             String filename = new Regex(singleLink, "class=\"full-file-name\">([^<>\"]+)<").getMatch(0);
             final String ext = new Regex(singleLink, "class=\"filename-extension\"[^>]*>([^<>\"]+)<").getMatch(0);
             final String filesize = new Regex(singleLink, "class=\"file_size\">([^<>}\"]*?)<").getMatch(0);
-            final String fileid = new Regex(singleLink, "(?:\\?|&)i=([a-z0-9]+)").getMatch(0);
+            String fileid = new Regex(singleLink, "(?:\\?|&)i=([a-z0-9]+)").getMatch(0);
+            if (fileid == null) {
+                /* 2021-01-25 */
+                fileid = new Regex(singleLink, "id=\"report_([a-z0-9]+)\"").getMatch(0);
+            }
             if (filename == null || filesize == null || fileid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

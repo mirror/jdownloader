@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -28,10 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?(pruteklyncs\\.xyz|dirtybandit\\.com)/[A-Za-z0-9]+($|/|\\?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?(pruteklyncs\\.xyz|dirtybandit\\.com)/[A-Za-z0-9\\-]+($|/|\\?)" })
 public class PruteklyncsXyz extends PluginForDecrypt {
     public PruteklyncsXyz(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,16 +46,16 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String iframeURL = br.getRegex("<iframe src\\s*=\\s*\"(https?://[^\"]+)\">").getMatch(0);
-        if (iframeURL == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (StringUtils.containsIgnoreCase(br.getHost(), "dirtybandit")) {
-            decryptedLinks.add(createDownloadlink(iframeURL));
-            return decryptedLinks;
-        }
-        br.getPage(iframeURL);
-        if (br.containsHTML(">\\s*Page Not Found\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (iframeURL != null) {
+            if (StringUtils.containsIgnoreCase(br.getHost(), "dirtybandit")) {
+                decryptedLinks.add(createDownloadlink(iframeURL));
+                return decryptedLinks;
+            }
+            br.getPage(iframeURL);
+            if (br.containsHTML(">\\s*Page Not Found\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
         }
         if (br.containsHTML("passster-captcha-js") && br.containsHTML(">\\s*Protected Area\\s*<")) {
             /* 2020-10-26: Cheap clientside captcha */

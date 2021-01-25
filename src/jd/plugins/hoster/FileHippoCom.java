@@ -150,7 +150,11 @@ public class FileHippoCom extends PluginForHost {
         }
         final String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
         if ((normalPage == null) && (mirrorPage == null)) { // Download link
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("dpbolvw\\.net/click")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Can't download from external sources");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final String pages[] = new String[] { mirrorPage, normalPage };
         for (String page : pages) {
