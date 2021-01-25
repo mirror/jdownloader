@@ -635,7 +635,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 logger.info("Unsupported URL (?)");
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
-            br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=true");
+            br.getPage("https://page.ardmediathek.de/page-gateway/pages/daserste/item/" + Encoding.urlEncode(ardBase64) + "?devicetype=pc&embedded=false");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
@@ -984,9 +984,13 @@ public class Ardmediathek extends PluginForDecrypt {
                     }
                 }
             }
+            /*
+             * Decide whether we want to use the existing http URLs or whether we want to prefer the ones we've generated out of their HLS
+             * URLs.
+             */
             final int numberof_http_qualities_found_inside_json = foundQualitiesMap.keySet().size();
             final int numberof_http_qualities_found_via_hls_to_http_conversion = foundQualitiesMap_http_urls_via_HLS_master.keySet().size();
-            if (numberof_http_qualities_found_via_hls_to_http_conversion > 0) {
+            if (numberof_http_qualities_found_via_hls_to_http_conversion > numberof_http_qualities_found_inside_json) {
                 /*
                  * 2019-04-15: Prefer URLs created via this way because if we don't, we may get entries labled as different qualities which
                  * may be duplicates!
