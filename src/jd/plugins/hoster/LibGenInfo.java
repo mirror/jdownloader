@@ -25,11 +25,12 @@ import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -76,7 +77,7 @@ public class LibGenInfo extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/ads\\.php\\?md5=([A-Fa-f0-9]{32})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ads\\.php|comics/get\\.php)\\?md5=([A-Fa-f0-9]{32})");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,10 +93,17 @@ public class LibGenInfo extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (fid != null) {
-            return fid.toUpperCase(Locale.ENGLISH);
-        } else {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        try {
+            final String fid = UrlQuery.parse(link.getPluginPatternMatcher()).get("md5");
+            if (fid != null) {
+                return fid.toUpperCase(Locale.ENGLISH);
+            } else {
+                return null;
+            }
+        } catch (final Throwable e) {
             return null;
         }
     }
@@ -103,19 +111,39 @@ public class LibGenInfo extends PluginForHost {
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 2;
+    private static final String  TYPE_COMICS       = "https?://[^/]+/comics/.+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        final String md5 = new Regex(link.getPluginPatternMatcher(), "md5=([a-f0-9]{32})").getMatch(0);
+        final String md5 = getFID(link);
         link.setMD5Hash(md5);
-        br.getPage("http://" + this.getHost() + "/item/index.php?md5=" + md5);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getPluginPatternMatcher().matches(TYPE_COMICS)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(link.getPluginPatternMatcher());
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    // link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            br.getPage("http://" + this.getHost() + "/item/index.php?md5=" + md5);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            parseFileInfo(link, this.br);
         }
-        parseFileInfo(link, this.br);
         return AvailableStatus.TRUE;
     }
 
@@ -145,10 +173,15 @@ public class LibGenInfo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        br.getPage("/ads.php?md5=" + this.getFID(link));
-        final String dllink = br.getRegex("<a\\s*href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink;
+        if (link.getPluginPatternMatcher().matches(TYPE_COMICS)) {
+            dllink = link.getPluginPatternMatcher();
+        } else {
+            br.getPage("/ads.php?md5=" + this.getFID(link));
+            dllink = br.getRegex("<a\\s*href\\s*=\\s*(\"|')((?:https?:)?(?://[\\w\\-\\./]+)?/get\\.php\\?md5=[a-f0-9]{32}.*?)\\1").getMatch(1);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
