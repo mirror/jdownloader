@@ -231,10 +231,6 @@ public class AtvAt extends PluginForDecrypt {
                 fp.setName(hybrid_name);
                 final String part_formatted = df.format(part_counter);
                 if (("streaming".equalsIgnoreCase(delivery) && (src.contains(".m3u8") || src.contains("chunklist"))) || src.contains(".m3u8")) {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user");
-                        return decryptedLinks;
-                    }
                     if (!ffmpeg.isAvailable()) {
                         logger.info("Ffmpeg is not installed --> Skipping hls urls");
                         continue;
@@ -347,6 +343,10 @@ public class AtvAt extends PluginForDecrypt {
                 }
             }
             part_counter++;
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user");
+                return decryptedLinks;
+            }
         }
         if (decryptedLinks.size() == 0 && geo_blocked) {
             logger.info("GEO-blocked");
