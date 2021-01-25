@@ -366,6 +366,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (date_formatted == null || internal_videoid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* TODO: Use this map to determine which audio versions our user wants and e.g. find BEST quality for each */
+        final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
         final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
         short crawledDownloadTypesCounter = 0;
         short highestHlsMasterValue = 0;
@@ -458,12 +460,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final String quality = (String) entries.get("quality");
                         entries = (LinkedHashMap<String, Object>) entries.get("audio");
                         final ArrayList<Object> tracks = (ArrayList<Object>) entries.get("tracks");
-                        for (final Object tracks_o : tracks) {
-                            entries = (LinkedHashMap<String, Object>) tracks_o;
+                        for (final Object trackO : tracks) {
+                            entries = (LinkedHashMap<String, Object>) trackO;
                             final String cdn = (String) entries.get("cdn");
                             /* E.g. 'main' = normal, 'ad' = 'audio deskription'(Audio commentary with background information) */
                             final String audio_class = (String) entries.get("class");
                             final String language = (String) entries.get("language");
+                            // final List<Object> qualitiesForThisLang;
+                            // if (audioVideoMap.containsKey(audio_class)) {
+                            // qualitiesForThisLang = (List<Object>) audioVideoMap.get(audio_class);
+                            // } else {
+                            // qualitiesForThisLang = new ArrayList<Object>();
+                            // }
+                            // qualitiesForThisLang.add(trackO);
+                            // audioVideoMap.put(audio_class, qualitiesForThisLang);
                             final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
                             String uri = (String) entries.get("uri");
                             if (StringUtils.isEmpty(cdn) || StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
