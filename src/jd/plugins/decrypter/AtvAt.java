@@ -17,12 +17,15 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -66,8 +69,8 @@ public class AtvAt extends PluginForDecrypt {
         String json_source = null;
         String seasonnumber_str = null;
         String episodenumber_str = null;
-        LinkedHashMap<String, Object> entries;
-        final ArrayList<Object> parts;
+        Map<String, Object> entries;
+        final List<Object> parts;
         boolean geo_blocked = false;
         if (parameter.matches(TYPE_ATVSMART)) {
             final Regex linkinfo = new Regex(parameter, "atvsmart\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
@@ -85,9 +88,9 @@ public class AtvAt extends PluginForDecrypt {
             final String api_b64 = this.br.getRegex("asm_viewData\\s*?=\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
             json_source = Encoding.Base64Decode(api_b64);
             json_source = Encoding.urlDecode(json_source, false);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
             episodename = (String) JavaScriptEngineFactory.walkJson(entries, "api/{0}/title");
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/{0}/reference/episode");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/{0}/reference/episode");
             seriesname = (String) entries.get("title");
             seasonnumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("season"), 0));
             episodenumber_str = Long.toString(JavaScriptEngineFactory.toLong(entries.get("episode"), 0));
@@ -97,7 +100,7 @@ public class AtvAt extends PluginForDecrypt {
             if (episodenumber_str.equals("0")) {
                 episodenumber_str = null;
             }
-            parts = (ArrayList<Object>) entries.get("videoUrl");
+            parts = (List<Object>) entries.get("videoUrl");
         } else {
             final Regex linkinfo = new Regex(parameter, "atv\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/((?:d|v)\\d+)/$");
             url_seriesname = linkinfo.getMatch(0);
@@ -135,16 +138,15 @@ public class AtvAt extends PluginForDecrypt {
                 json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
             }
             json_source = Encoding.htmlDecode(json_source);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
-            parts = (ArrayList<Object>) entries.get("parts");
+            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+            parts = (List<Object>) entries.get("parts");
         }
         final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
         final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
         short seasonnumber = -1;
         short episodenumber = -1;
         final DecimalFormat df = new DecimalFormat("00");
-        ArrayList<Object> sources = null;
         if (seriesname == null) {
             /* Fallback to URL information */
             seriesname = url_seriesname.replace("-", " ");
@@ -180,20 +182,87 @@ public class AtvAt extends PluginForDecrypt {
         hybrid_name = Encoding.htmlDecode(hybrid_name);
         hybrid_name = decodeUnicode(hybrid_name);
         final String[] possibleQualities = { "1080", "720", "576", "540", "360", "226" };
-        final int possibleQualitiesCount = possibleQualities.length;
-        final FFmpeg ffmpeg = new FFmpeg(br.cloneBrowser()) {
-            @Override
-            public LogInterface getLogger() {
-                return AtvAt.this.getLogger();
-            }
-        };
         int part_counter = 1;
+        /** Collect existing http URLs */
+        String randomHTTPUrl = null;
+        List<Object> sources = null;
+        ArrayList<Integer> partsWithoutHTTPQuality = new ArrayList<Integer>();
+        HashMap<Integer, String> partsWithHTTPQuality = new HashMap<Integer, String>();
+        final Pattern httpURL = Pattern.compile("(https?://.+/hbbtv)/(\\d+)(_\\d+)?\\.mp4");
         for (final Object parto : parts) {
-            entries = (LinkedHashMap<String, Object>) parto;
-            sources = (ArrayList<Object>) entries.get("sources");
+            Map<String, Object> partInfo = (Map<String, Object>) parto;
+            sources = (List<Object>) partInfo.get("sources");
+            boolean httpProtocolAvailable = false;
+            for (final Object source : sources) {
+                Map<String, Object> qualityInfo = (Map<String, Object>) source;
+                String src = (String) qualityInfo.get("src");
+                if (src != null && new Regex(src, httpURL).matches()) {
+                    httpProtocolAvailable = true;
+                    randomHTTPUrl = src;
+                    partsWithHTTPQuality.put(part_counter, src);
+                }
+            }
+            if (!httpProtocolAvailable) {
+                partsWithoutHTTPQuality.add(part_counter);
+            }
+            part_counter++;
+        }
+        /* Construct & collect missing http URLs based on known pattern */
+        if (randomHTTPUrl != null && !partsWithoutHTTPQuality.isEmpty()) {
+            final Regex urlParts = new Regex(randomHTTPUrl, httpURL);
+            final String urlBase = urlParts.getMatch(0);
+            final String episodeID = urlParts.getMatch(1);
+            for (final int part_number_real : partsWithoutHTTPQuality) {
+                final int partIndex = part_number_real - 1;
+                final String episodeInURL;
+                if (partIndex == 0) {
+                    /* E.g. https://multiscreen.atv.cdn.tvnext.tv/2016/10/SD/hbbtv/12345.mp4 */
+                    episodeInURL = episodeID;
+                } else {
+                    /* E.g. https://multiscreen.atv.cdn.tvnext.tv/2016/10/SD/hbbtv/12345_3.mp4 */
+                    episodeInURL = episodeID + "_" + part_number_real;
+                }
+                final String newHTTPUrl = urlBase + "/" + episodeInURL + ".mp4";
+                partsWithHTTPQuality.put(part_number_real, newHTTPUrl);
+            }
+        }
+        /* Add all HTTP URLs */
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(hybrid_name);
+        final Iterator<Entry<Integer, String>> iterator = partsWithHTTPQuality.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<Integer, String> entry = iterator.next();
+            final int part_number_real = entry.getKey();
+            final String url = entry.getValue();
+            /* delivery:progressive --> http url */
+            /* 2016-10-18: Seems like their http urls always have the same quality */
+            /*
+             * 2017-01-25: Seems like sometimes, part1 is only available in one single quality which is usually lower than 576p (same for
+             * hls) - this is a serverside "issue" and not a JDownloader problem! (See forum 59152 page 7).
+             */
+            final String quality = "576p";
+            final DownloadLink link = this.createDownloadlink("directhttp://" + url);
+            String finalname = hybrid_name + "_";
+            finalname += "http_part_";
+            finalname += df.format(part_number_real) + "_";
+            finalname += quality;
+            finalname += ".mp4";
+            link.setFinalFileName(finalname);
+            // link.setAvailable(true);
+            link.setContentUrl(parameter);
+            link._setFilePackage(fp);
+            decryptedLinks.add(link);
+            distribute(link);
+        }
+        /* Here we go again -> Add all HLS URLs */
+        part_counter = 1;
+        final int possibleQualitiesCount = possibleQualities.length;
+        for (final Object parto : parts) {
+            entries = (Map<String, Object>) parto;
+            sources = (List<Object>) entries.get("sources");
             final boolean is_geo_ip_blocked = ((Boolean) entries.get("is_geo_ip_blocked")).booleanValue();
             for (final Object source : sources) {
-                entries = (LinkedHashMap<String, Object>) source;
+                entries = (Map<String, Object>) source;
                 final String protocol = (String) entries.get("protocol");
                 final String delivery = (String) entries.get("delivery");
                 // final String type = (String) entries.get("type");
@@ -227,18 +296,13 @@ public class AtvAt extends PluginForDecrypt {
                 DownloadLink link = null;
                 String quality = null;
                 String finalname = null;
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(hybrid_name);
                 final String part_formatted = df.format(part_counter);
                 if (("streaming".equalsIgnoreCase(delivery) && (src.contains(".m3u8") || src.contains("chunklist"))) || src.contains(".m3u8")) {
-                    if (!ffmpeg.isAvailable()) {
-                        logger.info("Ffmpeg is not installed --> Skipping hls urls");
-                        continue;
-                    } else if (!ffmpeg.isCompatible()) {
-                        logger.info("Ffmpeg is incompatible --> Skipping hls urls");
+                    /* Find all hls qualities */
+                    if (partsWithHTTPQuality.containsKey(part_counter)) {
+                        logger.info("Skipping HLS quality because HTTP is available");
                         continue;
                     }
-                    /* Find all hls qualities */
                     /* 2016-10-18: It is possible to change hls urls to http urls! */
                     this.br.getPage(src);
                     final String[] qualities = this.br.getRegex("BANDWIDTH=").getColumn(-1);
@@ -321,25 +385,8 @@ public class AtvAt extends PluginForDecrypt {
                         }
                     }
                 } else {
-                    /* delivery:progressive --> http url */
-                    /* 2016-10-18: Seems like their http urls always have the same quality */
-                    /*
-                     * 2017-01-25: Seems like sometimes, part1 is only available in one single quality which is usually lower than 576p
-                     * (same for hls) - this is a serverside "issue" and not a JDownloader problem! (See forum 59152 page 7).
-                     */
-                    quality = "576p";
-                    link = this.createDownloadlink("directhttp://" + src);
-                    finalname = hybrid_name + "_";
-                    finalname += "http_part_";
-                    finalname += part_formatted + "_";
-                    finalname += quality;
-                    finalname += ".mp4";
-                    link.setFinalFileName(finalname);
-                    // link.setAvailable(true);
-                    link.setContentUrl(parameter);
-                    link._setFilePackage(fp);
-                    decryptedLinks.add(link);
-                    distribute(link);
+                    /* Skip http URLs and or unknown qualities. HTTP URLs have already been added before! */
+                    continue;
                 }
             }
             part_counter++;
