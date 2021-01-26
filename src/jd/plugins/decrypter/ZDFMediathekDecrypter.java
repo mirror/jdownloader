@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -153,7 +152,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /** Returns API parameters from html. */
-    private String[] getApiParams(Browser br, final String url, final boolean returnHardcodedData) throws IOException {
+    private String[] getApiParams(final Browser br, final String url, final boolean returnHardcodedData) throws IOException {
         String apitoken;
         /* 2020-03-19: apitoken2 not required anymore?! */
         String apitoken2;
@@ -202,10 +201,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked" })
     private void getDownloadLinksZdfNew() throws Exception {
+        final ArrayList<DownloadLink> allSelectedDownloadlinks = new ArrayList<DownloadLink>();
         List<String> all_selected_qualities = new ArrayList<String>();
         final List<String> all_found_languages = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
+        final ArrayList<String> selectedAudioVideoVersions = new ArrayList<String>();
+        /* Every video should have this version available */
+        selectedAudioVideoVersions.add("main");
         grabBest = cfg.isGrabBESTEnabled();
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
         this.grabSubtitles = cfg.isGrabSubtitleEnabled();
@@ -219,6 +222,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final boolean grabAudioDeskription = cfg.isGrabAudioDeskription();
         if (grabHlsAudio) {
             all_selected_qualities.add("hls_aac_0");
+            selectedAudioVideoVersions.add("ad");
         }
         final boolean grabHls170 = cfg.isGrabHLS170pVideoEnabled();
         final boolean grabHls270 = cfg.isGrabHLS270pVideoEnabled();
@@ -313,8 +317,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
-        LinkedHashMap<String, Object> entries_2 = null;
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+        Map<String, Object> entries_2 = null;
         final String contentType = (String) entries.get("contentType");
         String title = (String) entries.get("title");
         if (StringUtils.isEmpty(title)) {
@@ -327,9 +331,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         // final Object hasVideoo = entries.get("hasVideo");
         // final boolean hasVideo = hasVideoo != null && hasVideoo instanceof Boolean ? ((Boolean) entries.get("hasVideo")).booleanValue() :
         // false;
-        entries_2 = (LinkedHashMap<String, Object>) entries.get("http://zdf.de/rels/brand");
+        entries_2 = (Map<String, Object>) entries.get("http://zdf.de/rels/brand");
         final String tv_show = entries_2 != null ? (String) entries_2.get("title") : null;
-        entries_2 = (LinkedHashMap<String, Object>) entries.get("mainVideoContent");
+        entries_2 = (Map<String, Object>) entries.get("mainVideoContent");
         if (entries_2 == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
             logger.info("Content is not a video --> Scanning html for embedded content");
@@ -339,7 +343,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             return;
         }
-        entries_2 = (LinkedHashMap<String, Object>) entries_2.get("http://zdf.de/rels/target");
+        entries_2 = (Map<String, Object>) entries_2.get("http://zdf.de/rels/target");
         final String player_url_template = (String) entries_2.get("http://zdf.de/rels/streams/ptmd-template");
         String internal_videoid = (String) JavaScriptEngineFactory.walkJson(entries_2, "streams/default/extId");
         if (StringUtils.isEmpty(player_url_template)) {
@@ -375,7 +379,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         int highestHlsBandwidth = 0;
         boolean grabDownloadUrlsPossible = false;
         DownloadLink highestHlsDownload = null;
+        final List<String> hlsDupeArray = new ArrayList<String>();
         do {
+            /**
+             * TODO: Maybe prefer official download over stream download if available. Check if there are disadvantages e.g. lower quality
+             * when doing so!
+             */
             if (crawledDownloadTypesCounter == 0) {
                 /* First round: Grab streams */
                 logger.info("Crawling stream URLs");
@@ -390,7 +399,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 logger.info("Stopping as we've crawled all qualities");
                 break;
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
             /* 1. Collect subtitles if wanted by the user and if not already grabbed before */
             final Object captions = JavaScriptEngineFactory.walkJson(entries, "captions");
             if (grabSubtitles && captions instanceof List) {
@@ -418,174 +427,189 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 /* Are official video download-URLs existant? */
                 grabDownloadUrlsPossible = ((Boolean) downloadAllowed_o).booleanValue();
             }
-            final List<String> hlsDupeArray = new ArrayList<String>();
             final ArrayList<Object> priorityList = (ArrayList<Object>) entries.get("priorityList");
             for (final Object priority_o : priorityList) {
-                entries = (LinkedHashMap<String, Object>) priority_o;
-                final ArrayList<Object> formitaeten = (ArrayList<Object>) entries.get("formitaeten");
+                entries = (Map<String, Object>) priority_o;
+                final List<Object> formitaeten = (List<Object>) entries.get("formitaeten");
                 for (final Object formitaet_o : formitaeten) {
                     /* 2020-12-21: Skips (two) lower http qualities - just a test */
                     // final String facet = (String) JavaScriptEngineFactory.walkJson(entries, "facets/{0}");
                     // if ("restriction_useragent".equalsIgnoreCase(facet)) {
                     // continue;
                     // }
-                    entries = (LinkedHashMap<String, Object>) formitaet_o;
+                    entries = (Map<String, Object>) formitaet_o;
                     final boolean isAdaptive = ((Boolean) entries.get("isAdaptive")).booleanValue();
                     final String type = (String) entries.get("type");
-                    String protocol = "http";
-                    /* First check for global skip conditions */
-                    if (isAdaptive && !type.contains("m3u8")) {
-                        /* 2017-02-03: Skip HDS as HLS already contains all segment quelities. */
-                        continue;
-                    } else if (isAdaptive && !grabHLS) {
-                        /* Skip hls if not required by the user. */
-                        continue;
-                    }
-                    /* Now set some properties that are relevant for all items that are processed in this loop. */
-                    if (isAdaptive) {
-                        protocol = "hls";
-                    }
-                    String ext;
-                    if (type.contains("vorbis")) {
-                        /* http webm streams. */
-                        ext = "webm";
-                    } else {
-                        /* http mp4- and segment streams. */
-                        ext = "mp4";
-                    }
                     /* Process qualities */
-                    final ArrayList<Object> qualities = (ArrayList<Object>) entries.get("qualities");
+                    final List<Object> qualities = (List<Object>) entries.get("qualities");
                     for (final Object qualities_o : qualities) {
-                        entries = (LinkedHashMap<String, Object>) qualities_o;
+                        entries = (Map<String, Object>) qualities_o;
                         final String quality = (String) entries.get("quality");
-                        entries = (LinkedHashMap<String, Object>) entries.get("audio");
-                        final ArrayList<Object> tracks = (ArrayList<Object>) entries.get("tracks");
+                        entries = (Map<String, Object>) entries.get("audio");
+                        final List<Object> tracks = (List<Object>) entries.get("tracks");
                         for (final Object trackO : tracks) {
-                            entries = (LinkedHashMap<String, Object>) trackO;
-                            final String cdn = (String) entries.get("cdn");
-                            /* E.g. 'main' = normal, 'ad' = 'audio deskription'(Audio commentary with background information) */
+                            entries = (Map<String, Object>) trackO;
                             final String audio_class = (String) entries.get("class");
-                            final String language = (String) entries.get("language");
-                            // final List<Object> qualitiesForThisLang;
-                            // if (audioVideoMap.containsKey(audio_class)) {
-                            // qualitiesForThisLang = (List<Object>) audioVideoMap.get(audio_class);
-                            // } else {
-                            // qualitiesForThisLang = new ArrayList<Object>();
-                            // }
-                            // qualitiesForThisLang.add(trackO);
-                            // audioVideoMap.put(audio_class, qualitiesForThisLang);
-                            final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
-                            String uri = (String) entries.get("uri");
-                            if (StringUtils.isEmpty(cdn) || StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
-                                /* Skip invalid objects */
-                                continue;
-                            } else if (audio_class.equals("ad") && !grabAudioDeskription) {
-                                logger.info("Skipping Audiodeskription");
-                                continue;
-                            }
-                            final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
-                            String final_download_url;
-                            String linkid;
-                            String final_filename;
-                            /* internal_videoid, type, cdn, language, audio_class, protocol, resolution */
-                            final String linkid_format = "%s_%s_%s_%s_%s_%s_%s";
-                            /*
-                             * Each final filename should contain: filename_packagename_base_title, protocol, resolution, language,
-                             * audio_class_user_readable, ext
-                             */
-                            DownloadLink dl;
-                            if (isAdaptive) {
-                                /* HLS Segment download */
-                                String hls_master_quality_str = new Regex(uri, "m3u8/(\\d+)/").getMatch(0);
-                                if (hls_master_quality_str == null) {
-                                    // we asume this leads to m3u8 with multiple qualities
-                                    // better than not processing any m3u8
-                                    hls_master_quality_str = String.valueOf(Short.MAX_VALUE);
-                                }
-                                final String hls_master_dupe_string = hls_master_quality_str + "_" + audio_class;
-                                if (hlsDupeArray.contains(hls_master_dupe_string)) {
-                                    /* Skip dupes */
-                                    continue;
-                                }
-                                hlsDupeArray.add(hls_master_dupe_string);
-                                /* Access (hls) master. */
-                                this.br.getPage(uri);
-                                final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
-                                long duration = -1;
-                                for (final HlsContainer hlscontainer : allHlsContainers) {
-                                    if (duration == -1) {
-                                        duration = 0;
-                                        final List<M3U8Playlist> playList = hlscontainer.getM3U8(br.cloneBrowser());
-                                        if (playList != null) {
-                                            for (M3U8Playlist play : playList) {
-                                                duration += play.getEstimatedDuration();
-                                            }
-                                        }
-                                    }
-                                    final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
-                                    final String resolution = hlscontainer.getResolution();
-                                    final_download_url = hlscontainer.getDownloadurl();
-                                    ext = hlscontainer.getFileExtension().replace(".", "");
-                                    linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
-                                    final_filename = filename_packagename_base_title + "_" + protocol + "_" + resolution + "_" + language + "_" + audio_class_user_readable + "." + ext;
-                                    dl = createDownloadlink(final_download_url);
-                                    if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
-                                        /*
-                                         * While adding the URLs, let's find the BEST quality url. In case we need it later we will already
-                                         * know which one is the BEST.
-                                         */
-                                        highestHlsBandwidth = hlscontainer.getBandwidth();
-                                        highestHlsDownload = dl;
-                                    }
-                                    setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
-                                    dl.setProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, hlscontainer.getBandwidth());
-                                    if (duration > 0 && hlscontainer.getBandwidth() > 0) {
-                                        dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
-                                    }
-                                    all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, audio_class, all_found_languages), dl);
-                                    /**
-                                     * Extra abort handling within here to abort hls crawling as it also needs one http request for each
-                                     * quality.
-                                     */
-                                    if (this.isAbort()) {
-                                        return;
-                                    }
-                                }
-                                /* Set this so we do not crawl this particular hls master again next round. */
-                                highestHlsMasterValue = hlsMasterValueTemp;
+                            final List<Object> qualitiesForThisLang;
+                            if (audioVideoMap.containsKey(audio_class)) {
+                                qualitiesForThisLang = (List<Object>) audioVideoMap.get(audio_class);
                             } else {
-                                /* http download */
-                                final_download_url = uri;
-                                /*
-                                 * 2020-12-21: Some tests: There are higher http qualities available than what we get via API (see also
-                                 * mediathekview) ...
-                                 */
-                                /* Do NOT alter official downloadurls such as "http://downloadzdf-a.akamaihd.net/..." */
-                                if (final_download_url.matches("https?://rodlzdf-a\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
-                                    /* Improve "veryhigh" */
-                                    final_download_url = final_download_url.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
-                                    /* Improve "high/medium" */
-                                    final_download_url = final_download_url.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
-                                    /* Improve "low" */
-                                    final_download_url = final_download_url.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
-                                }
-                                linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
-                                final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
-                                dl = createDownloadlink(final_download_url);
-                                /* Usually filesize is only given for the official downloads. */
-                                if (filesize > 0) {
-                                    dl.setAvailable(true);
-                                    dl.setDownloadSize(filesize);
-                                }
-                                setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
-                                all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, quality, language, audio_class, all_found_languages), dl);
+                                qualitiesForThisLang = new ArrayList<Object>();
                             }
+                            entries.put("isAdaptive", isAdaptive);
+                            entries.put("type", type);
+                            entries.put("quality", quality);
+                            qualitiesForThisLang.add(entries);
+                            audioVideoMap.put(audio_class, qualitiesForThisLang);
                         }
                     }
                 }
             }
             crawledDownloadTypesCounter++;
         } while (!this.isAbort());
+        final Iterator<Entry<String, Object>> iterator = audioVideoMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<String, Object> entry = iterator.next();
+            final String audio_class = entry.getKey();
+            // final boolean userWantsThisAudioVideoVersion = selectedAudioVideoVersions.contains(audio_class);
+            if (audio_class.equals("ad") && !grabAudioDeskription) {
+                logger.info("Skipping Audiodeskription");
+                continue;
+            }
+            final List<Object> qualitiesList = (List<Object>) entry.getValue();
+            for (final Object qualityO : qualitiesList) {
+                entries = (Map<String, Object>) qualityO;
+                final boolean isAdaptive = ((Boolean) entries.get("isAdaptive"));
+                final String type = (String) entries.get("type");
+                final String quality = (String) entries.get("quality");
+                String protocol = "http";
+                /* First check for global skip conditions */
+                if (isAdaptive && !type.contains("m3u8")) {
+                    /* 2017-02-03: Skip HDS as HLS already contains all segment qualities. */
+                    continue;
+                } else if (isAdaptive && !grabHLS) {
+                    /* Skip hls if not required by the user. */
+                    continue;
+                }
+                /* Now set some properties that are relevant for all items that are processed in this loop. */
+                if (isAdaptive) {
+                    protocol = "hls";
+                }
+                String ext;
+                if (type.contains("vorbis")) {
+                    /* http webm streams. */
+                    ext = "webm";
+                } else {
+                    /* http mp4- and segment streams. */
+                    ext = "mp4";
+                }
+                final String cdn = (String) entries.get("cdn");
+                final String language = (String) entries.get("language");
+                String uri = (String) entries.get("uri");
+                if (StringUtils.isEmpty(cdn) || StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
+                    /* Skip invalid objects */
+                    continue;
+                }
+                final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
+                final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
+                String final_download_url;
+                String linkid;
+                String final_filename;
+                /* internal_videoid, type, cdn, language, audio_class, protocol, resolution */
+                final String linkid_format = "%s_%s_%s_%s_%s_%s_%s";
+                /*
+                 * Each final filename should contain: filename_packagename_base_title, protocol, resolution, language,
+                 * audio_class_user_readable, ext
+                 */
+                DownloadLink dl;
+                if (isAdaptive) {
+                    /* HLS Segment download */
+                    String hls_master_quality_str = new Regex(uri, "m3u8/(\\d+)/").getMatch(0);
+                    if (hls_master_quality_str == null) {
+                        // we asume this leads to m3u8 with multiple qualities
+                        // better than not processing any m3u8
+                        hls_master_quality_str = String.valueOf(Short.MAX_VALUE);
+                    }
+                    final String hls_master_dupe_string = hls_master_quality_str + "_" + audio_class;
+                    if (hlsDupeArray.contains(hls_master_dupe_string)) {
+                        /* Skip dupes */
+                        continue;
+                    }
+                    hlsDupeArray.add(hls_master_dupe_string);
+                    /* Access (hls) master. */
+                    this.br.getPage(uri);
+                    final List<HlsContainer> allHlsContainers = HlsContainer.getHlsQualities(this.br);
+                    long duration = -1;
+                    for (final HlsContainer hlscontainer : allHlsContainers) {
+                        if (duration == -1) {
+                            duration = 0;
+                            final List<M3U8Playlist> playList = hlscontainer.getM3U8(br.cloneBrowser());
+                            if (playList != null) {
+                                for (M3U8Playlist play : playList) {
+                                    duration += play.getEstimatedDuration();
+                                }
+                            }
+                        }
+                        final String height_for_quality_selection = getHeightForQualitySelection(hlscontainer.getHeight());
+                        final String resolution = hlscontainer.getResolution();
+                        final_download_url = hlscontainer.getDownloadurl();
+                        ext = hlscontainer.getFileExtension().replace(".", "");
+                        linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, resolution);
+                        final_filename = filename_packagename_base_title + "_" + protocol + "_" + resolution + "_" + language + "_" + audio_class_user_readable + "." + ext;
+                        dl = createDownloadlink(final_download_url);
+                        if (hlscontainer.getBandwidth() > highestHlsBandwidth) {
+                            /*
+                             * While adding the URLs, let's find the BEST quality url. In case we need it later we will already know which
+                             * one is the BEST.
+                             */
+                            highestHlsBandwidth = hlscontainer.getBandwidth();
+                            highestHlsDownload = dl;
+                        }
+                        setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
+                        dl.setProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, hlscontainer.getBandwidth());
+                        if (duration > 0 && hlscontainer.getBandwidth() > 0) {
+                            dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
+                        }
+                        all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, audio_class, all_found_languages), dl);
+                        /**
+                         * Extra abort handling within here to abort hls crawling as it also needs one http request for each quality.
+                         */
+                        if (this.isAbort()) {
+                            return;
+                        }
+                    }
+                    /* Set this so we do not crawl this particular hls master again next round. */
+                    highestHlsMasterValue = hlsMasterValueTemp;
+                } else {
+                    /* http download */
+                    final_download_url = uri;
+                    /*
+                     * 2020-12-21: Some tests: There are higher http qualities available than what we get via API (see also mediathekview)
+                     * ...
+                     */
+                    /* Do NOT alter official downloadurls such as "http://downloadzdf-a.akamaihd.net/..." */
+                    if (final_download_url.matches("https?://rodlzdf-a\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
+                        /* Improve "veryhigh" */
+                        final_download_url = final_download_url.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
+                        /* Improve "high/medium" */
+                        final_download_url = final_download_url.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
+                        /* Improve "low" */
+                        final_download_url = final_download_url.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
+                    }
+                    linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
+                    final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
+                    dl = createDownloadlink(final_download_url);
+                    /* Usually filesize is only given for the official downloads. */
+                    if (filesize > 0) {
+                        dl.setAvailable(true);
+                        dl.setVerifiedFileSize(filesize);
+                        // dl.setDownloadSize(filesize);
+                    }
+                    setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
+                    all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, quality, language, audio_class, all_found_languages), dl);
+                }
+            }
+        }
         if (all_found_downloadlinks.isEmpty()) {
             logger.warning("Failed to find any results at all");
             return;
@@ -593,7 +617,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /* Finally, check which qualities the user actually wants to have. */
         if (this.grabBest && highestHlsDownload != null) {
             /* Best is easy and even if it was an unknown quality, we knew that highest hls == always BEST! */
-            addDownloadLink(highestHlsDownload);
+            addDownloadLink(highestHlsDownload, this.decryptedLinks);
         } else {
             boolean atLeastOneSelectedItemExists = false;
             final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
@@ -628,7 +652,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 while (it.hasNext()) {
                     final Entry<String, DownloadLink> entry = it.next();
                     final DownloadLink dl = entry.getValue();
-                    addDownloadLink(dl);
+                    addDownloadLink(dl, this.decryptedLinks);
                 }
             }
         }
@@ -710,7 +734,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return newMap;
     }
 
-    private void addDownloadLink(final DownloadLink dl) {
+    private void addDownloadLink(final DownloadLink dl, final ArrayList<DownloadLink> decryptedLinks) {
         decryptedLinks.add(dl);
         for (final String selectedSubtitleType : this.userSelectedSubtitleTypes) {
             if (this.allSubtitles.containsKey(selectedSubtitleType)) {
