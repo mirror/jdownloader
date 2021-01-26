@@ -217,15 +217,6 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     private boolean premiumWorkaroundActive = false;
-    // @Override
-    // protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws
-    // Exception {
-    // if (premiumWorkaroundActive) {
-    // return null;
-    // } else {
-    // return super.requestFileInformationVideoEmbed(link, account, findFilesize);
-    // }
-    // }
 
     @Override
     protected String getDllinkVideohost(final String src) {
