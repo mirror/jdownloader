@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -101,7 +102,11 @@ public class HotlinkCc extends XFileSharingProBasic {
     @Override
     public Form findFormDownload2Premium() throws Exception {
         /* 2019-05-15: Special */
-        final Form formf1Premium = super.findFormDownload2Premium();
+        Form formf1Premium = super.findFormDownload2Premium();
+        if (formf1Premium == null) {
+            /* 2021-01-26 */
+            formf1Premium = br.getFormByInputFieldKeyValue("op", "download_orig");
+        }
         fixFormF1(formf1Premium);
         return formf1Premium;
     }
@@ -209,5 +214,55 @@ public class HotlinkCc extends XFileSharingProBasic {
         /* 2021-01-22: Prefer this as template will pickup filename without extension */
         fileInfo[0] = new Regex(correctedBR, "<i class=\"glyphicon glyphicon-download\"></i>([^<>\"]+)<").getMatch(0);
         return super.scanInfo(fileInfo);
+    }
+
+    private boolean premiumWorkaroundActive = false;
+    // @Override
+    // protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws
+    // Exception {
+    // if (premiumWorkaroundActive) {
+    // return null;
+    // } else {
+    // return super.requestFileInformationVideoEmbed(link, account, findFilesize);
+    // }
+    // }
+
+    @Override
+    protected String getDllinkVideohost(final String src) {
+        if (premiumWorkaroundActive) {
+            return null;
+        } else {
+            return super.getDllinkVideohost(src);
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /**
+         * 2021-01-26: They're providing AES encrypted videostreaming to premium users. By default, this is the preferred download method
+         * but it will fail -> This works around it
+         */
+        if (account.getType() == AccountType.PREMIUM) {
+            premiumWorkaroundActive = true;
+            try {
+                super.handlePremium(link, account);
+            } finally {
+                premiumWorkaroundActive = false;
+            }
+        } else {
+            premiumWorkaroundActive = false;
+        }
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /** 2021-01-26: Special */
+        String dllink = new Regex(correctedBR, "href=\"(https?://[^\"]+)\"[^>]*>Direct Download Link<").getMatch(0);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            /* Fallback to template handling */
+            return super.getDllink(link, account, br, src);
+        }
     }
 }

@@ -45,9 +45,9 @@ public class FilesFmFolder extends PluginForDecrypt {
         final PluginForHost hostplg = JDUtilities.getPluginForHost(this.getHost());
         /* 2016-03-10: They enforce https */
         final String parameter = param.toString().replace("http://", "https://");
-        final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        final String folderID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
-        br.getPage("https://files.fm/u/" + fid + "?view=gallery&items_only=true&index=0&count=10000");
+        br.getPage("https://files.fm/u/" + folderID + "?view=gallery&items_only=true&index=0&count=10000");
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not contain any files|These files are deleted by the owner<|The expiry date of these files is over<|class=\"deleted_wrapper\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -66,14 +66,14 @@ public class FilesFmFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        String[] folders = br.getRegex("<div class=\"item upload\".*?</i>\\s*</div>\\s*</div>").getColumn(-1);
-        if (folders != null) {
-            for (String folder : folders) {
-                folder = Encoding.htmlOnlyDecode(folder);
-                final String fileid = new Regex(folder, "/u/([a-z0-9]+)").getMatch(0);
-                final String contentUrl = Request.getLocation("/u/" + fileid, br.getRequest());
-                decryptedLinks.add(createDownloadlink(contentUrl));
+        String[] folders = br.getRegex("files\\.fm/u/([a-z0-9]+)").getColumn(0);
+        for (String folderIDTmp : folders) {
+            /* Do not re-add current folder */
+            if (folderIDTmp.equals(folderID)) {
+                continue;
             }
+            final String contentUrl = br.getURL("/u/" + folderIDTmp).toString();
+            decryptedLinks.add(createDownloadlink(contentUrl));
         }
         String[] links = br.getRegex("id=\"report_[^\"]+\".*?class=\"OrderID\"").getColumn(-1);
         if (links == null || links.length == 0) {
