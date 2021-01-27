@@ -14,13 +14,12 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "xvideos.com", type = Type.HOSTER)
 public interface XvideosComConfig extends PluginConfigInterface {
     @AboutConfig
-    @DefaultBooleanValue(true)
-    @TakeValueFromSubconfig("ENABLE_FAST_LINKCHECK")
-    @DescriptionForConfigEntry("Enable fast linkcheck for profile crawler?")
-    @Order(10)
-    boolean isEnableFastLinkcheckForProfileCrawler();
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Enable fast linkcheck for host plugin? If enabled, filesize won't be displayed until download is started!")
+    @Order(15)
+    boolean isEnableFastLinkcheckForHostPlugin();
 
-    void setEnableFastLinkcheckForProfileCrawler(boolean b);
+    void setEnableFastLinkcheckForHostPlugin(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
@@ -100,4 +99,11 @@ public interface XvideosComConfig extends PluginConfigInterface {
     PreferredHTTPQuality getPreferredHTTPQuality();
 
     void setPreferredHTTPQuality(PreferredHTTPQuality quality);
+
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("xvideos.com can 'shadow ban' users who download a lot. This will limit the max. available quality to 240p. This experimental setting will make JD try to detect this limit.")
+    @Order(140)
+    boolean isTryToRecognizeLimit();
+
+    void setTryToRecognizeLimit(boolean b);
 }

@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.XvideosComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -240,7 +238,6 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         short pageNum = 0;
         int decryptedLinksNum;
-        final boolean fast_linkcheck = PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForProfileCrawler();
         do {
             logger.info(String.format("Crawling page %d", pageNum));
             decryptedLinksNum = 0;
@@ -270,10 +267,8 @@ public class XvideosComProfile extends PluginForDecrypt {
                     final String url_name = new Regex(singleLink, "/\\d+/(?:THUMBNUM/)?(.+)").getMatch(0);
                     final String name_temp;
                     final DownloadLink dl = createDownloadlink(singleLink);
-                    if (fast_linkcheck) {
-                        /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                        dl.setAvailable(true);
-                    }
+                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                    dl.setAvailable(true);
                     fp.add(dl);
                     if (url_name != null) {
                         String clean = url_name.replaceAll("(watch_)?(free_)?(live_)?camgirls_at_(www(_|\\.))?teenhdcams(_|\\.)com$", "");
@@ -321,7 +316,6 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         short pageNum = 0;
         int decryptedLinksNum;
-        final boolean fast_linkcheck = PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForProfileCrawler();
         do {
             logger.info(String.format("Crawling page %d", pageNum));
             decryptedLinksNum = 0;
@@ -345,10 +339,8 @@ public class XvideosComProfile extends PluginForDecrypt {
                     final String url_name = urlRegex.getMatch(1);
                     final String name_temp;
                     final DownloadLink dl = createDownloadlink(singleLink);
-                    if (fast_linkcheck) {
-                        /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                        dl.setAvailable(true);
-                    }
+                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                    dl.setAvailable(true);
                     fp.add(dl);
                     if (url_name != null) {
                         name_temp = videoID + "_" + url_name.replace("-", "");
