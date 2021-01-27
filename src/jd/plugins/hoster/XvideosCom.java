@@ -188,10 +188,10 @@ public class XvideosCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0));
         }
@@ -263,104 +263,120 @@ public class XvideosCom extends PluginForHost {
             filename = videoID + "_" + filename;
         }
         String videoURL = null;
-        if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
-            final String hlsURL = getVideoHLS();
-            if (StringUtils.isNotEmpty(hlsURL)) {
-                final Browser m3u8 = br.cloneBrowser();
-                m3u8.getPage(hlsURL);
-                final int preferredHLSQuality = getPreferredHLSQuality();
-                HlsContainer selectedQuality = null;
-                final List<HlsContainer> hlsqualities = HlsContainer.getHlsQualities(m3u8);
-                for (final HlsContainer currentQuality : hlsqualities) {
-                    final int width = currentQuality.getHeight();
-                    if (width == preferredHLSQuality) {
-                        logger.info("Found user selected HLS quality: " + preferredHLSQuality);
-                        selectedQuality = currentQuality;
-                        break;
-                    }
-                }
-                if (selectedQuality == null) {
-                    logger.info("Failed to find user-selected HLS quality --> Fallback to BEST");
-                    selectedQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
-                }
-                if (selectedQuality != null) {
-                    if (Thread.currentThread() instanceof SingleDownloadController) {
-                        this.hlsContainer = selectedQuality;
-                    }
-                    final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(selectedQuality.getDownloadurl(), m3u8);
-                    long estimatedSize = -1;
-                    for (M3U8Playlist playList : playLists) {
-                        if (selectedQuality.getBandwidth() > 0) {
-                            playList.setAverageBandwidth(selectedQuality.getBandwidth());
-                            estimatedSize += playList.getEstimatedSize();
+        if (isDownload || !PluginJsonConfig.get(XvideosComConfig.class).isEnableFastLinkcheckForHostPlugin()) {
+            final String hlsURL = getVideoHLSMaster();
+            /**
+             * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
+             * is an attempt to detect this.</br>
+             * See also: https://board.jdownloader.org/showthread.php?t=86587
+             */
+            if (PluginJsonConfig.get(XvideosComConfig.class).isTryToRecognizeLimit() && isDownload && hlsURL == null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Low quality block active", 60 * 60 * 1000l);
+            }
+            if (PluginJsonConfig.get(XvideosComConfig.class).isPreferHLSDownload()) {
+                if (StringUtils.isNotEmpty(hlsURL)) {
+                    final Browser m3u8 = br.cloneBrowser();
+                    m3u8.getPage(hlsURL);
+                    final int preferredHLSQuality = getPreferredHLSQuality();
+                    HlsContainer selectedQuality = null;
+                    final List<HlsContainer> hlsqualities = HlsContainer.getHlsQualities(m3u8);
+                    for (final HlsContainer currentQuality : hlsqualities) {
+                        final int width = currentQuality.getHeight();
+                        if (width == preferredHLSQuality) {
+                            logger.info("Found user selected HLS quality: " + preferredHLSQuality);
+                            selectedQuality = currentQuality;
+                            break;
                         }
                     }
-                    if (estimatedSize > 0) {
-                        link.setDownloadSize(estimatedSize);
+                    if (selectedQuality == null) {
+                        logger.info("Failed to find user-selected HLS quality --> Fallback to BEST");
+                        selectedQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
                     }
-                    filename = filename.trim() + ".mp4";
-                    link.setFinalFileName(filename);
-                    return AvailableStatus.TRUE;
+                    if (selectedQuality != null) {
+                        if (Thread.currentThread() instanceof SingleDownloadController) {
+                            this.hlsContainer = selectedQuality;
+                        }
+                        final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(selectedQuality.getDownloadurl(), m3u8);
+                        long estimatedSize = -1;
+                        for (M3U8Playlist playList : playLists) {
+                            if (selectedQuality.getBandwidth() > 0) {
+                                playList.setAverageBandwidth(selectedQuality.getBandwidth());
+                                estimatedSize += playList.getEstimatedSize();
+                            }
+                        }
+                        if (estimatedSize > 0) {
+                            link.setDownloadSize(estimatedSize);
+                        }
+                        filename = filename.trim() + ".mp4";
+                        link.setFinalFileName(filename);
+                        return AvailableStatus.TRUE;
+                    }
                 }
-            }
-        } else if (account != null) {
-            /* When logged-in, official downloadlinks can be available */
-            logger.info("Looking for official download ...");
-            final Browser brc = br.cloneBrowser();
-            brc.getPage(this.br.getURL("/video-download/" + videoID + "/"));
-            /* TODO: Add user quality selection */
-            if (brc.getURL().contains(videoID)) {
-                final String[] qualities = { "URL_MP4_4K", "URL_MP4HD", "URL", "URL_LOW" };
-                for (final String quality : qualities) {
-                    final String downloadURLTmp = PluginJSonUtils.getJson(brc, quality);
-                    if (!StringUtils.isEmpty(downloadURLTmp)) {
-                        logger.info("Found official download - quality = " + quality);
-                        videoURL = downloadURLTmp;
-                        break;
+            } else if (account != null) {
+                /* When logged-in, official downloadlinks can be available */
+                logger.info("Looking for official download ...");
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(this.br.getURL("/video-download/" + videoID + "/"));
+                /* TODO: Add user quality selection */
+                if (brc.getURL().contains(videoID)) {
+                    final String[] qualities = { "URL_MP4_4K", "URL_MP4HD", "URL", "URL_LOW" };
+                    for (final String quality : qualities) {
+                        final String downloadURLTmp = PluginJSonUtils.getJson(brc, quality);
+                        if (!StringUtils.isEmpty(downloadURLTmp)) {
+                            logger.info("Found official download - quality = " + quality);
+                            videoURL = downloadURLTmp;
+                            break;
+                        }
                     }
+                }
+                if (StringUtils.isEmpty(videoURL)) {
+                    logger.info("Failed to find any official downloadlink");
                 }
             }
             if (StringUtils.isEmpty(videoURL)) {
-                logger.info("Failed to find any official downloadlink");
-            }
-        }
-        if (StringUtils.isEmpty(videoURL)) {
-            /* Download http streams */
-            final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
-            if (qualityhttp == PreferredHTTPQuality.HIGH) {
-                videoURL = getVideoHigh();
-            } else {
-                videoURL = getVideoLow();
-            }
-            if (videoURL != null && !isValidVideoURL(link, videoURL)) {
-                videoURL = null;
-            }
-            if (videoURL == null) {
-                /* Fallback / try to find BEST */
-                logger.info("Failed to find selected http quality");
-                videoURL = getVideoHigh();
-                if (!isValidVideoURL(link, videoURL)) {
+                /* Download http streams */
+                final PreferredHTTPQuality qualityhttp = getPreferredHTTPQuality();
+                if (qualityhttp == PreferredHTTPQuality.HIGH) {
+                    videoURL = getVideoHigh();
+                } else {
                     videoURL = getVideoLow();
+                }
+                if (videoURL != null && !isValidVideoURL(link, videoURL)) {
+                    videoURL = null;
+                }
+                if (videoURL == null) {
+                    /* Fallback / try to find BEST */
+                    logger.info("Failed to find selected http quality");
+                    videoURL = getVideoHigh();
                     if (!isValidVideoURL(link, videoURL)) {
-                        videoURL = getVideoFlv();
+                        videoURL = getVideoLow();
+                        if (!isValidVideoURL(link, videoURL)) {
+                            videoURL = getVideoFlv();
+                        }
                     }
                 }
+                if (!isValidVideoURL(link, videoURL)) {
+                    /* Assume that an account is required to access this content */
+                    throw new AccountRequiredException();
+                }
+                videoURL = Encoding.htmlOnlyDecode(videoURL);
             }
-            if (!isValidVideoURL(link, videoURL)) {
-                /* Assume that an account is required to access this content */
-                throw new AccountRequiredException();
+            if (isDownload) {
+                streamURL = videoURL;
             }
-            videoURL = Encoding.htmlOnlyDecode(videoURL);
         }
-        if (Thread.currentThread() instanceof SingleDownloadController) {
-            streamURL = videoURL;
+        filename = filename.trim();
+        if (videoURL != null) {
+            filename += getFileNameExtensionFromString(videoURL, ".mp4");
+            link.setName(filename);
+        } else {
+            filename += ".mp4";
+            link.setFinalFileName(filename);
         }
-        filename = filename.trim() + getFileNameExtensionFromString(videoURL, ".mp4");
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
-    private String getVideoHLS() {
+    private String getVideoHLSMaster() {
         return br.getRegex("html5player\\.setVideoHLS\\('(.*?)'\\)").getMatch(0);
     }
 
@@ -383,7 +399,7 @@ public class XvideosCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, null, true);
         handleDownload(link, null);
     }
 
@@ -669,7 +685,7 @@ public class XvideosCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // login(account, false);
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         handleDownload(link, account);
     }
 
