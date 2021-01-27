@@ -256,4 +256,10 @@ public class HotlinkCc extends XFileSharingProBasic {
             return super.getDllink(link, account, br, src);
         }
     }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /** 2021-01-27 */
+        return true;
+    }
 }
