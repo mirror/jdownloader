@@ -17,36 +17,29 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecheck.link", "container.cool", "redirect.codes" }, urls = { "https?://(?:www\\.)?filecheck\\.link/d/[A-Za-z0-9]+", "https?://(?:www\\.)?container\\.cool/d/[A-Za-z0-9]+", "https?://(?:www\\.)?redirect\\.codes/d/[A-Za-z0-9]+" })
-public class FilecheckLink extends antiDDoSForDecrypt {
-    public FilecheckLink(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lezlezlez.com" }, urls = { "http://(?:www\\.)?lezlezlez\\.com/mediaswf\\.php\\?type=vid\\&name=[^<>\"/]+\\.flv" })
+public class LezlezlezCom extends PluginForDecrypt {
+    public LezlezlezCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h1>File Not Found</h1><br>")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        /* Website of [XFS] filehost */
-        final String website = br.getRegex("name=\"F1\" action=\"(https?://[^/]+/)").getMatch(0);
-        final String fid = br.getRegex("\"id\" value=\"([^\"]+)\"").getMatch(0);
-        if (website == null || fid == null) {
-            return null;
-        }
-        final String finallink = website + fid;
-        decryptedLinks.add(createDownloadlink(finallink));
+        final String name = UrlQuery.parse(param.getCryptedUrl()).get("name");
+        final String finallink = "http://www.lezlezlez.com/vidz/" + name.replace(".flv", ".mp4");
+        final String finalfilename = this.correctOrApplyFileNameExtension(name, ".mp4");
+        final DownloadLink dl = createDownloadlink(finallink);
+        dl.setFinalFileName(finalfilename);
+        decryptedLinks.add(dl);
         return decryptedLinks;
     }
 }
