@@ -46,6 +46,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
@@ -265,14 +266,14 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
     /**
      * Alternative way to linkcheck (works only for some hosts and only if FUIS is given): privat-zapisi.biz/feed/12345.xml | Als working
      * for: webcamsbabe.com
      */
-    protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    protected AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
         prepBR(this.br);
@@ -281,6 +282,13 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!link.isNameSet() && !StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(titleURL + ".mp4");
+        }
+        if (account == null) {
+            /* Was not called in download mode -> Try to grab any valid account */
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
@@ -438,6 +446,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     final String redirect_url = brc.getHttpConnection().getRequest().getUrl();
                     if (redirect_url != null) {
@@ -560,7 +569,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
+        requestFileInformation(link, null, true);
         this.handleDownload(link, null);
     }
 
@@ -641,8 +650,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.login(account, false);
-        requestFileInformation(link, true);
+        requestFileInformation(link, account, true);
         this.handleDownload(link, account);
     }
 

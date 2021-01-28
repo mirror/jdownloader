@@ -933,14 +933,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     /** Log in the account of the hostplugin */
     @SuppressWarnings({ "deprecation" })
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
+        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             logger.warning("There is no account available, stopping...");
             return false;
         }
         try {
-            jd.plugins.hoster.PinterestCom.login(this.br, aa, force);
+            ((jd.plugins.hoster.PinterestCom) hostPlugin).login(aa, force);
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;

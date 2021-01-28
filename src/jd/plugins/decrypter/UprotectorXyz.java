@@ -29,9 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "4snip.pw" }, urls = { "https?://(?:www\\.)?4snip\\.pw/out2?/([A-Za-z0-9\\-]+)" })
-public class FoursnipPw extends PluginForDecrypt {
-    public FoursnipPw(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uprotector.xyz" }, urls = { "https?://(?:www\\.)?(?:4snip\\.pw|uprotector\\.xyz)/out2?/([A-Za-z0-9\\-_]+)" })
+public class UprotectorXyz extends PluginForDecrypt {
+    public UprotectorXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,11 +43,15 @@ public class FoursnipPw extends PluginForDecrypt {
         final boolean continue2Required = true;
         Form continueform = null;
         if (continue1Required) {
-            br.getPage("https://4snip.pw/out/" + linkid);
+            br.getPage("https://" + this.getHost() + "/out/" + linkid);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            // if (br.getRedirectLocation() != null && !this.canHandle(br.getRedirectLocation())) {
+            // decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            // return decryptedLinks;
+            // }
             continueform = br.getFormbyProperty("id", "link-view");
             if (continueform == null) {
                 return null;
@@ -56,7 +60,7 @@ public class FoursnipPw extends PluginForDecrypt {
         }
         if (continue2Required) {
             if (br.getURL() == null) {
-                br.getPage("https://4snip.pw/out2/" + linkid);
+                br.getPage("https://" + this.getHost() + "/out2/" + linkid);
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
@@ -69,9 +73,9 @@ public class FoursnipPw extends PluginForDecrypt {
         } else {
             continueform = new Form();
             continueform.setMethod(MethodType.POST);
-            continueform.setAction("https://4snip.pw/out2/" + linkid);
+            continueform.setAction("https://" + this.getHost() + "/out2/" + linkid);
             continueform.put("url", linkid);
-            br.getHeaders().put("Referer", "https://4snip.pw/out2/" + linkid);
+            br.getHeaders().put("Referer", "https://" + this.getHost() + "/out2/" + linkid);
         }
         br.submitForm(continueform);
         final String finallink = br.getRedirectLocation();
