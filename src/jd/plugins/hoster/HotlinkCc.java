@@ -198,7 +198,11 @@ public class HotlinkCc extends XFileSharingProBasic {
          * 2020-01-30: Special because template code matches also on ">\\s*Available Only for Premium Members" which is always present in
          * their html
          */
-        final boolean premiumonly_filehost = new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+        boolean premiumonly_filehost = new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+        if (!premiumonly_filehost) {
+            /** 2021-01-28 */
+            premiumonly_filehost = new Regex(correctedBR, "This video.{1,6}is available for viewing and downloading.{1,6}only for premium users").matches();
+        }
         /* 2019-05-30: Example: xvideosharing.com */
         final boolean premiumonly_videohost = new Regex(correctedBR, ">\\s*This video is available for Premium users only").matches();
         return premiumonly_filehost || premiumonly_videohost;
@@ -242,6 +246,7 @@ public class HotlinkCc extends XFileSharingProBasic {
             }
         } else {
             premiumWorkaroundActive = false;
+            super.handlePremium(link, account);
         }
     }
 
@@ -261,5 +266,17 @@ public class HotlinkCc extends XFileSharingProBasic {
     protected boolean isVideohoster_enforce_video_filename() {
         /** 2021-01-27 */
         return true;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /** 2021-01-28 */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        /** 2021-01-28 */
+        return false;
     }
 }
