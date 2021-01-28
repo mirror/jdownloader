@@ -18,13 +18,23 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -82,7 +92,7 @@ public class PinterestCom extends PluginForHost {
             final String username = link.getStringProperty("username", null);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null && source_url != null && boardid != null && username != null) {
-                login(this.br, aa, false);
+                login(aa, false);
                 loggedIN = true;
                 pinMap = jd.plugins.decrypter.PinterestComDecrypter.findPINMap(this.br, true, link.getContentUrl(), source_url, boardid, username);
                 /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
@@ -220,7 +230,7 @@ public class PinterestCom extends PluginForHost {
         return -1;
     }
 
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -228,10 +238,13 @@ public class PinterestCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 String last_used_host = account.getStringProperty("host");
                 if (last_used_host == null) {
-                    /* Fallback */
+                    /* Fallback and required on first run */
                     last_used_host = "pinterest.com";
                 }
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
+                final boolean enforceCookieLoginOnly = true;
                 if (cookies != null) {
                     br.setCookies(last_used_host, cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
@@ -239,24 +252,70 @@ public class PinterestCom extends PluginForHost {
                         return;
                     }
                     br.getPage("https://www." + last_used_host + "/");
-                    if (br.containsHTML("\"isAuth\":true")) {
+                    if (this.isLoggedINHTML()) {
+                        account.saveCookies(br.getCookies(last_used_host), "");
+                        account.setProperty("host", br.getHost());
                         return;
                     }
                     /* Full login required */
                 }
+                logger.info("Full login required");
+                if (enforceCookieLoginOnly && userCookies == null) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (userCookies != null) {
+                    /* They got a lot of different domains -> Choose the one the user was using */
+                    final Cookie sessCookie = userCookies.get("_pinterest_sess");
+                    if (sessCookie != null && !StringUtils.isEmpty(sessCookie.getHost()) && sessCookie.getHost().contains("pinterest")) {
+                        last_used_host = sessCookie.getHost();
+                    }
+                    br.setCookies(last_used_host, userCookies);
+                    br.getPage("https://www." + last_used_host);
+                    if (!this.isLoggedINHTML()) {
+                        logger.warning("Cookie login failed");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    account.saveCookies(br.getCookies(last_used_host), "");
+                    account.setProperty("host", br.getHost());
+                    return;
+                }
                 /* May redirect to e.g. pinterest.de */
                 br.getPage("https://www.pinterest.com/login/?action=login");
-                prepAPIBR(br);
-                String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
-                // postData = Encoding.urlEncode(postData);
-                final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
-                br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
+                String recaptchaV2Response = null;
+                final DownloadLink dlinkbefore = this.getDownloadLink();
+                try {
+                    final DownloadLink dl_dummy;
+                    if (dlinkbefore != null) {
+                        dl_dummy = dlinkbefore;
+                    } else {
+                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                        this.setDownloadLink(dl_dummy);
+                    }
+                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ldx7ZkUAAAAAF3SZ05DRL2Kdh911tCa3qFP0-0r") {
+                        protected boolean isEnterprise(final String source) {
+                            return true;
+                        }
+
+                        protected TYPE getType(String source) {
+                            return TYPE.INVISIBLE;
+                        }
+                    }.getToken();
+                } finally {
+                    this.setDownloadLink(dlinkbefore);
+                }
+                // prepAPIBR(br);
+                // String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() +
+                // "\",\"password\":\"" + account.getPass() +
+                // "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
+                // // postData = Encoding.urlEncode(postData);
+                // final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
+                // br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
+                br.postPage("https://accounts.pinterest.com/v3/login/handshake/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + recaptchaV2Response);
                 if (br.getHttpConnection().getResponseCode() != 200 || br.getCookie(br.getHost(), "_pinterest_sess", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                last_used_host = br.getHost();
                 account.saveCookies(br.getCookies(last_used_host), "");
-                account.setProperty("host", last_used_host);
+                account.setProperty("host", br.getHost());
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -266,10 +325,50 @@ public class PinterestCom extends PluginForHost {
         }
     }
 
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Pinterest - Login";
+                        message += "Hallo liebe(r) Pinterest NutzerIn\r\n";
+                        message += "Um deinen Pinterest Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Pinterest - Login";
+                        message += "Hello dear Pinterest user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
+    private boolean isLoggedINHTML() {
+        return br.containsHTML("\"isAuth\":true");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(-1);

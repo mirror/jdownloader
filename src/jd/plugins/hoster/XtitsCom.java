@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -52,7 +53,7 @@ public class XtitsCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    protected AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String fuid = this.getFUIDFromURL(link.getPluginPatternMatcher());
         if (fuid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -62,7 +63,7 @@ public class XtitsCom extends KernelVideoSharingComV2 {
         /* 2020-10-13: Special workaround to prevent serverside issue of random infinite redirects */
         link.setPluginPatternMatcher("https://www.xtits.com/popup-video/" + fuid + "/");
         try {
-            return super.requestFileInformation(link, isDownload);
+            return super.requestFileInformation(link, account, isDownload);
         } finally {
             link.setPluginPatternMatcher(urlOriginal);
             link.setFinalFileName(filetitle + ".mp4");

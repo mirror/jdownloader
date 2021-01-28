@@ -91,7 +91,13 @@ public class OkRuDecrypter extends PluginForDecrypt {
                     addedItems += 1;
                     dupes.add(videoID);
                     final DownloadLink dl = this.createDownloadlink("https://ok.ru/video/" + videoID);
-                    dl.setName(videoID + ".mp4");
+                    /* Try to find a meaningful title right away */
+                    final String title = br.getRegex("/video/" + videoID + "[^\"]+\" title=\"([^<>\"]+)\"").getMatch(0);
+                    if (title != null) {
+                        dl.setName(title + ".mp4");
+                    } else {
+                        dl.setName(videoID + ".mp4");
+                    }
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     distribute(dl);
