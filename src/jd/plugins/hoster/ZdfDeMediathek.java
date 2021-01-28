@@ -409,17 +409,25 @@ public class ZdfDeMediathek extends PluginForHost {
         void setGrabSubtitleForDisabledPeopleEnabled(boolean b);
 
         @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry("Grab audio only version if available?")
         @Order(14)
         boolean isGrabAudio();
 
         void setGrabAudio(boolean b);
 
         @DefaultBooleanValue(false)
-        @DescriptionForConfigEntry("Grab video quality 'Audio Deskription'?")
+        @DescriptionForConfigEntry("Grab video quality 'Audiodeskription'?")
         @Order(15)
-        boolean isGrabAudioDeskription();
+        boolean isGrabVideoVersionAudioDeskription();
 
-        void setGrabAudioDeskription(boolean b);
+        void setGrabVideoVersionAudioDeskription(boolean b);
+
+        @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry("Grab video quality 'Original sound'?")
+        @Order(16)
+        boolean isGrabVideoVersionOriginalAudio();
+
+        void setGrabVideoVersionOriginalAudio(boolean b);
 
         @DefaultBooleanValue(false)
         @Order(20)
@@ -435,7 +443,7 @@ public class ZdfDeMediathek extends PluginForHost {
         void setOnlyBestVideoQualityOfSelectedQualitiesEnabled(boolean b);
 
         @DefaultBooleanValue(true)
-        @Order(21)
+        @Order(22)
         boolean isAddUnknownQualitiesEnabled();
 
         void setAddUnknownQualitiesEnabled(boolean b);
