@@ -287,6 +287,7 @@ public class YouPornCom extends PluginForHost {
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     server_issues = true;

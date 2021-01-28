@@ -110,7 +110,8 @@ public class MegaConz extends PluginForHost {
     private final String   HIDE_APP                                                      = "HIDE_APP_V2";
     private final String   ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
     private final String   ALLOW_CONCURRENT_DECRYPTION                                   = "ALLOW_CONCURRENT_DECRYPTION";
-    private final String   LIMIT_MODE                                                    = "LIMIT_MODE";
+    private final String   LIMIT_MODE                                                    = "LIMIT_MODE_2021_01";
+    private final int      default_LIMIT_MODE                                            = 2;
     private final String[] limitModes                                                    = new String[] { "Global: Wait or get new IP", "Global: wait", "Per file: Wait" };
     private final String   MAX_LIMIT_WAITTIME                                            = "MAX_LIMIT_WAITTIME";
     private final long     default_MAX_LIMIT_WAITTIME                                    = 30;
@@ -966,7 +967,7 @@ public class MegaConz extends PluginForHost {
      */
     private void fileOrIPDownloadlimitReached(final Account account, final String msg, final long waitMilliseconds) throws PluginException {
         final long userDefinedMaxWaitMilliseconds = this.getPluginConfig().getLongProperty(MAX_LIMIT_WAITTIME, default_MAX_LIMIT_WAITTIME) * 60 * 1000;
-        final int userDefinedLimitMode = this.getPluginConfig().getIntegerProperty(LIMIT_MODE, 0);
+        final int userDefinedLimitMode = this.getPluginConfig().getIntegerProperty(LIMIT_MODE, default_LIMIT_MODE);
         if (waitMilliseconds == 0) {
             /* Special handling for zero given serverside waittime -> Old stuff - no idea whether this is still relevant */
             /** 2021-01-21: TODO: Re-Check this account limit handling */
@@ -1537,7 +1538,7 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_CONCURRENT_DECRYPTION, JDL.L("plugins.hoster.megaconz.concurrentdecryption", "Allow concurrent decryption?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Configure limit handling"));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), LIMIT_MODE, limitModes, JDL.L("plugins.hoster.megaconz.limitmode", "Set prefered limit mode")).setDefaultValue(0));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), LIMIT_MODE, limitModes, JDL.L("plugins.hoster.megaconz.limitmode", "Set prefered limit mode")).setDefaultValue(default_LIMIT_MODE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), MAX_LIMIT_WAITTIME, JDL.L("plugins.hoster.megaconz.maxlimitwaittimeminutes", "Max. wait time on limit reached"), 10, 360, 1).setDefaultValue(default_MAX_LIMIT_WAITTIME));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry cfgMulti = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MULTIHOST_USAGE, "Allow multihoster usage?").setDefaultValue(true);
