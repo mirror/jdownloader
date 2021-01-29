@@ -18,7 +18,6 @@ import java.net.URL;
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -491,18 +490,20 @@ abstract public class ZeveraCore extends UseNet {
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true, client_id);
-        final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
-        final String space_used = PluginJSonUtils.getJson(br, "space_used");
-        final String premium_until_str = PluginJSonUtils.getJson(br, "premium_until");
-        if (space_used != null && space_used.matches("\\d+")) {
-            ai.setUsedSpace(Long.parseLong(space_used));
-        } else if (space_used != null && space_used.matches("\\d+\\.\\d+")) {
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        // final String fair_use_used_str = PluginJSonUtils.getJson(br, "limit_used");
+        final Object fair_use_usedO = entries.get("limit_used");
+        final Object space_usedO = entries.get("space_used");
+        final Object premium_untilO = entries.get("premium_until");
+        if (space_usedO != null && space_usedO instanceof Long) {
+            ai.setUsedSpace(((Number) space_usedO).longValue());
+        } else if (space_usedO != null && space_usedO instanceof Double) {
             /* 2019-06-26: New */
-            ai.setUsedSpace((long) Double.parseDouble(space_used));
+            ai.setUsedSpace((long) ((Double) space_usedO).doubleValue());
         }
         /* E.g. free account: "premium_until":false */
         final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
-        final long premium_until = (premium_until_str != null && premium_until_str.matches("\\d+")) ? Long.parseLong(premium_until_str) * 1000 : 0;
+        final long premium_until = (premium_untilO != null && premium_untilO instanceof Number) ? ((Number) premium_untilO).longValue() * 1000 : 0;
         if (premium_until > currentTime) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
@@ -510,8 +511,8 @@ abstract public class ZeveraCore extends UseNet {
                 ai.setStatus("Premium | Unlimited Traffic Booster workaround enabled");
                 ai.setUnlimitedTraffic();
             } else {
-                if (!StringUtils.isEmpty(fair_use_used_str)) {
-                    final double d = Double.parseDouble(fair_use_used_str);
+                if (fair_use_usedO != null && fair_use_usedO instanceof Double) {
+                    final double d = ((Number) fair_use_usedO).doubleValue();
                     final int fairUsagePercentUsed = (int) (d * 100.0);
                     final int fairUsagePercentLeft = 100 - fairUsagePercentUsed;
                     if (fairUsagePercentUsed >= 100) {
@@ -536,7 +537,7 @@ abstract public class ZeveraCore extends UseNet {
             setFreeAccountTraffic(account, ai);
         }
         callAPI(br, account, "/api/services/list");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         // final ArrayList<String> supportedHosts = new ArrayList<String>();
         final ArrayList<String> directdl = (ArrayList<String>) entries.get("directdl");
         final HashSet<String> list = new HashSet<String>();
@@ -881,8 +882,9 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     private boolean isLoggedIn(final Browser br) {
-        final String status = PluginJSonUtils.getJson(br, "status");
-        if ("success".equalsIgnoreCase(status)) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Object statusO = entries.get("status");
+        if ("success".equalsIgnoreCase((String) statusO)) {
             return true;
         } else {
             return false;
@@ -911,19 +913,17 @@ abstract public class ZeveraCore extends UseNet {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         title = host + " - neue Login-Methode";
                         message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                        message += "Seit diesem Update hat sich die Login-Methode dieses Anbieters geändert um die sicherheit zu erhöhen!\r\n";
-                        message += "Um deinen Account weiterhin in JDownloader verwenden zu können musst du folgende Schritte beachten:\r\n";
+                        message += "Um deinen Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "1. Gehe sicher, dass du im Browser in deinem " + host_without_tld + " Account eingeloggt bist.\r\n";
-                        message += "2. Öffne diesen Link im Browser:\r\n\t'" + verification_url + "'\t\r\n";
+                        message += "2. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + verification_url + "'\t\r\n";
                         message += "3. Gib im Browser folgenden Code ein: " + user_code + "\r\n";
                         message += "Dein Account sollte nach einigen Sekunden von JDownloader akzeptiert werden.\r\n";
                     } else {
                         title = host + " - New login method";
                         message += "Hello dear " + host + " user\r\n";
-                        message += "This update has changed the login method of " + host_without_tld + " in favor of security.\r\n";
-                        message += "In order to keep using this service in JDownloader you need to follow these steps:\r\n";
-                        message += "1. Make sure that you're logged in your " + host_without_tld + " account with your default browser.\r\n";
-                        message += "2. Open this URL in your browser:\r\n\t'" + verification_url + "'\t\r\n";
+                        message += "In order to use this service in JDownloader you need to follow these steps:\r\n";
+                        message += "1. Make sure that you're logged in your " + host_without_tld + " account with your browser.\r\n";
+                        message += "2. Open this URL in your browser it that did not already happen automatically:\r\n\t'" + verification_url + "'\t\r\n";
                         message += "3. Enter the following code in the browser window: " + user_code + "\r\n";
                         message += "Your account should be accepted in JDownloader within a few seconds.\r\n";
                     }

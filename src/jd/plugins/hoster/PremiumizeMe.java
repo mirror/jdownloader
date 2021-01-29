@@ -97,10 +97,10 @@ public class PremiumizeMe extends ZeveraCore {
                 return "Allow free account downloads?\r\nFor more information visit: premiumize.me/free";
             }
 
-            public String getEnablePairingLogin_label() {
-                return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
-            }
-
+            /** 2021-01-29: For more info see: usePairingLogin */
+            // public String getEnablePairingLogin_label() {
+            // return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
+            // }
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
                 return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
             }
@@ -119,13 +119,13 @@ public class PremiumizeMe extends ZeveraCore {
 
         void setAllowFreeAccountDownloads(boolean b);
 
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @Order(20)
-        boolean isEnablePairingLogin();
-
-        void setEnablePairingLogin(boolean b);
-
+        /** 2021-01-29: For more info see: usePairingLogin */
+        // @AboutConfig
+        // @DefaultBooleanValue(false)
+        // @Order(20)
+        // boolean isEnablePairingLogin();
+        //
+        // void setEnablePairingLogin(boolean b);
         @AboutConfig
         @DefaultBooleanValue(false)
         @Order(30)
@@ -206,11 +206,16 @@ public class PremiumizeMe extends ZeveraCore {
 
     @Override
     public boolean usePairingLogin(final Account account) {
-        if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
-            return true;
-        } else {
-            return false;
-        }
+        /**
+         * 2021-01-29: Hardcoded-disabled this because API changes would be required to make Usenet work when logged in via this method.
+         * Also some users enabled this by mistake and then failed to login (WTF)
+         */
+        // if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
+        // return true;
+        // } else {
+        // return false;
+        // }
+        return false;
     }
 
     @Override
