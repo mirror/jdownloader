@@ -52,7 +52,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private String              PARAMETER                 = null;
     private String              PARAMETER_ORIGINAL        = null;
     private boolean             fastlinkcheck             = false;
-    private boolean             grabSubtitles             = false;
     private final String        TYPE_ZDF                  = "https?://(?:www\\.)?(?:zdf\\.de|3sat\\.de)/.+";
     /* Not sure where these URLs come from. Probably old RSS readers via old APIs ... */
     private final String        TYPER_ZDF_REDIRECT        = "https?://[^/]+/uri/.+";
@@ -276,12 +275,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final List<String> allKnownQualities = this.getKnownQualities();
         final ArrayList<DownloadLink> allSelectedDownloadlinks = new ArrayList<DownloadLink>();
         final List<String> selectedQualityStringsTmp = new ArrayList<String>();
-        final List<String> all_found_languages = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
         final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
         final ArrayList<String> selectedAudioVideoVersions = new ArrayList<String>();
         /* Every video should have this version available */
         selectedAudioVideoVersions.add("main");
+        /* Check for other versions, desired by the user */
         if (cfg.isGrabVideoVersionAudioDeskription()) {
             selectedAudioVideoVersions.add("ad");
         }
@@ -290,7 +289,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         final boolean grabBest = cfg.isGrabBESTEnabled();
         fastlinkcheck = cfg.isFastLinkcheckEnabled();
-        this.grabSubtitles = cfg.isGrabSubtitleEnabled();
         if (cfg.isGrabSubtitleEnabled()) {
             this.userSelectedSubtitleTypes.add("omu");
         }
@@ -398,9 +396,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 break;
             }
             entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
-            /* 1. Collect subtitles if wanted by the user and if not already grabbed before */
-            final Object captions = JavaScriptEngineFactory.walkJson(entries, "captions");
-            if (grabSubtitles && captions instanceof List) {
+            /* 1. Collect subtitles */
+            final Object captionsO = JavaScriptEngineFactory.walkJson(entries, "captions");
+            if (captionsO instanceof List && this.allSubtitles.isEmpty()) {
                 /* Captions can be available in different versions (languages- and types) */
                 final List<Object> subtitlesO = (List<Object>) entries.get("captions");
                 Map<String, Object> subInfo = null;
@@ -579,7 +577,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         if (duration > 0 && hlscontainer.getBandwidth() > 0) {
                             dl.setDownloadSize(duration / 1000 * hlscontainer.getBandwidth() / 8);
                         }
-                        final String qualitySelectorString = generateQualitySelectorString(protocol, ext, Integer.toString(hlscontainer.getHeight()), language, audio_class, all_found_languages);
+                        final String qualitySelectorString = generateQualitySelectorString(protocol, ext, Integer.toString(hlscontainer.getHeight()), language, audio_class);
                         all_found_downloadlinks.put(qualitySelectorString, dl);
                         addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
                         if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
@@ -588,9 +586,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         } else if (grabUnknownQualities && !containsQuality(allKnownQualities, qualitySelectorString)) {
                             userSelectedQualitiesTmp.add(dl);
                         }
-                        all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, audio_class, all_found_languages), dl);
+                        all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, audio_class), dl);
                         /**
-                         * Extra abort handling within here to abort hls crawling as it also needs one http request for each quality.
+                         * Extra check for abort here to abort hls crawling as it needs one extra http request to crawl each HLS-master.
                          */
                         if (this.isAbort()) {
                             return allSelectedDownloadlinks;
@@ -629,9 +627,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     linkid = this.getHost() + "://" + String.format(linkid_format, internal_videoid, type, cdn, language, audio_class, protocol, quality);
                     final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
                     dl = createDownloadlink(finalDownloadURL);
-                    /*
-                     * Usually filesize is only given for the official downloads. Only set it here if we haven't touched the original
-                     * downloadurls!
+                    /**
+                     * Usually filesize is only given for the official downloads.</br>
+                     * Only set it here if we haven't touched the original downloadurls!
                      */
                     if (filesize > 0 && !downloadurlWasModified) {
                         dl.setAvailable(true);
@@ -639,7 +637,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         // dl.setDownloadSize(filesize);
                     }
                     setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
-                    final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class, all_found_languages);
+                    final String qualitySelectorString = generateQualitySelectorString(protocol, ext, quality, language, audio_class);
                     all_found_downloadlinks.put(qualitySelectorString, dl);
                     addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
                     if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
@@ -692,29 +690,15 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             fp.addLinks(userSelectedQualities);
             return userSelectedQualities;
         } else {
+            /* E.g. if user has only selected qualities that are not available or if user has disabled all possible qualities. */
             logger.info("Fallback to all found qualities");
             fp.addLinks(allDownloadLinks);
             return allDownloadLinks;
         }
     }
 
-    private String generateQualitySelectorString(final String protocol, final String ext, final String quality, final String language, final String audio_class, final List<String> all_found_languages) {
-        /* protocol, ext, quality, audio_class */
+    private String generateQualitySelectorString(final String protocol, final String ext, final String quality, final String language, final String audio_class) {
         final String quality_selector_string = protocol + "_" + ext + "_" + quality + "_" + audio_class;
-        /*
-         * 2021-01-27: Not required anymore - each quality should only be available once per "audio_class" no matter which language is used.
-         */
-        // if (!all_found_languages.contains(language)) {
-        // /* TODO: Improve this handling! */
-        // all_found_languages.add(language);
-        // if (all_found_languages.size() > 1) {
-        // /*
-        // * Check for multiple languages - this will break quality selection but is a rare case and important to handle because if we
-        // * don't handle this, we have the same quality_selector values for different versions!!
-        // */
-        // quality_selector_string += "_" + language;
-        // }
-        // }
         return quality_selector_string;
     }
 
@@ -899,7 +883,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 }
