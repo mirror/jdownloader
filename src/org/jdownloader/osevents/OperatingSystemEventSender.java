@@ -27,7 +27,6 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
         SignalEventSource signalEventSource = null;
         try {
             signalEventSource = new SignalEventSource() {
-
                 @Override
                 public void onSignal(String name, int number) {
                     if ("HUP".equals(name)) {
@@ -54,19 +53,20 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
             break;
         default:
             System.out.println("Unhandled Event: " + event);
+            break;
         }
     }
 
+    public boolean isSignalSupported() {
+        return signalEventSource != null;
+    }
+
     public boolean setIgnoreSignal(final String signal, boolean ignore) {
-        if (signalEventSource != null) {
-            return signalEventSource.setIgnore(signal, ignore);
-        }
-        return false;
+        return signalEventSource != null && signalEventSource.setIgnore(signal, ignore);
     }
 
     @Override
     public void onOperatingSystemTerm() {
         ShutdownController.getInstance().requestShutdown(new ForcedShutdown());
     }
-
 }
