@@ -182,6 +182,15 @@ public class LinkChecker<E extends CheckableLink> {
         }
     }
 
+    public void check(E... links) {
+        if (links == null) {
+            throw new IllegalArgumentException("links is null?");
+        }
+        for (E link : links) {
+            check(link);
+        }
+    }
+
     public void check(List<E> links) {
         if (links == null) {
             throw new IllegalArgumentException("links is null?");

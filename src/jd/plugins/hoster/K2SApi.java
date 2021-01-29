@@ -364,17 +364,15 @@ public abstract class K2SApi extends PluginForHost {
                         }
                         sb.append("\"" + fuid + "\"");
                         index++;
-                        if (isSpecialFUID(fuid)) {
-                            // quick/dirty workaround for special IDs
-                            break;
-                        }
                     }
                 }
                 postPageRaw(br, "/getfilesinfo", "{\"ids\":[" + sb.toString() + "]}", null);
-                // TODO: check if response list maintains order of file IDs. optimize handling for special IDs
                 for (final DownloadLink dl : links) {
                     final String fuid = getFUID(dl);
                     String filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\":\"" + fuid + "\"[^\\}]*\\})").getMatch(0);
+                    if (filter == null) {
+                        filter = br.getRegex("(\\{[^\\}\\{\\[]*\"requested_id\":\"" + fuid + "\"[^\\}]*\\})").getMatch(0);
+                    }
                     if (filter == null && isSpecialFUID(fuid) && links.size() == 1) {
                         filter = br.getRegex("(\\{[^\\}\\{\\[]*\"id\"[^\\}]*\\})").getMatch(0);
                     }

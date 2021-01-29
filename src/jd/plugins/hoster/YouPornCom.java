@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.YoupornConfig;
-import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -40,6 +31,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.YoupornConfig;
+import org.jdownloader.plugins.components.config.YoupornConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YouPornCom extends PluginForHost {
@@ -266,8 +266,7 @@ public class YouPornCom extends PluginForHost {
         if (dllink == null) {
             /**
              * 2020-05-27: Workaround/Fallback for some users who seem to get a completely different pornhub page (???) RE:
-             * https://svn.jdownloader.org/issues/88346 </br>
-             * This source will be lower quality than their other sources!
+             * https://svn.jdownloader.org/issues/88346 </br> This source will be lower quality than their other sources!
              */
             dllink = br.getRegex("meta name=\"twitter:player:stream\" content=\"(http[^<>\"\\']+)\"").getMatch(0);
         }
@@ -286,7 +285,6 @@ public class YouPornCom extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {

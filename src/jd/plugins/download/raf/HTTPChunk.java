@@ -287,10 +287,9 @@ public class HTTPChunk extends Thread {
                 };
             };
             dl.getManagedConnetionHandler().addThrottledConnection(inputStream);
-            int bytesRead = 0;
             final byte[] readBuffer = dl.getChunkBuffer(this);
             while (!isExternalyAborted()) {
-                bytesRead = inputStream.read(readBuffer);
+                final int bytesRead = inputStream.read(readBuffer);
                 if (bytesRead > 0) {
                     long overlap = dl.write(this, readBuffer, bytesRead, chunkRange.getPosition());
                     chunkRange.incLoaded(bytesRead);
@@ -299,8 +298,12 @@ public class HTTPChunk extends Thread {
                         break;
                     }
                 } else if (bytesRead == -1) {
-                    chunkRange.setValidLoaded(true);
-                    break;
+                    if (chunkRange.getLoaded() == 0) {
+                        throw new IOException("No bytes read!");
+                    } else {
+                        chunkRange.setValidLoaded(true);
+                        break;
+                    }
                 }
             }
         } catch (Throwable e) {

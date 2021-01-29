@@ -1,20 +1,7 @@
 package jd.plugins.hoster;
 
-import java.util.Collection;
-
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.components.RefreshSessionLink;
-
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +15,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.plugins.components.RefreshSessionLink;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.google.com" }, urls = { "http://(www\\.)?video\\.google\\.(com|de)/(videoplay\\?docid=|googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=)(\\-)?\\d+|https?://[\\w\\-]+\\.googlevideo\\.com/videoplayback\\?.+|https?://(?!translate\\.)\\w+\\.googleusercontent\\.com/.+|https?://[\\w\\-\\.]+drive\\.google\\.com/videoplayback\\?.+" })
 public class VideoGoogle extends PluginForHost {
@@ -49,16 +44,8 @@ public class VideoGoogle extends PluginForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
-        if (pv.size() == 1) {
-            final DownloadLink downloadLink = pv.get(0);
-            if (StringUtils.contains(downloadLink.getPluginPatternMatcher(), "videoplayback?")) {
-                final JMenuItem changeURLMenuItem = createChangeURLMenuItem(downloadLink);
-                if (changeURLMenuItem != null) {
-                    parent.add(changeURLMenuItem);
-                }
-            }
-        }
+    protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
+        return checkableLink != null && checkableLink.getDownloadLink() != null && StringUtils.contains(checkableLink.getDownloadLink().getPluginPatternMatcher(), "videoplayback?");
     }
 
     public void correctDownloadLink(final DownloadLink link) {

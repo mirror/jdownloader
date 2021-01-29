@@ -20,20 +20,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -70,7 +68,6 @@ import org.jdownloader.auth.AuthenticationController;
 import org.jdownloader.auth.AuthenticationInfo;
 import org.jdownloader.auth.AuthenticationInfo.Type;
 import org.jdownloader.auth.Login;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -99,51 +96,57 @@ public class DirectHTTP extends antiDDoSForHost {
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         final ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        if (ret != null && ret.size() == 1) {
+            preProcessDirectHTTP(ret.get(0), data);
+        }
+        return ret;
+    }
+
+    private void preProcessDirectHTTP(final DownloadLink downloadLink, final String data) {
         try {
-            if (ret != null && ret.size() == 1) {
-                String modifiedData = null;
-                final boolean isDirect;
-                final boolean tryAll = StringUtils.containsIgnoreCase(data, ".jdeatme");
-                if (data.startsWith("directhttp://")) {
-                    isDirect = true;
-                    modifiedData = data.replace("directhttp://", "");
+            String modifiedData = null;
+            final boolean isDirect;
+            final boolean tryAll = StringUtils.containsIgnoreCase(data, ".jdeatme");
+            if (data.startsWith("directhttp://")) {
+                isDirect = true;
+                modifiedData = data.replace("directhttp://", "");
+            } else {
+                isDirect = false;
+                modifiedData = data.replace("httpsviajd://", "https://");
+                modifiedData = modifiedData.replace("httpviajd://", "http://");
+                modifiedData = modifiedData.replace(".jdeatme", "");
+            }
+            final DownloadLink link = downloadLink;
+            if (tryAll) {
+                link.setProperty(TRY_ALL, Boolean.TRUE);
+            }
+            correctDownloadLink(link);// needed to fixup the returned url
+            CrawledLink currentLink = getCurrentLink();
+            while (currentLink != null) {
+                if (!StringUtils.equals(currentLink.getURL(), data)) {
+                    link.setProperty(LinkCrawler.PROPERTY_AUTO_REFERER, currentLink.getURL());
+                    break;
                 } else {
-                    isDirect = false;
-                    modifiedData = data.replace("httpsviajd://", "https://");
-                    modifiedData = modifiedData.replace("httpviajd://", "http://");
-                    modifiedData = modifiedData.replace(".jdeatme", "");
+                    currentLink = currentLink.getSourceLink();
                 }
-                final DownloadLink link = ret.get(0);
-                if (tryAll) {
-                    link.setProperty(TRY_ALL, Boolean.TRUE);
-                }
-                correctDownloadLink(link);// needed to fixup the returned url
-                CrawledLink currentLink = getCurrentLink();
-                while (currentLink != null) {
-                    if (!StringUtils.equals(currentLink.getURL(), data)) {
-                        link.setProperty(LinkCrawler.PROPERTY_AUTO_REFERER, currentLink.getURL());
-                        break;
-                    } else {
-                        currentLink = currentLink.getSourceLink();
-                    }
-                }
-                /* single link parsing in svn/jd2 */
-                final String url = link.getDownloadURL();
-                final int idx = modifiedData.indexOf(url);
-                if (!isDirect && idx >= 0 && modifiedData.length() >= idx + url.length()) {
-                    String param = modifiedData.substring(idx + url.length());
-                    if (param != null) {
-                        param = new Regex(param, "(.*?)(\r|\n|$)").getMatch(0);
-                        if (param != null && param.trim().length() != 0) {
-                            link.setProperty(DirectHTTP.POSSIBLE_URLPARAM, new String(param));
-                        }
+            }
+            /* single link parsing in svn/jd2 */
+            final String url = link.getPluginPatternMatcher();
+            final int idx = modifiedData.indexOf(url);
+            if (!isDirect && idx >= 0 && modifiedData.length() >= idx + url.length()) {
+                String param = modifiedData.substring(idx + url.length());
+                if (param != null) {
+                    param = new Regex(param, "(.*?)(\r|\n|$)").getMatch(0);
+                    if (param != null && param.trim().length() != 0) {
+                        link.setProperty(DirectHTTP.POSSIBLE_URLPARAM, new String(param));
                     }
                 }
             }
         } catch (final Throwable e) {
-            this.logger.log(e);
+            if (logger != null) {
+                this.logger.log(e);
+            }
         }
-        return ret;
     }
 
     @Override
@@ -1098,6 +1101,25 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    @Override
+    protected void updateDownloadLink(final CheckableLink checkableLink, final String url) {
+        final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
+        if (downloadLink != null) {
+            final List<DownloadLink> downloadLinks = getDownloadLinks(url, null);
+            if (downloadLinks != null && downloadLinks.size() == 1) {
+                downloadLink.setFinalFileName(null);
+                downloadLink.setVerifiedFileSize(-1);
+                downloadLink.setDomainInfo(null);
+                downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                resetDownloadlink(downloadLink);
+                downloadLink.setPluginPatternMatcher(downloadLinks.get(0).getPluginPatternMatcher());
+                preProcessDirectHTTP(downloadLink, url);
+                final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                linkChecker.check(checkableLink);
+            }
+        }
+    }
+
     /**
      * custom offline references based on conditions found within previous URLConnectionAdapter request.
      *
@@ -1113,13 +1135,8 @@ public class DirectHTTP extends antiDDoSForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
-        if (pv.size() == 1) {
-            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
-            if (changeURLMenuItem != null) {
-                parent.add(changeURLMenuItem);
-            }
-        }
+    protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
+        return checkableLink != null && checkableLink.getDownloadLink() != null;
     }
 
     @Override

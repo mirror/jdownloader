@@ -18,40 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -74,6 +48,28 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "" })
 public class AllDebridCom extends antiDDoSForHost {
     public AllDebridCom(PluginWrapper wrapper) {
@@ -89,13 +85,8 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
-        if (pv.size() == 1) {
-            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
-            if (changeURLMenuItem != null) {
-                parent.add(changeURLMenuItem);
-            }
-        }
+    protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
+        return checkableLink != null && checkableLink.getDownloadLink() != null;
     }
 
     private static MultiHosterManagement mhm                               = new MultiHosterManagement("alldebrid.com");
