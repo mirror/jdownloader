@@ -21,10 +21,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -54,19 +71,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
     private final String         HTML_PASSWORDPROTECTED       = "(This file is Password Protected|Ce fichier est protégé par mot de passe|access with a password)";
@@ -76,7 +80,6 @@ public class OneFichierCom extends PluginForHost {
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
     public static final String   API_BASE                     = "https://api.1fichier.com/v1";
     private boolean              pwProtected                  = false;
-    private DownloadLink         currDownloadLink             = null;
     /* Max total connections for premium = 30 (RE: admin, updated 07.03.2019) */
     private static final boolean resume_account_premium       = true;
     private static final int     maxchunks_account_premium    = -3;
@@ -173,10 +176,6 @@ public class OneFichierCom extends PluginForHost {
         return linkid;
     }
 
-    private void setConstants(final Account acc, final DownloadLink dl) {
-        this.currDownloadLink = dl;
-    }
-
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -253,51 +252,53 @@ public class OneFichierCom extends PluginForHost {
         return true;
     }
 
-    /** Checks single URLs via API, TODO: Add crawler compatibility once crawler is done */
-    public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException {
-        prepareBrowserAPI(br, account);
-        performAPIRequest(API_BASE + "/file/info.cgi", "{\"url\":\"" + link.getPluginPatternMatcher() + "\"}");
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* E.g. message": "Resource not found #469" */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 403) {
-            /* 2020-01-30: e.g. {"status":"KO","message":"Resource not allowed #631"} */
-            /*
-             * Password-protected (no information given at all but we know that file is online). Example reasons: file is not allowed to be
-             * downloaded in current country, by current user, file is private
-             */
-            pwProtected = true;
-            link.setProperty("privatelink", true);
-            // link.setName(this.getLinkID(link));
-            if (isDownload) {
-                throwErrorPrivateLink();
-            }
-            /* Else all is fine - URL is online but we won't be able to download it. */
-            return AvailableStatus.TRUE;
-        }
-        /* 2019-04-05: This type of checksum is not supported by JDonloader so far */
-        // final String checksum = PluginJSonUtils.getJson(br, "checksum");
-        // if (!StringUtils.isEmpty(checksum)) {
-        // link.setSha256Hash(checksum);
-        // }
-        final String description = PluginJSonUtils.getJson(br, "description");
-        String filename = PluginJSonUtils.getJson(br, "filename");
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getLinkID(link);
-        }
-        String filesize = PluginJSonUtils.getJson(br, "size");
-        link.setName(filename);
-        if (filesize != null && filesize.matches("\\d+")) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
-            link.setComment(description);
-        }
-        /* 2020-01-30: We cannot work with this checksum */
-        // final String checksum = PluginJSonUtils.getJson(br, "checksum");
-        return AvailableStatus.TRUE;
-    }
-
+    /** 2021-01-29: Not required at this moment. Review this before using it! */
+    // /** Checks single URLs via API, TODO: Add crawler compatibility once crawler is done */
+    // public AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account, final boolean
+    // isDownload) throws IOException, PluginException {
+    // prepareBrowserAPI(br, account);
+    // performAPIRequest(API_BASE + "/file/info.cgi", "{\"url\":\"" + link.getPluginPatternMatcher() + "\"}");
+    // if (br.getHttpConnection().getResponseCode() == 404) {
+    // /* E.g. message": "Resource not found #469" */
+    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    // } else if (br.getHttpConnection().getResponseCode() == 403) {
+    // /* TODO: Do not jump into this only based on answer 403! Check for exact errormessage! */
+    // /* 2020-01-30: e.g. {"status":"KO","message":"Resource not allowed #631"} */
+    // /*
+    // * Password-protected (no information given at all but we know that file is online). Example reasons: file is not allowed to be
+    // * downloaded in current country, by current user, file is private
+    // */
+    // pwProtected = true;
+    // link.setProperty("privatelink", true);
+    // // link.setName(this.getLinkID(link));
+    // if (isDownload) {
+    // throwErrorPrivateLink();
+    // }
+    // /* Else all is fine - URL is online but we won't be able to download it. */
+    // return AvailableStatus.TRUE;
+    // }
+    // /* 2019-04-05: This type of checksum is not supported by JDonloader so far */
+    // // final String checksum = PluginJSonUtils.getJson(br, "checksum");
+    // // if (!StringUtils.isEmpty(checksum)) {
+    // // link.setSha256Hash(checksum);
+    // // }
+    // final String description = PluginJSonUtils.getJson(br, "description");
+    // String filename = PluginJSonUtils.getJson(br, "filename");
+    // if (StringUtils.isEmpty(filename)) {
+    // filename = this.getLinkID(link);
+    // }
+    // String filesize = PluginJSonUtils.getJson(br, "size");
+    // link.setName(filename);
+    // if (filesize != null && filesize.matches("\\d+")) {
+    // link.setDownloadSize(SizeFormatter.getSize(filesize));
+    // }
+    // if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+    // link.setComment(description);
+    // }
+    // /* 2020-01-30: We cannot work with this checksum */
+    // // final String checksum = PluginJSonUtils.getJson(br, "checksum");
+    // return AvailableStatus.TRUE;
+    // }
     /* Old linkcheck removed AFTER revision 29396 */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -324,19 +325,18 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        this.setConstants(null, downloadLink);
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        doFree(null, downloadLink);
+        doFree(null, link);
     }
 
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
     public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
-        checkDownloadable(account);
+        checkDownloadable(account, link);
         // to prevent wasteful requests.
         int i = 0;
         /* The following code will cover saved hotlinks */
@@ -411,7 +411,7 @@ public class OneFichierCom extends PluginForHost {
             }
             errorHandling(link, account, br);
             if (pwProtected || br.containsHTML(HTML_PASSWORDPROTECTED)) {
-                handlePasswordWebsite();
+                handlePasswordWebsite(link);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     // Link; 8182111113541.log; 464810; jdlog://8182111113541
@@ -587,14 +587,11 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setConstants(account, null);
-        AccountInfo ai = new AccountInfo();
         if (canUseAPI(account)) {
-            ai = fetchAccountInfoAPI(account);
+            return fetchAccountInfoAPI(account);
         } else {
-            ai = fetchAccountInfoWebsite(account);
+            return fetchAccountInfoWebsite(account);
         }
-        return ai;
     }
 
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
@@ -676,12 +673,19 @@ public class OneFichierCom extends PluginForHost {
          * {"status":"KO","message":"Flood detected: IP Locked #38"} [DOWNLOADS VIA API WILL STILL WORK!!]
          */
         performAPIRequest(API_BASE + "/user/info.cgi", "");
-        final AccountInfo ai = new AccountInfo();
+        AccountInfo ai = new AccountInfo();
         final String apierror = this.getAPIErrormessage();
         final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: (User|IP) Locked.*?");
         if (apiTempBlocked) {
             if (account.lastUpdateTime() > 0) {
                 logger.info("Cannot get account details because of API limits but account has been checked before and is ok");
+                // /* Return last accountInfo if available */
+                // if (account.getAccountInfo() != null) {
+                // logger.info("Returning last accountInfo");
+                // ai = account.getAccountInfo();
+                // ai.setStatus("Premium account (can't display more detailed info at this moment)");
+                // return ai;
+                // }
             } else {
                 /*
                  * Account got added for the first time but API is blocked at the moment. We know the account must be premium because only
@@ -697,16 +701,17 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         checkErrorsAPI(account);
-        String mail = PluginJSonUtils.getJson(br, "email");
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String mail = (String) entries.get("email");
         if (!StringUtils.isEmpty(mail)) {
             /* don't store the complete username for security purposes. */
             final String shortuserName = "***" + mail.substring(3, mail.length());
             account.setUser(shortuserName);
         }
-        final String subscription_end = PluginJSonUtils.getJson(br, "subscription_end");
-        final String available_credits_in_gigabyte_str = PluginJSonUtils.getJson(br, "cdn");
-        final double available_credits_in_gigabyte = available_credits_in_gigabyte_str != null ? Double.parseDouble(available_credits_in_gigabyte_str) : 0;
-        final String useOwnCredits = PluginJSonUtils.getJson(br, "use_cdn");
+        final String subscription_end = (String) entries.get("subscription_end");
+        final Object available_credits_in_gigabyteO = entries.get("cdn");
+        final double available_credits_in_gigabyte = available_credits_in_gigabyteO != null && available_credits_in_gigabyteO instanceof Double ? ((Number) available_credits_in_gigabyteO).doubleValue() : 0;
+        final long useOwnCredits = JavaScriptEngineFactory.toLong(entries.get("use_cdn"), 0);
         long validuntil = 0;
         if (!StringUtils.isEmpty(subscription_end)) {
             validuntil = TimeFormatter.getMilliSeconds(subscription_end, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -730,7 +735,7 @@ public class OneFichierCom extends PluginForHost {
             String creditsStatus = "";
             if (available_credits_in_gigabyte > 0) {
                 creditsStatus = "  (" + available_credits_in_gigabyte + " Credits available";
-                if (!StringUtils.isEmpty(useOwnCredits) && useOwnCredits.equals("1")) {
+                if (useOwnCredits == 1) {
                     creditsStatus += "[Using credits]";
                     ai.setTrafficLeft((long) available_credits_in_gigabyte);
                 } else {
@@ -753,9 +758,10 @@ public class OneFichierCom extends PluginForHost {
      * @throws PluginException
      */
     private void checkErrorsAPI(final Account account) throws PluginException {
-        final String status = PluginJSonUtils.getJson(br, "status");
-        final String message = getAPIErrormessage();
-        if ("KO".equalsIgnoreCase(status)) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Object statusO = entries.get("status");
+        if (statusO != null && "KO".equalsIgnoreCase((String) statusO)) {
+            final String message = (String) entries.get("message");
             if (StringUtils.isEmpty(message)) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000l);
@@ -784,6 +790,9 @@ public class OneFichierCom extends PluginForHost {
                 } else {
                     throw new AccountRequiredException();
                 }
+            } else if (message.matches("Owner locked #\\d+")) {
+                /* 2021-01-29 */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Accoubt banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (message.matches(".*Must be a customer.*")) {
                 /* 2020-06-09: E.g. {"message":"Must be a customer (Premium, Access) #200","status":"KO"} */
                 /* Free account (most likely expired premium) apikey entered by user --> API can only be used by premium users */
@@ -864,10 +873,9 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    /** Checks whether we're logged in via API. */
-    private boolean checkSID(Browser br) {
-        final String sid = br.getCookie(this.getHost(), "SID");
-        return !StringUtils.isEmpty(sid) && !StringUtils.equalsIgnoreCase(sid, "deleted");
+    /** Checks whether we're logged in via website. */
+    private boolean checkSID(final Browser br) {
+        return br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
@@ -896,7 +904,7 @@ public class OneFichierCom extends PluginForHost {
                         }
                     }
                 }
-                logger.info("Using full website login because API is either wrong or no free credits...");
+                logger.info("Performing full website login");
                 br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (!checkSID(br)) {
                     if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
@@ -931,26 +939,24 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    protected long getStartIntervall(final DownloadLink downloadLink, final Account account) {
-        if (account == null || !AccountType.PREMIUM.equals(account.getType()) || downloadLink == null) {
-            return super.getStartIntervall(downloadLink, account);
+    protected long getStartIntervall(final DownloadLink link, final Account account) {
+        if (account == null || !AccountType.PREMIUM.equals(account.getType()) || link == null) {
+            return super.getStartIntervall(link, account);
         } else {
-            final long knownDownloadSize = downloadLink.getKnownDownloadSize();
+            final long knownDownloadSize = link.getKnownDownloadSize();
             if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
                 final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
                 // avoid IP block because of too many downloads in short time
                 return Math.max(0, wait * 1000);
             } else {
-                return super.getStartIntervall(downloadLink, account);
+                return super.getStartIntervall(link, account);
             }
         }
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, link);
         requestFileInformation(link);
-        br = new Browser();
         if (AccountType.FREE.equals(account.getType()) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
              * Used if the API fails and is wrong or user uses a free account.
@@ -963,6 +969,9 @@ public class OneFichierCom extends PluginForHost {
             return;
         }
         String dllink = getDllinkPremium(link, account);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
         if (preferSSL && dllink.startsWith("http://")) {
             dllink = dllink.replace("http://", "https://");
@@ -991,9 +1000,7 @@ public class OneFichierCom extends PluginForHost {
                         continue;
                     }
                     errorHandling(link, account, br);
-                    /** TODO: Check this */
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
                 }
             }
             link.setProperty(PROPERTY_PREMLINK, dllink);
@@ -1015,8 +1022,12 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
-        /* 2019-04-05: At the moment there are no benefits for us when using this. */
-        requestFileInformationAPI(this.br, link, account, true);
+        /**
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
+         */
+        // requestFileInformationAPI(this.br, link, account, true);
+        // this.checkErrorsAPI(account);
         setPremiumAPIHeaders(br, account);
         /* Do NOT trust pwProtected as this is obtained via website or old mass-linkcheck API!! */
         String dllink = null;
@@ -1035,13 +1046,13 @@ public class OneFichierCom extends PluginForHost {
                 switch (i) {
                 case 0:
                     /* Try stored password if available */
-                    passCode = currDownloadLink.getDownloadPassword();
+                    passCode = link.getDownloadPassword();
                     break;
                 case 1:
                     passCode = lastSessionPassword.get();
                     break;
                 case 2:
-                    passCode = Plugin.getUserInput("Password?", currDownloadLink);
+                    passCode = Plugin.getUserInput("Password?", link);
                     break;
                 default:
                     break;
@@ -1049,20 +1060,18 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 passwordFailure = false;
                 if (passCode != null) {
-                    currDownloadLink.setDownloadPassword(passCode);
+                    link.setDownloadPassword(passCode);
                 }
                 break;
             }
         }
         if (passwordFailure) {
-            currDownloadLink.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            link.setDownloadPassword(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
+        checkErrorsAPI(account);
         dllink = PluginJSonUtils.getJson(br, "url");
-        if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
-            checkErrorsAPI(account);
-        }
         return dllink;
     }
 
@@ -1080,7 +1089,7 @@ public class OneFichierCom extends PluginForHost {
         errorHandling(link, account, br);
         dllink = br.getRedirectLocation();
         if (pwProtected || br.containsHTML(HTML_PASSWORDPROTECTED)) {
-            handlePasswordWebsite();
+            handlePasswordWebsite(link);
             /*
              * The users' 'direct download' setting has no effect on the password handling so we should always get a redirect to the final
              * downloadlink after having entered the correct download password (for premium users).
@@ -1204,7 +1213,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
-    private void handlePasswordWebsite() throws Exception {
+    private void handlePasswordWebsite(final DownloadLink link) throws Exception {
         synchronized (lastSessionPassword) {
             logger.info("This link seems to be password protected ...");
             Form pwForm = null;
@@ -1215,7 +1224,7 @@ public class OneFichierCom extends PluginForHost {
                     /* Try stored password if available */
                     pwForm = getPasswordForm();
                     // if property is set use it over lastSessionPassword!
-                    passCode = currDownloadLink.getDownloadPassword();
+                    passCode = link.getDownloadPassword();
                     break;
                 case 1:
                     // next lastSessionPassword
@@ -1223,7 +1232,7 @@ public class OneFichierCom extends PluginForHost {
                     break;
                 case 2:
                     // last user input
-                    passCode = Plugin.getUserInput("Password?", currDownloadLink);
+                    passCode = Plugin.getUserInput("Password?", link);
                     break;
                 default:
                     break;
@@ -1235,12 +1244,12 @@ public class OneFichierCom extends PluginForHost {
                 br.submitForm(pwForm);
                 if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
                     lastSessionPassword.set(passCode);
-                    currDownloadLink.setDownloadPassword(passCode);
+                    link.setDownloadPassword(passCode);
                     return;
                 } else {
                     pwForm = getPasswordForm();
                     // nullify stored password
-                    currDownloadLink.setDownloadPassword(null);
+                    link.setDownloadPassword(null);
                 }
             }
             throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
@@ -1271,11 +1280,10 @@ public class OneFichierCom extends PluginForHost {
      *
      * @throws Exception
      */
-    private void checkDownloadable(final Account account) throws Exception {
-        // TODO: add support for {"status":"KO","message":"Owner locked #622"}
-        if (this.currDownloadLink.getBooleanProperty("privatelink", false)) {
+    private void checkDownloadable(final Account account, final DownloadLink link) throws Exception {
+        if (link.getBooleanProperty("privatelink", false)) {
             logger.info("Link is PRIVATE --> Checking whether it really is PRIVATE or just password protected");
-            br.getPage(this.getDownloadlinkNEW(this.currDownloadLink));
+            br.getPage(this.getDownloadlinkNEW(link));
             if (br.containsHTML(this.HTML_PASSWORDPROTECTED)) {
                 logger.info("Link is password protected");
                 this.pwProtected = true;
