@@ -21,15 +21,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -44,6 +35,15 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?premiumize\\.me/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class PremiumizeMe extends ZeveraCore {
@@ -153,7 +153,7 @@ public class PremiumizeMe extends ZeveraCore {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) || "displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
+                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) || "displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
             }
 
             @Override
