@@ -21,6 +21,15 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -35,15 +44,6 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?premiumize\\.me/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class PremiumizeMe extends ZeveraCore {
@@ -97,10 +97,10 @@ public class PremiumizeMe extends ZeveraCore {
                 return "Allow free account downloads?\r\nFor more information visit: premiumize.me/free";
             }
 
-            /** 2021-01-29: For more info see: usePairingLogin */
-            // public String getEnablePairingLogin_label() {
-            // return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
-            // }
+            public String getEnablePairingLogin_label() {
+                return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
+            }
+
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
                 return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
             }
@@ -119,13 +119,13 @@ public class PremiumizeMe extends ZeveraCore {
 
         void setAllowFreeAccountDownloads(boolean b);
 
-        /** 2021-01-29: For more info see: usePairingLogin */
         // @AboutConfig
-        // @DefaultBooleanValue(false)
-        // @Order(20)
-        // boolean isEnablePairingLogin();
-        //
-        // void setEnablePairingLogin(boolean b);
+        @DefaultBooleanValue(false)
+        @Order(20)
+        boolean isEnablePairingLogin();
+
+        void setEnablePairingLogin(boolean b);
+
         @AboutConfig
         @DefaultBooleanValue(false)
         @Order(30)
@@ -210,12 +210,11 @@ public class PremiumizeMe extends ZeveraCore {
          * 2021-01-29: Hardcoded-disabled this because API changes would be required to make Usenet work when logged in via this method.
          * Also some users enabled this by mistake and then failed to login (WTF)
          */
-        // if (this.getAccountJsonConfig(account).isEnablePairingLogin()) {
-        // return true;
-        // } else {
-        // return false;
-        // }
-        return false;
+        if (false && this.getAccountJsonConfig(account).isEnablePairingLogin()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
