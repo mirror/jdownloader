@@ -9,7 +9,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.InputEvent;
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -20,6 +19,9 @@ import jd.controlling.ClipboardMonitoring.HTMLFragment;
 import jd.parser.html.HTMLParser;
 
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.ReflectionUtils;
+import org.jdownloader.logging.LogController;
 
 public class DragAndDropDelegater extends TransferHandler {
     private final TransferHandler org;
@@ -108,27 +110,37 @@ public class DragAndDropDelegater extends TransferHandler {
         return org.getVisualRepresentation(t);
     }
 
+    private static boolean REFLECTION = true;
+
     @Override
     protected Transferable createTransferable(JComponent c) {
         try {
-            final Method method = TransferHandler.class.getDeclaredMethod("createTransferable", new Class[] { JComponent.class });
-            method.setAccessible(true);
-            return (Transferable) method.invoke(org, new Object[] { c });
+            if (REFLECTION) {
+                return ReflectionUtils.invoke(TransferHandler.class, "createTransferable", org, Transferable.class, c);
+            }
         } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+            REFLECTION = false;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                LogController.CL().log(e);
+            }
         }
+        // DragHandler
+        final Clipboard clip = new Clipboard("dummyClipboard");
+        org.exportToClipboard(c, clip, COPY);
+        return clip.getContents(null);
     }
 
     @Override
     protected void exportDone(JComponent source, Transferable data, int action) {
         try {
-            final Method method = TransferHandler.class.getDeclaredMethod("exportDone", new Class[] { JComponent.class, Transferable.class, int.class });
-            method.setAccessible(true);
-            method.invoke(org, new Object[] { source, data, action });
+            if (REFLECTION) {
+                ReflectionUtils.invoke(TransferHandler.class, "exportDone", org, void.class, source, data, action);
+            }
         } catch (Throwable e) {
-            e.printStackTrace();
-            return;
+            REFLECTION = false;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                LogController.CL().log(e);
+            }
         }
     }
 }
