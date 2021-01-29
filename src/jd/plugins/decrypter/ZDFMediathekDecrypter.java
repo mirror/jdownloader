@@ -323,21 +323,25 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (grabHls720) {
             selectedQualityStringsTmp.add("hls_mp4_720");
         }
-        final boolean grabHttpMp4Low = cfg.isGrabHTTPMp4_170pVideoEnabled();
-        final boolean grabHttpMp4High = cfg.isGrabHTTPMp4_270pVideoEnabled();
-        final boolean grabHttpMp4VeryHigh = cfg.isGrabHTTPMp4_480pVideoEnabled();
-        final boolean grabHttpMp4HD = cfg.isGrabHTTPMp4HDVideoEnabled();
-        if (grabHttpMp4Low) {
+        boolean grabOfficialDownloadUrls = false;
+        final int selectedQualityStringsTmpLengthOld = selectedQualityStringsTmp.size();
+        if (cfg.isGrabHTTPMp4LowVideoEnabled()) {
             selectedQualityStringsTmp.add("http_mp4_low");
         }
-        if (grabHttpMp4High) {
+        if (cfg.isGrabHTTPMp4MediumVideoEnabled()) {
+            selectedQualityStringsTmp.add("http_mp4_medium");
+        }
+        if (cfg.isGrabHTTPMp4HighVideoEnabled()) {
             selectedQualityStringsTmp.add("http_mp4_high");
         }
-        if (grabHttpMp4VeryHigh) {
+        if (cfg.isGrabHTTPMp4VeryHighVideoEnabled()) {
             selectedQualityStringsTmp.add("http_mp4_veryhigh");
         }
-        if (grabHttpMp4HD) {
+        if (cfg.isGrabHTTPMp4HDVideoEnabled()) {
             selectedQualityStringsTmp.add("http_mp4_hd");
+        }
+        if (selectedQualityStringsTmp.size() > selectedQualityStringsTmpLengthOld) {
+            grabOfficialDownloadUrls = true;
         }
         final boolean grabHttpWebmLow = cfg.isGrabHTTPWebmLowVideoEnabled();
         final boolean grabHttpWebmHigh = cfg.isGrabHTTPWebmHighVideoEnabled();
@@ -365,11 +369,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
          * Grabbing hls means we make an extra http request --> Only do this if wished by the user or if the user set bad plugin settings!
          */
         final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720;
-        /*
-         * 2017-02-08: The only thing official download has and http stream has not is http veryhigh --> Only grab this if user has selected
-         * it explicitly!
-         */
-        boolean grabDownloadUrls = !grabBest && grabHttpMp4HD;
         final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
         final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
         short crawledDownloadTypesCounter = 0;
@@ -385,7 +384,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 /* First round: Grab streams */
                 logger.info("Crawling stream URLs");
                 accessPlayerJson(apiParams[2], player_url_template, "ngplayer_2_3");
-            } else if (grabDownloadUrls && grabDownloadUrlsPossible) {
+            } else if (grabOfficialDownloadUrls && grabDownloadUrlsPossible) {
                 /* 2nd round: Grab ffficial video download URLs if possible and wanted by the user */
                 logger.info("Crawling download URLs");
                 accessPlayerJson(apiParams[2], player_url_template, "zdf_pd_download_1");
