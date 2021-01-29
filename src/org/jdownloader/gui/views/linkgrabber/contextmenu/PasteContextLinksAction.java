@@ -3,15 +3,20 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
+import jd.gui.swing.jdgui.interfaces.View;
+
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.KeyObserver;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.bottombar.PasteLinksAction;
 import org.jdownloader.translate._JDT;
 
-public class PasteContextLinksAction extends CustomizableTableContextAppAction {
-
+public class PasteContextLinksAction extends CustomizableTableContextAppAction implements GUIListener, ActionContext {
     public static final String DEEP_DECRYPT_ENABLED = "deepDecryptEnabled";
     private boolean            deepDecryptEnabled   = false;
 
@@ -21,7 +26,6 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
 
     @Customizer(link = "#getTranslationForDeepDecryptEnabled")
     public boolean isDeepDecryptEnabled() {
-
         return deepDecryptEnabled;
     }
 
@@ -35,14 +39,26 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
         super.initContextDefaults();
     }
 
+    private boolean metaCtrl = false;
+
     @Override
-    public void requestUpdate(Object requestor) {
-        super.requestUpdate(requestor);
+    public void onKeyModifier(int parameter) {
+        if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
+            metaCtrl = true;
+        } else {
+            metaCtrl = false;
+        }
         update();
     }
 
+    @Override
+    public void requestUpdate(Object requestor) {
+        super.requestUpdate(requestor);
+        onKeyModifier(-1);
+    }
+
     private void update() {
-        if (isDeepDecryptEnabled()) {
+        if (isDeepDecrypt()) {
             setName(_GUI.T.PasteContextLinksAction_deep());
             setIconKey(IconKey.ICON_CLIPBOARD);
         } else {
@@ -55,11 +71,25 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
         super(true, false);
         setIconKey(IconKey.ICON_CLIPBOARD);
         setAccelerator(KeyEvent.VK_V);
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
+    }
+
+    private boolean isDeepDecrypt() {
+        boolean ret = isDeepDecryptEnabled();
+        if (ret == false) {
+            return metaCtrl;
+        } else {
+            return !metaCtrl;
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        PasteLinksAction.processPaste(isDeepDecryptEnabled());
+        PasteLinksAction.processPaste(isDeepDecrypt());
     }
 
+    @Override
+    public void onGuiMainTabSwitch(View oldView, View newView) {
+    }
 }

@@ -1272,6 +1272,7 @@ public class OneFichierCom extends PluginForHost {
      * @throws Exception
      */
     private void checkDownloadable(final Account account) throws Exception {
+        // TODO: add support for {"status":"KO","message":"Owner locked #622"}
         if (this.currDownloadLink.getBooleanProperty("privatelink", false)) {
             logger.info("Link is PRIVATE --> Checking whether it really is PRIVATE or just password protected");
             br.getPage(this.getDownloadlinkNEW(this.currDownloadLink));

@@ -187,7 +187,7 @@ public class NinjastreamTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = new SegmentDownloader(this, link, null, br, new URL(host + hash + "/"), segments) {
-                protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException {
+                protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException, PluginException {
                     final InputStream ret = super.getInputStream(segment, connection);
                     new DataInputStream(ret).readFully(new byte[0x78]);// Skip static PNG data
                     return ret;

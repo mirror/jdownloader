@@ -21,14 +21,11 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.proxy.ProxyController;
 import jd.http.Browser;
@@ -52,7 +49,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyException;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 // DEV NOTES:
@@ -304,13 +300,8 @@ public class Ftp extends PluginForHost {
     }
 
     @Override
-    public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
-        if (pv.size() == 1) {
-            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
-            if (changeURLMenuItem != null) {
-                parent.add(changeURLMenuItem);
-            }
-        }
+    protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
+        return checkableLink != null && checkableLink.getDownloadLink() != null;
     }
 
     @Override

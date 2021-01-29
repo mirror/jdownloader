@@ -22,8 +22,8 @@ import jd.http.requests.GetRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -52,10 +52,10 @@ public class SegmentDownloader extends DownloadInterface {
     private File                                    outputFinalCompleteFile;
     private File                                    outputPartFile;
     private PluginException                         caughtPluginException;
-    private final Browser                           obr;
-    private final List<Segment>                     segments          = new ArrayList<Segment>();
+    protected final Browser                         obr;
+    protected final List<Segment>                   segments          = new ArrayList<Segment>();
 
-    public SegmentDownloader(final Plugin plugin, final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
+    public SegmentDownloader(final PluginForHost plugin, final DownloadLink link, Downloadable dashDownloadable, Browser br2, URL baseURL, String[] segments) {
         this.obr = br2.cloneBrowser();
         this.link = link;
         logger = plugin.getLogger();
@@ -93,23 +93,39 @@ public class SegmentDownloader extends DownloadInterface {
         }
     }
 
-    protected URLConnectionAdapter openSegmentConnection(Segment segment) throws IOException {
-        final Browser br = obr.cloneBrowser();
-        final Request getRequest = createSegmentRequest(segment);
-        final URLConnectionAdapter ret = br.openRequestConnection(getRequest);
-        if (ret.getResponseCode() != 200) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            throw new IOException("Invalid responseCode:" + ret.getResponseCode() + "|Segment:" + segment.getUrl());
+    protected boolean retrySegmentConnection(Browser br, Segment segment, int segmentRetryCounter) throws InterruptedException, PluginException {
+        final URLConnectionAdapter con = br.getHttpConnection();
+        if (!externalDownloadStop() && segmentRetryCounter == 0 && (con.getResponseCode() == 404 || con.getResponseCode() == 502)) {
+            return true;
         } else {
-            return ret;
+            return false;
         }
     }
 
-    protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException {
+    protected URLConnectionAdapter openSegmentConnection(Segment segment) throws IOException, PluginException, InterruptedException {
+        int segmentRetryCounter = 0;
+        while (true) {
+            final Browser br = obr.cloneBrowser();
+            final Request getRequest = createSegmentRequest(segment);
+            final URLConnectionAdapter ret = br.openRequestConnection(getRequest);
+            if (ret.getResponseCode() != 200) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+                if (retrySegmentConnection(br, segment, segmentRetryCounter)) {
+                    segmentRetryCounter++;
+                } else {
+                    throw new IOException("Invalid responseCode:" + ret.getResponseCode() + "|RetryCounter:" + segmentRetryCounter + "|Segment:" + segment.getUrl());
+                }
+            } else {
+                return ret;
+            }
+        }
+    }
+
+    protected InputStream getInputStream(Segment segment, URLConnectionAdapter connection) throws IOException, PluginException {
         return connection.getInputStream();
     }
 
@@ -132,13 +148,13 @@ public class SegmentDownloader extends DownloadInterface {
                 connectionHandler.addThrottledConnection(meteredThrottledInputStream);
             }
             for (final Segment segment : segments) {
-                if (!abort.get()) {
+                if (!externalDownloadStop()) {
                     long loaded = 0;
                     try {
                         currentConnection = openSegmentConnection(segment);
                         segment.setLoaded(true);
                         meteredThrottledInputStream.setInputStream(getInputStream(segment, currentConnection));
-                        while (!abort.get()) {
+                        while (!externalDownloadStop()) {
                             final int len = meteredThrottledInputStream.read(readWriteBuffer);
                             if (len > 0) {
                                 loaded += len;
@@ -169,6 +185,10 @@ public class SegmentDownloader extends DownloadInterface {
             } else {
                 throw e;
             }
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (PluginException e) {
+            throw e;
         } catch (SkipReasonException e) {
             throw e;
         } catch (Throwable e) {

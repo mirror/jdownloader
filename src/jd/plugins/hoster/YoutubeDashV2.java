@@ -108,6 +108,7 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegMetaData;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.segment.Segment;
 import org.jdownloader.downloader.segment.SegmentDownloader;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -1297,7 +1298,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         final YoutubeConfig youtubeConfig = PluginJsonConfig.get(YoutubeConfig.class);
         final String[] segments = streamData.getSegments();
         if (segments != null) {
-            dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments);
+            dl = new SegmentDownloader(this, dashLink, dashDownloadable, br, new URL(streamData.getBaseUrl()), segments) {
+                @Override
+                protected boolean retrySegmentConnection(Browser br, Segment segment, int retryCounter) throws InterruptedException, PluginException {
+                    final boolean ret = super.retrySegmentConnection(br, segment, retryCounter);
+                    if (ret) {
+                        YoutubeDashV2.this.sleep(2000, downloadLink);
+                    }
+                    return ret;
+                }
+            };
         } else {
             final GetRequest request = new GetRequest(streamData.getBaseUrl());
             final List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByURL(request.getURL());

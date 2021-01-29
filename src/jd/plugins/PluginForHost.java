@@ -48,6 +48,47 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.PluginWrapper;
+import jd.captcha.JACMethod;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
+import jd.controlling.captcha.SkipException;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.NoGateWayException;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
+import jd.nutils.JDHash;
+import jd.plugins.Account.AccountError;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
@@ -66,6 +107,7 @@ import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.ProgressFeedback;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -136,47 +178,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
-import jd.PluginWrapper;
-import jd.captcha.JACMethod;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.captcha.CaptchaSettings;
-import jd.controlling.captcha.SkipException;
-import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController.WaitingQueueItem;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginConfigPanel;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.NoGateWayException;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
-import jd.nutils.JDHash;
-import jd.plugins.Account.AccountError;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadInterfaceFactory;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  *
@@ -185,13 +186,14 @@ import jd.plugins.download.Downloadable;
 public abstract class PluginForHost extends Plugin {
     private static final String    COPY_MOVE_FILE = "CopyMoveFile";
     private static final Pattern[] PATTERNS       = new Pattern[] {
-            /**
-             * these patterns should split filename and fileextension (extension must include the point)
-             */
-            // multipart rar archives
-            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-            // normal files with extension
-            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+        /**
+         * these patterns should split filename and fileextension (extension must include the
+         * point)
+         */
+        // multipart rar archives
+        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+        // normal files with extension
+        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
     private LazyHostPlugin         lazyP          = null;
     /**
      * Is true if the user has answered a captcha challenge. Does not say anything whether or not the answer was correct.
@@ -865,12 +867,11 @@ public abstract class PluginForHost extends Plugin {
      * @return Ein ArrayList mit den gefundenen Downloadlinks
      */
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
-        ArrayList<DownloadLink> links = null;
         final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
-            links = new ArrayList<DownloadLink>(hits.length);
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(hits.length);
             try {
-                PluginForHost plugin = getLazyP().getPrototype(null);
+                PluginForHost plugin = null;
                 for (String url : hits) {
                     /* remove newlines... */
                     url = url.trim();
@@ -890,6 +891,9 @@ public abstract class PluginForHost extends Plugin {
                      */
                     /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
                     if (isValidURL(url)) {
+                        if (plugin == null) {
+                            plugin = getLazyP().getPrototype(null);
+                        }
                         final DownloadLink link = new DownloadLink(plugin, null, getHost(), url, true);
                         links.add(link);
                     }
@@ -897,11 +901,13 @@ public abstract class PluginForHost extends Plugin {
             } catch (Throwable e) {
                 LogSource.exception(logger, e);
             }
+            if (fp != null && fp != FilePackage.getDefaultFilePackage()) {
+                fp.addLinks(links);
+            }
+            return links;
+        } else {
+            return null;
         }
-        if (links != null && fp != null && fp != FilePackage.getDefaultFilePackage()) {
-            fp.addLinks(links);
-        }
-        return links;
     }
 
     public boolean isValidURL(String URL) {
@@ -1603,10 +1609,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Determines whether or not mass- linkchecking is allowed. </br>
-     * If it is always possible, simply override PluginForHost.checkLinks(final DownloadLink[] urls). </br>
-     * If it is generally possible but not always e.g. depending whether an apikey is given or not, override this method. Example: </br>
-     * org.jdownloader.plugins.components.XFileSharingProBasic
+     * Determines whether or not mass- linkchecking is allowed. </br> If it is always possible, simply override
+     * PluginForHost.checkLinks(final DownloadLink[] urls). </br> If it is generally possible but not always e.g. depending whether an
+     * apikey is given or not, override this method. Example: </br> org.jdownloader.plugins.components.XFileSharingProBasic
      */
     public boolean internal_supportsMassLinkcheck() {
         return implementsCheckLinks(this);
@@ -2069,7 +2074,23 @@ public abstract class PluginForHost extends Plugin {
         return variants != null && variants.size() > 0;
     }
 
-    protected JMenuItem createChangeURLMenuItem(final DownloadLink downloadLink) {
+    protected void updateDownloadLink(final CheckableLink checkableLink, final String url) {
+        final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
+        if (downloadLink != null && url != null) {
+            downloadLink.setPluginPatternMatcher(url);
+            downloadLink.setDomainInfo(null);
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+            final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+            linkChecker.check(checkableLink);
+        }
+    }
+
+    protected boolean supportsUpdateDownloadLink(final CheckableLink downloadLink) {
+        return false;
+    }
+
+    protected JMenuItem createChangeURLMenuItem(final CheckableLink checkableLink) {
+        final DownloadLink downloadLink = checkableLink != null ? checkableLink.getDownloadLink() : null;
         if (downloadLink != null && !UrlProtection.PROTECTED_CONTAINER.equals(downloadLink.getUrlProtection())) {
             return new JMenuItem(new BasicAction() {
                 /**
@@ -2088,13 +2109,17 @@ public abstract class PluginForHost extends Plugin {
                     final InputDialogInterface ret = UIOManager.I().show(InputDialogInterface.class, new InputDialog(0, " " + downloadLink.getName(), _GUI.T.lit_change_url(), downloadLink.getPluginPatternMatcher(), icon, null, null));
                     try {
                         ret.throwCloseExceptions();
-                        final String newURLText = ret.getText();
-                        if (!StringUtils.equals(downloadLink.getPluginPatternMatcher(), newURLText)) {
-                            // if (new Regex(newURLText, getSupportedLinks()).matches()) {
-                            final URL newURL = new URL(newURLText);
-                            final boolean isOldFTP = StringUtils.startsWithCaseInsensitive(downloadLink.getPluginPatternMatcher(), "ftp");
-                            final boolean isNewFTP = StringUtils.startsWithCaseInsensitive(newURLText, "ftp");
-                            if (isOldFTP == isNewFTP) {
+                        final String url = ret.getText();
+                        if (!StringUtils.equals(downloadLink.getPluginPatternMatcher(), url)) {
+                            if (checkableLink instanceof CrawledLink) {
+                                LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                    @Override
+                                    protected Void run() throws RuntimeException {
+                                        updateDownloadLink(checkableLink, url);
+                                        return null;
+                                    }
+                                });
+                            } else {
                                 DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
                                     @Override
                                     public boolean isHighPriority() {
@@ -2109,16 +2134,12 @@ public abstract class PluginForHost extends Plugin {
                                     public void execute(DownloadSession currentSession) {
                                         final SingleDownloadController con = downloadLink.getDownloadLinkController();
                                         if (con == null) {
-                                            downloadLink.setPluginPatternMatcher(newURL.toString());
-                                            downloadLink.setDomainInfo(null);
-                                            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                                            updateDownloadLink(checkableLink, url);
                                         } else {
                                             con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
                                                 @Override
                                                 public void execute(DownloadSession currentSession) {
-                                                    downloadLink.setPluginPatternMatcher(newURL.toString());
-                                                    downloadLink.setDomainInfo(null);
-                                                    downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+                                                    updateDownloadLink(checkableLink, url);
                                                 }
 
                                                 @Override
@@ -2134,10 +2155,8 @@ public abstract class PluginForHost extends Plugin {
                                     }
                                 });
                             }
-                            // }
                         }
                     } catch (DialogNoAnswerException ignore) {
-                    } catch (MalformedURLException e1) {
                     }
                 }
             });
@@ -2146,6 +2165,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
+        if (pv.size() == 1 && supportsUpdateDownloadLink(pv.get(0))) {
+            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
+            if (changeURLMenuItem != null) {
+                parent.add(changeURLMenuItem);
+            }
+        }
         if (allPvs.size() == 1) {
             final JMenu setVariants = new JMenu(_GUI.T.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
@@ -2255,6 +2280,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv, Collection<PluginView<DownloadLink>> views) {
+        if (pv.size() == 1 && supportsUpdateDownloadLink(pv.get(0))) {
+            final JMenuItem changeURLMenuItem = createChangeURLMenuItem(pv.get(0));
+            if (changeURLMenuItem != null) {
+                parent.add(changeURLMenuItem);
+            }
+        }
     }
 
     public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
