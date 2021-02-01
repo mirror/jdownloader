@@ -23,6 +23,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,9 +49,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(www\\.)?(secure\\.)?flickr\\.com/(photos|groups)/.+" })
 public class FlickrCom extends PluginForDecrypt {
     public FlickrCom(PluginWrapper wrapper) {
@@ -56,6 +60,7 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String     TYPE_FAVORITES           = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites(/.+)?";
     private static final String     TYPE_GROUPS              = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
     private static final String     TYPE_SET_SINGLE          = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/(?:sets|albums)/\\d+/?";
+    private static final String     TYPE_GALLERY             = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/galleries/\\d+/?";
     private static final String     TYPE_SETS_OF_USER_ALL    = ".+/(?:albums|sets)/?$";
     private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/(?!tags/)[^<>\"/]+/\\d+.+";
     private static final String     TYPE_PHOTO               = "https?://(www\\.)?flickr\\.com/photos/.*?";
@@ -148,7 +153,6 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    @SuppressWarnings("deprecation")
     private void api_handleAPI() throws Exception {
         /* TODO: Fix csrf handling to make requests as logged-in user possible. */
         br.clearCookies(MAINPAGE);
@@ -165,10 +169,17 @@ public class FlickrCom extends PluginForDecrypt {
             csrf = "";
         }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        /* Set this if all items or a set/gallery belong to the same owner */
         String forcedOwner = null;
+        String username = null;
         String apilink = null;
         String path_alias = null;
         String setID = null;
+        String galleryID = null;
+        final UrlQuery baseParams = new UrlQuery();
+        baseParams.add("api_key", api_apikey);
+        baseParams.add("format", "json");
+        baseParams.add("per_page", Integer.toString(api_max_entries_per_page));
         if (parameter.matches(TYPE_SET_SINGLE)) {
             setID = new Regex(parameter, "(\\d+)/?$").getMatch(0);
             /* This request is only needed to get the title and owner of the photoset, */
@@ -187,6 +198,27 @@ public class FlickrCom extends PluginForDecrypt {
             }
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setID) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
+        } else if (parameter.matches(TYPE_GALLERY)) {
+            galleryID = new Regex(parameter, "(\\d+)/?$").getMatch(0);
+            final UrlQuery query = baseParams;
+            query.add("method", "flickr.galleries.getPhotos");
+            query.add("gallery_id", galleryID);
+            // query.add("get_user_info", "1");
+            query.add("get_gallery_info", "1");
+            api_getPage("https://api.flickr.com/services/rest?" + query.toString());
+            final String json = br.getRegex("jsonFlickrApi\\((.+\\})\\)").getMatch(0);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> galleryInfo = (Map<String, Object>) entries.get("gallery");
+            username = (String) galleryInfo.get("username");
+            final String galleryName = (String) JavaScriptEngineFactory.walkJson(entries, "title/_content");
+            if (!StringUtils.isEmpty(galleryName)) {
+                fpName = "flickr.com gallery " + fpName + " of user " + forcedOwner;
+            } else {
+                /* Fallback */
+                fpName = "flickr.com gallery " + galleryID + " of user " + forcedOwner;
+            }
+            query.add("page", "GETJDPAGE");
+            apilink = "https://api.flickr.com/services/rest?" + query.toString();
         } else if (parameter.matches(TYPE_SETS_OF_USER_ALL) && !parameter.matches(TYPE_SET_SINGLE)) {
             apiGetSetsOfUser();
             return;
@@ -213,6 +245,7 @@ public class FlickrCom extends PluginForDecrypt {
             api_getPage(apilink.replace("GETJDPAGE", "1"));
             fpName = "flickr.com images of group " + group_id;
         } else {
+            /* Crawl all items of a user */
             final String nsid = get_NSID(null);
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&extras=media&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&user_id=" + Encoding.urlEncode(nsid) + "&method=flickr.people.getPublicPhotos&hermes=1&hermesClient=1&nojsoncallback=1";
             /* Use this public request if the other one fails though this might return all but the last picture...?!: */
@@ -228,10 +261,6 @@ public class FlickrCom extends PluginForDecrypt {
         final int totalpages = Integer.parseInt(PluginJSonUtils.getJsonValue(br, "pages"));
         for (int i = 1; i <= totalpages; i++) {
             logger.info("Progress: Page " + i + " of " + totalpages + " || Images: " + decryptedLinks.size() + " of " + totalimgs);
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return;
-            }
             if (i > 1) {
                 api_getPage(apilink.replace("GETJDPAGE", Integer.toString(i)));
             }
@@ -263,7 +292,12 @@ public class FlickrCom extends PluginForDecrypt {
                     } catch (Throwable e) {
                     }
                 }
-                final String contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id + (setID != null ? ("/in/album-" + setID) : "");
+                final String contenturl;
+                if (setID != null) {
+                    contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id + "/in/album-" + setID;
+                } else {
+                    contenturl = "https://www.flickr.com/photos/" + owner + "/" + photo_id;
+                }
                 fina.setContentUrl(contenturl);
                 if (title.equals("")) {
                     title = null;
@@ -300,6 +334,10 @@ public class FlickrCom extends PluginForDecrypt {
                 fina._setFilePackage(fp);
                 distribute(fina);
                 decryptedLinks.add(fina);
+            }
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + parameter);
+                return;
             }
         }
     }
@@ -473,7 +511,7 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     private void site_handleSite() throws Exception {
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
@@ -521,11 +559,7 @@ public class FlickrCom extends PluginForDecrypt {
             getPage = parameter + "page%s/?fragment=1";
         }
         int i = (currentPage != -1 ? currentPage : 1);
-        while (true) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return;
-            }
+        do {
             if (i != 1 && currentPage == -1) {
                 br.getPage(String.format(getPage, i));
                 // when we are out of pages, it will redirect back to non page count
@@ -637,7 +671,7 @@ public class FlickrCom extends PluginForDecrypt {
             } else {
                 i++;
             }
-        }
+        } while (!this.isAbort());
     }
 
     @SuppressWarnings("unused")

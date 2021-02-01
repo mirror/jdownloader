@@ -36,6 +36,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -357,7 +359,7 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
             /* 2020-01-31: Do not check filesize if we're currently in download mode as directurl may expire then. */
-            if (link.getView().getBytesTotal() <= 0 && !isDownload) {
+            if (link.getView().getBytesTotal() <= 0 && !isDownload && !dllink.contains(".m3u8")) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
@@ -510,23 +512,35 @@ public class XHamsterCom extends PluginForHost {
         case 1:
             qualities.add("240p");
         }
+        String hlsMaster = null;
         try {
-            final Map<String, Object> json = JSonStorage.restoreFromString(br.getRegex(">\\s*window.initials\\s*=\\s*(\\{.*?\\})\\s*;\\s*<").getMatch(0), TypeRef.HASHMAP);
+            final Map<String, Object> json = JSonStorage.restoreFromString(br.getRegex(">\\s*window\\.initials\\s*=\\s*(\\{.*?\\})\\s*;\\s*<").getMatch(0), TypeRef.HASHMAP);
             final List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
             if (sources != null) {
                 for (final String quality : qualities) {
                     for (Map<String, Object> source : sources) {
-                        if (StringUtils.equalsIgnoreCase(quality, (String) source.get("quality"))) {
-                            String url = (String) source.get("url");
-                            url = br.getURL(url).toString();
-                            logger.info("Sources:" + quality + "->" + url);
-                            return url;
+                        final String qualityTmp = (String) source.get("quality");
+                        String url = (String) source.get("url");
+                        if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
+                            continue;
+                        } else if (hlsMaster == null && url.contains(".m3u8")) {
+                            hlsMaster = url;
+                            continue;
                         }
+                        /* We found the quality we were looking for. */
+                        url = br.getURL(url).toString();
+                        logger.info("Sources:" + quality + "->" + url);
+                        return url;
                     }
                 }
             }
         } catch (JSonMapperException e) {
             logger.log(e);
+        }
+        if (hlsMaster != null) {
+            /* 2021-02-01 */
+            logger.info("Fallback to HLS download -> " + hlsMaster);
+            return hlsMaster;
         }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
@@ -681,9 +695,9 @@ public class XHamsterCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink, true);
-        doFree(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        doFree(link);
     }
 
     @SuppressWarnings("deprecation")
@@ -750,33 +764,42 @@ public class XHamsterCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        boolean resume = true;
-        if (link.getBooleanProperty(NORESUME, false)) {
-            resume = false;
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, 0);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        if (this.dllink.contains(".m3u8")) {
+            /* 2021-02-01: HLS download */
+            br.getPage(this.dllink);
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            dl.startDownload();
+        } else {
+            boolean resume = true;
+            if (link.getBooleanProperty(NORESUME, false)) {
+                resume = false;
             }
-            if (dl.getConnection().getResponseCode() == 416) {
-                logger.info("Response code 416 --> Handling it");
-                if (link.getBooleanProperty(NORESUME, false)) {
-                    link.setProperty(NORESUME, Boolean.valueOf(false));
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, resume, 0);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
-                link.setProperty(NORESUME, Boolean.valueOf(true));
-                link.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416");
+                if (dl.getConnection().getResponseCode() == 416) {
+                    logger.info("Response code 416 --> Handling it");
+                    if (link.getBooleanProperty(NORESUME, false)) {
+                        link.setProperty(NORESUME, Boolean.valueOf(false));
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
+                    }
+                    link.setProperty(NORESUME, Boolean.valueOf(true));
+                    link.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416");
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error");
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
+            dl.startDownload();
         }
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        dl.startDownload();
     }
 
     public void login(final Account account, final boolean force) throws Exception {
