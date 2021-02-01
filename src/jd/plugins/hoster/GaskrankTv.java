@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.htm" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/[A-Za-z0-9\\-_]+/([A-Za-z0-9\\-_]+)\\.htm" })
 public class GaskrankTv extends PluginForHost {
     public GaskrankTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,6 +51,20 @@ public class GaskrankTv extends PluginForHost {
         return "http://www.gaskrank.tv/gaskrank/agb.htm";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -62,11 +76,7 @@ public class GaskrankTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)\\.htm$").getMatch(0).replace("-", " ");
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
-        }
+        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
         /* Prefer highest quality */
         final String[] qualities = { "hd1080p", "hd720p", "480p", "medium" };
         for (final String quality : qualities) {
@@ -97,9 +107,9 @@ public class GaskrankTv extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
-                link.setProperty("directlink", dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setDownloadSize(con.getCompleteContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } else {
                 server_issues = true;
             }
@@ -113,21 +123,25 @@ public class GaskrankTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

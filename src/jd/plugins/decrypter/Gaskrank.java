@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaskrank.tv" }, urls = { "https?://(www\\.)?gaskrank\\.tv/tv/[^/]+/[^/]+\\.html?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaskrank.tv" }, urls = { "https?://(?:www\\.)?gaskrank\\.tv/tv/[^/]+/[^/]+\\.htm" })
 public class Gaskrank extends antiDDoSForDecrypt {
     public Gaskrank(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +41,7 @@ public class Gaskrank extends antiDDoSForDecrypt {
         toString();
         String fpName = br.getRegex("<title>([^<]+)").getMatch(0);
         String[] links = br.getRegex("<source[^>]+src\\s*=\\s*\"([^\"]+)").getColumn(0);
-        if (links != null && links.length > 0) {
+        if (links != null && links.length > 1) {
             for (String link : links) {
                 link = Encoding.htmlOnlyDecode(link);
                 if (link.contains(br.getHost())) {
@@ -49,6 +49,8 @@ public class Gaskrank extends antiDDoSForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(link));
             }
+        } else {
+            decryptedLinks.add(this.createDownloadlink(parameter));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
