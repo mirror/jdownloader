@@ -47,7 +47,7 @@ public class PruteklyncsXyz extends PluginForDecrypt {
         }
         final String iframeURL = br.getRegex("<iframe src\\s*=\\s*\"(https?://[^\"]+)\">").getMatch(0);
         if (iframeURL != null) {
-            if (StringUtils.containsIgnoreCase(br.getHost(), "dirtybandit")) {
+            if (!this.canHandle(iframeURL)) {
                 decryptedLinks.add(createDownloadlink(iframeURL));
                 return decryptedLinks;
             }
@@ -56,6 +56,12 @@ public class PruteklyncsXyz extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+        }
+        final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"0; URL=(https?://[^\"]+)\"").getMatch(0);
+        if (redirect != null) {
+            /** 2021-02-01 */
+            logger.info("Found additional redirect");
+            br.getPage(redirect);
         }
         if (br.containsHTML("passster-captcha-js") && br.containsHTML(">\\s*Protected Area\\s*<")) {
             /* 2020-10-26: Cheap clientside captcha */
