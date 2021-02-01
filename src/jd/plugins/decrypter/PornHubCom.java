@@ -692,14 +692,16 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
         String categoriesCommaSeparated = "";
-        final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
-        for (int index = 0; index < categories.length; index++) {
-            final boolean isLastItem = index == categories.length - 1;
-            categoriesCommaSeparated += categories[index];
-            if (!isLastItem) {
-                categoriesCommaSeparated += ", ";
+        final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
+        if (categoriesSrc != null) {
+            final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
+            for (int index = 0; index < categories.length; index++) {
+                final boolean isLastItem = index == categories.length - 1;
+                categoriesCommaSeparated += categories[index];
+                if (!isLastItem) {
+                    categoriesCommaSeparated += ", ";
+                }
             }
         }
         String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
