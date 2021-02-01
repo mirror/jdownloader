@@ -220,7 +220,9 @@ public class CriptTo extends PluginForDecrypt {
                             continue;
                         }
                         validateLastChallengeResponse();
-                        decryptedLinks.add(createDownloadlink(finallink2));
+                        final DownloadLink dl2 = createDownloadlink(finallink2);
+                        decryptedLinks.add(dl2);
+                        distribute(dl2);
                         break;
                     } else {
                         logger.warning("Unknown captcha: " + parameter);
@@ -230,7 +232,9 @@ public class CriptTo extends PluginForDecrypt {
                 if (finallink == null || finallink.matches(".+cript\\.to/.+")) {
                     continue;
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
+                final DownloadLink dl1 = createDownloadlink(finallink);
+                decryptedLinks.add(dl1);
+                distribute(dl1);
             }
         }
         return decryptedLinks;

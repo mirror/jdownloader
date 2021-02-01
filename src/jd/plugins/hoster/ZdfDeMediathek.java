@@ -513,29 +513,5 @@ public class ZdfDeMediathek extends PluginForHost {
         boolean isGrabHTTPMp4HDVideoEnabled();
 
         void setGrabHTTPMp4HDVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(130)
-        boolean isGrabHTTPWebmLowVideoEnabled();
-
-        void setGrabHTTPWebmLowVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(140)
-        boolean isGrabHTTPWebmHighVideoEnabled();
-
-        void setGrabHTTPWebmHighVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(150)
-        boolean isGrabHTTPWebmVeryHighVideoEnabled();
-
-        void setGrabHTTPWebmVeryHighVideoEnabled(boolean b);
-
-        @DefaultBooleanValue(true)
-        @Order(160)
-        boolean isGrabHTTPWebmHDVideoEnabled();
-
-        void setGrabHTTPWebmHDVideoEnabled(boolean b);
     }
 }
