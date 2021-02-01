@@ -25,6 +25,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -46,12 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
@@ -692,6 +692,16 @@ public class PornHubCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
+        String categoriesCommaSeparated = "";
+        final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
+        for (int index = 0; index < categories.length; index++) {
+            final boolean isLastItem = index == categories.length - 1;
+            categoriesCommaSeparated += categories[index];
+            if (!isLastItem) {
+                categoriesCommaSeparated += ", ";
+            }
+        }
         String uploadDate = PluginJSonUtils.getJson(br, "uploadDate");
         /* Try to get date only, without time */
         final String better_date = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -728,11 +738,11 @@ public class PornHubCom extends PluginForDecrypt {
                         final String server_filename = jd.plugins.hoster.PornHubCom.getFilenameFromURL(url);
                         String html_filename = siteTitle + "_";
                         final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
-                        dl.setProperty("directlink", url);
-                        dl.setProperty("quality", quality);
+                        dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_DIRECTLINK, url);
+                        dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_QUALITY, quality);
                         dl.setProperty("mainlink", parameter);
                         dl.setProperty("viewkey", viewkey);
-                        dl.setProperty("format", format);
+                        dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT, format);
                         dl.setLinkID("pornhub://" + viewkey + "_" + format + "_" + quality);
                         if (!StringUtils.isEmpty(username)) {
                             html_filename += username + "_";
@@ -751,7 +761,11 @@ public class PornHubCom extends PluginForDecrypt {
                         }
                         dl.setProperty("decryptedfilename", html_filename);
                         if (!StringUtils.isEmpty(uploadDate)) {
-                            dl.setProperty("date", uploadDate);
+                            dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_DATE, uploadDate);
+                        }
+                        if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
+                            /* Packagizer property */
+                            dl.setProperty(jd.plugins.hoster.PornHubCom.PROPERT_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
                         }
                         dl.setContentUrl(parameter);
                         if (fastlinkcheck) {
@@ -777,13 +791,13 @@ public class PornHubCom extends PluginForDecrypt {
                     if (best == null) {
                         best = found;
                     } else {
-                        final String bestQuality = best.getStringProperty("quality");
-                        final String foundQuality = found.getStringProperty("quality");
+                        final String bestQuality = best.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_QUALITY);
+                        final String foundQuality = found.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_QUALITY);
                         if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
                             best = found;
                         } else {
-                            final String bestFormat = best.getStringProperty("format");
-                            final String foundFormat = found.getStringProperty("format");
+                            final String bestFormat = best.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT);
+                            final String foundFormat = found.getStringProperty(jd.plugins.hoster.PornHubCom.PROPERT_FORMAT);
                             if (Integer.parseInt(foundQuality) == Integer.parseInt(bestQuality) && StringUtils.equalsIgnoreCase(foundFormat, "mp4")) {
                                 best = found;
                             }
