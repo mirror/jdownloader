@@ -110,7 +110,12 @@ public class ArchiveOrg extends PluginForDecrypt {
                 con.disconnect();
             }
         }
-        if (br.containsHTML("schema\\.org/Book")) {
+        /**
+         * 2021-02-01: Disabled book crawling because it's not working as intended and "/details/" URLs can also contain embedded pages of
+         * books while at the same time, the original files are downloadable! E.g. https://board.jdownloader.org/showthread.php?t=86605
+         */
+        final boolean allowBookCrawling = false;
+        if (allowBookCrawling && br.containsHTML("schema\\.org/Book")) {
             /* Crawl all pages of a book */
             final String bookAjaxURL = br.getRegex("\\'([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)\\'").getMatch(0);
             if (bookAjaxURL == null) {
