@@ -396,6 +396,10 @@ public class UploadgigCom extends antiDDoSForHost {
         }
     }
 
+    /**
+     * 2021-02-01: Important: Host only allows one session per account. E.g. if user logs in via browser, this will invalidate JDownloaders
+     * session -> Can cause a lot of login-captchas!
+     */
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
@@ -414,6 +418,10 @@ public class UploadgigCom extends antiDDoSForHost {
                     }
                     logger.info("Checking login cookies");
                     getPage("http://" + this.getHost());
+                    /**
+                     * 2021-01-01: It is also possible to check via: https://uploadgig.com/login/form --> Returns raw text "You are
+                     * currently logged in." on success!
+                     */
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
                         /* Save new cookie timestamp */
@@ -437,8 +445,12 @@ public class UploadgigCom extends antiDDoSForHost {
                 loginform.put("email", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("rememberme", "1");
-                /* Handle login-captcha if required */
-                if (this.containsRecaptchaV2Class(brc)) {
+                /*
+                 * Handle login-captcha if required. If IP is flagged, login-captcha is always required. In all other cases, captcha won't
+                 * be required for the first login attempt of a session.
+                 */
+                final boolean captchaHidden = loginform.containsHTML("class=\"row hideme\"");
+                if (this.containsRecaptchaV2Class(brc) && !captchaHidden) {
                     /* 2020-05-15: New */
                     logger.info("Login captcha required");
                     final DownloadLink dlinkbefore = this.getDownloadLink();
