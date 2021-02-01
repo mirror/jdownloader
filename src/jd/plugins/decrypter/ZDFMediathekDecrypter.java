@@ -66,6 +66,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /** Returns all possible quality identifier strings in order highest --> lowest */
         final List<String> all_known_qualities = new ArrayList<String>();
         final String[] knownProtocols = { "http", "hls" };
+        /** 2021-02-01: Removed all .webm qualities from settings */
         final String[] knownExtensions = { "mp4", "webm" };
         final String[] knownQualityNames = { "1080", "hd", "veryhigh", "720", "480", "360", "high", "low", "170" };
         final String[] knownAudioClasses = { "main", "ad", "ot" };
@@ -343,22 +344,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (selectedQualityStringsTmp.size() > selectedQualityStringsTmpLengthOld) {
             grabOfficialDownloadUrls = true;
         }
-        final boolean grabHttpWebmLow = cfg.isGrabHTTPWebmLowVideoEnabled();
-        final boolean grabHttpWebmHigh = cfg.isGrabHTTPWebmHighVideoEnabled();
-        final boolean grabHttpWebmVeryHigh = cfg.isGrabHTTPWebmVeryHighVideoEnabled();
-        final boolean grabHttpWebmHD = cfg.isGrabHTTPWebmHDVideoEnabled();
-        if (grabHttpWebmLow) {
-            selectedQualityStringsTmp.add("http_webm_low");
-        }
-        if (grabHttpWebmHigh) {
-            selectedQualityStringsTmp.add("http_webm_high");
-        }
-        if (grabHttpWebmVeryHigh) {
-            selectedQualityStringsTmp.add("http_webm_veryhigh");
-        }
-        if (grabHttpWebmHD) {
-            selectedQualityStringsTmp.add("http_webm_hd");
-        }
         final List<String> selectedQualityStrings = new ArrayList<String>();
         for (final String selectedQualityTmp : selectedQualityStringsTmp) {
             for (final String selectedAudioVideoVersion : selectedAudioVideoVersions) {
@@ -368,7 +353,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /*
          * Grabbing hls means we make an extra http request --> Only do this if wished by the user or if the user set bad plugin settings!
          */
-        final boolean grabHLS = grabHlsAudio || grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720;
+        final boolean grabHLS = grabHlsAudio || ((grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720) && !grabBest);
         final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
         final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
         short crawledDownloadTypesCounter = 0;
