@@ -571,12 +571,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             userSelectedQualitiesTmp.add(dl);
                         }
                         all_found_downloadlinks.put(generateQualitySelectorString(protocol, ext, height_for_quality_selection, language, audio_class), dl);
-                        /**
-                         * Extra check for abort here to abort hls crawling as it needs one extra http request to crawl each HLS-master.
-                         */
-                        if (this.isAbort()) {
-                            return allSelectedDownloadlinks;
-                        }
+                    }
+                    /**
+                     * Extra check for abort here to abort hls crawling as it needs one extra http request to crawl each HLS-master.
+                     */
+                    if (this.isAbort()) {
+                        break;
                     }
                 } else {
                     /* http download */
@@ -651,7 +651,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             } else if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
                 /* Best of selected */
-                // all_selected_downloadlinks = findBESTInsideGivenMap(selectedQualitiesMapTmp);
                 final DownloadLink bestOfSelection = findBESTInsideGivenMapNew(selectedQualitiesMapTmp, allKnownQualities);
                 userSelectedQualitiesTmp.clear();
                 userSelectedQualitiesTmp.add(bestOfSelection);

@@ -20,6 +20,12 @@ public interface TurbobitCoreConfigTurbobitNet extends TurbobitCoreConfig {
             public String getLabel() {
                 return "turbo-bit.pw";
             }
+        },
+        DOMAIN2 {
+            @Override
+            public String getLabel() {
+                return "turbobi.pw";
+            }
         };
         // DOMAIN2 {
         // @Override

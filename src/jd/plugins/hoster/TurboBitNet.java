@@ -56,6 +56,8 @@ public class TurboBitNet extends TurbobitCore {
         switch (cfgdomain) {
         case DOMAIN1:
             return "turbo-bit.pw";
+        case DOMAIN2:
+            return "turbobi.pw";
         case DEFAULT:
         default:
             return this.getHost();
