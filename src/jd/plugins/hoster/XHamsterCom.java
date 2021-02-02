@@ -245,8 +245,8 @@ public class XHamsterCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        return requestFileInformation(downloadLink, false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -353,13 +353,11 @@ public class XHamsterCom extends PluginForHost {
                     if (br.containsHTML(HTML_PAID_VIDEO)) {
                         link.getLinkStatus().setStatusText("To download, you have to buy this video");
                         return AvailableStatus.TRUE;
-                    } else if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
             }
             /* 2020-01-31: Do not check filesize if we're currently in download mode as directurl may expire then. */
-            if (link.getView().getBytesTotal() <= 0 && !isDownload && !dllink.contains(".m3u8")) {
+            if (link.getView().getBytesTotal() <= 0 && !isDownload && dllink != null && !dllink.contains(".m3u8")) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
@@ -429,7 +427,9 @@ public class XHamsterCom extends PluginForHost {
         }
         dllink = getDllink();
         String ext;
-        if (dllink != null) {
+        if (!StringUtils.isEmpty(dllink) && dllink.contains(".m3u8")) {
+            ext = ".mp4";
+        } else if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, ".mp4");
         } else {
             ext = ".flv";
