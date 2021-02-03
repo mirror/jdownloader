@@ -37,6 +37,8 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?(\\.m3u8?(\\?.+)?|$)" })
 public class GenericM3u8 extends PluginForHost {
+    public static final String PRESET_NAME_PROPERTY = "preSetName";
+
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -138,7 +140,7 @@ public class GenericM3u8 extends PluginForHost {
             }
         }
         if (downloadLink.getFinalFileName() == null) {
-            String name = downloadLink.getStringProperty("preSetName", null);
+            String name = downloadLink.getStringProperty(PRESET_NAME_PROPERTY, null);
             if (name == null) {
                 name = downloadLink.isNameSet() ? downloadLink.getName() : getFileNameFromURL(new URL(downloadLink.getPluginPatternMatcher()));
             }
