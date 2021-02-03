@@ -142,6 +142,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    /** DownloadLink properties */
     /**
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
@@ -156,7 +157,6 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
     private static final String PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
-    // public String agent = null;
     private boolean             isStreamable                                   = false;
     private String              dllink                                         = null;
 
