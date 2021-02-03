@@ -65,7 +65,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/(?:(?:leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+)|https?://video\\.google\\.com/get_player\\?docid=[A-Za-z0-9\\-_]+" })
 public class GoogleDrive extends PluginForHost {
@@ -157,22 +156,20 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
     private static final String PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
     private static final String PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
-    public String               agent                                          = null;
+    // public String agent = null;
     private boolean             isStreamable                                   = false;
     private String              dllink                                         = null;
 
     /** Only call this if the user is not logged in! */
-    public Browser prepBrowser(Browser pbr) {
+    public Browser prepBrowser(final Browser pbr) {
         // used within the decrypter also, leave public
         // language determined by the accept-language
         // user-agent required to use new ones otherwise blocks with javascript notice.
-        if (pbr == null) {
-            pbr = new Browser();
-        }
-        if (agent == null) {
-            agent = UserAgents.stringUserAgent();
-        }
-        pbr.getHeaders().put("User-Agent", agent);
+        /* 2021-02-03: Removed random User-Agent - I do not see the need of it here! */
+        // if (agent == null) {
+        // agent = UserAgents.stringUserAgent();
+        // }
+        // pbr.getHeaders().put("User-Agent", agent);
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
         pbr.setFollowRedirects(true);
@@ -239,17 +236,19 @@ public class GoogleDrive extends PluginForHost {
         return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload)";
     }
 
-    /** Multiple factors decide whether or not we want to prefer using the API for downloading. */
+    /** Multiple factors decide whether we want to use the API for downloading or use the website. */
     private boolean useAPIForDownloading(final DownloadLink link, final Account account) {
         if (!canUseAPI()) {
+            /* No API download possible if we can't even use the API ;) */
             return false;
         } else if (this.isGoogleDocument(link)) {
-            /* 2020-12-10: Website mode cannot handle gdocs downloads (yet). */
+            /* Prefer API download for Google Documents. */
             return true;
         } else if (account != null) {
             /* For all other downloads: Prefer download via website with account to avoid "quota reached" errors. */
             return false;
         } else {
+            /* Prefer API download for all other cases. */
             return true;
         }
     }
@@ -673,7 +672,6 @@ public class GoogleDrive extends PluginForHost {
                 link.setFinalFileName(correctOrApplyFileNameExtension(filename, ".mp4"));
             }
         }
-        /* TODO: Leave this one in after public release and remove this comment! */
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             if (userHasDownloadedStreamBefore) {
                 link.setComment("Using FORCED preferred quality: " + preferredQualityHeight + "p | Used quality: " + usedQuality + "p");
@@ -688,7 +686,7 @@ public class GoogleDrive extends PluginForHost {
             logger.info("Resetting progress");
             link.setChunksProgress(null);
             link.setVerifiedFileSize(-1);
-            /* Save the quality we've decided to download in case user stops and resumes download later. */
+            /* Save the quality we've decided to download in case user stops- and resumes download later. */
             link.setProperty(PROPERTY_USED_QUALITY, usedQuality);
         }
         return selectedQualityDownloadlink;
@@ -1038,7 +1036,6 @@ public class GoogleDrive extends PluginForHost {
              * after some time!
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Retry later or add Google account and retry", 2 * 60 * 60 * 1000);
-            // throw new AccountRequiredException();
         }
     }
 
