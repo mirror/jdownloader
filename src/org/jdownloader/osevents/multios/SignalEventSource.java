@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 
 public abstract class SignalEventSource {
@@ -35,7 +36,10 @@ public abstract class SignalEventSource {
     protected void init() throws Exception {
         boolean regFlag = reg("INT");
         regFlag |= reg("TERM");
-        regFlag |= reg("HUP");
+        if (!CrossSystem.isWindows()) {
+            // HUP not available on windows
+            regFlag |= reg("HUP");
+        }
         if (!regFlag) {
             throw new Exception("could not register INT,TERM or HUP signal");
         }

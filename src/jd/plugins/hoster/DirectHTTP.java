@@ -1107,16 +1107,18 @@ public class DirectHTTP extends antiDDoSForHost {
         if (downloadLink != null) {
             final List<DownloadLink> downloadLinks = getDownloadLinks(url, null);
             if (downloadLinks != null && downloadLinks.size() == 1) {
-                downloadLink.setFinalFileName(null);
-                downloadLink.setVerifiedFileSize(-1);
-                downloadLink.setDomainInfo(null);
-                downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
-                resetDownloadlink(downloadLink);
                 downloadLink.setPluginPatternMatcher(downloadLinks.get(0).getPluginPatternMatcher());
-                preProcessDirectHTTP(downloadLink, url);
-                final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                linkChecker.check(checkableLink);
+            } else {
+                downloadLink.setPluginPatternMatcher(url);
             }
+            downloadLink.setFinalFileName(null);
+            downloadLink.setVerifiedFileSize(-1);
+            downloadLink.setDomainInfo(null);
+            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+            resetDownloadlink(downloadLink);
+            preProcessDirectHTTP(downloadLink, url);
+            final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+            linkChecker.check(checkableLink);
         }
     }
 

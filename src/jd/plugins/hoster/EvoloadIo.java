@@ -74,7 +74,7 @@ public class EvoloadIo extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:f|v)/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:f|v|e)/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
