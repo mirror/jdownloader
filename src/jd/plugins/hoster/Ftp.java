@@ -275,7 +275,7 @@ public class Ftp extends PluginForHost {
     private static WeakHashMap<DomainInfo, Integer> MAX_FTP_CONNECTION_MAP = new WeakHashMap<DomainInfo, Integer>();
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (link != null) {
             synchronized (MAX_FTP_CONNECTION_MAP) {
                 final Integer ret = MAX_FTP_CONNECTION_MAP.get(link.getDomainInfo());

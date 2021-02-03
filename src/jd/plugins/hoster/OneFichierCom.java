@@ -27,22 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -58,6 +42,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DefaultEditAccountPanel;
@@ -70,6 +55,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -317,7 +318,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (account == null && (link != null && link.getProperty(PROPERTY_HOTLINK, null) != null)) {
             return Integer.MAX_VALUE;
         }
@@ -664,7 +665,7 @@ public class OneFichierCom extends PluginForHost {
      */
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         if (!isApiKey(account.getPass())) {
-            invalidApiKey();
+            invalidApiKey(account);
         }
         br = new Browser();
         prepareBrowserAPI(br, account);
@@ -674,7 +675,7 @@ public class OneFichierCom extends PluginForHost {
          */
         performAPIRequest(API_BASE + "/user/info.cgi", "");
         AccountInfo ai = new AccountInfo();
-        final String apierror = this.getAPIErrormessage();
+        final String apierror = this.getAPIErrormessage(br);
         final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("Flood detected: (User|IP) Locked.*?");
         if (apiTempBlocked) {
             if (account.lastUpdateTime() > 0) {
@@ -776,20 +777,9 @@ public class OneFichierCom extends PluginForHost {
                 throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
             } else if (message.matches("Not authenticated #\\d+")) {
                 /* Login required but not logged in (this should never happen) */
-                if (account != null) {
-                    /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    invalidApiKey();
-                } else {
-                    throw new AccountRequiredException();
-                }
+                invalidApiKey(account);
             } else if (message.matches("No such user #\\d+")) {
-                /* Login required but not logged in */
-                if (account != null) {
-                    /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-                    invalidApiKey();
-                } else {
-                    throw new AccountRequiredException();
-                }
+                invalidApiKey(account);
             } else if (message.matches("Owner locked #\\d+")) {
                 /* 2021-01-29 */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Accoubt banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -814,11 +804,16 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    private void invalidApiKey() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in JD plugin settings so that you can login via username & password!\r\nKeep in mind that 2-factor-authentification login via JD and username/password is not supported!\r\nIf you want to login into your FREE 1fichier account in JD via username & password you will first have to disable 2-factor-authentication in your 1fichier account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void invalidApiKey(final Account account) throws PluginException {
+        if (account != null) {
+            /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
+            throw new AccountInvalidException("Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in JD plugin settings so that you can login via username & password!\r\nKeep in mind that 2-factor-authentification login via JD and username/password is not supported!\r\nIf you want to login into your FREE 1fichier account in JD via username & password you will first have to disable 2-factor-authentication in your 1fichier account!");
+        } else {
+            throw new AccountRequiredException();
+        }
     }
 
-    private String getAPIErrormessage() {
+    private String getAPIErrormessage(final Browser br) {
         return PluginJSonUtils.getJson(br, "message");
     }
 
@@ -1023,8 +1018,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
-         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
+         * blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
@@ -1039,7 +1034,7 @@ public class OneFichierCom extends PluginForHost {
              */
             /** Description of optional parameters: cdn=0/1 - use download-credits, */
             performAPIRequest(API_BASE + "/download/get_token.cgi", String.format("{\"url\":\"%s\",\"pass\":\"%s\"}", link.getPluginPatternMatcher(), passCode));
-            final String api_error = this.getAPIErrormessage();
+            final String api_error = this.getAPIErrormessage(br);
             if (!StringUtils.isEmpty(api_error) && api_error.matches("Resource not allowed #\\d+")) {
                 /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
                 this.pwProtected = true;
