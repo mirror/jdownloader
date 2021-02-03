@@ -564,9 +564,9 @@ public class DepositFiles extends antiDDoSForHost {
         final String downloadErrorHeader = dl.getConnection().getHeaderField("Download-Error");
         if (StringUtils.isNotEmpty(downloadErrorHeader)) {
             if (StringUtils.equalsIgnoreCase("No such file", downloadErrorHeader)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, downloadErrorHeader);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, downloadErrorHeader);
         }
         if (br.containsHTML("File does't exist")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
