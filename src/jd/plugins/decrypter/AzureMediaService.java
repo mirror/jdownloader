@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -55,7 +56,7 @@ public class AzureMediaService extends PluginForDecrypt {
                         downloadLink.setName(name + " (" + details.toString().trim() + ")" + container.getFileExtension());
                     }
                 }
-                downloadLink.setProperty("preSetName", name);
+                downloadLink.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, name);
                 downloadLink.setAvailable(true);
                 ret.add(downloadLink);
             }
