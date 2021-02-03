@@ -162,14 +162,6 @@ public class GoogleDrive extends PluginForHost {
 
     /** Only call this if the user is not logged in! */
     public Browser prepBrowser(final Browser pbr) {
-        // used within the decrypter also, leave public
-        // language determined by the accept-language
-        // user-agent required to use new ones otherwise blocks with javascript notice.
-        /* 2021-02-03: Removed random User-Agent - I do not see the need of it here! */
-        // if (agent == null) {
-        // agent = UserAgents.stringUserAgent();
-        // }
-        // pbr.getHeaders().put("User-Agent", agent);
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
         pbr.setFollowRedirects(true);
