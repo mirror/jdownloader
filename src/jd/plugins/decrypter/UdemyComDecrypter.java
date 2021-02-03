@@ -17,7 +17,8 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -27,6 +28,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -57,8 +59,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
         if (aa == null) {
-            logger.info("Account needed to download urls of this website");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         hostPlugin.setBrowser(this.br);
         ((jd.plugins.hoster.UdemyCom) hostPlugin).login(aa, false);
@@ -75,7 +76,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         this.br.getPage("https://www.udemy.com/api-2.0/courses/" + course_id + "/?fields[course]=title,headline,description,prerequisites,objectives,target_audiences,url,is_published,is_approved,is_practice_test_course,content_length_video,instructional_level,locale,content_length_practice_test_questions,content_info,num_subscribers,visible_instructors,is_paid,is_private,is_owner_terms_banned,is_owned_by_instructor_team,image_240x135,instructor_status,is_cpe_compliant,cpe_field_of_study,cpe_program_level,num_cpe_credits&fields[locale]=simple_english_title&fields[user]=url,title,job_title,image_200_H,description,display_name,image_50x50,initials,url_twitter,url_facebook,url_linkedin,url_youtube,url_personal_website&caching_intent=True");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         String courseTitle = (String) entries.get("title");
         if (StringUtils.isEmpty(courseTitle)) {
             /* Fallback */
@@ -89,15 +90,15 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("results");
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> ressourcelist = (List<Object>) entries.get("results");
         ArrayList<Object> ressourcelist_2 = null;
         int positionTOTAL = 1;
         int positionChapter = 0;
         final DecimalFormat chapterFormat = new DecimalFormat("000");
         String sectionTitle = null;
         for (final Object courseo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) courseo;
+            entries = (Map<String, Object>) courseo;
             final String lecture_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
             final String _class = (String) entries.get("_class");
             final Object supplementary_assets = entries.get("supplementary_assets");
@@ -115,7 +116,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
                 /* Hm maybe some type we don't support (yet). */
                 continue;
             }
-            entries = (LinkedHashMap<String, Object>) entries.get("asset");
+            entries = (Map<String, Object>) entries.get("asset");
             if (entries == null) {
                 continue;
             }
@@ -124,7 +125,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
             if (supplementary_assets != null) {
                 ressourcelist_2 = (ArrayList<Object>) supplementary_assets;
                 for (final Object supplementary_asseto : ressourcelist_2) {
-                    entries = (LinkedHashMap<String, Object>) supplementary_asseto;
+                    entries = (Map<String, Object>) supplementary_asseto;
                     decryptedLinks.add(decryptAsset(entries, courseTitle, sectionTitle, lecture_id, positionTOTAL));
                 }
             }
@@ -134,7 +135,7 @@ public class UdemyComDecrypter extends PluginForDecrypt {
     }
 
     /** Crawls single object (video or document) */
-    private DownloadLink decryptAsset(final LinkedHashMap<String, Object> entries, final String courseTitle, final String chapterTitle, final String lecture_id, final int position) {
+    private DownloadLink decryptAsset(final Map<String, Object> entries, final String courseTitle, final String chapterTitle, final String lecture_id, final int position) {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(courseTitle + " - " + chapterTitle);
         final DecimalFormat df = new DecimalFormat("000");

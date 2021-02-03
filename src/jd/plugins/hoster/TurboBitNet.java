@@ -16,12 +16,14 @@
 //
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.TurbobitCore;
 import org.jdownloader.plugins.components.config.TurbobitCoreConfigTurbobitNet;
@@ -42,25 +44,44 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw" };
+    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw", "turbobbit.com" };
 
     /* Setting domains */
     // protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
     @Override
     protected String getConfiguredDomain() {
         /* Returns user-set value which can be used to circumvent government based GEO-block. */
-        PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getPreferredDomain();
-        if (cfgdomain == null) {
-            cfgdomain = PreferredDomain.DEFAULT;
+        /**
+         * 2021-02-03: They're adding new domains quite often so in order to provide a more permanent solution for the user, I've added a
+         * setting to let the user define a custom preferred domain.
+         */
+        final String customDefinedPreferredDomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getCustomDomain();
+        boolean customDefinedPreferredDomainIsValid = false;
+        if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
+            try {
+                new URL("https://" + customDefinedPreferredDomain);
+                customDefinedPreferredDomainIsValid = true;
+            } catch (final Throwable e) {
+                logger.warning("User defined domain is invalid");
+            }
         }
-        switch (cfgdomain) {
-        case DOMAIN1:
-            return "turbo-bit.pw";
-        case DOMAIN2:
-            return "turbobi.pw";
-        case DEFAULT:
-        default:
-            return this.getHost();
+        if (customDefinedPreferredDomainIsValid) {
+            logger.info("Using user defined domain: " + customDefinedPreferredDomain);
+            return customDefinedPreferredDomain;
+        } else {
+            PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getPreferredDomain();
+            if (cfgdomain == null) {
+                cfgdomain = PreferredDomain.DEFAULT;
+            }
+            switch (cfgdomain) {
+            case DOMAIN1:
+                return "turbo-bit.pw";
+            case DOMAIN2:
+                return "turbobi.pw";
+            case DEFAULT:
+            default:
+                return this.getHost();
+            }
         }
     }
 

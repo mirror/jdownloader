@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -111,7 +110,7 @@ public class UdemyCom extends PluginForHost {
         String ext = null;
         String asset_type = link.getStringProperty("asset_type", "Video");
         final String lecture_id = link.getStringProperty("lecture_id", null);
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         if (!loggedin && link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             link.setName(asset_id);
             link.getLinkStatus().setStatusText("Cannot check this url without account");
@@ -160,12 +159,12 @@ public class UdemyCom extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 is_officially_downloadable = ((Boolean) entries.get("is_downloadable")).booleanValue();
                 final String title_cleaned = (String) entries.get("title_cleaned");
                 description = (String) entries.get("description");
                 String json_view_html = (String) entries.get("view_html");
-                entries = (LinkedHashMap<String, Object>) entries.get("asset");
+                entries = (Map<String, Object>) entries.get("asset");
                 if (asset_type.equalsIgnoreCase("Article")) {
                     ext = ".txt";
                     textAssetType = true;
@@ -175,21 +174,27 @@ public class UdemyCom extends PluginForHost {
                         ext = ".pdf";
                     }
                 }
-                final String json_download_path = "download_urls/" + asset_type;
-                final List<Object> download_urls = (List<Object>) entries.get("download_urls");
-                if (download_urls != null) {
+                final Object download_urlsO = entries.get("download_urls");
+                // final List<Object> download_urls = (List<Object>) entries.get("download_urls");
+                if (download_urlsO != null && download_urlsO instanceof Map) {
                     // DownloadURL
                     if (filename == null) {
                         filename = (String) entries.get("title");
                     }
-                    final ArrayList<Object> ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, json_download_path);
-                    dllink = (String) JavaScriptEngineFactory.walkJson(ressourcelist.get(ressourcelist.size() - 1), "file");
-                    if (dllink != null && filename == null) {
-                        filename = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
-                        if (filename == null) {
-                            filename = asset_id;
-                        } else {
-                            filename = asset_id + "_" + filename;
+                    entries = (Map<String, Object>) download_urlsO;
+                    final ArrayList<Object> ressourcelist = (ArrayList) entries.get(asset_type);
+                    long maxQuality = 0;
+                    for (final Object qualityO : ressourcelist) {
+                        entries = (Map<String, Object>) qualityO;
+                        final long qualityTmp = JavaScriptEngineFactory.toLong(entries.get("label"), 0);
+                        final String dllinkTmp = (String) entries.get("file");
+                        if (qualityTmp > maxQuality && !StringUtils.isEmpty(dllinkTmp)) {
+                            this.dllink = dllinkTmp;
+                            final String filename_url = this.br.getRegex("response\\-content\\-disposition=attachment%3Bfilename=([^<>\"/\\\\]*)(mp4)?\\.mp4").getMatch(0);
+                            if (filename_url != null) {
+                                filename = filename_url;
+                            }
+                            maxQuality = qualityTmp;
                         }
                     }
                 }
@@ -341,8 +346,9 @@ public class UdemyCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     server_issues = true;
                 }
@@ -360,7 +366,7 @@ public class UdemyCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (link.getDownloadURL().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
+        if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_PREMIUM__DECRYPRED)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         handleDownload(link);
@@ -419,7 +425,12 @@ public class UdemyCom extends PluginForHost {
                 dl.startDownload();
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-                if (dl.getConnection().getContentType().contains("html")) {
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
                     if (dl.getConnection().getResponseCode() == 400) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                     } else if (dl.getConnection().getResponseCode() == 403) {
@@ -427,7 +438,6 @@ public class UdemyCom extends PluginForHost {
                     } else if (dl.getConnection().getResponseCode() == 404) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                     }
-                    br.followConnection();
                     try {
                         dl.getConnection().disconnect();
                     } catch (final Throwable e) {
@@ -445,6 +455,7 @@ public class UdemyCom extends PluginForHost {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
                     if (!force) {
@@ -463,26 +474,34 @@ public class UdemyCom extends PluginForHost {
                         logger.info("Failed to login via cookies");
                         br.clearAll();
                     }
+                } else if (userCookies != null) {
+                    /* 2021-02-03: Experimental */
+                    logger.info("Checking user cookies");
+                    br.setCookies(this.getHost(), userCookies);
+                    final Browser ajaxBR = br.cloneBrowser();
+                    this.prepBRAPI(ajaxBR);
+                    ajaxBR.getPage("https://www.udemy.com/api-2.0/contexts/me/?header=True&footer=True");
+                    final String email = PluginJSonUtils.getJson(ajaxBR, "email");
+                    if (!StringUtils.isEmpty(email)) {
+                        logger.info("Successfully loggedin via cookies");
+                        return;
+                    } else {
+                        logger.info("Failed to login via cookies");
+                        // br.clearAll();
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.getPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
                 final String csrftoken = br.getCookie(this.getHost(), "csrftoken");
-                if (csrftoken == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (StringUtils.isEmpty(csrftoken)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String postData = "csrfmiddlewaretoken=" + csrftoken + "&locale=de_DE&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&displayType=ajax";
                 br.postPage("https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
                 if (br.containsHTML("data-purpose=\"do-login\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
