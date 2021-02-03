@@ -1115,6 +1115,7 @@ public class DirectHTTP extends antiDDoSForHost {
             downloadLink.setVerifiedFileSize(-1);
             downloadLink.setDomainInfo(null);
             downloadLink.setAvailableStatus(AvailableStatus.UNCHECKED);
+            // do not use DownloadLink.reset to keep the download progress
             resetDownloadlink(downloadLink);
             preProcessDirectHTTP(downloadLink, url);
             final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);

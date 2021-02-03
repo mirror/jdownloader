@@ -5,14 +5,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import jd.http.Browser;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -228,16 +229,115 @@ public class HlsContainer {
         return programID;
     }
 
-    private boolean isAudioMp3() {
-        return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.34");
+    public static enum CODEC_TYPE {
+        VIDEO,
+        AUDIO,
+        UNKNOWN
     }
 
-    private boolean isAudioAac() {
-        return StringUtils.equalsIgnoreCase(codecs, "mp4a.40.5") || StringUtils.equalsIgnoreCase(codecs, "mp4a.40.2");
+    public static enum CODEC {
+        // http://mp4ra.org/#/codecs
+        // https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Audio_Object_Types
+        MP3(CODEC_TYPE.AUDIO, "mp3,", "mp3", "mp4a\\.40\\.34"),
+        AAC(CODEC_TYPE.AUDIO, "aac", "m4a", "mp4a\\.40\\.(1|2|3|4|5|6)"),
+        AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
+        HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
+        UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
+        private final CODEC_TYPE type;
+
+        public CODEC_TYPE getType() {
+            return type;
+        }
+
+        public String getDefaultExtension() {
+            return defaultExtension;
+        }
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        private final String  defaultExtension;
+        private final Pattern pattern;
+        private final String  codecName;
+
+        public String getCodecName() {
+            return codecName;
+        }
+
+        private CODEC(CODEC_TYPE type, final String codecName, final String defaultExtension, final String pattern) {
+            this.type = type;
+            this.codecName = codecName;
+            this.defaultExtension = defaultExtension;
+            this.pattern = pattern != null ? Pattern.compile(pattern) : null;
+        }
+
+        public static CODEC parse(final String raw) {
+            if (StringUtils.isNotEmpty(raw)) {
+                for (CODEC codec : values()) {
+                    if (codec.getPattern() != null && new Regex(raw, codec.getPattern()).matches()) {
+                        return codec;
+                    }
+                }
+            }
+            return UNKNOWN;
+        }
     }
 
-    public boolean isAudio() {
-        return isAudioMp3() || isAudioAac();
+    public static class StreamCodec {
+        private final CODEC codec;
+
+        public CODEC getCodec() {
+            return codec;
+        }
+
+        public String getRaw() {
+            return raw;
+        }
+
+        private final String raw;
+
+        private StreamCodec(final String raw) {
+            this.raw = raw;
+            this.codec = CODEC.parse(raw);
+        }
+    }
+
+    public List<StreamCodec> getStreamCodecs() {
+        final String[] codecs = this.codecs != null ? this.codecs.split(",") : null;
+        if (codecs != null) {
+            final List<StreamCodec> ret = new ArrayList<StreamCodec>();
+            for (final String codec : codecs) {
+                ret.add(new StreamCodec(codec));
+            }
+            return ret;
+        } else {
+            return null;
+        }
+    }
+
+    public StreamCodec getCodecType(CODEC_TYPE type) {
+        final List<StreamCodec> ret = getStreamCodecs();
+        if (ret != null) {
+            for (final StreamCodec streamCodec : ret) {
+                if (streamCodec.getCodec().getType().equals(type)) {
+                    return streamCodec;
+                }
+            }
+        }
+        return null;
+    }
+
+    public StreamCodec getCodec(CODEC codec) {
+        final List<StreamCodec> ret = getStreamCodecs();
+        if (ret != null) {
+            for (final StreamCodec streamCodec : ret) {
+                if (streamCodec.getCodec().equals(codec)) {
+                    return streamCodec;
+                }
+            }
+        }
+        return null;
     }
 
     public String getCodecs() {
@@ -254,8 +354,8 @@ public class HlsContainer {
     }
 
     public boolean isVideo() {
-        if (isAudio()) {
-            return false;
+        if (getCodecType(CODEC_TYPE.VIDEO) != null) {
+            return true;
         } else if (this.width == -1 && this.height == -1) {
             /* wtf case */
             return false;
@@ -265,23 +365,11 @@ public class HlsContainer {
     }
 
     public int getWidth() {
-        final int width;
-        if (this.isAudio()) {
-            width = 0;
-        } else {
-            width = this.width;
-        }
-        return width;
+        return this.width;
     }
 
     public int getHeight() {
-        final int height;
-        if (this.isAudio()) {
-            height = 0;
-        } else {
-            height = this.height;
-        }
-        return height;
+        return this.height;
     }
 
     public int getFramerate() {
@@ -333,11 +421,14 @@ public class HlsContainer {
     }
 
     public String getFileExtension() {
-        if (isAudioMp3()) {
-            return ".mp3";
-        } else if (isAudioAac()) {
-            return ".aac";
+        final StreamCodec video = getCodecType(CODEC_TYPE.VIDEO);
+        final StreamCodec audio = getCodecType(CODEC_TYPE.AUDIO);
+        if (video != null) {
+            return "." + video.getCodec().getDefaultExtension();
+        } else if (audio != null) {
+            return "." + audio.getCodec().getDefaultExtension();
         } else {
+            // fallback
             return ".mp4";
         }
     }
