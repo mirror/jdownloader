@@ -30,6 +30,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -64,7 +68,6 @@ public class UdemyCom extends PluginForHost {
     private static final int     FREE_MAXCHUNKS                 = 0;
     private static final int     FREE_MAXDOWNLOADS              = 20;
     private String               dllink                         = null;
-    private boolean              server_issues                  = false;
     private boolean              textAssetType                  = false;
     private boolean              is_officially_downloadable     = true;
     private static final String  TYPE_SINGLE_FREE_OLD           = "https?://(?:www\\.)?udemy\\.com/.+\\?dtcode=[A-Za-z0-9]+";
@@ -89,7 +92,6 @@ public class UdemyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = null;
-        server_issues = false;
         textAssetType = false;
         is_officially_downloadable = true;
         this.setBrowserExclusive();
@@ -347,10 +349,12 @@ public class UdemyCom extends PluginForHost {
             try {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
                 }
             } finally {
                 try {
@@ -362,7 +366,21 @@ public class UdemyCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (new LinkCrawlerDeepInspector() {
+            @Override
+            public List<CrawledLink> deepInspect(LinkCrawler lc, LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }.looksLikeDownloadableContent(urlConnection)) {
+            return true;
+        } else {
+            /* 2021-02-04 */
+            return urlConnection.getContentType().contains("binary/octet-stream");
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -404,8 +422,6 @@ public class UdemyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Content might not be officially downloadable. Contact our support if you think this error message is wrong.");
             } else if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (this.server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             /*
              * Remove old cookies and headers from Browser as they are not needed for their downloadurls in fact using them get you server

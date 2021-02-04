@@ -115,6 +115,7 @@ public class XnXxCom extends PluginForHost {
             con = br2.openHeadConnection(flink);
             if (this.looksLikeDownloadableContent(con)) {
                 link.setDownloadSize(con.getCompleteContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
                 dllink = flink;
             } else {
                 dllink = null;
