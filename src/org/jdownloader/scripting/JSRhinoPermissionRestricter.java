@@ -2,6 +2,7 @@ package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.ClassShutter;
 import org.mozilla.javascript.Context;
@@ -100,7 +101,6 @@ import org.mozilla.javascript.tools.shell.Global;
  */
 public class JSRhinoPermissionRestricter {
     static public class SandboxContextFactory extends ContextFactory {
-
         static public class MyContext extends Context {
             private volatile long startTime = -1;
         }
@@ -134,38 +134,32 @@ public class JSRhinoPermissionRestricter {
                     boolean trusted = TRUSTED_THREAD.containsKey(cur);
                     if (cur instanceof JSShutterDelegate) {
                         if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
-
                             return true;
                         } else {
                             return false;
                         }
                     }
                     if (trusted) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Trusted Thread Loads: " + className);
+                        LogController.CL().severe("Trusted Thread Loads: " + className + "|Thread:" + cur);
                         return true;
-
                     }
                     if (className.startsWith("adapter")) {
                         return true;
                     } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
                         return true;
                     } else if (className.equals("org.mozilla.javascript.EcmaError")) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("Javascript error occured");
+                        LogController.CL().severe("Javascript error occured");
                         return true;
-
                     } else {
-                        throw new RuntimeException("Security Violation " + className);
+                        throw new RuntimeException("Security Violation " + className + "|Thread:" + cur);
                     }
-
                 }
             });
-
             return cx;
         }
     }
 
     public static class SandboxWrapFactory extends WrapFactory {
-
         @SuppressWarnings("rawtypes")
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
@@ -174,37 +168,30 @@ public class JSRhinoPermissionRestricter {
             }
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
-
     }
 
     public static class SandboxNativeJavaObject extends NativeJavaObject {
-
         private static final long serialVersionUID = -2783084485265910840L;
 
         public SandboxNativeJavaObject(Scriptable scope, Object javaObject, Class<?> staticType) {
-
             super(scope, javaObject, staticType);
         }
 
         @Override
         public Object get(String name, Scriptable start) {
-
             if (name.equals("getClass")) {
                 org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
                 return NOT_FOUND;
             }
-
             return super.get(name, start);
-
         }
     }
 
-    public static ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
+    public static final ConcurrentHashMap<Thread, Boolean> TRUSTED_THREAD = new ConcurrentHashMap<Thread, Boolean>();
 
     public static Object evaluateTrustedString(Context cx, Global scope, String source, String sourceName, int lineno, Object securityDomain) {
         try {
             TRUSTED_THREAD.put(Thread.currentThread(), true);
-
             return cx.evaluateString(scope, source, sourceName, lineno, securityDomain);
         } finally {
             TRUSTED_THREAD.remove(Thread.currentThread());
@@ -212,7 +199,6 @@ public class JSRhinoPermissionRestricter {
     }
 
     public static void init() {
-
         try {
             ContextFactory.initGlobal(new SandboxContextFactory());
             // let's do a test
@@ -220,13 +206,10 @@ public class JSRhinoPermissionRestricter {
                 Context cx = null;
                 try {
                     cx = ContextFactory.getGlobal().enterContext();
-
                     cx.evaluateString(cx.initStandardObjects(), "java.lang.System.out.println('TEST')", "<cmd>", 1, null);
-
                 } finally {
                     Context.exit();
                 }
-
                 throw new SecurityException("Could not install the sun.org.mozilla.javascript.internal Sandbox!");
             } catch (NullPointerException e) {
                 throw e;
@@ -238,13 +221,9 @@ public class JSRhinoPermissionRestricter {
                 } else {
                     // test successfull. Security Sandbox successfully initialized
                 }
-
             }
-
         } catch (Throwable e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
         }
-
     }
-
 }

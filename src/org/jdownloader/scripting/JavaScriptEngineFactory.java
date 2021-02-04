@@ -9,7 +9,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -927,158 +926,48 @@ public class JavaScriptEngineFactory {
         }
     }
 
-    public static class CustomRhinoScriptEngineFactory implements ScriptEngineFactory {
-        public CustomRhinoScriptEngineFactory() {
-        }
-
-        public Object getParameter(String key) {
-            if (key.equals(ScriptEngine.NAME)) {
-                return "javascript";
-            } else if (key.equals(ScriptEngine.ENGINE)) {
-                return "Mozilla Rhino";
-            } else if (key.equals(ScriptEngine.ENGINE_VERSION)) {
-                return "1.6 release 2";
-            } else if (key.equals(ScriptEngine.LANGUAGE)) {
-                return "javascript";
-            } else if (key.equals(ScriptEngine.LANGUAGE_VERSION)) {
-                return "1.6";
-            } else if (key.equals("THREADING")) {
-                return "MULTITHREADED";
-            } else {
-                throw new IllegalArgumentException("Invalid key");
-            }
-        }
-
-        public ScriptEngine getScriptEngine() {
-            try {
-                RhinoScriptEngine ret = new RhinoScriptEngine();
-                ret.setEngineFactory(this);
-                return ret;
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-                throw e;
-            } finally {
-            }
-        }
-
-        public String getMethodCallSyntax(String obj, String method, String... args) {
-            String ret = obj + "." + method + "(";
-            int len = args.length;
-            if (len == 0) {
-                ret += ")";
-                return ret;
-            }
-            for (int i = 0; i < len; i++) {
-                ret += args[i];
-                if (i != len - 1) {
-                    ret += ",";
-                } else {
-                    ret += ")";
-                }
-            }
-            return ret;
-        }
-
-        public String getOutputStatement(String toDisplay) {
-            StringBuffer buf = new StringBuffer();
-            int len = toDisplay.length();
-            buf.append("print(\"");
-            for (int i = 0; i < len; i++) {
-                char ch = toDisplay.charAt(i);
-                switch (ch) {
-                case '"':
-                    buf.append("\\\"");
-                    break;
-                case '\\':
-                    buf.append("\\\\");
-                    break;
-                default:
-                    buf.append(ch);
-                    break;
-                }
-            }
-            buf.append("\")");
-            return buf.toString();
-        }
-
-        public String getProgram(String... statements) {
-            int len = statements.length;
-            String ret = "";
-            for (int i = 0; i < len; i++) {
-                ret += statements[i] + ";";
-            }
-            return ret;
-        }
-
-        private static List<String> NAMES;
-        private static List<String> MIME_TYPES;
-        private static List<String> EXTENSIONS;
-        static {
-            NAMES = new ArrayList<String>(6);
-            NAMES.add("js");
-            NAMES.add("rhino");
-            NAMES.add("JavaScript");
-            NAMES.add("javascript");
-            NAMES = Collections.unmodifiableList(NAMES);
-            MIME_TYPES = new ArrayList<String>(4);
-            MIME_TYPES.add("application/javascript");
-            MIME_TYPES.add("application/ecmascript");
-            MIME_TYPES.add("text/javascript");
-            MIME_TYPES.add("text/ecmascript");
-            MIME_TYPES = Collections.unmodifiableList(MIME_TYPES);
-            EXTENSIONS = new ArrayList<String>(1);
-            EXTENSIONS.add("js");
-            EXTENSIONS = Collections.unmodifiableList(EXTENSIONS);
-        }
-
-        public String getName() {
-            return "javascript";
-        }
-
-        public String getEngineName() {
-            return "Mozilla Rhino";
-        }
-
-        public String getEngineVersion() {
-            return "1.6 release 2";
-        }
-
-        public String getLanguageName() {
-            return "javascript";
-        }
-
-        public String getLanguageVersion() {
-            return "1.6";
-        }
-
-        public List<String> getExtensions() {
-            return EXTENSIONS;
-        }
-
-        public List<String> getMimeTypes() {
-            return MIME_TYPES;
-        }
-
-        public List<String> getNames() {
-            return NAMES;
-        }
-    }
-
     public static class CustomizedScriptEngineManager extends ScriptEngineManager {
         @Override
         public ScriptEngine getEngineByName(String shortName) {
             final ScriptEngine ret = super.getEngineByName(shortName);
             if (ret instanceof RhinoScriptEngine) {
                 return ret;
+            } else {
+                throw new RuntimeException("Bad ScriptEngine:name=" + shortName + "|" + ret.getClass());
             }
-            throw new RuntimeException("Bad ScriptEngine: " + ret.getClass());
+        }
+
+        @Override
+        public ScriptEngine getEngineByExtension(String extension) {
+            final ScriptEngine ret = super.getEngineByExtension(extension);
+            if (ret instanceof RhinoScriptEngine) {
+                return ret;
+            } else {
+                throw new RuntimeException("Bad ScriptEngine:extension=" + extension + "|" + ret.getClass());
+            }
+        }
+
+        @Override
+        public ScriptEngine getEngineByMimeType(String mimeType) {
+            final ScriptEngine ret = super.getEngineByMimeType(mimeType);
+            if (ret instanceof RhinoScriptEngine) {
+                return ret;
+            } else {
+                throw new RuntimeException("Bad ScriptEngine:mime=" + mimeType + "|" + ret.getClass());
+            }
         }
 
         public CustomizedScriptEngineManager() {
             final CustomRhinoScriptEngineFactory factory = new CustomRhinoScriptEngineFactory();
-            this.registerEngineName("javascript", factory);
-            this.registerEngineName("js", factory);
-            this.registerEngineName("JavaScript", factory);
+            for (String name : factory.getNames()) {
+                registerEngineName(name, factory);
+            }
+            for (String extension : factory.getExtensions()) {
+                registerEngineExtension(extension, factory);
+            }
+            for (String mimeType : factory.getMimeTypes()) {
+                registerEngineMimeType(mimeType, factory);
+            }
         }
     }
 

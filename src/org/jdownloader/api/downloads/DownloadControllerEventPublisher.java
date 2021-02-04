@@ -53,7 +53,6 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsEventsI
 import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadControllerEventPublisher implements EventPublisher, DownloadControllerListener, LocalEventsAPIListener, DownloadControllerEventPublisherInterface, DownloadWatchdogListener {
-
     private enum BASIC_EVENT {
         REFRESH_STRUCTURE,
         REMOVE_CONTENT,
@@ -70,18 +69,16 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private final CopyOnWriteArraySet<RemoteAPIEventsSender> remoteEventSenders      = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private static final List<String>                        EVENT_ID_LIST;
     private final CopyOnWriteArraySet<DownloadLink>          linksWithPluginProgress = new CopyOnWriteArraySet<DownloadLink>();
-
     private final CopyOnWriteArrayList<ChannelCollector>     collectors              = new CopyOnWriteArrayList<ChannelCollector>();
-
     protected final static List<String>                      INTERVAL_EVENT_ID_LIST  = new ArrayList<String>();
     private ScheduledExecutorService                         executer;
     private final EventsAPI                                  eventsAPI;
     private final AtomicLong                                 backEndChangeID         = new AtomicLong(-1);
     private final AtomicLong                                 contentChangesCounter   = new AtomicLong(-1);
     private final Queue                                      queue                   = new Queue("DownloadControllerEventPublisher") {
-                                                                                         public void killQueue() {
-                                                                                         };
-                                                                                     };
+        public void killQueue() {
+        };
+    };
     static {
         EVENT_ID_LIST = new ArrayList<String>();
         for (BASIC_EVENT t : BASIC_EVENT.values()) {
@@ -92,18 +89,15 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         for (Entry<String, Object> es : map.entrySet()) {
             EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + "." + es.getKey());
         }
-
         map = new SimpleMapper().convert(new PackageQueryStorableDummy(), TypeRef.HASHMAP);
         for (Entry<String, Object> es : map.entrySet()) {
             EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + "." + es.getKey());
         }
-
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".speed");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".bytesLoaded");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".eta");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.LINK_UPDATE.name() + ".status");
-
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".speed");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".bytesLoaded");
         INTERVAL_EVENT_ID_LIST.add(BASIC_EVENT.PACKAGE_UPDATE.name() + ".eta");
@@ -280,6 +274,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private static final String LINK_UPDATE_finished         = BASIC_EVENT.LINK_UPDATE.name() + ".finished";
     private static final String LINK_UPDATE_reset            = BASIC_EVENT.LINK_UPDATE.name() + ".reset";
     private static final String PACKAGE_UPDATE_reset         = BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset";
+    private static final String LINK_UPDATE_resume           = BASIC_EVENT.LINK_UPDATE.name() + ".resume";
+    private static final String PACKAGE_UPDATE_resume        = BASIC_EVENT.PACKAGE_UPDATE.name() + ".resume";
     private static final String LINK_UPDATE_running          = BASIC_EVENT.LINK_UPDATE.name() + ".running";
     private static final String PACKAGE_UPDATE_running       = BASIC_EVENT.PACKAGE_UPDATE.name() + ".running";
     private static final String PACKAGE_UPDATE_status        = BASIC_EVENT.PACKAGE_UPDATE.name() + ".status";
@@ -442,7 +438,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     } else {
                         if (linksWithPluginProgress.add(dl)) {
                             queue.add(new QueueAction<Void, RuntimeException>() {
-
                                 @Override
                                 protected Void run() throws RuntimeException {
                                     updateExecuter(true);
@@ -477,6 +472,22 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                         flush = true;
                     }
                     break;
+                case RESUME:
+                    if (hasSubscriptionFor(LINK_UPDATE_resume)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("resume", "true");
+                        fire(LINK_UPDATE_resume, dls, LINK_UPDATE_resume + "." + dl.getUniqueID().getID());
+                        flush = true;
+                    }
+                    if (hasSubscriptionFor(PACKAGE_UPDATE_reset)) {
+                        final HashMap<String, Object> dls = new HashMap<String, Object>();
+                        dls.put("uuid", dl.getUniqueID().getID());
+                        dls.put("resume", "true");
+                        fire(PACKAGE_UPDATE_resume, dls, PACKAGE_UPDATE_resume + "." + parent.getUniqueID().getID());
+                        flush = true;
+                    }
+                    break;
                 case RESUMABLE:
                     break;
                 case SHA1:
@@ -506,7 +517,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                     break;
                 case VARIANTS_ENABLED:
                     break;
-
                 }
             }
             if (hasContentChanges() && hasSubscriptionFor(BASIC_EVENT.REFRESH_CONTENT.name())) {
@@ -551,7 +561,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     private void fire(final String eventID, final Object dls, final String collapseKey) {
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final SimpleEventObject eventObject = new SimpleEventObject(DownloadControllerEventPublisher.this, eventID, dls, collapseKey);
@@ -560,7 +569,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 }
                 return null;
             }
-
         });
     }
 
@@ -664,7 +672,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             }
             final boolean finalExecute = execute;
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     updateExecuter(finalExecute);
@@ -678,7 +685,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         synchronized (this) {
             if (b) {
                 if (executer == null) {
-
                     executer = Executors.newScheduledThreadPool(1);
                     executer.scheduleAtFixedRate(new Runnable() {
                         int terminationRounds = 0;
@@ -764,7 +770,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     protected void flushBuffer() {
         queue.add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 if (buffer.size() > 0) {
@@ -858,7 +863,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         }
         if (collectors.size() > 0) {
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     for (final ChannelCollector collector : collectors) {
@@ -892,7 +896,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private void cleanup(DownloadLink dl2) {
         if (collectors.size() > 0) {
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final HashSet<DownloadLink> linksToProcess = new HashSet<DownloadLink>();
@@ -913,7 +916,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         if (collectors.size() > 0) {
             final FilePackage parent = dl.getParentNode();
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     for (final ChannelCollector collector : collectors) {
@@ -948,7 +950,6 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     private void pushToBuffer(final ChannelCollector collector, final EventObject eventObject) {
         if (collector != null) {
             queue.add(new QueueAction<Void, RuntimeException>() {
-
                 @Override
                 protected Void run() throws RuntimeException {
                     final Object dls = eventObject.getEventdata();
@@ -978,5 +979,4 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     public DownloadListDiffStorable queryLinks(LinkQueryStorable queryParams, int diffID) throws BadParameterException {
         throw new WTFException("Not Implemented");
     }
-
 }
