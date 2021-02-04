@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -32,7 +30,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gpaste.us" }, urls = { "https?://(?:www\\.)?gpaste\\.us/[a-z0-9]+" })
 public class GpasteUs extends PluginForDecrypt {
-
     public GpasteUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,7 +46,6 @@ public class GpasteUs extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         int counter = 0;
         while (this.br.containsHTML(html_pwprotected) && counter <= 2) {
             final String passCode = getUserInput("Enter password", param);
@@ -59,7 +55,6 @@ public class GpasteUs extends PluginForDecrypt {
         if (this.br.containsHTML(html_pwprotected)) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-
         String fpName = br.getRegex("class=\"heading\">([^<>]+)<").getMatch(0);
         String sourcehtml = this.br.getRegex("<div[^<>]*?class=\"overthrow content\"[^<>]*?>(.*?)</div>").getMatch(0);
         if (sourcehtml == null) {
@@ -68,23 +63,21 @@ public class GpasteUs extends PluginForDecrypt {
         }
         final String[] links = HTMLParser.getHttpLinks(sourcehtml, null);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Failed to find any URLs");
+            return decryptedLinks;
         }
         for (final String singleLink : links) {
-            if (new Regex(singleLink, this.getSupportedLinks()).matches()) {
+            if (this.canHandle(singleLink)) {
                 continue;
+            } else {
+                decryptedLinks.add(createDownloadlink(singleLink));
             }
-            decryptedLinks.add(createDownloadlink(singleLink));
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
