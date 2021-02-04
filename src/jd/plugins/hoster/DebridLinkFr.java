@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.plugins.components.config.DebridLinkFrConfig;
 import org.jdownloader.plugins.components.config.DebridLinkFrConfig.PreferredDomain;
@@ -106,17 +108,18 @@ public class DebridLinkFr extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ac.setValidUntil(-1);
         }
-        // end of account stats
-        // multihoster array
+        /* Update list of supported hosts */
         getPage(account, null, "/downloader/status", false, null);
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostitems = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "hosters"));
-        for (final String hostitem : hostitems) {
-            // final String name = getJson(hostitem, "name");
-            final boolean isFreeHost = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(hostitem, "free_host"));
-            final String status = PluginJSonUtils.getJsonValue(hostitem, "status");
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("value");
+        final List<Object> hosters = (List<Object>) entries.get("hosters");
+        for (final Object hostO : hosters) {
+            entries = (Map<String, Object>) hostO;
+            final int status = ((Number) entries.get("status")).intValue();
+            final boolean isFreeHost = ((Boolean) entries.get("free_host")).booleanValue();
             /* Don't add hosts if they are down or disabled, */
-            if ("-1".equals(status) || "0".equals(status)) {
+            if (status == -1 || status == 0) {
                 // logger.info("NOT adding host " + name + " to host array because it is down or disabled");
                 continue;
             } else if (isFree && !isFreeHost) {
@@ -125,10 +128,10 @@ public class DebridLinkFr extends PluginForHost {
                 continue;
             } else {
                 // logger.info("ADDING host " + name + " to host array");
-                final String jsonarray = PluginJSonUtils.getJsonArray(hostitem, "hosts");
-                final String[] domains = PluginJSonUtils.getJsonResultsFromArray(jsonarray);
-                for (final String domain : domains) {
-                    supportedHosts.add(domain);
+                /* Add all domains of this host */
+                final List<Object> domains = (List<Object>) entries.get("hosts");
+                for (final Object domainO : domains) {
+                    supportedHosts.add((String) domainO);
                 }
             }
         }
@@ -317,8 +320,10 @@ public class DebridLinkFr extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "website_error_unable_to_retrieve_file_from_host", 50, 5 * 60 * 1000l);
             }
         }
-        final String error = PluginJSonUtils.getJsonValue(br, "ERR");
-        if (!StringUtils.isEmpty(error)) {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String result = (String) entries.get("status");
+        if ("KO".equalsIgnoreCase(result)) {
+            final String error = (String) entries.get("ERR");
             // generic errors not specific to download routine!
             if ("unknowR".equals(error)) {
                 // Bad r argument
@@ -529,8 +534,8 @@ public class DebridLinkFr extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
-        final String currenthost = downloadLink.getHost();
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        final String currenthost = link.getHost();
         final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
         if (account.getType() == AccountType.FREE && plain_hostinfo != null) {
             final String[] hostinfo = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(plain_hostinfo, "hosters"));
