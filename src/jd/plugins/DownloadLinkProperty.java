@@ -2,6 +2,7 @@ package jd.plugins;
 
 public class DownloadLinkProperty {
     public static enum Property {
+        RESUME,
         RESET,
         NAME,
         PRIORITY,
@@ -16,7 +17,6 @@ public class DownloadLinkProperty {
         LINKSTATUS,
         ARCHIVE_ID,
         DOWNLOAD_CONTROLLER,
-
         CHUNKS,
         SPEED_LIMIT,
         DOWNLOAD_PASSWORD,

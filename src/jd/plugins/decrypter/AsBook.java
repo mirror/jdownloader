@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,6 +28,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "asbook.info" }, urls = { "https?://(www\\.)?(asbook\\.info|asbookonline\\.com)/[^/]+/?" })
 public class AsBook extends antiDDoSForDecrypt {
@@ -57,7 +57,7 @@ public class AsBook extends antiDDoSForDecrypt {
                 getPage(br2, iframeURL);
                 String[][] trackDetails = br2.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+data-code\\s*=\\s*\"([^\"]+)\"[^>]*>").getMatches();
                 final String decryptJS = getDecryptJS(br2);
-                final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+                final ScriptEngine engine = JavaScriptEngineFactory.getScriptEngineManager(null).getEngineByName("js");
                 engine.eval("var res = \"\";");
                 engine.eval(decryptJS);
                 if (trackDetails != null && trackDetails.length > 0) {
@@ -72,8 +72,8 @@ public class AsBook extends antiDDoSForDecrypt {
                         String decodedLink = "";
                         engine.eval("res = d(f(d(i(\"" + datacode + "\"), p())), c());");
                         engine.eval("res = n(res);"); // Throws an "org.mozilla.javascript.ConsString cannot be cast to java.lang.String"
-                                                      // error in the Rhino engine, but works fine in Nashorn, so we're using the latter
-                                                      // above even though it's deprecated as of JDK 11.
+                        // error in the Rhino engine, but works fine in Nashorn, so we're using the latter
+                        // above even though it's deprecated as of JDK 11.
                         decodedLink = (String) engine.get("res");
                         decodedLink = decodedLink.replaceAll("^//", "https://");
                         DownloadLink dl = createDownloadlink(decodedLink);

@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 
@@ -21,6 +23,26 @@ public class JDClassLoaderLauncher {
 
         private final boolean preferParentClassLoader(final String name) {
             return name.equals(getClass().getName());
+        }
+
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException {
+            if (JVMVersion.isMinimum(JVMVersion.JAVA_15) && "META-INF/services/javax.script.ScriptEngineFactory".equals(name)) {
+                final Enumeration<URL> resources = super.getResources(name);
+                final List<URL> ret = new ArrayList<URL>();
+                while (resources != null && resources.hasMoreElements()) {
+                    final URL url = resources.nextElement();
+                    ret.add(url);
+                }
+                // Nashorn JS engine no longer available
+                final URL scriptEngineHack = getResource("org/jdownloader/scripting/ScriptEngineFactoryService.html");
+                if (scriptEngineHack != null) {
+                    ret.add(scriptEngineHack);
+                }
+                return Collections.enumeration(ret);
+            } else {
+                return super.getResources(name);
+            }
         }
 
         @Override

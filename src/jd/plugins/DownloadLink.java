@@ -30,6 +30,19 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -59,19 +72,6 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -84,7 +84,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
-
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -965,7 +964,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1102,13 +1101,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setConditionalSkipReason(null);
         setEnabled(true);
         if (resetPlugins != null) {
-            for (PluginForHost resetPlugin : resetPlugins) {
+            for (final PluginForHost resetPlugin : resetPlugins) {
                 try {
                     resetPlugin.resumeDownloadlink(this);
                 } catch (final Throwable e) {
                     LogController.CL().log(e);
                 }
             }
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESUME, null));
         }
     }
 
