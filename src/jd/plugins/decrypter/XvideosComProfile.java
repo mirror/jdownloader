@@ -145,9 +145,9 @@ public class XvideosComProfile extends PluginForDecrypt {
         } else if (parameter.matches(".+/photos/.+")) {
             crawlPhotos(parameter, decryptedLinks);
         } else if (parameter.matches(TYPE_USER) && premiumAccountActive) {
-            crawlVideosPremium(parameter, decryptedLinks);
+            crawlChannelPremium(parameter, decryptedLinks);
         } else {
-            crawlVideos(parameter, decryptedLinks);
+            crawlChannel(parameter, decryptedLinks);
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Failed to find and content for: " + parameter);
@@ -222,7 +222,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
-    private void crawlVideos(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
+    private void crawlChannel(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
         final ArrayList<String> dupeList = new ArrayList<String>();
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/(.+)");
         final String type = urlinfo.getMatch(0);
@@ -236,13 +236,20 @@ public class XvideosComProfile extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(username.trim()));
         fp.addLinks(decryptedLinks);
+        final String url_base = this.br.getURL("/channels/" + username + "/videos/new").toString();
         short pageNum = 0;
         int decryptedLinksNum;
         do {
             logger.info(String.format("Crawling page %d", pageNum));
             decryptedLinksNum = 0;
-            br.getPage("/" + type + "/" + username + "/videos/best/" + pageNum);
-            // users don't always have profile... as guardo finds links from google... false positive.
+            if (pageNum == 0) {
+                // br.postPage("https://www.xvideos.com/channels/" + username + "/videos/best", "is_first=true&main_cats=false");
+                br.postPage(url_base, "is_first=true&main_cats=false");
+            } else {
+                // br.getPage("/" + type + "/" + username + "/videos/best/" + pageNum);
+                br.postPage(url_base + "/" + pageNum, "main_cats=false");
+            }
+            // users don't always have profile... as bug reporter Guardao finds links from google... false positive.
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
                 return;
             } else if (br.toString().matches("<h4 class=\"text-center\">[^<]+  hat keine hochgeladene Videos</h4>\\s*")) {
@@ -250,7 +257,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return;
             }
-            final String[] links = br.getRegex("(/prof-video-click/[^/]+/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
+            final String[] links = br.getRegex("class=\"title\"><a href=\"(/prof-video-click/[^/]+/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
             if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
                 logger.info("All videos found or this user does not have any videos");
                 break;
@@ -258,7 +265,6 @@ public class XvideosComProfile extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find anything on current page");
                 break;
             }
-            decryptedLinksNum = links.length;
             for (String singleLink : links) {
                 final String videoID = new Regex(singleLink, "prof-video-click/[^/]+/[^/]+/(\\d+)").getMatch(0);
                 /* Only add new URLs */
@@ -286,10 +292,17 @@ public class XvideosComProfile extends PluginForDecrypt {
                     distribute(dl);
                     decryptedLinksNum++;
                     dupeList.add(videoID);
+                } else {
+                    // logger.info("Found dupe: " + videoID);
                 }
             }
+            logger.info("Found " + decryptedLinksNum + " items on current page");
+            if (!br.containsHTML("class=\"no-page next-page\"")) {
+                logger.info("Stopping because reached the end");
+                break;
+            }
             pageNum++;
-        } while (!this.isAbort() && decryptedLinksNum >= 36);
+        } while (!this.isAbort());
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -300,7 +313,7 @@ public class XvideosComProfile extends PluginForDecrypt {
      * 2020-10-06: Special method for xvideos.red though this will also work for xvideos.com. Old method is still in use as it's still
      * working!
      */
-    private void crawlVideosPremium(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
+    private void crawlChannelPremium(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
         final ArrayList<String> dupeList = new ArrayList<String>();
         final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/(.+)");
         final String type = urlinfo.getMatch(0);
