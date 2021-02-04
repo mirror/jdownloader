@@ -33,6 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.pro" }, urls = { "https?://(www\\d*\\.)?gogoanime\\.pro/anime/[^/]+\\d+.+" })
 public class GoGoAnimePro extends antiDDoSForDecrypt {
@@ -46,12 +48,16 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         String fpName = br.getRegex("<title>(?:Gogoanime - Watch\\s*)([^<]+)\\s+in\\s+HD\\s+-\\s+GogoAnime").getMatch(0);
-        String[] details = br.getRegex("<div[^>]+id\\s*=\\s*\"watch\"[^>]+data-id\\s*=\\s*\"([^\"]*)\"[^>]+data-ep-name-normalized\\s*=\\s*\"([^\"]*)\"[^>]*>").getRow(0);
+        String[] details = br.getRegex("<div[^>]+id\\s*=\\s*\"watch\"[^>]+data-id\\s*=\\s*\"([^\"]*)\"[^>]+data-ep-base-name\\s*=\\s*\"([^\"]*)\"[^>]*>").getRow(0);
         String titleID = details[0];
         String episodeID = details[1];
+        if (StringUtils.isEmpty(titleID) || StringUtils.isEmpty(episodeID)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final GetRequest getEpisodes = new GetRequest(br.getURL("/ajax/film/servers/" + titleID + "?ep=&episode=" + episodeID).toString());
         getEpisodes.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(br.getPage(getEpisodes), TypeRef.HASHMAP), "html");
+        String jsonSource = br.getPage(getEpisodes);
+        String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");6
         if (StringUtils.isNotEmpty(videoDetails)) {
             final GetRequest getKey = new GetRequest("https://mcloud.to/key");
             getKey.getHeaders().put("X-Requested-With", "XMLHttpRequest");
