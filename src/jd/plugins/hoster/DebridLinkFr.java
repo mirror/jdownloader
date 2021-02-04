@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -498,14 +499,19 @@ public class DebridLinkFr extends PluginForHost {
             resumes = Boolean.parseBoolean(resume);
             logger.info("CustomResume:" + resumes);
         }
+        /* 2021-02-04: TODO: Maybe save- and re-use generated download URLs! */
         String dllink = PluginJSonUtils.getJsonValue(br, "downloadLink");
         if (dllink == null) {
             logger.warning("Failed to find dllink");
             mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             errHandling(account, link, true);
             logger.warning("Unhandled download error on Service Provider side:");
             mhm.handleErrorGeneric(account, link, "final_downloadurl_isnot_a_file", 50, 5 * 60 * 1000l);
