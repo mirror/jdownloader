@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogo-stream.com" }, urls = { "https?://(?:www\\.)?(?:gogo-stream\\.com|vidstreaming\\.io)/(?:download\\?id=|loadserver\\.php?|streaming\\.php?|videos/)[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogo-stream.com" }, urls = { "https?://(?:www\\.)?(?:gogo-stream\\.com|vidstreaming\\.io|gogo-play\\.net)/(?:download\\?id=|loadserver\\.php?|streaming\\.php?|videos/)[^/]+" })
 @SuppressWarnings("deprecation")
 public class GoGoStream extends antiDDoSForDecrypt {
     public GoGoStream(final PluginWrapper wrapper) {
