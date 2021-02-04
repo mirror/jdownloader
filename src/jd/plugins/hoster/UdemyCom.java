@@ -30,10 +30,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -350,7 +346,6 @@ public class UdemyCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
@@ -364,21 +359,6 @@ public class UdemyCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (new LinkCrawlerDeepInspector() {
-            @Override
-            public List<CrawledLink> deepInspect(LinkCrawler lc, LinkCrawlerGeneration generation, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }.looksLikeDownloadableContent(urlConnection)) {
-            return true;
-        } else {
-            /* 2021-02-04 */
-            return urlConnection.getContentType().contains("binary/octet-stream");
-        }
     }
 
     @Override
