@@ -252,16 +252,13 @@ public class XvideosComProfile extends PluginForDecrypt {
             // users don't always have profile... as bug reporter Guardao finds links from google... false positive.
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 400) {
                 return;
-            } else if (br.toString().matches("<h4 class=\"text-center\">[^<]+  hat keine hochgeladene Videos</h4>\\s*")) {
-                logger.info("This user does not have any videos");
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return;
             }
-            final String[] links = br.getRegex("class=\"title\"><a href=\"(/prof-video-click/[^/]+/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
-            if (!br.containsHTML("profile-listing-uploads") && !br.containsHTML("profile-videos-sort") && (links == null || links.length == 0)) {
-                logger.info("All videos found or this user does not have any videos");
+            final String[] links = br.getRegex("class=\"title\"[^>]*><a href=\"(/prof-video-click/[^/]+/[^/]+/\\d+((?:/THUMBNUM)?/[^/\"\\']+)?)").getColumn(0);
+            if (links.length == 0 && pageNum == 0) {
+                logger.info("Assuming that user doesn't own any uploads");
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 break;
-            } else if (links == null || links.length == 0) {
+            } else if (links.length == 0 && pageNum == 0) {
                 logger.info("Stopping because: Failed to find anything on current page");
                 break;
             }

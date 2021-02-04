@@ -59,8 +59,8 @@ public class GofileIo extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXCHUNKS    = -2;
+    private static final int     FREE_MAXDOWNLOADS = -1;
     private String               downloadURL       = null;
 
     /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
