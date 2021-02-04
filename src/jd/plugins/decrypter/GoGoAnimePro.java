@@ -57,7 +57,7 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         final GetRequest getEpisodes = new GetRequest(br.getURL("/ajax/film/servers/" + titleID + "?ep=&episode=" + episodeID).toString());
         getEpisodes.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String jsonSource = br.getPage(getEpisodes);
-        String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");6
+        String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");
         if (StringUtils.isNotEmpty(videoDetails)) {
             final GetRequest getKey = new GetRequest("https://mcloud.to/key");
             getKey.getHeaders().put("X-Requested-With", "XMLHttpRequest");
