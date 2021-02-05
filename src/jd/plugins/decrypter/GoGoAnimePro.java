@@ -74,8 +74,6 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
             }.getToken();
             query.appendEncoded("token", recaptchaV2Response);
         }
-        // final GetRequest getEpisodes = new GetRequest(br.getURL("/ajax/film/servers/" + titleID + "?ep=&episode=" + episodeID + "&token="
-        // + Encoding.urlEncode(recaptchaV2Response)).toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("/ajax/" + type + "/servers" + "?" + query.toString());
         final String jsonSource = this.br.toString();
