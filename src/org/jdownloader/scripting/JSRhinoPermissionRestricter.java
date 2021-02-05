@@ -2,6 +2,7 @@ package org.jdownloader.scripting;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.ClassShutter;
@@ -100,6 +101,32 @@ import org.mozilla.javascript.tools.shell.Global;
  *
  */
 public class JSRhinoPermissionRestricter {
+    public static class SandboxException extends RuntimeException {
+        private final Context cx;
+
+        public Context getContext() {
+            return cx;
+        }
+
+        public Thread getThread() {
+            return thread;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        private final Thread thread;
+        private final String className;
+
+        public SandboxException(Context cx, Thread thread, String className, String message) {
+            super(message);
+            this.cx = cx;
+            this.thread = thread;
+            this.className = className;
+        }
+    }
+
     static public class SandboxContextFactory extends ContextFactory {
         static public class MyContext extends Context {
             private volatile long startTime = -1;
@@ -129,21 +156,20 @@ public class JSRhinoPermissionRestricter {
             // cx.setInstructionObserverThreshold(10000);
             cx.setWrapFactory(new SandboxWrapFactory());
             cx.setClassShutter(new ClassShutter() {
-                public boolean visibleToScripts(String className) {
-                    Thread cur = Thread.currentThread();
-                    boolean trusted = TRUSTED_THREAD.containsKey(cur);
-                    if (cur instanceof JSShutterDelegate) {
-                        if (((JSShutterDelegate) cur).isClassVisibleToScript(trusted, className)) {
+                public boolean visibleToScripts(final String className) {
+                    final Thread thread = Thread.currentThread();
+                    final boolean trusted = TRUSTED_THREAD.containsKey(thread);
+                    if (thread instanceof JSShutterDelegate) {
+                        if (((JSShutterDelegate) thread).isClassVisibleToScript(trusted, className)) {
                             return true;
                         } else {
                             return false;
                         }
                     }
                     if (trusted) {
-                        LogController.CL().severe("Trusted Thread Loads: " + className + "|Thread:" + cur);
+                        LogController.CL().severe("Trusted Thread Loads: " + className + "|Thread:" + thread);
                         return true;
-                    }
-                    if (className.startsWith("adapter")) {
+                    } else if (className.startsWith("adapter")) {
                         return true;
                     } else if (className.startsWith("org.mozilla.javascript.ConsString")) {
                         return true;
@@ -151,7 +177,7 @@ public class JSRhinoPermissionRestricter {
                         LogController.CL().severe("Javascript error occured");
                         return true;
                     } else {
-                        throw new RuntimeException("Security Violation " + className + "|Thread:" + cur);
+                        throw new SandboxException(cx, thread, className, "Security Violation:" + className + "|Thread:" + thread);
                     }
                 }
             });
@@ -164,7 +190,7 @@ public class JSRhinoPermissionRestricter {
         @Override
         public Scriptable wrapAsJavaObject(Context cx, Scriptable scope, Object javaObject, Class staticType) {
             if (javaObject instanceof EcmaError) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log((EcmaError) javaObject);
+                LogController.CL().log((Exception) javaObject);
             }
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
@@ -180,10 +206,11 @@ public class JSRhinoPermissionRestricter {
         @Override
         public Object get(String name, Scriptable start) {
             if (name.equals("getClass")) {
-                org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().severe("JS Security Exception");
+                LogController.CL().severe("JS Security Exception:" + name + "|" + start);
                 return NOT_FOUND;
+            } else {
+                return super.get(name, start);
             }
-            return super.get(name, start);
         }
     }
 
@@ -203,20 +230,15 @@ public class JSRhinoPermissionRestricter {
             ContextFactory.initGlobal(new SandboxContextFactory());
             // let's do a test
             try {
-                Context cx = null;
                 try {
-                    cx = ContextFactory.getGlobal().enterContext();
+                    final Context cx = ContextFactory.getGlobal().enterContext();
                     cx.evaluateString(cx.initStandardObjects(), "java.lang.System.out.println('TEST')", "<cmd>", 1, null);
                 } finally {
                     Context.exit();
                 }
                 throw new SecurityException("Could not install the sun.org.mozilla.javascript.internal Sandbox!");
-            } catch (NullPointerException e) {
-                throw e;
-            } catch (SecurityException e) {
-                throw e;
-            } catch (RuntimeException e) {
-                if (!"Security Violation org".equals(e.getMessage())) {
+            } catch (SandboxException e) {
+                if (!StringUtils.startsWithCaseInsensitive(e.getMessage(), "Security Violation:org")) {
                     throw e;
                 } else {
                     // test successfull. Security Sandbox successfully initialized
