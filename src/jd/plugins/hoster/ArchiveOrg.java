@@ -84,10 +84,10 @@ public class ArchiveOrg extends PluginForHost {
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
                 connectionErrorhandling(br.getHttpConnection(), link);
-                if (con.isOK() && (con.getLongContentLength() > 0 || con.isContentDisposition() || StringUtils.containsIgnoreCase(con.getContentType(), "application") || StringUtils.containsIgnoreCase(con.getContentType(), "video"))) {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(getFileNameFromHeader(con));
-                    if (con.getLongContentLength() > 0) {
-                        link.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return AvailableStatus.TRUE;
                 } else if (con.getResponseCode() == 200) { // txt/xml, size not available
@@ -136,8 +136,8 @@ public class ArchiveOrg extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             connectionErrorhandling(br.getHttpConnection(), link);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }

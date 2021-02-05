@@ -94,13 +94,18 @@ public class ArchiveOrg extends PluginForDecrypt {
                  * between a file or expected html.
                  */
                 final String host = Browser.getHost(con.getURL(), true);
-                if ((con.isContentDisposition() || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
+                if ((this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
                     final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                    if (con.getLongContentLength() > 0) {
-                        fina.setDownloadSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        fina.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    fina.setFinalFileName(getFileNameFromHeader(con));
-                    fina.setAvailable(true);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        fina.setFinalFileName(getFileNameFromHeader(con));
+                        fina.setAvailable(true);
+                    } else {
+                        /* 2021-02-05: Either offline or account-only. Assume offline for now. */
+                        fina.setAvailable(false);
+                    }
                     decryptedLinks.add(fina);
                     return decryptedLinks;
                 } else {
