@@ -270,8 +270,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
         getPage(API_BASE + "?check=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()));
         if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     /** Workaround(s) for special chars issues with login passwords. */
