@@ -21,6 +21,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -51,12 +53,32 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         String[] details = br.getRegex("<div[^>]+id\\s*=\\s*\"watch\"[^>]+data-id\\s*=\\s*\"([^\"]*)\"[^>]+data-ep-base-name\\s*=\\s*\"([^\"]*)\"[^>]*>").getRow(0);
         String titleID = details[0];
         String episodeID = details[1];
-        if (StringUtils.isEmpty(titleID) || StringUtils.isEmpty(episodeID)) {
+        /* 2021-02-05: episodeID is allowed to be an empty string */
+        if (StringUtils.isEmpty(titleID) || episodeID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final GetRequest getEpisodes = new GetRequest(br.getURL("/ajax/film/servers/" + titleID + "?ep=&episode=" + episodeID).toString());
-        getEpisodes.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String jsonSource = br.getPage(getEpisodes);
+        /* Can be "anime" or "film". So far I've only seen "anime". */
+        final String type = "anime";
+        final String reCaptchaKey = br.getRegex("var\\s*recaptcha_key=\\s*'([^<>\"\\']+)").getMatch(0);
+        final UrlQuery query = new UrlQuery();
+        query.add("id", titleID);
+        query.add("ep", "");
+        query.add("episode", episodeID);
+        if (reCaptchaKey != null) {
+            /* 2021-02-05: Captcha */
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, reCaptchaKey) {
+                @Override
+                public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                    return TYPE.INVISIBLE;
+                }
+            }.getToken();
+            query.appendEncoded("token", recaptchaV2Response);
+        }
+        // final GetRequest getEpisodes = new GetRequest(br.getURL("/ajax/film/servers/" + titleID + "?ep=&episode=" + episodeID + "&token="
+        // + Encoding.urlEncode(recaptchaV2Response)).toString());
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("/ajax/" + type + "/servers" + "?" + query.toString());
+        final String jsonSource = this.br.toString();
         String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");
         if (StringUtils.isNotEmpty(videoDetails)) {
             final GetRequest getKey = new GetRequest("https://mcloud.to/key");
