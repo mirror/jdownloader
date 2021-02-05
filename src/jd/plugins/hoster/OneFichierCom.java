@@ -27,6 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -55,22 +71,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -438,12 +438,12 @@ public class OneFichierCom extends PluginForHost {
                 br2.postPageRaw(br.getURL(), "");
                 errorHandling(link, account, br2);
                 if (br2.containsHTML("not possible to unregistered users")) {
-                    final Account aa = AccountController.getInstance().getValidAccount(this);
-                    if (aa != null) {
+                    final Account acc = AccountController.getInstance().getValidAccount(this);
+                    if (acc != null) {
                         try {
-                            synchronized (aa) {
-                                loginWebsite(aa, true);
-                                ensureSiteLogin(aa);
+                            synchronized (acc) {
+                                loginWebsite(acc, true);
+                                ensureSiteLogin(acc);
                             }
                         } catch (final PluginException e) {
                             logger.log(e);
@@ -869,7 +869,11 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /** Checks whether we're logged in via website. */
-    private boolean checkSID(final Browser br) {
+    private boolean isLoggedinWebsite(final Browser br) {
+        return isLoginCookieExists(br) && br.containsHTML("id=\"fileTree\"");
+    }
+
+    private boolean isLoginCookieExists(final Browser br) {
         return br.getCookie(this.getHost(), "SID", Cookies.NOTDELETEDPATTERN) != null;
     }
 
@@ -888,20 +892,21 @@ public class OneFichierCom extends PluginForHost {
                         return;
                     } else {
                         br.getPage("https://1fichier.com/console/index.pl");
-                        if (checkSID(br)) {
+                        if (isLoggedinWebsite(br)) {
                             logger.info("Cookie login successful");
                             account.saveCookies(br.getCookies(getHost()), "");
                             setBasicAuthHeader(br, account);
                             return;
                         } else {
                             logger.info("Cookie login failed");
-                            br.clearCookies(this.getHost());
+                            br.clearAll();
+                            this.prepareBrowserWebsite(this.br);
                         }
                     }
                 }
                 logger.info("Performing full website login");
                 br.postPage("https://1fichier.com/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!checkSID(br)) {
+                if (!isLoginCookieExists(this.br)) {
                     if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
                         throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
                     }
@@ -1018,8 +1023,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
@@ -1302,10 +1307,10 @@ public class OneFichierCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
     }
 
-    /** This function is there to make sure that we're really logged in (handling without API). */
-    private boolean ensureSiteLogin(Account account) throws Exception {
+    /** This function is there to make sure that we're really logged in (website handling). */
+    private boolean ensureSiteLogin(final Account account) throws Exception {
         br.getPage("https://1fichier.com/console/index.pl");
-        if (!checkSID(br) || !br.containsHTML("id=\"fileTree\"")) {
+        if (!isLoggedinWebsite(br)) {
             logger.info("Site login seems not to be valid anymore - trying to refresh cookie");
             if (account != null) {
                 this.loginWebsite(account, true);
@@ -1316,7 +1321,7 @@ public class OneFichierCom extends PluginForHost {
                     throw new AccountUnavailableException("Locked for security reasons", 60 * 60 * 1000l);
                 } else {
                     logger.warning("Failed to refresh login cookie");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
                 }
             }
         } else {
