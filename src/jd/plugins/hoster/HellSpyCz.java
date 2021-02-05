@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -334,20 +336,40 @@ public class HellSpyCz extends PluginForHost {
     /** TODO: Maybe add support for time-accounts */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("/ucet/");
         String traffic_left = br.getRegex("<td>Zakoupený:</td><td>(\\d+ MB)</td>").getMatch(0);
         if (traffic_left == null) {
             traffic_left = br.getRegex("<strong>Kreditů: </strong>([^<>\"]*?) \\&ndash; <a").getMatch(0);
         }
-        if (traffic_left == null) {
-            ai.setStatus("Invalid/Unknown");
-        } else {
+        if (traffic_left != null) {
+            final AccountInfo ai = new AccountInfo();
             ai.setTrafficLeft(SizeFormatter.getSize(traffic_left));
             ai.setValidUntil(-1);
             ai.setStatus("Account with credits");
+            return ai;
+        } else {
+            final String unlimitedUntil = br.getRegex("userbox-logged-data\">\\s*Neomezené stahování do\\s*([0-9\\.]+)").getMatch(0);
+            final String until[] = unlimitedUntil != null ? unlimitedUntil.split("\\.") : null;
+            if (until != null) {
+                final AccountInfo ai = new AccountInfo();
+                final Calendar cal = GregorianCalendar.getInstance();
+                cal.setTimeInMillis(System.currentTimeMillis());
+                if (until.length > 0) {
+                    cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(until[0]));
+                }
+                if (until.length > 1) {
+                    cal.set(Calendar.MONTH, Integer.parseInt(until[1]) - 1);
+                }
+                ai.setValidUntil(cal.getTimeInMillis());
+                if (!ai.isExpired()) {
+                    ai.setStatus("Account with unlimited traffic");
+                    return ai;
+                }
+            }
         }
+        final AccountInfo ai = new AccountInfo();
+        ai.setStatus("Invalid/Unknown");
         return ai;
     }
 

@@ -469,9 +469,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 *
+                 * 
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 *
+                 * 
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
