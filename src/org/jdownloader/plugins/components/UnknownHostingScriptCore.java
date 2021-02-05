@@ -19,8 +19,8 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -211,6 +211,14 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return false;
     }
 
+    /**
+     * On download error (typically error 502), this will allow to try other video qualities as fallback instead and download the best
+     * quality available if download of the original file fails.
+     */
+    protected boolean allowLowerQualityStreamingFallback() {
+        return false;
+    }
+
     /** Returns empty StringArray for filename, filesize, [more information in the future?] */
     protected String[] getFileInfoArray() {
         return new String[2];
@@ -387,11 +395,9 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        final boolean resume = this.isResumeable(link, account);
-        final int maxchunks = this.getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        this.checkDownloadurl(link, account, false, link.getStringProperty(directlinkproperty));
+        if (this.dl == null) {
             if (supports_availablecheck_via_api()) {
                 /* Did we use the API before? Then we'll have to access the website now. */
                 this.getPage(link.getPluginPatternMatcher());
@@ -401,9 +407,11 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                 }
             }
             /* Example of a website which supports videostreaming: minfil.com */
-            dllink = getDllink(link);
+            getDllink(link, account);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        if (this.dl == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+        }
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
          * connections) --> Should work fine after the next try.
@@ -417,7 +425,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
             }
             checkErrors(link, account);
             checkResponseCodeErrors(dl.getConnection());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
         /* Fix filename (e.g. required for anonfiles.com) */
         String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
@@ -428,11 +436,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String getDllink(final DownloadLink dl) {
-        return getDllink(this.br, dl);
-    }
-
-    private String getDllink(final Browser br, final DownloadLink link) {
+    protected String getDllink(final DownloadLink link, final Account account) throws Exception {
         String dllink = br.getRegex("id=\"download\\-url\"\\s*?class=\"[^\"]+\"\\s*?href=\"(https[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             /*
@@ -441,23 +445,84 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
              */
             dllink = br.getRegex("<input type=\"text\" class=\"form-control\" value=\"(http[^<>\"]+)\"").getMatch(0);
         }
+        /* TODO: Check if the handling below is still needed */
+        // if (StringUtils.isEmpty(dllink)) {
+        // /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
+        // final String fileID = getFID(link);
+        // /*
+        // * First try to find downloadurl which contains linkid as for different streaming qualities, downloadURLs look exactly the same
+        // * but lead to different video-resolutions.
+        // */
+        // /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
+        // dllink = br.getRegex("\"(https?://cdn-\\d+\\.[^/\"]+/" + fileID + "[^<>\"]+)\"").getMatch(0);
+        // if (StringUtils.isEmpty(dllink)) {
+        // dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/[^<>\"]+)\"").getMatch(0);
+        // }
+        // }
+        /* Original download should always be available! */
         if (StringUtils.isEmpty(dllink)) {
-            /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
-            final String linkid = getFID(link);
-            /*
-             * First try to find downloadurl which contains linkid as for different streaming qualities, downloadURLs look exactly the same
-             * but lead to different video-resolutions.
-             */
-            /* 2019-05-07: E.g. bayfiles.com, anonfiles.com */
-            dllink = br.getRegex("\"(https?://cdn-\\d+\\.[^/\"]+/" + linkid + "[^<>\"]+)\"").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                dllink = br.getRegex("\"(https?://cdn\\-\\d+\\.[^/\"]+/[^<>\"]+)\"").getMatch(0);
+            return null;
+        }
+        dllink = fixDownloadurl(dllink);
+        if (!this.allowLowerQualityStreamingFallback()) {
+            this.checkDownloadurl(link, account, true, dllink);
+            return dllink;
+        } else {
+            final String html = br.toString();
+            Exception failure = null;
+            try {
+                if (this.checkDownloadurl(link, account, true, dllink)) {
+                    logger.info("Original downloadurl is downloadable");
+                    return dllink;
+                }
+            } catch (final PluginException ex) {
+                failure = ex;
+            } catch (final BrowserException eb) {
+                failure = eb;
             }
+            logger.info("Original downloadurl is not downloadable -> Looking for streams as fallback");
+            int foundQualities = 0;
+            final String[] possibleQualities = new String[] { "1080p", "720p", "360p" };
+            for (final String possibleQuality : possibleQualities) {
+                String dlUrlTmp = new Regex(html, "id=\"download-quality-" + possibleQuality + "\"\\s*[^>]*href=\"(https://[^<>\"]+)\"").getMatch(0);
+                if (dlUrlTmp != null) {
+                    foundQualities += 1;
+                    dlUrlTmp = fixDownloadurl(dlUrlTmp);
+                    logger.info("Checking quality: " + possibleQuality);
+                    try {
+                        /* 2021-02-05: Purposely do not catch BrowserExceptions (e.g. timeouts) here! */
+                        if (this.checkDownloadurl(link, account, true, dlUrlTmp)) {
+                            logger.info("Quality is available");
+                            return dllink;
+                        } else {
+                            logger.info("Quality is not available");
+                        }
+                    } catch (final PluginException ex) {
+                        if (failure == null) {
+                            failure = ex;
+                        }
+                    }
+                }
+            }
+            if (foundQualities == 0) {
+                logger.info("Failed to find any streaming qualities");
+            } else {
+                logger.info("Failed to find any working streaming quality in all " + foundQualities + " existing qualities");
+            }
+            if (failure != null) {
+                logger.info("Throwing saved most recent Exception");
+                throw failure;
+            }
+            return null;
         }
-        if (Encoding.isHtmlEntityCoded(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
+    }
+
+    private String fixDownloadurl(String ret) {
+        if (Encoding.isHtmlEntityCoded(ret)) {
+            return Encoding.htmlDecode(ret);
+        } else {
+            return ret;
         }
-        return dllink;
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [A-Za-z0-9]+ */
@@ -544,31 +609,32 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        final String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            final Browser br2 = this.br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
+    private boolean checkDownloadurl(final DownloadLink link, final Account account, final boolean handleErrors, final String directurl) throws Exception {
+        if (directurl != null) {
             try {
-                con = br2.openHeadConnection(dllink);
-                if (!looksLikeDownloadableContent(con)) {
-                    throw new IOException();
+                final boolean resume = this.isResumeable(link, account);
+                final int maxchunks = this.getMaxChunks(account);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, resume, maxchunks);
+                if (looksLikeDownloadableContent(dl.getConnection())) {
+                    return true;
                 } else {
-                    return dllink;
+                    if (handleErrors) {
+                        this.checkResponseCodeErrors(dl.getConnection());
+                    }
+                    this.dl.getConnection().disconnect();
+                    this.dl = null;
+                    return false;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                link.setProperty(property, Property.NULL);
-                return null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                this.dl = null;
+                if (handleErrors) {
+                    throw e;
                 }
+                return false;
             }
         } else {
-            return null;
+            return false;
         }
     }
 
