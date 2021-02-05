@@ -78,19 +78,27 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         br.getPage("/ajax/" + type + "/servers" + "?" + query.toString());
         final String jsonSource = this.br.toString();
         String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");
-        if (StringUtils.isNotEmpty(videoDetails)) {
+        if (StringUtils.isEmpty(videoDetails)) {
+            getLogger().warning("Could not retrieve video Detail JSON from webservice.");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
             final GetRequest getKey = new GetRequest("https://mcloud.to/key");
             getKey.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             Browser br2 = br.cloneBrowser();
             String mcloud = new Regex(br2.getPage(getKey), "window\\.mcloudKey\\s*=\\s*['\"]\\s*([^'\"]+)\\s*['\"]").getMatch(0);
-            String[][] episodeDetails = new Regex(videoDetails, "data-name\\s*=\\s*\"([^\"]*)\"[^>]+data-name-normalized\\s*=\\s*\"([^\"]*)\"[^>]+data-servers\\s*=\\s*\"([^\"]*)\"").getMatches();
+            String[][] episodeDetails = new Regex(videoDetails, "data-name\\s*=\\s*[\"']([^\"']+)[\"'][^>]+data-name-normalized\\s*=\\s*[\"']([^\"']+)[\"'][^>]+href\\s*=\\s*[\"']([^\"']+)[\"'][^>]+data-sources\\s*=\\s*'(\\{[^']+\\})'").getMatches();
             if (episodeDetails != null) {
                 for (String[] episodeDetail : episodeDetails) {
                     String episodeName = episodeDetail[0];
                     String episodeTitle = episodeDetail[1];
-                    String serverIDList = episodeDetail[2];
+                    String serverIDList = episodeDetail[3];
                     if (StringUtils.isNotEmpty(serverIDList)) {
-                        for (String serverID : serverIDList.split(",")) {
+                        for (String serverID : serverIDList.replaceAll("[\\{\\}]", "").split(",")) {
+                            /*
+                             * 2021-02-05: Webservice change: Instead of the old method below it now uses some encoded episode ID like
+                             * /ajax/anime/episode?id=52f3e81e6aa0e4e61cabc0677f1a9a24d4d6c7ae2c9b48b67ae5e2af5800b733 No idea where that's
+                             * generated.
+                             */
                             final GetRequest getEpisode = new GetRequest(br.getURL("/ajax/episode/info?filmId=" + titleID + "&server=" + serverID + "&episode=" + Encoding.urlEncode(episodeName) + "&mcloud=" + mcloud).toString());
                             getEpisode.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                             String getEpisodeResponse = br.getPage(getEpisode);
