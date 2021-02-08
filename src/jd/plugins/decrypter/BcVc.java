@@ -211,7 +211,7 @@ public class BcVc extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Form form1 = new Form();
-        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=937,258:347.171875,31.609375:1737");
+        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=937,258:347.171875,31.609375:1737_TODO");
         form1.setMethod(MethodType.POST);
         form1.put(Encoding.urlEncode("xdf[afg]"), "12_TODO");
         form1.put(Encoding.urlEncode("xdf[bfg]"), "1234_TODO");
