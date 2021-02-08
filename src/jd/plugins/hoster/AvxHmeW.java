@@ -119,11 +119,24 @@ public class AvxHmeW extends PluginForHost {
                     logger.warning("Failed to find loginform");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                String csrftokenForm = null;
+                String csrftokenCookie = this.br.getCookie(this.br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+                if (loginform.hasInputFieldByName("csrfmiddlewaretoken")) {
+                    csrftokenForm = loginform.getInputField("csrfmiddlewaretoken").getValue();
+                }
+                if (csrftokenForm != null && csrftokenCookie != null && !csrftokenForm.equals(csrftokenCookie)) {
+                    logger.warning("csrftoken mismatch");
+                    // br.setCookie(br.getHost(), "csrftoken", csrftokenForm);
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
                 if (!isLoggedin()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (this.br.containsHTML(">\\s*Your accound is blocked")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
                 return true;
