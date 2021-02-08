@@ -27,6 +27,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,14 +60,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickrdecrypted\\.com/photos/[^<>\"/]+/\\d+(/in/album-\\d+)?" })
 public class FlickrCom extends PluginForHost {
@@ -137,7 +137,6 @@ public class FlickrCom extends PluginForHost {
      * https://www.flickr.com/services/api/flickr.photos.getSizes.html TODO API: Get correct csrf values so we can make requests as a
      * logged-in user
      */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -282,8 +281,8 @@ public class FlickrCom extends PluginForHost {
         if (br.getURL().contains("login.yahoo.com/config")) {
             throw new AccountRequiredException();
         } else if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getURL().toString().contains("/photo_unavailable.gif")) {
             dl.getConnection().disconnect();

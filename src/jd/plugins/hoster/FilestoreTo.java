@@ -165,44 +165,47 @@ public class FilestoreTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
-        final String url = downloadLink.getDownloadURL();
-        String downloadName = null;
-        String downloadSize = null;
+        final String url = link.getDownloadURL();
+        String filename = null;
+        String filesizeStr = null;
         for (int i = 1; i < 3; i++) {
             try {
                 br.getPage(url);
             } catch (final Exception e) {
                 continue;
             }
-            if (br.containsHTML(">Download-Datei wurde nicht gefunden<|>Datei nicht gefunden<")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML(">Download-Datei wurde gesperrt<")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             haveFun();
-            downloadName = br.getRegex("class=\"file\">\\s*(.*?)\\s*</").getMatch(0);
-            if (downloadName == null) {
-                downloadName = new Regex(aBrowser, "\\s*(File:|Filename:?|Dateiname:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
-                if (downloadName == null) {
-                    downloadName = new Regex(aBrowser, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
+            filename = br.getRegex("class=\"file\">\\s*(.*?)\\s*</").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(aBrowser, "\\s*(File:|Filename:?|Dateiname:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
+                if (filename == null) {
+                    filename = new Regex(aBrowser, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
                 }
             }
-            downloadSize = new Regex(aBrowser, "(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
-            if (downloadSize == null) {
-                downloadSize = new Regex(aBrowser, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
+            filesizeStr = new Regex(aBrowser, "(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
+            if (filesizeStr == null) {
+                filesizeStr = new Regex(aBrowser, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
             }
-            if (downloadName != null) {
-                downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
             }
-            if (downloadSize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
+            if (filesizeStr != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesizeStr.replaceAll(",", "\\.").trim()));
+            }
+            /** 2020-02-08: File information can be available for offline files too! */
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">\\s*Datei nicht gefunden")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">\\s*Datei gesperrt")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">\\s*Für diese Datei ist eine Take Down-Meldung eingegangen")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
         }

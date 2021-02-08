@@ -63,6 +63,8 @@ public class AvxHmeW extends PluginForDecrypt {
             if (acc != null) {
                 final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
                 ((jd.plugins.hoster.AvxHmeW) hostPlugin).login(acc, false);
+                /* 2021-02-08: Login may set another User-Agent */
+                this.br = hostPlugin.getBrowser();
             }
             br.setFollowRedirects(false);
             br.getPage(parameter);
