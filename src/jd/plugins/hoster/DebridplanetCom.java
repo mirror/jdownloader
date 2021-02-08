@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,11 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
 public class DebridplanetCom extends PluginForHost {
@@ -130,9 +130,9 @@ public class DebridplanetCom extends PluginForHost {
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             post.getHeaders().put("Origin", WEBSITE_BASE);
             br.getPage(post);
-            dllink = br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://[^\"]+/dl\\d*/[^\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("id=\"linklist1\"[^>]*>(https://[^<>\"]+)").getMatch(0);
+                dllink = br.getRegex("id=\"linklist1\"[^>]*>(https?://[^<>\"]+)").getMatch(0);
                 if (dllink == null) {
                     dllink = br.getRegex("\"(https?://[^\"]+/dl\\?download=[^\"]+)\"").getMatch(0);
                 }

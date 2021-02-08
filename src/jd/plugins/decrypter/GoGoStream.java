@@ -45,10 +45,12 @@ public class GoGoStream extends antiDDoSForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
         String fpName = br.getRegex("id=\"title\"\\s*>\\s*([^<]+)\\s*</span>").getMatch(0);
         if (StringUtils.isEmpty(fpName) && StringUtils.containsIgnoreCase(parameter, "/videos/")) {
             fpName = br.getRegex("\"og:title\"[^>]+content\\s*=\\s*\"(?:Watch\\s+)?([^\"]+)\\s+online\\s+at").getMatch(0);
+        }
+        if (!StringUtils.isEmpty(fpName)) {
+            fpName = Encoding.htmlDecode(fpName.trim().replaceAll("\\s+", " "));
         }
         ArrayList<String> links = new ArrayList<String>();
         String[] directLinks = br.getRegex("class=\"dowload\"\\s*>\\s*<a\\s+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
@@ -76,14 +78,19 @@ public class GoGoStream extends antiDDoSForDecrypt {
             DownloadLink dl = createDownloadlink(processPrefixSlashes(link));
             if (StringUtils.isNotEmpty(fpName)) {
                 if (directLinks != null && directLinks.length > 0) {
-                    dl.setFinalFileName(Encoding.htmlDecode(fpName.trim().replaceAll("\\s+", " ")) + ".mp4");
+                    final String specialTag = new Regex(link, "https?://[^/]*?cloud9xx\\.com.*?(\\d+p)\\.mp4").getMatch(0);
+                    if (specialTag != null) {
+                        dl.setFinalFileName(fpName + "_" + specialTag + ".mp4");
+                    } else {
+                        dl.setFinalFileName(fpName + ".mp4");
+                    }
                 }
             }
             decryptedLinks.add(dl);
         }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim().replaceAll("\\s+", " ")));
+            fp.setName(fpName);
             fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, true);
             fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
             fp.addLinks(decryptedLinks);

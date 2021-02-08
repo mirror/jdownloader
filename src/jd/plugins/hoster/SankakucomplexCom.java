@@ -39,7 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:chan|idol)\\.sankakucomplex\\.com/post/show/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -142,7 +142,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
             con = br2.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getLongContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 link.setProperty("directlink", dllink);
             } else {
