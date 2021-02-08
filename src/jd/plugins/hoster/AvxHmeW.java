@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -81,9 +82,16 @@ public class AvxHmeW extends PluginForHost {
         return 0;
     }
 
+    private Browser prepBRLogin(final Browser br) {
+        /* 2021-02-08 */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+        return br;
+    }
+
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
+                prepBRLogin(this.br);
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
