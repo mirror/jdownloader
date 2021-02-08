@@ -56,6 +56,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -76,7 +77,13 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         }
         if (StringUtils.isEmpty(title)) {
             /* Fallback */
-            title = new Regex(parameter, this.getSupportedLinks()).getMatch(0) + " - nhentai gallery";
+            title = galleryID + " - nhentai gallery";
+        } else {
+            /**
+             * 2021-02-08: Avoid merging of packages with the same name but different contents: Galleries can have the exact name but
+             * different content!
+             */
+            title = galleryID + "_" + title;
         }
         title = Encoding.htmlDecode(title);
         // images
@@ -97,6 +104,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(decryptedLinks);
+        // fp.setProperty(LinkCrawler.PACKAGE_ALLOW_MERGE, false);
         return decryptedLinks;
     }
 

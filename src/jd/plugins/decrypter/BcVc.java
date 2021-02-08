@@ -15,18 +15,26 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -146,7 +154,7 @@ public class BcVc extends antiDDoSForDecrypt {
                      * random ad websites --> Offline content ?!
                      */
                     if (br.getHost().equals("bcvc.live")) {
-                        decryptedLinks.add(this.createOfflinelink(br.getURL()));
+                        decryptedLinks.add(this.crawlBcbclive());
                         return decryptedLinks;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -189,6 +197,39 @@ public class BcVc extends antiDDoSForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink crawlBcbclive() throws IOException, PluginException {
+        /** 2021-02-08 */
+        final boolean pluginBroken = true;
+        if (pluginBroken) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String token1 = br.getRegex("let tkn = \\'([^<>\"\\']+)").getMatch(0);
+        final String xyz = br.getRegex("let xyz = '([a-f0-9]{32})';").getMatch(0);
+        if (token1 == null || xyz == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Form form1 = new Form();
+        form1.setAction("https://bcvc.live/ln.php?wds=" + xyz + "&time=937,258:347.171875,31.609375:1737");
+        form1.setMethod(MethodType.POST);
+        form1.put(Encoding.urlEncode("xdf[afg]"), "12_TODO");
+        form1.put(Encoding.urlEncode("xdf[bfg]"), "1234_TODO");
+        form1.put(Encoding.urlEncode("xdf[cfg]"), "1234_TODO");
+        form1.put(Encoding.urlEncode("xdf[jki]"), Encoding.urlEncode(token1));
+        form1.put(Encoding.urlEncode("xdf[dfg]"), "1234_TODO");
+        form1.put(Encoding.urlEncode("xdf[efg]"), "1234_TODO");
+        form1.put(Encoding.urlEncode("ojk"), "jfhg");
+        this.br.submitForm(form1);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Object errorO = entries.get("error");
+        if (errorO != null && !(errorO instanceof Boolean)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String url = (String) JavaScriptEngineFactory.walkJson(entries, "message/url");
+        final String b64 = UrlQuery.parse(url).get("cr");
+        final String finallink = Encoding.Base64Decode(b64);
+        return this.createDownloadlink(finallink);
     }
 
     /* NO OVERRIDE!! */
