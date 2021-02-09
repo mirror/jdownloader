@@ -70,7 +70,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -78,6 +77,7 @@ public class OneFichierCom extends PluginForHost {
     private final String         PROPERTY_FREELINK            = "freeLink";
     private final String         PROPERTY_HOTLINK             = "hotlink";
     private final String         PROPERTY_PREMLINK            = "premLink";
+    public static final String   PROPERTY_PASSWORD_PROTECTED  = "password_protected";
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
     public static final String   API_BASE                     = "https://api.1fichier.com/v1";
     private boolean              pwProtected                  = false;
@@ -1031,9 +1031,21 @@ public class OneFichierCom extends PluginForHost {
         setPremiumAPIHeaders(br, account);
         /* Do NOT trust pwProtected as this is obtained via website or old mass-linkcheck API!! */
         String dllink = null;
-        String passCode = link.getDownloadPassword();
-        boolean passwordFailure = true;
-        for (int i = 0; i <= 3; i++) {
+        synchronized (lastSessionPassword) {
+            String passCode = link.getDownloadPassword();
+            /* Check if we already know that this file is password protected ... */
+            /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
+            boolean usedLastPassword = false;
+            if (this.isPasswordProtected(link)) {
+                if (passCode == null) {
+                    if (lastSessionPassword.get() != null) {
+                        usedLastPassword = true;
+                        passCode = lastSessionPassword.get();
+                    } else {
+                        passCode = Plugin.getUserInput("Password?", link);
+                    }
+                }
+            }
             /**
              * TODO: Check if/when we need additional json POST parameters: inline, restrict_ip, no_ssl, folder_id, sharing_user
              */
@@ -1041,33 +1053,21 @@ public class OneFichierCom extends PluginForHost {
             performAPIRequest(API_BASE + "/download/get_token.cgi", String.format("{\"url\":\"%s\",\"pass\":\"%s\"}", link.getPluginPatternMatcher(), passCode));
             final String api_error = this.getAPIErrormessage(br);
             if (!StringUtils.isEmpty(api_error) && api_error.matches("Resource not allowed #\\d+")) {
-                /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
-                this.pwProtected = true;
-                switch (i) {
-                case 0:
-                    /* Try stored password if available */
-                    passCode = link.getDownloadPassword();
-                    break;
-                case 1:
-                    passCode = lastSessionPassword.get();
-                    break;
-                case 2:
-                    passCode = Plugin.getUserInput("Password?", link);
-                    break;
-                default:
-                    break;
+                if (usedLastPassword) {
+                    lastSessionPassword.set(null);
+                } else {
+                    link.setDownloadPassword(null);
                 }
-            } else {
-                passwordFailure = false;
-                if (passCode != null) {
-                    link.setDownloadPassword(passCode);
+                if (this.isPasswordProtected(link)) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
+                } else {
+                    this.setPasswordProtected(link, true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Password required!");
                 }
-                break;
+            } else if (passCode != null) {
+                lastSessionPassword.set(passCode);
+                link.setDownloadPassword(passCode);
             }
-        }
-        if (passwordFailure) {
-            link.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
         checkErrorsAPI(account);
@@ -1214,6 +1214,7 @@ public class OneFichierCom extends PluginForHost {
 
     /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
     private void handlePasswordWebsite(final DownloadLink link) throws Exception {
+        /** TODO: Review this old password handling! */
         synchronized (lastSessionPassword) {
             logger.info("This link seems to be password protected ...");
             Form pwForm = null;
@@ -1252,8 +1253,17 @@ public class OneFichierCom extends PluginForHost {
                     link.setDownloadPassword(null);
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            lastSessionPassword.set(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
         }
+    }
+
+    private boolean isPasswordProtected(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
+    }
+
+    private void setPasswordProtected(final DownloadLink link, final boolean passwordProtected) {
+        link.setProperty(PROPERTY_PASSWORD_PROTECTED, passwordProtected);
     }
 
     /* Returns postPage key + data based on the users' SSL preference. */
