@@ -17,7 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -28,6 +32,7 @@ import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
@@ -35,7 +40,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.OneFichierCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -107,10 +115,9 @@ public class OneFichierComFolder extends PluginForDecrypt {
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
         final Browser jsonBR = br.cloneBrowser();
-        jsonBR.getPage(parameter + "?e=1");
-        if (jsonBR.toString().equals("bad") || jsonBR.getHttpConnection().getResponseCode() == 404 || jsonBR.containsHTML("No htmlCode read")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return;
+        jsonBR.getPage(parameter + "?json=1");
+        if (jsonBR.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Access folder without API just to find foldername ... */
         br.getPage(parameter);
@@ -120,17 +127,24 @@ public class OneFichierComFolder extends PluginForDecrypt {
         if (fpName == null && password != null) {
             fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
         }
-        // passCode != null, post handling seems to respond with html instead of what's preferred below.
-        if (password == null && "text/plain; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
-            final String[][] linkInfo1 = jsonBR.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
-            for (String singleLinkInfo[] : linkInfo1) {
-                final DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
-                dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
-                dl.setVerifiedFileSize(Long.parseLong(singleLinkInfo[2]));
+        if (password == null && "application/json; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
+            final List<Object> ressourcelist = JSonStorage.restoreFromString(jsonBR.toString(), TypeRef.LIST);
+            for (final Object fileO : ressourcelist) {
+                final Map<String, Object> fileInfo = (Map<String, Object>) fileO;
+                final String filename = (String) fileInfo.get("filename");
+                final long filesize = ((Number) fileInfo.get("size")).longValue();
+                final String url = (String) fileInfo.get("link");
+                final int pwProtected = ((Number) fileInfo.get("password")).intValue();
+                final DownloadLink dl = createDownloadlink(url);
+                dl.setFinalFileName(filename);
+                dl.setVerifiedFileSize(filesize);
                 if (password != null) {
                     dl.setDownloadPassword(password);
                 }
                 dl.setAvailable(true);
+                if (pwProtected == 1) {
+                    dl.setProperty(OneFichierCom.PROPERTY_PASSWORD_PROTECTED, true);
+                }
                 decryptedLinks.add(dl);
             }
         } else {
@@ -164,20 +178,17 @@ public class OneFichierComFolder extends PluginForDecrypt {
         return linkInfo;
     }
 
-    private String passCode = null;
-
     private final String handlePassword(final CryptedLink param, final String parameter) throws Exception {
-        if (br.containsHTML("password")) {
-            if (passCode == null) {
-                passCode = param.getDecrypterPassword();
-            }
+        if (browserContainsFolderPasswordForm(this.br)) {
+            /* First try last crawler link password if available */
+            String passCode = param.getDecrypterPassword();
             final int repeat = 3;
             for (int i = 0; i <= repeat; i++) {
                 if (passCode == null) {
                     passCode = getUserInput(null, param);
                 }
-                br.postPage(parameter + "?e=1", "pass=" + Encoding.urlEncode(passCode));
-                if (br.containsHTML("password")) {
+                br.postPage(parameter + "?json=1", "pass=" + Encoding.urlEncode(passCode));
+                if (browserContainsFolderPasswordForm(this.br)) {
                     if (i + 1 >= repeat) {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
@@ -190,11 +201,16 @@ public class OneFichierComFolder extends PluginForDecrypt {
         return null;
     }
 
+    private boolean browserContainsFolderPasswordForm(final Browser br) {
+        final Form pwform = br.getFormbyKey("pass");
+        return pwform != null && this.canHandle(pwform.getAction());
+    }
+
     private void prepareBrowser(final Browser br) {
         if (br == null) {
             return;
         }
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.16) Gecko/20110323 Ubuntu/10.10 (maverick) Firefox/3.6.16");
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
         br.getHeaders().put("Pragma", null);
