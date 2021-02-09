@@ -72,40 +72,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             /* Crawl albums */
             return crawlPhotoAlbum(parameter);
         } else {
-            // if (parameter.matches(type_docviewer)) {
-            // /* TODO: Change that --> FILE-URLs --> Should work fine then with the fixed decrypter! */
-            // /* Documents in web view mode --> File-URLs! */
-            // /* First lets fix broken URLs by removing unneeded parameters ... */
-            // String parm = parameter;
-            // final String remove = new Regex(parm, "(\\&[a-z0-9]+=.+)").getMatch(0);
-            // if (remove != null) {
-            // parm = parm.replace(remove, "");
-            // }
-            // String hash = new Regex(parm, type_docviewer).getMatch(0);
-            // if (StringUtils.isEmpty(hash)) {
-            // hash = new Regex(parm, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-            // }
-            // if (StringUtils.isEmpty(hash)) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // hash_long_decoded = URLDecoder.decode(hash, "UTF-8");
-            // } else if (parameter.matches(type_yadi_sk_mail)) {
-            // hash_long_decoded = URLDecoder.decode(regexHashFromURL(parameter), "UTF-8");
-            // } else if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
-            // getPage(parameter);
-            // if (isOffline(this.br)) {
-            // final DownloadLink offline = this.createOfflinelink(parameter);
-            // decryptedLinks.add(offline);
-            // return decryptedLinks;
-            // }
-            // hash_long_decoded = PluginJSonUtils.getJsonValue(br, "hash");
-            // if (hash_long_decoded == null) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            // } else {
-            // hash_long_decoded = URLDecoder.decode(regexHashFromURL(parameter.replace("#", "?hash=")), "UTF-8");
-            // }
-            /** 2021-02-09: New */
+            /**
+             * 2021-02-09: New: Prefer website if we do now know whether we got a file or a folder! API will fail in case it is a single
+             * file && is currently quota-limited!
+             */
             if (StringUtils.isEmpty(this.getAdoptedCloudFolderStructure()) || StringUtils.isEmpty(getHashFromURL(parameter))) {
                 logger.info("Using website crawler because we cannot know whether we got a single file- or a folder");
                 return this.crawlFilesFoldersWebsite(param);
