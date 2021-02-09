@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,10 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hfiles.ro" }, urls = { "http://(?:www\\.)?(hfiles\\.ro/download/[^/]+/\\d+|hotfil\\.es/\\d+)" }) 
-public class HfilesRo extends PluginForDecrypt {
-
-    public HfilesRo(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotfil.es" }, urls = { "http://(?:www\\.)?hotfil\\.es/\\d+" })
+public class HotfilEs extends PluginForDecrypt {
+    public HotfilEs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,38 +38,38 @@ public class HfilesRo extends PluginForDecrypt {
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
+        final String fid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">A PHP Error was encountered")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-
+        } else if (fid == null) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         this.br.setFollowRedirects(false);
         String fpName = new Regex(parameter, "/download/([^/]+)/\\d+").getMatch(0);
-        final String[] links = br.getRegex("(/fisier/redirect/[^/]+/\\d+)").getColumn(0);
-        if (links == null || links.length == 0) {
+        final String[] hosts = br.getRegex("data-host=\"([^\"]+)\"").getColumn(0);
+        if (hosts.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
-            if (this.isAbort()) {
-                logger.info("Decrtyption aborted by user");
-                return decryptedLinks;
-            }
-            this.br.getPage(singleLink);
+        for (final String singleHost : hosts) {
+            this.br.getPage("/fisier/redirect/" + singleHost + "/" + fid);
             final String finallink = this.br.getRedirectLocation();
             if (finallink == null || new Regex(finallink, this.getSupportedLinks()).matches()) {
                 continue;
             }
             decryptedLinks.add(createDownloadlink(finallink));
+            if (this.isAbort()) {
+                logger.info("Decrtyption aborted by user");
+                return decryptedLinks;
+            }
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }
