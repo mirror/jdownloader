@@ -943,14 +943,15 @@ public class OneFichierCom extends PluginForHost {
         if (account == null || !AccountType.PREMIUM.equals(account.getType()) || link == null) {
             return super.getStartIntervall(link, account);
         } else {
-            final long knownDownloadSize = link.getKnownDownloadSize();
-            if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
-                final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
-                // avoid IP block because of too many downloads in short time
-                return Math.max(0, wait * 1000);
-            } else {
-                return super.getStartIntervall(link, account);
-            }
+            return super.getStartIntervall(link, account);
+            // final long knownDownloadSize = link.getKnownDownloadSize();
+            // if (knownDownloadSize > 0 && knownDownloadSize <= 50 * 1024 * 1024) {
+            // final int wait = PluginJsonConfig.get(OneFichierConfigInterface.class).getSmallFilesWaitInterval();
+            // // avoid IP block because of too many downloads in short time
+            // return Math.max(0, wait * 1000);
+            // } else {
+            // return super.getStartIntervall(link, account);
+            // }
         }
     }
 
@@ -1031,7 +1032,7 @@ public class OneFichierCom extends PluginForHost {
         setPremiumAPIHeaders(br, account);
         /* Do NOT trust pwProtected as this is obtained via website or old mass-linkcheck API!! */
         String dllink = null;
-        String passCode = null;
+        String passCode = link.getDownloadPassword();
         boolean passwordFailure = true;
         for (int i = 0; i <= 3; i++) {
             /**

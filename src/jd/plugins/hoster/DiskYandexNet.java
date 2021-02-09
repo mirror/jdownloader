@@ -98,6 +98,8 @@ public class DiskYandexNet extends PluginForHost {
     /* Properties */
     public static final String    PROPERTY_HASH                      = "hash_main";
     public static final String    PROPERTY_INTERNAL_FUID             = "INTERNAL_FUID";
+    public static final String    PROPERTY_IS_PART_OF_A_FOLDER       = "is_part_of_a_folder";
+    public static final String    PROPERTY_PREMIUMONLY               = "premiumonly";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!! This should work fine when enabled: use_api_file_free_download
@@ -229,7 +231,7 @@ public class DiskYandexNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 this.handleErrorsAPI(link, null);
-                link.setProperty("premiumonly", false);
+                link.setProperty(PROPERTY_PREMIUMONLY, false);
                 return parseInformationAPIAvailablecheckFiles(this, link, (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
             } else {
                 getPage(getMainLink(link));
@@ -261,10 +263,10 @@ public class DiskYandexNet extends PluginForHost {
                 }
                 /* Important for account download handling */
                 if (br.containsHTML(ACCOUNTONLYTEXT)) {
-                    link.setProperty("premiumonly", true);
+                    link.setProperty(PROPERTY_PREMIUMONLY, true);
                 } else {
-                    // link.setProperty("premiumonly", false);
-                    logger.info("Debug info: premiumonly: " + link.getBooleanProperty("premiumonly", false));
+                    // link.setProperty(PROPERTY_PREMIUMONLY, false);
+                    logger.info("Debug info: premiumonly: " + link.getBooleanProperty(PROPERTY_PREMIUMONLY, false));
                 }
             }
             if (final_filename == null && filename != null) {
@@ -298,7 +300,27 @@ public class DiskYandexNet extends PluginForHost {
             dl.setSha256Hash(sha256);
         }
         dl.setProperty("path", path);
-        dl.setProperty("hash_main", hash);
+        dl.setProperty(PROPERTY_HASH, hash);
+        dl.setFinalFileName(filename);
+        dl.setDownloadSize(filesize);
+        return AvailableStatus.TRUE;
+    }
+
+    public static AvailableStatus parseInformationWebsiteAvailablecheckFiles(final Plugin plugin, final DownloadLink dl, final Map<String, Object> entries) throws Exception {
+        final Map<String, Object> meta = (Map<String, Object>) entries.get("meta");
+        final long filesize = JavaScriptEngineFactory.toLong(meta.get("size"), -1);
+        final String filename = (String) entries.get("name");
+        final String path = (String) entries.get("path");
+        if (StringUtils.isEmpty(filename) || filesize == -1) {
+            /* Whatever - our link is probably offline! */
+            return AvailableStatus.FALSE;
+        }
+        if (!StringUtils.isEmpty(path)) {
+            dl.setProperty("path", path);
+        } else {
+            /* A.g. loose file, not part of a folder */
+            dl.setProperty("path", "");
+        }
         dl.setFinalFileName(filename);
         dl.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
@@ -421,15 +443,6 @@ public class DiskYandexNet extends PluginForHost {
                          */
                         /* Free API download. */
                         getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getRawHash(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
-                        if (this.br.containsHTML("DiskNotFoundError")) {
-                            /* Inside key 'error' */
-                            /*
-                             * Usually this would mean that the file is offline but we checked it before so it has probably simply reached
-                             * the traffic limit.
-                             */
-                            link.setProperty("premiumonly", true);
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                        }
                         this.handleErrorsAPI(link, account);
                         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                         dllink = (String) entries.get("href");
@@ -916,11 +929,12 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private boolean downloadableViaAccountOnly(final DownloadLink dl) {
-        return dl.getBooleanProperty("premiumonly", false);
+        return dl.getBooleanProperty(PROPERTY_PREMIUMONLY, false);
     }
 
     private boolean isPartOfAFolder(final DownloadLink dl) {
-        return dl.getBooleanProperty("is_part_of_a_folder", false);
+        /** TODO: Remove this property and simply check if the path contains more than just our main_hash. */
+        return dl.getBooleanProperty(PROPERTY_IS_PART_OF_A_FOLDER, false);
     }
 
     @SuppressWarnings("deprecation")

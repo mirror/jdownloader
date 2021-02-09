@@ -157,8 +157,12 @@ public class SharingWtf extends YetiShareCore {
             /* Special: Find downloadurl first, then continue_url */
             continue_link = this.getDllink(br);
             if (continue_link != null) {
-                /* 2020-06-04: Important! */
-                continue_link = continue_link.replace("/jdb", "/");
+                /* 2021-02-09: Cat & mouse */
+                continue_link = continue_link.replace("/jd2", "/");
+                final String try2 = br.getRegex("window\\.open\\(\\$\\(this\\)\\.data\\(\"url\"\\)\\.replace\\('([^<>\"\\']+)','/'\\)\\)").getMatch(0);
+                if (try2 != null) {
+                    continue_link = continue_link.replace(try2, "/");
+                }
             }
         }
         if (continue_link == null) {

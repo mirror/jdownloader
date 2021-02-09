@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,8 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierComFolder extends PluginForDecrypt {
@@ -78,8 +78,9 @@ public class OneFichierComFolder extends PluginForDecrypt {
             }
         }
         /*
-         * 2019-04-05: Folder support via API does not yet work (serverside) as it requires us to have the internal folder-IDs which we do
-         * not have!
+         * 2019-04-05: Folder support via API does not work (serverside) as it requires us to have the internal folder-IDs which we do not
+         * have! Basically their folder API call is only for internal folders of the current user -> Not useful for us! See also:
+         * https://1fichier.com/api.html
          */
         if (jd.plugins.hoster.OneFichierCom.canUseAPI(account) && false) {
             /* Use premium API */
@@ -102,6 +103,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
 
     private void crawlWebsite(final CryptedLink param) throws Exception {
         final String parameter = Request.getLocation("/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0), br.createGetRequest(param.toString()));
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
         final Browser jsonBR = br.cloneBrowser();
