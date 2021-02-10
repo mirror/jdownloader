@@ -72,29 +72,30 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
-    private final String         PROPERTY_FREELINK            = "freeLink";
-    private final String         PROPERTY_HOTLINK             = "hotlink";
-    private final String         PROPERTY_PREMLINK            = "premLink";
-    public static final String   PROPERTY_PASSWORD_PROTECTED  = "password_protected";
-    public static final String   PROPERTY_PRIVATELINK         = "privatelink";
+    private final String         PROPERTY_FREELINK                 = "freeLink";
+    private final String         PROPERTY_HOTLINK                  = "hotlink";
+    private final String         PROPERTY_PREMLINK                 = "premLink";
+    public static final String   PROPERTY_PASSWORD_PROTECTED       = "password_protected";
+    /** URLs can be restricted for various reason: https://1fichier.com/console/acl.pl */
+    public static final String   PROPERTY_ACL_ACCESS_CONTROL_LIMIT = "acl_access_control_limit";
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
-    public static final String   API_BASE                     = "https://api.1fichier.com/v1";
+    public static final String   API_BASE                          = "https://api.1fichier.com/v1";
     /*
      * Max total connections for premium = 30 (RE: admin, updated 07.03.2019) --> See also their FAQ: https://1fichier.com/hlp.html#dllent
      */
-    private static final boolean resume_account_premium       = true;
-    private static final int     maxchunks_account_premium    = -3;
-    private static final int     maxdownloads_account_premium = 10;
+    private static final boolean resume_account_premium            = true;
+    private static final int     maxchunks_account_premium         = -3;
+    private static final int     maxdownloads_account_premium      = 10;
     /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
-    private static final int     maxchunks_free               = 1;
-    private static final boolean resume_free                  = true;
-    private static final int     maxdownloads_free            = 1;
+    private static final int     maxchunks_free                    = 1;
+    private static final boolean resume_free                       = true;
+    private static final int     maxdownloads_free                 = 1;
     /*
      * Settings for hotlinks - basically such links are created by premium users so free users can download them without limits (same limits
      * as premium users).
      */
-    private static final boolean resume_free_hotlink          = true;
-    private static final int     maxchunks_free_hotlink       = -3;
+    private static final boolean resume_free_hotlink               = true;
+    private static final int     maxchunks_free_hotlink            = -3;
 
     @Override
     public String[] siteSupportedNames() {
@@ -230,7 +231,7 @@ public class OneFichierCom extends PluginForHost {
                             dllink.setName(addedlink_id);
                         }
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
-                        dllink.setProperty(PROPERTY_PRIVATELINK, true);
+                        dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
                         dllink.setAvailable(true);
                         if (!dllink.isNameSet()) {
                             dllink.setName(addedlink_id);
@@ -241,7 +242,7 @@ public class OneFichierCom extends PluginForHost {
                             logger.warning("Linkchecker for 1fichier.com is broken!");
                             return false;
                         }
-                        dllink.setProperty(PROPERTY_PRIVATELINK, false);
+                        dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, false);
                         dllink.setAvailable(true);
                         /* Trust API information. */
                         dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0]));
@@ -1028,6 +1029,10 @@ public class OneFichierCom extends PluginForHost {
             /** Description of optional parameters: cdn=0/1 - use download-credits, */
             performAPIRequest(API_BASE + "/download/get_token.cgi", String.format("{\"url\":\"%s\",\"pass\":\"%s\"}", link.getPluginPatternMatcher(), passCode));
             final String api_error = this.getAPIErrormessage(br);
+            /**
+             * 2021-02-10: This will ask for a password for all kinds of access limited files. They will have to update their API to fix
+             * this. Example self uploaded file, only downloadable from afghanistan: https://1fichier.com/?uczre58xge6pif2d9n6g
+             */
             if (!StringUtils.isEmpty(api_error) && api_error.matches("Resource not allowed #\\d+")) {
                 if (usedLastPassword) {
                     lastSessionPassword.set(null);
@@ -1043,6 +1048,9 @@ public class OneFichierCom extends PluginForHost {
             } else if (passCode != null) {
                 lastSessionPassword.set(passCode);
                 link.setDownloadPassword(passCode);
+            } else {
+                /* File is not password protected */
+                link.setProperty(PROPERTY_PASSWORD_PROTECTED, false);
             }
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
@@ -1225,8 +1233,8 @@ public class OneFichierCom extends PluginForHost {
         link.setProperty(PROPERTY_PASSWORD_PROTECTED, passwordProtected);
     }
 
-    private boolean isPrivateLink(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_PRIVATELINK, false);
+    private boolean isaccessControlLimited(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, false);
     }
 
     /* Returns postPage key + data based on the users' SSL preference. */
@@ -1251,7 +1259,7 @@ public class OneFichierCom extends PluginForHost {
     private void handleErrorsLastResortWebsite(final DownloadLink link, final Account account) throws PluginException {
         if (account != null && !this.isLoggedinWebsite(this.br)) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
-        } else if (this.isPrivateLink(link)) {
+        } else if (this.isaccessControlLimited(link)) {
             // throw new PluginException(LinkStatus.ERROR_FATAL, "This link is private. You're not authorized to download it!");
             /*
              * 2021-02-10: Not sure - seems like thi could be multiple reasons: registered only, premium only, IP/country only or private

@@ -135,7 +135,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 final long filesize = ((Number) fileInfo.get("size")).longValue();
                 final String url = (String) fileInfo.get("link");
                 final int pwProtected = ((Number) fileInfo.get("password")).intValue();
-                final int privateLink = ((Number) fileInfo.get("acl")).intValue();
+                final int accessControlLimitedLink = ((Number) fileInfo.get("acl")).intValue();
                 final DownloadLink dl = createDownloadlink(url);
                 dl.setFinalFileName(filename);
                 dl.setVerifiedFileSize(filesize);
@@ -146,8 +146,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 if (pwProtected == 1) {
                     dl.setProperty(OneFichierCom.PROPERTY_PASSWORD_PROTECTED, true);
                 }
-                if (privateLink == 1) {
-                    dl.setProperty(OneFichierCom.PROPERTY_PRIVATELINK, true);
+                if (accessControlLimitedLink == 1) {
+                    dl.setProperty(OneFichierCom.PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
                 }
                 decryptedLinks.add(dl);
             }

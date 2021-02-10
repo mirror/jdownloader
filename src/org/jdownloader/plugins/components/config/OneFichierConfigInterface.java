@@ -50,9 +50,8 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
     void setPreferSSLEnabled(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(30)
-    @TakeValueFromSubconfig("USE_PREMIUM_API")
     /**
      * Disabled by default because the API has very tight "account check" rate limits which will result in it failing to obtain account
      * information and/or even temporary account bans.
