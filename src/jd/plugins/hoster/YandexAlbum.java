@@ -73,7 +73,7 @@ public class YandexAlbum extends PluginForHost {
             final_filename = link.getFinalFileName();
         }
         br.getPage(link.getPluginPatternMatcher());
-        if (jd.plugins.decrypter.DiskYandexNetFolder.isOffline(this.br)) {
+        if (jd.plugins.decrypter.DiskYandexNetFolder.isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (StringUtils.isEmpty(getRawHash(link))) {

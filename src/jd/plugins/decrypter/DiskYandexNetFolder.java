@@ -59,14 +59,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
     private final String        type_yadi_sk_album = "https?://(www\\.)?yadi\\.sk/a/[A-Za-z0-9\\-_]+";
     private final String        DOWNLOAD_ZIP       = "DOWNLOAD_ZIP_2";
-    private static final String OFFLINE_TEXT       = "class=\"not\\-found\\-public__caption\"|class=\"error__icon error__icon_blocked\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<";
     private static final String JSON_TYPE_DIR      = "dir";
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        jd.plugins.hoster.DiskYandexNet.prepbrAPI(this.br);
+        jd.plugins.hoster.DiskYandexNet.prepBR(this.br);
         final String parameter = param.toString();
         if (parameter.matches(type_yadi_sk_album)) {
             /* Crawl albums */
@@ -128,7 +127,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         /* Access URL if it hasn't been accessed before */
         if (br.getRequest() == null) {
             br.getPage(addedLink);
-            if (isOffline(this.br)) {
+            if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
@@ -210,9 +209,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     final String url_content;
                     if (!StringUtils.isEmpty(path)) {
                         /* Path contains hash and path! */
-                        url_content = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(path);
+                        url_content = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(path);
                     } else {
-                        url_content = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash);
+                        url_content = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash);
                     }
                     jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hashMain);
                     dl.setProperty("mainlink", url_content);
@@ -285,7 +284,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             hashMain = getHashFromURL(url);
         } else if (url.matches(type_shortURLs_d) || url.matches(type_shortURLs_i)) {
             getPage(url);
-            if (isOffline(this.br)) {
+            if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             hashMain = PluginJSonUtils.getJsonValue(br, "hash");
@@ -339,7 +338,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             /* Small workaround: Hash contains remains of path -> Clean that */
             hashMain = hashMain.replace(":", "");
         }
-        final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hashMain);
+        final String addedLink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hashMain);
         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         short offset = 0;
@@ -374,7 +373,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 dl.setProperty("mainlink", addedLink);
                 dl.setLinkID(hashMain + internalPath);
                 /* Required by hoster plugin to get filepath (filename) */
-                dl.setProperty("plain_filename", PluginJSonUtils.getJsonValue(br, "name"));
+                dl.setProperty(DiskYandexNet.PROPERTY_CRAWLED_FILENAME, PluginJSonUtils.getJsonValue(br, "name"));
                 if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                 }
@@ -413,7 +412,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 if (type.equals(JSON_TYPE_DIR)) {
                     /* Subfolders go back into our decrypter! */
-                    final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
+                    final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
@@ -480,7 +479,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final ArrayList<String> dupeList = new ArrayList<String>();
         final String domain = "disk.yandex.com";
         getPage(addedLink);
-        if (isOffline(this.br)) {
+        if (isOfflineWebsite(this.br)) {
             decryptedLinks.add(this.createOfflinelink(addedLink));
             return decryptedLinks;
         }
@@ -598,8 +597,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return entries;
     }
 
-    public static boolean isOffline(final Browser br) {
-        return br.containsHTML(OFFLINE_TEXT) || br.getHttpConnection().getResponseCode() == 404;
+    public static boolean isOfflineWebsite(final Browser br) {
+        return br.containsHTML("class=\"not\\-found\\-public__caption\"|class=\"error__icon error__icon_blocked\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500;
     }
 
     private String getHashFromURL(final String url) throws UnsupportedEncodingException {
