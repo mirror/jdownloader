@@ -83,7 +83,6 @@ public class DiskYandexNet extends PluginForHost {
     /* Domains & other login stuff */
     private final String[]        cookie_domains                     = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
     public static final String[]  sk_domains                         = new String[] { "disk.yandex.com", "disk.yandex.ru", "disk.yandex.com.tr", "disk.yandex.ua", "disk.yandex.az", "disk.yandex.com.am", "disk.yandex.com.ge", "disk.yandex.co.il", "disk.yandex.kg", "disk.yandex.lt", "disk.yandex.lv", "disk.yandex.md", "disk.yandex.tj", "disk.yandex.tm", "disk.yandex.uz", "disk.yandex.fr", "disk.yandex.ee", "disk.yandex.kz", "disk.yandex.by" };
-    private static Object         LOCK                               = new Object();
     /* Other constants */
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String                ACCOUNT_SK                         = null;
@@ -465,7 +464,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 prepbrWebsite(this.br);
@@ -492,9 +491,11 @@ public class DiskYandexNet extends PluginForHost {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
+                    } else {
+                        /* Failed - we have to perform a full login! */
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
-                    /* Failed - we have to perform a full login! */
-                    br.clearCookies(br.getHost());
                 }
                 logger.info("Performing full login");
                 boolean isLoggedIN = false;
@@ -546,11 +547,7 @@ public class DiskYandexNet extends PluginForHost {
                     }
                 }
                 if (!isLoggedIN) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
