@@ -101,7 +101,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
     }
 
     private void crawlAPI(final CryptedLink param, final Account account) throws Exception {
-        final String folderID = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        // final String folderID = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
         jd.plugins.hoster.OneFichierCom.setPremiumAPIHeaders(this.br, account);
         PostRequest downloadReq = br.createJSonPostRequest(jd.plugins.hoster.OneFichierCom.API_BASE + "/file/ls.cgi", null);
         downloadReq.setContentType("application/json");
@@ -135,6 +135,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 final long filesize = ((Number) fileInfo.get("size")).longValue();
                 final String url = (String) fileInfo.get("link");
                 final int pwProtected = ((Number) fileInfo.get("password")).intValue();
+                final int privateLink = ((Number) fileInfo.get("acl")).intValue();
                 final DownloadLink dl = createDownloadlink(url);
                 dl.setFinalFileName(filename);
                 dl.setVerifiedFileSize(filesize);
@@ -144,6 +145,9 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 dl.setAvailable(true);
                 if (pwProtected == 1) {
                     dl.setProperty(OneFichierCom.PROPERTY_PASSWORD_PROTECTED, true);
+                }
+                if (privateLink == 1) {
+                    dl.setProperty(OneFichierCom.PROPERTY_PRIVATELINK, true);
                 }
                 decryptedLinks.add(dl);
             }
