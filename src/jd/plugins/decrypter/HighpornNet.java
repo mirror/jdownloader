@@ -62,7 +62,18 @@ public class HighpornNet extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String fpName = getTitle(br, parameter);
+        final String fpName = getTitle(this.br, parameter);
+        /* 2021-02-10: thatav.net */
+        final String specialVideoURL = br.getRegex("\"file\":\\s*\"(https?://[^<>\"]+\\.mp4[^<>\"]+)").getMatch(0);
+        if (specialVideoURL != null) {
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + specialVideoURL);
+            dl.setAvailable(true);
+            if (fpName != null) {
+                dl.setFinalFileName(fpName + ".mp4");
+            }
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         boolean singleVideo = false;
         final String videoLink = br.getRegex("data-src\\s*=\\s*\"(https?[^<>\"]+)\"").getMatch(0); // If single link, no videoID
         String[] videoIDs = br.getRegex("data-src\\s*=\\s*\"([^\"]+)\"").getColumn(0);

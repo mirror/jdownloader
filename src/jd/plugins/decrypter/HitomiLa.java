@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,9 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -105,7 +105,9 @@ public class HitomiLa extends antiDDoSForDecrypt {
             // retval = subdomain_from_galleryid(g) + retval;
             final String js = br.getRegex("src\\s*=\\s*\"([^\"]+" + gallery_id + "\\.js)\"").getMatch(0);
             if (js == null) {
-                return null;
+                logger.info("Seems like this is no downloadable/supported content");
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
             }
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
