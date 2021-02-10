@@ -226,11 +226,15 @@ public class OneFichierCom extends PluginForHost {
                         dllink.setAvailable(false);
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;(NOT FOUND|BAD LINK)")) {
                         dllink.setAvailable(false);
-                        dllink.setName(addedlink_id);
+                        if (!dllink.isNameSet()) {
+                            dllink.setName(addedlink_id);
+                        }
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
                         dllink.setProperty(PROPERTY_PRIVATELINK, true);
                         dllink.setAvailable(true);
-                        dllink.setName(addedlink_id);
+                        if (!dllink.isNameSet()) {
+                            dllink.setName(addedlink_id);
+                        }
                     } else {
                         final String[] linkInfo = br.getRegex(addedlink_id + "[^;]*;([^;]+);(\\d+)").getRow(0);
                         if (linkInfo.length != 2) {
@@ -493,7 +497,7 @@ public class OneFichierCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void errorHandlingWebsite(final DownloadLink link, final Account account, final Browser ibr) throws Exception {
+    private static void errorHandlingWebsite(final DownloadLink link, final Account account, final Browser ibr) throws Exception {
         long responsecode = 200;
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
@@ -527,11 +531,13 @@ public class OneFichierCom extends PluginForHost {
             }
         } else if (ibr.containsHTML(">\\s*Access to this file is protected")) {
             /* Access restricted by IP / only regbistered users / only premium users / only owner */
-            if (br.containsHTML(">The owner of this file has reserved access to the subscribers of our services")) {
+            if (ibr.containsHTML(">The owner of this file has reserved access to the subscribers of our services")) {
                 throw new AccountRequiredException();
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Access to this file has been restricted");
             }
+        } else if (ibr.getURL().contains("/?c=DB")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
         } else if (responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
@@ -541,7 +547,7 @@ public class OneFichierCom extends PluginForHost {
         }
     }
 
-    private void ipBlockedErrorHandling(final Browser br) throws PluginException {
+    private static void ipBlockedErrorHandling(final Browser br) throws PluginException {
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
         if (waittime == null) {
             waittime = br.getRegex(">You must wait (\\d+) minutes").getMatch(0);
@@ -964,37 +970,19 @@ public class OneFichierCom extends PluginForHost {
         if (preferSSL && dllink.startsWith("http://")) {
             dllink = dllink.replace("http://", "https://");
         }
-        for (int i = 0; i != 2; i++) {
-            /** 2019-04-04: TODO: Try to remove this overcomplicated handling! */
-            if (dl == null || i > 0) {
-                try {
-                    logger.info("Connecting to dllink: " + dllink);
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
-                } catch (final Exception e) {
-                    logger.info("Download failed because: " + e.getMessage());
-                    throw e;
-                }
-                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    logger.warning("The final dllink seems not to be a file!");
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
-                    if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
-                        if (i + 1 == 2) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-                        }
-                        continue;
-                    }
-                    errorHandlingWebsite(link, account, br);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
-                }
+        br.setFollowRedirects(true);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            link.setProperty(PROPERTY_PREMLINK, dllink);
-            dl.startDownload();
-            return;
+            errorHandlingWebsite(link, account, br);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
+        dl.startDownload();
     }
 
     private String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
@@ -1060,6 +1048,10 @@ public class OneFichierCom extends PluginForHost {
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
         checkErrorsAPI(account);
         dllink = PluginJSonUtils.getJson(br, "url");
+        if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+        }
         return dllink;
     }
 
