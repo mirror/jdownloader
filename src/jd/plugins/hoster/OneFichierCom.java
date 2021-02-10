@@ -146,35 +146,36 @@ public class OneFichierCom extends PluginForHost {
          * 2019-04-24: Do NOT change domains here! Uploaders can decide which domain is the only valid domain for their files e.g.
          * "alterupload.com". Using their main domain (1fichier.com) will result in OFFLINE URLs!
          */
-        final String linkid = getLinkID(link);
-        final String current_domain = Browser.getHost(link.getPluginPatternMatcher());
-        if (linkid != null) {
+        final String fid = getFID(link);
+        if (fid != null) {
             /* Use new/current linktype and keep original domain of inside added URL! */
-            link.setPluginPatternMatcher("https://" + current_domain + "/?" + linkid);
+            final String current_domain = Browser.getHost(link.getPluginPatternMatcher());
+            link.setPluginPatternMatcher("https://" + current_domain + "/?" + fid);
         }
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getLinkidFromURL(link.getPluginPatternMatcher());
+        final String linkid = getFID(link);
         if (linkid != null) {
-            return linkid;
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
     }
 
-    public static String getLinkidFromURL(final String url) {
-        if (url == null) {
+    /** Returns the unique file/link-ID of given downloadLink. */
+    private String getFID(final DownloadLink link) {
+        if (link.getPluginPatternMatcher() == null) {
             return null;
         }
         final String linkid;
-        if (url.matches("(?i)https?://[a-z0-9]{5,20}\\.")) {
+        if (link.getPluginPatternMatcher().matches("(?i)https?://[a-z0-9]{5,20}\\.")) {
             /* Old linktype */
-            linkid = new Regex(url, "(?i)https?://([a-z0-9]{5,20})\\..+").getMatch(0);
+            linkid = new Regex(link.getPluginPatternMatcher(), "(?i)https?://([a-z0-9]{5,20})\\..+").getMatch(0);
         } else {
             /* New linktype */
-            linkid = new Regex(url, "([a-z0-9]+)$").getMatch(0);
+            linkid = new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
         }
         return linkid;
     }
@@ -277,7 +278,7 @@ public class OneFichierCom extends PluginForHost {
     // */
     // pwProtected = true;
     // link.setProperty("privatelink", true);
-    // // link.setName(this.getLinkID(link));
+    // // link.setName(this.getFID(link));
     // if (isDownload) {
     // throwErrorPrivateLink();
     // }
@@ -292,7 +293,7 @@ public class OneFichierCom extends PluginForHost {
     // final String description = PluginJSonUtils.getJson(br, "description");
     // String filename = PluginJSonUtils.getJson(br, "filename");
     // if (StringUtils.isEmpty(filename)) {
-    // filename = this.getLinkID(link);
+    // filename = this.getFID(link);
     // }
     // String filesize = PluginJSonUtils.getJson(br, "size");
     // link.setName(filename);
@@ -530,12 +531,12 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP blocked for security reasons", 60 * 60 * 1000l);
             }
-        } else if (ibr.containsHTML(">\\s*Access to this file is protected")) {
-            /* Access restricted by IP / only regbistered users / only premium users / only owner */
+        } else if (ibr.containsHTML(">\\s*Access to this file is protected|>\\s*This file is protected")) {
+            /* Access restricted by IP / only registered users / only premium users / only owner */
             if (ibr.containsHTML(">The owner of this file has reserved access to the subscribers of our services")) {
                 throw new AccountRequiredException();
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Access to this file has been restricted");
+                errorAccessControlLimit(link);
             }
         } else if (ibr.getURL().contains("/?c=DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
@@ -546,6 +547,19 @@ public class OneFichierCom extends PluginForHost {
         } else {
             ipBlockedErrorHandling(ibr);
         }
+    }
+
+    /**
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
+     *
+     * @throws PluginException
+     */
+    private static void errorAccessControlLimit(final DownloadLink link) throws PluginException {
+        if (link != null) {
+            link.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Access to this file has been restricted");
     }
 
     private static void ipBlockedErrorHandling(final Browser br) throws PluginException {
@@ -699,7 +713,7 @@ public class OneFichierCom extends PluginForHost {
             ai.setUnlimitedTraffic();
             return ai;
         }
-        checkErrorsAPI(account);
+        handleErrorsAPI(account);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String mail = (String) entries.get("email");
         if (!StringUtils.isEmpty(mail)) {
@@ -756,7 +770,7 @@ public class OneFichierCom extends PluginForHost {
      *
      * @throws PluginException
      */
-    private void checkErrorsAPI(final Account account) throws PluginException {
+    private void handleErrorsAPI(final Account account) throws PluginException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object statusO = entries.get("status");
         if (statusO != null && "KO".equalsIgnoreCase((String) statusO)) {
@@ -764,24 +778,23 @@ public class OneFichierCom extends PluginForHost {
             if (StringUtils.isEmpty(message)) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API error", 5 * 60 * 1000l);
-            }
-            if (message.matches("Flood detected: IP Locked #\\d+")) {
+            } else if (message.matches("(?i)Flood detected: IP Locked #\\d+")) {
                 /*
                  * 2019-07-18: This may even happen on the first login attempt. When this happens we cannot know whether the account is
                  * valid or not!
                  */
                 throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
-            } else if (message.matches("Flood detected: User Locked #\\d+")) {
+            } else if (message.matches("(?i)Flood detected: User Locked #\\d+")) {
                 throw new AccountUnavailableException("API flood detection has been triggered", 5 * 60 * 1000l);
-            } else if (message.matches("Not authenticated #\\d+")) {
+            } else if (message.matches("(?i)Not authenticated #\\d+")) {
                 /* Login required but not logged in (this should never happen) */
                 invalidApiKey(account);
-            } else if (message.matches("No such user #\\d+")) {
+            } else if (message.matches("(?i)No such user #\\d+")) {
                 invalidApiKey(account);
-            } else if (message.matches("Owner locked #\\d+")) {
+            } else if (message.matches("(?i)Owner locked #\\d+")) {
                 /* 2021-01-29 */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Accoubt banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (message.matches(".*Must be a customer.*")) {
+            } else if (message.matches("(?i).*Must be a customer.*")) {
                 /* 2020-06-09: E.g. {"message":"Must be a customer (Premium, Access) #200","status":"KO"} */
                 /* Free account (most likely expired premium) apikey entered by user --> API can only be used by premium users */
                 // showAPIFreeAccountLoginFailureInformation();
@@ -789,9 +802,14 @@ public class OneFichierCom extends PluginForHost {
                 ai.setExpired(true);
                 account.setAccountInfo(ai);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium expired: Only premium users can use the 1fichier API)", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (isAPIErrorPassword(message)) {
+                /* 2021-02-10: This will usually be handled outside of this errorhandling! */
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            } else if (message.matches("(?i).*Resource not allowed #\\d+")) {
+                errorAccessControlLimit(this.getDownloadLink());
             } else {
                 /* Unknown/unhandled error */
-                logger.warning("Handling unknown error: " + message);
+                logger.warning("Handling unknown API error: " + message);
                 if (this.getDownloadLink() == null) {
                     /* Account error */
                     throw new AccountUnavailableException(message, 5 * 60 * 1000l);
@@ -801,6 +819,10 @@ public class OneFichierCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private boolean isAPIErrorPassword(final String errorMsg) {
+        return errorMsg != null && errorMsg.matches("(?i).*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+");
     }
 
     private void invalidApiKey(final Account account) throws PluginException {
@@ -1033,7 +1055,7 @@ public class OneFichierCom extends PluginForHost {
              * 2021-02-10: This will ask for a password for all kinds of access limited files. They will have to update their API to fix
              * this. Example self uploaded file, only downloadable from afghanistan: https://1fichier.com/?uczre58xge6pif2d9n6g
              */
-            if (!StringUtils.isEmpty(api_error) && api_error.matches("Resource not allowed #\\d+")) {
+            if (!StringUtils.isEmpty(api_error) && api_error.matches(".*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+")) {
                 if (usedLastPassword) {
                     lastSessionPassword.set(null);
                 } else {
@@ -1054,7 +1076,7 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
-        checkErrorsAPI(account);
+        handleErrorsAPI(account);
         dllink = PluginJSonUtils.getJson(br, "url");
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
@@ -1269,19 +1291,6 @@ public class OneFichierCom extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    /** Returns the unique file/link-ID of given downloadLink. */
-    @SuppressWarnings("deprecation")
-    private String getFID(final DownloadLink dl) {
-        String test = new Regex(dl.getDownloadURL(), "/\\?([a-z0-9]+)$").getMatch(0);
-        if (test == null) {
-            test = new Regex(dl.getDownloadURL(), "://(?!www\\.)([a-z0-9]+)\\.").getMatch(0);
-            if (test != null && test.matches("www")) {
-                test = null;
-            }
-        }
-        return test;
     }
 
     private void prepareBrowserWebsite(final Browser br) {
