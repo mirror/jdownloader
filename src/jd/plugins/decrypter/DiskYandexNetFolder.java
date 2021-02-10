@@ -486,7 +486,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         String fpName = null;
-        final String clientID = jd.plugins.hoster.DiskYandexNet.albumGetIdClient();
+        final String clientID = jd.plugins.hoster.YandexAlbum.albumGetIdClient();
         final String hash_short = new Regex(addedLink, "/a/(.+)").getMatch(0);
         final String rawHash = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
         final String json_of_first_page = regExJSON(this.br);
@@ -525,7 +525,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 fp.setName(fpName);
             } else {
-                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + URLEncode.encodeURIComponent(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + URLEncode.encodeURIComponent(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.DiskYandexNet.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
+                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + URLEncode.encodeURIComponent(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + URLEncode.encodeURIComponent(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.YandexAlbum.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
                 entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 modelObjects = (List<Object>) entries.get("models");
             }
@@ -551,7 +551,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final String url = String.format("https://yadi.sk/a/%s/%s", URLEncode.encodeURIComponent(hash_short), URLEncode.encodeURIComponent(item_id));
                 final DownloadLink dl = this.createDownloadlink(url);
                 dl.setLinkID(hash_short + "/" + item_id);
-                jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
+                jd.plugins.hoster.YandexAlbum.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
                 jd.plugins.hoster.DiskYandexNet.setRawHash(dl, rawHash);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
