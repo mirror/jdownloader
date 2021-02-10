@@ -33,6 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -80,7 +82,7 @@ public class HighpornNet extends PluginForDecrypt {
         if (videoIDs == null || videoIDs.length == 0) {
             if (videoLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 videoIDs = new String[1];
                 videoIDs[0] = (Long.toString(System.currentTimeMillis())); // dummy videoID
