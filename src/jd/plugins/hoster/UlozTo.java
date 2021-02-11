@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -45,16 +49,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
     // private static final String CAPTCHA_TEXT = "CAPTCHA_TEXT";
     // private static final String CAPTCHA_ID = "CAPTCHA_ID";
-    private static final String  QUICKDOWNLOAD                = "https?://(?:www\\.)?uloz\\.to/quickDownload/\\d+";
+    private static final String  QUICKDOWNLOAD                = "https?://[^/]+/quickDownload/\\d+";
     private static final String  PREMIUMONLYUSERTEXT          = "Only downloadable for premium users!";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
     private static final boolean use_login_api                = false;
@@ -184,21 +184,19 @@ public class UlozTo extends PluginForHost {
             if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = null;
             passwordProtected = this.isPasswordProtected();
             if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
                 /* Seems like whatever url the user added, it is not a downloadurl. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
+            String filename = br.getRegex("<title>\\s*(.*?)\\s*(\\| on-line video\\s+)?(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
             if (this.passwordProtected) {
-                filename = getFilename();
-                if (filename == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (filename != null) {
+                    link.setName(Encoding.htmlDecode(filename.trim()));
                 }
-                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                 link.getLinkStatus().setStatusText("This link is password protected");
             } else {
-                filename = getFilename();
                 // For video links
                 String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
                 if (filesize == null) {
@@ -214,10 +212,10 @@ public class UlozTo extends PluginForHost {
                         }
                     }
                 }
-                if (filename == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (filename != null) {
+                    // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                    link.setName(Encoding.htmlDecode(filename.trim()));
                 }
-                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                 if (filesize != null) {
                     link.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
@@ -226,13 +224,13 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private void handleAgeRestrictedRedirects(final DownloadLink downloadLink) throws Exception {
+    private void handleAgeRestrictedRedirects(final DownloadLink link) throws Exception {
         /* For age restricted links */
         final String ageFormToken = br.getRegex("id=\"frm-askAgeForm-_token_\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (ageFormToken != null) {
             /* 2016-05-24: This might be outdated */
             br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
-            handleRedirect(downloadLink);
+            handleRedirect(link);
         } else if (br.containsHTML("value=\"pornDisclaimer-submit\"")) {
             /* 2016-05-24: This might be outdated */
             br.setFollowRedirects(true);
@@ -253,11 +251,6 @@ public class UlozTo extends PluginForHost {
             br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
             br.setFollowRedirects(false);
         }
-    }
-
-    private String getFilename() {
-        final String filename = br.getRegex("<title>\\s*(.*?)\\s*(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
-        return filename;
     }
 
     private String handleDownloadUrl(final DownloadLink link) throws Exception {
@@ -452,6 +445,27 @@ public class UlozTo extends PluginForHost {
                     if (br.containsHTML("\"errors\"\\s*:\\s*\\[\\s*\"(Error rewriting the text|Rewrite the text from the picture|Text je opsán špatně|An error ocurred while)") || br.containsHTML("\"new_captcha_data\"") || isError2020) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
+                    final String redirectToSecondCaptcha = PluginJSonUtils.getJson(br, "redirectDialogContent");
+                    if (redirectToSecondCaptcha != null) {
+                        /**
+                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br>
+                         * This can happen after downloading some files. The user is allowed to download more but has to solve two captchas
+                         * in a row to do so!
+                         */
+                        br.getPage(redirectToSecondCaptcha);
+                        final Form f = br.getFormbyActionRegex(".*limit-exceeded.*");
+                        if (f != null) {
+                            if (f.containsHTML("class=\"g-recaptcha\"")) {
+                                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                            }
+                            br.submitForm(f);
+                        } else {
+                            /* This should never happen */
+                            logger.warning("Limit reached and failed to find Form for 2nd captcha");
+                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                        }
+                    }
                     dllink = getFinalDownloadurl(br);
                     if (StringUtils.isEmpty(dllink)) {
                         break;
@@ -549,6 +563,11 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        dl.setFilenameFix(true);
+        // final String fileName = getFileNameFromDispositionHeader(dl.getConnection());
+        // if (fileName != null) {
+        // link.setFinalFileName(fileName);
+        // }
         link.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
             /* add a download slot */
