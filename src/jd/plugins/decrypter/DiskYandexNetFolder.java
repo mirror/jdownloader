@@ -431,7 +431,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     parseFilePropertiesAPI(dl, entries);
                     final String urlContent = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hashFull);
                     String urlUser;
-                    if ("document".equalsIgnoreCase(media_type) && !true) {
+                    if ("document".equalsIgnoreCase(media_type)) {
                         /*
                          * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
                          */
