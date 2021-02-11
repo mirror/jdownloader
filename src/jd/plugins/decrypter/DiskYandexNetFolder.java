@@ -58,7 +58,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private final String        type_shortURLs_i   = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
     private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
     private final String        type_yadi_sk_album = "https?://(www\\.)?yadi\\.sk/a/[A-Za-z0-9\\-_]+";
-    private final String        DOWNLOAD_ZIP       = "DOWNLOAD_ZIP_2";
     private static final String JSON_TYPE_DIR      = "dir";
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
