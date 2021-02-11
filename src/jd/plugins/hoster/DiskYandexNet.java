@@ -311,7 +311,6 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
-                    /** TODO: 2021-02-11: Check all "getPath" calls - set values from crawler could be wrong! */
                     getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                     this.handleErrorsAPI(link, account);
                     final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
