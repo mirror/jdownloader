@@ -120,6 +120,7 @@ public class OneFichierCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
+            /* URL format according to API page --> General: https://1fichier.com/api.html */
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?([a-z0-9]{5,20})");
         }
         return ret.toArray(new String[0]);

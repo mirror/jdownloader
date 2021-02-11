@@ -564,10 +564,6 @@ public class UlozTo extends PluginForHost {
             }
         }
         dl.setFilenameFix(true);
-        // final String fileName = getFileNameFromDispositionHeader(dl.getConnection());
-        // if (fileName != null) {
-        // link.setFinalFileName(fileName);
-        // }
         link.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
             /* add a download slot */
