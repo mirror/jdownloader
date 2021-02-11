@@ -22,7 +22,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -225,7 +226,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String api_records_parameters = getParametersRecordsAPI();
         /* First let's find the number of items to expect */
         api_GET(this.br, "/records/count" + "?" + api_records_parameters);
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         totalLinksNum += (int) JavaScriptEngineFactory.toLong(entries.get("count"), 0);
         if (totalLinksNum == 0) {
             /* Can e.g. happen for setting 'Only add new telecastIDs' or if user uses custom API parameters. */
@@ -251,15 +252,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
          */
         final String api_get_data = "?fields=" + jd.plugins.hoster.SaveTv.getRecordsFieldsValue() + "&" + api_records_parameters + "&offset=" + offset;
         /* API does not tell us the total number of telecastIDs so let's find that out first! */
-        ArrayList<Object> ressourcelist;
+        List<Object> ressourcelist;
         long latestRecordTimeTemp = 0;
         do {
-            if (this.isAbort()) {
-                throw new DecrypterException("Decrypt aborted!");
-            }
             logger.info("Request " + currentRequestCount + " of " + requestCountMax);
             api_GET(this.br, "/records" + api_get_data + offset);
-            ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             for (final Object telecastID_o : ressourcelist) {
                 final DownloadLink dl = addID_api(acc, telecastID_o);
                 latestRecordTimeTemp = dl.getLongProperty(jd.plugins.hoster.SaveTv.PROPERTY_originaldate, 0);
@@ -270,7 +268,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             logger.info("Found " + ressourcelist.size() + " telecastIDs so far");
             currentRequestCount++;
-        } while (ressourcelist.size() >= API_ENTRIES_PER_REQUEST);
+        } while (!this.isAbort() && ressourcelist.size() >= API_ENTRIES_PER_REQUEST);
         if (totalLinksNum > 0) {
             acc.setProperty(CRAWLER_PROPERTY_LASTCRAWL_LATEST_START_DATE, timestamp_last_record_started);
         }
@@ -325,8 +323,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 }
                 /* 2016-09-14: dStartdate and dEnddate parameters are important now! */
                 this.br.postPage("/STV/M/obj/archive/JSON/VideoArchiveApi.cfm", "iEntriesPerPage=" + SITE_ENTRIES_PER_REQUEST + "&iCurrentPage=" + request_num + "&dStartdate=" + date_start_formatted + "&dEnddate=" + date_end_formatted);
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                final ArrayList<Object> resource_data_list = (ArrayList) entries.get("ARRVIDEOARCHIVEENTRIES");
+                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                final List<Object> resource_data_list = (List) entries.get("ARRVIDEOARCHIVEENTRIES");
                 for (final Object singleid_information : resource_data_list) {
                     addID_site(acc, singleid_information);
                     added_entries++;
@@ -353,7 +351,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("unchecked")
     private DownloadLink addID_api(final Account acc, final Object json_o) throws ParseException, DecrypterException, PluginException {
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) json_o;
+        final Map<String, Object> entries = (Map<String, Object>) json_o;
         final String telecast_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("telecastId"), -1));
         if (telecast_id.equalsIgnoreCase("-1")) {
             throw new DecrypterException("Decryption aborted because of BAD telecastID");
@@ -374,8 +372,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void addID_site(final Account acc, final Object object_source) throws ParseException, DecrypterException, PluginException {
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) object_source;
-        entries = (LinkedHashMap<String, Object>) entries.get("STRTELECASTENTRY");
+        Map<String, Object> entries = (Map<String, Object>) object_source;
+        entries = (Map<String, Object>) entries.get("STRTELECASTENTRY");
         final String telecastURL = (String) entries.get("SDETAILSURL");
         final String telecast_id = new Regex(telecastURL, "(\\d+)$").getMatch(0);
         if (dupecheckList.contains(telecast_id)) {
@@ -386,7 +384,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
         }
         jd.plugins.hoster.SaveTv.parseFilenameInformation_site(dl, entries);
-        jd.plugins.hoster.SaveTv.parseQualityTagWebsite(dl, (ArrayList) entries.get("ARRALLOWDDOWNLOADFORMATS"));
+        jd.plugins.hoster.SaveTv.parseQualityTagWebsite(dl, (List) entries.get("ARRALLOWDDOWNLOADFORMATS"));
         if (telecastID_IS_AllowedWebsite(dl)) {
             dl.setName(jd.plugins.hoster.SaveTv.getFilename(this, dl));
             distribute(dl);

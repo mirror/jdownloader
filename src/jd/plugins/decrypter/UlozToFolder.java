@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,18 +70,31 @@ public class UlozToFolder extends PluginForDecrypt {
     /** Special (temporary/IP bound) URLs available when searching for files directly on the website of this file-hoster. */
     // private static final String TYPE_TRACKING = "https?://[^/]+//file-tracking/[a-f0-9]{96}";
 
-    /** 2021-02-11: This host GEO-blocks german IPs! */
+    /** 2021-02-11: This host is GEO-blocking german IPs! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        if (param.getCryptedUrl().matches("")) {
+            return crawlSingleURL(param);
+        } else {
+            return crawlFolder(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlSingleURL(final CryptedLink param) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl());
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
+        } else {
+            decryptedLinks.add(createDownloadlink(finallink));
         }
-        decryptedLinks.add(createDownloadlink(finallink));
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         return decryptedLinks;
     }
 }

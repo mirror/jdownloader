@@ -18,10 +18,9 @@ package jd.plugins.hoster;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -40,7 +39,6 @@ import org.jdownloader.translate._JDT;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -247,7 +245,7 @@ public class SaveTv extends PluginForHost {
         }
         Account account = null;
         final String account_username_via_which_url_is_downloadable = getDownloadableVia(link);
-        final ArrayList<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
+        final List<Account> all_stv_accounts = AccountController.getInstance().getValidAccounts(this.getHost());
         if (all_stv_accounts == null || all_stv_accounts.size() == 0) {
             link.getLinkStatus().setStatusText("Kann Links ohne güntigen und dazugehörigen Account nicht überprüfen");
             checkAccountNeededDialog();
@@ -303,7 +301,7 @@ public class SaveTv extends PluginForHost {
             /* Offline#1 - offline */
             return AvailableStatus.FALSE;
         }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final Object aRRALLOWDDOWNLOADFORMATS = entries.get("ARRALLOWDDOWNLOADFORMATS");
         final Object sTRRECORDORDER = entries.get("STRRECORDORDER");
         if (aRRALLOWDDOWNLOADFORMATS == null || sTRRECORDORDER == null) {
@@ -313,8 +311,8 @@ public class SaveTv extends PluginForHost {
              */
             return AvailableStatus.FALSE;
         }
-        final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
-        entries = (LinkedHashMap<String, Object>) entries.get("TELECASTDETAILS");
+        final List<Object> sourcelist = jsonGetVideoSourcelist(entries);
+        entries = (Map<String, Object>) entries.get("TELECASTDETAILS");
         parseFilenameInformation_site(link, entries);
         parseQualityTagWebsite(link, sourcelist);
         link.setAvailable(true);
@@ -326,8 +324,8 @@ public class SaveTv extends PluginForHost {
         /* Let's assume that all URLs the user adds are telecastIDs which have already been recorded. */
         /* TODO: Maybe add erorhandling based on recordStateID, see: https://api.save.tv:443/v3/recordstates */
         final String telecastID = getTelecastId(link);
-        ArrayList<Object> qualityList = null;
-        LinkedHashMap<String, Object> entries = null;
+        List<Object> qualityList = null;
+        Map<String, Object> entries = null;
         boolean existsRecord = false;
         if (isTypeTelecastIDOverview(link)) {
             /* telecast info --> If available, find record info */
@@ -335,13 +333,13 @@ public class SaveTv extends PluginForHost {
             if (isOfflineAPI(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             existsRecord = ((Boolean) entries.get("existsRecord")).booleanValue();
             if (existsRecord) {
                 /* Item downloadable --> Find quality list */
                 logger.info("Assumed not-yet-recorded telecastID is recorded and downloadable");
                 callAPIRecordsSingle(telecastID);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
                 /* Set current correct downloadurl so that on next linkcheck, we can request the record information right away. */
                 link.setUrlDownload(buildArchiveDownloadURL(link));
             }
@@ -355,7 +353,7 @@ public class SaveTv extends PluginForHost {
                  * Only parse json if we know that the telecastID is not offline because else we might get an Exception as we get a Map
                  * instead of the expected LinkedHashMap!
                  */
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             } else {
                 /* Item not downloadable --> At least try to get general information about this ID */
                 logger.info("Failed to find record --> Checking if maybe it hasn't been recorded yet or is too old (offline)");
@@ -363,7 +361,7 @@ public class SaveTv extends PluginForHost {
                 if (isOfflineAPI(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             }
         }
         if (existsRecord) {
@@ -764,7 +762,7 @@ public class SaveTv extends PluginForHost {
      * Get- and set the information, we later need for the custom filenames. <br />
      * Their json is crazy regarding data types thus we have a lot of type conversions here ...
      */
-    public static void parseFilenameInformation_site(final DownloadLink dl, final LinkedHashMap<String, Object> sourcemap) throws PluginException {
+    public static void parseFilenameInformation_site(final DownloadLink dl, final Map<String, Object> sourcemap) throws PluginException {
         /*
          * Caution with data types - if e.g. a movie is named "1987" they will actually use a double- or long value - this is totally crazy
          * as everything can happen here. Imagine a movie is named "true" ...
@@ -845,7 +843,7 @@ public class SaveTv extends PluginForHost {
      *            : For downloadable telecastIDs we're not yet at the telecastMap which is why we have to grab it (this is set to true)!
      */
     @SuppressWarnings("unchecked")
-    public static void parseFilenameInformation_api(final DownloadLink dl, LinkedHashMap<String, Object> entries, final boolean hasToGrabTelecastMap) throws PluginException {
+    public static void parseFilenameInformation_api(final DownloadLink dl, Map<String, Object> entries, final boolean hasToGrabTelecastMap) throws PluginException {
         if (entries == null) {
             return;
         }
@@ -853,7 +851,7 @@ public class SaveTv extends PluginForHost {
         final short isAdsFreeAvailable = jsonGetAdsFreeAvailableAPIDetailed(entries);
         final int runtime_seconds_adsfree = (int) JavaScriptEngineFactory.toLong(entries.get("adFreeLength"), -1);
         if (hasToGrabTelecastMap) {
-            entries = (LinkedHashMap<String, Object>) entries.get("telecast");
+            entries = (Map<String, Object>) entries.get("telecast");
             if (entries == null) {
                 return;
             }
@@ -978,89 +976,119 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Sets available quality as PROPERTY_quality and sets filesize. */
-    public static void parseQualityTagWebsite(final DownloadLink dl, final ArrayList<Object> sourcelist) {
+    public static void parseQualityTagWebsite(final DownloadLink dl, final List<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormatID(dl);
         /*
          * If we have no source, we can select HQ if the user chose HQ because it is always available. If the user selects any other quality
          * we need to know whether it exists or not and then set the data.
          */
-        final String final_quality;
+        final String finalQualityStr;
         if (sourcelist == null) {
             /* No qualities given from website/API */
-            final_quality = STATE_QUALITY_HQ;
+            finalQualityStr = STATE_QUALITY_HQ;
         } else {
             final int quality_best = jsonGetBestQualityIdWebsite(sourcelist);
             final boolean isHDAvailable = quality_best == getBestFormatID();
             switch (selected_video_format) {
             case SITE_FORMAT_HD:
                 if (isHDAvailable) {
-                    final_quality = STATE_QUALITY_HD;
+                    finalQualityStr = STATE_QUALITY_HD;
                 } else {
-                    final_quality = STATE_QUALITY_HQ;
+                    finalQualityStr = STATE_QUALITY_HQ;
                 }
                 break;
             case SITE_FORMAT_HQ:
-                final_quality = STATE_QUALITY_HQ;
+                finalQualityStr = STATE_QUALITY_HQ;
                 break;
             case SITE_FORMAT_LQ:
                 if (sourcelist.size() == 2) {
                     /* Mobile version available (should always be the case!) */
-                    final_quality = STATE_QUALITY_LQ;
+                    finalQualityStr = STATE_QUALITY_LQ;
                 } else {
-                    final_quality = STATE_QUALITY_HQ;
+                    finalQualityStr = STATE_QUALITY_HQ;
                 }
                 break;
             default:
-                final_quality = STATE_QUALITY_HQ;
+                finalQualityStr = STATE_QUALITY_HQ;
             }
         }
-        dl.setProperty(PROPERTY_quality, final_quality);
-        dl.setDownloadSize(calculateFilesize(dl, final_quality));
+        dl.setProperty(PROPERTY_quality, finalQualityStr);
+        dl.setDownloadSize(calculateFilesize(dl, finalQualityStr));
     }
 
     /**
      * Sets available quality as PROPERTY_quality and sets filesize. <br />
      * Has fallback for all possible errorcases!
      */
-    public static void parseQualityTagAPI(final DownloadLink dl, final ArrayList<Object> sourcelist) {
+    public static void parseQualityTagAPI(final DownloadLink dl, final List<Object> sourcelist) {
         final int selected_video_format = getConfiguredVideoFormatID(dl);
         /*
          * If we have no source, we can select HQ if the user chose HQ because it is always available. If the user selects any other quality
          * we need to know whether it exists or not and then set the data.
          */
-        final String final_quality;
+        final String finalQualityStr;
         if (sourcelist == null) {
             /* No qualities given from website/API */
-            final_quality = STATE_QUALITY_HQ;
+            finalQualityStr = STATE_QUALITY_HQ;
         } else {
             // final String quality_best = jsonGetBestQualityIdAPI(sourcelist);
             final boolean isHDAvailable = sourcelist.size() == 3;
             switch (selected_video_format) {
             case SITE_FORMAT_HD:
                 if (isHDAvailable) {
-                    final_quality = STATE_QUALITY_HD;
+                    finalQualityStr = STATE_QUALITY_HD;
                 } else {
-                    final_quality = STATE_QUALITY_HQ;
+                    finalQualityStr = STATE_QUALITY_HQ;
                 }
                 break;
             case SITE_FORMAT_HQ:
-                final_quality = STATE_QUALITY_HQ;
+                finalQualityStr = STATE_QUALITY_HQ;
                 break;
             case SITE_FORMAT_LQ:
                 if (sourcelist.size() == 2) {
                     /* Mobile version available (should always be the case!) */
-                    final_quality = STATE_QUALITY_LQ;
+                    finalQualityStr = STATE_QUALITY_LQ;
                 } else {
-                    final_quality = STATE_QUALITY_HQ;
+                    finalQualityStr = STATE_QUALITY_HQ;
                 }
                 break;
             default:
-                final_quality = STATE_QUALITY_HQ;
+                finalQualityStr = STATE_QUALITY_HQ;
             }
         }
-        dl.setProperty(PROPERTY_quality, final_quality);
-        /* Finally set downloadsize based on given format information. */
-        dl.setDownloadSize(calculateFilesize(dl, final_quality));
+        dl.setProperty(PROPERTY_quality, finalQualityStr);
+        /* Set downloadsize based on given format information. */
+        try {
+            final int finalFormat = convertQualityStringToInternalID(finalQualityStr);
+            final boolean user_prefers_adsfree = getPreferAdsFree(dl);
+            for (final Object formatO : sourcelist) {
+                final Map<String, Object> entries = (Map<String, Object>) formatO;
+                final Map<String, Object> recordFormat = (Map<String, Object>) entries.get("recordFormat");
+                final int thisFormatValue = ((Number) recordFormat.get("id")).intValue();
+                if (thisFormatValue != finalFormat) {
+                    continue;
+                }
+                /**
+                 * 2021-02-11: Both serverside given filesizes are very vague. For downloads with ads we use the serverside given
+                 * information. </br>
+                 * For ad-free downloads we'll calculate it on our own as that is more precise!
+                 */
+                final long filesizeAdFree = ((Number) entries.get("cutVideoSize")).longValue();
+                final long filesizeWithAds = ((Number) entries.get("uncutVideoSize")).longValue();
+                if (user_prefers_adsfree && filesizeAdFree > 0) {
+                    final int duration_seconds_adsfree = dl.getIntegerProperty(PROPERTY_site_runtime_seconds_adsfree, 0);
+                    final double mb_per_second = getBitrateForFormat(finalFormat);
+                    final double calculated_filesize = mb_per_second * duration_seconds_adsfree * 1024 * 1024;
+                    dl.setDownloadSize((long) calculated_filesize);
+                } else {
+                    dl.setDownloadSize(filesizeWithAds * 1024 * 1024);
+                }
+                break;
+            }
+        } catch (final Exception e) {
+            /* This should never happen */
+            System.out.print("WTF");
+        }
     }
 
     @Override
@@ -1112,8 +1140,8 @@ public class SaveTv extends PluginForHost {
         }
         final boolean downloadAdsFreeValue = verifyAdsFreeUserSelection(link, preferAdsFree, isAdsFreeAvailable);
         /* Set download options (ads-free or with ads) and get download url */
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final ArrayList<Object> sourcelist = jsonGetVideoSourcelist(entries);
+        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Object> sourcelist = jsonGetVideoSourcelist(entries);
         final int best_quality_id = jsonGetBestQualityIdWebsite(sourcelist);
         int stv_request_selected_format_id_value = getConfiguredVideoFormatID(link);
         final boolean desired_format_is_available = jsonIsDesiredFormatAvailableWebsite(sourcelist, stv_request_selected_format_id_value);
@@ -1124,7 +1152,7 @@ public class SaveTv extends PluginForHost {
         String dllink = checkDirectLink(link, stv_request_selected_format_id_value, downloadAdsFreeValue);
         if (StringUtils.isEmpty(dllink)) {
             requestDownloadWebsite(link, stv_request_selected_format_id_value, downloadAdsFreeValue);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             /* 2016-07-06: Collecting errors: */
             /*
              * {"ERROR":
@@ -1147,7 +1175,7 @@ public class SaveTv extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void handlePremiumAPI(final DownloadLink link, final Account account) throws Exception {
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
         final boolean preferAdsFree = getPreferAdsFree(link);
         int formatIDselected = getConfiguredVideoFormatID(link);
         int formatIDFallback = getDefaultFormatID();
@@ -1155,11 +1183,11 @@ public class SaveTv extends PluginForHost {
         boolean selectedFormatIsAvailable = false;
         final boolean isAdsFreeAvailable = jsonGetAdsFreeAvailableAPI(entries);
         final boolean downloadAdsFreeValue = verifyAdsFreeUserSelection(link, preferAdsFree, isAdsFreeAvailable);
-        ArrayList<Object> qualityList = jsonGetFormatArrayAPI(entries);
+        List<Object> qualityList = jsonGetFormatArrayAPI(entries);
         /* Now let's find the best quality AND find out whether the user-selected format is available or not. */
         for (final Object qualityo : qualityList) {
-            entries = (LinkedHashMap<String, Object>) qualityo;
-            entries = (LinkedHashMap<String, Object>) entries.get("recordFormat");
+            entries = (Map<String, Object>) qualityo;
+            entries = (Map<String, Object>) entries.get("recordFormat");
             formatIDtemp = jsonGetFormatArrayGetIDAPI(entries);
             if (formatIDtemp > formatIDFallback) {
                 formatIDFallback = formatIDtemp;
@@ -1177,7 +1205,7 @@ public class SaveTv extends PluginForHost {
         String dllink = checkDirectLink(link, formatIDselected, downloadAdsFreeValue);
         if (StringUtils.isEmpty(dllink)) {
             accessDownloadPageAPI(link, formatIDselected, downloadAdsFreeValue);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
             dllink = (String) entries.get("downloadUrl");
         }
         handleDownload(link, account, dllink);
@@ -1252,13 +1280,13 @@ public class SaveTv extends PluginForHost {
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler 404", 15 * 60 * 1000l);
             }
             /* Handle (known) errors */
             logger.warning("Received HTML code instead of the file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler 1 - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
         } else if (dl.getConnection().getCompleteContentLength() <= 1048576l) {
             /* Avoid downloading (too small) trash data */
@@ -1326,28 +1354,20 @@ public class SaveTv extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    dl.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                dl.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
-            if (dllink != null) {
-                logger.info("Re-using saved directurl");
-            } else {
-                logger.info("Failed to re-use saved directurl --> Deleted it");
-            }
         } else {
             logger.info("Failed to find saved downloadurl");
         }
-        return dllink;
+        return null;
     }
 
     /**
@@ -1406,8 +1426,8 @@ public class SaveTv extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         String package_name = null;
         api_GET(br, "/user?fields=contract.hasxlpackage%2C%20contract.hasxxlpackage%2C%20contract.islocked%2C%20contract.isrunning%2C%20contract.packagename");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) entries.get("contract");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) entries.get("contract");
         final boolean isPremium = ((Boolean) entries.get("isRunning")).booleanValue();
         package_name = (String) entries.get("packageName");
         if (isPremium) {
@@ -1626,8 +1646,8 @@ public class SaveTv extends PluginForHost {
          */
         final boolean isInErrorState = br.containsHTML("\\d+\\.\\d+E\\d+,\"NOK\",\"");
         if (isInErrorState) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            final ArrayList<Object> errorlist = (ArrayList) entries.get("ARRVIDEOURL");
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final List<Object> errorlist = (List) entries.get("ARRVIDEOURL");
             final String errormessage = (String) errorlist.get(2);
             if (errormessage.contains("Aufnahme zu betrachten, laden Sie bitte die ungeschnittene Version")) {
                 errorAdsFreeUnavailable(60 * 60 * 1000, null);
@@ -1681,12 +1701,12 @@ public class SaveTv extends PluginForHost {
             login_api(br, account, true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Loginproblem", 1 * 60 * 1000l);
         } else {
-            LinkedHashMap<String, Object> error_map = null;
+            Map<String, Object> error_map = null;
             try {
                 final Object errorO = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                if (errorO instanceof ArrayList) {
-                    final ArrayList<Object> errorlist = (ArrayList<Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                    error_map = (LinkedHashMap<String, Object>) errorlist.get(1);
+                if (errorO instanceof List) {
+                    final List<Object> errorlist = (List<Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    error_map = (Map<String, Object>) errorlist.get(1);
                 }
             } catch (final Throwable e) {
             }
@@ -2026,23 +2046,23 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public static ArrayList<Object> jsonGetFormatArrayAPI(final LinkedHashMap<String, Object> entries) {
+    public static List<Object> jsonGetFormatArrayAPI(final Map<String, Object> entries) {
         if (entries == null) {
             return null;
         }
         final Object formatsO = entries.get("formats");
-        if (formatsO == null || !(formatsO instanceof ArrayList)) {
+        if (formatsO == null || !(formatsO instanceof List)) {
             return null;
         }
-        return (ArrayList<Object>) formatsO;
+        return (List<Object>) formatsO;
     }
 
-    public static int jsonGetFormatArrayGetIDAPI(final LinkedHashMap<String, Object> entries) {
+    public static int jsonGetFormatArrayGetIDAPI(final Map<String, Object> entries) {
         return (int) JavaScriptEngineFactory.toLong(entries.get("id"), SITE_FORMAT_HD);
     }
 
     /** Ads-Free status -1 = Unknown, 0 = false, 1 = true */
-    public static short jsonGetAdsFreeAvailableAPIDetailed(final LinkedHashMap<String, Object> entries) {
+    public static short jsonGetAdsFreeAvailableAPIDetailed(final Map<String, Object> entries) {
         final Object adFreeAvailableO = entries != null ? entries.get("adFreeAvailable") : null;
         final short adsfreeStatus;
         if (adFreeAvailableO == null || !(adFreeAvailableO instanceof Boolean)) {
@@ -2059,7 +2079,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /** Ads-Free status true, false (NOT unknown!) */
-    public static boolean jsonGetAdsFreeAvailableAPI(final LinkedHashMap<String, Object> entries) {
+    public static boolean jsonGetAdsFreeAvailableAPI(final Map<String, Object> entries) {
         final short adsFreeStatus = jsonGetAdsFreeAvailableAPIDetailed(entries);
         if (adsFreeStatus == 1) {
             return true;
@@ -2069,10 +2089,10 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public static int jsonGetBestQualityIdWebsite(final ArrayList<Object> sourcelist) {
+    public static int jsonGetBestQualityIdWebsite(final List<Object> sourcelist) {
         final long recordingformat;
         if (sourcelist != null && sourcelist.size() > 0) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sourcelist.get(sourcelist.size() - 1);
+            final Map<String, Object> entries = (Map<String, Object>) sourcelist.get(sourcelist.size() - 1);
             recordingformat = jsonGetRecordingformatid(entries);
         } else {
             /* Fallback to a format which is always available. */
@@ -2082,14 +2102,14 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    public static String jsonGetBestQualityIdAPI(final ArrayList<Object> sourcelist) {
+    public static String jsonGetBestQualityIdAPI(final List<Object> sourcelist) {
         final String recordingformat;
         if (sourcelist != null && sourcelist.size() > 0) {
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             long quality_max = SITE_FORMAT_HQ;
             long quality_temp;
             for (final Object qualityo : sourcelist) {
-                entries = (LinkedHashMap<String, Object>) qualityo;
+                entries = (Map<String, Object>) qualityo;
                 quality_temp = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "recordFormat/id"), SITE_FORMAT_HQ);
                 if (quality_temp > quality_max) {
                     quality_max = quality_temp;
@@ -2104,15 +2124,15 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static ArrayList<Object> jsonGetVideoSourcelist(final LinkedHashMap<String, Object> sourcemap) {
+    public static List<Object> jsonGetVideoSourcelist(final Map<String, Object> sourcemap) {
         if (sourcemap == null) {
             return null;
         }
-        final ArrayList<Object> sourcelist = (ArrayList) sourcemap.get("ARRALLOWDDOWNLOADFORMATS");
+        final List<Object> sourcelist = (List) sourcemap.get("ARRALLOWDDOWNLOADFORMATS");
         return sourcelist;
     }
 
-    public static int jsonGetRecordingformatid(final LinkedHashMap<String, Object> entries) {
+    public static int jsonGetRecordingformatid(final Map<String, Object> entries) {
         final long recordingformatid;
         final Object recordingformatido;
         if (entries != null) {
@@ -2133,14 +2153,14 @@ public class SaveTv extends PluginForHost {
 
     /** Checks whether user-defined formatID is available or not. */
     @SuppressWarnings("unchecked")
-    public static boolean jsonIsDesiredFormatAvailableWebsite(final ArrayList<Object> sourcelist, final int desiredFormat) {
+    public static boolean jsonIsDesiredFormatAvailableWebsite(final List<Object> sourcelist, final int desiredFormat) {
         if (sourcelist == null) {
             return false;
         }
-        LinkedHashMap<String, Object> entries = null;
+        Map<String, Object> entries = null;
         int format_id = -1;
         for (final Object vsorceo : sourcelist) {
-            entries = (LinkedHashMap<String, Object>) vsorceo;
+            entries = (Map<String, Object>) vsorceo;
             format_id = jsonGetRecordingformatid(entries);
             if (format_id == desiredFormat) {
                 return true;
@@ -2801,9 +2821,9 @@ public class SaveTv extends PluginForHost {
     private static String getMessageEnd() {
         String message = "";
         message += "\r\n\r\n";
-        message += "Falls du Fehler findest oder Fragen hast, melde dich jederzeit gerne bei uns im Supportforum:\r\nhttp://board.jdownloader.org/\r\n";
+        message += "Falls du Fehler findest oder Fragen hast, melde dich jederzeit gerne in unserem Supportforum:\r\nhttp://board.jdownloader.org/\r\n";
         message += "\r\n";
-        message += "Dieses Fenster wird nur einmal angezeigt.\r\nAlle wichtigen Informationen stehen auch in den save.tv Plugin Einstellungen.\r\n";
+        message += "Dieses Fenster wird nur einmal angezeigt.\r\nAlle wichtigen Informationen findest du ebenfalls in den save.tv Plugin Einstellungen.\r\n";
         message += "\r\n";
         message += "- Das JDownloader Team wünscht weiterhin viel Spaß mit JDownloader und save.tv! -";
         return message;
@@ -2888,7 +2908,7 @@ public class SaveTv extends PluginForHost {
             message += "- Alles unter beachtung der Schnittlisten-Einstellungen und des Formats\r\n";
             message += "- Und viele mehr...\r\n";
             message += "\r\n";
-            message += "Diese Einstellungen sind in der Version JDownloader 2 verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+            message += "Diese Einstellungen sind verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
             message += getMessageEnd();
             UIOManager.I().showMessageDialog(message);
         } catch (Throwable e) {
