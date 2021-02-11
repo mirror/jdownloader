@@ -29,6 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import jd.plugins.DownloadLink;
@@ -984,7 +985,7 @@ public class Multi extends IExtraction {
             /* This should never happen */
             password = "";
         }
-        final AtomicBoolean passwordfound = new AtomicBoolean(false);
+        final AtomicReference<Signature> passwordFound = new AtomicReference<Signature>(null);
         try {
             final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
             final ArchiveFormat format = archive.getArchiveFormat();
@@ -1052,7 +1053,7 @@ public class Multi extends IExtraction {
                 final int numberOfItems = inArchive.getNumberOfItems();
                 if (archive.isPasswordRequiredToOpen() && numberOfItems > 0) {
                     // archive is open. password seems to be ok.
-                    passwordfound.set(true);
+                    passwordFound.set(new Signature("UNKNOWN:ArchiveOpen:" + numberOfItems, null, null, null));
                     return true;
                 }
                 final ArrayList<Integer> allItems = new ArrayList<Integer>();
@@ -1075,7 +1076,7 @@ public class Multi extends IExtraction {
                     items[index++] = item;
                 }
                 try {
-                    inArchive.extract(items, false, new Seven7PWCallback(ctl, inArchive, passwordfound, password, buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
+                    inArchive.extract(items, false, new Seven7PWCallback(ctl, inArchive, passwordFound, password, buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
                 } catch (SevenZipException e) {
                     e.printStackTrace();
                     // An error will be thrown if the write method
@@ -1083,14 +1084,14 @@ public class Multi extends IExtraction {
                     // 0.
                 }
             } else {
-                final SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(ctl, passwordfound, ctl.getFileSignatures(), buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
+                final SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(ctl, passwordFound, ctl.getFileSignatures(), buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
                 final ISimpleInArchiveItem[] items = inArchive.getSimpleInterface().getArchiveItems();
                 // we found some rar archives, that throw an exception when we try to open it with no or an invalid password, but do not
                 // throw any exceptions if we use - for example - their archive name as password.
                 // in this case, the archive opens fine, but does not show any contents. let's catch this case here
                 if (archive.isPasswordRequiredToOpen() && items != null && items.length > 0) {
                     // archive is open. password seems to be ok.
-                    passwordfound.set(true);
+                    passwordFound.set(new Signature("UNKNOWN:ArchiveOpen:" + items.length, null, null, null));
                     return true;
                 }
                 for (final ISimpleInArchiveItem item : items) {
@@ -1102,17 +1103,16 @@ public class Multi extends IExtraction {
                          * we also check for items with size ==0, they should have a packedsize>0
                          */
                         continue;
-                    }
-                    if (ctl.gotKilled()) {
+                    } else if (ctl.gotKilled()) {
                         /* extraction got aborted */
                         break;
-                    } else if (passwordfound.get()) {
+                    } else if (passwordFound.get() != null) {
                         break;
                     }
                     final String path = item.getPath();
                     final String ext = Files.getExtension(path);
                     if (checkedExtensions.add(ext) || !optimized) {
-                        if (!passwordfound.get()) {
+                        if (passwordFound.get() == null) {
                             try {
                                 signatureOutStream.reset();
                                 signatureOutStream.setSignatureLength(path, size);
@@ -1125,15 +1125,18 @@ public class Multi extends IExtraction {
                                      * crash jvm)
                                      */
                                     return false;
-                                }
-                                if (ExtractOperationResult.OK.equals(result)) {
-                                    passwordfound.set(true);
+                                } else if (ExtractOperationResult.OK.equals(result)) {
+                                    passwordFound.set(new Signature("UNKNOWN:Extraction:" + result, null, null, ext));
                                 }
                             } catch (SevenZipException e) {
                                 e.printStackTrace();
                                 // An error will be thrown if the write method
                                 // returns
                                 // 0.
+                            } finally {
+                                if (passwordFound.get() != null) {
+                                    logger.info("Verified Password:" + password + "|" + path + "|" + passwordFound.get());
+                                }
                             }
                         } else {
                             /* pw found */
@@ -1143,7 +1146,7 @@ public class Multi extends IExtraction {
                     // if (filter(item.getPath())) continue;
                 }
             }
-            return passwordfound.get();
+            return passwordFound.get() != null;
         } catch (SevenZipException e) {
             // this happens if the archive has encrypted filenames as well and thus needs a password to open it
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
@@ -1157,7 +1160,7 @@ public class Multi extends IExtraction {
         } catch (Throwable e) {
             throw new ExtractionException(e, null);
         } finally {
-            if (passwordfound.get()) {
+            if (passwordFound.get() != null) {
                 archive.setFinalPassword(password);
                 if (inArchive != null) {
                     updateContentView(inArchive.getSimpleInterface());
@@ -1192,25 +1195,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         *
+                         * 
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         *
+                         * 
                          * 0x0004 Archive lock attribute
-                         *
+                         * 
                          * 0x0008 Solid attribute (solid archive)
-                         *
+                         * 
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         *
+                         * 
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         *
+                         * 
                          * 0x0040 Recovery record present
-                         *
+                         * 
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         *
+                         * 
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);

@@ -13,19 +13,14 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.util.regex.Pattern;
 
 public class Signature {
-
     private final String  id;
-
     private final Pattern signatur;
-
     private final String  desc;
-
     private final Pattern extensionSure;
     private final Pattern extensionUnsure;
 
@@ -35,7 +30,6 @@ public class Signature {
         this.extensionUnsure = null;
         this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
-
     }
 
     public Signature(String id, String signaturPattern, String desc, String ext, String unsureext) {
@@ -44,6 +38,11 @@ public class Signature {
         this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
         this.extensionUnsure = ext != null ? Pattern.compile(unsureext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
+    }
+
+    @Override
+    public String toString() {
+        return "SignatureID:" + getId();
     }
 
     public boolean isPrecisePatternStart() {
@@ -73,5 +72,4 @@ public class Signature {
     public boolean matches(String sig) {
         return signatur.matcher(sig).matches();
     }
-
 }

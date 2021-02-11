@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.extraction.multi;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.SevenZipException;
@@ -13,7 +13,7 @@ import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.Signature;
 
 public class SignatureCheckingOutStream implements ISequentialOutStream {
-    private final AtomicBoolean                 passwordfound;
+    private final AtomicReference<Signature>    passwordFound;
     private final FileSignatures                filesignatures;
     private final ReusableByteArrayOutputStream buffer;
     private int                                 signatureMinLength = 32;
@@ -25,8 +25,8 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     private final ExtractionController          ctrl;
     private Signature                           lastSignature      = null;
 
-    public SignatureCheckingOutStream(final ExtractionController ctrl, AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
-        this.passwordfound = passwordfound;
+    public SignatureCheckingOutStream(final ExtractionController ctrl, AtomicReference<Signature> passwordFound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
+        this.passwordFound = passwordFound;
         this.filesignatures = filesignatures;
         this.buffer = buffer;
         this.maxPWCheckSize = maxPWCheckSize;
@@ -34,15 +34,15 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
         this.ctrl = ctrl;
     }
 
-    public int write(byte[] data) throws SevenZipException {
+    public int write(final byte[] data, final int off, final int len) throws SevenZipException {
         if (ctrl.gotKilled()) {
             throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
         }
         if (ignoreWrite == false) {
-            int toWrite = Math.min(buffer.free(), data.length);
+            int toWrite = Math.min(buffer.free(), len);
             if (toWrite > 0) {
                 /* we still have enough buffer left to write the data */
-                buffer.write(data, 0, toWrite);
+                buffer.write(data, off, toWrite);
             } else {
                 ignoreWrite = true;
             }
@@ -60,7 +60,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
                     if (signature.getExtensionSure() != null && (itemName == null || signature.getExtensionSure().matcher(itemName).matches())) {
                         /* signature matches, lets abort PWFinding now */
                         if (signature.isPrecisePatternStart()) {
-                            passwordfound.set(true);
+                            passwordFound.set(signature);
                             return 0;
                         } else {
                             lastSignature = signature;
@@ -71,11 +71,19 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
         }
         if ((itemSize >= 0 && itemSize <= maxPWCheckSize) || !optimized || lastSignature != null) {
             /* we still allow further extraction as the itemSize <= maxPWCheckSize */
-            return data.length;
+            return len;
         } else {
             /* this will throw SevenZipException */
             return 0;
         }
+    }
+
+    public int write(byte[] data) throws SevenZipException {
+        return write(data, 0, data.length);
+    }
+
+    public Signature getLastSignature() {
+        return lastSignature;
     }
 
     public void reset() {
