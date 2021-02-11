@@ -74,6 +74,16 @@ public class BeegCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(\\d+)(\\?t=\\d+-\\d+)?$").getMatch(0);
     }
 
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        String fid = null;
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
