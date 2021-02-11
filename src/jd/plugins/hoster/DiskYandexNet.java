@@ -317,6 +317,7 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
+                    /** TODO: 2021-02-11: Check all "getPath" calls - set values from crawler could be wrong! */
                     getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getRawHash(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                     this.handleErrorsAPI(link, account);
                     final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
@@ -436,10 +437,6 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    private String getIdClient() {
-        return String.format("undefined", System.currentTimeMillis());
-    }
-
     public static void setRawHash(final DownloadLink dl, final String hash_long) {
         dl.setProperty(PROPERTY_HASH, hash_long);
     }
@@ -451,14 +448,6 @@ public class DiskYandexNet extends PluginForHost {
 
     private String getPath(final DownloadLink dl) {
         return dl.getStringProperty("path", null);
-    }
-
-    private String getCkey() throws PluginException {
-        final String ckey = PluginJSonUtils.getJsonValue(br, "ckey");
-        if (ckey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return ckey;
     }
 
     private String getUserID(final Account acc) {
@@ -539,7 +528,11 @@ public class DiskYandexNet extends PluginForHost {
                         requiresCaptcha = false;
                     }
                     br.submitForm(loginform);
-                    isLoggedIN = br.getCookie(br.getURL(), "yandex_login") != null;
+                    isLoggedIN = br.getCookie(br.getURL(), "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
+                    if (!isLoggedIN) {
+                        /* 2021-02-11: Small workaround/test */
+                        isLoggedIN = br.getCookie("yandex.com", "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
+                    }
                     if (!requiresCaptcha && i > 0) {
                         /* Probably wrong password */
                         break;
@@ -844,28 +837,6 @@ public class DiskYandexNet extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
-    // private String diskGetID0Public(final DownloadLink dl) {
-    // final String hash = this.currHash.replace("/", "_").replace("+", "-");
-    // final String path = this.currPath;
-    // final String postValue;
-    // if (isPartOfAFolder(dl)) {
-    // postValue = "%2Fpublic%2F" + Encoding.urlEncode(hash + ":" + path);
-    // } else {
-    // postValue = "%2Fpublic%2F" + Encoding.urlEncode(hash);
-    // }
-    // return postValue;
-    // }
-    // private String diskGetID0(final DownloadLink dl) {
-    // final String hash = getRawHash(dl);
-    // final String path = this.getPath(dl);
-    // final String id0;
-    // if (isPartOfAFolder(dl)) {
-    // id0 = hash + ":" + path;
-    // } else {
-    // id0 = hash;
-    // }
-    // return id0;
-    // }
 
     public static String getHashLongFromHTML(final Browser br) {
         return PluginJSonUtils.getJsonValue(br, "public_key");
