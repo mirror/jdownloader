@@ -103,7 +103,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 relativeDownloadPath = internalPath;
             }
         }
-        boolean is_part_of_a_folder = false;
         if (internalPath == null) {
             /* No path given? Crawl everything starting from root. */
             internalPath = "/";
@@ -118,7 +117,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             /* Set correct value */
             hashMain = hashregex.getMatch(0);
             internalPath = hashregex.getMatch(1);
-            is_part_of_a_folder = true;
         } else if (hashMain.contains(":")) {
             /* Small workaround: Hash contains remains of path -> Clean that */
             hashMain = hashMain.replace(":", "");
@@ -319,7 +317,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 relativeDownloadPath = internalPath;
             }
         }
-        boolean is_part_of_a_folder = false;
         if (internalPath == null) {
             /* No path given? Crawl everything starting from root. */
             internalPath = "/";
@@ -337,7 +334,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             /* Set correct value */
             hashMain = hashregex.getMatch(0);
             internalPath = hashregex.getMatch(1);
-            is_part_of_a_folder = true;
         } else if (hashMain.contains(":")) {
             /* Small workaround: Hash contains remains of path -> Clean that */
             hashMain = hashMain.replace(":", "");
@@ -369,11 +365,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 parseFilePropertiesAPI(dl, entries);
-                if (is_part_of_a_folder) {
-                    /* TODO: Check this! */
-                    /* 2017-04-07: Overwrite previously set path value with correct value. */
-                    dl.setProperty("path", internalPath);
-                }
                 dl.setProperty("mainlink", addedLink);
                 dl.setLinkID(hashMain + internalPath);
                 /* Required by hoster plugin to get filepath (filename) */
@@ -486,7 +477,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String fpName = null;
         final String clientID = jd.plugins.hoster.YandexAlbum.albumGetIdClient();
         final String hash_short = new Regex(addedLink, "/a/(.+)").getMatch(0);
-        final String rawHash = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
+        final String rawHash = PluginJSonUtils.getJsonValue(br, "public_key");
         final String json_of_first_page = regExJSON(this.br);
         if (StringUtils.isEmpty(rawHash)) {
             /* Value is required! */

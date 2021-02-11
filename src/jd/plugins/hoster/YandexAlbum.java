@@ -78,7 +78,7 @@ public class YandexAlbum extends PluginForHost {
         }
         if (StringUtils.isEmpty(getRawHash(link))) {
             /* For urls which have not been added via crawler, this value is not set but we might need it later. */
-            final String hash_long = jd.plugins.hoster.DiskYandexNet.getHashLongFromHTML(this.br);
+            final String hash_long = PluginJSonUtils.getJsonValue(br, "public_key");
             if (!StringUtils.isEmpty(hash_long)) {
                 setRawHash(link, hash_long);
             }
