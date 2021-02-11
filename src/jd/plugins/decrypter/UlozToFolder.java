@@ -67,12 +67,13 @@ public class UlozToFolder extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
+
     /** Special (temporary/IP bound) URLs available when searching for files directly on the website of this file-hoster. */
-    // private static final String TYPE_TRACKING = "https?://[^/]+//file-tracking/[a-f0-9]{96}";
+    private static final String TYPE_TRACKING = "https?://[^/]+/file-tracking/[a-f0-9]{96}";
 
     /** 2021-02-11: This host is GEO-blocking german IPs! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches("")) {
+        if (param.getCryptedUrl().matches(TYPE_TRACKING)) {
             return crawlSingleURL(param);
         } else {
             return crawlFolder(param);
