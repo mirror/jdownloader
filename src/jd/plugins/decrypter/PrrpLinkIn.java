@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeplink.in", "alfalink.info" }, urls = { "https?://(www\\.)?peeplink\\.in/[a-z0-9]+", "https?://(www\\.)?alfalink\\.info/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeplink.in", "alfalink.to" }, urls = { "https?://(www\\.)?peeplink\\.in/[a-z0-9]+", "https?://(www\\.)?alfalink\\.(info|to)/[a-z0-9]+" })
 public class PrrpLinkIn extends PluginForDecrypt {
     public PrrpLinkIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -34,11 +34,8 @@ public class PrrpLinkIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             final DownloadLink dead = createDownloadlink("directhttp://" + parameter);
@@ -57,10 +54,6 @@ public class PrrpLinkIn extends PluginForDecrypt {
         if (br.containsHTML(">Shoot</a></li>")) {
             br.postPage("/qaptcha/php/Qaptcha.jquery.php", "action=qaptcha");
             br.postPage(parameter, "iQapTcha=");
-            redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                br.getPage(redirect);
-            }
         }
         String finallink = br.getRegex("<article.*?>(.*?)</article").getMatch(0);
         if (finallink != null) {

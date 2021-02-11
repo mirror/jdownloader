@@ -114,7 +114,8 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.jna.windows.JNAWindowsWindowManager;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.net.BCTLSSocketStreamFactory;
+import org.jdownloader.net.AutoBCSSLSocketStreamFactory;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
 import org.jdownloader.osevents.OperatingSystemEventSender;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
@@ -548,27 +549,33 @@ public class SecondLevelLaunch {
             @Override
             public void run() {
                 try {
-                    final long javaVersion = Application.getJavaVersion();
-                    if (javaVersion < Application.JAVA18) {
-                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version < 1.8! Java-" + javaVersion);
-                    } else if (javaVersion <= 18006000l) {
-                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: java version <= 1.8.0_06! Java-" + javaVersion);
+                    final long javaVersion = JVMVersion.get();
+                    if (javaVersion <= 18006000l) {
+                        final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
+                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(bc);
+                        LoggerFactory.getDefaultLogger().info("Use '" + bc.getInfo() + "' for default SSLSocketStreamFactory because: java version <= 1.8.0_06! Java-" + javaVersion);
                     } else if (CFG_GENERAL.CFG.isPreferBouncyCastleForTLS()) {
-                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: enabled! Java-" + javaVersion);
+                        final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
+                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(bc);
+                        LoggerFactory.getDefaultLogger().info("Use '" + bc.getInfo() + "' for default SSLSocketStreamFactory because: enabled! Java-" + javaVersion);
                     } else if (!UJCECheck.isSuccessful()) {
-                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                        LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: UJCECheck was not successful! Java-" + javaVersion);
+                        final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
+                        HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(bc);
+                        LoggerFactory.getDefaultLogger().info("Use '" + bc.getInfo() + "' for default SSLSocketStreamFactory because: UJCECheck was not successful! Java-" + javaVersion);
                     } else {
                         try {
                             // synology has broken/incomplete java packages that are missing ECDHE_ECDSA
                             JavaSSLSocketStreamFactory.isCipherSuiteSupported(new String[] { "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256" });
-                            LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory! Java-" + javaVersion);
+                            if (javaVersion >= JVMVersion.JAVA_11) {
+                                LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory because: java version >= 11! Java-" + javaVersion);
+                            } else {
+                                HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new AutoBCSSLSocketStreamFactory());
+                                LoggerFactory.getDefaultLogger().info("Use 'Auto' for default SSLSocketStreamFactory because: java version < 11! Java-" + javaVersion);
+                            }
                         } catch (final SSLException e) {
-                            HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new BCTLSSocketStreamFactory());
-                            LoggerFactory.getDefaultLogger().info("Use 'BouncyCastle' for default SSLSocketStreamFactory because: " + e + "! Java-" + javaVersion);
+                            final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
+                            HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(bc);
+                            LoggerFactory.getDefaultLogger().info("Use '" + bc.getInfo() + "' for default SSLSocketStreamFactory because: " + e + "! Java-" + javaVersion);
                         }
                     }
                 } catch (final Throwable e) {

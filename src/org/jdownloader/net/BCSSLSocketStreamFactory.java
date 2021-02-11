@@ -53,8 +53,9 @@ import org.bouncycastle.util.Strings;
  * @author daniel
  *
  */
-public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
+public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
     protected final static Provider                 BC               = new BouncyCastleProvider();
+    private final static String                     TLS13_ENABLED    = "BC_TLS1.3_ENABLED";
     // raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html
     // openssl.org/docs/man1.0.1/apps/ciphers.html
     // TODO: sort strength
@@ -86,9 +87,14 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             if (options.getDisabledCipherSuites().size() > 0) {
                 for (final String disabledEntry : options.getDisabledCipherSuites()) {
                     final Iterator<String> it = list.iterator();
-                    while (it.hasNext()) {
+                    disableLoop: while (it.hasNext()) {
                         final String next = it.next();
                         if (StringUtils.containsIgnoreCase(next, disabledEntry)) {
+                            for (String enabledEntry : options.getEnabledCipherSuites()) {
+                                if (StringUtils.containsIgnoreCase(next, enabledEntry)) {
+                                    continue disableLoop;
+                                }
+                            }
                             it.remove();
                             disabled.add(next);
                         }
@@ -188,9 +194,10 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
     }
 
     private class BCTLSSocketStreamTlsClient extends DefaultTlsClient {
-        private final String  hostName;
-        private final int[]   enabledCipherSuites;
-        private final boolean sniEnabled;
+        private final String                 hostName;
+        private final int[]                  enabledCipherSuites;
+        private final boolean                sniEnabled;
+        private final SSLSocketStreamOptions options;
 
         private BCTLSSocketStreamTlsClient(final String hostName, final boolean sniEnabled, final SSLSocketStreamOptions options) {
             super(new BcTlsCrypto(new SecureRandom()));
@@ -198,12 +205,13 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
             this.hostName = hostName;
             this.enabledCipherSuites = modifyCipherSuites(CIPHERSUITES, options);
             this.sniEnabled = sniEnabled;
+            this.options = options;
         }
 
         @Override
         public ProtocolVersion[] getProtocolVersions() {
             final ProtocolVersion[] ret = super.getProtocolVersions();
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (options.getCustomFactorySettings().contains(TLS13_ENABLED)) {
                 final List<ProtocolVersion> protocolVersions = new ArrayList<ProtocolVersion>(Arrays.asList(ret));
                 if (!protocolVersions.contains(ProtocolVersion.TLSv13)) {
                     protocolVersions.add(0, ProtocolVersion.TLSv13);
@@ -320,6 +328,12 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         return -1;
     }
 
+    public interface BCSSLSocketStreamInterface extends SSLSocketStreamInterface {
+        public TlsClientProtocol getTlsClientProtocol();
+
+        public BCTLSSocketStreamTlsClient getTlsClient();
+    }
+
     @Override
     public SSLSocketStreamInterface create(final SocketStreamInterface socketStream, final String hostName, final int port, final boolean autoclose, final SSLSocketStreamOptions options) throws IOException {
         final boolean sniEnabled = !StringUtils.isEmpty(hostName) && (options == null || options.isSNIEnabled());
@@ -327,9 +341,8 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
         final BCTLSSocketStreamTlsClient client = new BCTLSSocketStreamTlsClient(hostName, sniEnabled, options);
         protocol.connect(client);
         final Integer selectedCipherSuite = client.getSelectedCipherSuite();
-        final ProtocolVersion clientVersion = client.getClientVersion();
         final String selectedCipherSuiteName = getCipherSuiteName(selectedCipherSuite);
-        return new SSLSocketStreamInterface() {
+        return new BCSSLSocketStreamInterface() {
             @Override
             public Socket getSocket() {
                 return getParentSocketStream().getSocket();
@@ -364,8 +377,47 @@ public class BCTLSSocketStreamFactory implements SSLSocketStreamFactory {
 
             @Override
             public String getCipherSuite() {
-                return BC.getInfo() + "|" + client.getCrypto() + "|Protocol:" + clientVersion + "|CipherSuite:" + selectedCipherSuiteName;
+                return getInfo() + "|" + getTlsClient().getCrypto() + "|Protocol:" + getTlsClient().getClientVersion() + "|CipherSuite:" + selectedCipherSuiteName;
+            }
+
+            @Override
+            public SSLSocketStreamOptions getOptions() {
+                return options;
+            }
+
+            @Override
+            public TlsClientProtocol getTlsClientProtocol() {
+                return protocol;
+            }
+
+            @Override
+            public BCTLSSocketStreamTlsClient getTlsClient() {
+                return client;
+            }
+
+            @Override
+            public SSLSocketStreamFactory getSSLSocketStreamFactory() {
+                return BCSSLSocketStreamFactory.this;
             }
         };
+    }
+
+    public String getInfo() {
+        return BC.getInfo();
+    }
+
+    @Override
+    public String retry(SSLSocketStreamOptions options, Exception e) {
+        if (StringUtils.containsIgnoreCase(e.getMessage(), "protocol_version")) {
+            // https://www.bouncycastle.org/docs/tlsdocs1.5on/org/bouncycastle/tls/AlertDescription.html
+            if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
+                // retry with TLS1.3 enabled
+                return "enable TLS1.3";
+            } else if (options.enableNextDisabledCipher("GCM") != null) {
+                // retry with TLS1.3 and GCM
+                return "enable GCM for TLS1.3";
+            }
+        }
+        return null;
     }
 }
