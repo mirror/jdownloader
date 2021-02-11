@@ -2,9 +2,12 @@ package org.jdownloader.extensions.extraction.multi;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
 import net.lingala.zip4j.core.ZipFile;
@@ -13,7 +16,9 @@ import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
 import net.sf.sevenzipjbinding.SevenZipException;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
+import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -30,12 +35,14 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
+import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class Zip4J extends IExtraction {
+    private volatile int               crack                   = 0;
     private ZipFile                    zipFile                 = null;
     private static final ArchiveType[] SUPPORTED_ARCHIVE_TYPES = new ArchiveType[] { ArchiveType.ZIP_MULTI2 };
 
@@ -45,13 +52,95 @@ public class Zip4J extends IExtraction {
     }
 
     @Override
-    public boolean findPassword(ExtractionController controller, String password, boolean optimized) throws ExtractionException {
-        return false;
+    public boolean findPassword(ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
+        final Archive archive = getExtractionController().getArchive();
+        crack++;
+        if (StringUtils.isEmpty(password)) {
+            /* This should never happen */
+            password = "";
+        }
+        final AtomicReference<Signature> passwordFound = new AtomicReference<Signature>(null);
+        try {
+            final List<?> items = zipFile.getFileHeaders();
+            final HashSet<String> checkedExtensions = new HashSet<String>();
+            final ReusableByteArrayOutputStream buffer = new ReusableByteArrayOutputStream(64 * 1024);
+            final SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(ctl, passwordFound, ctl.getFileSignatures(), buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
+            final byte[] readBuffer = new byte[32767];
+            for (int index = 0; index < items.size(); index++) {
+                final FileHeader item = (FileHeader) items.get(index);
+                // Skip folders
+                if (item == null || item.isDirectory() || !item.isEncrypted()) {
+                    continue;
+                } else if (ctl.gotKilled()) {
+                    /* extraction got aborted */
+                    break;
+                } else if (passwordFound.get() != null) {
+                    break;
+                }
+                final String path = item.getFileName();
+                final String ext = Files.getExtension(path);
+                if (checkedExtensions.add(ext) || !optimized) {
+                    if (passwordFound.get() == null) {
+                        try {
+                            long remaining = item.getUncompressedSize();
+                            signatureOutStream.reset();
+                            signatureOutStream.setSignatureLength(path, remaining);
+                            logger.fine("Validating password: " + path + "|" + password);
+                            zipFile.setPassword(password);
+                            final InputStream is = zipFile.getInputStream(item);
+                            try {
+                                while (passwordFound.get() == null) {
+                                    final int read = is.read(readBuffer);
+                                    if (read == -1) {
+                                        break;
+                                    } else {
+                                        final int write = signatureOutStream.write(readBuffer, 0, read);
+                                        if (write == 0) {
+                                            break;
+                                        } else {
+                                            remaining -= write;
+                                        }
+                                    }
+                                }
+                            } finally {
+                                is.close();
+                            }
+                            if (remaining == 0) {
+                                passwordFound.set(new Signature("UNKNOWN:Extraction:OK", null, null, ext));
+                            }
+                        } catch (SevenZipException e) {
+                            logger.log(e);
+                        } catch (IOException e) {
+                            if (!StringUtils.containsIgnoreCase(e.getMessage(), "Wrong Password")) {
+                                throw e;
+                            } else {
+                                logger.log(e);
+                            }
+                        } finally {
+                            if (passwordFound.get() != null) {
+                                logger.info("Verified Password:" + password + "|" + path + "|" + passwordFound.get());
+                            }
+                        }
+                    } else {
+                        /* pw found */
+                        break;
+                    }
+                }
+            }
+            return passwordFound.get() != null;
+        } catch (Throwable e) {
+            throw new ExtractionException(e, null);
+        } finally {
+            if (passwordFound.get() != null) {
+                archive.setFinalPassword(password);
+            }
+        }
     }
 
     private final ExtractionExtension extension;
 
     public Zip4J(ExtractionExtension extension) {
+        crack = 0;
         this.extension = extension;
     }
 
@@ -193,7 +282,11 @@ public class Zip4J extends IExtraction {
         try {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
             ctrl.setProcessedBytes(0);
-            final List<Object> items = zipFile.getFileHeaders();
+            if (zipFile.isEncrypted()) {
+                final String pw = archive.getFinalPassword();
+                zipFile.setPassword(pw);
+            }
+            final List<?> items = zipFile.getFileHeaders();
             byte[] readBuffer = new byte[32767];
             for (int index = 0; index < items.size(); index++) {
                 final FileHeader item = (FileHeader) items.get(index);
@@ -254,28 +347,24 @@ public class Zip4J extends IExtraction {
                     ctrl.setCurrentActiveItem(null);
                 }
             }
+            archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
         } catch (MultiSevenZipException e) {
             logger.log(e);
             setException(e);
             archive.setExitCode(e.getExitCode());
-            return;
         } catch (SevenZipException e) {
             logger.log(e);
             setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-            return;
         } catch (ZipException e) {
             logger.log(e);
             setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
-            return;
         } catch (IOException e) {
             logger.log(e);
             setException(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
-            return;
         }
-        archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
 
     @Override
@@ -285,7 +374,7 @@ public class Zip4J extends IExtraction {
 
     @Override
     public int getCrackProgress() {
-        return 0;
+        return crack;
     }
 
     @Override
@@ -294,23 +383,11 @@ public class Zip4J extends IExtraction {
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
             zipFile = new ZipFile(firstArchiveFile.getFilePath());
-            if (zipFile.isEncrypted()) {
-                archive.setProtected(true);
-                archive.setPasswordRequiredToOpen(true);
-                return true;
-            }
-            final List<Object> fileHeaders = zipFile.getFileHeaders();
-            for (int index = 0; index < fileHeaders.size(); index++) {
-                final FileHeader fileHeader = (FileHeader) fileHeaders.get(index);
-                if (fileHeader != null && fileHeader.isEncrypted()) {
-                    archive.setProtected(true);
-                    break;
-                }
-            }
+            archive.setProtected(zipFile.isEncrypted());
             updateContentView(zipFile);
         } catch (Throwable e) {
             logger.log(e);
-            throw new ExtractionException(e, null);
+            throw new ExtractionException(e, firstArchiveFile);
         }
         return true;
     }
@@ -321,7 +398,7 @@ public class Zip4J extends IExtraction {
             if (archive != null) {
                 initFilters();
                 final ContentView newView = new ContentView();
-                final List<Object> fileHeaders = zipFile.getFileHeaders();
+                final List<?> fileHeaders = zipFile.getFileHeaders();
                 for (int index = 0; index < fileHeaders.size(); index++) {
                     final FileHeader fileHeader = (FileHeader) fileHeaders.get(index);
                     if (fileHeader != null) {
@@ -386,7 +463,11 @@ public class Zip4J extends IExtraction {
                     final ZipFile zipFile = new ZipFile(archive.getArchiveFiles().get(0).getFilePath());
                     final ArrayList<String> splitZipFiles = zipFile.getSplitZipFiles();
                     if (splitZipFiles != null) {
-                        for (final String splitZipFile : splitZipFiles) {
+                        for (String splitZipFile : splitZipFiles) {
+                            if (splitZipFile.endsWith("z010")) {
+                                // workaround for bug in Zip4jUtil.getSplitZipFiles, if i>9 must be i>9
+                                splitZipFile = splitZipFile.replaceFirst("z010$", "z10");
+                            }
                             if (archive.getArchiveFileByPath(splitZipFile) == null) {
                                 final File missingFile = new File(splitZipFile);
                                 ret.add(new DummyArchiveFile(new MissingArchiveFile(missingFile.getName(), splitZipFile)));
