@@ -206,20 +206,24 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                      * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder but
                      * the exact file he wants to have!
                      */
-                    final String url_content;
+                    final String urlContent;
                     if (!StringUtils.isEmpty(path)) {
                         /* Path contains hash and path! */
-                        url_content = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(path);
+                        urlContent = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(path);
                     } else {
-                        url_content = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash);
+                        urlContent = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash);
                     }
-                    jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hashMain);
-                    dl.setProperty("mainlink", url_content);
-                    dl.setContentUrl(url_content);
+                    if (!StringUtils.isEmpty(path)) {
+                        /* Path contains hash + path */
+                        jd.plugins.hoster.DiskYandexNet.setRawHash(dl, path);
+                    } else {
+                        /* Hash only */
+                        jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hash);
+                    }
+                    dl.setProperty("mainlink", urlContent);
+                    dl.setContentUrl(urlContent);
                     dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
                     if (ressources.size() > 1) {
-                        /* All items decrypted here are part of a folder! */
-                        dl.setProperty(DiskYandexNet.PROPERTY_IS_PART_OF_A_FOLDER, true);
                         if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                         }
@@ -366,7 +370,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
                 parseFilePropertiesAPI(dl, entries);
                 if (is_part_of_a_folder) {
-                    dl.setProperty(DiskYandexNet.PROPERTY_IS_PART_OF_A_FOLDER, is_part_of_a_folder);
+                    /* TODO: Check this! */
                     /* 2017-04-07: Overwrite previously set path value with correct value. */
                     dl.setProperty("path", internalPath);
                 }
@@ -410,9 +414,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path) || StringUtils.isEmpty(name)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                final String hashFull = hash + ":" + path;
                 if (type.equals(JSON_TYPE_DIR)) {
                     /* Subfolders go back into our decrypter! */
-                    final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash) + "%3A" + URLEncode.encodeURIComponent(path);
+                    final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hashFull);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
@@ -424,31 +429,25 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     }
                     final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                     parseFilePropertiesAPI(dl, entries);
-                    String url_content;
-                    if ("document".equalsIgnoreCase(media_type)) {
+                    final String urlContent = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hashFull);
+                    String urlUser;
+                    if ("document".equalsIgnoreCase(media_type) && !true) {
                         /*
                          * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
                          */
-                        url_content = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncode.encodeURIComponent(hash);
+                        urlUser = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncode.encodeURIComponent(hashFull);
                     } else {
                         /*
-                         * We do not have any URL - set main URL.
+                         * No fancy content URL available - set main URL.
                          */
-                        url_content = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash);
+                        urlUser = urlContent;
                     }
-                    /*
-                     * We want the user to have an URL which he can open via browser and it does not only open up the root of the folder but
-                     * the exact file he wants to have!
-                     */
-                    url_content += "%3A" + URLEncode.encodeURIComponent(path);
-                    jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hashMain);
-                    dl.setProperty("mainlink", url_content);
-                    /* All items decrypted here are part of a folder! */
-                    dl.setProperty(DiskYandexNet.PROPERTY_IS_PART_OF_A_FOLDER, true);
+                    jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hashFull);
+                    dl.setProperty("mainlink", urlContent);
                     if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                     }
-                    dl.setContentUrl(url_content);
+                    dl.setContentUrl(urlUser);
                     dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);

@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -29,7 +28,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -69,8 +67,7 @@ public class DiskYandexNet extends PluginForHost {
     private final String          DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
     private static final String   NORESUME                           = "NORESUME";
     /* Some constants which they used in browser */
-    public static final String    CLIENT_ID                          = "2784000881524006529778";
-    public static String          VERSION_YANDEX_FILES               = "59.7";
+    public static final String    CLIENT_ID                          = "2784000881613056614464";
     /* Different languages == different 'downloads' directory names */
     private static final String[] downloaddirs                       = { "Downloads", "%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8" };
     /* Connection limits */
@@ -86,7 +83,6 @@ public class DiskYandexNet extends PluginForHost {
     /* Properties */
     public static final String    PROPERTY_HASH                      = "hash_main";
     public static final String    PROPERTY_INTERNAL_FUID             = "INTERNAL_FUID";
-    public static final String    PROPERTY_IS_PART_OF_A_FOLDER       = "is_part_of_a_folder";
     public static final String    PROPERTY_QUOTA_REACHED             = "quoty_reached";
     public static final String    PROPERTY_CRAWLED_FILENAME          = "plain_filename";
     /*
@@ -339,11 +335,9 @@ public class DiskYandexNet extends PluginForHost {
                             logger.warning("sk in account handling (without move) is null");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        /* 2018-04-18: Not required anymore */
-                        // getPage("https://yadi.sk/tns.html");
                         br.getHeaders().put("Accept", "*/*");
                         br.getHeaders().put("Content-Type", "text/plain");
-                        postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
+                        br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
                         /** TODO: Find out why we have the wrong SK here and remove this workaround! */
                         if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                             logger.warning("WRONG_SK --> This should not happen");
@@ -359,11 +353,11 @@ public class DiskYandexNet extends PluginForHost {
                         }
                         handleErrorsFree();
                         dllink = PluginJSonUtils.getJsonValue(br, "url");
-                        if (dllink == null) {
+                        if (StringUtils.isEmpty(dllink)) {
                             logger.warning("Failed to find final downloadurl");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        /* Don't do htmldecode because the link will be invalid then */
+                        /* Don't do htmldecode because the link will become invalid then */
                         /* sure json will return url with htmlentities? */
                         dllink = HTMLEntities.unhtmlentities(dllink);
                     }
@@ -607,35 +601,36 @@ public class DiskYandexNet extends PluginForHost {
         }
         String dllink = checkDirectLink(link, "directlink_account");
         if (dllink == null) {
-            final String hash = getRawHash(link);
-            final String id0 = diskGetID0(link);
+            // final String id0 = diskGetID0(link);
             /*
              * Move files into account and download them "from there" although user might not have selected this? --> Forced handling, only
              * required if not possible via different way
              */
             final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean downloadableViaAccountOnly = isFileDownloadQuotaReached(link);
+            Map<String, Object> entries = null;
             if (!moveIntoAccHandlingActive && !downloadableViaAccountOnly) {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
-                // getPage(getMainLink(link));
-                br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + URLEncode.encodeURIComponent(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + authSk);
-                dllink = siteGetDllink(link);
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("Content-Type", "text/plain");
+                br.postPageRaw("/public/api/download-url", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), authSk, userID)));
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/url");
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.warning("Failed to find final downloadurl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            if (moveIntoAccHandlingActive || downloadableViaAccountOnly || dllink == null) {
+            if (moveIntoAccHandlingActive || downloadableViaAccountOnly || StringUtils.isEmpty(dllink)) {
                 if (downloadableViaAccountOnly) {
                     logger.info("forcedmoveIntoAccHandling active");
                 }
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("Content-Type", "text/plain");
                 String internal_file_path = getInternalFilePath(link);
-                final boolean file_was_moved_before = internal_file_path != null;
                 logger.info("MoveFileIntoAccount: MoveFileIntoAccount handling is active");
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
-                    /*
-                     * "name" pretty much doesn't matter as this is just the name the file gets inside our account. Of course this will be
-                     * part of our <internal_file_path> but best is to use the original filename!
-                     */
-                    br.getHeaders().put("Content-Type", "text/plain");
-                    br.setAllowedResponseCodes(400);
                     /**
                      * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
                      * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
@@ -648,8 +643,10 @@ public class DiskYandexNet extends PluginForHost {
                     } else {
                         copySource = "public_web_copy";
                     }
-                    postPageRaw("https://" + getCurrentDomain() + "/public/api/save", URLEncoder.encode(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"" + copySource + "\",\"isAlbum\":false,\"itemId\":null,\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", id0, link.getName(), authSk, userID), "UTF-8"));
-                    internal_file_path = PluginJSonUtils.getJson(br, "path");
+                    br.postPageRaw("/public/api/save", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"%s\",\"isAlbum\":false,\"itemId\":null,\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), link.getName(), copySource, authSk, userID)));
+                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    internal_file_path = (String) JavaScriptEngineFactory.walkJson(entries, "data/path");
+                    final String oid = (String) JavaScriptEngineFactory.walkJson(entries, "data/oid");
                     if (br.containsHTML("\"code\":85")) {
                         logger.info("MoveFileIntoAccount: failed to move file to account: No free space available");
                         // throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
@@ -658,62 +655,49 @@ public class DiskYandexNet extends PluginForHost {
                         /* This should never happen! */
                         logger.info("MoveFileIntoAccount: Failed to move file into account: WTF");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (StringUtils.isEmpty(oid)) {
+                        /* Should never happen */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error while importing file into account: Failed to find oid");
                     }
                     /* Save internal path for later. */
                     link.setProperty("path_internal", internal_file_path);
-                    final String oid = PluginJSonUtils.getJson(br, "oid");
-                    if (!StringUtils.isEmpty(oid)) {
-                        /* Sometimes the process of 'moving' a file into a cloud account can take some seconds. */
-                        logger.info("transfer-status: checking");
-                        try {
-                            for (int i = 1; i < 5; i++) {
-                                br.getHeaders().put("Content-Type", "text/plain");
-                                postPageRaw("https://" + getCurrentDomain() + "/public/api/get-operation-status", URLEncoder.encode(String.format("{\"oid\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\"}", oid, authSk, userID), "UTF-8"));
-                                final String copyState = PluginJSonUtils.getJson(br, "state");
-                                logger.info("Copy state: " + copyState);
-                                if (copyState.equalsIgnoreCase("COMPLETED")) {
-                                    break;
-                                } else if (copyState.equalsIgnoreCase("FAILED")) {
-                                    logger.info("Possibly failed to copy file to account");
-                                    break;
-                                }
-                                sleep(i * 1000l, link);
-                            }
-                        } catch (final Throwable e) {
-                            logger.warning("transfer-status: Unknown failure occured");
+                    /* Sometimes the process of 'moving' a file into a cloud account can take some seconds. */
+                    logger.info("transfer-status: checking");
+                    boolean fileWasImportedSuccessfully = false;
+                    for (int i = 1; i < 5; i++) {
+                        br.getHeaders().put("Content-Type", "text/plain");
+                        br.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-operation-status", URLEncode.encodeURIComponent(String.format("{\"oid\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\"}", oid, authSk, userID)));
+                        final String copyState = PluginJSonUtils.getJson(br, "state");
+                        logger.info("Copy state: " + copyState);
+                        if (copyState.equalsIgnoreCase("COMPLETED")) {
+                            fileWasImportedSuccessfully = true;
+                            break;
+                        } else if (copyState.equalsIgnoreCase("FAILED")) {
+                            logger.info("Possibly failed to copy file to account");
+                            break;
                         }
-                    } else {
-                        logger.info("transfer-status: Cannot check - Failed to find oid");
+                        sleep(i * 1000l, link);
+                    }
+                    if (!fileWasImportedSuccessfully) {
+                        /* Should never happen */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error while importing file into account");
                     }
                 } else {
                     logger.info("given/stored internal filepath: " + internal_file_path);
                 }
                 dllink = getDllinkFromFileInAccount(link, authSk, br);
                 if (dllink == null) {
-                    if (file_was_moved_before) {
-                        /*
-                         * This could happen e.g. if the user has deleted or renamed the file --> Internal path changes --> We're not able
-                         * to find it under the stored path
-                         */
-                        logger.info("Previously stored internal path was probably wrong --> Retrying");
-                        link.setProperty("path_internal", Property.NULL);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Bad internal path");
-                    }
-                    logger.warning("MoveFileIntoAccount: Fatal failure");
-                    /*
-                     * Possible errors (which should never occur: "id":"HTTP_404 == File could not be found in the account --> Probably move
-                     * handling failed or is broken
-                     */
+                    logger.warning("MoveFileIntoAccount: Fatal failure - failed to generate downloadurl ");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            }
-            if (getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
-                /*
-                 * It sounds crazy but we actually 'delete' the previously moved file before starting the download as cached links last long
-                 * enough for us to download it PLUS this way we do not waste space on the users' account :)
-                 */
-                moveFileToTrash(link, authSk);
-                emptyTrash(authSk);
+                if (getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
+                    /*
+                     * It sounds crazy but we actually 'delete' the previously moved file before starting the download as cached links last
+                     * long enough for us to download it PLUS this way we do not waste space on the users' account :)
+                     */
+                    moveFileToTrash(link, authSk);
+                    emptyTrash(authSk);
+                }
             }
         }
         boolean resume = ACCOUNT_FREE_RESUME;
@@ -734,21 +718,15 @@ public class DiskYandexNet extends PluginForHost {
             handleServerErrors(link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // final String server_filename = getFileNameFromHeader(dl.getConnection());
-        // if (server_filename != null) {
-        // link.setFinalFileName(server_filename.replace("+", " "));
-        // }
+        if (link.getFinalFileName() == null) {
+            dl.setFilenameFix(true);
+        }
         link.setProperty("directlink_account", dllink);
         dl.startDownload();
     }
 
     private boolean isFileDownloadQuotaReached(final DownloadLink dl) {
         return dl.getBooleanProperty(PROPERTY_QUOTA_REACHED, false);
-    }
-
-    private boolean isPartOfAFolder(final DownloadLink dl) {
-        /** TODO: Remove this property and simply check if the path contains more than just our main_hash. */
-        return dl.getBooleanProperty(PROPERTY_IS_PART_OF_A_FOLDER, false);
     }
 
     @SuppressWarnings("deprecation")
@@ -771,98 +749,46 @@ public class DiskYandexNet extends PluginForHost {
             logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
             return null;
         }
-        String dllink = null;
-        final boolean newWay = true;
-        if (newWay) {
-            /* 2018-04-18 */
-            try {
-                this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + authSk);
-                dllink = siteGetDllink(dl);
-            } catch (final Throwable e) {
-                logger.warning("Failed to create dllink of link in account - Exception!");
+        /* 2018-04-18 */
+        try {
+            this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
+            String dllink = PluginJSonUtils.getJsonValue(br, "file");
+            if (!StringUtils.isEmpty(dllink) && dllink.startsWith("//")) {
+                /* 2018-04-18 */
+                dllink = "https:" + dllink;
             }
-        } else {
-            for (final String downloaddir : downloaddirs) {
-                try {
-                    br.setFollowRedirects(false);
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Referer", "https://" + getCurrentDomain() + "/client/disk/Downloads");
-                    this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-get-resource-subresources,do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&version=" + VERSION_YANDEX_FILES + "&sk=" + authSk);
-                    /* 28 = file not found, 70 = folder not found */
-                    if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
-                        logger.info("getLinkFromFileInAccount: Moved file was not found in directory: " + downloaddir);
-                        continue;
-                    }
-                    dllink = br.getRedirectLocation();
-                    if (dllink == null) {
-                        dllink = siteGetDllink(dl);
-                    }
-                    br.setFollowRedirects(true);
-                    /* Fix links - cookies sit on the other domain */
-                    if (dllink != null) {
-                        dllink = dllink.replace("disk.yandex.ru/", "disk.yandex.com/");
-                    }
-                    break;
-                } catch (final Throwable e) {
-                    logger.warning("Failed to create dllink of link in account - Exception!");
-                    break;
-                }
-            }
+            return dllink;
+        } catch (final Throwable e) {
+            logger.warning("Failed to create dllink of link in account - Exception!");
         }
-        return dllink;
+        return null;
     }
 
     private void moveFileToTrash(final DownloadLink dl, final String authSk) {
         final String filepath = getInternalFilePath(dl);
         if (!StringUtils.isEmpty(filepath)) {
             logger.info("Trying to move file to trash: " + filepath);
-            final boolean newWay = true;
-            if (newWay) {
-                /* 2018-04-18 */
-                try {
-                    this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk + "&version=" + VERSION_YANDEX_FILES);
-                    final String error = PluginJSonUtils.getJson(br, "error");
-                    if (!StringUtils.isEmpty(error)) {
-                        logger.info("Possible failure on moving file into trash");
-                    } else {
-                        logger.info("Successfully moved file into trash");
-                    }
-                } catch (final Throwable e) {
-                    logger.warning("Failed to move file to trash - Exception!");
+            /* 2018-04-18 */
+            try {
+                this.br.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
+                final String error = PluginJSonUtils.getJson(br, "error");
+                if (!StringUtils.isEmpty(error)) {
+                    logger.info("Possible failure on moving file into trash");
+                } else {
+                    logger.info("Successfully moved file into trash");
                 }
-            } else {
-                for (final String downloaddir : downloaddirs) {
-                    try {
-                        this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=%2Fdisk%2F" + downloaddir + "%2F" + filepath + "&idClient=" + CLIENT_ID + "&sk=" + authSk + "&version=" + VERSION_YANDEX_FILES);
-                        /* 28 = file not found, 70 = folder not found */
-                        if (br.containsHTML("\"code\":28") || br.containsHTML("\"code\":70")) {
-                            logger.info("moveFileToTrash: ");
-                            continue;
-                        }
-                        logger.info("Successfully moved file to trash");
-                        break;
-                    } catch (final Throwable e) {
-                        logger.warning("Failed to move file to trash - Exception!");
-                        break;
-                    }
-                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.warning("Failed to move file to trash - Exception!");
             }
         } else {
             logger.info("Cannot move any file to trash as there is no stored internal path available");
         }
     }
 
-    private String siteGetDllink(final DownloadLink dl) {
-        String dllink = PluginJSonUtils.getJsonValue(br, "file");
-        if (!StringUtils.isEmpty(dllink) && dllink.startsWith("//")) {
-            /* 2018-04-18 */
-            dllink = "https:" + dllink;
-        }
-        return dllink;
-    }
-
     /**
-     * Returns URL-encoded internal path for download/move/file POST-requests. This is the path which a specific file has inside an account.
+     * Returns URL-encoded internal path for download/move/file POST-requests. This is the path which a specific file has inside a users'
+     * account e.g. after importing a public file into an account.
      */
     private String getInternalFilePath(final DownloadLink dl) {
         String filepath = null;
@@ -884,7 +810,7 @@ public class DiskYandexNet extends PluginForHost {
     private void emptyTrash(final String authSk) {
         try {
             logger.info("Trying to empty trash");
-            this.br.postPage("https://" + getCurrentDomain() + "/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk + "&version=" + VERSION_YANDEX_FILES);
+            this.br.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
             logger.info("Successfully emptied trash");
         } catch (final Throwable e) {
             logger.warning("Failed to empty trash");
@@ -916,10 +842,8 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
         return ACCOUNT_FREE_MAXDOWNLOADS;
     }
-
     // private String diskGetID0Public(final DownloadLink dl) {
     // final String hash = this.currHash.replace("/", "_").replace("+", "-");
     // final String path = this.currPath;
@@ -931,17 +855,17 @@ public class DiskYandexNet extends PluginForHost {
     // }
     // return postValue;
     // }
-    private String diskGetID0(final DownloadLink dl) {
-        final String hash = getRawHash(dl);
-        final String path = this.getPath(dl);
-        final String id0;
-        if (isPartOfAFolder(dl)) {
-            id0 = hash + ":" + path;
-        } else {
-            id0 = hash;
-        }
-        return id0;
-    }
+    // private String diskGetID0(final DownloadLink dl) {
+    // final String hash = getRawHash(dl);
+    // final String path = this.getPath(dl);
+    // final String id0;
+    // if (isPartOfAFolder(dl)) {
+    // id0 = hash + ":" + path;
+    // } else {
+    // id0 = hash;
+    // }
+    // return id0;
+    // }
 
     public static String getHashLongFromHTML(final Browser br) {
         return PluginJSonUtils.getJsonValue(br, "public_key");
@@ -955,14 +879,6 @@ public class DiskYandexNet extends PluginForHost {
     public static String getNewSK(final Browser br, final String domain, final String sourceURL) throws IOException {
         br.getPage("https://" + domain + "/auth/status?urlOrigin=" + Encoding.urlEncode(sourceURL) + "&source=album_web_signin");
         return PluginJSonUtils.getJsonValue(br, "sk");
-    }
-
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private void postPageRaw(final String url, final String data) throws Exception {
-        br.postPageRaw(url, data);
-        if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
-            throw new AccountUnavailableException("Wrong SK", 5 * 60 * 1000l);
-        }
     }
 
     @Override
