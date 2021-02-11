@@ -120,7 +120,7 @@ public class OneFichierCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?[a-z0-9]{5,20}|https?://[a-z0-9]{5,20}\\." + buildHostsPatternPart(domains));
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\?([a-z0-9]{5,20})");
         }
         return ret.toArray(new String[0]);
     }
@@ -168,16 +168,9 @@ public class OneFichierCom extends PluginForHost {
     private String getFID(final DownloadLink link) {
         if (link.getPluginPatternMatcher() == null) {
             return null;
-        }
-        final String linkid;
-        if (link.getPluginPatternMatcher().matches("(?i)https?://[a-z0-9]{5,20}\\.")) {
-            /* Old linktype */
-            linkid = new Regex(link.getPluginPatternMatcher(), "(?i)https?://([a-z0-9]{5,20})\\..+").getMatch(0);
         } else {
-            /* New linktype */
-            linkid = new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         }
-        return linkid;
     }
 
     @Override
@@ -196,10 +189,6 @@ public class OneFichierCom extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
             while (true) {
-                if (this.isAbort()) {
-                    logger.info("User stopped downloads --> Stepping out of loop");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
-                }
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
@@ -219,7 +208,6 @@ public class OneFichierCom extends PluginForHost {
                 // remove last &
                 sb.deleteCharAt(sb.length() - 1);
                 br.postPageRaw(correctProtocol("http://" + this.getHost() + "/check_links.pl"), sb.toString());
-                checkConnection(br);
                 for (final DownloadLink dllink : links) {
                     // final String addedLink = dllink.getDownloadURL();
                     final String addedlink_id = this.getFID(dllink);
@@ -324,7 +312,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
+    protected int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (account == null && (link != null && link.getProperty(PROPERTY_HOTLINK, null) != null)) {
             return Integer.MAX_VALUE;
         } else {
@@ -334,7 +322,8 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        /* Do not perform availablecheck here to save requests */
+        // requestFileInformation(link);
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -344,8 +333,6 @@ public class OneFichierCom extends PluginForHost {
     private String regex_dllink_middle = "align:middle\">\\s+<a href=(\"|')(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+.*?)\\1";
 
     public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
-        // to prevent wasteful requests.
-        int i = 0;
         /* The following code will cover saved hotlinks */
         String dllink = link.getStringProperty(PROPERTY_HOTLINK, null);
         if (dllink != null) {
@@ -369,7 +356,7 @@ public class OneFichierCom extends PluginForHost {
                 return;
             }
         }
-        // retry/resume of cached free link!
+        /* retry/resume of cached free link! */
         dllink = link.getStringProperty(PROPERTY_FREELINK, null);
         if (dllink != null) {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free, maxchunks_free);
@@ -391,8 +378,8 @@ public class OneFichierCom extends PluginForHost {
                 prepareBrowserWebsite(br);
             }
         }
-        // this covers virgin downloads which end up been hot link-able...
-        dllink = getDownloadlinkNEW(link);
+        /* this covers virgin downloads which end up been hot link-able... */
+        dllink = link.getPluginPatternMatcher();
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_free_hotlink, maxchunks_free_hotlink);
         if (this.looksLikeDownloadableContent(dl.getConnection())) {
             /* resume download */
@@ -400,29 +387,28 @@ public class OneFichierCom extends PluginForHost {
             dl.startDownload();
             return;
         }
-        // not hotlinkable.. standard free link...
-        // html yo!
+        /* not hotlinkable.. standard free link... */
         br.followConnection();
-        checkConnection(br);
         dllink = null;
         br.setFollowRedirects(false);
-        // use the English page, less support required
         boolean retried = false;
+        int i = 0;
         while (true) {
             i++;
-            // redirect log 2414663166931
             if (i > 1) {
                 br.setFollowRedirects(true);
                 // no need to do this link twice as it's been done above.
-                br.getPage(this.getDownloadlinkNEW(link));
+                br.getPage(link.getPluginPatternMatcher());
                 br.setFollowRedirects(false);
+            }
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             errorHandlingWebsite(link, account, br);
             if (this.getDownloadPasswordForm() != null) {
                 handleDownloadPasswordWebsite(link);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    // Link; 8182111113541.log; 464810; jdlog://8182111113541
                     dllink = br.getRegex(regex_dllink_middle).getMatch(1);
                     if (dllink == null) {
                         logger.warning("Failed to find final downloadlink after password handling success");
@@ -434,14 +420,8 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 final Browser br2 = br.cloneBrowser();
-                // final Form a1 = br2.getForm(0);
-                // if (a1 == null) {
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
-                // a1.remove(null);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, link);
-                // br2.submitForm(a1);
                 br2.postPageRaw(br.getURL(), "");
                 errorHandlingWebsite(link, account, br2);
                 dllink = br2.getRedirectLocation();
@@ -507,8 +487,7 @@ public class OneFichierCom extends PluginForHost {
         if (ibr.containsHTML(">IP Locked|>Will be unlocked within 1h\\.")) {
             // jdlog://2958376935451/ https://board.jdownloader.org/showthread.php?t=67204&page=2
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP will be locked 1h", 60 * 60 * 1000l);
-        } else if (ibr.containsHTML(">\\s*File not found !\\s*<br/>It has could be deleted by its owner\\.\\s*<")) {
-            // api linkchecking can be out of sync (wrong)
+        } else if (ibr.containsHTML(">\\s*File not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (ibr.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
             // jdlog://3278035891641 jdlog://7543779150841
@@ -544,6 +523,8 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (ibr.getHttpConnection().getResponseCode() == 503 && ibr.containsHTML(">\\s*Our services are in maintenance\\. Please come back after")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!", 20 * 60 * 1000l);
         } else {
             ipBlockedErrorHandling(ibr);
         }
@@ -886,12 +867,6 @@ public class OneFichierCom extends PluginForHost {
         return thread;
     }
 
-    private void checkConnection(final Browser br) throws PluginException {
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.containsHTML(">\\s*Our services are in maintenance\\. Please come back after")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Hoster is in maintenance mode!", 20 * 60 * 1000l);
-        }
-    }
-
     /** Checks whether we're logged in via website. */
     private boolean isLoggedinWebsite(final Browser br) {
         return isLoginCookieExists(br) && br.containsHTML("/logout\\.pl");
@@ -979,16 +954,18 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        /**
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
+         */
         if (AccountType.FREE.equals(account.getType())) {
             /**
              * Website mode is required for free account downloads
              */
-            requestFileInformation(link);
             loginWebsite(account, false);
             doFree(account, link);
             return;
         } else {
-            /** 2021-02-11: Don't do availablecheck in premium mode to reduce requests. */
             String dllink = getDllinkPremium(link, account);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1236,6 +1213,7 @@ public class OneFichierCom extends PluginForHost {
              * password protected!
              */
             link.setProperty(PROPERTY_PASSWORD_PROTECTED, true);
+            /** That is a multi purpose Form containing some default fields which we don't want or and to correct. */
             pwform.remove("save");
             pwform.put("did", "1");
             br.submitForm(pwform);
@@ -1277,12 +1255,6 @@ public class OneFichierCom extends PluginForHost {
             formdata = "dl=Download";
         }
         return formdata;
-    }
-
-    /** Returns an accessible downloadlink in the NEW format. */
-    private String getDownloadlinkNEW(final DownloadLink dl) {
-        final String host_of_current_downloadlink = Browser.getHost(dl.getPluginPatternMatcher());
-        return "https://" + host_of_current_downloadlink + "/?" + getFID(dl);
     }
 
     private void handleErrorsLastResortWebsite(final DownloadLink link, final Account account) throws PluginException {
