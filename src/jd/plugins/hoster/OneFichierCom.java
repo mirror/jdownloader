@@ -793,7 +793,7 @@ public class OneFichierCom extends PluginForHost {
                 invalidApiKey(account);
             } else if (message.matches("(?i)Owner locked #\\d+")) {
                 /* 2021-01-29 */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Accoubt banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned: " + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (message.matches("(?i).*Must be a customer.*")) {
                 /* 2020-06-09: E.g. {"message":"Must be a customer (Premium, Access) #200","status":"KO"} */
                 /* Free account (most likely expired premium) apikey entered by user --> API can only be used by premium users */
@@ -807,6 +807,9 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
             } else if (message.matches("(?i).*Resource not allowed #\\d+")) {
                 errorAccessControlLimit(this.getDownloadLink());
+            } else if (message.matches("(?i).*Resource not found #\\d+")) {
+                /* Usually goes along with http response 404 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 /* Unknown/unhandled error */
                 logger.warning("Handling unknown API error: " + message);
@@ -976,36 +979,38 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         if (AccountType.FREE.equals(account.getType())) {
             /**
-             * Used if the API fails and is wrong or user uses a free account.
+             * Website mode is required for free account downloads
              */
+            requestFileInformation(link);
             loginWebsite(account, false);
             doFree(account, link);
             return;
-        }
-        String dllink = getDllinkPremium(link, account);
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
-        if (preferSSL && dllink.startsWith("http://")) {
-            dllink = dllink.replace("http://", "https://");
-        }
-        br.setFollowRedirects(true);
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+        } else {
+            /** 2021-02-11: Don't do availablecheck in premium mode to reduce requests. */
+            String dllink = getDllinkPremium(link, account);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            errorHandlingWebsite(link, account, br);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
+            final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
+            if (preferSSL && dllink.startsWith("http://")) {
+                dllink = dllink.replace("http://", "https://");
+            }
+            br.setFollowRedirects(true);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                errorHandlingWebsite(link, account, br);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
@@ -1213,7 +1218,7 @@ public class OneFichierCom extends PluginForHost {
     private void handleDownloadPasswordWebsite(final DownloadLink link) throws Exception {
         synchronized (lastSessionPassword) {
             logger.info("Handling supposedly password protected link...");
-            final Form pwForm = getDownloadPasswordForm();
+            final Form pwform = getDownloadPasswordForm();
             /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
             boolean usedLastPassword = false;
             String passCode = link.getDownloadPassword();
@@ -1225,13 +1230,15 @@ public class OneFichierCom extends PluginForHost {
                     passCode = Plugin.getUserInput("Password?", link);
                 }
             }
-            pwForm.put("pass", Encoding.urlEncode(passCode));
+            pwform.put("pass", Encoding.urlEncode(passCode));
             /*
              * Set pw protected flag so in case this downloadlink is ever tried to be downloaded via API, we already know that it is
              * password protected!
              */
             link.setProperty(PROPERTY_PASSWORD_PROTECTED, true);
-            br.submitForm(pwForm);
+            pwform.remove("save");
+            pwform.put("did", "1");
+            br.submitForm(pwform);
             if (getDownloadPasswordForm() != null) {
                 if (usedLastPassword) {
                     lastSessionPassword.set(null);
