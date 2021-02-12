@@ -571,7 +571,7 @@ public class SecondLevelLaunch {
                                 LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory because: TLSv1.3 supported! Java-" + javaVersion);
                             } else {
                                 HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new AutoBCSSLSocketStreamFactory());
-                                LoggerFactory.getDefaultLogger().info("Use 'Auto' for default SSLSocketStreamFactory because: JSSE missing TLSv1.3 support! Java-" + javaVersion);
+                                LoggerFactory.getDefaultLogger().info("Use 'AUTO' for default SSLSocketStreamFactory because: JSSE missing TLSv1.3 support! Java-" + javaVersion);
                             }
                         } catch (final SSLException e) {
                             final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
