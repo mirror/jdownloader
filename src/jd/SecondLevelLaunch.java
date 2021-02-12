@@ -85,6 +85,7 @@ import org.appwork.utils.logging2.extmanager.Log;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
+import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory.TLS;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.Docker;
@@ -565,12 +566,12 @@ public class SecondLevelLaunch {
                     } else {
                         try {
                             // synology has broken/incomplete java packages that are missing ECDHE_ECDSA
-                            JavaSSLSocketStreamFactory.isCipherSuiteSupported(new String[] { "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256" });
-                            if (javaVersion >= JVMVersion.JAVA_11) {
-                                LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory because: java version >= 11! Java-" + javaVersion);
+                            JavaSSLSocketStreamFactory.getInstance().isCipherSuiteSupported(new String[] { "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256" });
+                            if (JavaSSLSocketStreamFactory.getInstance().isTLSSupported(TLS.TLS_1_3, null, null)) {
+                                LoggerFactory.getDefaultLogger().info("Use 'JSSE' for default SSLSocketStreamFactory because: TLSv1.3 supported! Java-" + javaVersion);
                             } else {
                                 HTTPConnectionImpl.setDefaultSSLSocketStreamFactory(new AutoBCSSLSocketStreamFactory());
-                                LoggerFactory.getDefaultLogger().info("Use 'Auto' for default SSLSocketStreamFactory because: java version < 11! Java-" + javaVersion);
+                                LoggerFactory.getDefaultLogger().info("Use 'Auto' for default SSLSocketStreamFactory because: JSSE missing TLSv1.3 support! Java-" + javaVersion);
                             }
                         } catch (final SSLException e) {
                             final BCSSLSocketStreamFactory bc = new BCSSLSocketStreamFactory();
