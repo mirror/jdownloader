@@ -20,30 +20,8 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
-import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -60,6 +38,27 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
+import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.components.PluginJSonUtils;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -121,7 +120,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your
                 // account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                ac.setValidUntil(Long.parseLong(expire) * 1000);
+                ac.setValidUntil(Long.parseLong(expire) * 1000, this.br);
                 account.setType(AccountType.PREMIUM);
             }
             /* Find traffic left */
@@ -155,13 +154,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
-            LinkedHashMap<String, Object> hosterInformation;
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("return");
+            Map<String, Object> hosterInformation;
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = (Map<String, Object>) entries.get("return");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
-                hosterInformation = (LinkedHashMap<String, Object>) entry.getValue();
+                hosterInformation = (Map<String, Object>) entry.getValue();
                 final String host = entry.getKey();
                 if (StringUtils.isEmpty(host)) {
                     continue;
@@ -251,8 +250,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private boolean isLoginSessionExpired(String message) {
         if (br.containsHTML("Session Expired") || "Invalid Username".equals(message)) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -386,50 +386,54 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 tt = a;
             }
         }
-        /* typically downloading generated links do not require login session! */
-        dllink = link.getStringProperty("linksnappycomdirectlink", null);
-        if (dllink != null) {
-            dllink = (attemptDownload(account) ? dllink : null);
-        }
-        final Map<String, Object> urlinfo = new HashMap<String, Object>();
-        urlinfo.put("link", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-        urlinfo.put("type", "");
-        if (!StringUtils.isEmpty(link.getDownloadPassword())) {
-            urlinfo.put("linkpass", link.getDownloadPassword());
-        }
-        final String urlinfo_encoded = URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo));
         if (dllink == null) {
+            /* typically downloading generated links do not require login session! */
+            dllink = link.getStringProperty("linksnappycomdirectlink", null);
+            if (dllink != null) {
+                dllink = (attemptDownload(account) ? dllink : null);
+            }
+            final String urlRaw;
             if (AccountType.FREE == account.getType()) {
+                urlRaw = "https://" + this.getHost() + "/api/linkfree?genLinks=%s";
                 /* Free Account download - not possible via API! */
-                loginWebsite(account);
-                getPage("https://" + this.getHost() + "/api/linkfree?genLinks=" + urlinfo_encoded);
-                /* Returns same json as API which means we can use the same code to try to start the download! */
-                attemptDownload(account);
+                loginWebsite(account, false);
             } else {
-                /* Premium account download */
-                boolean hasValidatedCookies = this.loginAPI(account, false);
-                /* Reset value because otherwise if attempts fail, JD will try again with the same broken dllink. */
-                link.setProperty("linksnappycomdirectlink", Property.NULL);
-                final String genLinks = "https://" + this.getHost() + "/api/linkgen?genLinks=" + urlinfo_encoded;
-                for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
-                    getPage(genLinks);
-                    final String message = PluginJSonUtils.getJsonValue(br, "error");
-                    if (isLoginSessionExpired(message)) {
-                        if (hasValidatedCookies) {
-                            // we already logged in seconds earlier... continuously re-logging in is pointless.
-                            throw new AccountUnavailableException("Session expired", 5 * 60 * 1000);
-                        }
-                        this.loginAPI(account, true);
-                        hasValidatedCookies = true;
-                        getPage(genLinks);
-                    }
-                    if (!attemptDownload(account)) {
-                        // we should have short wait period between retries.
-                        sleep(5000l, link, "Failed, will retry shortly");
-                        continue;
-                    }
-                    break;
+                urlRaw = "https://" + this.getHost() + "/api/linkgen?genLinks=%s";
+                this.loginAPI(account, false);
+            }
+            String passCode = link.getDownloadPassword();
+            int wrongPasswordAttempts = 0;
+            for (i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
+                final Map<String, Object> urlinfo = new HashMap<String, Object>();
+                urlinfo.put("link", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                urlinfo.put("type", "");
+                if (!StringUtils.isEmpty(passCode)) {
+                    urlinfo.put("linkpass", passCode);
                 }
+                getPage(String.format(urlRaw, URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo))));
+                final String message = PluginJSonUtils.getJsonValue(br, "error");
+                if (this.isErrorPasswordRequiredOrWrong(message)) {
+                    wrongPasswordAttempts += 1;
+                    if (wrongPasswordAttempts >= 3) {
+                        /* Allow next candidate to try */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong password entered");
+                    }
+                    passCode = getUserInput("Password?", link);
+                    /*
+                     * Do not reset initial password. Multihosters are prone to error - we do not want to remove the users' initial manually
+                     * typed in PW!
+                     */
+                    // link.setDownloadPassword(null);
+                    continue;
+                }
+                if (!attemptDownload(account)) {
+                    sleep(5000l, link, "Failed, will retry shortly");
+                    continue;
+                }
+                break;
+            }
+            if (passCode != null) {
+                link.setDownloadPassword(passCode);
             }
             handleDownloadErrors(account);
         }
@@ -497,28 +501,24 @@ public class LinkSnappyCom extends antiDDoSForHost {
      * @throws InterruptedException
      */
     private void handleDownloadErrors(final Account account) throws PluginException, IOException, InterruptedException {
-        if (dlResponseCode == 507) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Moving to new server", 5 * 60 * 1000l);
-        }
-        if (dlResponseCode == 504) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid response. Retrying", 5 * 60 * 1000l);
-        }
-        if (dlResponseCode == 503) {
-            // Max 10 retries above link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 error", 5 * 60 * 1000l);
-        }
         if (dlResponseCode == 502) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timeout from filehost", 5 * 60 * 1000l);
-        }
-        if (dlResponseCode == 429) {
+        } else if (dlResponseCode == 503) {
+            // Max 10 retries above link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 error", 5 * 60 * 1000l);
+        } else if (dlResponseCode == 504) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid response. Retrying", 5 * 60 * 1000l);
+        } else if (dlResponseCode == 507) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Moving to new server", 5 * 60 * 1000l);
+        } else if (dlResponseCode == 429) {
             // what does ' max connection limit' error mean??, for user to that given hoster??, or user to that linksnappy finallink
             // server?? or linksnappy global (across all finallink servers) connections
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Max Connection limit reached", 5 * 60 * 1000l);
         }
-        if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection() == null || !this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dlResponseCode == 200) {
                 // all but 200 is followed by handleAttemptResponseCode()
-                br.followConnection();
+                br.followConnection(true);
             }
             logger.info("Unknown download error");
             mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 2, 5 * 60 * 1000l);
@@ -554,42 +554,31 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if ("FAILED".equalsIgnoreCase(status) || "ERROR".equalsIgnoreCase(status)) {
                 final String err = PluginJSonUtils.getJsonValue(br, "error");
                 if (!StringUtils.isEmpty(err)) {
-                    if ("ERROR Code: 087".equalsIgnoreCase(err)) {
-                        // "status":"FAILED","error":"ERROR Code: 087"
-                        // I assume offline (webui says his host is offline, but not the api host list.
-                        mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Filehost offline");
-                    } else if ("No server available for this filehost, Please retry after few minutes".equalsIgnoreCase(err)) {
+                    if ("No server available for this filehost, Please retry after few minutes".equalsIgnoreCase(err)) {
                         // if no server available for the filehost
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "hoster offline");
-                    } else if (new Regex(err, "Couldn't (re-)?start download in system").matches()) {
+                    } else if (new Regex(err, "(?i)Couldn't (re-)?start download in system").matches()) {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), "Can't start cache. Possibly daily limit reached", 50);
-                    } else if (new Regex(err, "You have reached max download request").matches()) {
+                    } else if (new Regex(err, "(?i)You have reached max download request").matches()) {
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
-                    } else if (new Regex(err, "You have reached max download limit of").matches()) {
+                    } else if (new Regex(err, "(?i)You have reached max download limit of").matches()) {
                         try {
                             account.getAccountInfo().setTrafficLeft(0);
                         } catch (final Throwable e) {
                         }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit Reached. Please purchase elite membership!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (new Regex(err, "Invalid .*? link\\. Cannot find Filename\\.").matches()) {
+                    } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename\\.").matches()) {
                         logger.info("Error: Disabling current host");
                         mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Multihoster issue");
-                    } else if (new Regex(err, "Invalid file URL format\\.").matches()) {
+                    } else if (new Regex(err, "(?i)Invalid file URL format\\.").matches()) {
                         /*
                          * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is
                          * online but the link format is not added on linksnappy.
                          */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format");
-                    } else if (new Regex(err, "File not found").matches()) {
-                        if (i + 1 == MAX_DOWNLOAD_ATTEMPTS) {
-                            // multihoster is not trusted source for offline...
-                            logger.warning("Maybe the Hoster link is really offline! Confirm in browser!");
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        /* we just try again */
-                        logger.info("Attempt failed: 'file not found' error");
-                        return false;
-                    } else if (new Regex(err, "Your Account has Expired").matches()) {
+                    } else if (new Regex(err, "(?i)File not found").matches()) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
+                    } else if (new Regex(err, "(?i)Your Account has Expired").matches()) {
                         /*
                          * 2019-09-03 "{"status": "ERROR", "error": "Your Account has Expired, Please <a
                          * href=\"https://linksnappy.com/myaccount/extend\">extend it</a>"}"
@@ -602,12 +591,20 @@ public class LinkSnappyCom extends antiDDoSForHost {
                             account.getAccountInfo().setExpired(true);
                         } catch (final Throwable e) {
                         }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (new Regex(err, "Please upgrade to Elite membership").matches()) {
+                        throw new AccountUnavailableException("Account expired", 3 * 60 * 60 * 1000l);
+                    } else if (isErrorPasswordRequiredOrWrong(err)) {
+                        /** This error will usually be handled outside of here! */
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    } else if (new Regex(err, "(?i)Please upgrade to Elite membership").matches()) {
                         /* 2019-09-05: Free Account daily downloadlimit reached */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        throw new AccountUnavailableException("Daily downloadlimit reached", 10 * 60 * 1000l);
                     } else {
                         logger.warning("Possible unknown API error occured: " + err);
+                        if (this.getDownloadLink() == null) {
+                            throw new AccountUnavailableException("Unknown error: " + err, 10 * 60 * 1000l);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + err, 5 * 60 * 1000l);
+                        }
                     }
                 }
             }
@@ -642,6 +639,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
             // this will happen when response codes are outside of allowable
             return handleAttemptResponseCode(account, br, dl.getConnection());
         }
+    }
+
+    private boolean isErrorPasswordRequiredOrWrong(final String msg) {
+        return msg != null && msg.matches("(?i)This file requires password");
     }
 
     private boolean handleAttemptResponseCode(final Account account, final Browser br, final URLConnectionAdapter connection) throws IOException, PluginException {
@@ -685,7 +686,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
         synchronized (account) {
             br = new Browser();
             br.setCookiesExclusive(true);
-            boolean validatedCookies = false;
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 logger.info("Attempting cookie login");
@@ -700,44 +700,41 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 final String message = PluginJSonUtils.getJsonValue(br, "error");
                 // invalid username is shown when 2factorauth is required o_O.
                 if (!isLoginSessionExpired(message) && !error) {
-                    logger.info("cached login successful");
-                    validatedCookies = true;
+                    logger.info("Cached login successful");
+                    /* Save new cookie timestamp */
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return true;
                 } else {
-                    logger.info("cached login failed");
-                    validatedCookies = false;
+                    logger.info("Cached login failed");
+                    br.clearCookies(br.getHost());
                 }
             }
-            if (!validatedCookies) {
-                /* Full login is required */
-                logger.info("Performing full login");
-                getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getHttpConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
-                }
-                final boolean error = "ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"));
-                final String message = PluginJSonUtils.getJsonValue(br, "error");
-                if (error) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                // its not an error. it has to be OK!
-                account.saveCookies(br.getCookies(this.getHost()), "");
-                validatedCookies = true;
+            /* Full login is required */
+            logger.info("Performing full login");
+            getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
             }
-            return validatedCookies;
+            final boolean error = "ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"));
+            final String message = PluginJSonUtils.getJsonValue(br, "error");
+            if (error) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // its not an error. it has to be OK!
+            account.saveCookies(br.getCookies(this.getHost()), "");
+            return true;
         }
     }
 
-    private boolean loginWebsite(final Account account) throws Exception {
+    private boolean loginWebsite(final Account account, final boolean verifyCookies) throws Exception {
         /* 2019-09-05: API cookies and website cookies are the same and can be used for both! */
-        boolean validatedCookies = this.loginAPI(account, false);
-        if (!validatedCookies) {
+        boolean validatedCookies = this.loginAPI(account, verifyCookies);
+        if (verifyCookies) {
             br.getPage("https://" + this.getHost());
-            validatedCookies = this.isLoggedinWebsite();
-            if (!validatedCookies) {
-                this.loginAPI(account, true);
-            }
+            return this.isLoggedinWebsite();
+        } else {
+            return validatedCookies;
         }
-        return validatedCookies;
     }
 
     private boolean isLoggedinWebsite() {
@@ -750,12 +747,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -773,8 +771,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        throw new AccountRequiredException();
     }
 
     @Override
