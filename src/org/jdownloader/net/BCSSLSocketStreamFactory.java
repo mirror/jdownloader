@@ -413,9 +413,11 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
             if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
                 // retry with TLS1.3 enabled
                 return "enable TLS1.3";
-            } else if (options.enableNextDisabledCipher("GCM") != null) {
+            }
+            final String bcRetry = options.enableNextDisabledCipher("GCM");
+            if (bcRetry != null) {
                 // retry with TLS1.3 and GCM
-                return "enable GCM for TLS1.3";
+                return "enable " + bcRetry + " for TLS1.3";
             }
         }
         return null;
