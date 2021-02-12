@@ -641,7 +641,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
             /*
              * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
-             * first attempt (e.g. clipcake.com). Examples: hdzog.com (404), txxx.com (403)
+             * first attempt Examples: hdzog.com (404), txxx.com (403)
              */
             workaroundURL = con.getRequest().getUrl();
         }
