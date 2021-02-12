@@ -203,10 +203,10 @@ public class DiskYandexNet extends PluginForHost {
         final String error = (String) entries.get("error");
         final String hash = (String) entries.get("public_key");
         final String filename = (String) entries.get("name");
-        // final String path = (String) entries.get("path");
+        final String path = (String) entries.get("path");
         final String md5 = (String) entries.get("md5");
         final String sha256 = (String) entries.get("sha256");
-        if (error != null || StringUtils.isEmpty(filename) || StringUtils.isEmpty(hash) || filesize == -1) {
+        if (error != null || StringUtils.isEmpty(filename) || StringUtils.isEmpty(hash) || StringUtils.isEmpty(path) || filesize == -1) {
             /* Whatever - our link is probably offline! */
             return AvailableStatus.FALSE;
         }
@@ -216,10 +216,12 @@ public class DiskYandexNet extends PluginForHost {
         if (sha256 != null) {
             dl.setSha256Hash(sha256);
         }
-        dl.setProperty(PROPERTY_HASH, hash);
+        dl.setProperty(PROPERTY_HASH, hash + ":" + path);
         dl.setFinalFileName(filename);
         dl.setProperty(PROPERTY_CRAWLED_FILENAME, filename);
-        dl.setVerifiedFileSize(filesize);
+        if (filesize > 0) {
+            dl.setVerifiedFileSize(filesize);
+        }
         // dl.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
@@ -235,7 +237,9 @@ public class DiskYandexNet extends PluginForHost {
         }
         dl.setFinalFileName(filename);
         dl.setProperty(PROPERTY_CRAWLED_FILENAME, filename);
-        dl.setVerifiedFileSize(filesize);
+        if (filesize > 0) {
+            dl.setVerifiedFileSize(filesize);
+        }
         // dl.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
@@ -361,7 +365,8 @@ public class DiskYandexNet extends PluginForHost {
                 logger.log(e);
             }
             handleServerErrors(link);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* This will most likely happen for 0 byte filesize files / serverside broken files. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
         dl.startDownload();
     }
@@ -417,32 +422,18 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    public static void setRawHash(final DownloadLink dl, final String hash_long) {
-        dl.setProperty(PROPERTY_HASH, hash_long);
-    }
-
     private String getRawHash(final DownloadLink dl) {
         final String hash = dl.getStringProperty(PROPERTY_HASH, null);
         return hash;
     }
 
     private String getHashWithoutPath(final DownloadLink dl) {
-        final String hash = this.getRawHash(dl);
-        if (hash.matches(".+:/.+")) {
-            return hash.substring(0, hash.indexOf(":/"));
-        } else {
-            return hash;
-        }
+        return DiskYandexNetFolder.getHashWithoutPath(this.getRawHash(dl));
     }
 
     /** Returns relative path of the file in relation to {@link #getHashWithoutPath(DownloadLink)}. */
     private String getPath(final DownloadLink dl) {
-        final String hash = this.getRawHash(dl);
-        if (hash.matches(".+:/.+")) {
-            return hash.substring(hash.indexOf(":/") + 1, hash.length());
-        } else {
-            return "/";
-        }
+        return DiskYandexNetFolder.getPathFromHash(this.getRawHash(dl));
     }
 
     private String getUserID(final Account acc) {

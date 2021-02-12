@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -70,6 +72,25 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             /* Crawl albums */
             return crawlPhotoAlbum(parameter);
         } else {
+            /* Do some URL corrections */
+            if (param.getCryptedUrl().matches(type_docviewer)) {
+                /* Documents in web view mode --> File-URLs! */
+                /* First lets fix broken URLs by removing unneeded parameters ... */
+                String tmp = param.getCryptedUrl();
+                final String remove = new Regex(tmp, "(\\&[a-z0-9]+=.+)").getMatch(0);
+                if (remove != null) {
+                    tmp = tmp.replace(remove, "");
+                }
+                String hash = new Regex(tmp, type_docviewer).getMatch(0);
+                if (StringUtils.isEmpty(hash)) {
+                    hash = new Regex(tmp, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
+                }
+                if (StringUtils.isEmpty(hash)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String hashRoot = URLDecoder.decode(hash, "UTF-8");
+                param.setCryptedUrl(generateContentURL(hashRoot));
+            }
             /**
              * 2021-02-09: New: Prefer website if we do now know whether we got a file or a folder! API will fail in case it is a single
              * file && is currently quota-limited!
@@ -90,43 +111,15 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (relativeDownloadPath == null) {
             relativeDownloadPath = "";
         }
-        String internalPath = new Regex(param.toString(), type_shortURLs_d).getMatch(1);
-        if (internalPath != null) {
-            internalPath = URLDecoder.decode(internalPath, "UTF-8");
-            /* Remove parameter(s) */
-            if (internalPath.contains("?")) {
-                internalPath = internalPath.substring(0, internalPath.indexOf("?"));
-            }
-            /* No path given from previous crawler actions -> That's the best we can get. */
-            if (StringUtils.isEmpty(relativeDownloadPath)) {
-                relativeDownloadPath = internalPath;
-            }
-        }
-        if (internalPath == null) {
-            /* No path given? Crawl everything starting from root. */
-            internalPath = "/";
-        }
-        String hashMain = getHashMain(param.getCryptedUrl());
-        if (hashMain.contains(":/")) {
-            /* Hash with path --> Separate that */
-            final Regex hashregex = new Regex(hashMain, "(.*?):(/.+)");
-            if (StringUtils.isEmpty(hashregex.getMatch(0))) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Set correct value */
-            hashMain = hashregex.getMatch(0);
-            internalPath = hashregex.getMatch(1);
-        } else if (hashMain.contains(":")) {
-            /* Small workaround: Hash contains remains of path -> Clean that */
-            hashMain = hashMain.replace(":", "");
-        }
-        final String addedLink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hashMain);
-        /* Access URL if it hasn't been accessed before */
-        if (br.getRequest() == null) {
-            br.getPage(addedLink);
-            if (isOfflineWebsite(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        /**
+         * 2021-02-12: If a user adds an URL leading to only one file but this file is part of a folder, this crawler will crawl everything
+         * from the root folder on. This is because the fiule could e.g. be at the end of a paginated folder -> Browser will do pagination
+         * until file is found but this takes too much time and effort for us so we'll just add everything. The user can then sort/find that
+         * file in the LinkGrabber.
+         */
+        br.getPage(param.getCryptedUrl());
+        if (isOfflineWebsite(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         final String json = br.getRegex("<script type=\"application/json\"[^>]*id=\"store-prefetch\"[^>]*>(.*?)</script>").getMatch(0);
@@ -137,17 +130,19 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
          * containing the name of the root folder.
          */
         String baseFolderName = null;
+        String hashMain = null;
         for (final String key : entries.keySet()) {
             final Map<String, Object> ressource = (Map<String, Object>) entries.get(key);
             final String type = (String) ressource.get("type");
             if (type.equals("dir")) {
                 baseFolderName = (String) ressource.get("name");
+                hashMain = (String) ressource.get("hash");
             }
             break;
         }
         if (StringUtils.isEmpty(baseFolderName)) {
             /* Fallback */
-            baseFolderName = hashMain;
+            baseFolderName = "unknown";
         }
         if (StringUtils.isEmpty(relativeDownloadPath)) {
             /* First time crawl of a possible folder structure -> Define root dir name */
@@ -180,7 +175,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     }
                     offset += 1;
                     /* Subfolders go back into our decrypter! Path contains "<hash_long_decoded>:/path" */
-                    final String folderlink = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(path);
+                    final String folderlink = this.generateContentURL(path);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
@@ -212,10 +207,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     }
                     if (!StringUtils.isEmpty(path)) {
                         /* Path contains hash + path */
-                        jd.plugins.hoster.DiskYandexNet.setRawHash(dl, path);
+                        dl.setProperty(DiskYandexNet.PROPERTY_HASH, path);
                     } else {
                         /* Hash only */
-                        jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hash);
+                        dl.setProperty(DiskYandexNet.PROPERTY_HASH, hash);
                     }
                     dl.setProperty("mainlink", urlContent);
                     dl.setContentUrl(urlContent);
@@ -241,7 +236,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.info("Stopping because: Reached last page");
                 break;
             } else if (StringUtils.isEmpty(sk)) {
+                /* This should never happen */
                 logger.warning("Pagination failure: sk missing");
+                break;
+            } else if (StringUtils.isEmpty(hashMain)) {
+                /* This should never happen */
+                logger.warning("Pagination failure: hashMain missing");
                 break;
             }
             // final Map<String, Object> paginationMap = new HashMap<String, Object>();
@@ -263,49 +263,34 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getHashMain(final String url) throws PluginException, IOException {
-        String hashMain;
-        if (url.matches(type_docviewer)) {
-            /* Documents in web view mode --> File-URLs! */
-            /* First lets fix broken URLs by removing unneeded parameters ... */
-            String tmp = url;
-            final String remove = new Regex(tmp, "(\\&[a-z0-9]+=.+)").getMatch(0);
-            if (remove != null) {
-                tmp = tmp.replace(remove, "");
-            }
-            String hash = new Regex(tmp, type_docviewer).getMatch(0);
-            if (StringUtils.isEmpty(hash)) {
-                hash = new Regex(tmp, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-            }
-            if (StringUtils.isEmpty(hash)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            hashMain = URLDecoder.decode(hash, "UTF-8");
-        } else if (url.matches(type_yadi_sk_mail)) {
-            hashMain = getHashFromURL(url);
-        } else if (url.matches(type_shortURLs_d) || url.matches(type_shortURLs_i)) {
-            getPage(url);
-            if (isOfflineWebsite(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            hashMain = PluginJSonUtils.getJsonValue(br, "hash");
-            if (hashMain == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            hashMain = getHashFromURL(url);
-        }
-        return hashMain;
-    }
-
     private ArrayList<DownloadLink> crawlFilesFoldersAPI(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
         if (relativeDownloadPath == null) {
             relativeDownloadPath = "";
         }
-        String internalPath = new Regex(param.getCryptedUrl(), type_shortURLs_d).getMatch(1);
-        if (internalPath != null) {
+        String hashWithPath;
+        if (param.getCryptedUrl().matches(type_yadi_sk_mail)) {
+            hashWithPath = getHashFromURL(param.getCryptedUrl());
+        } else if (param.getCryptedUrl().matches(type_shortURLs_d) || param.getCryptedUrl().matches(type_shortURLs_i)) {
+            getPage(param.getCryptedUrl());
+            if (isOfflineWebsite(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            hashWithPath = PluginJSonUtils.getJsonValue(br, "hash");
+            if (hashWithPath == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            hashWithPath = getHashFromURL(param.getCryptedUrl());
+        }
+        if (hashWithPath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String hashWithoutPath = getHashWithoutPath(hashWithPath);
+        String internalPath = null;
+        if (param.getCryptedUrl().matches(type_shortURLs_d)) {
+            internalPath = new Regex(param.getCryptedUrl(), type_shortURLs_d).getMatch(1);
             internalPath = URLDecoder.decode(internalPath, "UTF-8");
             /* Remove parameter(s) */
             if (internalPath.contains("?")) {
@@ -315,29 +300,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             if (StringUtils.isEmpty(relativeDownloadPath)) {
                 relativeDownloadPath = internalPath;
             }
+        } else {
+            internalPath = getPathFromHash(hashWithPath);
         }
         if (internalPath == null) {
             /* No path given? Crawl everything starting from root. */
             internalPath = "/";
         }
-        String hashMain = getHashMain(param.getCryptedUrl());
-        if (hashMain == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (hashMain.contains(":/")) {
-            /* Hash with path --> Separate that */
-            final Regex hashregex = new Regex(hashMain, "(.*?):(/.+)");
-            if (StringUtils.isEmpty(hashregex.getMatch(0))) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Set correct value */
-            hashMain = hashregex.getMatch(0);
-            internalPath = hashregex.getMatch(1);
-        } else if (hashMain.contains(":")) {
-            /* Small workaround: Hash contains remains of path -> Clean that */
-            hashMain = hashMain.replace(":", "");
-        }
-        final String addedLink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hashMain);
         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         short offset = 0;
@@ -345,32 +314,24 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         long totalNumberofEntries = 0;
         final FilePackage fp = FilePackage.getInstance();
         do {
-            getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashMain) + "&path=" + URLEncode.encodeURIComponent(internalPath));
+            getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             /*
              * 2021-01-19:
              * {"message":"Не удалось найти запрошенный ресурс.","description":"Resource not found.","error":"DiskNotFoundError"}
              */
             if (entries.containsKey("error")) {
-                decryptedLinks.add(this.createOfflinelink(addedLink));
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                 return decryptedLinks;
             }
             final String type_main = (String) entries.get("type");
             if (!type_main.equals(JSON_TYPE_DIR)) {
                 /* We only have a single file --> Add to downloadliste / host plugin */
-                final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                if (jd.plugins.hoster.DiskYandexNet.apiAvailablecheckIsOffline(this.br)) {
-                    decryptedLinks.add(this.createOfflinelink(addedLink));
-                    return decryptedLinks;
-                }
-                parseFilePropertiesAPI(dl, entries);
-                dl.setProperty("mainlink", addedLink);
-                dl.setLinkID(hashMain + internalPath);
-                /* Required by hoster plugin to get filepath (filename) */
-                dl.setProperty(DiskYandexNet.PROPERTY_CRAWLED_FILENAME, PluginJSonUtils.getJsonValue(br, "name"));
+                final DownloadLink dl = parseSingleFileAPI(entries);
                 if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                 }
+                dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -387,7 +348,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 String baseFolderName = (String) entries.get("name");
                 if (StringUtils.isEmpty(baseFolderName)) {
                     /* Fallback */
-                    baseFolderName = hashMain;
+                    baseFolderName = hashWithPath;
                 }
                 fp.setName(baseFolderName);
                 if (StringUtils.isEmpty(relativeDownloadPath)) {
@@ -404,41 +365,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 if (StringUtils.isEmpty(type_main) || StringUtils.isEmpty(path) || StringUtils.isEmpty(name)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final String hashFull = hash + ":" + path;
                 if (type.equals(JSON_TYPE_DIR)) {
                     /* Subfolders go back into our decrypter! */
-                    final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hashFull);
+                    final String folderlink = "https://disk.yandex.com/public?hash=" + URLEncode.encodeURIComponent(hash + ":" + path);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath + "/" + name);
                     decryptedLinks.add(dl);
                 } else {
-                    final String media_type = (String) entries.get("media_type");
-                    final String resource_id = (String) entries.get("resource_id");
-                    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(hash) || StringUtils.isEmpty(resource_id)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                    parseFilePropertiesAPI(dl, entries);
-                    final String urlContent = "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hashFull);
-                    String urlUser;
-                    if ("document".equalsIgnoreCase(media_type)) {
-                        /*
-                         * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
-                         */
-                        urlUser = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncode.encodeURIComponent(hashFull);
-                    } else {
-                        /*
-                         * No fancy content URL available - set main URL.
-                         */
-                        urlUser = urlContent;
-                    }
-                    jd.plugins.hoster.DiskYandexNet.setRawHash(dl, hashFull);
-                    dl.setProperty("mainlink", urlContent);
+                    final DownloadLink dl = parseSingleFileAPI(entries);
                     if (StringUtils.isNotEmpty(relativeDownloadPath)) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, relativeDownloadPath);
                     }
-                    dl.setContentUrl(urlUser);
-                    dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
                     dl._setFilePackage(fp);
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -460,6 +397,40 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink parseSingleFileAPI(final Map<String, Object> entries) throws Exception {
+        final String hash = (String) entries.get("public_key");
+        final String path = (String) entries.get("path");
+        final String name = (String) entries.get("name");
+        final String resource_id = (String) entries.get("resource_id");
+        if (StringUtils.isEmpty(name) || StringUtils.isEmpty(path) || StringUtils.isEmpty(hash) || StringUtils.isEmpty(resource_id)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+        parseFilePropertiesAPI(dl, entries);
+        final String hashFull = hash + ":" + path;
+        final String urlContent = generateContentURL(hashFull);
+        /**
+         * 2021-02-12: Keep it simple: Do not use different contentURLs for documents so they can be viewed in context of the folder they're
+         * in via browser!
+         */
+        // String urlUser;
+        // if ("document".equalsIgnoreCase((String) entries.get("media_type"))) {
+        // /*
+        // * Set contentURL which links to a comfortable web-view of documents whenever it makes sense.
+        // */
+        // urlUser = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + URLEncode.encodeURIComponent(hashFull);
+        // } else {
+        // /*
+        // * No fancy content URL available - set main URL.
+        // */
+        // urlUser = urlContent;
+        // }
+        dl.setProperty("mainlink", generateContentURL(hashFull));
+        dl.setContentUrl(urlContent);
+        dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
+        return dl;
     }
 
     /** For e.g. https://yadi.sk/a/blabla */
@@ -540,7 +511,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink(url);
                 dl.setLinkID(hash_short + "/" + item_id);
                 jd.plugins.hoster.YandexAlbum.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
-                jd.plugins.hoster.DiskYandexNet.setRawHash(dl, rawHash);
+                dl.setProperty(DiskYandexNet.PROPERTY_HASH, rawHash);
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
@@ -558,6 +529,26 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             throw new DecrypterException();
         }
         return decryptedLinks;
+    }
+
+    private String generateContentURL(final String hash) {
+        return "https://disk.yandex.com/public/?hash=" + URLEncode.encodeURIComponent(hash);
+    }
+
+    public static String getPathFromHash(final String hash) {
+        if (hash.matches(".+:/.+")) {
+            return hash.substring(hash.indexOf(":/") + 1, hash.length());
+        } else {
+            return "/";
+        }
+    }
+
+    public static String getHashWithoutPath(final String hash) {
+        if (hash.matches(".+:/.+")) {
+            return hash.substring(0, hash.indexOf(":/"));
+        } else {
+            return hash;
+        }
     }
 
     public static String regExJSON(final Browser br) {
@@ -590,8 +581,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return br.containsHTML("class=\"not\\-found\\-public__caption\"|class=\"error__icon error__icon_blocked\"|_file\\-blocked\"|A complaint was received regarding this file|>File blocked<") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500;
     }
 
-    private String getHashFromURL(final String url) throws UnsupportedEncodingException {
-        final String ret = new Regex(url, "hash=([^&#]+)").getMatch(0);
+    private String getHashFromURL(final String url) throws UnsupportedEncodingException, MalformedURLException {
+        final String ret = UrlQuery.parse(url).get("hash");
         if (ret != null) {
             return URLDecoder.decode(ret, "UTF-8");
         } else {
