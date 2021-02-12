@@ -83,6 +83,7 @@ public class DiskYandexNet extends PluginForHost {
     public static final String   PROPERTY_INTERNAL_FUID             = "INTERNAL_FUID";
     public static final String   PROPERTY_QUOTA_REACHED             = "quoty_reached";
     public static final String   PROPERTY_CRAWLED_FILENAME          = "plain_filename";
+    public static final String   PROPERTY_PATH_INTERNAL             = "path_internal";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!!
@@ -574,6 +575,7 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dllink = checkDirectLink(link, "directlink_account");
+        boolean moveToTrashAfterDownloading = false;
         if (dllink == null) {
             // final String id0 = diskGetID0(link);
             /*
@@ -634,7 +636,7 @@ public class DiskYandexNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error while importing file into account: Failed to find oid");
                     }
                     /* Save internal path for later. */
-                    link.setProperty("path_internal", internal_file_path);
+                    link.setProperty(PROPERTY_PATH_INTERNAL, internal_file_path);
                     /* Sometimes the process of 'moving' a file into a cloud account can take some seconds. */
                     logger.info("transfer-status: checking");
                     boolean fileWasImportedSuccessfully = false;
@@ -664,14 +666,7 @@ public class DiskYandexNet extends PluginForHost {
                     logger.warning("MoveFileIntoAccount: Fatal failure - failed to generate downloadurl ");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false)) {
-                    /*
-                     * It sounds crazy but we actually 'delete' the previously moved file before starting the download as cached links last
-                     * long enough for us to download it PLUS this way we do not waste space on the users' account :)
-                     */
-                    moveFileToTrash(link, authSk);
-                    emptyTrash(authSk);
-                }
+                moveToTrashAfterDownloading = getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
             }
         }
         boolean resume = ACCOUNT_FREE_RESUME;
@@ -681,6 +676,8 @@ public class DiskYandexNet extends PluginForHost {
             resume = false;
             link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
         }
+        /* Small workaround - use stored browser as it contains our originally used host. */
+        final Browser br2 = this.br.cloneBrowser();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
@@ -696,7 +693,18 @@ public class DiskYandexNet extends PluginForHost {
             dl.setFilenameFix(true);
         }
         link.setProperty("directlink_account", dllink);
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } finally {
+            if (moveToTrashAfterDownloading) {
+                /*
+                 * Don't care whether or not the download was successful as we've stored our generated directURL. If that fails too, we'll
+                 * just import the file into the users' account again.
+                 */
+                moveFileToTrash(br2, link, authSk);
+                emptyTrash(br2, authSk);
+            }
+        }
     }
 
     private boolean isFileDownloadQuotaReached(final DownloadLink dl) {
@@ -737,17 +745,18 @@ public class DiskYandexNet extends PluginForHost {
         return null;
     }
 
-    private void moveFileToTrash(final DownloadLink dl, final String authSk) {
+    private void moveFileToTrash(final Browser br2, final DownloadLink dl, final String authSk) {
         final String filepath = getInternalFilePath(dl);
         if (!StringUtils.isEmpty(filepath)) {
             logger.info("Trying to move file to trash: " + filepath);
             try {
-                this.br.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
-                final String error = PluginJSonUtils.getJson(br, "error");
-                if (!StringUtils.isEmpty(error)) {
+                br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+                if (entries.containsKey("error")) {
                     logger.info("Possible failure on moving file into trash");
                 } else {
                     logger.info("Successfully moved file into trash");
+                    dl.removeProperty(PROPERTY_PATH_INTERNAL);
                 }
             } catch (final Throwable e) {
                 logger.log(e);
@@ -767,7 +776,7 @@ public class DiskYandexNet extends PluginForHost {
         final boolean newWay = true;
         if (newWay) {
             /* 2018-04-18: New */
-            filepath = dl.getStringProperty("path_internal", null);
+            filepath = dl.getStringProperty(PROPERTY_PATH_INTERNAL, null);
         } else {
             final String plain_filename = dl.getStringProperty(PROPERTY_CRAWLED_FILENAME, null);
             filepath = Encoding.urlEncode(plain_filename);
@@ -779,10 +788,10 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /** Deletes all items inside users' Yandex trash folder. */
-    private void emptyTrash(final String authSk) {
+    private void emptyTrash(final Browser br2, final String authSk) {
         try {
             logger.info("Trying to empty trash");
-            this.br.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
+            br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
             logger.info("Successfully emptied trash");
         } catch (final Throwable e) {
             logger.warning("Failed to empty trash");

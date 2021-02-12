@@ -967,7 +967,14 @@ public class OneFichierCom extends PluginForHost {
             doFree(account, link);
             return;
         } else {
-            String dllink = getDllinkPremium(link, account);
+            String dllink = checkDirectLink(link, PROPERTY_PREMLINK);
+            if (dllink == null) {
+                if (canUseAPI(account)) {
+                    dllink = getDllinkPremiumAPI(link, account);
+                } else {
+                    dllink = getDllinkPremiumWebsite(link, account);
+                }
+            }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -989,18 +996,6 @@ public class OneFichierCom extends PluginForHost {
             }
             dl.startDownload();
         }
-    }
-
-    private String getDllinkPremium(final DownloadLink link, final Account account) throws Exception {
-        String dllink = checkDirectLink(link, PROPERTY_PREMLINK);
-        if (dllink == null) {
-            if (canUseAPI(account)) {
-                dllink = getDllinkPremiumAPI(link, account);
-            } else {
-                dllink = getDllinkPremiumWebsite(link, account);
-            }
-        }
-        return dllink;
     }
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {

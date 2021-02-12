@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import org.appwork.utils.Regex;
@@ -114,8 +115,8 @@ public class FastShareCz extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         if (br.containsHTML("(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         }
@@ -126,7 +127,7 @@ public class FastShareCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (captchaLink != null) {
-            final String captcha = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
+            final String captcha = getCaptchaCode(MAINPAGE + captchaLink, link);
             postPage(action, "code=" + Encoding.urlEncode(captcha));
         } else {
             postPage(action, "");
@@ -156,21 +157,25 @@ public class FastShareCz extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             }
             logger.info("fastshare.cz: Unknown error -> Retrying");
-            int timesFailed = downloadLink.getIntegerProperty("timesfailedfastsharecz_unknown", 0);
-            downloadLink.getLinkStatus().setRetryCount(0);
+            int timesFailed = link.getIntegerProperty("timesfailedfastsharecz_unknown", 0);
+            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                downloadLink.setProperty("timesfailedfastsharecz_unknown", timesFailed);
+                link.setProperty("timesfailedfastsharecz_unknown", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                downloadLink.setProperty("timesfailedfastsharecz_unknown", Property.NULL);
+                link.setProperty("timesfailedfastsharecz_unknown", Property.NULL);
                 logger.info("fastshare.cz: Unknown error -> Plugin is broken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -183,26 +188,26 @@ public class FastShareCz extends antiDDoSForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
-                br.setCookie(MAINPAGE, "lang", "cs");
+                br.setCookie(this.getHost(), "lang", "cs");
                 br.setCustomCharset("utf-8");
-                Cookies cookies = account.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
-                    getPage("https://fastshare.cz/user");
-                    if (!br.containsHTML(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>")) {
-                        cookies = null;
+                    getPage("https://" + this.getHost() + "/user");
+                    if (this.isLoggedIN()) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getURL()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
                     }
                 }
-                if (cookies == null) {
-                    br.setFollowRedirects(true);
-                    postPage("https://fastshare.cz/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-                    if (br.getURL().contains("fastshare.cz/error=1")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (!br.containsHTML(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                logger.info("Performing full login");
+                br.setFollowRedirects(true);
+                postPage("https://" + this.getHost() + "/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                if (!isLoggedIN()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
@@ -214,14 +219,23 @@ public class FastShareCz extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean isLoggedIN() {
+        return br.containsHTML("/logout\\.php");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
-        final String availabletraffic = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)[\t\n\r ]+:[\t\n\r ]+</td>[\r\n\t ]+<td[^>]*?>([^<>\"&]+)").getMatch(0);
+        String availabletraffic = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)\\s*:\\s*</td>\\s*<td[^>]*?>([^<>\"&]+)").getMatch(0);
+        // if (availabletraffic == null) {
+        // /* 2021-02-12 */
+        // availabletraffic = br.getRegex("\"start-tag\">span</span>\\&gt;</span><span>\\(([^<>\"]+)\\)").getMatch(0);
+        // }
         final String unlimitedTraffic = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         if (availabletraffic != null) {
+            /* 2021-02-12: E.g. 3 335.88 GB */
+            availabletraffic = availabletraffic.trim().replace(" ", "");
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         }
         if (unlimitedTraffic != null) {
@@ -229,7 +243,7 @@ public class FastShareCz extends antiDDoSForHost {
             if (until != null) {
                 final long validUntil = TimeFormatter.getMilliSeconds(until, "dd.MM.yyyy", Locale.ENGLISH) + (23 * 60 * 60 * 1000l);
                 if (validUntil > 0) {
-                    ai.setValidUntil(validUntil);
+                    ai.setValidUntil(validUntil, this.br);
                     if (!ai.isExpired()) {
                         ai.setUnlimitedTraffic();
                     }
@@ -270,8 +284,12 @@ public class FastShareCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("Nemate dostatecny kredit pro stazeni tohoto souboru! Kredit si muzete dobit")) {
                 logger.info("Trafficlimit reached!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -303,15 +321,15 @@ public class FastShareCz extends antiDDoSForHost {
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 }
