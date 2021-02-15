@@ -53,7 +53,7 @@ public class UlozToFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file-tracking/[a-f0-9]{96}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:download|file)-tracking/[a-f0-9]{96}");
         }
         return ret.toArray(new String[0]);
     }
@@ -69,7 +69,7 @@ public class UlozToFolder extends PluginForDecrypt {
     }
 
     /** Special (temporary/IP bound) URLs available when searching for files directly on the website of this file-hoster. */
-    private static final String TYPE_TRACKING = "https?://[^/]+/file-tracking/[a-f0-9]{96}";
+    private static final String TYPE_TRACKING = "https?://[^/]+/(?:download|file)-tracking/[a-f0-9]{96}";
 
     /** 2021-02-11: This host is GEO-blocking german IPs! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
