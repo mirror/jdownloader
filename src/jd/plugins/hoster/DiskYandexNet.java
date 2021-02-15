@@ -452,26 +452,26 @@ public class DiskYandexNet extends PluginForHost {
                 br.setFollowRedirects(true);
                 /* Always try to re-use cookies to avoid login captchas! */
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
                 if (cookies != null) {
-                    for (final String domain : cookie_domains) {
-                        br.setCookies(domain, cookies);
-                    }
-                    br.setCookies("passport.yandex.com", cookies);
+                    this.setCookies(cookies);
                     if (!force) {
                         /* Trust cookies */
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    br.getPage("https://passport.yandex.com/profile");
-                    if (br.containsHTML("mode=logout")) {
-                        /* Set new cookie timestamp */
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    if (this.checkCookies(account)) {
+                        return;
+                    }
+                }
+                /* 2021-02-15: Implemented cookie login for testing purposes */
+                if (userCookies != null) {
+                    logger.info("Attempting cookie login...");
+                    this.setCookies(userCookies);
+                    if (this.checkCookies(account)) {
                         return;
                     } else {
-                        /* Failed - we have to perform a full login! */
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 logger.info("Performing full login");
@@ -543,12 +543,34 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
+    private void setCookies(final Cookies cookies) {
+        for (final String domain : cookie_domains) {
+            br.setCookies(domain, cookies);
+        }
+        br.setCookies("passport.yandex.com", cookies);
+    }
+
+    private boolean checkCookies(final Account account) throws IOException {
+        br.getPage("https://passport.yandex.com/profile");
+        if (br.containsHTML("mode=logout")) {
+            /* Set new cookie timestamp */
+            logger.info("Cookie login successful");
+            account.saveCookies(br.getCookies(this.getHost()), "");
+            return true;
+        } else {
+            /* Failed - we have to perform a full login! */
+            logger.info("Cookie login failed");
+            br.clearCookies(br.getHost());
+            return false;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!br.getURL().contains("client/disk")) {
-            getPage("https://" + getCurrentDomain() + "/client/disk/");
+            getPage("/client/disk/");
         }
         final String userID = PluginJSonUtils.getJson(br, "uid");
         if (StringUtils.isEmpty(userID)) {
