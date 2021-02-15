@@ -136,7 +136,7 @@ public class OkRu extends PluginForHost {
                 /* User needs account and has to pay to download/view such content. */
                 this.paidContent = true;
             } else {
-                final String[] qualities = { "hd", "sd", "low", "lowest", "mobile" };
+                // final String[] qualities = { "full", "hd", "sd", "low", "lowest", "mobile" };
                 final String lowQualityName = "sd";
                 final boolean preferLowQuality = this.getPluginConfig().getBooleanProperty(PREFER_480P, false);
                 LinkedHashMap<String, Object> httpQualityInfo = null;
@@ -152,7 +152,9 @@ public class OkRu extends PluginForHost {
                             continue;
                         }
                         final int currentQuality;
-                        if (quality.equalsIgnoreCase("hd")) {
+                        if (quality.equalsIgnoreCase("full")) {
+                            currentQuality = 200;
+                        } else if (quality.equalsIgnoreCase("hd")) {
                             currentQuality = 100;
                         } else if (quality.equalsIgnoreCase("sd")) {
                             currentQuality = 80;

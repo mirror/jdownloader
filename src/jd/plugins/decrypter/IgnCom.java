@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:[a-z0-9]+)?\\.ign\\.com/(?:dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|[a-z0-9\\-]+/\\d+/video/[a-z0-9\\-]+)|https?://(?:www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:[a-z0-9]+)?\\.ign\\.com/(?:dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|[a-z0-9\\-]+/\\d+/video(/(?!embed)[a-z0-9\\-]+)?)|https?://(?:www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
 public class IgnCom extends PluginForDecrypt {
     public IgnCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -67,7 +67,7 @@ public class IgnCom extends PluginForDecrypt {
             fpName = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
                 /* Fallback to url-name */
-                fpName = new Regex(parameter, "/([a-z0-9\\-]+)$").getMatch(0);
+                fpName = new Regex(this.br.getURL(), "/([a-z0-9\\-]+)$").getMatch(0);
             }
             // final String json = br.getRegex("data-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
             // final String json = br.getRegex("data-settings=\"(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);

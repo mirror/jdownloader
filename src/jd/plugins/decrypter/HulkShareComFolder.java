@@ -35,9 +35,9 @@ public class HulkShareComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String HULKSHAREDOWNLOADLINK = "https?://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
-    private static final String TYPE_SECONDSINGLELINK = "https?://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9\\-_]+/[^<>\"/]+";
-    private static final String TYPE_PLAYLIST         = "https?://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+(.+)?";
+    private static final String HULKSHAREDOWNLOADLINK = "^https?://[^/]+/([a-z0-9]{12})$";
+    private static final String TYPE_SECONDSINGLELINK = "https?://[^/]+/[a-z0-9\\-_]+/[^<>\"/]+";
+    private static final String TYPE_PLAYLIST         = "https?://[^/]+/playlist/\\d+(.+)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -51,14 +51,14 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        } else if (new Regex(parameter, Pattern.compile(HULKSHAREDOWNLOADLINK, Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(parameter, HULKSHAREDOWNLOADLINK).matches()) {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
-        br.setCookie("http://hulkshare.com/", "lang", "english");
+        br.setCookie(this.getHost(), "lang", "english");
         // They can have huge pages, allow double of the normal load limit
-        br.setLoadLimit(4194304);
+        br.setLoadLimit(br.getLoadLimit() * 2);
         br.getPage(parameter);
         final String longLink = br.getRegex("longLink = \\'(https?://(?:www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
         if ((new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink != null) {
@@ -141,14 +141,6 @@ public class HulkShareComFolder extends PluginForDecrypt {
         fp.setName(new Regex(parameter, "hulkshare\\.com/(.+)").getMatch(0));
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 1; i <= max_loads; i++) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted for link: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
-            }
             logger.info("Decrypting page " + i + " of " + max_loads);
             String linktext;
             if (i == 1) {
@@ -183,11 +175,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
                     }
                     fina._setFilePackage(fp);
                     fina.setProperty("LINKDUPEID", "hulksharecom_" + fcode);
-                    try {
-                        distribute(fina);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
-                    }
+                    distribute(fina);
                     decryptedLinks.add(fina);
                     added_links_count++;
                 }
@@ -195,6 +183,9 @@ public class HulkShareComFolder extends PluginForDecrypt {
             if (added_links_count != entries_per_page) {
                 logger.info("We got less links than entries_per_page --> Probably we're done - stopping");
                 break;
+            } else if (this.isAbort()) {
+                logger.info("Decryption aborted for link: " + parameter);
+                return decryptedLinks;
             }
         }
         if (decryptedLinks.size() == 0) {

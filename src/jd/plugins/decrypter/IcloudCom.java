@@ -127,6 +127,7 @@ public class IcloudCom extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink("http://iclouddecrypted.com/" + photoGuid + "_" + checksum);
+            dl.setContentUrl("https://www." + this.getHost() + "/sharedalbum/de-de/#" + folderid + ";" + photoGuid);
             if (filesizeMax > 0) {
                 dl.setDownloadSize(filesizeMax);
             }
