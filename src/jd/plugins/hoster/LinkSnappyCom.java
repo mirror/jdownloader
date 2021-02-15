@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -103,40 +102,46 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private AccountInfo api_fetchAccountInfo(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             final AccountInfo ac = new AccountInfo();
-            br = new Browser();
             loginAPI(account, force);
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
             }
-            final String expire = PluginJSonUtils.getJsonValue(br, "expire");
-            final String accPackage = PluginJSonUtils.getJsonValue(br, "package");
-            if ("lifetime".equalsIgnoreCase(expire) || "lifetime".equalsIgnoreCase(accPackage)) {
-                /* 2018-01-15: Lifetime accounts have an expire date near the max unix timestamp (thus we do not display it) */
-                account.setType(AccountType.LIFETIME);
-            } else if ("expired".equalsIgnoreCase(expire)) {
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("return");
+            final Object expireO = entries.get("expire");
+            // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium accounts
+            if (expireO instanceof String && ((String) expireO).equalsIgnoreCase("expired")) {
                 /* Free account which has never been premium = also "expired" */
                 account.setType(AccountType.FREE);
                 /* 2019-09-05: Free Accounts are supported from now on */
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your
                 // account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                ac.setValidUntil(Long.parseLong(expire) * 1000, this.br);
+                ac.setValidUntil(((Long) expireO).longValue() * 1000, this.br);
                 account.setType(AccountType.PREMIUM);
             }
             /* Find traffic left */
-            final String trafficLeft = PluginJSonUtils.getJsonValue(br, "trafficleft");
-            final String maxtraffic = PluginJSonUtils.getJsonValue(br, "maxtraffic");
-            if ("unlimited".equalsIgnoreCase(trafficLeft)) {
+            final Object trafficleftO = entries.get("trafficleft");
+            // final Object maxtrafficO = entries.get("maxtraffic");
+            if (trafficleftO instanceof String) {
+                /* E.g. value is "unlimited" */
+                // if (maxtrafficO instanceof Number && ((Long) maxtrafficO).longValue() > 0) {
+                // ac.setTrafficLeft(((Long) maxtrafficO).longValue());
+                // ac.setSpecialTraffic(true);
+                // } else {
+                // ac.setUnlimitedTraffic();
+                // }
                 ac.setUnlimitedTraffic();
-            } else if (!StringUtils.isEmpty(trafficLeft)) {
+            } else if (trafficleftO instanceof Number) {
                 /* Also check for negative traffic */
-                if (trafficLeft.contains("-")) {
+                final long trafficleft = ((Long) trafficleftO).longValue();
+                if (trafficleft <= 0) {
                     ac.setTrafficLeft(0);
                 } else {
-                    ac.setTrafficLeft(Long.parseLong(trafficLeft));
+                    ac.setTrafficLeft(trafficleft);
                 }
-                if (maxtraffic != null) {
-                    ac.setTrafficMax(Long.parseLong(maxtraffic));
+                if (entries.containsKey("maxtraffic")) {
+                    ac.setTrafficMax(((Long) entries.get("maxtraffic")).longValue());
                 }
             } else {
                 logger.info("Failed to find trafficLeft");
@@ -155,7 +160,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
             Map<String, Object> hosterInformation;
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             entries = (Map<String, Object>) entries.get("return");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
@@ -217,6 +222,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             }
             account.setProperty("accountProperties", con);
             // final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
+            /* Free account information & downloading is only possible via website; not via API! */
             if (AccountType.FREE == account.getType()) {
                 /* Try to find Free Account limits to display them properly */
                 try {
@@ -244,14 +250,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
             }
             ac.setMultiHostSupport(this, supportedHosts);
             return ac;
-        }
-    }
-
-    private boolean isLoginSessionExpired(String message) {
-        if (br.containsHTML("Session Expired") || "Invalid Username".equals(message)) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -438,14 +436,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             handleDownloadErrors(account);
         }
         link.setProperty("linksnappycomdirectlink", dllink);
-        try {
-            final String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
-            if (server_filename.contains("%")) {
-                /* Fix html-encoded filename */
-                link.setFinalFileName(Encoding.htmlDecode(server_filename));
-            }
-        } catch (final Throwable e) {
-        }
+        dl.setFilenameFix(true);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -487,7 +478,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     // this is when linksnappy dls text as proper filename
                     System.out.print("bingo");
                     dl.getConnection().disconnect();
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Problem with multihoster");
+                    mhm.putError(account, link, 5 * 60 * 1000l, "Cache download failure");
                 }
             }
             throw e;
@@ -608,9 +599,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                 }
             }
-            dllink = PluginJSonUtils.getJsonValue(br, "generated");
-            isCache = PluginJSonUtils.getJsonValue(br, "cacheDL");
-            linkHash = PluginJSonUtils.getJsonValue(br, "hash");
+            this.dllink = PluginJSonUtils.getJsonValue(br, "generated");
+            this.isCache = PluginJSonUtils.getJsonValue(br, "cacheDL");
+            this.linkHash = PluginJSonUtils.getJsonValue(br, "hash");
             if (StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinkmissing", 2, 5 * 60 * 1000l);
@@ -622,17 +613,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
             br.setConnectTimeout(60 * 1000);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), dllink, resumes, chunks);
             return handleAttemptResponseCode(account, br, dl.getConnection());
-        } catch (final SocketTimeoutException e) {
-            // if (currentLink.getHost() == "uploaded.to" || currentLink.getHost() == "rapidgator.net") {
-            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waiting for download", 30 * 1000l);
-            // }
-            final boolean timeoutedBefore = this.getDownloadLink().getBooleanProperty("sockettimeout", false);
-            if (timeoutedBefore) {
-                this.getDownloadLink().setProperty("sockettimeout", false);
-                throw e;
-            }
-            this.getDownloadLink().setProperty("sockettimeout", true);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
         } catch (final BrowserException ebr) {
             logger.log(ebr);
             logger.info("Attempt failed: Got BrowserException for link: " + dllink);
@@ -684,7 +664,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
      */
     private boolean loginAPI(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            br = new Browser();
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
@@ -696,10 +675,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
                 logger.info("Validating cookies");
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
-                boolean error = "ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"));
-                final String message = PluginJSonUtils.getJsonValue(br, "error");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 // invalid username is shown when 2factorauth is required o_O.
-                if (!isLoginSessionExpired(message) && !error) {
+                if (!entries.containsKey("error")) {
                     logger.info("Cached login successful");
                     /* Save new cookie timestamp */
                     account.saveCookies(br.getCookies(this.getHost()), "");
