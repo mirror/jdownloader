@@ -33,22 +33,24 @@ import org.w3c.dom.NodeList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:www\\.)?pc\\.ign\\.com/dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|http://(www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ign.com" }, urls = { "https?://(?:[a-z0-9]+)?\\.ign\\.com/(?:dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html|[a-z0-9\\-]+/\\d+/video/[a-z0-9\\-]+)|https?://(?:www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+" })
 public class IgnCom extends PluginForDecrypt {
     public IgnCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_NEW = ".+ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
+    // private static final String TYPE_NEW = ".+ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
+    private static final String TYPE_OLD = "https?://(?:www\\.)?ign\\.com/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -57,7 +59,7 @@ public class IgnCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String fpName;
-        if (parameter.matches(TYPE_NEW)) {
+        if (!parameter.matches(TYPE_OLD)) {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
@@ -67,24 +69,28 @@ public class IgnCom extends PluginForDecrypt {
                 /* Fallback to url-name */
                 fpName = new Regex(parameter, "/([a-z0-9\\-]+)$").getMatch(0);
             }
-            fpName = Encoding.htmlDecode(fpName).trim();
             // final String json = br.getRegex("data-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
             // final String json = br.getRegex("data-settings=\"(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
             // String json = br.getRegex("video&quot;:(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
-            final String json_single_video = br.getRegex("<script type=\"application/ld\\+json\">(\\{\"contentUrl\".*?)</script>").getMatch(0);
+            final String json_single_video = br.getRegex("<script type=\"application/ld\\+json\">([^<]*VideoObject[^>]*)</script>").getMatch(0);
             final String json = br.getRegex("<script id=\"__NEXT_DATA__\" type=\"application/json\">(.*?)</script>").getMatch(0);
             if (json == null && json_single_video == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             LinkedHashMap<String, Object> entries = null;
             if (json_single_video != null) {
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_single_video);
                 final String finallink = (String) entries.get("contentUrl");
+                String fileTitle = (String) entries.get("name");
                 if (StringUtils.isEmpty(finallink)) {
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (StringUtils.isEmpty(fileTitle)) {
+                    /* Fallback */
+                    fileTitle = fpName;
                 }
                 final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
-                dlink.setFinalFileName(fpName + ".mp4");
+                dlink.setFinalFileName(fileTitle + ".mp4");
                 decryptedLinks.add(dlink);
             } else {
                 // json = Encoding.htmlDecode(json);
@@ -114,7 +120,7 @@ public class IgnCom extends PluginForDecrypt {
                 }
             }
         } else {
-            if (br.containsHTML("No htmlCode read")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100) {
                 final DownloadLink offline = this.createOfflinelink(parameter);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
@@ -130,13 +136,12 @@ public class IgnCom extends PluginForDecrypt {
                 }
             }
             if (fpName == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             fpName = fpName.trim();
             String configUrl = br.getRegex("\"config_episodic\":\"(http:.*?)\"").getMatch(0);
             if (configUrl == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             configUrl = configUrl.replace("\\", "");
             br.getPage(configUrl);
@@ -155,7 +160,7 @@ public class IgnCom extends PluginForDecrypt {
             }
             if (failed) {
                 logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
