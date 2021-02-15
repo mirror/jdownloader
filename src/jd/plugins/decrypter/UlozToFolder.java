@@ -18,12 +18,21 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -53,7 +62,7 @@ public class UlozToFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:download|file)-tracking/[a-f0-9]{96}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:download|file)-tracking/[a-f0-9]{96}|folder/[A-Za-z0-9]+/name/.+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -70,6 +79,7 @@ public class UlozToFolder extends PluginForDecrypt {
 
     /** Special (temporary/IP bound) URLs available when searching for files directly on the website of this file-hoster. */
     private static final String TYPE_TRACKING = "https?://[^/]+/(?:download|file)-tracking/[a-f0-9]{96}";
+    private static final String TYPE_FOLDER   = "https?://[^/]+/folder/([A-Za-z0-9]+)/name/(.+)";
 
     /** 2021-02-11: This host is GEO-blocking german IPs! */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -94,8 +104,68 @@ public class UlozToFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws IOException {
+    private static final String API_BASE = "https://apis.uloz.to/v5";
+
+    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (true) {
+            /* TODO */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("X-Auth-Token", "TODO");
+        final String folderID = new Regex(param.getCryptedUrl(), TYPE_FOLDER).getMatch(0);
+        final String folderNameURL = new Regex(param.getCryptedUrl(), TYPE_FOLDER).getMatch(1);
+        br.getPage(API_BASE + "/folder/" + folderID + "/" + folderNameURL + "/" + folderID + "?cacheBusting=" + System.currentTimeMillis());
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("folder");
+        final String folderName = (String) entries.get("name");
+        final boolean is_password_protected = ((Boolean) entries.get("is_password_protected")).booleanValue();
+        if (is_password_protected) {
+            /* TODO */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // br.getHeaders().put("X-Password", "TODO");
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        if (!StringUtils.isEmpty(folderName)) {
+            fp.setName(folderName);
+        } else {
+            /* Fallback */
+            fp.setName(folderID);
+        }
+        int offset = 0;
+        final int maxItemsPerPage = 50;
+        int page = 0;
+        do {
+            page += 1;
+            logger.info("Crawling page: " + page);
+            br.getPage(API_BASE + "/folder/" + folderID + "/file-list?sort=-created&offset=" + offset + "&limit=" + maxItemsPerPage + "&cacheBusting=" + System.currentTimeMillis());
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final List<Object> ressourcelist = (List<Object>) entries.get("items");
+            for (final Object fileO : ressourcelist) {
+                entries = (Map<String, Object>) fileO;
+                final String filename = (String) entries.get("name");
+                final long filesize = ((Number) entries.get("filesize")).longValue();
+                final String description = (String) entries.get("description");
+                final String url = (String) entries.get("url");
+                if (StringUtils.isEmpty(url)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + url);
+                dl.setFinalFileName(filename);
+                dl.setVerifiedFileSize(filesize);
+                if (!StringUtils.isEmpty(description)) {
+                    dl.setComment(description);
+                }
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            }
+            if (ressourcelist.size() < maxItemsPerPage) {
+                logger.info("Stopping because: Reached end");
+                break;
+            }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 }

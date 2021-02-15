@@ -193,6 +193,11 @@ public class FastShareCz extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
+                    if (!force) {
+                        logger.info("Trust cookies without checking");
+                        return;
+                    }
+                    logger.info("Attempting cookie login...");
                     getPage("https://" + this.getHost() + "/user");
                     if (this.isLoggedIN()) {
                         logger.info("Cookie login successful");
@@ -226,14 +231,13 @@ public class FastShareCz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
+        if (!br.getURL().contains("/user")) {
+            br.getPage("/user");
+        }
+        /* 2021-02-12: E.g. <td>3 445.56 GB </td> */
         String availabletraffic = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)\\s*:\\s*</td>\\s*<td[^>]*?>([^<>\"&]+)").getMatch(0);
-        // if (availabletraffic == null) {
-        // /* 2021-02-12 */
-        // availabletraffic = br.getRegex("\"start-tag\">span</span>\\&gt;</span><span>\\(([^<>\"]+)\\)").getMatch(0);
-        // }
         final String unlimitedTraffic = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         if (availabletraffic != null) {
-            /* 2021-02-12: E.g. 3 335.88 GB */
             availabletraffic = availabletraffic.trim().replace(" ", "");
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         }
