@@ -501,7 +501,7 @@ public class DiskYandexNet extends PluginForHost {
                         if (csrf_token == null || idkey == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        ajaxBR.postPage("https://passport.yandex.com/registration-validations/textcaptcha", "csrf_token=" + csrf_token + "&track_id=" + idkey);
+                        ajaxBR.postPage("/registration-validations/textcaptcha", "csrf_token=" + csrf_token + "&track_id=" + idkey);
                         final String url_captcha = PluginJSonUtils.getJson(ajaxBR, "image_url");
                         final String id = PluginJSonUtils.getJson(ajaxBR, "id");
                         if (StringUtils.isEmpty(url_captcha) || StringUtils.isEmpty(id)) {
@@ -520,8 +520,11 @@ public class DiskYandexNet extends PluginForHost {
                         /* 2021-02-11: Small workaround/test */
                         isLoggedIN = br.getCookie("yandex.com", "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
                     }
-                    if (!requiresCaptcha && i > 0) {
-                        /* Probably wrong password */
+                    if (!requiresCaptcha) {
+                        /* Probably wrong password and we only allow one captcha attempt. */
+                        break;
+                    } else if (requiresCaptcha && i > 0) {
+                        /* Probably wrong password and we only allow one captcha attempt. */
                         break;
                     } else if (isLoggedIN) {
                         break;

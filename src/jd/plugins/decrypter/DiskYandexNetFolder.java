@@ -37,7 +37,6 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -48,19 +47,60 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DiskYandexNet;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?(((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)|yadi\\.sk)/(disk/)?public/?(\\?hash=.+|#.+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|yadi\\.sk/mail/\\?hash=.+)|https?://yadi\\.sk/a/[A-Za-z0-9\\-_]+", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
+    // public static List<String> getPluginSubDomains() {
+    // final ArrayList<String> subdomains = new ArrayList<String>();
+    // subdomains.add("disk");
+    // subdomains.add("mail");
+    // subdomains.add("docviewer");
+    // return subdomains;
+    // }
 
-    private static final String type_docviewer     = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
-    private final String        type_primaryURLs   = ".+?public/?(\\?hash=.+|#.+)";
-    private final String        type_shortURLs_d   = "https?://[^/]+/d/[A-Za-z0-9\\-_]+((/[^/]+){0,})";
-    private final String        type_shortURLs_i   = "https?://[^/]+/i/[A-Za-z0-9\\-_]+";
-    private final String        type_yadi_sk_mail  = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=.+";
-    private final String        type_yadi_sk_album = "https?://(www\\.)?yadi\\.sk/a/[A-Za-z0-9\\-_]+";
-    private static final String JSON_TYPE_DIR      = "dir";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "yandex.net", "yandex.com", "yandex.com.tr", "yandex.ru", "yandex.ua", "yadi.sk", "yadisk.cc" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return new String[] { "disk.yandex.net" };
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            // final String annotationName = domains[0];
+            String pattern = "https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/((?:disk/)?public/?(\\?hash=.+|#.+)|";
+            pattern += "(?:d|i)/[A-Za-z0-9\\-_]+(/[^/]+){0,}|";
+            pattern += "mail/\\?hash=.+|";
+            pattern += "\\?url=ya\\-disk\\-public%3A%2F%2F.+";
+            pattern += ")";
+            ret.add(pattern);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    /** Usually docviewer.yandex.xy but we're supporting so many domains and subdomains that a generic RegEx works better. */
+    private static final String type_docviewer    = "https?://[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
+    private final String        type_primaryURLs  = ".+?public/?(\\?hash=.+|#.+)";
+    private final String        type_shortURLs_d  = "https?://[^/]+/d/[A-Za-z0-9\\-_]+((/[^/]+){0,})";
+    private final String        type_shortURLs_i  = "https?://[^/]+/i/[A-Za-z0-9\\-_]+";
+    private final String        type_yadi_sk_mail = "https?://[^/]+/mail/\\?hash=.+";
+    private static final String JSON_TYPE_DIR     = "dir";
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
     @SuppressWarnings({ "deprecation" })
@@ -68,40 +108,35 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         jd.plugins.hoster.DiskYandexNet.prepBR(this.br);
         final String parameter = param.toString();
-        if (parameter.matches(type_yadi_sk_album)) {
-            /* Crawl albums */
-            return crawlPhotoAlbum(parameter);
+        /* Do some URL corrections */
+        if (param.getCryptedUrl().matches(type_docviewer)) {
+            /* Documents in web view mode --> File-URLs! */
+            /* First lets fix broken URLs by removing unneeded parameters ... */
+            String tmp = param.getCryptedUrl();
+            final String remove = new Regex(tmp, "(\\&[a-z0-9]+=.+)").getMatch(0);
+            if (remove != null) {
+                tmp = tmp.replace(remove, "");
+            }
+            String hash = new Regex(tmp, type_docviewer).getMatch(0);
+            if (StringUtils.isEmpty(hash)) {
+                hash = new Regex(tmp, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
+            }
+            if (StringUtils.isEmpty(hash)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String hashRoot = URLDecoder.decode(hash, "UTF-8");
+            param.setCryptedUrl(generateContentURL(hashRoot));
+        }
+        /**
+         * 2021-02-09: New: Prefer website if we do now know whether we got a file or a folder! API will fail in case it is a single file &&
+         * is currently quota-limited!
+         */
+        if (StringUtils.isEmpty(this.getAdoptedCloudFolderStructure()) || StringUtils.isEmpty(getHashFromURL(parameter))) {
+            logger.info("Using website crawler because we cannot know whether we got a single file- or a folder");
+            return this.crawlFilesFoldersWebsite(param);
         } else {
-            /* Do some URL corrections */
-            if (param.getCryptedUrl().matches(type_docviewer)) {
-                /* Documents in web view mode --> File-URLs! */
-                /* First lets fix broken URLs by removing unneeded parameters ... */
-                String tmp = param.getCryptedUrl();
-                final String remove = new Regex(tmp, "(\\&[a-z0-9]+=.+)").getMatch(0);
-                if (remove != null) {
-                    tmp = tmp.replace(remove, "");
-                }
-                String hash = new Regex(tmp, type_docviewer).getMatch(0);
-                if (StringUtils.isEmpty(hash)) {
-                    hash = new Regex(tmp, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-                }
-                if (StringUtils.isEmpty(hash)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String hashRoot = URLDecoder.decode(hash, "UTF-8");
-                param.setCryptedUrl(generateContentURL(hashRoot));
-            }
-            /**
-             * 2021-02-09: New: Prefer website if we do now know whether we got a file or a folder! API will fail in case it is a single
-             * file && is currently quota-limited!
-             */
-            if (StringUtils.isEmpty(this.getAdoptedCloudFolderStructure()) || StringUtils.isEmpty(getHashFromURL(parameter))) {
-                logger.info("Using website crawler because we cannot know whether we got a single file- or a folder");
-                return this.crawlFilesFoldersWebsite(param);
-            } else {
-                logger.info("Using API crawler");
-                return this.crawlFilesFoldersAPI(param);
-            }
+            logger.info("Using API crawler");
+            return this.crawlFilesFoldersAPI(param);
         }
     }
 
@@ -431,104 +466,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         dl.setContentUrl(urlContent);
         dl.setProperty(DiskYandexNet.PROPERTY_INTERNAL_FUID, resource_id);
         return dl;
-    }
-
-    /** For e.g. https://yadi.sk/a/blabla */
-    private ArrayList<DownloadLink> crawlPhotoAlbum(String addedLink) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> dupeList = new ArrayList<String>();
-        final String domain = "disk.yandex.com";
-        getPage(addedLink);
-        if (isOfflineWebsite(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(addedLink));
-            return decryptedLinks;
-        }
-        String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
-        String fpName = null;
-        final String clientID = jd.plugins.hoster.YandexAlbum.albumGetIdClient();
-        final String hash_short = new Regex(addedLink, "/a/(.+)").getMatch(0);
-        final String rawHash = PluginJSonUtils.getJsonValue(br, "public_key");
-        final String json_of_first_page = regExJSON(this.br);
-        if (StringUtils.isEmpty(rawHash)) {
-            /* Value is required! */
-            decryptedLinks.add(this.createOfflinelink(addedLink));
-            return decryptedLinks;
-        }
-        if (StringUtils.isEmpty(sk)) {
-            /** TODO: Maybe keep SK throughout sessions to save that one request ... */
-            logger.info("Getting new SK value ...");
-            sk = jd.plugins.hoster.DiskYandexNet.getNewSK(this.br, domain, addedLink);
-            if (StringUtils.isEmpty(sk)) {
-                logger.warning("Failed to get SK value");
-                throw new DecrypterException();
-            }
-        }
-        prepBrAlbum(this.br);
-        final int maxItemsPerPage = 40;
-        int addedItemsTemp = 0;
-        int offset = 0;
-        String idItemLast = null;
-        final FilePackage fp = FilePackage.getInstance();
-        do {
-            addedItemsTemp = 0;
-            Map<String, Object> entries = null;
-            final List<Object> modelObjects;
-            if (offset == 0) {
-                /* First loop */
-                modelObjects = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_of_first_page);
-                entries = findModel(modelObjects, "album");
-                entries = (Map<String, Object>) entries.get("data");
-                fpName = (String) entries.get("title");
-                if (StringUtils.isEmpty(fpName)) {
-                    fpName = hash_short;
-                }
-                fp.setName(fpName);
-            } else {
-                br.postPage("https://" + domain + "/album-models/?_m=resources", "_model.0=resources&idContext.0=%2Falbum%2F" + URLEncode.encodeURIComponent(rawHash) + "&order.0=1&sort.0=order_index&offset.0=" + offset + "&amount.0=" + maxItemsPerPage + "&idItemLast.0=" + URLEncode.encodeURIComponent(idItemLast) + "&idClient=" + clientID + "&version=" + jd.plugins.hoster.YandexAlbum.VERSION_YANDEX_PHOTO_ALBUMS + "&sk=" + sk);
-                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                modelObjects = (List<Object>) entries.get("models");
-            }
-            entries = findModel(modelObjects, "resources");
-            if (entries == null) {
-                logger.warning("Failed to find resource model");
-                throw new DecrypterException();
-            }
-            final List<Object> mediaObjects = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/resources");
-            for (final Object mediao : mediaObjects) {
-                entries = (Map<String, Object>) mediao;
-                /* Unique id e.g. '/album/<public_key>:<item_id>' */
-                final String id = (String) entries.get("id");
-                final String item_id = (String) entries.get("item_id");
-                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(item_id)) {
-                    /* his should never happen */
-                    continue;
-                }
-                if (dupeList.contains(id)) {
-                    logger.info("Stopping to avoid an endless loop because of duplicates / wrong 'idItemLast.0' value");
-                    return decryptedLinks;
-                }
-                final String url = String.format("https://yadi.sk/a/%s/%s", URLEncode.encodeURIComponent(hash_short), URLEncode.encodeURIComponent(item_id));
-                final DownloadLink dl = this.createDownloadlink(url);
-                dl.setLinkID(hash_short + "/" + item_id);
-                jd.plugins.hoster.YandexAlbum.parseInformationAPIAvailablecheckAlbum(this, dl, entries);
-                dl.setProperty(DiskYandexNet.PROPERTY_HASH, rawHash);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-                distribute(dl);
-                offset++;
-                addedItemsTemp++;
-                if (addedItemsTemp == mediaObjects.size()) {
-                    /* Important for ajax request - id of our last object */
-                    idItemLast = id;
-                }
-                dupeList.add(id);
-            }
-        } while (!this.isAbort() && addedItemsTemp >= maxItemsPerPage && idItemLast != null);
-        if (offset == 0) {
-            logger.warning("Failed to find items");
-            throw new DecrypterException();
-        }
-        return decryptedLinks;
     }
 
     private String generateContentURL(final String hash) {
