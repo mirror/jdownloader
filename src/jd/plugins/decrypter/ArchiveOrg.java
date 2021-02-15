@@ -362,6 +362,17 @@ public class ArchiveOrg extends PluginForDecrypt {
         }
     }
 
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        /* Sync this between hoster- and decrypter plugin! */
+        if (urlConnection.getURL().toString().contains(".xml")) {
+            /* 2021-02-15: Special handling for .xml files */
+            return urlConnection.getContentType().contains("xml");
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
+    }
+
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
