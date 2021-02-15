@@ -104,10 +104,9 @@ public class FastShareCz extends antiDDoSForHost {
                 }
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -115,7 +114,7 @@ public class FastShareCz extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         if (br.containsHTML("(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
