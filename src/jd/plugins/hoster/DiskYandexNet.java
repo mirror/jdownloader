@@ -521,7 +521,7 @@ public class DiskYandexNet extends PluginForHost {
                         isLoggedIN = br.getCookie("yandex.com", "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
                     }
                     if (!requiresCaptcha) {
-                        /* Probably wrong password and we only allow one captcha attempt. */
+                        /* No captcha -> Only try login once! */
                         break;
                     } else if (requiresCaptcha && i > 0) {
                         /* Probably wrong password and we only allow one captcha attempt. */
