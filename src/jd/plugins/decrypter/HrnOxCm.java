@@ -26,13 +26,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "http://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" })
 public class HrnOxCm extends PluginForDecrypt {
     public HrnOxCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed|shop|category|images|page)/.*?";
+    private static final String INVALIDLINKS = "https?://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed|shop|category|images|page)/.*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -78,9 +78,9 @@ public class HrnOxCm extends PluginForDecrypt {
         // Check if we have a picdump
         String[] urls = null;
         if (parameter.contains("-gifdump")) {
-            urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
+            urls = br.getRegex("\\'(https?://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
         } else {
-            urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
+            urls = br.getRegex("\"(https?://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
             if (urls == null || urls.length == 0) {
                 urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads/(?!thumb)[^<>\"]+)\"").getColumn(0);
             }
@@ -101,9 +101,9 @@ public class HrnOxCm extends PluginForDecrypt {
             for (String page : pageqs) {
                 br.getPage(page);
                 if (parameter.contains("-gifdump")) {
-                    urls = br.getRegex("\\'(http://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
+                    urls = br.getRegex("\\'(https?://gifdumps\\.hornoxe\\.com/gifdump[^<>\"]*?)\\'").getColumn(0);
                 } else {
-                    urls = br.getRegex("\"(http://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
+                    urls = br.getRegex("\"(https?://(www\\.)?hornoxe\\.com/wp\\-content/picdumps/[^<>\"]*?)\"").getColumn(0);
                     if (urls == null || urls.length == 0) {
                         urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getColumn(0);
                     }
