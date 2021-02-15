@@ -13,15 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.LinkedHashMap;
+import java.io.IOException;
+import java.util.Map;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,11 +34,9 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "http://iclouddecrypted\\.com/[A-Z0-9\\-]+_[a-f0-9]{42}" })
 public class IcloudCom extends PluginForHost {
-
     public IcloudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -52,7 +49,6 @@ public class IcloudCom extends PluginForHost {
     private static final boolean free_resume            = true;
     private static final int     free_maxchunks         = 0;
     private static final int     free_maxdownloads      = -1;
-
     private String               dllink                 = null;
     private boolean              server_issues          = false;
 
@@ -79,21 +75,33 @@ public class IcloudCom extends PluginForHost {
             final String photoGuid = new Regex(link.getDownloadURL(), "/([A-Z0-9\\-]+)_.+$").getMatch(0);
             final String checksum = new Regex(link.getDownloadURL(), "([a-f0-9]+)$").getMatch(0);
             final String postData = String.format("{\"photoGuids\":[\"%s\"],\"derivatives\":{\"%s\":[\"%s\"]}}", photoGuid, photoGuid, checksum);
-            this.br.postPageRaw("https://p41-sharedstreams.icloud.com/" + folderid + "/sharedstreams/webasseturls", postData);
+            String host = "p43-sharedstreams.icloud.com";
+            Map<String, Object> entries = null;
+            boolean triedSecondHost = false;
+            do {
+                this.br.postPageRaw("https://p" + host + "/" + folderid + "/sharedstreams/webasseturls", postData);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                if (entries.containsKey("X-Apple-MMe-Host")) {
+                    if (triedSecondHost) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    host = (String) entries.get("X-Apple-MMe-Host");
+                    triedSecondHost = true;
+                    continue;
+                } else {
+                    break;
+                }
+            } while (true);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("items");
-            entries = (LinkedHashMap<String, Object>) entries.get(checksum);
-
+            entries = (Map<String, Object>) entries.get("items");
+            entries = (Map<String, Object>) entries.get(checksum);
             dllink = getDirectlink(entries);
             String filename = getFilenameFromDirectlink(dllink);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
@@ -102,10 +110,8 @@ public class IcloudCom extends PluginForHost {
                 if (!filename.endsWith(ext)) {
                     filename += ext;
                 }
-
                 link.setFinalFileName(filename);
             }
-
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -113,8 +119,8 @@ public class IcloudCom extends PluginForHost {
             try {
                 /* Do NOT use HEAD request, otherwise server will return HTTP/1.1 501 Not Implemented */
                 con = br2.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                     if (filename == null) {
                         filename = getFileNameFromHeader(con);
                         link.setFinalFileName(filename);
@@ -135,21 +141,25 @@ public class IcloudCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
@@ -159,35 +169,30 @@ public class IcloudCom extends PluginForHost {
         dl.startDownload();
     }
 
-    /**
-     * Check if a stored directlink exists under property 'property' and if so, check if it is still valid (leads to a downloadable content
-     * [NOT html]).
-     */
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
-    public static String getDirectlink(final LinkedHashMap<String, Object> entries) {
+    public static String getDirectlink(final Map<String, Object> entries) {
         String finallink = null;
         final String server = (String) entries.get("url_location");
         final String path = (String) entries.get("url_path");

@@ -103,25 +103,26 @@ public class HulkShareCom extends PluginForHost {
             link.setUrlDownload("http://www.hulkshare.com/" + realID);
         }
         br.getPage(link.getDownloadURL());
-        final String argh = br.getRedirectLocation();
+        final String redirect = br.getRedirectLocation();
         // Handling for direct links
-        if (argh != null) {
-            if (argh.contains("hulkshare.com/404.php")) {
+        if (redirect != null) {
+            if (redirect.contains("hulkshare.com/404.php")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            br.setFollowRedirects(true);
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(argh);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                con = br2.openGetConnection(redirect);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                     link.setFinalFileName(getFileNameFromHeader(con));
-                    link.setProperty("freelink", argh);
+                    link.setProperty("freelink", redirect);
                     return AvailableStatus.TRUE;
                 } else {
-                    br.getPage(argh);
+                    br.getPage(redirect);
                 }
             } finally {
                 try {
@@ -329,37 +330,37 @@ public class HulkShareCom extends PluginForHost {
         }
     }
 
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
             md5hash = md5hash.trim();
             logger.info("Found md5hash: " + md5hash);
-            downloadLink.setMD5Hash(md5hash);
+            link.setMD5Hash(md5hash);
         }
         if (br.containsHTML("class=\"nhsDisabledPlayerText\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file cannot be downloaded");
         }
-        String dllink = checkDirectLink(downloadLink, "freelink");
+        String dllink = checkDirectLink(link, "freelink");
         if (dllink == null) {
-            dllink = apiDownload(downloadLink);
+            dllink = apiDownload(link);
         }
         if (dllink == null) {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
-            final String tempurl = "http://www.hulkshare.com/dl/" + this.getFID(downloadLink) + "/hulkshare.mp3?d=1";
-            br2.getPage("http://www.hulkshare.com/static.php?op=adv_video_popup&h=" + Encoding.urlEncode(tempurl));
+            final String tempurl = "https://www.hulkshare.com/dl/" + this.getFID(link) + "/hulkshare.mp3?d=1";
+            br2.getPage("https://www.hulkshare.com/static.php?op=adv_video_popup&h=" + Encoding.urlEncode(tempurl));
             dllink = br2.getRedirectLocation();
         }
         // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
+            checkErrors(link, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
+                br.postPage(link.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(link.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(link.getName()) + "&referer=&method_free=Free+Download");
                 doSomething();
-                checkErrors(downloadLink, false, passCode);
+                checkErrors(link, false, passCode);
             }
-            dllink = getDllink(downloadLink);
+            dllink = getDllink(link);
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
@@ -400,9 +401,9 @@ public class HulkShareCom extends PluginForHost {
                     logger.warning("Standard captcha captchahandling broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                for (String link : sitelinks) {
-                    if (link.contains("/captchas/")) {
-                        captchaurl = link;
+                for (String captchaurlTmp : sitelinks) {
+                    if (captchaurlTmp.contains("/captchas/")) {
+                        captchaurl = captchaurlTmp;
                         break;
                     }
                 }
@@ -410,7 +411,7 @@ public class HulkShareCom extends PluginForHost {
                     logger.warning("Standard captcha captchahandling broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, link);
                 dlForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (new Regex(BRBEFORE, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
@@ -421,7 +422,7 @@ public class HulkShareCom extends PluginForHost {
                 rc.setId(id);
                 rc.load();
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                String c = getCaptchaCode("recaptcha", cf, link);
                 Form rcform = rc.getForm();
                 rcform.put("recaptcha_challenge_field", rc.getChallenge());
                 rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
@@ -432,16 +433,16 @@ public class HulkShareCom extends PluginForHost {
             }
             /* Captcha END */
             if (password) {
-                passCode = handlePassword(passCode, dlForm, downloadLink);
+                passCode = handlePassword(passCode, dlForm, link);
             }
             if (!skipWaittime) {
-                waitTime(timeBefore, downloadLink);
+                waitTime(timeBefore, link);
             }
             br.submitForm(dlForm);
             logger.info("Submitted DLForm");
             doSomething();
-            checkErrors(downloadLink, true, passCode);
-            dllink = getDllink(downloadLink);
+            checkErrors(link, true, passCode);
+            dllink = getDllink(link);
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -449,33 +450,37 @@ public class HulkShareCom extends PluginForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Workaround for missing extensions for audio files
-        if (dl.getConnection().getContentType().equals("audio/mpeg") && !downloadLink.getFinalFileName().endsWith(".mp3")) {
-            downloadLink.setFinalFileName(downloadLink.getFinalFileName() + ".mp3");
+        if (dl.getConnection().getContentType().equals("audio/mpeg") && !link.getFinalFileName().endsWith(".mp3")) {
+            link.setFinalFileName(link.getFinalFileName() + ".mp3");
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            downloadLink.setProperty("freelink", null);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            link.setProperty("freelink", null);
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             doSomething();
             checkServerErrors();
             /** Downloadlink just redirects into nowhere */
             if (br.getURL().contains("hulkshare.com/dl/") || br.containsHTML("(Uploaded Now|<b>Size:</b> 0 b<br)")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: bad downloadlink!", 30 * 60 * 1000l);
             }
-            if (br.containsHTML("<h2>This is a private file.")) {
+            if (br.containsHTML(">\\s*This is a private file\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+            link.setProperty("pass", passCode);
         }
-        downloadLink.setProperty("freelink", dl.getConnection().getRequest().getUrl().toString());
+        link.setProperty("freelink", dl.getConnection().getRequest().getUrl().toString());
         dl.startDownload();
     }
 
@@ -486,32 +491,31 @@ public class HulkShareCom extends PluginForHost {
         br2.getHeaders().put("User-Agent", "Java/1.6.0_37");
         br2.getHeaders().put("Accept", "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
         br2.getHeaders().remove("Accept-Language");
-        br2.getPage("http://www.hulkshare.com/api.php?q=%7B%22header%22%3A%7B%22clientRevision%22%3A1.3%2C%22system%22%3A%22windows+7%22%2C%22userId%22%3A%22%22%7D%2C%22function%22%3A%22file%22%2C%22parameters%22%3A%7B%22fileCode%22%3A%5B%22" + getFID(dl) + "%22%5D%7D%7D");
+        br2.getPage("https://www.hulkshare.com/api.php?q=%7B%22header%22%3A%7B%22clientRevision%22%3A1.3%2C%22system%22%3A%22windows+7%22%2C%22userId%22%3A%22%22%7D%2C%22function%22%3A%22file%22%2C%22parameters%22%3A%7B%22fileCode%22%3A%5B%22" + getFID(dl) + "%22%5D%7D%7D");
         return br2.getRedirectLocation();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     private String getFID(final DownloadLink dl) {
@@ -558,12 +562,7 @@ public class HulkShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (space != null) {
             ai.setUsedSpace(space.trim() + " Mb");
@@ -577,7 +576,6 @@ public class HulkShareCom extends PluginForHost {
             }
             ai.setPremiumPoints(Long.parseLong(points.trim()));
         }
-        account.setValid(true);
         String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
@@ -594,7 +592,6 @@ public class HulkShareCom extends PluginForHost {
             String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
                 ai.setExpired(true);
-                account.setValid(false);
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
@@ -613,40 +610,45 @@ public class HulkShareCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public String getDllink(DownloadLink downloadLink) throws Exception {
-        String dllink = br.getRegex("<div style=\"width: 300px; margin: 0 10px 15px; margin\\-top: 10px; float: left; text\\-align:justify;\">[\t\n\r ]+<div style=\"float: right; text\\-align:justify;\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+    public String getDllink(final DownloadLink link) throws Exception {
+        String dllink = br.getRegex("<div style=\"width: 300px; margin: 0 10px 15px; margin\\-top: 10px; float: left; text\\-align:justify;\">\\s*<div style=\"float: right; text\\-align:justify;\">\\s*<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("This direct link will be available for your IP.*?href=\"(http.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\"(http://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                    dllink = br.getRegex("\"(https?://[0-9\\.]+/d/[a-z0-9]+/.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("\"(http://[0-9w]+\\.hulkshare\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
+                        dllink = br.getRegex("\"(https?://[0-9w]+\\.hulkshare\\.com/d/[a-z0-9]+/.*?)\"").getMatch(0);
                         if (dllink == null) {
-                            dllink = br.getRegex("\"(http://[a-z0-9]+\\.hulkshare\\.com/hulkdl/[a-z0-9]+/.*?)\"").getMatch(0);
-                            if (dllink == null) {
-                                /* Don't use the existing browser here! */
-                                final Browser br2 = new Browser();
-                                br2.setFollowRedirects(false);
-                                br2.getPage("http://www.hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
-                                dllink = br2.getRedirectLocation();
-                                if (dllink != null) {
-                                    br2.getPage(dllink);
-                                    dllink = br2.getRedirectLocation();
-                                }
-                                if (dllink == null) {
-                                    String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
-                                    if (jsCrap != null) {
-                                        dllink = execJS(jsCrap);
-                                    }
-                                }
-                            }
+                            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.hulkshare\\.com/hulkdl/[a-z0-9]+/.*?)\"").getMatch(0);
                         }
                     }
                 }
             }
         }
+        if (dllink == null) {
+            /* 2021-02-15 */
+            dllink = br.getRegex("(/dl/[a-z0-9]{12}/[^<>\"]+\\?d=1)\"").getMatch(0);
+        }
+        // if (dllink == null) {
+        // /* Don't use the existing browser here! */
+        // final Browser br2 = new Browser();
+        // br2.setFollowRedirects(false);
+        // br2.getPage("http://www.hulkshare.com/ap-" + new Regex(link.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
+        // dllink = br2.getRedirectLocation();
+        // if (dllink != null) {
+        // br2.getPage(dllink);
+        // dllink = br2.getRedirectLocation();
+        // }
+        // if (dllink == null) {
+        // String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r
+        // ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
+        // if (jsCrap != null) {
+        // dllink = execJS(jsCrap);
+        // }
+        // }
+        // }
         return dllink;
     }
 
@@ -661,9 +663,9 @@ public class HulkShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1);
+    public void handleFree(DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, false, 1);
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
@@ -729,14 +731,18 @@ public class HulkShareCom extends PluginForHost {
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 doSomething();
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty("premlink", dllink);
+            link.setProperty("premlink", dl.getConnection().getURL().toString());
             dl.startDownload();
         }
     }

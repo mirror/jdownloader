@@ -44,7 +44,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
         String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
         final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
         if (fid != null) {
-            parameter = "http://www.hulkshare.com/" + fid;
+            parameter = "https://www." + this.getHost() + "/" + fid;
         } else if (!parameter.matches(HULKSHAREDOWNLOADLINK) && !parameter.matches(TYPE_PLAYLIST)) {
         }
         if (parameter.matches("https?://(?:www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
@@ -60,7 +60,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
         // They can have huge pages, allow double of the normal load limit
         br.setLoadLimit(4194304);
         br.getPage(parameter);
-        final String longLink = br.getRegex("longLink = \\'(http://(www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
+        final String longLink = br.getRegex("longLink = \\'(https?://(?:www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
         if ((new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink != null) {
             /* We have a single mp3 link */
             decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
@@ -79,18 +79,16 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">The owner of this file doesn\\'t allow downloading")) {
+        if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">\\s*The owner of this file doesn\\'t allow downloading")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        }
-        if (br.containsHTML("You have reached the download\\-limit")) {
+        } else if (br.containsHTML("You have reached the download\\-limit")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        }
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
+        } else if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
@@ -100,13 +98,11 @@ public class HulkShareComFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        }
-        if (br.containsHTML("class=\"nhsUploadLink signupPopLink\">Sign up for Hulkshare<")) {
+        } else if (br.containsHTML("class=\"nhsUploadLink signupPopLink\">Sign up for Hulkshare<")) {
             logger.info("Link doesn't contain any downloadable content: " + parameter);
             decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
-        }
-        if (new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) {
             String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
                 fpName = "hulkshare.com playlist - " + new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -158,7 +154,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             if (i == 1) {
                 linktext = br.getRegex("<ul class=\"nhsBrowseItems\">(.*?</li>)[\t\n\r ]+</ul>").getMatch(0);
             } else {
-                br.postPage("http://www.hulkshare.com/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
+                br.postPage("https://www." + this.getHost() + "/userPublic.php", "ajax_pagination=1&uid=" + uid + "&page=" + i + "&fav=0&isvid=0&fld_id=0&per_page=" + entries_per_page + "&up=0&is_following=1&type=music&last_create_from_previous_list=");
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 linktext = br.getRegex("\"html\":\"(.+)\\}$").getMatch(0);
             }

@@ -485,7 +485,7 @@ public class OneFichierCom extends PluginForHost {
         if (ibr.getHttpConnection() != null) {
             responsecode = ibr.getHttpConnection().getResponseCode();
         }
-        if (ibr.containsHTML(">IP Locked|>Will be unlocked within 1h\\.")) {
+        if (ibr.containsHTML(">\\s*IP Locked|>\\s*Will be unlocked within 1h\\.")) {
             // jdlog://2958376935451/ https://board.jdownloader.org/showthread.php?t=67204&page=2
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP will be locked 1h", 60 * 60 * 1000l);
         } else if (ibr.containsHTML(">\\s*File not found")) {
@@ -493,15 +493,11 @@ public class OneFichierCom extends PluginForHost {
         } else if (ibr.containsHTML("Warning ! Without subscription, you can only download one file at|<span style=\"color:red\">Warning\\s*!\\s*</span>\\s*<br/>Without subscription, you can only download one file at a time\\.\\.\\.")) {
             // jdlog://3278035891641 jdlog://7543779150841
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many downloads - wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (ibr.containsHTML("<h1>Select files to send :</h1>")) {
-            // for some reason they linkcheck correct, then show upload page. re: jdlog://3895673179241
-            // https://svn.jdownloader.org/issues/65003
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue?", 60 * 60 * 1000l);
-        } else if (ibr.containsHTML(">Software error:<")) {
+        } else if (ibr.containsHTML(">\\s*Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
-        } else if (ibr.containsHTML(">Connexion à la base de données impossible<|>Can\\'t connect DB")) {
+        } else if (ibr.containsHTML(">\\s*Connexion à la base de données impossible<|>Can\\'t connect DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
-        } else if (ibr.containsHTML(">Votre adresse IP ouvre trop de connexions vers le serveur")) {
+        } else if (ibr.containsHTML(">\\s*Votre adresse IP ouvre trop de connexions vers le serveur")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 3 * 60 * 1000l);
         } else if (ibr.containsHTML("not possible to free unregistered users")) {
             throw new AccountRequiredException();
@@ -513,7 +509,7 @@ public class OneFichierCom extends PluginForHost {
             }
         } else if (ibr.containsHTML(">\\s*Access to this file is protected|>\\s*This file is protected")) {
             /* Access restricted by IP / only registered users / only premium users / only owner */
-            if (ibr.containsHTML(">The owner of this file has reserved access to the subscribers of our services")) {
+            if (ibr.containsHTML(">\\s*The owner of this file has reserved access to the subscribers of our services")) {
                 throw new AccountRequiredException();
             } else {
                 errorAccessControlLimit(link);
@@ -548,6 +544,9 @@ public class OneFichierCom extends PluginForHost {
         String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
         if (waittime == null) {
             waittime = br.getRegex(">You must wait (\\d+) minutes").getMatch(0);
+        }
+        if (waittime == null) {
+            waittime = br.getRegex(">\\s*Vous devez attendre encore (\\d+) minutes").getMatch(0);
         }
         boolean isBlocked = waittime != null;
         isBlocked |= br.containsHTML("/>Téléchargements en cours");

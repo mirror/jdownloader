@@ -64,7 +64,7 @@ public class DegooCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://cloud\\." + buildHostsPatternPart(domains) + "/share/([A-Za-z0-9]+)\\?ID=(\\d+)");
+            ret.add("https?://cloud\\." + buildHostsPatternPart(domains) + "/share/([A-Za-z0-9\\-_]+)\\?ID=(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
