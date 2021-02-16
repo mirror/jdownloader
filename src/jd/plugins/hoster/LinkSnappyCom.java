@@ -22,6 +22,22 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -42,22 +58,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -707,15 +707,22 @@ public class LinkSnappyCom extends antiDDoSForHost {
             /* Full login is required */
             logger.info("Performing full login");
             getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.getHttpConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final String errorMsg = (String) entries.get("error");
+            if (!StringUtils.isEmpty(errorMsg)) {
+                final String redirect = (String) entries.get("redirect");
+                if (StringUtils.containsIgnoreCase(errorMsg, "Two-Factor Verification Required") && !StringUtils.isEmpty(redirect)) {
+                    /* 2021-02-16: Rare case: User needs to open this URL and confirm log. */
+                    /**
+                     * {"status":"ERROR","error":"Two-Factor Verification Required. Please check your
+                     * Email","return":null,"redirect":"\/validate\/xxxxxxxxxx"}
+                     */
+                    final String fullURL = br.getURL(redirect).toString();
+                    throw new AccountUnavailableException("\r\n" + errorMsg + "\r\n" + fullURL, 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
-            final boolean error = "ERROR".equals(PluginJSonUtils.getJsonValue(br, "status"));
-            final String message = PluginJSonUtils.getJsonValue(br, "error");
-            if (error) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            // its not an error. it has to be OK!
             account.saveCookies(br.getCookies(this.getHost()), "");
             return true;
         }
