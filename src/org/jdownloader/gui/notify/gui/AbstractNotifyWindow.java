@@ -64,6 +64,8 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import com.sun.awt.AWTUtilities.Translucency;
+
 public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
@@ -182,21 +184,6 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         }
     }
 
-    // @Override
-    // public void mouseClicked(MouseEvent e) {
-    // System.out.println(e);
-    // }
-    //
-    // @Override
-    // public void mousePressed(MouseEvent e) {
-    // System.out.println(e);
-    // }
-    //
-    // @Override
-    // public void mouseReleased(MouseEvent e) {
-    // System.out.println(e);
-    // }
-    //
     public boolean isClosed() {
         return closed;
     }
@@ -258,17 +245,25 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         if (Boolean.FALSE.equals(setWindowOpacitySupported)) {
             return;
         }
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        final GraphicsDevice gd = ge.getDefaultScreenDevice();
         try {
-            if (gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT)) {
-                if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
-                    window.setOpacity(f);
-                } else {
-                    com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
+                if (setWindowOpacitySupported == null) {
+                    final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    final GraphicsDevice gd = ge.getDefaultScreenDevice();
+                    setWindowOpacitySupported = gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT);
                 }
-                setWindowOpacitySupported = Boolean.TRUE;
-                return;
+                if (Boolean.TRUE.equals(setWindowOpacitySupported)) {
+                    window.setOpacity(f);
+                    return;
+                }
+            } else {
+                if (setWindowOpacitySupported == null) {
+                    setWindowOpacitySupported = com.sun.awt.AWTUtilities.isTranslucencySupported(Translucency.TRANSLUCENT);
+                }
+                if (Boolean.TRUE.equals(setWindowOpacitySupported)) {
+                    com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+                    return;
+                }
             }
         } catch (Throwable e) {
             e.printStackTrace();
