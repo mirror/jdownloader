@@ -21,6 +21,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com" }, urls = { "https?://(www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "indianpornvideos.com", "freesexyindians.com" }, urls = { "https?://(?:www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(\\.html)?", "https?://(?:www\\.)?freesexyindians\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class IndianPornVideosCom extends PluginForHost {
     public IndianPornVideosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,22 +52,23 @@ public class IndianPornVideosCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches("https?://(www.)?indianpornvideos.com/(account|categories|contact-us|dmca|faq|feed|login|privacy|report-abuse|terms|wp-content|wp-includes|wp-json)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This video (does not exist|Was Deleted)|video id not found") || this.br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video (does not exist|Was Deleted)|video id not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
         }
+        String filename_url = new Regex(link.getPluginPatternMatcher(), "[^/]+/([a-z0-9\\-]+)(\\.html)?$").getMatch(0);
         dllink = findStream(br);
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             if (!br.containsHTML("id=\"video_views_count\"")) {
                 /* Probably not a video-page e.g. '/about-us ' */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -74,35 +76,45 @@ public class IndianPornVideosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        /* Prefer filenames via URL as they're nearly always given */
+        if (filename_url != null) {
+            filename_url = filename_url.replace("-", " ");
+            filename_url = filename_url.trim();
+            link.setFinalFileName(filename_url + ".mp4");
+        } else if (filename != null) {
+            filename = filename.trim();
+            link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setVerifiedFileSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
