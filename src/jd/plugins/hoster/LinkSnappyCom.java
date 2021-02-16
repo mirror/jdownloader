@@ -675,18 +675,21 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private String getError(Map<String, Object> map) {
         final Object status = map.get("status");
         final Object error = map.get("error");
-        if (status != null && "OK".equalsIgnoreCase(status.toString())) {
-            if (error == null || Boolean.FALSE.equals(error)) {
+        if (status != null) {
+            if ("OK".equalsIgnoreCase(status.toString())) {
                 return null;
             } else {
-                logger.severe("Error?:" + JSonStorage.toString(map));
-                return null;
+                if (error instanceof String) {
+                    return error.toString();
+                } else {
+                    return "unknown/" + status + "/" + error;
+                }
             }
         } else if (error != null) {
             if (error instanceof String) {
                 return error.toString();
             } else {
-                return "unknownError/" + error;
+                return "unknown/" + status + "/" + error;
             }
         } else {
             return null;
