@@ -30,9 +30,9 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
+    private static final String                                           PLUGIN_PATH       = "jd/plugins/decrypter";
     private static final Object                                           INSTANCELOCK      = new Object();
     private static volatile MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
     private static final AtomicBoolean                                    CACHE_INVALIDATED = new AtomicBoolean(false);
@@ -195,10 +195,15 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
     }
 
+    @Override
+    protected String getPluginPath() {
+        return PLUGIN_PATH;
+    }
+
     private List<LazyCrawlerPlugin> update(final LogSource logger, final List<LazyCrawlerPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final ArrayList<LazyCrawlerPlugin> retList = new ArrayList<LazyCrawlerPlugin>();
         final Map<String, LazyCrawlerPlugin> fastAccessCache = buildFastAccessCache(updateCache);
-        for (final PluginInfo<PluginForDecrypt> pluginInfo : scan(logger, "jd/plugins/decrypter", updateCache, lastFolderModification)) {
+        for (final PluginInfo<PluginForDecrypt> pluginInfo : scan(logger, updateCache, lastFolderModification)) {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
@@ -306,7 +311,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 cache.delete();
             } finally {
                 LOCK.writeUnlock();
-                FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
+                FileCreationManager.getInstance().delete(TMP_INVALIDPLUGINS, null);
             }
         }
     }
@@ -317,7 +322,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
@@ -377,7 +382,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     public static void invalidateCacheIfRequired() {
-        if (Application.getTempResource(HostPluginController.TMP_INVALIDPLUGINS).exists()) {
+        if (TMP_INVALIDPLUGINS.exists()) {
             invalidateCache();
         }
     }

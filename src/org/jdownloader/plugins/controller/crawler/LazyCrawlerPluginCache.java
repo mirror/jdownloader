@@ -19,7 +19,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.host.LazyHostPluginCache;
 
 public class LazyCrawlerPluginCache {
-    private static final long CACHEVERSION = 04052020001l;
+    private static final long CACHEVERSION = 16022021001l;
 
     public static List<LazyCrawlerPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
