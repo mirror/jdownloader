@@ -708,8 +708,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             logger.info("Performing full login");
             getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final String errorMsg = (String) entries.get("error");
-            if (!StringUtils.isEmpty(errorMsg)) {
+            final Object errorO = entries.get("error");
+            if (errorO instanceof String) {
+                final String errorMsg = (String) errorO;
                 final String redirect = (String) entries.get("redirect");
                 if (StringUtils.containsIgnoreCase(errorMsg, "Two-Factor Verification Required") && !StringUtils.isEmpty(redirect)) {
                     /* 2021-02-16: Rare case: User needs to open this URL and confirm log. */
