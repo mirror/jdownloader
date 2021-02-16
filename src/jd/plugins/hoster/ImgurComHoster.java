@@ -20,6 +20,20 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
@@ -45,20 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -270,8 +270,12 @@ public class ImgurComHoster extends PluginForHost {
             /* 2020-09-24: Redirect to: https://i.imgur.com/removed.png */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.looksLikeDownloadableContent(con)) {
-            /* E.g. HTTP/1.1 503 first byte timeout */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            if (con.isOK()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* E.g. HTTP/1.1 503 first byte timeout */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
         } else if (con.getLongContentLength() == 0) {
             /*
              * This can really only happen if the user is adding wrong items e.g. adds a single item which actually contains a galleryID -->

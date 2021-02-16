@@ -9,7 +9,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.hoster.IndianPornVideosCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indianpornvideos.com", "freesexyindians.com" }, urls = { "https?://(?:www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(?:\\.html)?", "https?://(?:www\\.)?freesexyindians\\.com/porn-star/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indianpornvideos.com", "freesexyindians.com" }, urls = { "https?://(?:www\\.)?indianpornvideos2?\\.com/(video/)?[A-Za-z0-9\\-_]+(?:\\.html)?", "https?://(?:www\\.)?freesexyindians\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
 public class IndianpornvideosCom extends PornEmbedParser {
     public IndianpornvideosCom(PluginWrapper wrapper) {
         super(wrapper);
