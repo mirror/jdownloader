@@ -45,8 +45,7 @@ import org.jdownloader.plugins.controller.PluginInfo;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class HostPluginController extends PluginController<PluginForHost> {
-    public static final String                TMP_INVALIDPLUGINS = "invalidplugins";
-    private static final HostPluginController INSTANCE           = new HostPluginController();
+    private static final HostPluginController INSTANCE = new HostPluginController();
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
@@ -307,9 +306,14 @@ public class HostPluginController extends PluginController<PluginForHost> {
         }
     }
 
+    @Override
+    protected String getPluginPath() {
+        return "jd/plugins/hoster";
+    }
+
     private List<LazyHostPlugin> update(LogSource logger, final List<LazyHostPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final List<LazyHostPlugin> retList = new ArrayList<LazyHostPlugin>();
-        for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCache, lastFolderModification)) {
+        for (PluginInfo<PluginForHost> pluginInfo : scan(logger, updateCache, lastFolderModification)) {
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);
@@ -461,7 +465,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 cache.delete();
             } finally {
                 LOCK.writeUnlock();
-                FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDPLUGINS), null);
+                FileCreationManager.getInstance().delete(TMP_INVALIDPLUGINS, null);
             }
         }
     }
@@ -479,8 +483,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
             localList = list;
             if (localList != null && isCacheInvalidated() == false) {
                 return localList;
+            } else {
+                return init();
             }
-            return init();
         }
     }
 
@@ -499,7 +504,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public void invalidateCacheIfRequired() {
-        if (Application.getTempResource(TMP_INVALIDPLUGINS).exists()) {
+        if (TMP_INVALIDPLUGINS.exists()) {
             invalidateCache();
         }
     }

@@ -1,5 +1,7 @@
 package org.jdownloader.plugins.controller;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -15,6 +17,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
+import org.appwork.utils.IO.SYNC;
+import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController.CHECK_RESULT;
@@ -40,16 +45,46 @@ public class PluginScannerNIO<T extends Plugin> {
         try {
             final long lastFolderModifiedCheck = lastFolderModification != null ? lastFolderModification.get() : -1;
             final Path folder = Application.getRootByClass(jd.SecondLevelLaunch.class, hosterpath).toPath();
-            final long lastFolderModifiedScanStart = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
+            long lastFolderModifiedScanStart = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
             if (pluginCache == null || pluginCache.size() == 0 || lastFolderModifiedCheck <= 0) {
                 logger.info("@PluginController(NIO): no plugin cache available|LastModified:" + lastFolderModifiedCheck);
             } else {
-                if (lastFolderModifiedScanStart == lastFolderModifiedCheck) {
+                boolean lastModifiedTimestampUnchanged = lastFolderModifiedScanStart == lastFolderModifiedCheck;
+                if (lastModifiedTimestampUnchanged) {
+                    try {
+                        while (true) {
+                            final String uniqueID = UniqueAlltimeID.create();
+                            final File testLastModified = new File(folder.toFile(), uniqueID);
+                            if (!testLastModified.exists()) {
+                                IO.secureWrite(testLastModified, uniqueID, SYNC.META_AND_DATA);
+                                if (!testLastModified.delete()) {
+                                    testLastModified.deleteOnExit();
+                                }
+                                final long testLastFolderModifiedScanStart = Files.readAttributes(folder, BasicFileAttributes.class).lastModifiedTime().toMillis();
+                                if (testLastFolderModifiedScanStart == lastFolderModifiedScanStart) {
+                                    logger.info("@PluginController(NIO): lastModified timestamp change test: failed");
+                                    lastModifiedTimestampUnchanged = false;
+                                } else {
+                                    logger.info("@PluginController(NIO): lastModified timestamp change test: successful");
+                                    lastFolderModifiedScanStart = testLastFolderModifiedScanStart;
+                                }
+                                break;
+                            }
+                        }
+                    } catch (IOException e) {
+                        logger.exception("@PluginController(NIO): lastModified timestamp change test: error", e);
+                        lastModifiedTimestampUnchanged = false;
+                    }
+                }
+                if (lastModifiedTimestampUnchanged) {
                     for (final LazyPlugin<T> lazyPlugin : pluginCache) {
                         final PluginInfo<T> pluginInfo = new PluginInfo<T>(lazyPlugin.getLazyPluginClass(), lazyPlugin);
                         ret.add(pluginInfo);
                     }
                     logger.info("@PluginController(NIO): plugin cache valid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
+                    if (lastFolderModification != null) {
+                        lastFolderModification.set(lastFolderModifiedScanStart);
+                    }
                     return ret;
                 } else {
                     logger.info("@PluginController(NIO): plugin cache invalid|Size:" + pluginCache.size() + "|LastModified:" + lastFolderModifiedScanStart);
@@ -100,8 +135,7 @@ public class PluginScannerNIO<T extends Plugin> {
                                         continue;
                                     }
                                 } catch (final Throwable e) {
-                                    logger.finer("Failed: " + className);
-                                    logger.log(e);
+                                    logger.exception("Failed: " + className, e);
                                 }
                             }
                         }
@@ -119,12 +153,10 @@ public class PluginScannerNIO<T extends Plugin> {
                                 continue;
                             }
                         } catch (final OutOfMemoryError e) {
-                            logger.finer("Failed: " + className);
-                            logger.log(e);
+                            logger.exception("Failed: " + className, e);
                             throw e;
                         } catch (final Throwable e) {
-                            logger.finer("Failed: " + className);
-                            logger.log(e);
+                            logger.exception("Failed: " + className, e);
                             continue;
                         }
                         //
@@ -134,12 +166,10 @@ public class PluginScannerNIO<T extends Plugin> {
                         ret.add(pluginInfo);
                     }
                 } catch (final OutOfMemoryError e) {
-                    logger.finer("Failed: " + path);
-                    logger.log(e);
+                    logger.exception("Failed: " + path, e);
                     throw e;
                 } catch (Throwable e) {
-                    logger.finer("Failed: " + path);
-                    logger.log(e);
+                    logger.exception("Failed: " + path, e);
                 }
             }
             if (stream != null) {

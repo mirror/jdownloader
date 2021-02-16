@@ -13,10 +13,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class PluginController<T extends Plugin> {
+    protected static final File TMP_INVALIDPLUGINS = Application.getTempResource("invalidplugins");
+
     public static class PluginClassInfo<T extends Plugin> {
         public byte[]       sha256;
         public int          interfaceVersion = -1;
@@ -82,14 +85,16 @@ public abstract class PluginController<T extends Plugin> {
 
     protected abstract PluginClassInfo<T> getPluginClassInfo(Map<Object, List<String>> dependenciesCache, Class<T> clazz) throws Exception;
 
-    protected List<PluginInfo<T>> scan(LogSource logger, String hosterpath, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
-        if (!Application.isJared(PluginController.class) && lastFolderModification != null) {
+    protected abstract String getPluginPath();
+
+    protected List<PluginInfo<T>> scan(LogSource logger, final List<? extends LazyPlugin<T>> pluginCache, final AtomicLong lastFolderModification) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && lastFolderModification != null) {
             lastFolderModification.set(-1l);
         }
         if (Application.getJavaVersion() >= Application.JAVA17) {
-            return new PluginScannerNIO<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
+            return new PluginScannerNIO<T>(this).scan(logger, getPluginPath(), pluginCache, lastFolderModification);
         } else {
-            return new PluginScannerFiles<T>(this).scan(logger, hosterpath, pluginCache, lastFolderModification);
+            return new PluginScannerFiles<T>(this).scan(logger, getPluginPath(), pluginCache, lastFolderModification);
         }
     }
 }
