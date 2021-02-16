@@ -96,7 +96,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        return api_fetchAccountInfo(account, false);
+        return api_fetchAccountInfo(account, true);
     }
 
     private AccountInfo api_fetchAccountInfo(final Account account, final boolean force) throws Exception {
@@ -683,6 +683,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         synchronized (account) {
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
+            Object errorO = null;
             if (cookies != null) {
                 logger.info("Attempting cookie login");
                 br.setCookies(this.getHost(), cookies);
@@ -693,8 +694,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 logger.info("Validating cookies");
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                errorO = entries.get("error");
                 // invalid username is shown when 2factorauth is required o_O.
-                if (!entries.containsKey("error")) {
+                if (!(errorO instanceof String)) {
                     logger.info("Cached login successful");
                     /* Save new cookie timestamp */
                     account.saveCookies(br.getCookies(this.getHost()), "");
@@ -708,7 +710,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             logger.info("Performing full login");
             getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Object errorO = entries.get("error");
+            errorO = entries.get("error");
             if (errorO instanceof String) {
                 final String errorMsg = (String) errorO;
                 final String redirect = (String) entries.get("redirect");
