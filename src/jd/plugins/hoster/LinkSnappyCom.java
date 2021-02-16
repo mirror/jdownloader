@@ -22,22 +22,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -58,6 +42,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * 24.11.15 Update by Bilal Ghouri:
@@ -109,19 +109,39 @@ public class LinkSnappyCom extends antiDDoSForHost {
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("return");
             final Object expireO = entries.get("expire");
+            logger.info("expire:" + expireO);
             // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium accounts
-            if (expireO instanceof String && ((String) expireO).equalsIgnoreCase("expired")) {
+            if ("lifetime".equalsIgnoreCase(expireO.toString())) {
+                account.setType(AccountType.PREMIUM);
+            } else if ("expired".equalsIgnoreCase(expireO.toString())) {
                 /* Free account which has never been premium = also "expired" */
                 account.setType(AccountType.FREE);
-                /* 2019-09-05: Free Accounts are supported from now on */
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nPlease make sure that your
-                // account is a paid(premium) account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                ac.setValidUntil(((Long) expireO).longValue() * 1000, this.br);
-                account.setType(AccountType.PREMIUM);
+                Long validUntil = null;
+                if (expireO instanceof Number) {
+                    validUntil = ((Number) expireO).longValue() * 1000;
+                } else if (expireO instanceof String) {
+                    try {
+                        validUntil = Long.parseLong(expireO.toString()) * 1000;
+                    } catch (final NumberFormatException e) {
+                        logger.exception("expire:" + expireO, e);
+                    }
+                }
+                if (validUntil != null) {
+                    ac.setValidUntil(validUntil, this.br);
+                    if (!ac.isExpired()) {
+                        account.setType(AccountType.PREMIUM);
+                    } else {
+                        ac.setValidUntil(-1);
+                        account.setType(AccountType.FREE);
+                    }
+                } else {
+                    account.setType(AccountType.FREE);
+                }
             }
             /* Find traffic left */
             final Object trafficleftO = entries.get("trafficleft");
+            logger.info("trafficLeft:" + trafficleftO);
             // final Object maxtrafficO = entries.get("maxtraffic");
             if (trafficleftO instanceof String) {
                 /* E.g. value is "unlimited" */
@@ -134,17 +154,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 ac.setUnlimitedTraffic();
             } else if (trafficleftO instanceof Number) {
                 /* Also check for negative traffic */
-                final long trafficleft = ((Long) trafficleftO).longValue();
+                final long trafficleft = ((Number) trafficleftO).longValue();
                 if (trafficleft <= 0) {
                     ac.setTrafficLeft(0);
                 } else {
                     ac.setTrafficLeft(trafficleft);
                 }
-                if (entries.containsKey("maxtraffic")) {
-                    ac.setTrafficMax(((Long) entries.get("maxtraffic")).longValue());
+                if (entries.get("maxtraffic") instanceof Number) {
+                    ac.setTrafficMax(((Number) entries.get("maxtraffic")).longValue());
                 }
-            } else {
-                logger.info("Failed to find trafficLeft");
             }
             /* now it's time to get all supported hosts */
             getPage("https://" + this.getHost() + "/api/FILEHOSTS");
@@ -159,13 +177,12 @@ public class LinkSnappyCom extends antiDDoSForHost {
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
-            Map<String, Object> hosterInformation;
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             entries = (Map<String, Object>) entries.get("return");
             final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
-                hosterInformation = (Map<String, Object>) entry.getValue();
+                final Map<String, Object> hosterInformation = (Map<String, Object>) entry.getValue();
                 final String host = entry.getKey();
                 if (StringUtils.isEmpty(host)) {
                     continue;
@@ -233,7 +250,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                      * extend">an Elite account</a> in order to start download." OR
                      * ">Activation code has been blocked due to violation of our terms of service. Buy Elite membership in order to Download."
                      */
-                    final Regex remainingURLS = br.getRegex("id=\"linkleft\">(\\d+)</span> out of (\\d+) premium link");
+                    final Regex remainingURLS = br.getRegex("id\\s*=\\s*\"linkleft\">\\s*(\\d+)\\s*</span>\\s*out of (\\d+) premium link");
                     final String remainingDailyURLsStr = remainingURLS.getMatch(0);
                     final String maxDailyURLsStr = remainingURLS.getMatch(1);
                     final int remainingURLs = Integer.parseInt(remainingDailyURLsStr);
@@ -243,7 +260,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                     ac.setStatus(String.format("Free Account [%s of %s daily links left]", remainingDailyURLsStr, maxDailyURLsStr));
                 } catch (final Throwable e) {
-                    logger.info("Failed to find free Account limits --> Setting ZERO trafficleft");
+                    logger.exception("Failed to find free Account limits --> Setting ZERO trafficleft", e);
                     ac.setTrafficLeft(0);
                     ac.setStatus("Free Account [Failed to find number of URLs left]");
                 }
