@@ -59,10 +59,13 @@ public class AparatCom extends PluginForDecrypt {
         for (String[] jsonMatch : jsonMatches) {
             final LinkedHashMap<String, Object> jsonEntries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(jsonMatch[0]);
             String videoName = jsonEntries.get("name").toString();
-            String videoURL = jsonEntries.get("contentUrl").toString();
+            final String videoURL = jsonEntries.get("contentUrl").toString();
             if (videoName != null && videoURL != null) {
+                if (Encoding.isHtmlEntityCoded(videoName)) {
+                    videoName = Encoding.htmlDecode(videoName);
+                }
                 final DownloadLink dl = createDownloadlink("directhttp://" + videoURL);
-                dl.setForcedFileName(videoName = videoName + ".mp4");
+                dl.setForcedFileName(videoName + ".mp4");
                 decryptedLinks.add(dl);
             }
         }
