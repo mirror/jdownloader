@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javnew)\\.(club|net|today)/.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_]+/" })
 public class JavFembed extends PluginForDecrypt {
     public JavFembed(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,13 +47,33 @@ public class JavFembed extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Page not found")) {
-            crawledLinks.add(createOfflinelink(parameter));
-            return crawledLinks;
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+        /** 2021-02-17: Check for extra iframe containing fembed source URL javhd.today ticket 89512 */
+        final String iframeRedirect = br.getRegex("<iframe id=\"main-player\" src=\"(https?://player\\.[^/]+/\\d+/?)\"").getMatch(0);
+        if (iframeRedirect != null) {
+            br.getPage(iframeRedirect);
+        }
+        /* First check for externally hosted content. */
+        /* 2021-02-17: javnew.net ticket 89511 */
+        final String externalURL = br.getRegex("<iframe src=\"(https?://ninjastream\\.to/watch/[^<>\"]+)\"").getMatch(0);
+        if (externalURL != null) {
+            decryptedLinks.add(this.createDownloadlink(externalURL));
+            return decryptedLinks;
+        }
+        /* 2021-02-17: javhd.today ticket 89512 */
+        final String[] allExternalSources = br.getRegex("playEmbed\\('(https?://[^<>\"\\']+)'\\)").getColumn(0);
+        if (allExternalSources.length > 0) {
+            for (final String externalSource : allExternalSources) {
+                decryptedLinks.add(this.createDownloadlink(externalSource));
+            }
+            return decryptedLinks;
         }
         title = Encoding.htmlDecode(br.getRegex("<title>(?:Watch Japanese Porn - )?(.*?)( \\| JAVNEW| - JAVR.club)?</title>").getMatch(0)).trim();
         final FilePackage fp = FilePackage.getInstance();
@@ -68,9 +88,9 @@ public class JavFembed extends PluginForDecrypt {
         }
         fembed = fembed.replace("\\", "");
         logger.info("Debug info: fembed: " + fembed);
-        crawlFembedLink(crawledLinks, fembed);
-        fp.addLinks(crawledLinks);
-        return crawledLinks;
+        crawlFembedLink(decryptedLinks, fembed);
+        fp.addLinks(decryptedLinks);
+        return decryptedLinks;
     }
 
     private void crawlFembedLink(final ArrayList<DownloadLink> crawledLinks, final String fembed) throws Exception {

@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -39,14 +41,40 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avxhm.se" }, urls = { "https?://(www\\.)?(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhm\\.is|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+|https?://(www\\.)?(avaxhome\\.pro)/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AvxHmeW extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public AvxHmeW(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String notThis = "(?:https?:)?(?://(?!(www\\.imdb\\.com|avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhm\\.is|avxhome\\.(?:se|in)|avaxhome\\.pro|avxsearch\\.(?:se|pro))))[\\S&]+";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        /* Always add current domain to first position! */
+        ret.add(new String[] { "avh.world", "avaxhome.ws", "avaxhome.bz", "avaxhome.cc", "avaxhome.in", "avaxhome.pro", "avaxho.me", "avaxhm.com", "avxhm.is", "avxhm.se", "avxhome.se", "avxhome.in" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -56,12 +84,12 @@ public class AvxHmeW extends PluginForDecrypt {
         br = new Browser();
         br.setAllowedResponseCodes(new int[] { 401 });
         // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(?:ws|bz|cc|in)|avaxho\\.me|avaxhm\\.com|avxhm\\.is|avxhome\\.(?:se|in)|avxhm\\.se|avaxhome\\.unblocker\\.xyz)", "avxhm.se");
+        final String parameter = cryptedLink.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(cryptedLink.toString())), this.getHost());
         if (parameter.matches(".*/go/\\d+/.*")) {
             /* 2021-01-20: Login whenever possible -> No captchas required then */
-            final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+            final Account acc = AccountController.getInstance().getValidAccount("avxhm.se");
             if (acc != null) {
-                final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+                final PluginForHost hostPlugin = this.getNewPluginForHostInstance("avxhm.se");
                 ((jd.plugins.hoster.AvxHmeW) hostPlugin).login(acc, false);
                 /* 2021-02-08: Login may set another User-Agent */
                 this.br = hostPlugin.getBrowser();
@@ -99,6 +127,7 @@ public class AvxHmeW extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            final String notThis = "(?:https?:)?" + buildHostsPatternPart(getPluginDomains().get(0)) + "[\\S&]+";
             final HashSet<String> dupe = new HashSet<String>();
             if (!parameter.contains("avaxhome.pro/")) {
                 // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore

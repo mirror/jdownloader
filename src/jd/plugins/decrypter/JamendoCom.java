@@ -27,34 +27,32 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "https?://[\\w\\.\\-]*?jamendo\\.com(?:/[a-z]{2})?/(album/\\d+|artist/.+|list/a\\d+)" })
 public class JamendoCom extends PluginForDecrypt {
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_ALBUM = ".*/(album/\\d+|list/a\\d+)";
+
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            br.setLoadLimit(4194304);
-        } catch (final Throwable e) {
-            // Not available in old 0.9.581 Stable
-        }
+        br.setLoadLimit(4194304);
         String url = parameter.toString();
         final SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
-        if (url.contains("/album") || url.contains("list/a")) {
-            String AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
+        if (url.matches(TYPE_ALBUM)) {
+            final String albumID = new Regex(url, "(\\d+)$").getMatch(0);
             br.setFollowRedirects(true);
-            br.getPage("https://www.jamendo.com/en/album/" + AlbumID);
+            br.getPage("https://www." + this.getHost() + "/album/" + albumID);
             if (!url.contains("/album") && !url.contains("list/a")) {
                 decryptedLinks.add(this.createOfflinelink(url));
                 return decryptedLinks;
             }
             String album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
-            String tracks[][] = br.getRegex("<a href='/en/track/(\\d+).*?' >(.*?)</").getMatches();
+            String tracks[] = br.getRegex("\\{\\&quot;id\\&quot;:(\\d+),\\&quot;popularityScore").getColumn(0);
             FilePackage fp = FilePackage.getInstance();
             String packageName = "";
             if (album != null) {
@@ -67,16 +65,16 @@ public class JamendoCom extends PluginForDecrypt {
                 packageName = artist + packageName;
             }
             fp.setName(packageName);
-            if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
-                DownloadLink link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + AlbumID);
+            if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", false)) {
+                DownloadLink link = createDownloadlink("http://storage-new.newjamendo.com/download/a/" + albumID);
                 link.setName(packageName);
                 link.setAvailable(true);
                 fp.add(link);
                 decryptedLinks.add(link);
             } else {
-                for (final String track[] : tracks) {
-                    final DownloadLink link = createDownloadlink("https://www.jamendo.com/en/track/" + track[0]);
-                    link.setName(artist + " - " + album + " - " + track[1] + ".mp3");
+                for (final String trackID : tracks) {
+                    final DownloadLink link = createDownloadlink("https://www.jamendo.com/track/" + trackID);
+                    link.setName(trackID + ".mp3");
                     link.setAvailable(true);
                     fp.add(link);
                     decryptedLinks.add(link);
@@ -90,7 +88,7 @@ public class JamendoCom extends PluginForDecrypt {
             String albums[] = br.getRegex("<h2>\\s+<a href='/en/list/a(\\d+)/\\w+' >").getColumn(0);
             DownloadLink link;
             for (String album : albums) {
-                if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
+                if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", false)) {
                     link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + album);
                     link.setName(artist + " - " + album + ".zip");
                 } else {
