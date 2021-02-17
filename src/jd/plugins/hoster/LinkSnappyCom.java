@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -90,8 +91,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
     private boolean          resumes               = true;
     private int              chunks                = 0;
     private String           dllink                = null;
-    private String           linkHash              = null;
-    private String           isCache               = null;
     private static final int CACHE_WAIT_THRESHOLD  = 10 * 60000;
 
     @Override
@@ -296,95 +295,92 @@ public class LinkSnappyCom extends antiDDoSForHost {
      * Check with linksnappy server if file needs to get downloaded first before the user can download it from there (2019-05-14: E.g.
      * rapidgator.net URLs).
      **/
-    private void cacheDLChecker(final Account account) throws Exception {
-        if (isCache != null) {
-            final String id = linkHash.toString();
-            final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
-                protected long lastCurrent    = -1;
-                protected long lastTotal      = -1;
-                protected long startTimeStamp = -1;
+    private void cacheDLChecker(final Account account, final String id) throws Exception {
+        final PluginProgress waitProgress = new PluginProgress(0, 100, null) {
+            protected long lastCurrent    = -1;
+            protected long lastTotal      = -1;
+            protected long startTimeStamp = -1;
 
-                @Override
-                public PluginTaskID getID() {
-                    return PluginTaskID.WAIT;
-                }
-
-                @Override
-                public String getMessage(Object requestor) {
-                    if (requestor instanceof ETAColumn) {
-                        final long eta = getETA();
-                        if (eta >= 0) {
-                            return TimeFormatter.formatMilliSeconds(eta, 0);
-                        }
-                        return "";
-                    }
-                    return "Preparing your file";
-                }
-
-                @Override
-                public void updateValues(long current, long total) {
-                    super.updateValues(current, total);
-                    if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
-                        lastTotal = total;
-                        lastCurrent = current;
-                        startTimeStamp = System.currentTimeMillis();
-                        // this.setETA(-1);
-                        return;
-                    }
-                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                    if (currentTimeDifference <= 0) {
-                        return;
-                    }
-                    long speed = (current * 10000) / currentTimeDifference;
-                    if (speed == 0) {
-                        return;
-                    }
-                    long eta = ((total - current) * 10000) / speed;
-                    this.setETA(eta);
-                }
-            };
-            waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
-            waitProgress.setProgressSource(this);
-            try {
-                long lastProgressChange = System.currentTimeMillis();
-                int lastProgress = -1;
-                while (System.currentTimeMillis() - lastProgressChange < CACHE_WAIT_THRESHOLD) {
-                    if (isAbort()) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                    br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
-                    final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    final String error = getError(data);
-                    if (error != null) {
-                        mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache check returned error", 20, 5 * 60 * 1000l);
-                    } else if (data.get("return") == null) {
-                        break;
-                    }
-                    final Map<String, Object> cacheReturnStatus = (Map<String, Object>) data.get("return");
-                    final Integer currentProgress = (int) JavaScriptEngineFactory.toLong(cacheReturnStatus.get("percent"), 0);
-                    // download complete?
-                    if (currentProgress.intValue() == 100) {
-                        // cache finished, lets go to download part
-                        break;
-                    } else {
-                        this.getDownloadLink().addPluginProgress(waitProgress);
-                        waitProgress.updateValues(currentProgress.intValue(), 100);
-                        for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                            if (isAbort()) {
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            } else {
-                                Thread.sleep(1000);
-                            }
-                        }
-                        if (currentProgress.intValue() != lastProgress) {
-                            lastProgressChange = System.currentTimeMillis();
-                            lastProgress = currentProgress.intValue();
-                        }
-                    }
-                }
-            } finally {
-                this.getDownloadLink().removePluginProgress(waitProgress);
+            @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.WAIT;
             }
+
+            @Override
+            public String getMessage(Object requestor) {
+                if (requestor instanceof ETAColumn) {
+                    final long eta = getETA();
+                    if (eta >= 0) {
+                        return TimeFormatter.formatMilliSeconds(eta, 0);
+                    }
+                    return "";
+                }
+                return "Preparing your file";
+            }
+
+            @Override
+            public void updateValues(long current, long total) {
+                super.updateValues(current, total);
+                if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                    lastTotal = total;
+                    lastCurrent = current;
+                    startTimeStamp = System.currentTimeMillis();
+                    // this.setETA(-1);
+                    return;
+                }
+                long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                if (currentTimeDifference <= 0) {
+                    return;
+                }
+                long speed = (current * 10000) / currentTimeDifference;
+                if (speed == 0) {
+                    return;
+                }
+                long eta = ((total - current) * 10000) / speed;
+                this.setETA(eta);
+            }
+        };
+        waitProgress.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+        waitProgress.setProgressSource(this);
+        try {
+            long lastProgressChange = System.currentTimeMillis();
+            int lastProgress = -1;
+            while (System.currentTimeMillis() - lastProgressChange < CACHE_WAIT_THRESHOLD) {
+                if (isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
+                final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String error = getError(data);
+                if (error != null) {
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), "Cache check returned error", 20, 5 * 60 * 1000l);
+                } else if (data.get("return") == null) {
+                    break;
+                }
+                final Map<String, Object> cacheReturnStatus = (Map<String, Object>) data.get("return");
+                final Integer currentProgress = (int) JavaScriptEngineFactory.toLong(cacheReturnStatus.get("percent"), 0);
+                // download complete?
+                if (currentProgress.intValue() == 100) {
+                    // cache finished, lets go to download part
+                    break;
+                } else {
+                    this.getDownloadLink().addPluginProgress(waitProgress);
+                    waitProgress.updateValues(currentProgress.intValue(), 100);
+                    for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                        if (isAbort()) {
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            Thread.sleep(1000);
+                        }
+                    }
+                    if (currentProgress.intValue() != lastProgress) {
+                        lastProgressChange = System.currentTimeMillis();
+                        lastProgress = currentProgress.intValue();
+                    }
+                }
+            }
+        } finally {
+            this.getDownloadLink().removePluginProgress(waitProgress);
         }
     }
 
@@ -424,7 +420,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     urlinfo.put("linkpass", passCode);
                 }
                 getPage(String.format(urlRaw, URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo))));
-                final String message = PluginJSonUtils.getJsonValue(br, "error");
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                try {
+                    final List<Object> ressourcelist = (List<Object>) entries.get("links");
+                    entries = (Map<String, Object>) ressourcelist.get(0);
+                } catch (final Throwable e) {
+                }
+                final String message = this.getError(entries);
                 if (this.isErrorPasswordRequiredOrWrong(message)) {
                     wrongPasswordAttempts += 1;
                     if (wrongPasswordAttempts >= 3) {
@@ -476,13 +478,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     } catch (final Throwable e) {
                         history_deleted = false;
                     }
-                    try {
-                        if (history_deleted) {
-                            logger.warning("Delete history succeeded!");
-                        } else {
-                            logger.warning("Delete history failed");
-                        }
-                    } catch (final Throwable e2) {
+                    if (history_deleted) {
+                        logger.warning("Delete history succeeded!");
+                    } else {
+                        logger.warning("Delete history failed");
                     }
                 }
             }
@@ -556,9 +555,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private boolean attemptDownload(final Account account) throws Exception {
         if (br != null && br.getHttpConnection() != null) {
-            final String err = getError(br);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            try {
+                final List<Object> ressourcelist = (List<Object>) entries.get("links");
+                entries = (Map<String, Object>) ressourcelist.get(0);
+            } catch (final Throwable e) {
+            }
+            final String err = getError(entries);
             if (err != null) {
-                if ("No server available for this filehost, Please retry after few minutes".equalsIgnoreCase(err)) {
+                if (new Regex(err, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
                     // if no server available for the filehost
                     mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "hoster offline");
                 } else if (new Regex(err, "(?i)Couldn't (re-)?start download in system").matches()) {
@@ -571,7 +576,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     } catch (final Throwable e) {
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLimit Reached. Please purchase elite membership!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename\\.").matches()) {
+                } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename").matches()) {
                     logger.info("Error: Disabling current host");
                     mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, "Multihoster issue");
                 } else if (new Regex(err, "(?i)Invalid file URL format\\.").matches()) {
@@ -611,14 +616,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     }
                 }
             }
-            this.dllink = PluginJSonUtils.getJsonValue(br, "generated");
-            this.isCache = PluginJSonUtils.getJsonValue(br, "cacheDL");
-            this.linkHash = PluginJSonUtils.getJsonValue(br, "hash");
-            if (StringUtils.isEmpty(dllink) || "false".equals(dllink)) {
+            final Object dllinkO = entries.get("generated");
+            if (!(dllinkO instanceof String)) {
                 logger.info("Direct downloadlink not found");
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinkmissing", 2, 5 * 60 * 1000l);
             }
-            cacheDLChecker(account);
+            this.dllink = (String) dllinkO;
+            if (entries.containsKey("cacheDL")) {
+                cacheDLChecker(account, (String) entries.get("hash"));
+            }
         }
         dlResponseCode = -1;
         try {
