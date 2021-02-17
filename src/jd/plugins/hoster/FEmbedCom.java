@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +76,7 @@ public class FEmbedCom extends PluginForHost {
                 if (!(Thread.currentThread() instanceof SingleDownloadController)) {
                     final URLConnectionAdapter con = br.cloneBrowser().openHeadConnection(file);
                     try {
-                        if (con.getResponseCode() == 200 && con.getLongContentLength() > 0 && !StringUtils.contains(con.getContentType(), "text")) {
+                        if (this.looksLikeDownloadableContent(con)) {
                             parameter.setVerifiedFileSize(con.getCompleteContentLength());
                         } else {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,8 +99,12 @@ public class FEmbedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
