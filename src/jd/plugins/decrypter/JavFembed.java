@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_]+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_]{5,}/" })
 public class JavFembed extends PluginForDecrypt {
     public JavFembed(PluginWrapper wrapper) {
         super(wrapper);
