@@ -146,82 +146,85 @@ public class UlozTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (CTRLLOCK) {
-            passwordProtected = false;
-            correctDownloadLink(link);
-            prepBR(this.br);
-            br.setFollowRedirects(false);
-            if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
-                link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
-                return AvailableStatus.TRUE;
+            return requestFileInformation(link, false);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        passwordProtected = false;
+        correctDownloadLink(link);
+        prepBR(this.br);
+        br.setFollowRedirects(false);
+        if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
+            link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
+        if (link.getDownloadURL().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
+            return AvailableStatus.FALSE;
+        }
+        finalDirectDownloadURL = handleDownloadUrl(link);
+        if (finalDirectDownloadURL != null) {
+            return AvailableStatus.TRUE;
+        }
+        checkGeoBlocked(br, null);
+        if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+            if (!isDownload) {
+                /* Don't ask for captchas during availablecheck */
+                return AvailableStatus.UNCHECKABLE;
             }
-            if (link.getDownloadURL().matches("https?://pornfile\\.cz/(podminky|tos)/[^/]+")) {
-                return AvailableStatus.FALSE;
+            final Form f = br.getFormbyAction("/limit-exceeded");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(f);
+        }
+        handleAgeRestrictedRedirects(link);
+        if (br.containsHTML("The file is not available at this moment, please, try it later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
+        }
+        // responseCode offline check
+        responseCodeOfflineCheck();
+        // Wrong links show the mainpage so here we check if we got the mainpage or not
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        passwordProtected = this.isPasswordProtected();
+        if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
+            /* Seems like whatever url the user added, it is not a downloadurl. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
+        String filename = br.getRegex("<title>\\s*(.*?)\\s*(\\| on-line video\\s+)?(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
+        if (this.passwordProtected) {
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename.trim()));
             }
-            finalDirectDownloadURL = handleDownloadUrl(link);
-            if (finalDirectDownloadURL != null) {
-                return AvailableStatus.TRUE;
-            }
-            checkGeoBlocked(br, null);
-            if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
-                final Form f = br.getFormbyAction("/limit-exceeded");
-                if (f != null) {
-                    if (f.containsHTML("class=\"g-recaptcha\"")) {
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    }
-                    br.submitForm(f);
-                } else {
-                    return AvailableStatus.UNCHECKABLE;
-                }
-            }
-            handleAgeRestrictedRedirects(link);
-            if (br.containsHTML("The file is not available at this moment, please, try it later")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
-            }
-            // responseCode offline check
-            responseCodeOfflineCheck();
-            // Wrong links show the mainpage so here we check if we got the mainpage or not
-            if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            passwordProtected = this.isPasswordProtected();
-            if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
-                /* Seems like whatever url the user added, it is not a downloadurl. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
-            String filename = br.getRegex("<title>\\s*(.*?)\\s*(\\| on-line video\\s+)?(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
-            if (this.passwordProtected) {
-                if (filename != null) {
-                    link.setName(Encoding.htmlDecode(filename.trim()));
-                }
-                link.getLinkStatus().setStatusText("This link is password protected");
-            } else {
-                // For video links
-                String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+            link.getLinkStatus().setStatusText("This link is password protected");
+        } else {
+            // For video links
+            String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+            if (filesize == null) {
+                filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
                 if (filesize == null) {
-                    filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
+                    filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
+                    // For file links
                     if (filesize == null) {
-                        filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
-                        // For file links
+                        filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
                         if (filesize == null) {
-                            filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
-                            if (filesize == null) {
-                                filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
-                            }
+                            filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
                         }
                     }
                 }
-                if (filename != null) {
-                    // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                    link.setName(Encoding.htmlDecode(filename.trim()));
-                }
-                if (filesize != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
             }
-            return AvailableStatus.TRUE;
+            if (filename != null) {
+                // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                link.setName(Encoding.htmlDecode(filename.trim()));
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
+        return AvailableStatus.TRUE;
     }
 
     private void handleAgeRestrictedRedirects(final DownloadLink link) throws Exception {
@@ -762,7 +765,7 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private void checkGeoBlocked(Browser br, Account account) throws PluginException {
+    private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
         if (StringUtils.containsIgnoreCase(br.getURL(), "/blocked")) {
             if (account != null) {
                 throw new AccountUnavailableException("Geoblocked", 24 * 60 * 60 * 1000l);
