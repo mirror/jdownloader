@@ -7,7 +7,6 @@ import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class ReScanPluginsCommand extends AbstractStartupCommand {
-
     public ReScanPluginsCommand() {
         super("scanextensions", "scanplugins", "scan");
     }
@@ -16,17 +15,21 @@ public class ReScanPluginsCommand extends AbstractStartupCommand {
     public void run(String command, String... parameters) {
         logger.info("Rescan Plugins and Extensions");
         HostPluginController.getInstance().invalidateCache();
-        ExtensionController.getInstance().invalidateCache();
         CrawlerPluginController.invalidateCache();
+        ExtensionController.getInstance().invalidateCache();
         SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
-
             @Override
             public void run() {
+                new Thread() {
+                    {
+                        setDaemon(true);
+                    }
 
-                if (HostPluginController.getInstance().isCacheInvalidated()) {
-                    HostPluginController.getInstance().init();
-                }
-
+                    public void run() {
+                        HostPluginController.getInstance().ensureLoaded();
+                        CrawlerPluginController.getInstance().ensureLoaded();
+                    };
+                }.start();
             }
         });
     }
@@ -35,5 +38,4 @@ public class ReScanPluginsCommand extends AbstractStartupCommand {
     public String getDescription() {
         return "Rescan Plugins at Startup";
     }
-
 }

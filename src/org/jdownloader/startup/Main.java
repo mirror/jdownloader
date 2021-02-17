@@ -40,8 +40,6 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.myjdownloader.client.json.JSonHandler;
 import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
@@ -201,8 +199,6 @@ public class Main {
         PARAMETER_HANDLER.onStartup(args);
         // Rescan plugincached if required
         ExtensionController.getInstance().invalidateCacheIfRequired();
-        HostPluginController.getInstance().invalidateCacheIfRequired();
-        CrawlerPluginController.invalidateCacheIfRequired();
         jd.SecondLevelLaunch.mainStart(args);
     }
 

@@ -22,7 +22,6 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.NonInterruptibleRunnable;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -311,7 +310,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 cache.delete();
             } finally {
                 LOCK.writeUnlock();
-                FileCreationManager.getInstance().delete(TMP_INVALIDPLUGINS, null);
             }
         }
     }
@@ -322,7 +320,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
@@ -379,12 +377,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             }
         }
         return ret;
-    }
-
-    public static void invalidateCacheIfRequired() {
-        if (TMP_INVALIDPLUGINS.exists()) {
-            invalidateCache();
-        }
     }
 
     @Override
