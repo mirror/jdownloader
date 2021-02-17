@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archivedecrypted\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -230,9 +230,9 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         /* Sync this between hoster- and decrypter plugin! */
-        if (urlConnection.getURL().toString().contains(".xml")) {
+        if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".xml")) {
             /* 2021-02-15: Special handling for .xml files */
-            return urlConnection.getContentType().contains("xml");
+            return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "xml");
         } else {
             return super.looksLikeDownloadableContent(urlConnection);
         }

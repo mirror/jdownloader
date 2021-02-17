@@ -12,14 +12,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.Plugin;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class PluginController<T extends Plugin> {
-    protected static final File TMP_INVALIDPLUGINS = Application.getTempResource("invalidplugins");
-
     public static class PluginClassInfo<T extends Plugin> {
         public byte[]       sha256;
         public int          interfaceVersion = -1;
@@ -91,7 +89,7 @@ public abstract class PluginController<T extends Plugin> {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && lastFolderModification != null) {
             lastFolderModification.set(-1l);
         }
-        if (Application.getJavaVersion() >= Application.JAVA17) {
+        if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
             return new PluginScannerNIO<T>(this).scan(logger, getPluginPath(), pluginCache, lastFolderModification);
         } else {
             return new PluginScannerFiles<T>(this).scan(logger, getPluginPath(), pluginCache, lastFolderModification);

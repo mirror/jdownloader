@@ -29,6 +29,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -408,7 +409,7 @@ public class UpdateController implements UpdateCallbackInterface {
                 return;
             }
             // no need to do this if we have a selfupdate pending
-            InstallLog awfoverview = handler.createAWFInstallLog();
+            final InstallLog awfoverview = handler.createAWFInstallLog();
             logger.info(JSonStorage.toString(awfoverview));
             if (awfoverview.getSourcePackages().size() == 0) {
                 logger.info("Nothing to install " + handler.isGuiVisible());
@@ -440,15 +441,22 @@ public class UpdateController implements UpdateCallbackInterface {
                 }
                 logger.info("run install");
                 UpdateController.getInstance().installUpdates(awfoverview);
-                logger.info("start scanner");
-                new Thread("PluginScanner") {
-                    public void run() {
-                        HostPluginController.getInstance().invalidateCache();
-                        CrawlerPluginController.invalidateCache();
-                        HostPluginController.getInstance().ensureLoaded();
-                        CrawlerPluginController.getInstance().ensureLoaded();
-                    }
-                }.start();
+                if (awfoverview.getModifiedPlugins().size() > 0) {
+                    logger.info("start scanner");
+                    new Thread("PluginScanner") {
+                        public void run() {
+                            for (final String plugin : awfoverview.getModifiedPlugins()) {
+                                if (StringUtils.containsIgnoreCase(plugin, "jd/plugins/hoster")) {
+                                    HostPluginController.getInstance().invalidateCache();
+                                } else if (StringUtils.containsIgnoreCase(plugin, "jd/plugins/decrypter")) {
+                                    CrawlerPluginController.invalidateCache();
+                                }
+                                HostPluginController.getInstance().ensureLoaded();
+                                CrawlerPluginController.getInstance().ensureLoaded();
+                            }
+                        }
+                    }.start();
+                }
                 logger.info("set gui finished");
                 handler.setGuiFinished(_UPDATE.T.updatedplugins());
                 if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) {

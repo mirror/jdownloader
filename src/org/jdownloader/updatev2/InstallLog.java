@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Locale;
 
 public class InstallLog {
-    private HashSet<File> sourcePackages;
+    private final HashSet<File> sourcePackages;
 
     public InstallLog() {
         modifiedDirects = new HashSet<String>();
@@ -25,9 +25,9 @@ public class InstallLog {
         return modifiedFiles;
     }
 
-    private Collection<String> modifiedFiles;
-    private Collection<String> modifiedPlugins;
-    private Collection<String> modifiedDirects;
+    private final Collection<String> modifiedFiles;
+    private final Collection<String> modifiedPlugins;
+    private final Collection<String> modifiedDirects;
 
     public Collection<String> getModifiedPlugins() {
         return modifiedPlugins;
@@ -45,14 +45,14 @@ public class InstallLog {
         return modifiedExtensionFiles;
     }
 
-    private Collection<String> modifiedRestartRequiredFiles;
-    private Collection<String> modifiedExtensionFiles;
-    public static final String FILE_EXT_JARSIGNATURE    = ".jarSignature";
-    public static final String FILE_EXT_UPDATESIGNATURE = ".updateSignature";
-    public static final String FILE_EXT_REMOVEDFILE     = ".removed";
-    public static final String FILE_EXT_JAR             = ".jar";
-    public static final String CLIENT_OPTIONS           = ".clientOptions";
-    public static final String SERVER_OPTIONS           = ".serverOptions";
+    private final Collection<String> modifiedRestartRequiredFiles;
+    private final Collection<String> modifiedExtensionFiles;
+    public static final String       FILE_EXT_JARSIGNATURE    = ".jarSignature";
+    public static final String       FILE_EXT_UPDATESIGNATURE = ".updateSignature";
+    public static final String       FILE_EXT_REMOVEDFILE     = ".removed";
+    public static final String       FILE_EXT_JAR             = ".jar";
+    public static final String       CLIENT_OPTIONS           = ".clientOptions";
+    public static final String       SERVER_OPTIONS           = ".serverOptions";
 
     public void add(String relPath) {
         if (relPath.endsWith(FILE_EXT_UPDATESIGNATURE)) {

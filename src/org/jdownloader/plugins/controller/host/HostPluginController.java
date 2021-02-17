@@ -34,7 +34,6 @@ import org.appwork.utils.NonInterruptibleRunnable;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPluginClass;
@@ -465,7 +464,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 cache.delete();
             } finally {
                 LOCK.writeUnlock();
-                FileCreationManager.getInstance().delete(TMP_INVALIDPLUGINS, null);
             }
         }
     }
@@ -501,11 +499,5 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
         }
         return null;
-    }
-
-    public void invalidateCacheIfRequired() {
-        if (TMP_INVALIDPLUGINS.exists()) {
-            invalidateCache();
-        }
     }
 }

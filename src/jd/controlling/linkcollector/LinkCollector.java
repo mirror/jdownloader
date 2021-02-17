@@ -761,17 +761,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     @Override
-    public void moveOrAddAt(CrawledPackage pkg, final List<CrawledLink> movechildren, int moveChildrenindex, int pkgIndex) {
+    public void moveOrAddAt(final CrawledPackage pkg, final List<CrawledLink> movechildren, final int moveChildrenindex, final int pkgIndex) {
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
                 for (CrawledLink l : movechildren) {
                     putCrawledLinkByLinkID(l.getLinkID(), l);
                 }
+                LinkCollector.super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
                 return null;
             }
         });
-        super.moveOrAddAt(pkg, movechildren, moveChildrenindex, pkgIndex);
     }
 
     private List<CrawledLink> getIdentifiedMap(final CrawledPackageMappingID crawledPackageMappingID, HashMap<CrawledPackageMappingID, List<CrawledLink>> map) {
@@ -1343,9 +1343,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1861,7 +1861,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         updateUniqueAlltimeIDMaps(lpackages);
                         for (final CrawledPackage filePackage : lpackages) {
                             for (final CrawledLink link : filePackage.getChildren()) {
-                                putCrawledLinkByLinkID(link.getLinkID(), link);
+                                try {
+                                    putCrawledLinkByLinkID(link.getLinkID(), link);
+                                } catch (Throwable e) {
+                                    logger.log(e);
+                                }
                             }
                         }
                         packages.addAll(0, lpackages);
@@ -2987,11 +2991,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected CrawledLink run() throws RuntimeException {
                 if (LinkCollector.getInstance().containsLinkId(cl.getLinkID())) {
                     return null;
+                } else {
+                    final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                    list.add(cl);
+                    LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+                    return cl;
                 }
-                final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
-                list.add(cl);
-                LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
-                return cl;
             }
         });
     }
