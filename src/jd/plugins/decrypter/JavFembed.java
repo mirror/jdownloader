@@ -29,15 +29,14 @@ import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_]{5,}/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fembed.com" }, urls = { "https?://(?:www\\.)?(av-th|javhd|javr|javrave|javnew)\\.(club|net|today)/[a-z0-9\\-_%]{5,}/" })
 public class JavFembed extends PluginForDecrypt {
     public JavFembed(PluginWrapper wrapper) {
         super(wrapper);
@@ -60,13 +59,6 @@ public class JavFembed extends PluginForDecrypt {
         if (iframeRedirect != null) {
             br.getPage(iframeRedirect);
         }
-        /* First check for externally hosted content. */
-        /* 2021-02-17: javnew.net ticket 89511 */
-        final String externalURL = br.getRegex("<iframe src=\"(https?://ninjastream\\.to/watch/[^<>\"]+)\"").getMatch(0);
-        if (externalURL != null) {
-            decryptedLinks.add(this.createDownloadlink(externalURL));
-            return decryptedLinks;
-        }
         /* 2021-02-17: javhd.today ticket 89512 */
         final String[] allExternalSources = br.getRegex("playEmbed\\('(https?://[^<>\"\\']+)'\\)").getColumn(0);
         if (allExternalSources.length > 0) {
@@ -83,8 +75,15 @@ public class JavFembed extends PluginForDecrypt {
             fembed = br.getRegex("allowfullscreen=[^<>]+?(http[^<>]+?)>").getMatch(0); // javr.club
         }
         if (fembed == null) {
-            logger.warning("Decrypter broken (items regex) for link: " + parameter);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Fallback - crawl all URLs inside all iframes where they usually got their players. */
+            final String[] iframes = br.getRegex("<iframe(.*?)</iframe>").getColumn(0);
+            for (final String iframe : iframes) {
+                final String[] urls = HTMLParser.getHttpLinks(iframe, br.getURL());
+                for (final String url : urls) {
+                    decryptedLinks.add(this.createDownloadlink(url));
+                }
+            }
+            return decryptedLinks;
         }
         fembed = fembed.replace("\\", "");
         logger.info("Debug info: fembed: " + fembed);
