@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa\\.com/([a-z0-9\\-]+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa2?\\.com/([a-z0-9\\-]+)/?" })
 public class KamababaComCrawler extends PornEmbedParser {
     public KamababaComCrawler(PluginWrapper wrapper) {
         super(wrapper);

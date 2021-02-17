@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -30,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa\\.com/([a-z0-9\\-]+)/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kamababa.com" }, urls = { "https?://(?:www\\.)?kamababa2?\\.com/([a-z0-9\\-]+)/?" })
 public class KamababaCom extends antiDDoSForHost {
     public KamababaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -122,10 +124,10 @@ public class KamababaCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
+                if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
                 } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -138,21 +140,25 @@ public class KamababaCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {

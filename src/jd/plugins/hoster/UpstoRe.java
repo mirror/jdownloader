@@ -27,7 +27,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -46,6 +45,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -300,23 +300,25 @@ public class UpstoRe extends antiDDoSForHost {
         return v;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 br.setCookie(getHost(), "lang", "en");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(MAINPAGE, cookies);
-                    getPage("https://upstore.net");
-                    if (!browserCookiesMatchLoginCookies(br) || br.containsHTML("/account/login")) {
+                    getPage("https://" + this.getHost());
+                    if (!this.isLoggedinHTML()) {
+                        logger.info("Cookie login failed");
                         br.clearCookies(MAINPAGE);
                     } else {
+                        logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(MAINPAGE), "");
                         return;
                     }
                 }
+                logger.info("Full login required");
                 // dump previous set user-agent
                 if (userAgent.get() != null) {
                     userAgent.set(null);
@@ -326,8 +328,8 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 // goto first page
                 br.setCookie(getHost(), "lang", "en");
-                getPage("https://upstore.net");
-                getPage("https://upstore.net/account/login/");
+                getPage("https://" + this.getHost());
+                getPage("https://" + this.getHost() + "/account/login/");
                 final Form login = br.getFormbyActionRegex(".+/login.*");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -350,8 +352,8 @@ public class UpstoRe extends antiDDoSForHost {
                 } else if (br.containsHTML(regexLoginCaptcha)) {
                     // incorrect captcha, or form values changed
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else if (!browserCookiesMatchLoginCookies(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (!this.isLoggedinHTML()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
                 account.saveCookies(br.getCookies(MAINPAGE), "");
@@ -400,6 +402,15 @@ public class UpstoRe extends antiDDoSForHost {
         return false;
     }
 
+    /**
+     * Array containing all required premium cookies!
+     *
+     * @return
+     */
+    private String[] getLoginCookies() {
+        return new String[] { "usid", "upst" };
+    }
+
     private boolean isMail(final String parameter) {
         return parameter.matches(".+@.+");
     }
@@ -422,10 +433,10 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-        areWeStillLoggedIn(account);
+        this.login(account, true);
         // Make sure that the language is correct
         getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/?lang=en");
         getPage((br.getHttpConnection() == null ? MAINPAGE.replace("http://", "https://") : "") + "/stat/download/?lang=en");
@@ -437,7 +448,7 @@ public class UpstoRe extends antiDDoSForHost {
                     ai.setValidUntil(-1);
                     ai.setStatus("Unlimited Premium Account");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountUnavailableException("\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", 5 * 60 * 1000l);
                 }
             } else {
                 ai.setValidUntil(validUntil);
@@ -453,79 +464,14 @@ public class UpstoRe extends antiDDoSForHost {
         ai.setTrafficLeft(trafficLeft);
         ai.setTrafficMax(trafficDaily);
         ai.setStatus("Premium Account");
-        account.setValid(true);
         return ai;
     }
 
     // lifetime account
     private String lifetimeAccount = "eternal premium";
 
-    /**
-     * Method to determine if current cookie session is still valid.
-     *
-     * @author raztoki
-     * @param account
-     * @return
-     * @throws Exception
-     */
-    private boolean areWeStillLoggedIn(Account account) throws Exception {
-        synchronized (account) {
-            boolean isFollowingRedirects = br.isFollowingRedirects();
-            try {
-                br = new Browser();
-                br.setFollowRedirects(true);
-                login(account, false);
-                if (br.getHttpConnection() != null) {
-                    // full login just happened and verified as current! otherwise exception would have been thrown!
-                    return true;
-                }
-                // send a get page to mainpage to see if premium cookie is cleared.
-                getPage(MAINPAGE);
-                // upstore doesn't remove invalid cookies, so we need to also check against account types!
-                if (browserCookiesMatchLoginCookies(br) && (br.containsHTML(this.lifetimeAccount) || br.containsHTML("unlimited premium") || getPremiumTill(br) > 0)) {
-                    // save these incase they changed value.
-                    account.saveCookies(br.getCookies(MAINPAGE), "");
-                } else {
-                    account.clearCookies("");
-                    br = new Browser();
-                    login(account, false);
-                }
-                // there is no false as exception should be thrown, or full login performed we are always true!
-                return true;
-            } finally {
-                br.setFollowRedirects(isFollowingRedirects);
-            }
-        }
-    }
-
-    /**
-     * Array containing all required premium cookies!
-     *
-     * @return
-     */
-    private String[] getLoginCookies() {
-        return new String[] { "usid", "upst" };
-    }
-
-    /**
-     * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
-     * <br />
-     * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
-     *
-     * @author raztoki
-     */
-    private boolean browserCookiesMatchLoginCookies(final Browser br) {
-        // simple math logic here
-        int i = 0;
-        for (final String loginCookie : getLoginCookies()) {
-            final String value = br.getCookie(MAINPAGE, loginCookie, Cookies.NOTDELETEDPATTERN);
-            if (StringUtils.isNotEmpty(value)) {
-                i++;
-            } else {
-                return false;
-            }
-        }
-        return i == getLoginCookies().length;
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("account/logout/?\"");
     }
 
     private final String premDlLimit = "It is strange, but you have reached a download limit for today";
@@ -546,7 +492,7 @@ public class UpstoRe extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        areWeStillLoggedIn(account);
+        this.login(account, false);
         br.setFollowRedirects(false);
         getPage(link.getDownloadURL());
         if (br.containsHTML(premDlLimit)) {
@@ -564,6 +510,9 @@ public class UpstoRe extends antiDDoSForHost {
         }
         if (dllink == null) {
             handleErrorsJson();
+            if (!this.isLoggedinHTML()) {
+                throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+            }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
