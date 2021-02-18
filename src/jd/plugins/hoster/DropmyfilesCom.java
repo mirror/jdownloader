@@ -36,7 +36,8 @@ public class DropmyfilesCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info:<br />
+     * limit-info: 2021-02-18: There might not be an extra indicator for premium accounts other than they got traffic > 0. They also were
+     * limited to 1 chunk and no resume! <br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
      * other:<br />
      */
@@ -65,13 +66,13 @@ public class DropmyfilesCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return true;
+            return false;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return true;
+            return false;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
@@ -80,13 +81,13 @@ public class DropmyfilesCom extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
