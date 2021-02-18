@@ -48,13 +48,13 @@ public class FilestoreTo extends PluginForHost {
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(10000l);
-        enablePremium("http://filestore.to/premium");
+        enablePremium("https://filestore.to/premium");
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        login(account, false);
+        login(account, true);
         if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "/konto")) {
             br.getPage("/konto");
         }
