@@ -43,7 +43,8 @@ public class AudionowDe extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        /* 2021-02-18: E.g. redirect to "audionow.de/404" without actual 404 http code */
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.canHandle(br.getURL())) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
