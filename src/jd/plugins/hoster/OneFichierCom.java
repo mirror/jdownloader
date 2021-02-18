@@ -658,6 +658,8 @@ public class OneFichierCom extends PluginForHost {
      * but we don't know this yet!
      */
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        /* 2021-02-18: Remove linebreaks from the end RE forum: https://board.jdownloader.org/showthread.php?t=83954 */
+        account.setPass(account.getPass().trim());
         if (!isApiKey(account.getPass())) {
             invalidApiKey(account);
         }
@@ -1368,7 +1370,7 @@ public class OneFichierCom extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            final String password = getPassword();
+            final String password = getPassword().trim();
             if (!isApiKey(password)) {
                 idLabel.setForeground(Color.RED);
                 return false;
