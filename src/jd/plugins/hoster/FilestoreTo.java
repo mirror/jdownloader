@@ -54,7 +54,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        login(ai, account);
+        login(account, false);
         if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "/konto")) {
             br.getPage("/konto");
         }
@@ -77,33 +77,43 @@ public class FilestoreTo extends PluginForHost {
         return ai;
     }
 
-    private boolean isCookieSet(Browser br, String key) {
-        final String value = br.getCookie(getHost(), key);
-        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("\"[^\"]*logout\"");
     }
 
-    private AccountInfo login(final AccountInfo ai, final Account account) throws Exception {
+    private boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             final Cookies cookies = account.loadCookies("");
             try {
                 if (cookies != null) {
                     br.setCookies(getHost(), cookies);
-                    br.getPage("http://filestore.to/konto");
-                }
-                if (!isCookieSet(br, "login")) {
-                    account.clearCookies("");
-                    br.getPage("http://filestore.to/login");
-                    final Form form = br.getFormbyKey("Email");
-                    form.put("EMail", Encoding.urlEncode(account.getUser()));
-                    form.put("Password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(form);
-                    br.followRedirect();
-                    if (!isCookieSet(br, "login")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!validateCookies) {
+                        logger.info("Trust cookies without login");
+                        return false;
+                    }
+                    br.getPage("http://" + this.getHost() + "/konto");
+                    if (this.isLoggedinHTML()) {
+                        logger.info("Cookie login successful");
+                        /* refresh saved cookies timestamp */
+                        account.saveCookies(br.getCookies(getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
                     }
                 }
+                logger.info("Performing full login");
+                account.clearCookies("");
+                br.getPage("http://" + this.getHost() + "/login");
+                final Form form = br.getFormbyKey("Email");
+                form.put("EMail", Encoding.urlEncode(account.getUser()));
+                form.put("Password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(form);
+                br.followRedirect();
+                if (!this.isLoggedinHTML()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 account.saveCookies(br.getCookies(getHost()), "");
-                return ai;
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -114,27 +124,14 @@ public class FilestoreTo extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(null, account);
-        boolean ok = false;
-        for (int i = 1; i < 3; i++) {
-            try {
-                br.getPage(link.getDownloadURL());
-                ok = true;
-                break;
-            } catch (final Exception e) {
-                continue;
-            }
-        }
-        if (ok) {
-            if (AccountType.FREE.equals(account.getType())) {
-                download(link, account, true, 1);
-            } else {
-                download(link, account, true, 0);
-            }
+        login(account, false);
+        br.getPage(link.getPluginPatternMatcher());
+        if (AccountType.FREE.equals(account.getType())) {
+            download(link, account, true, 1);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            download(link, account, true, 0);
         }
     }
 
@@ -279,13 +276,12 @@ public class FilestoreTo extends PluginForHost {
         }
         return dllink;
     }
-
-    private Browser prepAjax(Browser prepBr) {
-        prepBr.getHeaders().put("Accept", "*/*");
-        prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
-        return prepBr;
-    }
+    // private Browser prepAjax(Browser prepBr) {
+    // prepBr.getHeaders().put("Accept", "*/*");
+    // prepBr.getHeaders().put("Accept-Charset", null);
+    // prepBr.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
+    // return prepBr;
+    // }
 
     public void haveFun() throws Exception {
         aBrowser = br.toString();
