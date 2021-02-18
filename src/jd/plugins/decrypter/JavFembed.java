@@ -67,7 +67,7 @@ public class JavFembed extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        title = Encoding.htmlDecode(br.getRegex("<title>(?:Watch Japanese Porn - )?(.*?)( \\| JAVNEW| - JAVR.club)?</title>").getMatch(0)).trim();
+        title = Encoding.htmlDecode(br.getRegex("<title>(?:Watch Japanese Porn &ndash; )?(.*?)( \\| JAVNEW| &ndash; JavRave.club| - (JavSeen.Tv|1080HD|Jav Tsunami))?</title>").getMatch(0)).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         String fembed = br.getRegex("<iframe[^<>]*?src=\"([^<>]*?/v/.*?)\"").getMatch(0);
