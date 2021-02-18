@@ -163,6 +163,8 @@ public class JamendoCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, "Prefer High Quality Download").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, "Prefer whole Album as Zip").setDefaultValue(false));
+        /* 2021-02-18: Not supported anymore */
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, "Prefer whole Album as
+        // Zip").setDefaultValue(false));
     }
 }

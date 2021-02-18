@@ -65,7 +65,9 @@ public class JamendoCom extends PluginForDecrypt {
                 packageName = artist + packageName;
             }
             fp.setName(packageName);
-            if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", false)) {
+            /* 2021-02-18: Not supported anymore */
+            final boolean allowAlbumZipDownload = false;
+            if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", false) && allowAlbumZipDownload) {
                 DownloadLink link = createDownloadlink("http://storage-new.newjamendo.com/download/a/" + albumID);
                 link.setName(packageName);
                 link.setAvailable(true);
