@@ -28,18 +28,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javstream.us" }, urls = { "https?://javstream\\.us/[^/]+?html(\\?mirror=\\d)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javstream.in" }, urls = { "https?://javstream\\.(?:us|in)/[^/]+?html(\\?mirror=\\d)?" })
 public class JavStream extends antiDDoSForDecrypt {
     public JavStream(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** 2021-02-18: New main domain = javstream.in */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<title>([^<]+)\\s+\\|[\\s\\w]+</title>").getMatch(0);
         logger.info("filename: " + filename);
         if (filename != null) {

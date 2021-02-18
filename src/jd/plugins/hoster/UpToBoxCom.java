@@ -577,22 +577,29 @@ public class UpToBoxCom extends antiDDoSForHost {
                 logger.info("User entered correct password");
                 link.setDownloadPassword(passCode);
             }
-            final String waitStr = PluginJSonUtils.getJson(br, "waiting");
-            final String waitingToken = PluginJSonUtils.getJson(br, "waitingToken");
-            if (waitingToken != null && waitStr != null) {
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            /**
+             * 2021-02-18: E.g. for high waittimes, token is not given {"statusCode":16,"message":"Waiting
+             * needed","data":{"waiting":125,"waitingToken":null}}
+             */
+            entries = (Map<String, Object>) entries.get("data");
+            final String waitingToken = (String) entries.get("waitingToken");
+            if (waitingToken != null || entries.containsKey("waiting")) {
+                final int waitSeconds = ((Number) entries.get("waiting")).intValue();
                 /* Waittime is usually only present in free (-account) mode. */
-                final int wait = Integer.parseInt(waitStr);
                 /* Waittime too high? Temp. disable account until nex downloads is possible. */
-                if (wait > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
-                    throw new AccountUnavailableException("Download limit reached", wait * 1001l);
+                if (waitSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT || StringUtils.isEmpty(waitingToken)) {
+                    throw new AccountUnavailableException("Download limit reached", waitSeconds * 1001l);
                 }
                 /* 2020-04-16: Add 2 extra wait seconds otherwise download may fail */
-                this.sleep((wait + 2) * 1001, link);
+                this.sleep((waitSeconds + 2) * 1001, link);
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
+                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = (Map<String, Object>) entries.get("data");
             }
-            dllink = PluginJSonUtils.getJson(br, "dlLink");
+            dllink = (String) entries.get("dlLink");
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                 this.checkErrorsAPI(link, account);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");

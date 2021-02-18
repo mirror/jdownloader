@@ -52,7 +52,7 @@ public class JamendoCom extends PluginForDecrypt {
             }
             String album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
-            String tracks[] = br.getRegex("\\{\\&quot;id\\&quot;:(\\d+),\\&quot;popularityScore").getColumn(0);
+            String tracks[] = br.getRegex("\\{[^\\}]+position[^\\}]+id\\&quot;:(\\d+),\\&quot;").getColumn(0);
             FilePackage fp = FilePackage.getInstance();
             String packageName = "";
             if (album != null) {

@@ -15,12 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +29,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -81,6 +82,10 @@ public class JianguoyunCom extends PluginForHost {
             }
         } else {
             br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRLink?k=" + folderid + "&dn=null&p=" + Encoding.urlEncode(relPath) + "&forwin=1&_=" + System.currentTimeMillis());
+            if (br.getHttpConnection().getResponseCode() == 401) {
+                /* 2021-02-18: {"errorCode":"UnAuthorized","detailMsg":"Try to sign in to access it","payload":null} */
+                throw new AccountRequiredException();
+            }
             getDllink();
         }
         // final String filename = getJson(br.toString(), "n");
@@ -141,16 +146,16 @@ public class JianguoyunCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink link) throws Exception, PluginException {
         if (dllink == null) {
-            dllink = checkDirectLink(downloadLink, "directlink");
+            dllink = checkDirectLink(link, "directlink");
         }
         if (dllink == null) {
-            if (handlePasswordProtected(downloadLink)) {
+            if (handlePasswordProtected(link)) {
                 /* Make sure we get the correct filename after user entered download password. */
-                requestFileInformation(downloadLink);
+                requestFileInformation(link);
             }
-            br.getPage("https://www.jianguoyun.com/d/ajax/fileops/pubFileLink?k=" + this.folderid + "&name=" + Encoding.urlEncode(downloadLink.getName()) + "&forwin=1&_=" + System.currentTimeMillis());
+            br.getPage("https://www.jianguoyun.com/d/ajax/fileops/pubFileLink?k=" + this.folderid + "&name=" + Encoding.urlEncode(link.getName()) + "&forwin=1&_=" + System.currentTimeMillis());
             getDllink();
         }
         if (dllink == null) {
@@ -159,13 +164,17 @@ public class JianguoyunCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("Finallink does not lead to a file...");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 
@@ -203,30 +212,31 @@ public class JianguoyunCom extends PluginForHost {
         return br;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
-                con.disconnect();
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
-    private static Object LOCK = new Object();
-
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");

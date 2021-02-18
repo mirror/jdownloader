@@ -47,7 +47,7 @@ public class AudionowDe extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] htmls = br.getRegex("<li class=\"episode-list-item\">(.*?)</div>\\s*</li>").getColumn(0);
+        final String[] htmls = br.getRegex("<li[^>]*class=\"episode-list-item\">(.*?)</div>\\s*</li>").getColumn(0);
         if (htmls == null || htmls.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -62,7 +62,7 @@ public class AudionowDe extends PluginForDecrypt {
             index++;
             String eptitle = new Regex(html, "class=\"episode-title\"[^>]*>([^<>\"]+)<").getMatch(0);
             final String directurl = new Regex(html, "data-audiolink=\"(https://[^<>\"]+)").getMatch(0);
-            final String filesize = new Regex(html, "<span class=\"text-size\">(\\d+ [A-Za-z]+)</span>").getMatch(0);
+            final String filesize = new Regex(html, "<span[^>]*class=\"text-size\"[^>]*>(\\d+ [A-Za-z]+)</span>").getMatch(0);
             // final String date = new Regex(html, "class=\"text-date\">(\\d{2}\\.\\d{2}\\.\\d{4})<").getMatch(0);
             if (StringUtils.isEmpty(directurl)) {
                 /* Skip invalid items */
