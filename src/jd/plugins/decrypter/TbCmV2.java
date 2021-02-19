@@ -871,6 +871,9 @@ public class TbCmV2 extends PluginForDecrypt {
                         if (stream.getContentLength() > 0) {
                             estimatedFileSize += stream.getContentLength();
                             break;
+                        } else if (stream.estimatedContentLength() > 0) {
+                            estimatedFileSize += stream.estimatedContentLength();
+                            break;
                         }
                     }
                 }
@@ -879,6 +882,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     for (YoutubeStreamData stream : videoStreams) {
                         if (stream.getContentLength() > 0) {
                             estimatedFileSize += stream.getContentLength();
+                            break;
+                        } else if (stream.estimatedContentLength() > 0) {
+                            estimatedFileSize += stream.estimatedContentLength();
                             break;
                         }
                     }
@@ -890,6 +896,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     for (YoutubeStreamData stream : dataStreams) {
                         if (stream.getContentLength() > 0) {
                             estimatedFileSize += stream.getContentLength();
+                            break;
+                        } else if (stream.estimatedContentLength() > 0) {
+                            estimatedFileSize += stream.estimatedContentLength();
                             break;
                         }
                     }

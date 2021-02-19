@@ -35,11 +35,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
         INVISIBLE
     }
 
-    protected final T       plugin;
-    protected LogInterface  logger;
-    protected final Browser br;
-    protected String        siteKey;
-    protected String        secureToken;
+    protected final T            plugin;
+    protected final LogInterface logger;
+    protected final Browser      br;
+    protected String             siteKey;
+    protected String             secureToken;
 
     public String getSecureToken() {
         return getSecureToken(br != null ? br.toString() : null);
@@ -213,22 +213,26 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             throw new IllegalStateException("Browser.getRequest() == null!");
         }
         this.siteDomain = Browser.getHost(br.getURL(), true);
-        logger = plugin == null ? null : plugin.getLogger();
-        if (logger == null) {
-            createFallbackLogger();
-        }
+        logger = createFallbackLogger(plugin);
         this.siteKey = siteKey;
         this.secureToken = secureToken;
     }
 
-    protected void createFallbackLogger() {
-        Class<?> cls = getClass();
-        String name = cls.getSimpleName();
-        while (StringUtils.isEmpty(name)) {
-            cls = cls.getSuperclass();
-            name = cls.getSimpleName();
+    protected LogInterface createFallbackLogger(T plugin) {
+        LogInterface ret = null;
+        if (plugin != null) {
+            ret = plugin.getLogger();
         }
-        logger = LogController.getInstance().getLogger(name);
+        if (ret == null) {
+            Class<?> cls = getClass();
+            String name = cls.getSimpleName();
+            while (StringUtils.isEmpty(name)) {
+                cls = cls.getSuperclass();
+                name = cls.getSimpleName();
+            }
+            ret = LogController.getInstance().getLogger(name);
+        }
+        return ret;
     }
 
     protected void runDdosPrevention() throws InterruptedException {
@@ -431,6 +435,11 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                 } else {
                     return TYPE.NORMAL.name();
                 }
+            }
+
+            @Override
+            protected LogInterface getLogger() {
+                return logger;
             }
         };
     }
