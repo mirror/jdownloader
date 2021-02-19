@@ -57,6 +57,9 @@ public class SvtSe extends PluginForHost {
         this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
         if (videoid == null) {
             videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            if (videoid == null) {
+                videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
+            }
         }
         /* 404 --> Offline, videoid not found --> No video on page --> Offline */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
