@@ -119,6 +119,11 @@ public class KsharedCom extends PluginForHost {
         }
     }
 
+    private Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, null);
@@ -126,10 +131,11 @@ public class KsharedCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
         if (account == null) {
+            prepBR(this.br);
             this.setBrowserExclusive();
+            br.getPage(link.getPluginPatternMatcher());
             findAndSetBearerToken();
         }
-        br.getPage(link.getPluginPatternMatcher());
         final Map<String, Object> data = new HashMap<String, Object>();
         if (account != null) {
             data.put("ud", this.accountGetUD(account));
@@ -137,7 +143,7 @@ public class KsharedCom extends PluginForHost {
         }
         data.put("fileid", this.getFID(link));
         br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download", JSonStorage.serializeToJson(data));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -146,6 +152,10 @@ public class KsharedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         entries = (Map<String, Object>) entries.get("file");
+        if (entries == null) {
+            /* 2021-02-18: Returns broken json for offline items */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // final Object errorO = entries.get("error");
         // if (errorO != null) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -259,6 +269,7 @@ public class KsharedCom extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                prepBR(this.br);
                 String accessToken = this.accountGetAccessToken(account);
                 String ut = this.accountGetUT(account);
                 String ud = this.accountGetUD(account);
