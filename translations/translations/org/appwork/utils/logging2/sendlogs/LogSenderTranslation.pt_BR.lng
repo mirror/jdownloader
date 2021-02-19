@@ -8,3 +8,4 @@ LogTable_onContextMenu_disable_=Desmarcar
 LogTable_onContextMenu_enable_=Marcar
 SendLogDialog_SendLogDialog_title_=Enviar Relatório de Erro
 SendLogDialog_layoutDialogContent_desc_=Quando ocorreu o Problema? Por favor, marque todas as entradas que possam ser consideradas!
+SendLogDialog_layoutDialogContent_nologs_=Nenhum log disponível encontrado!
