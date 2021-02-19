@@ -227,6 +227,12 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     protected String lastRequestString = null;
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.appwork.utils.net.httpserver.handler.HttpRequestHandler#onGetRequest(org.appwork.utils.net.httpserver.requests.GetRequest,
+     * org.appwork.utils.net.httpserver.responses.HttpResponse)
+     */
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
         try {
@@ -271,6 +277,40 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
                 final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
                 if (config.isAutoClickEnabled()) {
+                    // let bounds = element.getBoundingClientRect();
+                    //
+                    // let w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+                    // let h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+                    // /*
+                    // * If the browser does not support screenX and screen Y, use screenLeft and
+                    // * screenTop instead (and vice versa)
+                    // */
+                    // let winLeft = window.screenX ? window.screenX : window.screenLeft;
+                    // let winTop = window.screenY ? window.screenY : window.screenTop;
+                    // let windowWidth = window.outerWidth;
+                    // let windowHeight = window.outerHeight;
+                    // let ie = getInternetExplorerVersion();
+                    // if (ie > 0) {
+                    // if (ie >= 10) {
+                    // // bug in ie 10 and 11
+                    // let zoom = screen.deviceXDPI / screen.logicalXDPI;
+                    // winLeft *= zoom;
+                    // winTop *= zoom;
+                    // windowWidth *= zoom;
+                    // windowHeight *= zoom;
+                    // }
+                    // }
+                    // let loadedParams = Object.create(null);
+                    // loadedParams.x = winLeft;
+                    // loadedParams.y = winTop;
+                    // loadedParams.w = windowWidth;
+                    // loadedParams.h = windowHeight;
+                    // loadedParams.vw = w;
+                    // loadedParams.vh = h;
+                    // loadedParams.eleft = bounds.left;
+                    // loadedParams.etop = bounds.top;
+                    // loadedParams.ew = bounds.width;
+                    // loadedParams.eh = bounds.height;
                     try {
                         final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh"))) {
                             @Override
