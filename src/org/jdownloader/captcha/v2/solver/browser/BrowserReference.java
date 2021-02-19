@@ -121,7 +121,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
 
     protected LogInterface getLogger() {
         LogInterface logger = challenge.getJob().getLogger();
-        if (logger != null) {
+        if (logger == null) {
             final Plugin plugin = challenge.getPlugin();
             if (plugin != null) {
                 logger = plugin.getLogger();
