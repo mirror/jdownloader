@@ -121,7 +121,7 @@ public class Mp4UploadCom extends XFileSharingProBasic {
         super.scanInfo(fileInfo);
         if (fileInfo[0] != null && fileInfo[0].equals(".mp4")) {
             /* 2021-01-11: Fallback for bad given filename string */
-            fileInfo[0] = this.fuid;
+            fileInfo[0] = this.getFUIDFromURL(this.getDownloadLink());
         }
         return fileInfo;
     }

@@ -20,6 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,12 +34,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AniStreamCom extends XFileSharingProBasic {
@@ -123,7 +123,7 @@ public class AniStreamCom extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String[] fileInfo) {
         /* 2020-06-16: Special */
-        fileInfo[0] = new Regex(correctedBR, Pattern.compile(this.fuid + "\">([^<>\"]+)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        fileInfo[0] = new Regex(correctedBR, Pattern.compile(this.getFUIDFromURL(this.getDownloadLink()) + "\">([^<>\"]+)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ byte)\\)").getMatch(0);
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             super.scanInfo(fileInfo);

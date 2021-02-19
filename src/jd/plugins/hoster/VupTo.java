@@ -115,7 +115,7 @@ public class VupTo extends XFileSharingProBasic {
         /* 2019-10-01: Special: They have customized embed URLs. */
         boolean isVideohostHTML = super.isVideohosterEmbedHTML();
         if (!isVideohostHTML) {
-            isVideohostHTML = new Regex(correctedBR, "/emb\\.html\\?" + this.fuid).matches();
+            isVideohostHTML = new Regex(correctedBR, "/emb\\.html\\?" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         }
         return isVideohostHTML;
     }
