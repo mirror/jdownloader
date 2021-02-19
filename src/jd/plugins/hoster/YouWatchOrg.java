@@ -145,7 +145,7 @@ public class YouWatchOrg extends XFileSharingProBasic {
         final Browser brc = this.br.cloneBrowser();
         if (StringUtils.isEmpty(dllink)) {
             if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
-                final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
+                final String embed_access = getMainPage() + "/embed-" + this.getFUIDFromURL(link) + ".html";
                 getPage(brc, embed_access);
                 /**
                  * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video

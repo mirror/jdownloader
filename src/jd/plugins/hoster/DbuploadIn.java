@@ -115,7 +115,7 @@ public class DbuploadIn extends XFileSharingProBasic {
         /* 2019-10-05: Special: Workaround for serverside bad filenames */
         final AvailableStatus status = super.requestFileInformationWebsite(link, account, downloadsStarted);
         final String filename = link.getName();
-        if (filename != null && this.fuid != null && !filename.equals(this.fuid)) {
+        if (filename != null && this.getFUIDFromURL(link) != null && !filename.equals(this.getFUIDFromURL(link))) {
             link.setFinalFileName(filename);
         }
         return status;

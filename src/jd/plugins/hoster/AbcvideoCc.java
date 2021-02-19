@@ -143,7 +143,7 @@ public class AbcvideoCc extends XFileSharingProBasic {
                 return null;
             }
             /* 2020-06-19: Special */
-            final String getvideo = br.getRegex("(/dl\\?op=video_src\\&file_code=" + this.fuid + "&g-recaptcha-response=)").getMatch(0);
+            final String getvideo = br.getRegex("(/dl\\?op=video_src\\&file_code=" + this.getFUIDFromURL(link) + "&g-recaptcha-response=)").getMatch(0);
             if (getvideo == null) {
                 return null;
             }

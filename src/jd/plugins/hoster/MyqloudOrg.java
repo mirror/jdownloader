@@ -221,7 +221,7 @@ public class MyqloudOrg extends XFileSharingProBasic {
              * xvideosharing.com)
              */
             /* 2020-03-11: Special */
-            getPage(brc, "/dl?op=download_orig_pre&id=" + this.fuid + "&mode=" + videoQualityStr + "&hash=" + videoHash);
+            getPage(brc, "/dl?op=download_orig_pre&id=" + this.getFUIDFromURL(link) + "&mode=" + videoQualityStr + "&hash=" + videoHash);
             if (brc.containsHTML(">\\s*Only Premium users can download files")) {
                 /* 2020-11-12 */
                 requiresAccountToDownload = true;

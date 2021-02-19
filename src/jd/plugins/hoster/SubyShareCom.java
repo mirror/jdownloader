@@ -190,7 +190,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                     try {
                         logger.info("Trying to get link via vidembed");
                         final Browser brv = br.cloneBrowser();
-                        getPage(brv, "/vidembed-" + fuid, false);
+                        getPage(brv, "/vidembed-" + this.getFUIDFromURL(link), false);
                         dllink = brv.getRedirectLocation();
                         if (StringUtils.isEmpty(dllink)) {
                             logger.info("Failed to get link via vidembed because: " + br.toString());
