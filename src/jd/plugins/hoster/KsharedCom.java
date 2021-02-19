@@ -125,12 +125,16 @@ public class KsharedCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        if (account == null) {
+            this.setBrowserExclusive();
+            findAndSetBearerToken();
+        }
         br.getPage(link.getPluginPatternMatcher());
-        findAndSetBearerToken();
         final Map<String, Object> data = new HashMap<String, Object>();
-        data.put("ud", null);
-        data.put("ut", null);
+        if (account != null) {
+            data.put("ud", this.accountGetUD(account));
+            data.put("ut", this.accountGetUT(account));
+        }
         data.put("fileid", this.getFID(link));
         br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download", JSonStorage.serializeToJson(data));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -158,7 +162,7 @@ public class KsharedCom extends PluginForHost {
         if (filesize > 0) {
             link.setVerifiedFileSize(filesize);
         }
-        if (lockedStatus.equalsIgnoreCase("premium")) {
+        if (StringUtils.equalsIgnoreCase(lockedStatus, "premium")) {
             link.setProperty(PROPERTY_PREMIUMONLY, true);
         } else {
             link.removeProperty(PROPERTY_PREMIUMONLY);
@@ -292,7 +296,7 @@ public class KsharedCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.getPage("https://" + this.getHost() + "/account/signin");
-                findAndSetBearerToken();
+                accessToken = findAndSetBearerToken();
                 final Map<String, Object> data = new HashMap<String, Object>();
                 data.put("email", account.getUser());
                 data.put("passw", account.getPass());
@@ -302,7 +306,7 @@ public class KsharedCom extends PluginForHost {
                 // accessToken = (String) entries.get("accesstoken");
                 ut = (String) entries.get("ut");
                 ud = (String) entries.get("accesstoken");
-                if (StringUtils.isEmpty(accessToken) || StringUtils.isEmpty(ut) || StringUtils.isEmpty(ud)) {
+                if (StringUtils.isEmpty(ut) || StringUtils.isEmpty(ud)) {
                     /* This should never happen */
                     throw new AccountUnavailableException("Unknown failure", 10 * 60 * 1000l);
                 }
@@ -399,8 +403,8 @@ public class KsharedCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         login(account, false);
+        requestFileInformation(link, account);
         if (account.getType() == AccountType.FREE) {
             /* TODO */
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
