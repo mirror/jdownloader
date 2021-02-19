@@ -8,9 +8,8 @@ import java.awt.event.InputEvent;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
-import org.jdownloader.logging.LogController;
 
-public class Recaptcha2BrowserViewport extends BrowserViewport {
+public abstract class Recaptcha2BrowserViewport extends BrowserViewport {
     protected final Rectangle recaptchaIframe;
 
     public double getScale() {
@@ -34,9 +33,9 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
             try {
                 workaround = new WindowsMouseSpeedWorkaround();
                 mouseSpeed = workaround.getMouseSpeed();
-                LogController.CL().info("GetMouseSpeed(Before):" + mouseSpeed);
+                getLogger().info("GetMouseSpeed(Before):" + mouseSpeed);
             } catch (final Throwable e) {
-                LogController.CL().log(e);
+                getLogger().log(e);
             }
         }
         // System.out.println("Press " + clickX + ":" + clickY);
@@ -50,10 +49,10 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
         getRobot().mouseMove(oldloc.x, oldloc.y);
         if (CrossSystem.isWindows() && workaround != null && mouseSpeed != null) {
             try {
-                LogController.CL().info("GetMouseSpeed(After):" + workaround.getMouseSpeed());
-                LogController.CL().info("Set(Before)MouseSpeed:(" + mouseSpeed + ")|" + workaround.setMouseSpeed(mouseSpeed));
+                getLogger().info("GetMouseSpeed(After):" + workaround.getMouseSpeed());
+                getLogger().info("Set(Before)MouseSpeed:(" + mouseSpeed + ")|" + workaround.setMouseSpeed(mouseSpeed));
             } catch (final Throwable e) {
-                LogController.CL().log(e);
+                getLogger().log(e);
             }
         }
     }

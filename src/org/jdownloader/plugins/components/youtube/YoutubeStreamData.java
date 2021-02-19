@@ -79,8 +79,33 @@ public class YoutubeStreamData {
     private String fps;
     private int    projectionType;
     private String src;
-    private long   contentLength = -1;
-    private int    bitrate       = -1;
+    private long   contentLength          = -1;
+    private long   estimatedContentLength = -1;
+
+    public void setEstimatedContentLength(long estimatedContentLength) {
+        this.estimatedContentLength = estimatedContentLength;
+    }
+
+    private long approxDurationMs = -1;
+
+    public long getApproxDurationMs() {
+        return approxDurationMs;
+    }
+
+    public void setApproxDurationMs(long approxDurationMs) {
+        this.approxDurationMs = approxDurationMs;
+    }
+
+    private int bitrate        = -1;
+    private int averageBitrate = -1;
+
+    public int getAverageBitrate() {
+        return averageBitrate;
+    }
+
+    public void setAverageBitrate(int averageBitrate) {
+        this.averageBitrate = averageBitrate;
+    }
 
     public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
@@ -123,6 +148,29 @@ public class YoutubeStreamData {
 
     public long getContentLength() {
         return contentLength;
+    }
+
+    public long getEstimatedContentLength() {
+        return estimatedContentLength;
+    }
+
+    public long estimatedContentLength() {
+        long estimatedContentLength = getEstimatedContentLength();
+        if (estimatedContentLength > 0) {
+            return estimatedContentLength;
+        }
+        final long duration = getApproxDurationMs();
+        if (duration > 0) {
+            int bitrate = getAverageBitrate();
+            if (bitrate <= 0) {
+                bitrate = getBitrate();
+            }
+            if (bitrate > 0) {
+                estimatedContentLength = (bitrate * (duration / 1000)) / 8;
+                return estimatedContentLength;
+            }
+        }
+        return -1;
     }
 
     public int getBitrate() {

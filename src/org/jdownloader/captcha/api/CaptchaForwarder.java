@@ -10,10 +10,12 @@ import jd.http.Browser;
 
 import org.appwork.remoteapi.exceptions.FileNotFound404Exception;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.logging.LogController;
 
 public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
     private static final CaptchaForwarder INSTANCE = new CaptchaForwarder();
@@ -79,6 +81,11 @@ public class CaptchaForwarder implements CaptchaForwarderAPIInterface {
 
                             public String getHost() {
                                 return domain;
+                            }
+
+                            @Override
+                            protected LogInterface getLogger() {
+                                return LogController.CL();
                             };
                         };
                     };

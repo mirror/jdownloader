@@ -14,6 +14,8 @@ import jd.nutils.Colors;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Time;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 public abstract class ScreenResource {
@@ -46,6 +48,8 @@ public abstract class ScreenResource {
         return height;
     }
 
+    protected abstract LogInterface getLogger();
+
     protected int    y;
     protected int    width;
     protected int    height;
@@ -53,7 +57,7 @@ public abstract class ScreenResource {
     protected double scale = 1d;
 
     public Rectangle getRectangleByColor(int rgb, int wmin, int hmin, double tollerance, int xstart, int ystart) {
-        long start = System.currentTimeMillis();
+        final long start = Time.systemIndependentCurrentJVMTimeMillis();
         int xstartBlock = xstart / blockSize;
         int ystartBlock = ystart / blockSize;
         int blockRadius = 0;
@@ -126,15 +130,15 @@ public abstract class ScreenResource {
                 }
                 Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
                 // showImage(getRobot().createScreenCapture(ret), null);
-                System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start) + "ms");
+                getLogger().info("Found Rectangle in " + (Time.systemIndependentCurrentJVMTimeMillis() - start) + "ms");
                 return ret;
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            getLogger().log(e);
         } finally {
             clearBlocks();
         }
-        // return null;
+        getLogger().info("No Rectangle in " + (Time.systemIndependentCurrentJVMTimeMillis() - start) + "ms");
         return null;
     }
 
@@ -228,8 +232,7 @@ public abstract class ScreenResource {
                 }
             }
         } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+            getLogger().log(e);
         }
         return null;
     }
@@ -279,13 +282,15 @@ public abstract class ScreenResource {
             if ((img = image.get()) == null) {
                 // System.out.println("Threw away");
                 return updateImage();
+            } else {
+                return img;
             }
-            return img;
         }
 
         private BufferedImage updateImage() {
             final Rectangle rec = new Rectangle(ScreenResource.this.x + this.x, ScreenResource.this.y + y, blockSize, blockSize);
             final BufferedImage img = getRobot().createScreenCapture(rec);
+            getLogger().info("New Screenshot for:" + rec);
             if (System.getProperty("rc2debug") != null) {
                 showImage(img, rec.toString());
             }

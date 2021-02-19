@@ -25,12 +25,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -53,12 +47,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public PornHubCom(PluginWrapper wrapper) {
         super(wrapper);
-        Browser.setRequestIntervalLimitGlobal(getHost(), 333);
+        for (final String pluginDomains[] : getPluginDomains()) {
+            for (final String pluginDomain : pluginDomains) {
+                Browser.setRequestIntervalLimitGlobal(pluginDomain, 333);
+            }
+        }
     }
 
     final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -112,12 +116,13 @@ public class PornHubCom extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        /* Load sister-host plugin */
         try {
             parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         } catch (PluginException e) {
             logger.log(e);
-            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/", "https://www.pornhub.com/");
+            // keep pornhub <->pornhubpremium
+            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhub\\.(?:com|org)/", "https://www.pornhub.com/");
+            parameter = param.toString().replaceFirst("https?://(?:www\\.|[a-z]{2}\\.)?pornhubpremium\\.(?:com|org)/", "https://www.pornhubpremium.com/");
         }
         br.setFollowRedirects(true);
         jd.plugins.hoster.PornHubCom.prepBr(br);
@@ -168,10 +173,10 @@ public class PornHubCom extends PluginForDecrypt {
         final boolean ret;
         if (parameter.matches("(?i).*/playlist/.*")) {
             logger.info("PlayList");
-            ret = decryptAllVideosOfAPlaylist();
+            ret = decryptAllVideosOfAPlaylist(account);
         } else if (parameter.matches("(?i).*/gifs.*")) {
             logger.info("Gif");
-            ret = decryptAllGifsOfAUser();
+            ret = decryptAllGifsOfAUser(account);
         } else if (parameter.matches("(?i).*/model/.*")) {
             final String model = new Regex(parameter, "/model/([^/]+)").getMatch(0);
             final String mode = new Regex(parameter, "/model/[^/]+/(.+)").getMatch(0);
@@ -215,17 +220,22 @@ public class PornHubCom extends PluginForDecrypt {
                 ret = decryptAllVideosOf(br, account, new HashSet<String>());
             } else {
                 logger.info("Users / Channels");
-                ret = decryptAllVideosOfAUser();
+                ret = decryptAllVideosOfAUser(account);
             }
         } else {
             logger.info("Video");
-            return decryptSingleVideo();
+            return decryptSingleVideo(account);
         }
         if (ret == false && decryptedLinks.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             return decryptedLinks;
         }
+    }
+
+    private String getLinkDomain(Browser br, Account account) {
+        final String ret = Browser.getHost(br._getURL(), false);
+        return ret;
     }
 
     /** Handles pornhub.com/bla/(model|pornstar)/bla */
@@ -286,7 +296,7 @@ public class PornHubCom extends PluginForDecrypt {
                     if (isAbort()) {
                         return true;
                     } else if (dupes.add(viewkey)) {
-                        final DownloadLink dl = createDownloadlink("https://www." + getHost() + "/view_video.php?viewkey=" + viewkey);
+                        final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewkey);
                         dl.setContainerUrl(containerURL);
                         decryptedLinks.add(dl);
                         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -343,7 +353,7 @@ public class PornHubCom extends PluginForDecrypt {
         return br.getRegex("(<ul[^>]*(?:class\\s*=\\s*\"videos[^>]*id\\s*=\\s*\"" + section + "\"|[^>]*id\\s*=\\s*\"" + section + "\"[^>]*class\\s*=\\s*\"videos[^>]).*?)(<ul\\s*class\\s*=\\s*\"videos|</ul>)").getMatch(0);
     }
 
-    private boolean decryptAllVideosOfAUser() throws Exception {
+    private boolean decryptAllVideosOfAUser(final Account account) throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
@@ -450,7 +460,7 @@ public class PornHubCom extends PluginForDecrypt {
             for (final String viewkey : viewkeys) {
                 if (dupes.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey);
+                    final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewkey);
                     if (fp != null) {
                         fp.add(dl);
                     }
@@ -473,7 +483,7 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean decryptAllGifsOfAUser() throws Exception {
+    private boolean decryptAllGifsOfAUser(final Account account) throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return true;
@@ -548,7 +558,7 @@ public class PornHubCom extends PluginForDecrypt {
                 final String viewKey = new Regex(item, "/gif/(\\d+)").getMatch(0);
                 if (viewKey != null && dupes.add(viewKey)) {
                     final String name = new Regex(item, "class\\s*=\\s*\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
-                    final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/gif/" + viewKey);
+                    final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/gif/" + viewKey);
                     if (name != null) {
                         dl.setName(name + "_" + viewKey + ".webm");
                     } else {
@@ -573,7 +583,7 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean decryptAllVideosOfAPlaylist() throws Exception {
+    private boolean decryptAllVideosOfAPlaylist(final Account account) throws Exception {
         int page = 1;
         int addedItems = 0;
         int foundItems = 0;
@@ -596,7 +606,7 @@ public class PornHubCom extends PluginForDecrypt {
                     if (isAbort()) {
                         return true;
                     } else if (dupes.add(viewKey)) {
-                        final DownloadLink dl = createDownloadlink("https://www." + this.getHost() + "/view_video.php?viewkey=" + viewKey);
+                        final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewKey);
                         decryptedLinks.add(dl);
                         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                             distribute(dl);
@@ -633,7 +643,7 @@ public class PornHubCom extends PluginForDecrypt {
         return true;
     }
 
-    private ArrayList<DownloadLink> decryptSingleVideo() throws Exception {
+    private ArrayList<DownloadLink> decryptSingleVideo(final Account account) throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean bestonly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_ONLY, false);
         final boolean bestselectiononly = cfg.getBooleanProperty(jd.plugins.hoster.PornHubCom.BEST_SELECTION_ONLY, false);

@@ -35,6 +35,7 @@ import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.logging.LogController;
 import org.mozilla.javascript.ConsString;
@@ -1006,15 +1007,19 @@ public class JavaScriptEngineFactory {
         try {
             if (value instanceof String) {
                 final String numberStr = (String) value;
-                if (numberStr.matches("\\d+")) {
+                if (StringUtils.isEmpty(numberStr)) {
+                    return fallback;
+                } else if (numberStr.matches("\\d+")) {
                     return Long.parseLong((String) value);
                 } else if (numberStr.matches("\\d+\\.\\d+")) {
-                    return (long) Double.parseDouble(numberStr);
+                    return Double.valueOf(numberStr).longValue();
                 } else {
                     throw new Exception("no number?" + numberStr);
                 }
             } else if (value instanceof Number) {
                 return ((Number) value).longValue();
+            } else if (value == null) {
+                return fallback;
             } else {
                 throw new Exception("no number?" + value);
             }

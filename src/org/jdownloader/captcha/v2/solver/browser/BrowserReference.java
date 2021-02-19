@@ -120,7 +120,17 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
     }
 
     protected LogInterface getLogger() {
-        return challenge.getJob().getLogger();
+        LogInterface logger = challenge.getJob().getLogger();
+        if (logger != null) {
+            final Plugin plugin = challenge.getPlugin();
+            if (plugin != null) {
+                logger = plugin.getLogger();
+            }
+            if (logger != null) {
+                logger = LogController.CL();
+            }
+        }
+        return logger;
     }
 
     public String getBaseHost() {
@@ -153,7 +163,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 pb.start();
                 return;
             } catch (IOException e) {
-                LogController.CL().log(e);
+                getLogger().log(e);
             }
         }
         CrossSystem.openURL(url);
@@ -262,24 +272,25 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                 final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
                 if (config.isAutoClickEnabled()) {
                     try {
-                        final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
+                        final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh"))) {
+                            @Override
+                            protected LogInterface getLogger() {
+                                return BrowserReference.this.getLogger();
+                            }
+                        };
                         if (CrossSystem.isUnix()) {
                             // new Robot().createScreenCapture may crash the VM, auto disable before to avoid crashing again and again...
                             config.setAutoClickEnabled(false);
                             config._getStorageHandler().write();
                         }
                         final Rectangle elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
+                        getLogger().info("Rectangle:" + elementBounds);
                         final BrowserViewport viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                         if (viewport != null) {
                             viewport.onLoaded();
                         }
                     } catch (Throwable e) {
-                        final Plugin plugin = challenge.getPlugin();
-                        if (plugin != null && plugin.getLogger() != null) {
-                            plugin.getLogger().log(e);
-                        } else {
-                            LogController.CL().log(e);
-                        }
+                        getLogger().log(e);
                     } finally {
                         config.setAutoClickEnabled(true);
                     }
@@ -325,10 +336,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             }
             return true;
         } catch (Throwable e) {
-            final Plugin plugin = challenge.getPlugin();
-            if (plugin != null && plugin.getLogger() != null) {
-                plugin.getLogger().log(e);
-            }
+            getLogger().log(e);
             error(response, e);
             return true;
         }
@@ -369,10 +377,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             }
             return challenge.onPostRequest(this, request, response);
         } catch (Throwable e) {
-            final Plugin plugin = challenge.getPlugin();
-            if (plugin != null && plugin.getLogger() != null) {
-                plugin.getLogger().log(e);
-            }
+            getLogger().log(e);
             error(response, e);
             return true;
         }

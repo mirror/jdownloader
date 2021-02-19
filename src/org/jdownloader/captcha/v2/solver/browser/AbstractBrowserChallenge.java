@@ -15,12 +15,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.remoteapi.exceptions.RemoteAPIException;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.logging.LogController;
 
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
     protected final Plugin  plugin;
@@ -59,6 +61,17 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         } else {
             this.pluginBrowser = null;
         }
+    }
+
+    protected LogInterface getLogger() {
+        LogInterface ret = null;
+        if (plugin != null) {
+            ret = plugin.getLogger();
+            if (ret == null) {
+                ret = LogController.CL();
+            }
+        }
+        return ret;
     }
 
     abstract public String getHTML(HttpRequest request, String id);

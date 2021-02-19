@@ -1778,11 +1778,16 @@ public class YoutubeHelper {
         }
         doFeedScan();
         doUserAPIScan();
+        List<YoutubeStreamData> incomplete = new ArrayList<YoutubeStreamData>();
         for (StreamMap fmt : fmtMaps) {
             if (fmt.streamData != null) {
                 try {
                     final YoutubeStreamData match = fmt.streamData;
-                    addYoutubeStreamData(ret, match);
+                    if (looksIncomplete(match)) {
+                        incomplete.add(match);
+                    } else {
+                        addYoutubeStreamData(ret, match);
+                    }
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -1790,10 +1795,25 @@ public class YoutubeHelper {
                 for (final String line : fmt.mapData.split(",")) {
                     try {
                         final YoutubeStreamData match = this.parseLine(Request.parseQuery(line), fmt);
-                        addYoutubeStreamData(ret, match);
+                        if (looksIncomplete(match)) {
+                            incomplete.add(match);
+                        } else {
+                            addYoutubeStreamData(ret, match);
+                        }
                     } catch (Throwable e) {
                         logger.log(e);
                     }
+                }
+            }
+        }
+        if (incomplete.size() > 0) {
+            for (YoutubeStreamData data : incomplete) {
+                try {
+                    if (!ret.containsKey(data.getItag())) {
+                        addYoutubeStreamData(ret, data);
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
                 }
             }
         }
@@ -1917,6 +1937,16 @@ public class YoutubeHelper {
         }
         vid.streams = ret;
         vid.subtitles = loadSubtitles();
+    }
+
+    private boolean looksIncomplete(YoutubeStreamData data) {
+        if (data.getSegments() == null && (data.getContentLength() < 0 && data.estimatedContentLength() < 0)) {
+            final boolean isLive = StringUtils.containsIgnoreCase(data.getUrl(), "live=1");
+            logger.info("looksIncomplete:" + data + "|live:" + isLive);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String getHtml5PlayerJs() throws IOException {
@@ -2118,6 +2148,8 @@ public class YoutubeHelper {
             final Long height = JavaScriptEngineFactory.toLong(entry.get("height"), -1);
             final Long contentLength = JavaScriptEngineFactory.toLong(entry.get("contentLength"), -1);
             final Long bitrate = JavaScriptEngineFactory.toLong(entry.get("bitrate"), -1);
+            final Long averageBitrate = JavaScriptEngineFactory.toLong(entry.get("averageBitrate"), -1);
+            final Long approxDurationMs = JavaScriptEngineFactory.toLong(entry.get("approxDurationMs"), -1);
             final Long itagID = JavaScriptEngineFactory.toLong(entry.get("itag"), -1);
             final Long fps = JavaScriptEngineFactory.toLong(entry.get("fps"), -1);
             final String stereoLayout = (String) entry.get("stereoLayout");
@@ -2156,6 +2188,12 @@ public class YoutubeHelper {
             }
             if (bitrate > 0) {
                 ret.setBitrate(bitrate.intValue());
+            }
+            if (averageBitrate > 0) {
+                ret.setAverageBitrate(averageBitrate.intValue());
+            }
+            if (approxDurationMs > 0) {
+                ret.setApproxDurationMs(approxDurationMs.longValue());
             }
             // stereoLayout:STEREO_LAYOUT_LEFT_RIGHT
             // projectionType:RECTANGULAR,MESH,EQUIRECTANGULAR
@@ -2272,17 +2310,30 @@ public class YoutubeHelper {
             }
             final List<String> segments = new ArrayList<String>();
             final NodeList segmentList = representation.getElementsByTagName("SegmentList").item(0).getChildNodes();
+            long approxDurationMs = 0;
+            long estimatedContentLength = 0;
             for (int i = 0; i < segmentList.getLength(); i++) {
                 final Element segment = (Element) segmentList.item(i);
+                String url = null;
                 if ("Initialization".equals(segment.getNodeName())) {
-                    final String sourceURL = segment.getAttribute("sourceURL");
-                    if (StringUtils.isNotEmpty(sourceURL)) {
-                        segments.add(sourceURL);
+                    url = segment.getAttribute("sourceURL");
+                    if (StringUtils.isNotEmpty(url)) {
+                        segments.add(url);
                     }
                 } else if ("SegmentURL".equals(segment.getNodeName())) {
-                    final String media = segment.getAttribute("media");
-                    if (StringUtils.isNotEmpty(media)) {
-                        segments.add(media);
+                    url = segment.getAttribute("media");
+                    if (StringUtils.isNotEmpty(url)) {
+                        segments.add(url);
+                    }
+                }
+                if (url != null) {
+                    final long sqDuration = parseMPDDuration(url);
+                    if (sqDuration > 0) {
+                        approxDurationMs += sqDuration;
+                    }
+                    final long sqRange = parseMPDRange(url);
+                    if (sqRange > 0) {
+                        estimatedContentLength += sqRange;
                     }
                 }
             }
@@ -2304,9 +2355,48 @@ public class YoutubeHelper {
             if (bitrate > 0) {
                 data.setBitrate(bitrate.intValue());
             }
+            if (estimatedContentLength > 0) {
+                data.setEstimatedContentLength(estimatedContentLength);
+            }
+            if (approxDurationMs > 0) {
+                data.setApproxDurationMs(approxDurationMs);
+            }
             ret.add(data);
         }
         return ret;
+    }
+
+    private long parseMPDRange(final String url) {
+        final String[] range = new Regex(url, "range/(\\d+)-(\\d+)").getRow(0);
+        if (range != null) {
+            return Long.parseLong(range[1]) - Long.parseLong(range[0]);
+        } else {
+            return -1;
+        }
+    }
+
+    private long parseMPDDuration(final String url) {
+        final String[] duration = new Regex(url, "dur/(\\d+)(\\.(\\d+))?").getRow(0);
+        if (duration != null) {
+            final String secs = duration[0];
+            final String msns = duration[2];
+            if (duration.length == 1 || msns == null) {
+                return Long.parseLong(secs) * 1000;
+            } else {
+                long ret = Long.parseLong(secs) * 1000;
+                if (msns.length() == 1) {
+                    ret += Long.parseLong(msns) * 100;
+                } else if (msns.length() == 2) {
+                    ret += Long.parseLong(msns) * 10;
+                } else if (msns.length() == 3) {
+                    ret += Long.parseLong(msns);
+                } else {
+                    ret += Long.parseLong(msns.substring(0, 3));
+                }
+                return ret;
+            }
+        }
+        return -1;
     }
 
     private void collectMapsFromVideoInfo(String queryString, String src) throws MalformedURLException {

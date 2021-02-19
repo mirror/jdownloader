@@ -2,8 +2,7 @@ package org.jdownloader.captcha.v2.solver.browser;
 
 import java.awt.Rectangle;
 
-public class BrowserWindow extends ScreenResource {
-
+public abstract class BrowserWindow extends ScreenResource {
     private int viewportWidth;
 
     public int getViewportWidth() {
@@ -34,11 +33,9 @@ public class BrowserWindow extends ScreenResource {
         this.viewportWidth = viewportWidth;
         this.viewportHeight = viewportHeight;
         this.userAgent = userAgent;
-
     }
 
     public void screenShot() {
         showImage(getRobot().createScreenCapture(new Rectangle(x, y, width, height)), null);
-
     }
 }

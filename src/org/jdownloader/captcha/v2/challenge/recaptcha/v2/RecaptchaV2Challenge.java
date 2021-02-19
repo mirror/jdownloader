@@ -26,6 +26,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
@@ -43,7 +44,7 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.translate._GUI;
 
-public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
+public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public static final String             RAWTOKEN    = "rawtoken";
     public static final String             RECAPTCHAV2 = "recaptchav2";
     private final String                   siteKey;
@@ -211,7 +212,12 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             break;
         }
         if (rect != null) {
-            return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
+            return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds) {
+                @Override
+                protected LogInterface getLogger() {
+                    return RecaptchaV2Challenge.this.getLogger();
+                }
+            };
         } else {
             return null;
         }
