@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -22,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -35,35 +37,25 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de", "tivi.de" }, urls = { "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/[A-Za-z0-9]+/video/rss\\.xml", "https?://(?:www\\.)?tivi\\.de/(mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?|tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de" }, urls = { "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/[A-Za-z0-9]+/video/rss\\.xml" })
 public class PhoenixDe extends PluginForDecrypt {
-
     public PhoenixDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String Q_SUBTITLES        = "Q_SUBTITLES";
-    private static final String Q_BEST             = "Q_BEST";
-    private static final String Q_LOW              = "Q_LOW";
-    private static final String Q_HIGH             = "Q_HIGH";
-    private static final String Q_VERYHIGH         = "Q_VERYHIGH";
-    private static final String Q_HD               = "Q_HD";
-    private static final String FASTLINKCHECK      = "FASTLINKCHECK";
-    private boolean             BEST               = false;
-
-    ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
-    private String              PARAMETER = null;
-    boolean                     fastlinkcheck      = false;
-
-    private final String        TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
-    private final String        TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/.+";
-
-    private final String        TYPE_TIVI          = "https?://(?:www\\.)?tivi\\.de/(?:mediathek/[a-z0-9\\-]+\\-(\\d+)/[a-z0-9\\-]+\\-(\\d+)/?|tiviVideos/beitrag/title/(\\d+)/(\\d+)\\?view=.+)";
-    private final String        TYPE_TIVI_1        = "https?://(?:www\\.)?tivi\\.de/mediathek/[a-z0-9\\-]+\\-\\d+/[a-z0-9\\-]+\\-\\d+/?";
-    private final String        TYPE_TIVI_2        = "https?://(?:www\\.)?tivi\\.de/tiviVideos/beitrag/title/\\d+/\\d+\\?view=.+";
+    private static final String Q_SUBTITLES      = "Q_SUBTITLES";
+    private static final String Q_BEST           = "Q_BEST";
+    private static final String Q_LOW            = "Q_LOW";
+    private static final String Q_HIGH           = "Q_HIGH";
+    private static final String Q_VERYHIGH       = "Q_VERYHIGH";
+    private static final String Q_HD             = "Q_HD";
+    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
+    private boolean             BEST             = false;
+    ArrayList<DownloadLink>     decryptedLinks   = new ArrayList<DownloadLink>();
+    private String              PARAMETER        = null;
+    boolean                     fastlinkcheck    = false;
+    private final String        TYPE_PHOENIX     = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
+    private final String        TYPE_PHOENIX_RSS = "http://(?:www\\.)?phoenix\\.de/podcast/.+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.br.setAllowedResponseCodes(500);
@@ -76,7 +68,6 @@ public class PhoenixDe extends PluginForDecrypt {
         } else {
             getDownloadLinksZdfOld(cfg);
         }
-
         return decryptedLinks;
     }
 
@@ -139,48 +130,27 @@ public class PhoenixDe extends PluginForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-
         try {
-            if (PARAMETER.matches(TYPE_PHOENIX)) {
-                br.getPage(PARAMETER);
-                if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
-                    decryptedLinks.add(this.createOfflinelink(PARAMETER));
-                    return decryptedLinks;
-                }
-                id = br.getRegex("id=\"phx_vod_(\\d+)\"").getMatch(0);
-                if (id == null) {
-                    decryptedLinks.add(this.createOfflinelink(PARAMETER));
-                    return decryptedLinks;
-                }
-                id_filename = id;
-                decrypterurl = "decrypted://phoenix.de/content/" + id + "&quality=%s";
-                br.getPage("/php/zdfplayer-v1.3/data/beitragsDetails.php?ak=web&id=" + id);
-            } else if (this.PARAMETER.matches(TYPE_TIVI)) {
-                final String param_1;
-                final String param_2;
-                if (this.PARAMETER.matches(TYPE_TIVI_1)) {
-                    param_1 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(0);
-                    param_2 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(1);
-                } else {
-                    param_1 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(2);
-                    param_2 = new Regex(this.PARAMETER, TYPE_TIVI).getMatch(3);
-                }
-                id_filename = param_1 + "_" + param_2;
-                decrypterurl = "decrypted://tivi.de/content/" + param_1 + param_2 + "&quality=%s";
-                br.getPage("http://www.tivi.de/tiviVideos/beitrag/" + param_1 + "/" + param_2 + "?view=flashXml");
+            br.getPage(PARAMETER);
+            if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500) {
+                decryptedLinks.add(this.createOfflinelink(PARAMETER));
+                return decryptedLinks;
             }
+            id = br.getRegex("id=\"phx_vod_(\\d+)\"").getMatch(0);
+            if (id == null) {
+                decryptedLinks.add(this.createOfflinelink(PARAMETER));
+                return decryptedLinks;
+            }
+            id_filename = id;
+            decrypterurl = "decrypted://phoenix.de/content/" + id + "&quality=%s";
+            br.getPage("/php/zdfplayer-v1.3/data/beitragsDetails.php?ak=web&id=" + id);
             if (br.containsHTML("<debuginfo>Kein Beitrag mit ID") || br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
                 decryptedLinks.add(this.createOfflinelink(PARAMETER));
                 return decryptedLinks;
             }
-
             date = getXML("airtime");
             title = getTitle(br);
             show = this.getXML("originChannelTitle");
-            if (show == null) {
-                /* E.g. for tivi.de */
-                show = this.getXML("ns2:broadcast-name");
-            }
             String extension = ".mp4";
             subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
             if (subtitleInfo != null) {
@@ -194,19 +164,14 @@ public class PhoenixDe extends PluginForDecrypt {
             }
             show = Encoding.htmlDecode(show);
             show = encodeUnicode(show);
-
             date_formatted = jd.plugins.decrypter.ZDFMediathekDecrypter.formatDateZDF(date);
-
             final Browser br2 = br.cloneBrowser();
             final String[][] downloads = br2.getRegex("<[^>]*?formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</[^>]*?formitaet>").getMatches();
             for (String streams[] : downloads) {
-
                 if (!(streams[0].contains("mp4_http") || streams[0].contains("mp4_rtmp_zdfmeta"))) {
                     continue;
                 }
-
                 for (String stream[] : new Regex(streams[1], "<[^>]*?quality>([^<]+)</[^>]*?quality>.*?<[^>]*?url>([^<]+)<.*?<[^>]*?filesize>(\\d+)<").getMatches()) {
-
                     if (streams[0].contains("mp4_http") && !new Regex(streams[1], ("<[^>]*?facet>(progressive|restriction_useragent|podcast|hbbtv)</[^>]*?facet>")).matches()) {
                         continue;
                     }
@@ -220,7 +185,6 @@ public class PhoenixDe extends PluginForDecrypt {
                             continue;
                         }
                     }
-
                     String url = stream[1];
                     String fmt = stream[0];
                     if (fmt != null) {
@@ -264,7 +228,6 @@ public class PhoenixDe extends PluginForDecrypt {
                             }
                         }
                     }
-
                     final String fmtUPPR = fmt.toUpperCase(Locale.ENGLISH);
                     final String name = date_formatted + "_zdf_" + show + " - " + title + "_" + id_filename + "@" + fmtUPPR + extension;
                     final DownloadLink link = createDownloadlink(String.format(decrypterurl, fmt));
@@ -279,14 +242,12 @@ public class PhoenixDe extends PluginForDecrypt {
                     link.setProperty("directQuality", stream[0]);
                     link.setProperty("streamingType", "http");
                     link.setProperty("directfmt", fmtUPPR);
-
                     if (!url.contains("hinweis_fsk")) {
                         try {
                             link.setDownloadSize(SizeFormatter.getSize(stream[2]));
                         } catch (Throwable e) {
                         }
                     }
-
                     DownloadLink best = bestMap.get(fmt);
                     if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
                         bestMap.put(fmt, link);
@@ -394,5 +355,4 @@ public class PhoenixDe extends PluginForDecrypt {
         title = encodeUnicode(title);
         return title;
     }
-
 }

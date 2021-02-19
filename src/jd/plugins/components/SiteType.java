@@ -179,15 +179,6 @@ public class SiteType {
         /**
          * <b>Minimum requirements:</b> Website has to fit script <br />
          * <b>Additional requirements to be added to main class:</b> NO account support<br />
-         * <b>Main host class:</b> UnknownPornScript3<br />
-         * <b>Example that suits main host class:</b> <a href="http:/xxxkinky.com/">xxxkinky.com</a><br />
-         * <b>Example that does NOT suit main host class (needs separate class):</b> -<br />
-         * <b>Example that needs a decrypter class :</b> -<br />
-         */
-        UnknownPornScript3,
-        /**
-         * <b>Minimum requirements:</b> Website has to fit script <br />
-         * <b>Additional requirements to be added to main class:</b> NO account support<br />
          * <b>Main host class:</b> UnknownPornScript4<br />
          * <b>Example that suits main host class:</b> <a href="http:/pornyeah.com/">pornyeah.com</a><br />
          * <b>Example that does NOT suit main host class (needs separate class):</b> <a href="http:/eroxia.com/">eroxia.com</a><br />
