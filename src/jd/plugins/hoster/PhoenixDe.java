@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.BufferedWriter;
@@ -37,9 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de", "tivi.de" }, urls = { "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+|decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://tivi\\.de/content/\\d+\\&quality=\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "phoenix.de" }, urls = { "decrypted://phoenix\\.de/content/\\d+\\&quality=\\w+|decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+" })
 public class PhoenixDe extends PluginForHost {
-
     private String  dllink        = null;
     private boolean server_issues = false;
 
@@ -162,7 +160,6 @@ public class PhoenixDe extends PluginForHost {
      */
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
         BufferedWriter dest = null;
         try {
             File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
@@ -174,11 +171,9 @@ public class PhoenixDe extends PluginForHost {
             } catch (IOException e1) {
                 return false;
             }
-
             final StringBuilder xml = new StringBuilder();
             int counter = 1;
             final String lineseparator = System.getProperty("line.separator");
-
             Scanner in = null;
             try {
                 in = new Scanner(new FileReader(source));
@@ -196,11 +191,9 @@ public class PhoenixDe extends PluginForHost {
                 final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
                 for (String[] match : matches) {
                     dest.write(counter++ + lineseparator);
-
                     final Double start = Double.valueOf(match[0]) + starttime;
                     final Double end = Double.valueOf(match[1]) + starttime;
                     dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
                     String text = match[2].trim();
                     text = text.replaceAll(lineseparator, " ");
                     text = text.replaceAll("&amp;", "&");
@@ -210,7 +203,6 @@ public class PhoenixDe extends PluginForHost {
                     text = text.replaceAll("<br />", lineseparator);
                     text = text.replace("</p>", "");
                     text = text.replace("<span ", "").replace("</span>", "");
-
                     final String[][] textReplaces = new Regex(text, "(tts:color=\"#([A-Z0-9]+)\">(.*?)($|tts:))").getMatches();
                     if (textReplaces != null && textReplaces.length != 0) {
                         for (final String[] singleText : textReplaces) {
@@ -222,7 +214,6 @@ public class PhoenixDe extends PluginForHost {
                         }
                     }
                     dest.write(text + lineseparator + lineseparator);
-
                 }
             } catch (Exception e) {
                 return false;
@@ -234,7 +225,6 @@ public class PhoenixDe extends PluginForHost {
             }
         }
         source.delete();
-
         return true;
     }
 
@@ -250,9 +240,7 @@ public class PhoenixDe extends PluginForHost {
         String minute = "00";
         String second = "00";
         String millisecond = "0";
-
         Integer itime = Integer.valueOf(time.intValue());
-
         // Hour
         Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
         if (timeHour < 10) {
@@ -260,7 +248,6 @@ public class PhoenixDe extends PluginForHost {
         } else {
             hour = timeHour.toString();
         }
-
         // Minute
         Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
         if (timeMinute < 10) {
@@ -268,7 +255,6 @@ public class PhoenixDe extends PluginForHost {
         } else {
             minute = timeMinute.toString();
         }
-
         // Second
         Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
         if (timeSecond < 10) {
@@ -276,7 +262,6 @@ public class PhoenixDe extends PluginForHost {
         } else {
             second = timeSecond.toString();
         }
-
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
         if (millisecond.length() == 1) {
@@ -288,10 +273,8 @@ public class PhoenixDe extends PluginForHost {
         if (millisecond.length() > 2) {
             millisecond = millisecond.substring(0, 3);
         }
-
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
-
         return result;
     }
 
@@ -315,7 +298,7 @@ public class PhoenixDe extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's phoenix.de Plugin helps downloading videoclips from phoenix.de and tivi.de. Both websites provide different video qualities.";
+        return "JDownloader's phoenix.de Plugin helps downloading videoclips from phoenix.de. Both websites provide different video qualities.";
     }
 
     private static final String Q_SUBTITLES                                         = "Q_SUBTITLES";
@@ -340,5 +323,4 @@ public class PhoenixDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, "Load HD version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Aktiviere schnellen Linkcheck?\r\nFalls aktiv: Dateigrößen sind erst beim Downloadstart sichtbar!").setDefaultValue(false));
     }
-
 }
