@@ -37,7 +37,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -163,21 +162,11 @@ public class UlozTo extends PluginForHost {
         if (link.getDownloadURL().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
             return AvailableStatus.FALSE;
         }
-        finalDirectDownloadURL = handleDownloadUrl(link);
+        finalDirectDownloadURL = handleDownloadUrl(link, isDownload);
         if (finalDirectDownloadURL != null) {
             return AvailableStatus.TRUE;
         }
         checkGeoBlocked(br, null);
-        if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
-            if (!isDownload) {
-                /* Don't ask for captchas during availablecheck */
-                return AvailableStatus.UNCHECKABLE;
-            }
-            final Form f = br.getFormbyAction("/limit-exceeded");
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(f);
-        }
         handleAgeRestrictedRedirects(link);
         if (br.containsHTML("The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
@@ -256,7 +245,8 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private String handleDownloadUrl(final DownloadLink link) throws Exception {
+    /** Accesses downloadurl and checks for content. */
+    private String handleDownloadUrl(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage(link.getDownloadURL());
         int i = 0;
         while (br.getRedirectLocation() != null) {
@@ -278,8 +268,16 @@ public class UlozTo extends PluginForHost {
                 return con.getRequest().getUrl();
             }
             br.followConnection();
-            if (StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
-                throw new AccountRequiredException("Not enough premium traffic available");
+            if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+                logger.info("Captcha required!");
+                if (!isDownload) {
+                    /* Don't ask for captchas during availablecheck */
+                    return null;
+                }
+                final Form f = br.getFormbyActionRegex(".*/limit-exceeded.*");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(f);
             }
             i++;
         }
@@ -504,7 +502,7 @@ public class UlozTo extends PluginForHost {
                         }
                         br.clearCookies("ulozto.net");
                         br.clearCookies("uloz.to");
-                        dllink = handleDownloadUrl(link);
+                        dllink = handleDownloadUrl(link, true);
                         if (dllink != null) {
                             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
                             if (this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -781,35 +779,39 @@ public class UlozTo extends PluginForHost {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 prepBR(this.br);
-                Cookies cookies = account.loadCookies("");
+                final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     this.br.getPage("https://" + account.getHoster());
                     checkGeoBlocked(br, account);
                     handleAgeRestrictedRedirects(null);
                     if (br.containsHTML("do=web-login")) {
-                        cookies = null;
+                        logger.info("Cookie login failed");
                     } else if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
-                        cookies = null;
+                        logger.info("Cookie login failed");
+                    } else {
+                        logger.info("Cookie login successful");
+                        /* Re-new cookie timestamp */
+                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        return;
                     }
                 }
-                if (cookies == null) {
-                    this.br.getPage("https://" + account.getHoster() + "/login");
-                    checkGeoBlocked(br, account);
-                    handleAgeRestrictedRedirects(null);
-                    final Form loginform = br.getFormbyKey("username");
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (loginform.hasInputFieldByName("remember")) {
-                        loginform.remove("remember");
-                    }
-                    loginform.put("remember", "on");
-                    loginform.put("username", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(loginform);
-                    if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                logger.info("Performing full login");
+                this.br.getPage("https://" + account.getHoster() + "/login");
+                checkGeoBlocked(br, account);
+                handleAgeRestrictedRedirects(null);
+                final Form loginform = br.getFormbyKey("username");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (loginform.hasInputFieldByName("remember")) {
+                    loginform.remove("remember");
+                }
+                loginform.put("remember", "on");
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {

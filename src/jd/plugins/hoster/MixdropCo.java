@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -171,24 +172,27 @@ public class MixdropCo extends antiDDoSForHost {
             if (USE_API_FOR_LINKCHECK) {
                 getPage(link.getPluginPatternMatcher());
             }
-            final String fid = getFID(link);
+            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            final String continueURL = br.getRegex("((?://[^/]+)?/f/[a-z0-9]+\\?download)").getMatch(0);
+            if (continueURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            getPage(continueURL);
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
             if (csrftoken == null) {
-                /* 2019-11-07: Via browser it is usually "" so empty value is okay */
                 csrftoken = "";
             }
-            br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            final String url = "/f/" + fid + "?download";
-            getPage(url);
-            String postData = "a=genticket&csrf=" + csrftoken;
+            final UrlQuery query = new UrlQuery();
+            query.add("a", "genticket");
+            query.add("csrf", csrftoken);
             /* 2019-12-13: Invisible reCaptcha */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
                 // final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                postData += "&token=" + Encoding.urlEncode(recaptchaV2Response);
+                query.appendEncoded("token", recaptchaV2Response);
             }
-            postPage(url, postData);
+            postPage(continueURL, query.toString());
             dllink = PluginJSonUtils.getJson(br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 if (br.containsHTML("Failed captcha verification")) {

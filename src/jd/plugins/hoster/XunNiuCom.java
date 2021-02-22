@@ -23,7 +23,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -107,14 +106,14 @@ public class XunNiuCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String fid = getFID(downloadLink);
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String fid = getFID(link);
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             final boolean skipWaittime = true;
             final boolean skipCaptcha = true;
@@ -129,7 +128,7 @@ public class XunNiuCom extends PluginForHost {
                     /* High waittime --> Reconnect is faster than waiting :) */
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
                 }
-                this.sleep(wait * 1001l, downloadLink);
+                this.sleep(wait * 1001l, link);
             }
             /*
              * 2019-09-12: General procedure: /down2 --> /down --> Captcha --> Download(?) --> Failed to start a single free download via
@@ -155,7 +154,7 @@ public class XunNiuCom extends PluginForHost {
             if ((br.containsHTML("imagecode\\.php") || true) && !skipCaptcha) {
                 do {
                     try {
-                        final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), downloadLink);
+                        final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
                         ajax.postPage(action, "action=check_code&code=" + Encoding.urlEncode(code));
                         if (ajax.toString().equals("false")) {
                             continue;
@@ -193,9 +192,9 @@ public class XunNiuCom extends PluginForHost {
                 throw new AccountRequiredException();
             }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        link.setProperty(directlinkproperty, dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -211,29 +210,27 @@ public class XunNiuCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -255,7 +252,6 @@ public class XunNiuCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean validatedCookies = false;
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
@@ -263,41 +259,43 @@ public class XunNiuCom extends PluginForHost {
                         logger.info("Trust cookies without checking as they're still fresh");
                         return false;
                     }
+                    logger.info("Validating cookies...");
                     br.getPage("http://www." + account.getHoster() + "/mydisk.php");
                     if (isLoggedIn()) {
-                        validatedCookies = true;
+                        logger.info("Cookie login successful");
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
                     } else {
-                        this.br = new Browser();
+                        logger.info("Cookie login failed");
+                        this.br.clearCookies(br.getHost());
                     }
                 }
                 /*
                  * 2019-09-12: Every full login will invalidate al older sessions (user will have to re-login via browser)! If users
                  * complain about too many login captchas, tell them to only login via browser OR JDownloader to avoid this!
                  */
-                if (!validatedCookies) {
-                    br.getPage("http://www." + account.getHoster() + "/account.php?action=login");
-                    final Form loginform = br.getFormbyProperty("name", "login_form");
-                    if (loginform == null) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put("username", account.getUser());
-                    loginform.put("password", account.getPass());
-                    final String captchaFieldKey = "verycode";
-                    if (loginform.hasInputFieldByName(captchaFieldKey)) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
-                        final String code = getCaptchaCode("/includes/imgcode.inc.php?verycode_type=2&t=0." + System.currentTimeMillis(), dummyLink);
-                        loginform.put(captchaFieldKey, code);
-                    }
-                    loginform.put("remember", "1");
-                    br.submitForm(loginform);
-                    if (!isLoggedIn()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    validatedCookies = true;
+                logger.info("Performing full login");
+                br.getPage("http://www." + account.getHoster() + "/account.php?action=login");
+                final Form loginform = br.getFormbyProperty("name", "login_form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", account.getUser());
+                loginform.put("password", account.getPass());
+                final String captchaFieldKey = "verycode";
+                if (loginform.hasInputFieldByName(captchaFieldKey)) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
+                    final String code = getCaptchaCode("/includes/imgcode.inc.php?verycode_type=2&t=0." + System.currentTimeMillis(), dummyLink);
+                    loginform.put(captchaFieldKey, code);
+                }
+                loginform.put("remember", "1");
+                br.submitForm(loginform);
+                if (!isLoggedIn()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return validatedCookies;
+                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -335,7 +333,7 @@ public class XunNiuCom extends PluginForHost {
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(expire);
+            ai.setValidUntil(expire, this.br);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
@@ -375,7 +373,7 @@ public class XunNiuCom extends PluginForHost {
                 }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!dl.getConnection().isContentDisposition()) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
                     br.followConnection(true);
@@ -412,6 +410,11 @@ public class XunNiuCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        /*
+         * 2021-02-22: Remove directurl so next attempt, another random mirror will be selected. This host provides multiple mirrors and
+         * speeds may vary!
+         */
+        link.removeProperty("premium_directlink");
     }
 }

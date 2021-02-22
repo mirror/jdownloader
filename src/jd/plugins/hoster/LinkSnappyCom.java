@@ -581,7 +581,12 @@ public class LinkSnappyCom extends antiDDoSForHost {
     }
 
     private void handleErrors(final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (entries.containsKey("links") && entries.get("links") instanceof List) {
+            /* Make sure we're working on the correct map! */
+            final List<Object> ressourcelist = (List<Object>) entries.get("links");
+            entries = (Map<String, Object>) ressourcelist.get(0);
+        }
         final String err = getError(entries);
         if (err != null) {
             if (new Regex(err, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
@@ -631,9 +636,9 @@ public class LinkSnappyCom extends antiDDoSForHost {
             } else {
                 logger.warning("Possible unknown API error occured: " + err);
                 if (this.getDownloadLink() == null) {
-                    throw new AccountUnavailableException("Unknown error: " + err, 10 * 60 * 1000l);
+                    throw new AccountUnavailableException(err, 10 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + err, 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, err, 5 * 60 * 1000l);
                 }
             }
         }
