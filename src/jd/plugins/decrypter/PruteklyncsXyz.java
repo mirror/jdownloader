@@ -92,7 +92,7 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            if (!this.canHandle(singleLink)) {
+            if (!singleLink.equals(parameter)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
