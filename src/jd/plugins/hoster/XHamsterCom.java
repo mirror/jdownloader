@@ -266,8 +266,25 @@ public class XHamsterCom extends PluginForHost {
                 login(aa, false);
             }
             br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 423) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
+            final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
+            if (responsecode == 423) {
+                if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
+                    friendsOnly = true;
+                    return AvailableStatus.TRUE;
+                } else if (br.containsHTML("<title>Page was deleted</title>")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (isPasswordProtected()) {
+                    return AvailableStatus.TRUE;
+                } else {
+                    final String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
+                    if (exactErrorMessage != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423: " + exactErrorMessage, 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423", 60 * 60 * 1000l);
+                    }
+                }
+            } else if (responsecode == 404 || responsecode == 410 || responsecode == 452) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (link.getPluginPatternMatcher().matches(TYPE_PREMIUM)) {
                 /* Premium content */
@@ -292,22 +309,6 @@ public class XHamsterCom extends PluginForHost {
                     link.setName(this.getFID(link) + ".mp4");
                 }
             } else {
-                final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
-                if (responsecode == 423) {
-                    if (br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
-                        friendsOnly = true;
-                        return AvailableStatus.TRUE;
-                    } else if (br.containsHTML("Conversion of video processing")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Conversion of video processing", 60 * 60 * 1000l);
-                    } else if (br.containsHTML("<title>Page was deleted</title>")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (isPasswordProtected()) {
-                        return AvailableStatus.TRUE;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (responsecode == 404 || responsecode == 410 || responsecode == 452) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
                 // embeded correction --> Usually not needed
                 if (link.getPluginPatternMatcher().matches(".+/xembed\\.php.*")) {
                     logger.info("Trying to change embed URL --> Real URL");

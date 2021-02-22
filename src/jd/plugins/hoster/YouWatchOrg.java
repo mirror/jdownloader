@@ -206,4 +206,14 @@ public class YouWatchOrg extends XFileSharingProBasic {
         }
         return fileInfo;
     }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link) {
+        if (!br.getURL().contains(this.getFUIDFromURL(this.getDownloadLink()))) {
+            /* 2021-02-22 */
+            return true;
+        } else {
+            return super.isOffline(link);
+        }
+    }
 }
