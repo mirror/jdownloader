@@ -21,20 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -42,6 +28,19 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvoloadIo extends PluginForHost {
@@ -141,16 +140,15 @@ public class EvoloadIo extends PluginForHost {
                     link.setFinalFileName(filename);
                 }
                 if (size > 0) {
-                    link.setDownloadSize(size);
+                    link.setVerifiedFileSize(size);
                 }
                 final String status = (String) entries.get("status");
                 if (StringUtils.equalsIgnoreCase("Online", status)) {
                     return AvailableStatus.TRUE;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* 2021-02-22: E.g. status "Expired". Sometimes even the delete reason is given e.g.: "reason":"Expired" */
+                    return AvailableStatus.FALSE;
                 }
-            } catch (final PluginException e) {
-                throw e;
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("API Availablecheck failed");
@@ -293,16 +291,7 @@ public class EvoloadIo extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
-        return false;
+        return true;
     }
 
     @Override
