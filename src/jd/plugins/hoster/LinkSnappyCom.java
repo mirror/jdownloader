@@ -445,13 +445,13 @@ public class LinkSnappyCom extends antiDDoSForHost {
             handleErrors(link, account);
             /* 2021-02-18: Downloadurl will always be returned even if file hasn't been downloaded successfully serverside yet! */
             dllink = (String) entries.get("generated");
-            if (entries.containsKey("cacheDL")) {
-                logger.info("Checking caching file...");
-                cacheDLChecker(link, account, (String) entries.get("hash"));
-            }
             if (StringUtils.isEmpty(dllink)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
+            }
+            if (entries.containsKey("cacheDL")) {
+                logger.info("Checking caching file...");
+                cacheDLChecker(link, account, (String) entries.get("hash"));
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
