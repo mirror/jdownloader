@@ -137,14 +137,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /* Used variables */
-    public String                 correctedBR                              = "";
-    protected String              fuid                                     = null;
+    public String                 correctedBR                                                       = "";
+    protected String              fuid                                                              = null;
     /* don't touch the following! */
-    private static AtomicInteger  freeRunning                              = new AtomicInteger(0);
-    private static final String   PROPERTY_pw_required                     = "password_requested_by_website";
-    protected static final String PROPERTY_captcha_required                = "captcha_requested_by_website";
-    protected static final String PROPERTY_ACCOUNT_apikey                  = "apikey";
-    private static final String   PROPERTY_PLUGIN_api_domain_with_protocol = "apidomain";
+    private static AtomicInteger  freeRunning                                                       = new AtomicInteger(0);
+    private static final String   PROPERTY_pw_required                                              = "password_requested_by_website";
+    protected static final String PROPERTY_captcha_required                                         = "captcha_requested_by_website";
+    protected static final String PROPERTY_ACCOUNT_apikey                                           = "apikey";
+    private static final String   PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
+    private static final String   PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
@@ -153,7 +154,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * https://sibsoft.net/xvideosharing/changelog.html <br/>
      * limit-info:<br />
      * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
-     * Last compatible XFileSharingProBasic template: Version 2.7.8.7 in revision 40351 other:<br />
      */
     @Override
     public String getAGBLink() {
@@ -501,7 +501,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public String getLinkID(DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        final String fuid = getFUIDFromURL(link);
         if (fuid != null) {
             return getHost() + "://" + fuid;
         } else {
@@ -530,7 +530,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
+        final String fuid = getFUIDFromURL(link);
         if (fuid != null && link.getPluginPatternMatcher() != null) {
             /* link cleanup, prefer https if possible */
             try {
@@ -575,7 +575,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            /* define custom browser headers and language settings */
+            /* Define custom browser headers and preferred language */
             prepBr.setCookie(getMainPage(), "lang", "english");
             prepBr.setAllowedResponseCodes(new int[] { 500 });
         }
@@ -656,12 +656,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Website is not in maintenance mode and should usually work fine.
      */
     protected boolean isWebsiteUnderMaintenance() {
-        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "\">\\s*This server is in maintenance mode").matches();
+        return br.getHttpConnection().getResponseCode() == 500 || new Regex(correctedBR, "(?i)\">\\s*This server is in maintenance mode").matches();
     }
 
     protected boolean isOffline(final DownloadLink link) {
         /* 2020-12-11:e.g. "video you are looking for is not found": dood.to | doodstream.com */
-        return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists|>\\s*video you are looking for is not found)").matches();
+        return br.getHttpConnection().getResponseCode() == 404 || new Regex(correctedBR, "(?i)(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists|>\\s*video you are looking for is not found)").matches();
     }
 
     @Override
@@ -670,7 +670,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enable_account_api_only_mode()) {
             return massLinkcheckerAPI(urls, apiKey, true);
         } else if (supports_mass_linkcheck_over_website()) {
-            return this.massLinkcheckerWebsite(urls, true);
+            return this.massLinkcheckerWebsite(urls);
         } else {
             /* No mass linkchecking possible */
             return false;
@@ -689,7 +689,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String[] fileInfo = internal_getFileInfoArray();
         Browser altbr = null;
         fuid = null;
@@ -775,7 +775,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Set filesize */
             if (!StringUtils.isEmpty(fileInfo[1])) {
                 link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-            } else if (this.internal_isVideohosterEmbed() && supports_availablecheck_filesize_via_embedded_video() && !downloadsStarted) {
+            } else if (this.internal_isVideohosterEmbed() && supports_availablecheck_filesize_via_embedded_video() && !isDownload) {
                 /*
                  * Special case for some videohosts to determinethe filesize: Last chance to find filesize - do NOT execute this when used
                  * has started the download of our current DownloadLink as this could lead to "Too many connections" errors!
@@ -961,15 +961,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return fileInfo;
     }
 
-    public AvailableStatus requestFileInformationWebsiteMassLinkcheckerSingle(final DownloadLink link, final boolean setWeakFilename) throws IOException, PluginException {
-        massLinkcheckerWebsite(new DownloadLink[] { link }, setWeakFilename);
+    public AvailableStatus requestFileInformationWebsiteMassLinkcheckerSingle(final DownloadLink link) throws IOException, PluginException {
+        massLinkcheckerWebsite(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
-        }
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+        } else if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     /**
@@ -982,7 +982,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * - If the normal way via website is blocked somehow e.g. 'site-verification' captcha </br>
      * <b>- If used to check multiple URLs (mass-linkchecking feature), call with setWeakFilename = true!! </b>
      */
-    public boolean massLinkcheckerWebsite(final DownloadLink[] urls, final boolean setWeakFilename) {
+    public boolean massLinkcheckerWebsite(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
         }
@@ -1060,7 +1060,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             getPage(br, checkURL);
                             checkForm = br.getFormByInputFieldKeyValue("op", checkTypeCurrent);
                             if (checkForm == null) {
-                                /* TODO: Add auto-retry so that 2nd type of linkchecker is either used directly or on the next attempt! */
                                 logger.info("Failed to find Form for checkType: " + checkTypeCurrent);
                                 linkcheckTypeTryCount++;
                                 continue;
@@ -1128,10 +1127,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         } catch (final Throwable e) {
                         }
                     }
-                    if (setWeakFilename && !dl.isNameSet()) {
+                    if (!dl.isNameSet()) {
                         /*
-                         * We cannot get 'good' filenames via this call so we have to rely on our fallback-filenames (fuid or filename
-                         * inside URL)!
+                         * Fallback! We cannot get 'good' filenames via this call so we have to rely on our fallback-filenames (fuid or
+                         * filename inside URL)!
                          */
                         setWeakFilename(dl);
                     }
@@ -1182,7 +1181,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             filename = fallbackFilename;
             if (fnameViaAbuseUnsupported) {
                 logger.info("Seems like report_file availablecheck seems not to be supported by this host");
-                this.getPluginConfig().setProperty("REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", System.currentTimeMillis());
+                this.getPluginConfig().setProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, System.currentTimeMillis());
             }
         } else {
             logger.info("Successfully found filename via report_file");
@@ -1225,7 +1224,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected final boolean getFilesizeViaAvailablecheckAlt(final Browser br, final DownloadLink link) throws PluginException, IOException {
         logger.info("Trying getFilesizeViaAvailablecheckAlt");
-        requestFileInformationWebsiteMassLinkcheckerSingle(link, false);
+        requestFileInformationWebsiteMassLinkcheckerSingle(link);
         final boolean isChecked = link.isAvailabilityStatusChecked();
         if (isChecked) {
             logger.info("Successfully checked URL via massLinkchecker | filesize: " + link.getView().getBytesTotal());
@@ -2535,7 +2534,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @version 0.4
      * @author raztoki
      */
-    protected void fixFilename(final DownloadLink downloadLink) {
+    protected void fixFilename(final DownloadLink link) {
         /* TODO: Maybe make use of already given methods to e.g. extract filename without extension from String. */
         /* Previous (e.h. html) filename without extension */
         String orgName = null;
@@ -2544,11 +2543,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         /* Server filename with extension */
         String servExt = null;
         /* Either final filename from previous download attempt or filename found in HTML. */
-        String orgNameExt = downloadLink.getFinalFileName();
+        String orgNameExt = link.getFinalFileName();
         /* Extension of orgNameExt */
         String orgExt = null;
         if (StringUtils.isEmpty(orgNameExt)) {
-            orgNameExt = downloadLink.getName();
+            orgNameExt = link.getName();
         }
         if (!StringUtils.isEmpty(orgNameExt) && StringUtils.contains(orgNameExt, ".")) {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
@@ -2592,7 +2591,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("fixFileName case 4: prefer orgNameExt");
         }
         logger.info("fixFileName: before=" + orgNameExt + "|after=" + FFN);
-        downloadLink.setFinalFileName(FFN);
+        link.setFinalFileName(FFN);
     }
 
     /**
@@ -2685,11 +2684,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected void handlePassword(final Form pwform, final DownloadLink link) throws PluginException {
         if (isPasswordProtectedHTML(pwform)) {
+            link.setProperty(PROPERTY_pw_required, true);
             if (pwform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("URL is password protected");
-            link.setProperty(PROPERTY_pw_required, true);
             String passCode = link.getDownloadPassword();
             if (passCode == null) {
                 passCode = Plugin.getUserInput("Password?", link);
@@ -4598,7 +4597,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
         final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.fuid).matches();
         boolean allowed_by_auto_handling = true;
-        final long last_failure = this.getPluginConfig().getLongProperty("REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP", 0);
+        final long last_failure = this.getPluginConfig().getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
         if (last_failure > 0) {
             final long timestamp_cooldown = last_failure + internal_waittime_on_alternative_availablecheck_failures();
             if (timestamp_cooldown > System.currentTimeMillis()) {
