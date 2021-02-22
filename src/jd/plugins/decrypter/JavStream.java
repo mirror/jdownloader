@@ -50,7 +50,7 @@ public class JavStream extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<]*?)( - Jav Stream)?</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<]*?)( - Jav Stream)?</title>").getMatch(0) + ".mp4";
         logger.info("filename: " + filename);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename.trim());
