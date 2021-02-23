@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,11 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.com" }, urls = { "https?://(?:www\\.)?lhtranslation\\.com/read\\-[a-z0-9\\-]+\\-chapter\\-\\d+\\.html" })
-public class LhtranslationCom extends antiDDoSForDecrypt {
-    public LhtranslationCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.net" }, urls = { "https?://(?:www\\.)?lhtranslation\\.(?:com|net)/read\\-([a-z0-9\\-]+)\\-chapter\\-(\\d+)\\.html" })
+public class Lhtranslation extends antiDDoSForDecrypt {
+    public Lhtranslation(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,12 +45,12 @@ public class LhtranslationCom extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final Regex urlinfo = new Regex(parameter, "/read\\-([a-z0-9\\-]+)\\-chapter\\-(\\d+)\\.html");
+        final Regex urlinfo = new Regex(parameter, this.getSupportedLinks());
         String name_chapter = br.getRegex("<h1><font color=\"white\">([^<>\"]+) Chapter \\d+</font></h1>").getMatch(0);
         final String url_chapter = urlinfo.getMatch(1);
         final String url_name = urlinfo.getMatch(0);
         String ext = null;
-        final String[] images = br.getRegex("class=\\'chapter\\-img\\'[^<>]*?src=\\'(http[^<>\"\\']+)").getColumn(0);
+        final String[] images = br.getRegex("data-original='(https?://[^<>\"\\']+)'").getColumn(0);
         if (images == null || images.length == 0) {
             return null;
         }
@@ -63,9 +63,6 @@ public class LhtranslationCom extends antiDDoSForDecrypt {
         final int padLength = getPadLength(images.length);
         int page = 0;
         for (final String finallink : images) {
-            if (this.isAbort()) {
-                return decryptedLinks;
-            }
             page++;
             final String page_formatted = String.format(Locale.US, "%0" + padLength + "d", page);
             if (finallink == null) {
@@ -79,7 +76,6 @@ public class LhtranslationCom extends antiDDoSForDecrypt {
             final DownloadLink dl = this.createDownloadlink(finallink);
             dl._setFilePackage(fp);
             dl.setFinalFileName(filename);
-            // dl.setContentUrl(page_url);
             dl.setLinkID(filename);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
