@@ -1,7 +1,10 @@
 package org.jdownloader.api.myjdownloader;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.appwork.console.AbstractConsole;
 import org.appwork.console.ConsoleDialog;
+import org.appwork.shutdown.ExceptionShutdownRequest;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -17,9 +20,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
+import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEventSender;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.exceptions.UnconnectedException;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
@@ -96,14 +101,14 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         }
     }
 
-    private final boolean isAlwaysConnectEnabled() {
+    public final boolean isAlwaysConnectRequired() {
         return Application.isHeadless();
     }
 
     private MyJDownloaderController() {
         logger = LogController.getInstance().getLogger(MyJDownloaderController.class.getName());
         eventSender = new MyJDownloaderEventSender();
-        if (isAlwaysConnectEnabled() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
+        if (isAlwaysConnectRequired() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
             start();
         }
         CFG_MYJD.AUTO_CONNECT_ENABLED.getEventSender().addListener(this);
@@ -113,35 +118,22 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         stop();
         String email = CFG_MYJD.CFG.getEmail();
         String password = CFG_MYJD.CFG.getPassword();
-        if (!validateLogins(email, password) && isAlwaysConnectEnabled()) {
-            synchronized (AbstractConsole.LOCK) {
-                final ConsoleDialog cd = new ConsoleDialog("MyJDownloader Setup");
-                cd.start();
+        boolean validFlag = validateAndVerifyLogins(email, password, isAlwaysConnectRequired());
+        if (!validFlag && isAlwaysConnectRequired()) {
+            while (true) {
                 try {
-                    cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
-                    try {
-                        while (true) {
-                            cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
-                            email = cd.ask("Please Enter your MyJDownloader Email:");
-                            if (new Regex(email, "..*?@.*?\\..+").matches()) {
-                                password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
-                                if (validateLogins(email, password)) {
-                                    CFG_MYJD.EMAIL.setValue(email.trim());
-                                    CFG_MYJD.PASSWORD.setValue(password);
-                                    break;
-                                }
-                            }
-                            cd.println("Invalid Logins");
-                        }
-                    } catch (DialogNoAnswerException e) {
-                        ShutdownController.getInstance().requestShutdown();
+                    if (askLoginsOnConsole(true)) {
+                        email = CFG_MYJD.CFG.getEmail();
+                        password = CFG_MYJD.CFG.getPassword();
+                        validFlag = true;
+                        break;
                     }
-                } finally {
-                    cd.end();
+                } catch (DialogNoAnswerException e) {
+                    ShutdownController.getInstance().requestShutdown(new ExceptionShutdownRequest(e, false, false));
                 }
             }
         }
-        if (validateLogins(email, password)) {
+        if (validFlag || validateAndVerifyLogins(email, password, false)) {
             final MyJDownloaderConnectThread lthread = new MyJDownloaderConnectThread(this);
             lthread.setEmail(email);
             lthread.setPassword(password);
@@ -215,7 +207,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        if (isAlwaysConnectEnabled() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
+        if (isAlwaysConnectRequired() || CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
             start();
         }
     }
@@ -228,7 +220,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         switch (error) {
         case ACCOUNT_UNCONFIRMED:
             stop();
-            if (isAlwaysConnectEnabled()) {
+            if (isAlwaysConnectRequired()) {
                 synchronized (AbstractConsole.LOCK) {
                     final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
                     cd.start();
@@ -246,7 +238,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             break;
         case OUTDATED:
             stop();
-            if (isAlwaysConnectEnabled()) {
+            if (isAlwaysConnectRequired()) {
                 synchronized (AbstractConsole.LOCK) {
                     final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
                     cd.start();
@@ -265,44 +257,38 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         case EMAIL_INVALID:
         case BAD_LOGINS:
             stop();
-            if (isAlwaysConnectEnabled()) {
-                synchronized (AbstractConsole.LOCK) {
-                    final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
-                    cd.start();
-                    try {
-                        cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
-                        try {
-                            while (true) {
-                                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
-                                final String email = cd.ask("Please Enter your MyJDownloader Email:");
-                                if (new Regex(email, "..*?@.*?\\..+").matches()) {
-                                    final String password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
-                                    if (validateLogins(email, password)) {
-                                        CFG_MYJD.EMAIL.setValue(email.trim());
-                                        CFG_MYJD.PASSWORD.setValue(password);
-                                        new Thread() {
-                                            public void run() {
-                                                connect();
-                                            }
-                                        }.start();
-                                        return;
-                                    }
-                                }
-                                cd.println("Invalid Logins");
-                            }
-                        } catch (DialogNoAnswerException e) {
-                            ShutdownController.getInstance().requestShutdown();
-                        }
-                    } finally {
-                        cd.end();
-                    }
-                }
+            if (isAlwaysConnectRequired()) {
+                start();
             } else {
                 UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, "MyJDownloader", _JDT.T.MyJDownloaderController_onError_badlogins());
             }
             break;
         default:
             break;
+        }
+    }
+
+    public boolean askLoginsOnConsole(final boolean verifyLogins) throws DialogNoAnswerException {
+        synchronized (AbstractConsole.LOCK) {
+            final ConsoleDialog cd = new ConsoleDialog("MyJDownloader");
+            cd.start();
+            try {
+                cd.printLines(_JDT.T.MyJDownloaderController_onError_badlogins());
+                cd.waitYesOrNo(0, "Enter Logins", "Exit JDownloader");
+                final String email = cd.ask("Please Enter your MyJDownloader Email:");
+                if (new Regex(email, "..*?@.*?\\..+").matches()) {
+                    final String password = cd.askHidden("Please Enter your MyJDownloader Password(not visible):");
+                    if (validateAndVerifyLogins(email, password, verifyLogins)) {
+                        CFG_MYJD.EMAIL.setValue(email.trim());
+                        CFG_MYJD.PASSWORD.setValue(password);
+                        return true;
+                    }
+                }
+                cd.println("Invalid Logins");
+                return false;
+            } finally {
+                cd.end();
+            }
         }
     }
 
@@ -326,16 +312,45 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         start();
     }
 
-    public static boolean validateLogins(String email, String password) {
+    public boolean validateAndVerifyLogins(final String email, final String password, final boolean verifyLogins) {
         if (StringUtils.isEmpty(password) || StringUtils.isEmpty(email) || !new Regex(email, "..*?@.*?\\..+").matches()) {
             return false;
         } else {
-            return true;
+            if (!verifyLogins) {
+                return true;
+            } else {
+                final AtomicBoolean validFlag = new AtomicBoolean(false);
+                final MyJDownloaderAPI api = new MyJDownloaderAPI() {
+                    public LogSource getLogger() {
+                        return MyJDownloaderController.this.getLogger();
+                    };
+                };
+                final Thread validateThread = new Thread("validateLogins") {
+                    @Override
+                    public void run() {
+                        try {
+                            final SessionInfo session = api.connect(email, password);
+                            validFlag.set(true);
+                            api.disconnect();
+                        } catch (Exception e) {
+                            api.getLogger().log(e);
+                        }
+                    }
+                };
+                validateThread.setDaemon(true);
+                validateThread.start();
+                try {
+                    validateThread.join();
+                } catch (InterruptedException e) {
+                    api.getLogger().log(e);
+                }
+                return validFlag.get();
+            }
         }
     }
 
-    public boolean isLoginValid() {
-        return validateLogins(CFG_MYJD.CFG.getEmail(), CFG_MYJD.CFG.getPassword());
+    public boolean isLoginValid(final boolean verifyLogin) {
+        return validateAndVerifyLogins(CFG_MYJD.CFG.getEmail(), CFG_MYJD.CFG.getPassword(), verifyLogin);
     }
 
     /**

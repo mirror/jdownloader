@@ -2,6 +2,7 @@ package org.jdownloader.api.system;
 
 import java.io.IOException;
 import java.nio.file.FileStore;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -13,19 +14,40 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.appwork.utils.Files17;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 
 public class SystemAPIImpl17 {
+    private static Path getPath(final FileStore fileStore) {
+        if (CrossSystem.isWindows()) {
+            try {
+                for (final Path rootPath : FileSystems.getDefault().getRootDirectories()) {
+                    if (Files.isDirectory(rootPath) && Files.getFileStore(rootPath).equals(fileStore)) {
+                        return rootPath;
+                    }
+                }
+            } catch (IOException e) {
+                LogController.CL().log(e);
+            }
+        }
+        final String rootPath = new Regex(fileStore.toString(), "^\\s*(.*?) \\(.*?\\)\\s*$").getMatch(0);
+        if (rootPath != null) {
+            return Paths.get(rootPath);
+        } else {
+            return null;
+        }
+    }
+
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
         final List<String> typeFilters;
         final List<String> pathFilters;
         if (CrossSystem.isUnix()) {
-            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs");
-            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev");
+            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs");
+            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user");
         } else {
             typeFilters = Arrays.asList(new String[0]);
             pathFilters = Arrays.asList(new String[0]);
@@ -45,7 +67,7 @@ public class SystemAPIImpl17 {
         }
         if (roots.isEmpty()) {
             for (final FileStore fileStore : Files17.getFileStores()) {
-                final Path fileStorePath = Files17.getPath(fileStore);
+                final Path fileStorePath = getPath(fileStore);
                 if (fileStorePath != null) {
                     roots.put(fileStorePath, fileStore);
                 }

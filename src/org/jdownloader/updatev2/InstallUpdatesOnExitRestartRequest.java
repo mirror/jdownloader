@@ -12,9 +12,8 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 
 public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
-
-    private ShutdownRequest shutdownRequest;
-    private boolean         runUpdates = true;
+    protected final ShutdownRequest shutdownRequest;
+    private volatile boolean        runUpdates = true;
 
     public InstallUpdatesOnExitRestartRequest(ShutdownRequest filter) {
         this.shutdownRequest = filter;
@@ -23,7 +22,6 @@ public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
     @Override
     public boolean askForVeto(ShutdownVetoListener listener) {
         boolean ret = shutdownRequest.askForVeto(listener);
-
         return ret;
     }
 
@@ -56,19 +54,13 @@ public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
             // _UPDATE.T.confirmdialog_new_update_available_for_install_message_launcher(), null,
             // _UPDATE.T.confirmdialog_new_update_available_answer_now_install(),
             // _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
-
             ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _UPDATE.T.confirmdialog_new_update_available_frametitle(), _UPDATE.T.confirmdialog_new_update_available_for_install_message_launcher(), null, _UPDATE.T.confirmdialog_new_update_available_answer_now_install(), _UPDATE.T.confirmdialog_new_update_available_answer_later_install());
-
             try {
-
                 UIOManager.I().show(ConfirmDialogInterface.class, dialog).throwCloseExceptions();
-
             } catch (DialogNoAnswerException e) {
                 runUpdates = false;
             } catch (Throwable e) {
-
             }
-
         }
     }
 
@@ -85,4 +77,8 @@ public class InstallUpdatesOnExitRestartRequest implements RestartRequest {
     public void onShutdownVeto() {
     }
 
+    @Override
+    public Integer getExitCode() {
+        return null;
+    }
 }
