@@ -230,9 +230,12 @@ public class UlozToFolder extends PluginForDecrypt {
                     dl.setComment(description);
                 }
                 dl.setAvailable(true);
-                if (isPasswordProtectedFile && passCode != null) {
-                    /* Let's assume that the file password is the same as the folder password */
-                    dl.setDownloadPassword(passCode);
+                if (isPasswordProtectedFile) {
+                    dl.setPasswordProtected(true);
+                    if (passCode != null) {
+                        /* Let's assume that the file password is the same as the folder password */
+                        dl.setDownloadPassword(passCode);
+                    }
                 }
                 dl._setFilePackage(fp);
                 dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subfolderPath);

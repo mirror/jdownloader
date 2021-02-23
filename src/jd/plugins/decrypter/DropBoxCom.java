@@ -340,7 +340,7 @@ public class DropBoxCom extends PluginForDecrypt {
                     }
                     if (!StringUtils.isEmpty(passCode)) {
                         dl.setDownloadPassword(passCode);
-                        dl.setProperty(DropboxCom.PROPERTY_IS_PASSWORD_PROTECTED, true);
+                        dl.setPasswordProtected(true);
                     }
                     if (is_single_file) {
                         dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
@@ -641,7 +641,7 @@ public class DropBoxCom extends PluginForDecrypt {
                     }
                     if (!StringUtils.isEmpty(passCode)) {
                         dl.setDownloadPassword(passCode);
-                        dl.setProperty(DropboxCom.PROPERTY_IS_PASSWORD_PROTECTED, true);
+                        dl.setPasswordProtected(true);
                         if (!StringUtils.isEmpty(password_cookie)) {
                             dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, password_cookie);
                         }

@@ -349,7 +349,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 final Map<String, Object> data = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 this.handleErrors(this.getDownloadLink(), account);
                 if (data.get("return") == null) {
-                    /* TODO: Check this */
                     logger.warning("Bad cache state/answer");
                     break;
                 }
@@ -582,9 +581,10 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private void handleErrors(final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        if (entries.containsKey("links") && entries.get("links") instanceof List) {
+        final Object linksO = entries.get("links");
+        if (linksO != null && linksO instanceof List) {
             /* Make sure we're working on the correct map! */
-            final List<Object> ressourcelist = (List<Object>) entries.get("links");
+            final List<Object> ressourcelist = (List<Object>) linksO;
             entries = (Map<String, Object>) ressourcelist.get(0);
         }
         final String err = getError(entries);

@@ -144,7 +144,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
                 }
                 dl.setAvailable(true);
                 if (pwProtected == 1) {
-                    dl.setProperty(OneFichierCom.PROPERTY_PASSWORD_PROTECTED, true);
+                    dl.setPasswordProtected(true);
                 }
                 if (accessControlLimitedLink == 1) {
                     dl.setProperty(OneFichierCom.PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);

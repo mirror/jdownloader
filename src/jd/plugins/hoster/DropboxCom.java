@@ -113,7 +113,6 @@ public class DropboxCom extends PluginForHost {
     private static final boolean            HARDCODED_ENFORCE_API                            = true;
     public static String                    PROPERTY_MAINPAGE                                = "mainlink";
     public static String                    PROPERTY_INTERNAL_PATH                           = "serverside_path_to_file_relative";
-    public static String                    PROPERTY_IS_PASSWORD_PROTECTED                   = "is_password_protected";
     public static String                    PROPERTY_PASSWORD_COOKIE                         = "password_cookie";
     public static String                    PROPERTY_IS_SINGLE_FILE                          = "is_single_file";
     public static String                    PROPERTY_ACCOUNT_ACCESS_TOKEN                    = "access_token";
@@ -192,8 +191,10 @@ public class DropboxCom extends PluginForHost {
                     }
                     if (isPasswordProtectedWebsite(br)) {
                         /* Password handling is located in download handling */
-                        link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+                        link.setPasswordProtected(true);
                         return AvailableStatus.TRUE;
+                    } else {
+                        link.setPasswordProtected(false);
                     }
                 } finally {
                     try {
@@ -376,7 +377,7 @@ public class DropboxCom extends PluginForHost {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if (this.isPasswordProtected(link) && isPasswordProtectedWebsite(br)) {
+        } else if (link.isPasswordProtected() && isPasswordProtectedWebsite(br)) {
             /* Single file */
             resume_supported = true;
             final String content_id = new Regex(br.getURL(), "content_id=([^\\&]+)").getMatch(0);
@@ -552,7 +553,7 @@ public class DropboxCom extends PluginForHost {
                  * API, he will already have entered the correct password by now!
                  */
                 logger.info("URL is either password protected or user is lacking the rights to view it");
-                link.setProperty(PROPERTY_IS_PASSWORD_PROTECTED, true);
+                link.setPasswordProtected(true);
                 final boolean enable_password_protected_workaround = true;
                 if (enable_password_protected_workaround) {
                     /**
@@ -565,6 +566,8 @@ public class DropboxCom extends PluginForHost {
                     link.setDownloadPassword(download_password);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
+            } else {
+                link.setPasswordProtected(false);
             }
             handleAPIErrors();
             final URLConnectionAdapter con = dl.getConnection();
@@ -891,13 +894,6 @@ public class DropboxCom extends PluginForHost {
     // }
     public static String getAPIToken(final Account account) {
         return account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, null);
-    }
-
-    /** Returns whether or not a file/folder is password protected according to previously stored property. */
-    private boolean isPasswordProtected(final DownloadLink dl) {
-        /* Do NOT check this via existing password as user can set a download-password at any time even for unprotected URLs!! */
-        // return dl.getDownloadPassword();
-        return dl.getBooleanProperty(PROPERTY_IS_PASSWORD_PROTECTED, false);
     }
 
     /**
