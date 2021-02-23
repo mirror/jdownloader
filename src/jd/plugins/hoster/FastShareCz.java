@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,6 +31,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastshare.cz" }, urls = { "https?://(?:www\\.)?(?:fastshare|netshare)\\.cz/(\\d+)/[^<>\"#]+" })
 public class FastShareCz extends antiDDoSForHost {
@@ -231,7 +231,7 @@ public class FastShareCz extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.getURL().contains("/user")) {
+        if (br.getRequest() == null || !br.getURL().contains("/user")) {
             br.getPage("/user");
         }
         /* 2021-02-12: E.g. <td>3 445.56 GB </td> */

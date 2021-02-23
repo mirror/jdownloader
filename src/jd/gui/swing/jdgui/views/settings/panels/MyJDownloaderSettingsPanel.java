@@ -156,7 +156,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                     @Override
                     protected Void run() throws RuntimeException {
-                        if (MyJDownloaderController.getInstance().isLoginValid()) {
+                        if (MyJDownloaderController.getInstance().isLoginValid(false)) {
                             MyJDownloaderController.getInstance().connect();
                         } else {
                             MyJDownloaderController.getInstance().onError(MyJDownloaderError.BAD_LOGINS);
@@ -341,7 +341,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                 if (connected) {
                     String cDevice = MyJDownloaderController.getInstance().getCurrentDeviceName();
                     connectButton.setAction(connectAction);
-                    if (MyJDownloaderController.validateLogins(cUser, cPass)) {
+                    if (MyJDownloaderController.getInstance().validateAndVerifyLogins(cUser, cPass, false)) {
                         if ((cUser == null || !cUser.equals(CFG_MYJD.EMAIL.getValue())) || (cPass == null || !cPass.equals(CFG_MYJD.PASSWORD.getValue())) || (cDevice == null || !cDevice.equals(CFG_MYJD.DEVICE_NAME.getValue()))) {
                             reconnectAction.setEnabled(true);
                             connectButton.setAction(reconnectAction);

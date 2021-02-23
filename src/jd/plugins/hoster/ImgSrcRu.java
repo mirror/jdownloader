@@ -23,10 +23,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +37,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -112,7 +112,9 @@ public class ImgSrcRu extends PluginForHost {
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {

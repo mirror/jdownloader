@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +41,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DiskYandexNetFolder;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" })
 public class DiskYandexNet extends PluginForHost {
@@ -569,7 +569,7 @@ public class DiskYandexNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.getURL().contains("client/disk")) {
+        if (br.getRequest() == null || !br.getURL().contains("client/disk")) {
             getPage("/client/disk/");
         }
         final String userID = PluginJSonUtils.getJson(br, "uid");
@@ -633,10 +633,9 @@ public class DiskYandexNet extends PluginForHost {
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
                     /**
-                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
-                     * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
-                     * moment. </br>
-                     * Both will work but we'll try to choose the one which would also be used via browser.
+                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br> public_web_copy_limit is
+                     * usually used if the files is currently quota limited and cannot be downloaded at all at this moment. </br> Both will
+                     * work but we'll try to choose the one which would also be used via browser.
                      */
                     final String copySource;
                     if (this.isFileDownloadQuotaReached(link)) {
