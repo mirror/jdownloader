@@ -23,6 +23,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -120,7 +120,7 @@ public class ImgSrcRu extends PluginForHost {
                     String oldname = new Regex(link.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
                     link.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
                     if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return AvailableStatus.TRUE;
                 }
@@ -208,13 +208,10 @@ public class ImgSrcRu extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">\\s*Adult content warning") && br.containsHTML(">\\s*You are about to enter")) {
-            final String enter = br.getRegex("(/main/warn[^\"']*over18[^\"']*)").getMatch(-1);
-            if (enter != null) {
-                jd.plugins.decrypter.ImgSrcRu.getPage(br, enter);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        final String enterOver18 = br.getRegex("(/main/warn[^<>\"\\']*over18[^<>\"\\']*)").getMatch(-1);
+        if (enterOver18 != null) {
+            logger.info("Entering over18 content: " + enterOver18);
+            jd.plugins.decrypter.ImgSrcRu.getPage(br, enterOver18);
         } else if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
             // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
             // lets look for the link

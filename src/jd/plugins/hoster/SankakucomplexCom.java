@@ -106,18 +106,24 @@ public class SankakucomplexCom extends antiDDoSForHost {
             if (dllink == null) {
                 dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
             }
+            if (dllink == null) {
+                /* 2021-02-23 */
+                dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
+            }
             if (dllink != null) {
                 dllink = "https:" + dllink;
             }
         }
-        if (filename == null || dllink == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)(\\?|$)").getMatch(0);
+        String ext = null;
+        if (dllink != null) {
+            ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)(\\?|$)").getMatch(0);
+        }
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, default_Extension);
         }
@@ -134,24 +140,26 @@ public class SankakucomplexCom extends antiDDoSForHost {
             link.setDownloadSize(Long.parseLong(size.replace(",", "")));
             return AvailableStatus.TRUE;
         }
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getLongContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                link.setProperty("directlink", dllink);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
+        if (dllink != null) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getLongContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    link.setProperty("directlink", dllink);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -162,6 +170,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
         requestFileInformation(link);
         if (this.accountRequired) {
             throw new AccountRequiredException();
+        } else if (this.dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Disable chunks as we only download small files */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
