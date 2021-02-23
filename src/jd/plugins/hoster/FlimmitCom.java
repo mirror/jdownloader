@@ -160,12 +160,11 @@ public class FlimmitCom extends PluginForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final Object dataO = entries.get("data");
         if (dataO != null) {
-            entries = (Map<String, Object>) entries.get(dataO);
+            entries = (Map<String, Object>) dataO;
             String expireDateStr = (String) entries.get("next_payment_date");
             if (!StringUtils.isEmpty(expireDateStr)) {
-                expireDateStr = expireDateStr.replaceAll("(\\+.+)$", "");
                 account.setType(AccountType.PREMIUM);
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
                 ai.setUnlimitedTraffic();
             } else {
                 account.setType(AccountType.FREE);
