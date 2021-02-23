@@ -19,7 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
@@ -36,11 +41,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 /**
  *
@@ -53,14 +56,13 @@ import jd.plugins.components.PluginJSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "" })
 public class MobilismOrg extends antiDDoSForHost {
     /* Tags: Script vinaget.us */
-    private static final String          DOMAIN              = "http://mblservices.org";
+    private static final String          WEBSITE_BASE        = "https://mblservices.org";
     private static final String          NORESUME            = "mobilismorg_NORESUME";
     private static MultiHosterManagement mhm                 = new MultiHosterManagement("mobilism.org");
     /* Last updated: 31.03.15 */
     private static final int             defaultMAXDOWNLOADS = 20;
     private static final int             defaultMAXCHUNKS    = 0;
     private static final boolean         defaultRESUME       = true;
-    private static Object                CTRLLOCK            = new Object();
 
     public MobilismOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,14 +71,14 @@ public class MobilismOrg extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://images.mobilism.org/";
+        return "https://forum.mobilism.org/";
     }
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            prepBr.addAllowedResponseCodes(401);
+            prepBr.addAllowedResponseCodes(new int[] { 401 });
         }
         return prepBr;
     }
@@ -96,26 +98,21 @@ public class MobilismOrg extends antiDDoSForHost {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
-        }
-        // long fsize = downloadLink.getVerifiedFileSize();
-        // if (fsize == -1) {
-        // fsize = downloadLink.getDownloadSize();
-        // }
-        final LinkInfo linkInfo = link.getLinkInfo();
-        if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(linkInfo.getExtension())) {
+        } else if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(link.getLinkInfo().getExtension())) {
             // videos are no longer allowed
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
@@ -132,7 +129,6 @@ public class MobilismOrg extends antiDDoSForHost {
         if (!resume) {
             maxChunks = 1;
         }
-        link.setProperty(this.getHost() + "directlink", dllink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
@@ -148,6 +144,7 @@ public class MobilismOrg extends antiDDoSForHost {
             }
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
+        link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
         this.dl.startDownload();
     }
 
@@ -156,65 +153,57 @@ public class MobilismOrg extends antiDDoSForHost {
         return new FEATURE[] { FEATURE.MULTIHOST };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        final boolean forceNewLinkGeneration = true;
-        /*
-         * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
-         * needed to get the individual host limits.
-         */
-        synchronized (CTRLLOCK) {
-            login(account, false);
-        }
+        login(account, false);
+        /* 2021-02-23: Allow re-using previously generated directURLs */
+        final boolean forceNewLinkGeneration = false;
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
-            br = new Browser();
+            login(account, true);
             br.setFollowRedirects(true);
-            login(account, false);
-            getPage("https://mblservices.org/amember/downloader/downloader/app/index.php?dl=" + link.getPluginPatternMatcher());
-            // form
-            final Form d2 = br.getFormbyProperty("name", "transload");
-            if (d2 == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String urlInputFieldName = "link";
-            d2.put(urlInputFieldName, Encoding.urlEncode(link.getDownloadURL()));
-            d2.put("premium_acc", "on");
-            submitForm(d2);
-            final Form d3 = br.getFormbyAction("/amember/downloader/downloader/app/index.php");
-            if (d3 == null) {
-                // instead of d3 form you can get errors outputs directly from there scripts. for example rapidgator an premium cookie could
-                // not be found
-                // <div id="mesg" width="100%" align="center">Processing. Remain patient.</div><div align="center"><span
-                // class='htmlerror'><b>Login Error: Cannot find 'user__' cookie.</b></span>
-                final boolean header = br.containsHTML("<div id=\"mesg\" width=\"100%\" align=\"center\">.*?</div>");
-                final String error = br.getRegex("<span class='htmlerror'><b>(.*?)</b></span>").getMatch(0);
-                if (header && error != null) {
-                    // server side issues...
-                    mhm.handleErrorGeneric(account, link, "multihoster_issue", 2, 10 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            submitForm(d3);
+            getPage(WEBSITE_BASE + "/amember/downloader/downloader/app/bindex3.php?dl=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             final String regex_dllink = "(https?://[^\"]+/downloader/app/files/[^\"]+)\"";
             dllink = br.getRegex(regex_dllink).getMatch(0);
-            long time = 0;
-            long wait = 5 * 60 * 1000l;
             if (dllink == null) {
-                do {
-                    // transloading bullshit...
-                    sleep(1 * 60 * 1000l, link);
-                    submitForm(d3);
-                    dllink = br.getRegex(regex_dllink).getMatch(0);
-                } while (dllink == null && time < 5 * 60 * 1000l);
+                dllink = br.getRegex("Download: <a href=\"([^<>\"]+)\"").getMatch(0);
             }
-            if (dllink == null && time > wait) {
-                logger.warning("Final downloadlink is null");
-                mhm.handleErrorGeneric(account, link, "dllinknull", 2, 10 * 60 * 1000l);
+            if (dllink == null) {
+                mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 10, 5 * 60 * 1000l);
             }
+            /* TODO: Check if this is still required */
+            // final Form d3 = br.getFormbyActionRegex(".*/amember/downloader/downloader/app/bindex3\\.php.*");
+            // if (d3 == null) {
+            // // instead of d3 form you can get errors outputs directly from there scripts. for example rapidgator an premium cookie could
+            // // not be found
+            // // <div id="mesg" width="100%" align="center">Processing. Remain patient.</div><div align="center"><span
+            // // class='htmlerror'><b>Login Error: Cannot find 'user__' cookie.</b></span>
+            // final boolean header = br.containsHTML("<div id=\"mesg\" width=\"100%\" align=\"center\">.*?</div>");
+            // final String error = br.getRegex("<span class='htmlerror'><b>(.*?)</b></span>").getMatch(0);
+            // if (header && error != null) {
+            // // server side issues...
+            // mhm.handleErrorGeneric(account, link, "multihoster_issue", 10, 5 * 60 * 1000l);
+            // }
+            // mhm.handleErrorGeneric(account, link, "Failed to find transload Form #2", 10, 5 * 60 * 1000l);
+            // }
+            // submitForm(d3);
+            // dllink = br.getRegex(regex_dllink).getMatch(0);
+            // long time = 0;
+            // long wait = 5 * 60 * 1000l;
+            // if (dllink == null) {
+            // do {
+            // /* Transloading bullshit... */
+            // sleep(1 * 60 * 1000l, link);
+            // submitForm(d3);
+            // dllink = br.getRegex(regex_dllink).getMatch(0);
+            // } while (dllink == null && time < 5 * 60 * 1000l);
+            // }
+            // if (dllink == null && time > wait) {
+            // logger.warning("Final downloadlink is null");
+            // mhm.handleErrorGeneric(account, link, "dllinknull", 2, 10 * 60 * 1000l);
+            // }
         }
         handleDL(account, link, dllink);
     }
@@ -244,26 +233,26 @@ public class MobilismOrg extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        br = new Browser();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
         login(account, true);
-        final String url = PluginJSonUtils.getJsonValue(br, "url");
-        if (url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.getURL().contains("/amember/member")) {
+            this.getPage("/amember/member");
         }
-        getPage(url);
-        // here is free account check
+        /* Here is free account check */
         // url(/amember/downloader/manual/) will redirect, /amember/no-access/folder/id/4?url=/amember/downloader/manual/?
         if (br.getURL().contains("/amember/no-access/") && br.containsHTML("<title>Access Denied</title>")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        final String expireDateStr = br.getRegex("expires (\\d{1,2}/\\d{1,2}/\\d{1,2})").getMatch(0);
+        if (expireDateStr != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "MM/dd/yy", Locale.ENGLISH), this.br);
         }
         final HashSet<String> supported = new HashSet<String>();
         String[] supportedHosts = br.getRegex("td>\\-([A-Za-z0-9\\-\\.]+)").getColumn(0);
         if (supportedHosts != null) {
             supported.addAll(Arrays.asList(supportedHosts));
         }
-        br.getPage("http://forum.mobilism.org/filehosts.xml");
+        getPage("https://forum." + this.getHost() + "/filehosts.xml");
         supportedHosts = br.getRegex("host url=\"([A-Za-z0-9\\-\\.]+)\"").getColumn(0);
         if (supportedHosts != null) {
             supported.addAll(Arrays.asList(supportedHosts));
@@ -279,48 +268,48 @@ public class MobilismOrg extends antiDDoSForHost {
         synchronized (account) {
             final boolean ifr = br.isFollowingRedirects();
             try {
-                /* Load cookies */
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    logger.info("Trust cookies without check");
+                if (cookies != null) {
                     br.setCookies(cookies);
-                    return;
-                }
-                /*
-                 * 2016-01-24: When logged in and want to download it leads us to: http://mblservices.org/amember/login --> Here our initial
-                 * login data does not work ...
-                 */
-                /*
-                 * 20160201: above statement is no longer valid.. website login works in via browser (tested in chrome)
-                 */
-                if (false) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
+                        return;
+                    }
+                    logger.info("Checking login cookies...");
+                    this.checkAndHandleLogin2(account);
+                    br.getPage(WEBSITE_BASE + "/amember/member");
+                    if (this.isLoggedinHTML()) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        logger.info("Cookie login failed");
                     }
                 }
-                // this will redirect.
+                logger.info("Performing full login");
+                /* this will redirect. */
                 br.setFollowRedirects(true);
-                getPage("http://mblservices.org/amember/login");
+                getPage(WEBSITE_BASE + "/amember/login");
                 final Form login = br.getFormbyProperty("name", "login");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // note that the login form looks like it CAN has recaptcha event....
                 login.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 login.put("amember_login", Encoding.urlEncode(account.getUser()));
-                // json with these, html and standard redirect without!
+                /* json with these, html and standard redirect without! */
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 submitForm(login);
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 br.getHeaders().put("X-Requested-With", null);
-                // double check
-                if (br.getCookie(DOMAIN, "amember_nr", Cookies.NOTDELETEDPATTERN) == null && !PluginJSonUtils.parseBoolean(PluginJSonUtils.getJsonValue(br, "ok"))) {
+                /* E.g. successful response: {"ok":true,"url":"\/amember\/member"} */
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final boolean loginIsOK = ((Boolean) entries.get("ok")).booleanValue();
+                if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null && loginIsOK) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                this.checkAndHandleLogin2(account);
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -331,6 +320,30 @@ public class MobilismOrg extends antiDDoSForHost {
                 br.setFollowRedirects(ifr);
             }
         }
+    }
+
+    /** 2nd login endpoint: We can't download without doing this once per session! */
+    private void checkAndHandleLogin2(final Account account) throws Exception {
+        br.getPage(WEBSITE_BASE + "/amember/downloader/downloader/app/bindex3.php");
+        final Form login2 = br.getFormbyKey("password");
+        if (login2 != null) {
+            logger.info("Processing login2...");
+            login2.put("username", Encoding.urlEncode(account.getUser()));
+            login2.put("password", Encoding.urlEncode(account.getPass()));
+            this.submitForm(login2);
+            if (br.containsHTML(">\\s*The username or password is incorrect")) {
+                /* Do not throw exception here although downloads will very likely fail... */
+                logger.warning("Login2 seems to have failed");
+            } else {
+                logger.info("Login2 looks good");
+            }
+        } else {
+            logger.info("Login2: All good we're already logged in");
+        }
+    }
+
+    private boolean isLoggedinHTML() {
+        return br.containsHTML("/amember/logout");
     }
 
     @Override
