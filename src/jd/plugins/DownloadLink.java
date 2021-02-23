@@ -30,19 +30,6 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -72,6 +59,19 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -84,6 +84,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
+
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -104,6 +105,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String               PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
     private static final String               PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
     private static final String               PROPERTY_COMMENT                    = "COMMENT";
+    private static final String               PROPERTY_PASSWORD_PROTECTED         = "PASSWORD_PROTECTED";
     private static final String               PROPERTY_PRIORITY                   = "PRIORITY2";
     private static final String               PROPERTY_FINISHTIME                 = "FINISHTIME";
     private static final String               PROPERTY_PWLIST                     = "PWLIST";
@@ -964,7 +966,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1550,22 +1552,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return downloadMax;
     }
 
-    /**
-     * DO NOT USE in 09581 Stable
-     *
-     * @return
-     * @since JD2
-     */
     public String getDownloadPassword() {
         return getStringProperty(PROPERTY_PASS, null);
     }
 
-    /**
-     * DO NOT USE in 09581 Stable
-     *
-     * @return
-     * @since JD2
-     */
     public void setDownloadPassword(String pass) {
         final String oldPassword = getDownloadPassword();
         if (StringUtils.equals(pass, oldPassword) || (StringUtils.isEmpty(pass) && StringUtils.isEmpty(oldPassword))) {
@@ -1578,6 +1568,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOAD_PASSWORD, pass));
+        }
+    }
+
+    /**
+     * Returns whether or not a download password is required to download this item. 7 </br>
+     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
+     * crawling already.
+     */
+    public boolean isPasswordProtected() {
+        return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
+    }
+
+    public void setPasswordProtected(final boolean pwProtected) {
+        if (pwProtected) {
+            this.setProperty(PROPERTY_PASSWORD_PROTECTED, true);
+        } else {
+            this.removeProperty(PROPERTY_PASSWORD_PROTECTED);
         }
     }
 

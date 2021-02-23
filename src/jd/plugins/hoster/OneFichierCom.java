@@ -27,6 +27,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -54,28 +70,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
     private final String         PROPERTY_FREELINK                 = "freeLink";
     private final String         PROPERTY_HOTLINK                  = "hotlink";
     private final String         PROPERTY_PREMLINK                 = "premLink";
-    public static final String   PROPERTY_PASSWORD_PROTECTED       = "password_protected";
     /** URLs can be restricted for various reason: https://1fichier.com/console/acl.pl */
     public static final String   PROPERTY_ACL_ACCESS_CONTROL_LIMIT = "acl_access_control_limit";
     /** 2019-04-04: Documentation: https://1fichier.com/api.html */
@@ -528,8 +527,8 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
-     * required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -957,8 +956,8 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
-         * availablecheck call just before downloading via API can be troublesome
+         * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+         * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
          */
         if (AccountType.FREE.equals(account.getType())) {
             /**
@@ -1001,8 +1000,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws IOException, PluginException {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
         // requestFileInformationAPI(this.br, link, account, true);
         // this.checkErrorsAPI(account);
@@ -1014,7 +1013,7 @@ public class OneFichierCom extends PluginForHost {
             /* Check if we already know that this file is password protected ... */
             /** Try passwords in this order: 1. DownloadLink stored password, 2. Last used password, 3. Ask user */
             boolean usedLastPassword = false;
-            if (this.isPasswordProtected(link)) {
+            if (link.isPasswordProtected()) {
                 if (passCode == null) {
                     if (lastSessionPassword.get() != null) {
                         usedLastPassword = true;
@@ -1035,15 +1034,15 @@ public class OneFichierCom extends PluginForHost {
              * this. Example self uploaded file, only downloadable from afghanistan: https://1fichier.com/?uczre58xge6pif2d9n6g
              */
             if (!StringUtils.isEmpty(api_error) && api_error.matches(".*(Invalid password\\.|Password not provided\\.).*Resource not allowed #\\d+")) {
+                link.setPasswordProtected(true);
                 if (usedLastPassword) {
                     lastSessionPassword.set(null);
                 } else {
                     link.setDownloadPassword(null);
                 }
-                if (this.isPasswordProtected(link)) {
+                if (link.isPasswordProtected()) {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
                 } else {
-                    this.setPasswordProtected(link, true);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Password required!");
                 }
             } else if (passCode != null) {
@@ -1051,7 +1050,7 @@ public class OneFichierCom extends PluginForHost {
                 link.setDownloadPassword(passCode);
             } else {
                 /* File is not password protected */
-                link.setProperty(PROPERTY_PASSWORD_PROTECTED, false);
+                link.setPasswordProtected(false);
             }
         }
         /* 2019-04-04: Downloadlink is officially only valid for 5 minutes */
@@ -1209,7 +1208,7 @@ public class OneFichierCom extends PluginForHost {
              * Set pw protected flag so in case this downloadlink is ever tried to be downloaded via API, we already know that it is
              * password protected!
              */
-            link.setProperty(PROPERTY_PASSWORD_PROTECTED, true);
+            link.setPasswordProtected(true);
             /** That is a multi purpose Form containing some default fields which we don't want or and to correct. */
             pwform.remove("save");
             pwform.put("did", "1");
@@ -1227,14 +1226,6 @@ public class OneFichierCom extends PluginForHost {
                 link.setDownloadPassword(passCode);
             }
         }
-    }
-
-    private boolean isPasswordProtected(final DownloadLink link) {
-        return link.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
-    }
-
-    private void setPasswordProtected(final DownloadLink link, final boolean passwordProtected) {
-        link.setProperty(PROPERTY_PASSWORD_PROTECTED, passwordProtected);
     }
 
     private boolean isaccessControlLimited(final DownloadLink link) {

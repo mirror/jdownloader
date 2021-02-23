@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,9 +39,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
 public class MediafireComFolder extends PluginForDecrypt {
@@ -202,7 +202,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                 }
                 final String pass = getXML("password_protected", browser);
                 if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
-                    link.setProperty("passwordRequired", true);
+                    link.setPasswordProtected(true);
                 }
                 if (size != null) {
                     final long sizeLong = Long.parseLong(size);
@@ -264,7 +264,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                                 }
                                 final String pass = getXML("password_protected", fileInfo);
                                 if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
-                                    link.setProperty("passwordRequired", true);
+                                    link.setPasswordProtected(true);
                                 }
                                 link.setAvailable(true);
                                 if (fp != null) {
