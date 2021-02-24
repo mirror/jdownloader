@@ -1388,7 +1388,7 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             return null;
         } else if (o instanceof List) {
-            final List<Object> array = (ArrayList) o;
+            final List<Object> array = (List) o;
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
                     final Object pico = findPictureObject(arrayo, picid);
