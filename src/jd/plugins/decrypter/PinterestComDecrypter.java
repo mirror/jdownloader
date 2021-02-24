@@ -314,7 +314,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      *          crawl everything we find </br>
      *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
      */
-    private boolean crawlSections(final Browser ajax, final String targetSectionTitle, final long total_inside_sections_pin_count) throws Exception {
+    private boolean crawlSections(final Browser ajax, final String targetSectionSlug, final long totalInsideSectionsPinCount) throws Exception {
         final String username_and_boardname = new Regex(this.parameter, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
         final Map<String, Object> postDataOptions = new HashMap<String, Object>();
         postDataOptions.put("isPrefetch", false);
@@ -352,10 +352,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 }
                 logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
                 fp.setName(username_and_boardname + " - " + section_title);
-                if (targetSectionTitle != null && !section_url_title.equalsIgnoreCase(targetSectionTitle)) {
+                if (targetSectionSlug != null && !section_url_title.equalsIgnoreCase(targetSectionSlug)) {
                     logger.info("User wants only a specific section --> Skipping unwanted sections");
                     continue;
-                } else if (targetSectionTitle != null && section_url_title.equalsIgnoreCase(targetSectionTitle)) {
+                } else if (targetSectionSlug != null && section_url_title.equalsIgnoreCase(targetSectionSlug)) {
                     logger.info("User wants only a specific section --> Found that");
                     foundTargetSection = true;
                     /* Found target section --> Clear previously found items as user only wants to have this section. */
@@ -382,7 +382,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 pinPaginationPostData.put("context", pinPaginationpostDataContext);
                 ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
                 pinsLoop: do {
-                    logger.info("Section-Page: " + pageCount + " | Found " + numberof_pins_decrypted_via_current_function + " of " + total_inside_sections_pin_count + " items");
+                    logger.info("Section-Page: " + pageCount + " | Found " + numberof_pins_decrypted_via_current_function + " of " + totalInsideSectionsPinCount + " items");
                     final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
                     final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
                     final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
@@ -432,9 +432,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
             }
         } while (!this.isAbort());
-        if (targetSectionTitle != null && foundTargetSection) {
+        if (targetSectionSlug != null && foundTargetSection) {
             logger.info("Found targetSection and only added it");
-        } else if (targetSectionTitle != null && !foundTargetSection) {
+        } else if (targetSectionSlug != null && !foundTargetSection) {
             logger.info("Failed to find targetSection --> Added ALL sections");
         } else {
             logger.info("Added ALL sections");
@@ -447,10 +447,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * In case the user wants to add a specific section, we have to get to the section overview --> Find sectionID --> Finally crawl
          * section PINs
          */
-        final String targetSection = new Regex(this.parameter, "https?://[^/]+/[^/]+/[^/]+/([^/]+)").getMatch(0);
-        if (targetSection != null) {
+        final String targetSectionSlug = new Regex(this.parameter, "https?://[^/]+/[^/]+/[^/]+/([^/]+)").getMatch(0);
+        if (targetSectionSlug != null) {
             /* Remove targetSection from URL as we cannot use it in this way. */
-            parameter = parameter.replace(targetSection + "/", "");
+            parameter = parameter.replace(targetSectionSlug + "/", "");
         }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -462,7 +462,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         prepAPIBRCrawler(ajax);
         /* This is a prominent point of failure! */
         String json_source_for_crawl_process = getJsonSourceFromHTML(this.br);
-        Map<String, Object> json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
+        Map<String, Object> jsonRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
         final long max_pins_per_board_pagination = 25;
         /*
          * First let's find the board information map and user information map. This is a little bit different depending on whether the user
@@ -471,18 +471,18 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         Map<String, Object> boardPageResource;
         // final Map<String, Object> userResource;
         if (loggedIN) {
-            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
+            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resources/data/BoardPageResource/{0}/data");
             if (boardPageResource == null) {
                 /* 2020-10-12 */
-                boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "boards/content/{0}");
+                boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "boards/content/{0}");
             }
             // userResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root,
             // "resources/data/UserResource/{0}/data");
         } else {
-            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resourceResponses/{0}/response/data");
+            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resourceResponses/{0}/response/data");
             // userResource = (Map<String, Object>) boardPageResource.get("owner");
         }
-        board_id = (String) boardPageResource.get("id");
+        this.board_id = (String) boardPageResource.get("id");
         if (StringUtils.isEmpty(board_id)) {
             logger.warning("Failed to find board_id");
             return;
@@ -493,10 +493,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * 2018-12-11: It is now no more a fatal problem if we fail to find the total number of items at this stage as we have multiple
          * fail-safes to prevent infinite loops!
          */
-        long total_pin_count = JavaScriptEngineFactory.toLong(boardPageResource.get("pin_count"), 0);
+        long totalPinCount = JavaScriptEngineFactory.toLong(boardPageResource.get("pin_count"), 0);
         long sectionless_pin_count = JavaScriptEngineFactory.toLong(boardPageResource.get("sectionless_pin_count"), 0);
-        final long total_inside_sections_pin_count = (total_pin_count > 0 && sectionless_pin_count < total_pin_count) ? total_pin_count - sectionless_pin_count : 0;
-        logger.info("PINs total: " + total_pin_count + " | PINs inside sections: " + total_inside_sections_pin_count + " | PINs outside sections: " + sectionless_pin_count);
+        final long total_inside_sections_pin_count = (totalPinCount > 0 && sectionless_pin_count < totalPinCount) ? totalPinCount - sectionless_pin_count : 0;
+        logger.info("PINs total: " + totalPinCount + " | PINs inside sections: " + total_inside_sections_pin_count + " | PINs outside sections: " + sectionless_pin_count);
         /*
          * Sections are like folders. Now find all the PINs that are not in any sections (it may happen that we already have everything at
          * this stage!) Only decrypt these leftover PINs if either the user did not want to have a specified section only or if he wanted to
@@ -506,11 +506,16 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * 2018-12-11: Anonymous users officially cannot see sections even if they exist but we can crawl them the same way we do for
          * loggedIN users. Disable this if it is not possible anymore to crawl them.
          */
-        final boolean enable_section_crawler_for_NOT_loggedin_users = true;
+        final boolean enableSectionCrawlerForNOTLoggedinUsers = true;
         final boolean foundTargetSection;
-        if (section_count > 0 && (loggedIN || (!loggedIN && enable_section_crawler_for_NOT_loggedin_users))) {
-            /* Crawl sections - only available when loggedIN (2017-11-22) */
-            foundTargetSection = this.crawlSections(ajax.cloneBrowser(), targetSection, total_inside_sections_pin_count);
+        /* TODO: Add dedicated function for single section crawling! */
+        // if (targetSectionSlug != null) {
+        // final String targetSectionID = this.findSectionID(jsonRoot, targetSectionSlug);
+        // logger.info("Found sectionID: " + targetSectionID);
+        // }
+        if (section_count > 0 && (loggedIN || (!loggedIN && enableSectionCrawlerForNOTLoggedinUsers))) {
+            logger.info("Expecting to find sections: " + section_count);
+            foundTargetSection = this.crawlSections(ajax.cloneBrowser(), targetSectionSlug, total_inside_sections_pin_count);
         } else {
             foundTargetSection = false;
         }
@@ -532,19 +537,20 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             fpName = linkpart.replace("/", "_");
         }
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        if (total_pin_count == 0 && number_of_decrypted_pins_in_sections == 0) {
+        if (totalPinCount == 0 && number_of_decrypted_pins_in_sections == 0) {
+            /* No items at all available */
             decryptedLinks.add(getOffline(parameter));
             return;
         }
-        if (number_of_decrypted_pins_in_sections > 0 && total_pin_count > number_of_decrypted_pins_in_sections) {
+        if (number_of_decrypted_pins_in_sections > 0 && totalPinCount > number_of_decrypted_pins_in_sections) {
             /*
              * We only get the total count but it may happen that some of these PINs are located inside sections which have already been
              * crawled before --> Calculate the correct number of remaining PINs
              */
-            logger.info("Total number of PINs: " + total_pin_count);
+            logger.info("Total number of PINs: " + totalPinCount);
             logger.info("Total number of PINs inside sections: " + number_of_decrypted_pins_in_sections);
-            total_pin_count = total_pin_count - number_of_decrypted_pins_in_sections;
-            logger.info("Total number of PINs outside sections (to be crawled now): " + total_pin_count);
+            totalPinCount = totalPinCount - number_of_decrypted_pins_in_sections;
+            logger.info("Total number of PINs outside sections (to be crawled now): " + totalPinCount);
         }
         if (json_source_for_crawl_process == null && force_api_usage) {
             // error handling, this has to be always not null!
@@ -653,15 +659,15 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     }
                     json_source_for_crawl_process = ajax.toString();
                 }
-                json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
+                jsonRoot = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
                 Map<String, Object> entries = null;
-                final Map<String, Object> resource_response = (Map<String, Object>) json_root.get("resource_response");
+                final Map<String, Object> resource_response = (Map<String, Object>) jsonRoot.get("resource_response");
                 List<Object> pin_list = null;
                 if (resource_response != null) {
                     pin_list = (ArrayList) resource_response.get("data");
                 }
                 /* 2018-12-11: Eventually outdated */
-                List<Object> resource_data_list = (ArrayList) json_root.get("resource_data_cache");
+                List<Object> resource_data_list = (ArrayList) jsonRoot.get("resource_data_cache");
                 // if (resource_data_list == null) {
                 // /*
                 // * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the
@@ -720,11 +726,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                         proccessMap(single_pinterest_data, board_id, source_url);
                     }
                 } else {
-                    processPinsKamikaze(json_root, board_id, source_url);
+                    processPinsKamikaze(jsonRoot, board_id, source_url);
                 }
                 final boolean changed = dupeList.size() - before != 0;
                 /* 2019-01-29: We should always find our 'nextbookmark' value here on first try! */
-                nextbookmark = (String) JavaScriptEngineFactory.walkJson(json_root, "resource/options/bookmarks/{0}");
+                nextbookmark = (String) JavaScriptEngineFactory.walkJson(jsonRoot, "resource/options/bookmarks/{0}");
                 if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
                     /* Fallback to RegEx */
                     nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
@@ -746,7 +752,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     logger.info("No PINs found after first run --> We've probably reached the end");
                     break;
                 } else {
-                    logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + total_pin_count + " pins (total number may be inaccurate)");
+                    logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + totalPinCount + " pins (total number may be inaccurate)");
                 }
                 if (i > 2 && nextbookmark == null) {
                     logger.info("Found less than " + max_pins_per_board_pagination + " items in current run --> robably reached the end");
@@ -755,7 +761,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             } while (!this.isAbort());
         } else {
             decryptSite();
-            if (total_pin_count > max_entries_per_page_free) {
+            if (totalPinCount > max_entries_per_page_free) {
                 UIOManager.I().showMessageDialog("Please add your pinterest.com account at Settings->Account manager to find more than " + max_entries_per_page_free + " images");
             }
         }
@@ -909,6 +915,38 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 processPinsKamikaze(listo, board_id, source_url);
             }
         }
+    }
+
+    /** Recursive function to find the ID of a sectionSlug. */
+    private String findSectionID(final Object jsono, final String sectionSlug) throws PluginException {
+        if (jsono instanceof Map) {
+            final Map<String, Object> mapTmp = (Map<String, Object>) jsono;
+            final Iterator<Entry<String, Object>> iterator = mapTmp.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (key.equals("slug") && value instanceof String && value.toString().equalsIgnoreCase(sectionSlug)) {
+                    return (String) mapTmp.get("id");
+                } else if (value instanceof List || value instanceof Map) {
+                    final String result = findSectionID(value, sectionSlug);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        } else if (jsono instanceof ArrayList) {
+            final List<Object> ressourcelist = (List<Object>) jsono;
+            for (final Object arrayo : ressourcelist) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final String result = findSectionID(arrayo, sectionSlug);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void decryptSite() {
