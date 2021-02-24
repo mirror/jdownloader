@@ -670,7 +670,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                 final Form continueform = getContinueForm(i, continue_link);
                                 if (i == startValue && continueform == null) {
                                     /* First loop and no Form -> Give up */
-                                    logger.info("No continue_form/continue_link available, plugin broken");
+                                    logger.info("No continue_form/continue_link available, plugin broken --> Step: " + (i + 1));
                                     checkErrorsLastResort(link, account);
                                 } else if (continueform == null) {
                                     logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
