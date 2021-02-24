@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+(?:/[A-Za-z0-9\\-_]+)?|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" })
 public class YuvutuCom extends PluginForHost {
-
     public String dllink = null;
 
     public YuvutuCom(PluginWrapper wrapper) {
@@ -108,11 +106,12 @@ public class YuvutuCom extends PluginForHost {
         if (filename == null) {
             filename = this.getLinkid(downloadLink);
         }
-        final String embedlink = br.getRegex("\"(/embed_video\\.php\\?uri=[^<>\"]*?)\"").getMatch(0);
-        if (embedlink == null || filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage("http://www.yuvutu.com" + embedlink);
+        /* 2021-02-24 embedlink is not correct anymore */
+        // final String embedlink = br.getRegex("\"(/embed_video\\.php\\?uri=[^<>\"]*?)\"").getMatch(0);
+        // if (embedlink == null || filename == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // br.getPage("http://www.yuvutu.com" + embedlink);
         dllink = br.getRegex("file\\s*?:\\s*?\"(http[^<>\"]+)").getMatch(0);
         if (filename == null || dllink == null) {
             if (!br.containsHTML("player\\.swf")) {
