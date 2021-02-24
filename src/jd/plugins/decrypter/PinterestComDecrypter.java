@@ -17,12 +17,16 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -100,7 +104,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(this.parameter);
         if (enable_crawl_alternative_URL) {
             try {
-                final LinkedHashMap<String, Object> pinMap = findPINMap(this.br, this.loggedIN, this.parameter, null, null, null);
+                final Map<String, Object> pinMap = findPINMap(this.br, this.loggedIN, this.parameter, null, null, null);
                 setInfoOnDownloadLink(this.br, singlePIN, pinMap, null, loggedIN);
                 final String externalURL = getAlternativeExternalURLInPINMap(pinMap);
                 if (externalURL != null) {
@@ -120,7 +124,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         fp.addLinks(this.decryptedLinks);
     }
 
-    public static void setInfoOnDownloadLink(final Browser br, final DownloadLink dl, final LinkedHashMap<String, Object> pinMap, String directlink, final boolean loggedIN) {
+    public static void setInfoOnDownloadLink(final Browser br, final DownloadLink dl, final Map<String, Object> pinMap, String directlink, final boolean loggedIN) {
         final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(dl.getDownloadURL());
         String filename = null;
         final String description;
@@ -128,10 +132,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (StringUtils.isEmpty(directlink)) {
                 directlink = getDirectlinkFromPINMap(pinMap);
             }
-            final LinkedHashMap<String, Object> data = pinMap.containsKey("data") ? (LinkedHashMap<String, Object>) pinMap.get("data") : pinMap;
+            final Map<String, Object> data = pinMap.containsKey("data") ? (Map<String, Object>) pinMap.get("data") : pinMap;
             if (loggedIN) {
                 try {
-                    final LinkedHashMap<String, Object> page_info = (LinkedHashMap<String, Object>) pinMap.get("page_info");
+                    final Map<String, Object> page_info = (Map<String, Object>) pinMap.get("page_info");
                     filename = (String) page_info.get("title");
                 } catch (final Throwable e) {
                 }
@@ -183,10 +187,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         dl.setAvailable(true);
     }
 
-    public static LinkedHashMap<String, Object> findPINMap(final Browser br, final boolean loggedIN, final String contentURL, final String source_url, final String boardid, final String username) throws Exception {
+    public static Map<String, Object> findPINMap(final Browser br, final boolean loggedIN, final String contentURL, final String source_url, final String boardid, final String username) throws Exception {
         final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(contentURL);
-        LinkedHashMap<String, Object> pinMap = null;
-        ArrayList<Object> resource_data_cache = null;
+        Map<String, Object> pinMap = null;
+        List<Object> resource_data_cache = null;
         if (loggedIN && source_url != null && boardid != null && username != null) {
             String pin_ressource_url = "http://www.pinterest.com/resource/PinResource/get/?source_url=";
             String options = "/pin/%s/&data={\"options\":{\"field_set_key\":\"detailed\",\"link_selection\":true,\"fetch_visual_search_objects\":true,\"id\":\"%s\"},\"context\":{},\"module\":{\"name\":\"CloseupContent\",\"options\":{\"unauth_pin_closeup\":false}},\"render_type\":1}&module_path=App()>BoardPage(resource=BoardResource(username=amazvicki,+slug=))>Grid(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>GridItems(resource=BoardFeedResource(board_id=%s,+board_url=%s,+page_size=null,+prepend=true,+access=,+board_layout=default))>Pin(show_pinner=false,+show_pinned_from=true,+show_board=false,+squish_giraffe_pins=false,+component_type=0,+resource=PinResource(id=%s))";
@@ -201,7 +205,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (jd.plugins.hoster.PinterestCom.isOffline(br, pin_id)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             resource_data_cache = (ArrayList) entries.get("resource_data_cache");
         } else {
             br.getPage(contentURL);
@@ -209,7 +213,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (jd.plugins.hoster.PinterestCom.isOffline(br, pin_id)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            LinkedHashMap<String, Object> entries = null;
+            Map<String, Object> entries = null;
             /*
              * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always present
              * in the normal html code.
@@ -220,7 +224,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             }
             if (json != null) {
                 /* Website json */
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 resource_data_cache = (ArrayList) entries.get("resourceDataCache");
             } else {
                 /* API json e.g. needed: https://www.pinterest.com/pin/104497653832270636/ */
@@ -228,7 +232,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final String pin_json_url = "https://www.pinterest.com/resource/PinResource/get/?source_url=%2Fpin%2F" + pin_id + "%2F&data=%7B%22options%22%3A%7B%22field_set_key%22%3A%22detailed%22%2C%22ptrf%22%3Anull%2C%22fetch_visual_search_objects%22%3Atrue%2C%22id%22%3A%22" + pin_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&module_path=Pin(show_pinner%3Dtrue%2C+show_board%3Dtrue%2C+is_original_pin_in_related_pins_grid%3Dtrue)&_=" + System.currentTimeMillis();
                 br.getPage(pin_json_url);
                 json = br.toString();
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 if (entries.containsKey("resource_data_cache")) {
                     resource_data_cache = (ArrayList) entries.get("resource_data_cache");
                 } else {
@@ -253,7 +257,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             grabThis = false;
         }
         for (final Object resource_object : resource_data_cache) {
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) resource_object;
+            final Map<String, Object> entries = (Map<String, Object>) resource_object;
             final String this_pin_id = (String) JavaScriptEngineFactory.walkJson(entries, "data/id");
             final boolean pins_matched = this_pin_id.equals(pin_id);
             if (pins_matched || grabThis) {
@@ -277,7 +281,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     /** Returns highest resolution image URL inside given PIN Map. */
-    public static String getDirectlinkFromPINMap(final LinkedHashMap<String, Object> pinMap) {
+    public static String getDirectlinkFromPINMap(final Map<String, Object> pinMap) {
         if (pinMap == null) {
             return null;
         }
@@ -290,7 +294,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     /** Returns e.g. an alternative, probably higher quality imgur.com URL to the same image which we have as Pinterest PIN here. */
-    private String getAlternativeExternalURLInPINMap(final LinkedHashMap<String, Object> pinMap) {
+    private String getAlternativeExternalURLInPINMap(final Map<String, Object> pinMap) {
         String externalURL = null;
         try {
             String path;
@@ -307,75 +311,127 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     /**
      * @return: true: target section was found and only this will be crawler false: failed to find target section - in this case we should
-     *          crawl everything we find
+     *          crawl everything we find </br>
+     *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
      */
     private boolean crawlSections(final Browser ajax, final String targetSectionTitle, final long total_inside_sections_pin_count) throws Exception {
         final String username_and_boardname = new Regex(this.parameter, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
-        ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22board_id%22%3A%22" + board_id + "%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
-        LinkedHashMap<String, Object> json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-        final ArrayList<Object> sections = (ArrayList) JavaScriptEngineFactory.walkJson(json_root, "resource_response/data");
+        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+        postDataOptions.put("isPrefetch", false);
+        postDataOptions.put("board_id", this.board_id);
+        postDataOptions.put("redux_normalize_feed", true);
+        postDataOptions.put("no_fetch_context_on_resource", false);
+        final Map<String, Object> postDataContext = new HashMap<String, Object>();
+        Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("options", postDataOptions);
+        postData.put("context", postDataContext);
         boolean foundTargetSection = false;
-        int sectionCounter = 1;
-        for (final Object sectionO : sections) {
-            if (this.isAbort()) {
-                break;
-            }
-            final String logger_text_sections = "Crawling section " + sectionCounter + " of " + sections.size();
-            logger.info(logger_text_sections);
-            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) sectionO;
-            final String section_title = (String) entries.get("title");
-            final String section_url_title = (String) entries.get("slug");
-            final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
-            final String section_ID = (String) entries.get("id");
-            if (StringUtils.isEmpty(section_title) || section_ID == null || section_total_pin_count == 0) {
-                /* Skip invalid entries and empty sections */
-                continue;
-            }
-            fp.setName(username_and_boardname + " - " + section_title);
-            if (targetSectionTitle != null && !section_url_title.equalsIgnoreCase(targetSectionTitle)) {
-                logger.info("User wants only a specific section --> Skipping unwanted sections");
-                continue;
-            } else if (targetSectionTitle != null && section_url_title.equalsIgnoreCase(targetSectionTitle)) {
-                logger.info("User wants only a specific section --> Found that");
-                foundTargetSection = true;
-                /* Found target section --> Clear previously found items as user only wants to have this section. */
-                decryptedLinks.clear();
-            }
-            int decryptedPinCount = 0;
-            int stepCount = 1;
-            String bookmarks = "";
-            // final String url_section = "https://www.pinterest.com/" + source_url + section_title + "/";
-            ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22section_id%22%3A%22" + section_ID + "%22%2C%22prepend%22%3Afalse%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
-            do {
-                if (this.isAbort()) {
-                    break;
+        int sectionPage = -1;
+        ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)));
+        final int maxSectionsPerPage = 25;
+        sectionPagination: do {
+            sectionPage += 1;
+            logger.info("Crawling sections page: " + (sectionPage + 1));
+            final Map<String, Object> sectionsData = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            // Map<String, Object> json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final List<Object> sections = (ArrayList) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
+            int sectionCounter = 1;
+            sectionLoop: for (final Object sectionO : sections) {
+                // if (true) {
+                // logger.info("Number of sections in this pagination: " + sections.size());
+                // break;
+                // }
+                final Map<String, Object> entries = (Map<String, Object>) sectionO;
+                final String section_title = (String) entries.get("title");
+                final String section_url_title = (String) entries.get("slug");
+                final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
+                final String sectionID = (String) entries.get("id");
+                if (StringUtils.isEmpty(section_title) || sectionID == null || section_total_pin_count == 0) {
+                    /* Skip invalid entries and empty sections */
+                    continue;
                 }
-                logger.info(logger_text_sections + " | Step: " + stepCount + " | Found " + numberof_pins_decrypted_via_current_function + " of " + total_inside_sections_pin_count + " items");
-                if (stepCount > 0) {
-                    ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + bookmarks + "%22%5D%2C%22section_id%22%3A%22" + section_ID + "%22%2C%22prepend%22%3Afalse%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
+                logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
+                fp.setName(username_and_boardname + " - " + section_title);
+                if (targetSectionTitle != null && !section_url_title.equalsIgnoreCase(targetSectionTitle)) {
+                    logger.info("User wants only a specific section --> Skipping unwanted sections");
+                    continue;
+                } else if (targetSectionTitle != null && section_url_title.equalsIgnoreCase(targetSectionTitle)) {
+                    logger.info("User wants only a specific section --> Found that");
+                    foundTargetSection = true;
+                    /* Found target section --> Clear previously found items as user only wants to have this section. */
+                    decryptedLinks.clear();
                 }
-                json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-                bookmarks = (String) JavaScriptEngineFactory.walkJson(json_root, "resource/options/bookmarks/{0}");
-                final ArrayList<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(json_root, "resource_response/data");
-                for (final Object pinO : pins) {
-                    entries = (LinkedHashMap<String, Object>) pinO;
-                    if (!proccessLinkedHashMap(entries, board_id, source_url)) {
-                        break;
+                int decryptedPinCount = 0;
+                int pageCount = 1;
+                /* Single section pagination */
+                // final String url_section = "https://www.pinterest.com/" + source_url + section_title + "/";
+                final int maxPINsPerRequest = 25;
+                final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionsData, "resource/options/bookmarks");
+                final Map<String, Object> pinPaginationPostDataOptions = new HashMap<String, Object>();
+                pinPaginationPostDataOptions.put("isPrefetch", false);
+                pinPaginationPostDataOptions.put("currentFilter", -1);
+                pinPaginationPostDataOptions.put("field_set_key", "react_grid_pin");
+                pinPaginationPostDataOptions.put("is_own_profile_pins", false);
+                pinPaginationPostDataOptions.put("page_size", maxPINsPerRequest);
+                pinPaginationPostDataOptions.put("redux_normalize_feed", true);
+                pinPaginationPostDataOptions.put("section_id", sectionID);
+                pinPaginationPostDataOptions.put("no_fetch_context_on_resource", false);
+                final Map<String, Object> pinPaginationpostDataContext = new HashMap<String, Object>();
+                Map<String, Object> pinPaginationPostData = new HashMap<String, Object>();
+                pinPaginationPostData.put("options", pinPaginationPostDataOptions);
+                pinPaginationPostData.put("context", pinPaginationpostDataContext);
+                ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
+                pinsLoop: do {
+                    logger.info("Section-Page: " + pageCount + " | Found " + numberof_pins_decrypted_via_current_function + " of " + total_inside_sections_pin_count + " items");
+                    final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+                    final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
+                    final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
+                    for (final Object pinO : pins) {
+                        final Map<String, Object> pinMap = (Map<String, Object>) pinO;
+                        if (!proccessMap(pinMap, board_id, source_url)) {
+                            logger.info("Stopping PIN pagination because: Found unprocessable PIN map");
+                            break pinsLoop;
+                        }
+                        decryptedPinCount++;
                     }
-                    decryptedPinCount++;
+                    pageCount++;
+                    if (StringUtils.isEmpty(bookmarks) || bookmarks.equals("-end-")) {
+                        /* Looks as if we've reached the end */
+                        logger.info("Stopping PIN pagination because: Reached end");
+                        break pinsLoop;
+                    } else if (pins.size() < maxPINsPerRequest) {
+                        /* Fail safe */
+                        logger.info("Stopping because: Current page contains less items than: " + maxPINsPerRequest);
+                        break pinsLoop;
+                    } else if (this.isAbort()) {
+                        break sectionPagination;
+                    } else {
+                        pinPaginationPostDataOptions.put("bookmarks", bookmarksO);
+                        /* TODO: Make use of pinPaginationPostData */
+                        ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(bookmarks) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22currentFilter%22%3A-1%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22is_own_profile_pins%22%3Afalse%2C%22page_size%22%3A" + maxPINsPerRequest + "%2C%22redux_normalize_feed%22%3Atrue%2C%22section_id%22%3A%22" + sectionID + "%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
+                    }
+                } while (decryptedPinCount < section_total_pin_count);
+                if (foundTargetSection) {
+                    /* We got what we wanted --> Stop here */
+                    break sectionPagination;
                 }
-                stepCount++;
-                if (bookmarks == null || bookmarks.equals("-end-")) {
-                    /* Looks as if we've reached the end */
-                    break;
-                }
-            } while (decryptedPinCount < section_total_pin_count);
-            if (foundTargetSection) {
-                /* We got what we wanted --> Stop here */
-                break;
+                sectionCounter += 1;
             }
-            sectionCounter++;
-        }
+            // final Object sectionsBookmarksO = JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
+            // final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsBookmarksO, "{0}");
+            final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
+            if (StringUtils.isEmpty(sectionsNextBookmark) || sectionsNextBookmark.equalsIgnoreCase("-end-")) {
+                logger.info("Stopping sections crawling because: Reached end");
+                break sectionPagination;
+            } else if (sections.size() < maxSectionsPerPage) {
+                /* Fail safe */
+                logger.info("Stopping because: Current page contains less than " + maxSectionsPerPage + " items");
+                break sectionPagination;
+            } else {
+                postDataOptions.put("bookmarks", new String[] { sectionsNextBookmark });
+                ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+            }
+        } while (!this.isAbort());
         if (targetSectionTitle != null && foundTargetSection) {
             logger.info("Found targetSection and only added it");
         } else if (targetSectionTitle != null && !foundTargetSection) {
@@ -406,25 +462,25 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         prepAPIBRCrawler(ajax);
         /* This is a prominent point of failure! */
         String json_source_for_crawl_process = getJsonSourceFromHTML(this.br);
-        LinkedHashMap<String, Object> json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
+        Map<String, Object> json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
         final long max_pins_per_board_pagination = 25;
         /*
          * First let's find the board information map and user information map. This is a little bit different depending on whether the user
          * has an account or not.
          */
-        LinkedHashMap<String, Object> boardPageResource;
-        // final LinkedHashMap<String, Object> userResource;
+        Map<String, Object> boardPageResource;
+        // final Map<String, Object> userResource;
         if (loggedIN) {
-            boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
+            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resources/data/BoardPageResource/{0}/data");
             if (boardPageResource == null) {
                 /* 2020-10-12 */
-                boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "boards/content/{0}");
+                boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "boards/content/{0}");
             }
-            // userResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root,
+            // userResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root,
             // "resources/data/UserResource/{0}/data");
         } else {
-            boardPageResource = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resourceResponses/{0}/response/data");
-            // userResource = (LinkedHashMap<String, Object>) boardPageResource.get("owner");
+            boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json_root, "resourceResponses/{0}/response/data");
+            // userResource = (Map<String, Object>) boardPageResource.get("owner");
         }
         board_id = (String) boardPageResource.get("id");
         if (StringUtils.isEmpty(board_id)) {
@@ -444,7 +500,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         /*
          * Sections are like folders. Now find all the PINs that are not in any sections (it may happen that we already have everything at
          * this stage!) Only decrypt these leftover PINs if either the user did not want to have a specified section only or if he wanted to
-         * have a specified section only but it could not be found.
+         * have a specified section only but we failed to find that.
          */
         /*
          * 2018-12-11: Anonymous users officially cannot see sections even if they exist but we can crawl them the same way we do for
@@ -462,7 +518,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             logger.info("Found target section --> Done");
             return;
         } else {
-            logger.info("Failed to find target section --> Crawling ALL (remaining) items");
+            logger.info("Failed to find target section --> Crawling ALL (remaining) items -> Loose PINs");
         }
         /* TODO: Remove this dangerous public variable */
         numberof_pins_decrypted_via_current_function = 0;
@@ -500,211 +556,203 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (loggedIN || force_api_usage) {
             String nextbookmark = null;
             /* First, get the first 25 pictures from their site. */
-            int i = 0;
+            int i = -1;
             do {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return;
-                    }
+                i++;
+                /*
+                 * 2017-07-19: First round does not necessarily have to contain items but we look for them anyways - then we'll enter this
+                 * ajax mode.
+                 */
+                if (i > 0) {
                     /*
-                     * 2017-07-19: First round does not necessarily have to contain items but we look for them anyways - then we'll enter
-                     * this ajax mode.
+                     * 2017-07-19: When loggedIN, first batch of results gets loaded via ajax as well so we will only abort if we still got
+                     * 0 items after 2 loops.
                      */
-                    if (i > 0) {
+                    if (i > 1 && dupeList.isEmpty()) {
                         /*
-                         * 2017-07-19: When loggedIN, first batch of results gets loaded via ajax as well so we will only abort if we still
-                         * got 0 items after 2 loops.
+                         * 2017-07-18: It can actually happen that according to the website, one or more PIN items are available but
+                         * actually nothing is available ...
                          */
-                        if (i > 1 && dupeList.isEmpty()) {
-                            /*
-                             * 2017-07-18: It can actually happen that according to the website, one or more PIN items are available but
-                             * actually nothing is available ...
-                             */
-                            logger.info("Failed to find any entry - either wrong URL, broken website or (low chance) plugin issue");
-                            return;
-                        } else if (board_id == null) {
-                            logger.warning("board_id = null --> Failed to grab more than the first batch of items");
-                            break;
+                        logger.info("Failed to find any entry - either wrong URL, broken website or (low chance) plugin issue");
+                        return;
+                    } else if (board_id == null) {
+                        logger.warning("board_id = null --> Failed to grab more than the first batch of items");
+                        break;
+                    }
+                    if (nextbookmark != null) {
+                        /*
+                         * This is a static value and yes, it really is something like a bookmark. If the process stops at a specified value
+                         * we can easily find the original request via browser. Like pagination just unnecessarily more complicated.
+                         */
+                        logger.info("Current 'nextbookmark' value: " + nextbookmark);
+                    }
+                    /* not required. */
+                    final String module = ""; // "&module_path=App%3ENags%3EUnauthBanner%3EUnauthHomePage%3ESignupForm%3EUserRegister(wall_class%3DdarkWall%2C+container%3Dinspired_banner%2C+show_personalize_field%3Dfalse%2C+next%3Dnull%2C+force_disable_autofocus%3Dnull%2C+is_login_form%3Dnull%2C+show_business_signup%3Dnull%2C+auto_follow%3Dnull%2C+register%3Dtrue)";
+                    final String getpage;
+                    if (loggedIN) {
+                        if (i == 1) {
+                            /* First ajax request --> No "nextbookmark" value required */
+                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                        } else {
+                            if (nextbookmark == null) {
+                                logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
+                                break;
+                            }
+                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22access%22%3A%5B%5D%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                         }
-                        if (nextbookmark != null) {
-                            /*
-                             * This is a static value and yes, it really is something like a bookmark. If the process stops at a specified
-                             * value we can easily find the original request via browser. Like pagination just unnecessarily more
-                             * complicated.
-                             */
-                            logger.info("Current 'nextbookmark' value: " + nextbookmark);
-                        }
-                        /* not required. */
-                        final String module = ""; // "&module_path=App%3ENags%3EUnauthBanner%3EUnauthHomePage%3ESignupForm%3EUserRegister(wall_class%3DdarkWall%2C+container%3Dinspired_banner%2C+show_personalize_field%3Dfalse%2C+next%3Dnull%2C+force_disable_autofocus%3Dnull%2C+is_login_form%3Dnull%2C+show_business_signup%3Dnull%2C+auto_follow%3Dnull%2C+register%3Dtrue)";
-                        final String getpage;
-                        if (loggedIN) {
+                    } else {
+                        if (decryptAllImagesOfUser) {
                             if (i == 1) {
                                 /* First ajax request --> No "nextbookmark" value required */
-                                getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                             } else {
                                 if (nextbookmark == null) {
                                     logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                     break;
                                 }
-                                getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22access%22%3A%5B%5D%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                             }
                         } else {
-                            if (decryptAllImagesOfUser) {
-                                if (i == 1) {
-                                    /* First ajax request --> No "nextbookmark" value required */
-                                    getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                            /* Without account, nextbookmark value is always required even for the first ajax request. */
+                            if (i == 1) {
+                                if (nextbookmark == null) {
+                                    logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
+                                    break;
                                 } else {
-                                    if (nextbookmark == null) {
-                                        logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
-                                        break;
-                                    }
-                                    getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 }
                             } else {
-                                /* Without account, nextbookmark value is always required even for the first ajax request. */
-                                if (i == 1) {
-                                    if (nextbookmark == null) {
-                                        logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
-                                        break;
-                                    } else {
-                                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                                    }
+                                if (nextbookmark != null) {
+                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 } else {
-                                    if (nextbookmark != null) {
-                                        getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                                    } else {
-                                        getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
-                                    }
+                                    getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 }
                             }
                         }
-                        /*
-                         * Access URL - retry on error so that the crawl process of a large gallery does not top in the middle just because
-                         * the server f*cks it up one time.
-                         */
-                        int failcounter_http_5034 = 0;
-                        /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
-                        do {
-                            if (this.isAbort()) {
-                                logger.info("Decryption aborted by user: " + parameter);
-                                return;
-                            }
-                            if (failcounter_http_5034 > 0) {
-                                logger.info("503/504 error retry " + failcounter_http_5034);
-                                this.sleep(5000, param);
-                            }
-                            ajax.getPage(getpage);
-                            failcounter_http_5034++;
-                        } while ((ajax.getHttpConnection().getResponseCode() == 504 || ajax.getHttpConnection().getResponseCode() == 503) && failcounter_http_5034 <= 4);
-                        if (!ajax.getRequest().getHttpConnection().isOK()) {
-                            throw new IOException("Invalid responseCode " + ajax.getRequest().getHttpConnection().getResponseCode());
+                    }
+                    /*
+                     * Access URL - retry on error so that the crawl process of a large gallery does not top in the middle just because the
+                     * server f*cks it up one time.
+                     */
+                    int failcounter_http_5034 = 0;
+                    /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
+                    do {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user: " + parameter);
+                            return;
                         }
-                        json_source_for_crawl_process = ajax.toString();
-                    }
-                    json_root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
-                    LinkedHashMap<String, Object> entries = null;
-                    final LinkedHashMap<String, Object> resource_response = (LinkedHashMap<String, Object>) json_root.get("resource_response");
-                    ArrayList<Object> pin_list = null;
-                    if (resource_response != null) {
-                        pin_list = (ArrayList) resource_response.get("data");
-                    }
-                    /* 2018-12-11: Eventually outdated */
-                    ArrayList<Object> resource_data_list = (ArrayList) json_root.get("resource_data_cache");
-                    // if (resource_data_list == null) {
-                    // /*
-                    // * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the
-                    // * API.
-                    // */
-                    // resource_data_list = (ArrayList) json_root.get("resourceDataCache");
-                    // if (resource_data_list == null) {
-                    // final Map<String, Map<String, Object>> reactBoardFeedResource = (Map<String, Map<String, Object>>)
-                    // JavaScriptEngineFactory.walkJson(json_root, "resources/data/ReactBoardFeedResource/");
-                    // if (reactBoardFeedResource != null) {
-                    // pin_list = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(reactBoardFeedResource.values().iterator().next(),
-                    // "data/board_feed");
-                    // }
-                    // }
-                    // }
-                    // /* Find correct list of PINs */
-                    // if (pin_list == null && resource_data_list != null) {
-                    // for (Object o : resource_data_list) {
-                    // entries = (LinkedHashMap<String, Object>) o;
-                    // o = entries.get("data");
-                    // if (o != null && o instanceof ArrayList) {
-                    // resource_data_list = (ArrayList) o;
-                    // if (numberof_pins >= max_pins_per_page_new && resource_data_list.size() != max_pins_per_page_new) {
-                    // /*
-                    // * If we have more pins then pins per page we should at lest have as much as max_entries_per_page_free
-                    // * pins (on the first page)!
-                    // */
-                    // continue;
-                    // }
-                    // pin_list = resource_data_list;
-                    // break;
-                    // }
-                    // }
-                    // }
-                    if (pin_list == null) {
-                        /* Final fallback - RegEx the pin-array --> Json parser */
-                        String pin_list_json_source;
-                        if (i == 0) {
-                            /* RegEx json from jsom html from first page */
-                            pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"children\"").getMatch(0);
-                            if (pin_list_json_source == null) {
-                                pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
-                            }
-                        } else {
-                            /* RegEx json from ajax response > 1 page */
-                            pin_list_json_source = new Regex(json_source_for_crawl_process, "\"resource_response\".*?\"data\"\\s*?:\\s*?(\\[.+),\\s*?\"error\"").getMatch(0);
+                        if (failcounter_http_5034 > 0) {
+                            logger.info("503/504 error retry " + failcounter_http_5034);
+                            this.sleep(5000, param);
                         }
-                        if (pin_list_json_source != null) {
-                            pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
-                        }
+                        ajax.getPage(getpage);
+                        failcounter_http_5034++;
+                    } while ((ajax.getHttpConnection().getResponseCode() == 504 || ajax.getHttpConnection().getResponseCode() == 503) && failcounter_http_5034 <= 4);
+                    if (!ajax.getRequest().getHttpConnection().isOK()) {
+                        throw new IOException("Invalid responseCode " + ajax.getRequest().getHttpConnection().getResponseCode());
                     }
-                    final long before = dupeList.size();
-                    if (pin_list != null) {
-                        for (final Object pint : pin_list) {
-                            final LinkedHashMap<String, Object> single_pinterest_data = (LinkedHashMap<String, Object>) pint;
-                            proccessLinkedHashMap(single_pinterest_data, board_id, source_url);
-                        }
-                    } else {
-                        processPinsKamikaze(json_root, board_id, source_url);
-                    }
-                    final boolean changed = dupeList.size() - before != 0;
-                    /* 2019-01-29: We should always find our 'nextbookmark' value here on first try! */
-                    nextbookmark = (String) JavaScriptEngineFactory.walkJson(json_root, "resource/options/bookmarks/{0}");
-                    if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
-                        /* Fallback to RegEx */
-                        nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
-                        if (nextbookmark == null) {
-                            nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
-                        }
-                        if (nextbookmark == null) {
-                            /* 2018-12-11: New for /BoardRelatedPixieFeedResource/ */
-                            nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmark\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
-                        }
-                    }
-                    logger.info(i + ":" + nextbookmark);
-                    if (i == 0 && numberof_pins_decrypted_via_current_function == 0) {
-                        /* Usually the case when a user owns an account */
-                        logger.info("Found nothing on first run - this means that everything will be crawled via ajax requests and nothing was found inside the json inside the html code");
-                        continue;
-                    } else if (decryptedLinks.size() == 0 && i > 2) {
-                        /* Multiple cycles but no results --> End?! */
-                        logger.info("No PINs found after first run --> We've probably reached the end");
-                        break;
-                    } else {
-                        logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + total_pin_count + " pins (total number may be inaccurate)");
-                    }
-                    if (i > 2 && nextbookmark == null) {
-                        logger.info("Found less than " + max_pins_per_board_pagination + " items in current run --> robably reached the end");
-                        break;
-                    }
-                } finally {
-                    i++;
+                    json_source_for_crawl_process = ajax.toString();
                 }
-            } while (true);
+                json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source_for_crawl_process);
+                Map<String, Object> entries = null;
+                final Map<String, Object> resource_response = (Map<String, Object>) json_root.get("resource_response");
+                List<Object> pin_list = null;
+                if (resource_response != null) {
+                    pin_list = (ArrayList) resource_response.get("data");
+                }
+                /* 2018-12-11: Eventually outdated */
+                List<Object> resource_data_list = (ArrayList) json_root.get("resource_data_cache");
+                // if (resource_data_list == null) {
+                // /*
+                // * Not logged in ? Sometimes needed json is already given in html code! It has minor differences compared to the
+                // * API.
+                // */
+                // resource_data_list = (ArrayList) json_root.get("resourceDataCache");
+                // if (resource_data_list == null) {
+                // final Map<String, Map<String, Object>> reactBoardFeedResource = (Map<String, Map<String, Object>>)
+                // JavaScriptEngineFactory.walkJson(json_root, "resources/data/ReactBoardFeedResource/");
+                // if (reactBoardFeedResource != null) {
+                // pin_list = (List<Object>) JavaScriptEngineFactory.walkJson(reactBoardFeedResource.values().iterator().next(),
+                // "data/board_feed");
+                // }
+                // }
+                // }
+                // /* Find correct list of PINs */
+                // if (pin_list == null && resource_data_list != null) {
+                // for (Object o : resource_data_list) {
+                // entries = (Map<String, Object>) o;
+                // o = entries.get("data");
+                // if (o != null && o instanceof ArrayList) {
+                // resource_data_list = (ArrayList) o;
+                // if (numberof_pins >= max_pins_per_page_new && resource_data_list.size() != max_pins_per_page_new) {
+                // /*
+                // * If we have more pins then pins per page we should at lest have as much as max_entries_per_page_free
+                // * pins (on the first page)!
+                // */
+                // continue;
+                // }
+                // pin_list = resource_data_list;
+                // break;
+                // }
+                // }
+                // }
+                if (pin_list == null) {
+                    /* Final fallback - RegEx the pin-array --> Json parser */
+                    String pin_list_json_source;
+                    if (i == 0) {
+                        /* RegEx json from jsom html from first page */
+                        pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"children\"").getMatch(0);
+                        if (pin_list_json_source == null) {
+                            pin_list_json_source = new Regex(json_source_for_crawl_process, "\"board_feed\"\\s*?:\\s*?(\\[.+),\\s*?\"options\"").getMatch(0);
+                        }
+                    } else {
+                        /* RegEx json from ajax response > 1 page */
+                        pin_list_json_source = new Regex(json_source_for_crawl_process, "\"resource_response\".*?\"data\"\\s*?:\\s*?(\\[.+),\\s*?\"error\"").getMatch(0);
+                    }
+                    if (pin_list_json_source != null) {
+                        pin_list = (ArrayList) JavaScriptEngineFactory.jsonToJavaObject(pin_list_json_source);
+                    }
+                }
+                final long before = dupeList.size();
+                if (pin_list != null) {
+                    for (final Object pint : pin_list) {
+                        final Map<String, Object> single_pinterest_data = (Map<String, Object>) pint;
+                        proccessMap(single_pinterest_data, board_id, source_url);
+                    }
+                } else {
+                    processPinsKamikaze(json_root, board_id, source_url);
+                }
+                final boolean changed = dupeList.size() - before != 0;
+                /* 2019-01-29: We should always find our 'nextbookmark' value here on first try! */
+                nextbookmark = (String) JavaScriptEngineFactory.walkJson(json_root, "resource/options/bookmarks/{0}");
+                if (nextbookmark == null || nextbookmark.equalsIgnoreCase("-end-")) {
+                    /* Fallback to RegEx */
+                    nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\s*?\"([^\"]{6,})\"").getMatch(0);
+                    if (nextbookmark == null) {
+                        nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmarks\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
+                    }
+                    if (nextbookmark == null) {
+                        /* 2018-12-11: New for /BoardRelatedPixieFeedResource/ */
+                        nextbookmark = new Regex(json_source_for_crawl_process, "\"bookmark\"\\s*?:\\[\"([^\"]{6,})\"").getMatch(0);
+                    }
+                }
+                logger.info(i + ":" + nextbookmark);
+                if (i == 0 && numberof_pins_decrypted_via_current_function == 0) {
+                    /* Usually the case when a user owns an account */
+                    logger.info("Found nothing on first run - this means that everything will be crawled via ajax requests and nothing was found inside the json inside the html code");
+                    continue;
+                } else if (decryptedLinks.size() == 0 && i > 2) {
+                    /* Multiple cycles but no results --> End?! */
+                    logger.info("No PINs found after first run --> We've probably reached the end");
+                    break;
+                } else {
+                    logger.info("Decrypted " + numberof_pins_decrypted_via_current_function + " of " + total_pin_count + " pins (total number may be inaccurate)");
+                }
+                if (i > 2 && nextbookmark == null) {
+                    logger.info("Found less than " + max_pins_per_board_pagination + " items in current run --> robably reached the end");
+                    break;
+                }
+            } while (!this.isAbort());
         } else {
             decryptSite();
             if (total_pin_count > max_entries_per_page_free) {
@@ -734,21 +782,21 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return json_source_from_html;
     }
 
-    private boolean proccessLinkedHashMap(LinkedHashMap<String, Object> single_pinterest_data, final String board_id, final String source_url) throws PluginException {
+    private boolean proccessMap(Map<String, Object> single_pinterest_data, final String board_id, final String source_url) throws PluginException {
         final String type = getStringFromJson(single_pinterest_data, "type");
         if (type == null || !(type.equals("pin") || type.equals("interest"))) {
             /* Skip invalid objects! */
             return false;
         }
-        final LinkedHashMap<String, Object> single_pinterest_pinner = (LinkedHashMap<String, Object>) single_pinterest_data.get("pinner");
-        final LinkedHashMap<String, Object> single_pinterest_images = (LinkedHashMap<String, Object>) single_pinterest_data.get("images");
-        LinkedHashMap<String, Object> single_pinterest_images_original = null;
+        final Map<String, Object> single_pinterest_pinner = (Map<String, Object>) single_pinterest_data.get("pinner");
+        final Map<String, Object> single_pinterest_images = (Map<String, Object>) single_pinterest_data.get("images");
+        Map<String, Object> single_pinterest_images_original = null;
         if (single_pinterest_images != null) {
-            single_pinterest_images_original = (LinkedHashMap<String, Object>) single_pinterest_images.get("orig");
+            single_pinterest_images_original = (Map<String, Object>) single_pinterest_images.get("orig");
         }
         final Object usernameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("username") : null;
         // final Object pinner_nameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("full_name") : null;
-        LinkedHashMap<String, Object> tempmap = null;
+        Map<String, Object> tempmap = null;
         String directlink = null;
         if (single_pinterest_images_original != null) {
             /* Original image available --> Take that */
@@ -759,7 +807,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final Iterator<Entry<String, Object>> it = single_pinterest_images.entrySet().iterator();
                 while (it.hasNext()) {
                     final Entry<String, Object> ipentry = it.next();
-                    tempmap = (LinkedHashMap<String, Object>) ipentry.getValue();
+                    tempmap = (Map<String, Object>) ipentry.getValue();
                     /* First image = highest (but original is somewhere 'in the middle') */
                     break;
                 }
@@ -810,7 +858,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     /* Wrapper which either returns object as String or (e.g. it is missing or different datatype), null. */
-    private String getStringFromJson(final LinkedHashMap<String, Object> entries, final String key) {
+    private String getStringFromJson(final Map<String, Object> entries, final String key) {
         final String output;
         final Object jsono = entries.get(key);
         if (jsono != null && jsono instanceof String) {
@@ -844,10 +892,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      */
     @SuppressWarnings("unchecked")
     private void processPinsKamikaze(final Object jsono, final String board_id, final String source_url) throws PluginException {
-        LinkedHashMap<String, Object> test;
-        if (jsono instanceof LinkedHashMap) {
-            test = (LinkedHashMap<String, Object>) jsono;
-            if (!proccessLinkedHashMap(test, board_id, source_url)) {
+        Map<String, Object> test;
+        if (jsono instanceof Map) {
+            test = (Map<String, Object>) jsono;
+            if (!proccessMap(test, board_id, source_url)) {
                 final Iterator<Entry<String, Object>> it = test.entrySet().iterator();
                 while (it.hasNext()) {
                     final Entry<String, Object> thisentry = it.next();
@@ -856,7 +904,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 }
             }
         } else if (jsono instanceof ArrayList) {
-            ArrayList<Object> ressourcelist = (ArrayList<Object>) jsono;
+            final List<Object> ressourcelist = (List<Object>) jsono;
             for (final Object listo : ressourcelist) {
                 processPinsKamikaze(listo, board_id, source_url);
             }

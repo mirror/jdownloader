@@ -582,17 +582,22 @@ public class UpToBoxCom extends antiDDoSForHost {
              * 2021-02-18: E.g. for high waittimes, token is not given {"statusCode":16,"message":"Waiting
              * needed","data":{"waiting":125,"waitingToken":null}}
              */
+            final int statusCode = ((Number) entries.get("statusCode")).intValue();
+            if (statusCode != 16) {
+                /* Unexpected statuscode -> Check for errors */
+                this.checkErrorsAPI(link, account);
+            }
             entries = (Map<String, Object>) entries.get("data");
             final String waitingToken = (String) entries.get("waitingToken");
-            if (waitingToken != null || entries.containsKey("waiting")) {
+            if (!StringUtils.isEmpty(waitingToken)) {
+                /* Waittime is usually only present in free -account mode, not in premium. */
                 final int waitSeconds = ((Number) entries.get("waiting")).intValue();
-                /* Waittime is usually only present in free (-account) mode. */
                 /* Waittime too high? Temp. disable account until nex downloads is possible. */
-                if (waitSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT || StringUtils.isEmpty(waitingToken)) {
+                if (waitSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
                     throw new AccountUnavailableException("Download limit reached", waitSeconds * 1001l);
                 }
                 /* 2020-04-16: Add 2 extra wait seconds otherwise download may fail */
-                this.sleep((waitSeconds + 2) * 1001, link);
+                this.sleep((waitSeconds + 2) * 1000, link);
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
@@ -842,6 +847,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             case 2:
                 invalidLogin();
             case 5:
+                /* Premium account required to download this file */
                 throw new AccountRequiredException(errorMsg);
             case 7:
                 /*
@@ -855,6 +861,14 @@ public class UpToBoxCom extends antiDDoSForHost {
             case 13:
                 /* "Invalid token" --> Permanently disable account */
                 invalidLogin();
+            case 39:
+                /* Waittime between multiple (free account) downloads -> Temp. disable account */
+                long waitSeconds = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "data/waiting"), 0);
+                if (waitSeconds <= 0) {
+                    /* Fallback (should not be needed) */
+                    waitSeconds = 5 * 60;
+                }
+                throw new AccountUnavailableException(errorMsg, waitSeconds * 1000l);
             case api_responsecode_password_required_or_wrong:
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
