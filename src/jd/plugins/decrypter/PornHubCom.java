@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -262,9 +263,16 @@ public class PornHubCom extends PluginForDecrypt {
                 if (paidVideosSection != null) {
                     // /videos/premium contains paid/available premium videos while
                     // /videos/paid contains all un-paid videos
-                    final Browser brc = br.cloneBrowser();
-                    jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/premium"));
-                    decryptAllVideosOf(brc, account, dupes);
+                    if (br.containsHTML(Pattern.quote(new URL(br.getURL() + "/paid").getPath()))) {
+                        final Browser brc = br.cloneBrowser();
+                        jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/paid"));
+                        decryptAllVideosOf(brc, account, dupes);
+                    }
+                    if (br.containsHTML(Pattern.quote(new URL(br.getURL() + "/premium").getPath()))) {
+                        final Browser brc = br.cloneBrowser();
+                        jd.plugins.hoster.PornHubCom.getPage(brc, brc.createGetRequest(br.getURL() + "/premium"));
+                        decryptAllVideosOf(brc, account, dupes);
+                    }
                 }
                 final String fanVideosSection = findVideoSection(br, "fanVideosSection");// /videos/fanonly
                 if (false && fanVideosSection != null) {
