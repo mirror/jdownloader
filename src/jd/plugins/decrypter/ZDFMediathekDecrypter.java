@@ -220,7 +220,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return allDownloadLinks;
         }
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
-        Map<String, Object> entries_2 = null;
+        Map<String, Object> entries2 = null;
         final String contentType = (String) entries.get("contentType");
         String title = (String) entries.get("title");
         if (StringUtils.isEmpty(title)) {
@@ -233,10 +233,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         // final Object hasVideoo = entries.get("hasVideo");
         // final boolean hasVideo = hasVideoo != null && hasVideoo instanceof Boolean ? ((Boolean) entries.get("hasVideo")).booleanValue() :
         // false;
-        entries_2 = (Map<String, Object>) entries.get("http://zdf.de/rels/brand");
-        final String tv_show = entries_2 != null ? (String) entries_2.get("title") : null;
-        entries_2 = (Map<String, Object>) entries.get("mainVideoContent");
-        if (entries_2 == null) {
+        entries2 = (Map<String, Object>) entries.get("http://zdf.de/rels/brand");
+        entries2 = (Map<String, Object>) entries.get("mainVideoContent");
+        if (entries2 == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
             logger.info("Content is not a video --> Scanning html for embedded content");
             final ArrayList<DownloadLink> results = crawlEmbeddedUrlsZdfNew();
@@ -245,9 +244,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             return results;
         }
-        entries_2 = (Map<String, Object>) entries_2.get("http://zdf.de/rels/target");
-        final String player_url_template = (String) entries_2.get("http://zdf.de/rels/streams/ptmd-template");
-        String internal_videoid = (String) JavaScriptEngineFactory.walkJson(entries_2, "streams/default/extId");
+        entries2 = (Map<String, Object>) entries2.get("http://zdf.de/rels/target");
+        final String tv_show = (String) entries2.get("title");
+        entries2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries2, "streams/default");
+        final String player_url_template = (String) entries2.get("http://zdf.de/rels/streams/ptmd-template");
+        String internal_videoid = (String) entries2.get("extId");
         if (StringUtils.isEmpty(player_url_template)) {
             allDownloadLinks.add(this.createOfflinelink(this.PARAMETER_ORIGINAL, "NO_DOWNLOADABLE_CONTENT"));
             return allDownloadLinks;
@@ -490,13 +491,13 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* http mp4- and segment streams. */
                     ext = "mp4";
                 }
-                final String cdn = (String) entries.get("cdn");
                 final String language = (String) entries.get("language");
                 String uri = (String) entries.get("uri");
-                if (StringUtils.isEmpty(cdn) || StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
+                if (StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
                     /* Skip invalid objects */
                     continue;
                 }
+                final String cdn = (String) entries.get("cdn");
                 final long filesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), 0);
                 final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
                 String finalDownloadURL;
