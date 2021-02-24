@@ -39,6 +39,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -114,6 +115,10 @@ public class ArchiveOrg extends PluginForDecrypt {
             } finally {
                 con.disconnect();
             }
+        }
+        if (br.containsHTML("class=\"theatre-title\"|>\\s*You must log in to view this content")) {
+            /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
+            throw new AccountRequiredException();
         }
         /**
          * 2021-02-01: Disabled book crawling because it's not working as intended and "/details/" URLs can also contain embedded pages of

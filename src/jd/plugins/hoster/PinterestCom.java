@@ -16,7 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -84,7 +84,7 @@ public class PinterestCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         dllink = checkDirectLink(link, "free_directlink");
-        LinkedHashMap<String, Object> pinMap = null;
+        Map<String, Object> pinMap = null;
         boolean loggedIN = false;
         if (dllink == null) {
             final String source_url = link.getStringProperty("source_url", null);
