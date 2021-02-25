@@ -59,9 +59,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private static final boolean    force_api_usage                              = true;
     private ArrayList<DownloadLink> decryptedLinks                               = null;
     private ArrayList<String>       dupeList                                     = new ArrayList<String>();
-    private String                  parameter                                    = null;
     private String                  source_url                                   = null;
-    private String                  board_id                                     = null;
     private String                  linkpart;
     /* Reset this after every function use e.g. crawlSections --> Reset --> crawlBoardPINs */
     private int                     numberof_pins_decrypted_via_current_function = 0;
@@ -72,7 +70,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private static final int        max_entries_per_page_free                    = 25;
 
     @SuppressWarnings({ "deprecation" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
@@ -80,31 +78,31 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         enable_crawl_alternative_URL = hostPlugin.getPluginConfig().getBooleanProperty(jd.plugins.hoster.PinterestCom.ENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS, jd.plugins.hoster.PinterestCom.defaultENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS);
         /* Correct link - remove country related language-subdomains (e.g. 'es.pinterest.com'). */
         linkpart = new Regex(param.toString(), "pinterest\\.[^/]+/(.+)").getMatch(0);
-        parameter = "https://www.pinterest.com/" + linkpart;
-        source_url = new Regex(parameter, "pinterest\\.com(/.+)").getMatch(0);
+        param.setCryptedUrl("https://www.pinterest.com/" + linkpart);
+        source_url = new Regex(param.getCryptedUrl(), "pinterest\\.com(/.+)").getMatch(0);
         fp = FilePackage.getInstance();
         br.setFollowRedirects(true);
-        if (parameter.matches(unsupported_urls)) {
-            decryptedLinks.add(getOffline(parameter));
+        if (param.getCryptedUrl().matches(unsupported_urls)) {
+            decryptedLinks.add(getOffline(param.getCryptedUrl()));
             return decryptedLinks;
         }
         /* Sometimes html can be very big */
         br.setLoadLimit(br.getLoadLimit() * 4);
         loggedIN = getUserLogin(false);
-        if (new Regex(this.parameter, ".+/pin/.+").matches()) {
-            parseSinglePIN();
+        if (new Regex(param.getCryptedUrl(), ".+/pin/.+").matches()) {
+            parseSinglePIN(param);
         } else {
             crawlBoardPINs(param);
         }
         return decryptedLinks;
     }
 
-    private void parseSinglePIN() throws Exception {
-        final DownloadLink singlePIN = this.createPINDownloadUrl(this.parameter);
-        final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(this.parameter);
+    private void parseSinglePIN(final CryptedLink param) throws Exception {
+        final DownloadLink singlePIN = this.createPINDownloadUrl(param.getCryptedUrl());
+        final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(param.getCryptedUrl());
         if (enable_crawl_alternative_URL) {
             try {
-                final Map<String, Object> pinMap = findPINMap(this.br, this.loggedIN, this.parameter, null, null, null);
+                final Map<String, Object> pinMap = findPINMap(this.br, this.loggedIN, param.getCryptedUrl(), null, null, null);
                 setInfoOnDownloadLink(this.br, singlePIN, pinMap, null, loggedIN);
                 final String externalURL = getAlternativeExternalURLInPINMap(pinMap);
                 if (externalURL != null) {
@@ -314,18 +312,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      *          crawl everything we find </br>
      *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
      */
-    private boolean crawlSections(final Browser ajax, final String targetSectionSlug, final long totalInsideSectionsPinCount) throws Exception {
-        final String username_and_boardname = new Regex(this.parameter, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
+    private void crawlSections(final CryptedLink param, final Browser ajax, final String boardID, final long totalInsideSectionsPinCount) throws Exception {
+        final String username_and_boardname = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
         final Map<String, Object> postDataOptions = new HashMap<String, Object>();
         postDataOptions.put("isPrefetch", false);
-        postDataOptions.put("board_id", this.board_id);
+        postDataOptions.put("board_id", boardID);
         postDataOptions.put("redux_normalize_feed", true);
         postDataOptions.put("no_fetch_context_on_resource", false);
         final Map<String, Object> postDataContext = new HashMap<String, Object>();
         Map<String, Object> postData = new HashMap<String, Object>();
         postData.put("options", postDataOptions);
         postData.put("context", postDataContext);
-        boolean foundTargetSection = false;
         int sectionPage = -1;
         ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)));
         final int maxSectionsPerPage = 25;
@@ -336,14 +333,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             // Map<String, Object> json_root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             final List<Object> sections = (ArrayList) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
             int sectionCounter = 1;
-            sectionLoop: for (final Object sectionO : sections) {
-                // if (true) {
-                // logger.info("Number of sections in this pagination: " + sections.size());
-                // break;
-                // }
+            for (final Object sectionO : sections) {
                 final Map<String, Object> entries = (Map<String, Object>) sectionO;
                 final String section_title = (String) entries.get("title");
-                final String section_url_title = (String) entries.get("slug");
+                // final String sectionSlug = (String) entries.get("slug");
                 final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
                 final String sectionID = (String) entries.get("id");
                 if (StringUtils.isEmpty(section_title) || sectionID == null || section_total_pin_count == 0) {
@@ -352,73 +345,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 }
                 logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
                 fp.setName(username_and_boardname + " - " + section_title);
-                if (targetSectionSlug != null && !section_url_title.equalsIgnoreCase(targetSectionSlug)) {
-                    logger.info("User wants only a specific section --> Skipping unwanted sections");
-                    continue;
-                } else if (targetSectionSlug != null && section_url_title.equalsIgnoreCase(targetSectionSlug)) {
-                    logger.info("User wants only a specific section --> Found that");
-                    foundTargetSection = true;
-                    /* Found target section --> Clear previously found items as user only wants to have this section. */
-                    decryptedLinks.clear();
-                }
-                int decryptedPinCount = 0;
-                int pageCount = 1;
-                /* Single section pagination */
-                // final String url_section = "https://www.pinterest.com/" + source_url + section_title + "/";
-                final int maxPINsPerRequest = 25;
-                final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionsData, "resource/options/bookmarks");
-                final Map<String, Object> pinPaginationPostDataOptions = new HashMap<String, Object>();
-                pinPaginationPostDataOptions.put("isPrefetch", false);
-                pinPaginationPostDataOptions.put("currentFilter", -1);
-                pinPaginationPostDataOptions.put("field_set_key", "react_grid_pin");
-                pinPaginationPostDataOptions.put("is_own_profile_pins", false);
-                pinPaginationPostDataOptions.put("page_size", maxPINsPerRequest);
-                pinPaginationPostDataOptions.put("redux_normalize_feed", true);
-                pinPaginationPostDataOptions.put("section_id", sectionID);
-                pinPaginationPostDataOptions.put("no_fetch_context_on_resource", false);
-                final Map<String, Object> pinPaginationpostDataContext = new HashMap<String, Object>();
-                Map<String, Object> pinPaginationPostData = new HashMap<String, Object>();
-                pinPaginationPostData.put("options", pinPaginationPostDataOptions);
-                pinPaginationPostData.put("context", pinPaginationpostDataContext);
-                ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
-                pinsLoop: do {
-                    logger.info("Section-Page: " + pageCount + " | Found " + numberof_pins_decrypted_via_current_function + " of " + totalInsideSectionsPinCount + " items");
-                    final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
-                    final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
-                    final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
-                    for (final Object pinO : pins) {
-                        final Map<String, Object> pinMap = (Map<String, Object>) pinO;
-                        if (!proccessMap(pinMap, board_id, source_url)) {
-                            logger.info("Stopping PIN pagination because: Found unprocessable PIN map");
-                            break pinsLoop;
-                        }
-                        decryptedPinCount++;
-                    }
-                    pageCount++;
-                    if (StringUtils.isEmpty(bookmarks) || bookmarks.equals("-end-")) {
-                        /* Looks as if we've reached the end */
-                        logger.info("Stopping PIN pagination because: Reached end");
-                        break pinsLoop;
-                    } else if (pins.size() < maxPINsPerRequest) {
-                        /* Fail safe */
-                        logger.info("Stopping because: Current page contains less items than: " + maxPINsPerRequest);
-                        break pinsLoop;
-                    } else if (this.isAbort()) {
-                        break sectionPagination;
-                    } else {
-                        pinPaginationPostDataOptions.put("bookmarks", bookmarksO);
-                        /* TODO: Make use of pinPaginationPostData */
-                        ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(bookmarks) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22currentFilter%22%3A-1%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22is_own_profile_pins%22%3Afalse%2C%22page_size%22%3A" + maxPINsPerRequest + "%2C%22redux_normalize_feed%22%3Atrue%2C%22section_id%22%3A%22" + sectionID + "%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
-                    }
-                } while (decryptedPinCount < section_total_pin_count);
-                if (foundTargetSection) {
-                    /* We got what we wanted --> Stop here */
+                crawlSection(ajax, boardID, sectionID);
+                sectionCounter += 1;
+                if (this.isAbort()) {
                     break sectionPagination;
                 }
-                sectionCounter += 1;
             }
-            // final Object sectionsBookmarksO = JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
-            // final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsBookmarksO, "{0}");
             final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
             if (StringUtils.isEmpty(sectionsNextBookmark) || sectionsNextBookmark.equalsIgnoreCase("-end-")) {
                 logger.info("Stopping sections crawling because: Reached end");
@@ -432,14 +364,63 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
             }
         } while (!this.isAbort());
-        if (targetSectionSlug != null && foundTargetSection) {
-            logger.info("Found targetSection and only added it");
-        } else if (targetSectionSlug != null && !foundTargetSection) {
-            logger.info("Failed to find targetSection --> Added ALL sections");
-        } else {
-            logger.info("Added ALL sections");
-        }
-        return foundTargetSection;
+        logger.info("Section crawler done");
+        return;
+    }
+
+    private void crawlSection(final Browser ajax, final String boardID, final String sectionID) throws Exception {
+        int decryptedPINCounter = 0;
+        int pageCounter = 1;
+        /* Single section pagination */
+        // final String url_section = "https://www.pinterest.com/" + source_url + section_title + "/";
+        final int maxPINsPerRequest = 25;
+        final Map<String, Object> pinPaginationPostDataOptions = new HashMap<String, Object>();
+        pinPaginationPostDataOptions.put("isPrefetch", false);
+        pinPaginationPostDataOptions.put("currentFilter", -1);
+        pinPaginationPostDataOptions.put("field_set_key", "react_grid_pin");
+        pinPaginationPostDataOptions.put("is_own_profile_pins", false);
+        pinPaginationPostDataOptions.put("page_size", maxPINsPerRequest);
+        pinPaginationPostDataOptions.put("redux_normalize_feed", true);
+        pinPaginationPostDataOptions.put("section_id", sectionID);
+        pinPaginationPostDataOptions.put("no_fetch_context_on_resource", false);
+        final Map<String, Object> pinPaginationpostDataContext = new HashMap<String, Object>();
+        Map<String, Object> pinPaginationPostData = new HashMap<String, Object>();
+        pinPaginationPostData.put("options", pinPaginationPostDataOptions);
+        pinPaginationPostData.put("context", pinPaginationpostDataContext);
+        ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
+        pinsLoop: do {
+            logger.info("Crawling section " + sectionID + " page: " + pageCounter);
+            final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+            final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks");
+            final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
+            final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
+            for (final Object pinO : pins) {
+                final Map<String, Object> pinMap = (Map<String, Object>) pinO;
+                if (!proccessMap(pinMap, boardID, source_url)) {
+                    logger.info("Stopping PIN pagination because: Found unprocessable PIN map");
+                    break pinsLoop;
+                }
+                decryptedPINCounter++;
+            }
+            pageCounter++;
+            if (this.isAbort()) {
+                logger.info("Crawler aborted by user");
+                break;
+            } else if (StringUtils.isEmpty(bookmarks) || bookmarks.equals("-end-") || bookmarksO == null) {
+                /* Looks as if we've reached the end */
+                logger.info("Stopping PIN pagination because: Reached end");
+                break pinsLoop;
+            } else if (pins.size() < maxPINsPerRequest) {
+                /* Fail safe */
+                logger.info("Stopping because: Current page contains less items than: " + maxPINsPerRequest);
+                break pinsLoop;
+            } else {
+                pinPaginationPostDataOptions.put("bookmarks", bookmarksO);
+                /* TODO: Make use of pinPaginationPostData */
+                ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(bookmarks) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22currentFilter%22%3A-1%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22is_own_profile_pins%22%3Afalse%2C%22page_size%22%3A" + maxPINsPerRequest + "%2C%22redux_normalize_feed%22%3Atrue%2C%22section_id%22%3A%22" + sectionID + "%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
+            }
+        } while (true);
+        logger.info("Number of PINs in current section: " + decryptedPINCounter);
     }
 
     private void crawlBoardPINs(final CryptedLink param) throws Exception {
@@ -447,14 +428,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * In case the user wants to add a specific section, we have to get to the section overview --> Find sectionID --> Finally crawl
          * section PINs
          */
-        final String targetSectionSlug = new Regex(this.parameter, "https?://[^/]+/[^/]+/[^/]+/([^/]+)").getMatch(0);
+        final String targetSectionSlug = new Regex(param.getCryptedUrl(), "https?://[^/]+/[^/]+/[^/]+/([^/]+)").getMatch(0);
+        final String sourceURL;
         if (targetSectionSlug != null) {
             /* Remove targetSection from URL as we cannot use it in this way. */
-            parameter = parameter.replace(targetSectionSlug + "/", "");
+            sourceURL = param.getCryptedUrl().replaceAll(org.appwork.utils.Regex.escape(targetSectionSlug) + "/?", "");
+        } else {
+            sourceURL = param.getCryptedUrl();
         }
-        br.getPage(parameter);
+        br.getPage(sourceURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(getOffline(parameter));
+            decryptedLinks.add(getOffline(param.getCryptedUrl()));
             return;
         }
         /* referrer should always be of the first request! */
@@ -482,8 +466,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resourceResponses/{0}/response/data");
             // userResource = (Map<String, Object>) boardPageResource.get("owner");
         }
-        this.board_id = (String) boardPageResource.get("id");
-        if (StringUtils.isEmpty(board_id)) {
+        final String boardID = (String) boardPageResource.get("id");
+        if (StringUtils.isEmpty(boardID)) {
             logger.warning("Failed to find board_id");
             return;
         }
@@ -507,23 +491,16 @@ public class PinterestComDecrypter extends PluginForDecrypt {
          * loggedIN users. Disable this if it is not possible anymore to crawl them.
          */
         final boolean enableSectionCrawlerForNOTLoggedinUsers = true;
-        final boolean foundTargetSection;
-        /* TODO: Add dedicated function for single section crawling! */
-        // if (targetSectionSlug != null) {
-        // final String targetSectionID = this.findSectionID(jsonRoot, targetSectionSlug);
-        // logger.info("Found sectionID: " + targetSectionID);
-        // }
-        if (section_count > 0 && (loggedIN || (!loggedIN && enableSectionCrawlerForNOTLoggedinUsers))) {
-            logger.info("Expecting to find sections: " + section_count);
-            foundTargetSection = this.crawlSections(ajax.cloneBrowser(), targetSectionSlug, total_inside_sections_pin_count);
-        } else {
-            foundTargetSection = false;
-        }
-        if (foundTargetSection) {
-            logger.info("Found target section --> Done");
-            return;
-        } else {
-            logger.info("Failed to find target section --> Crawling ALL (remaining) items -> Loose PINs");
+        final boolean allowSectionCrawling = (loggedIN || (!loggedIN && enableSectionCrawlerForNOTLoggedinUsers));
+        if (targetSectionSlug != null && allowSectionCrawling) {
+            final String targetSectionID = this.findSectionID(jsonRoot, targetSectionSlug);
+            if (targetSectionID == null) {
+                logger.info("Failed to crawl user desired section -> Crawling sectionless PINs only...");
+            } else {
+                this.crawlSection(ajax.cloneBrowser(), boardID, targetSectionID);
+            }
+        } else if (section_count > 0 && allowSectionCrawling) {
+            this.crawlSections(param, ajax.cloneBrowser(), boardID, total_inside_sections_pin_count);
         }
         /* TODO: Remove this dangerous public variable */
         numberof_pins_decrypted_via_current_function = 0;
@@ -539,7 +516,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         if (totalPinCount == 0 && number_of_decrypted_pins_in_sections == 0) {
             /* No items at all available */
-            decryptedLinks.add(getOffline(parameter));
+            decryptedLinks.add(getOffline(param.getCryptedUrl()));
             return;
         }
         if (number_of_decrypted_pins_in_sections > 0 && totalPinCount > number_of_decrypted_pins_in_sections) {
@@ -581,7 +558,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                          */
                         logger.info("Failed to find any entry - either wrong URL, broken website or (low chance) plugin issue");
                         return;
-                    } else if (board_id == null) {
+                    } else if (boardID == null) {
                         logger.warning("board_id = null --> Failed to grab more than the first batch of items");
                         break;
                     }
@@ -598,25 +575,25 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     if (loggedIN) {
                         if (i == 1) {
                             /* First ajax request --> No "nextbookmark" value required */
-                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%25D1%2581%25D0%25BA%25D0%25B5%25D1%2582%25D1%2587%25D0%25B1%25D1%2583%25D0%25BA%2F%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                         } else {
                             if (nextbookmark == null) {
                                 logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                 break;
                             }
-                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22access%22%3A%5B%5D%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                            getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22access%22%3A%5B%5D%2C%22board_id%22%3A%22" + boardID + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                         }
                     } else {
                         if (decryptAllImagesOfUser) {
                             if (i == 1) {
                                 /* First ajax request --> No "nextbookmark" value required */
-                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                             } else {
                                 if (nextbookmark == null) {
                                     logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                     break;
                                 }
-                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                             }
                         } else {
                             /* Without account, nextbookmark value is always required even for the first ajax request. */
@@ -625,13 +602,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                                     logger.info("Failed to find nextbookmark --> Cannot grab more items --> Stopping");
                                     break;
                                 } else {
-                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 }
                             } else {
                                 if (nextbookmark != null) {
-                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                    getpage = "/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22bookmarks%22%3A%5B%22" + Encoding.urlEncode(nextbookmark) + "%3D%3D%22%5D%2C%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22board_url%22%3A%22" + Encoding.urlEncode(source_url) + "%22%2C%22field_set_key%22%3A%22react_grid_pin%22%2C%22filter_section_pins%22%3Atrue%2C%22layout%22%3A%22default%22%2C%22page_size%22%3A" + max_entries_per_page_free + "%2C%22redux_normalize_feed%22%3Atrue%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 } else {
-                                    getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + board_id + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
+                                    getpage = "/resource/BoardRelatedPixieFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22board_id%22%3A%22" + boardID + "%22%2C%22add_vase%22%3Atrue%2C%22field_set_key%22%3A%22unauth_react%22%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis();
                                 }
                             }
                         }
@@ -644,7 +621,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     /* 2016-11-03: Added retries on HTTP/1.1 503 first byte timeout | HTTP/1.1 504 GATEWAY_TIMEOUT */
                     do {
                         if (this.isAbort()) {
-                            logger.info("Decryption aborted by user: " + parameter);
                             return;
                         }
                         if (failcounter_http_5034 > 0) {
@@ -723,10 +699,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 if (pin_list != null) {
                     for (final Object pint : pin_list) {
                         final Map<String, Object> single_pinterest_data = (Map<String, Object>) pint;
-                        proccessMap(single_pinterest_data, board_id, source_url);
+                        proccessMap(single_pinterest_data, boardID, source_url);
                     }
                 } else {
-                    processPinsKamikaze(jsonRoot, board_id, source_url);
+                    processPinsKamikaze(jsonRoot, boardID, source_url);
                 }
                 final boolean changed = dupeList.size() - before != 0;
                 /* 2019-01-29: We should always find our 'nextbookmark' value here on first try! */
@@ -760,7 +736,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 }
             } while (!this.isAbort());
         } else {
-            decryptSite();
+            decryptSite(param);
             if (totalPinCount > max_entries_per_page_free) {
                 UIOManager.I().showMessageDialog("Please add your pinterest.com account at Settings->Account manager to find more than " + max_entries_per_page_free + " images");
             }
@@ -833,7 +809,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final String username = usernameo != null ? (String) usernameo : null;
         // final String pinner_name = pinner_nameo != null ? (String) pinner_nameo : null;
         if (StringUtils.isEmpty(pin_id) || directlink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dupeList.contains(pin_id)) {
             logger.info("Skipping duplicate: " + pin_id);
@@ -949,14 +924,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    private void decryptSite() {
+    private void decryptSite(final CryptedLink param) {
         /*
          * Also possible using json of P.start.start( to get the first 25 entries: resourceDataCache --> Last[] --> data --> Here we go --->
          * But I consider this as an unsafe method.
          */
         final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)class=\"creditTitle\"").getColumn(0);
         if (linkinfo == null || linkinfo.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             decryptedLinks = null;
             return;
         }
@@ -968,7 +943,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final String directlink = new Regex(sinfo, "\"(https?://[a-z0-9\\.\\-]+/originals/[^<>\"]*?)\"").getMatch(0);
             final String pin_id = new Regex(sinfo, "/pin/([A-Za-z0-9\\-_]+)/").getMatch(0);
             if (pin_id == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
                 decryptedLinks = null;
                 return;
             } else if (dupeList.contains(pin_id)) {
