@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -211,7 +212,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             String timestamp = br.getRegex("name=\"timestamp\" value=\"(\\d+)\"").getMatch(0);
-            final Form dlform = br.getFormbyProperty("id", "downloadform");
+            Form dlform = br.getFormbyProperty("id", "downloadform");
+            if (dlform == null) {
+                /* 2021-02-25: E.g. for single mp3 files */
+                dlform = br.getFormbyProperty("id", "adfreedownload");
+            }
             if (dlform == null) {
                 logger.warning("Failed to find dlform");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -265,6 +270,16 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 if (br.containsHTML("solvemedia\\.com/papi/")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+            } else if (dlform.containsHTML("g-recaptcha-response")) {
+                /* 2021-02-25 */
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                if (StringUtils.isEmpty(dlform.getAction())) {
+                    dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
+                }
+                br.getHeaders().put("Origin", "https://www.livemixtapes.com");
+                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+                this.submitForm(dlform);
             }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
