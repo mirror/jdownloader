@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,8 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:www\\.)?archivedecrypted\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -69,10 +69,10 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException {
         registered_only = false;
         if (link.getPluginPatternMatcher().endsWith("my_dir")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -82,8 +82,9 @@ public class ArchiveOrg extends PluginForHost {
         if (!isDownload) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(link.getPluginPatternMatcher());
-                connectionErrorhandling(br.getHttpConnection(), link);
+                /* 2021-02-25: Do NOT use head connection here anymore! */
+                con = br.openGetConnection(link.getPluginPatternMatcher());
+                connectionErrorhandling(br.getHttpConnection(), link, account);
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(getFileNameFromHeader(con));
                     if (con.getCompleteContentLength() > 0) {
@@ -105,14 +106,21 @@ public class ArchiveOrg extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link) throws PluginException, IOException {
+    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
         if (con.getResponseCode() == 403 || StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
-            con.disconnect();
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.containsHTML(">Item not available<")) {
-                if (br.containsHTML("The item is not available due to issues")) {
+            br.followConnection(true);
+            /* <h1>Item not available</h1> */
+            if (br.containsHTML("(?i)>\\s*Item not available<")) {
+                if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
                     registered_only = true;
-                    throw new AccountRequiredException();
+                    if (account == null) {
+                        throw new AccountRequiredException();
+                    } else {
+                        /* Error happened while we're logged in -> Dead end */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
+                    }
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,9 +131,9 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
+        requestFileInformation(link, null, true);
         if (registered_only) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            throw new AccountRequiredException();
         }
         if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
             doDownload(null, link, false, 1, "free_directlink");
@@ -137,8 +145,7 @@ public class ArchiveOrg extends PluginForHost {
     private void doDownload(final Account account, final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            connectionErrorhandling(br.getHttpConnection(), link);
+            connectionErrorhandling(br.getHttpConnection(), link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
@@ -218,7 +225,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, true);
+        requestFileInformation(link, account, true);
         login(account, false);
         if (link.getPluginPatternMatcher().matches("(?i).+\\.zip/.+")) {
             doDownload(account, link, false, 1, "account_free_directlink");

@@ -51,37 +51,55 @@ public class GelbooruCom extends PluginForDecrypt {
         int offset = 0;
         final int max_entries_per_page = 42;
         int entries_per_page_current = 0;
+        final ArrayList<String> dupes = new ArrayList<String>();
         do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return decryptedLinks;
+            logger.info("Crawling page: " + page_counter);
+            logger.info("Crawling URL: " + this.br.getURL());
+            boolean addedAtLeastOneNewItem = false;
+            String[] contentIDs = br.getRegex("id=\"(?:s|p)(\\d+)\"").getColumn(0);
+            if (contentIDs.length == 0) {
+                /* Fallback */
+                contentIDs = br.getRegex("page=post&[^\"]*id=(\\d+)\\&tags=").getColumn(0);
             }
-            if (page_counter > 1) {
-                this.br.getPage(url_part + "&pid=" + offset);
-                if (this.br.containsHTML("You are viewing an advertisement")) {
-                    this.br.getPage(url_part + "&pid=" + offset);
-                }
-            }
-            logger.info("Decrypting: " + this.br.getURL());
-            final String[] linkids = br.getRegex("id=\"s(\\d+)\"").getColumn(0);
-            if (linkids == null || linkids.length == 0) {
+            if (contentIDs.length == 0) {
                 logger.warning("Decrypter might be broken for link: " + parameter);
                 break;
             }
-            entries_per_page_current = linkids.length;
-            for (final String linkid : linkids) {
-                final String link = "https://" + this.getHost() + "/index.php?page=post&s=view&id=" + linkid;
+            entries_per_page_current = contentIDs.length;
+            for (final String contentID : contentIDs) {
+                if (dupes.contains(contentID)) {
+                    continue;
+                }
+                dupes.add(contentID);
+                addedAtLeastOneNewItem = true;
+                final String link = "https://" + this.getHost() + "/index.php?page=post&s=view&id=" + contentID;
                 final DownloadLink dl = createDownloadlink(link);
-                dl.setLinkID(linkid);
+                dl.setLinkID(contentID);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpeg");
+                dl.setName(contentID + ".jpeg");
                 dl._setFilePackage(fp);
                 decryptedLinks.add(dl);
                 distribute(dl);
                 offset++;
             }
             page_counter++;
-        } while (entries_per_page_current >= max_entries_per_page);
+            if (br.containsHTML(">Unable to go this deep in pagination")) {
+                logger.info("Stopping because: Account required to continue pagination");
+                break;
+            } else if (!addedAtLeastOneNewItem) {
+                /* Fail-safe */
+                logger.info("Stoping because: Failed rto find any more items on current page");
+                break;
+            } else if (entries_per_page_current < max_entries_per_page) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else {
+                this.br.getPage(url_part + "&pid=" + offset);
+                if (this.br.containsHTML("You are viewing an advertisement")) {
+                    this.br.getPage(url_part + "&pid=" + offset);
+                }
+            }
+        } while (!this.isAbort());
         return decryptedLinks;
     }
 
