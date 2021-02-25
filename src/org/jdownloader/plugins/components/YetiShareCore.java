@@ -1266,7 +1266,8 @@ public class YetiShareCore extends antiDDoSForHost {
         if (account == null) {
             /* Programmer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!this.isLoggedin()) {
+        } else if (br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin()) {
+            /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
     }
