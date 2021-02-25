@@ -33,6 +33,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSourceRedirector;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -40,8 +41,6 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.myjdownloader.client.json.JSonHandler;
 import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
-
-import com.formdev.flatlaf.util.StringUtils;
 
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
