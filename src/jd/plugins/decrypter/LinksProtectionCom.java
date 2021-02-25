@@ -39,9 +39,10 @@ public class LinksProtectionCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Invalid Link|>The link you are looking for has been deleted")) {
-            logger.info("Link offline: " + parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Invalid Link|>\\s*The link you are looking for has been deleted")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,9 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "https?://([a-z0-9]+\\.livedrive\\.com/((I|i)tem|files)/[a-z0-9]+|[a-z0-9]+\\.livedrivefolderlink\\.com/[a-z0-9]{32})" })
 public class LiveDriveComFolder extends PluginForDecrypt {
-
     public LiveDriveComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -40,6 +38,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Prefer http for Stable compatibility
+        br.setFollowRedirects(true);
         String parameter = param.toString().replace("https://", "http://");
         if (parameter.matches(FOLDERLINK)) {
             parameter = parameter.replace("livedrivefolderlink.com/", "livedrive.com/");
@@ -52,39 +51,39 @@ public class LiveDriveComFolder extends PluginForDecrypt {
             br.getPage(parameter);
         }
         // Single link or folder
-        if (new Regex(parameter, Pattern.compile("(http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32})", Pattern.CASE_INSENSITIVE)).matches()) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypted.com/")));
-        } else {
-            String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
-            liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
-            if (br.containsHTML("Item not found</span>")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+        String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
+        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
+        if (br.containsHTML("Item not found</span>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[][] folders = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\" aid=\"\\d+\" ondblclick=\"Spinner\\(\\);\\$\\(\\'#FileList\\'\\)\\.load").getMatches();
+        final String[][] files = br.getRegex("\"/Files/ToolTipView\\?fileId=([a-f0-9]{32})\\&pageNo=1\" name=\"([^<>\"]+)\"").getMatches();
+        if ((folders == null || folders.length == 0) && (files == null || files.length == 0)) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return decryptedLinks;
+        }
+        if (files.length != 0) {
+            for (final String finfo[] : files) {
+                final String filename = finfo[1];
+                final String ID = finfo[0];
+                final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivedecrypted.com/item/" + ID);
+                theFinalLink.setAvailable(true);
+                theFinalLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                decryptedLinks.add(theFinalLink);
             }
-            final String[][] folders = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\" aid=\"\\d+\" ondblclick=\"Spinner\\(\\);\\$\\(\\'#FileList\\'\\)\\.load").getMatches();
-            final String[][] files = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\" aid=\"\\d+\" rel=\"/Files/ToolTipView\\?fileId=").getMatches();
-            if ((folders == null || folders.length == 0) && (files == null || files.length == 0)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return decryptedLinks;
+        }
+        if (folders.length != 0) {
+            for (final String[] folderinfo : folders) {
+                final String ID = folderinfo[1];
+                final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivefolderlink.com/" + ID);
+                decryptedLinks.add(theFinalLink);
             }
-            if (files != null && files.length != 0) {
-                for (final String finfo[] : files) {
-                    final String filename = finfo[0];
-                    final String ID = finfo[1];
-                    final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivedecrypted.com/item/" + ID);
-                    theFinalLink.setAvailable(true);
-                    theFinalLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                    decryptedLinks.add(theFinalLink);
-                }
-            }
-            if (folders != null && folders.length != 0) {
-                for (final String[] folderinfo : folders) {
-                    final String ID = folderinfo[1];
-                    final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivefolderlink.com/" + ID);
-                    decryptedLinks.add(theFinalLink);
-                }
-            }
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        }
+        if (decryptedLinks.size() == 0) {
+            if (new Regex(parameter, Pattern.compile("(http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32})", Pattern.CASE_INSENSITIVE)).matches()) {
+                decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypted.com/")));
+            } else {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -96,5 +95,4 @@ public class LiveDriveComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
