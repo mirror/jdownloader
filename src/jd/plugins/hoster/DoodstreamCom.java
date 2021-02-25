@@ -20,6 +20,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -29,10 +33,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -191,7 +191,6 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
-        fuid = null;
         correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
@@ -203,7 +202,6 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (isOffline(link) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        setFUID(link);
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
             /* First try to get filename from Chromecast json */
             String filename = new Regex(correctedBR, "<title>\\s*([^<>\"]+)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);

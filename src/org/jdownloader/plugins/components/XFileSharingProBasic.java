@@ -138,7 +138,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /* Used variables */
     public String                 correctedBR                                                       = "";
-    protected String              fuid                                                              = null;
+    // protected String fuid = null;
     /* don't touch the following! */
     private static AtomicInteger  freeRunning                                                       = new AtomicInteger(0);
     private static final String   PROPERTY_pw_required                                              = "password_requested_by_website";
@@ -296,7 +296,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Checks whether current html code contains embed code for current fuid which would indicate that we have a videohost. */
     protected boolean isVideohosterEmbedHTML() {
-        return new Regex(correctedBR, "/embed-" + this.fuid + "\\.html").matches();
+        return new Regex(correctedBR, "/embed-" + this.getFUIDFromURL(this.getDownloadLink()) + "\\.html").matches();
     }
 
     /**
@@ -587,8 +587,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * If a subdomain is required, do not use this method before making a browser request!!
      */
     protected String getMainPage() {
+        return getMainPage(this.br);
+    }
+
+    protected String getMainPage(final Browser brc) {
         final String host;
-        final String browser_host = this.br != null ? br.getHost(true) : null;
+        final String browser_host = this.br != null ? brc.getHost(true) : null;
         if (browser_host != null) {
             /* Has a browser request been done before? Use this domain as it could e.g. differ from the plugin set main domain. */
             host = browser_host;
@@ -692,7 +696,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String[] fileInfo = internal_getFileInfoArray();
         Browser altbr = null;
-        fuid = null;
         correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
@@ -702,7 +705,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (isOffline(link)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        setFUID(link);
         final String fallback_filename = this.getFallbackFilename(link);
         altbr = br.cloneBrowser();
         if (isPremiumOnlyURL()) {
@@ -801,7 +803,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final Browser brc = this.br.cloneBrowser();
         if (StringUtils.isEmpty(dllink)) {
             if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
-                final String embed_access = getMainPage() + "/embed-" + fuid + ".html";
+                final String embed_access = getMainPage() + "/embed-" + this.getFUIDFromURL(link) + ".html";
                 getPage(brc, embed_access);
                 /**
                  * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
@@ -845,18 +847,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         /* 2019-05-08: 'Forum Code': Sharebox with filename & filesize (bytes), example: brupload.net, qtyfiles.com */
-        final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "[^\\]]*?\\]([^\"/]*?)\\s*\\-\\s*(\\d+)\\[/URL\\]";
+        final String sharebox2 = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "[^\\]]*?\\]([^\"/]*?)\\s*\\-\\s*(\\d+)\\[/URL\\]";
         /* First found for pixroute.com URLs */
-        final String sharebox2_without_filesize = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.fuid + "/([^<>\"/\\]]*?)(?:\\.html)?\\]";
+        final String sharebox2_without_filesize = "\\[URL=https?://(?:www\\.)?[^/\"]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"/\\]]*?)(?:\\.html)?\\]";
         /*
          * 2019-05-21: E.g. uqload.com, vidoba.net - this method will return a 'cleaner' filename than in other places - their titles will
          * often end with " mp4" which we have to correct later!
          */
-        final String sharebox3_videohost = "\\[URL=https?://[^/]+/" + this.fuid + "[^/<>\\]]*?\\]\\[IMG\\][^<>\"\\[\\]]+\\[/IMG\\]([^<>\"]+)\\[/URL\\]";
+        final String sharebox3_videohost = "\\[URL=https?://[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "[^/<>\\]]*?\\]\\[IMG\\][^<>\"\\[\\]]+\\[/IMG\\]([^<>\"]+)\\[/URL\\]";
         /* standard traits from base page */
         if (StringUtils.isEmpty(fileInfo[0])) {
             /* 2019-06-12: TODO: Update this RegEx for e.g. up-4ever.org */
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + fuid + "/([^<>\"]+)<").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]+)<").getMatch(0);
             if (StringUtils.isEmpty(fileInfo[0])) {
                 /* 2019-05-21: E.g. datoporn.co */
                 fileInfo[0] = new Regex(correctedBR, "name=\"fname\" (?:type=\"hidden\" )?value=\"(.*?)\"").getMatch(0);
@@ -886,7 +888,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 if (StringUtils.isEmpty(fileInfo[0])) {
                     /* Link of the box without filesize */
-                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + fuid + "/([^<>\"]*?)</textarea").getMatch(0);
+                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">https?://(?:www\\.)?[^/]+/" + this.getFUIDFromURL(this.getDownloadLink()) + "/([^<>\"]*?)</textarea").getMatch(0);
                 }
             }
         }
@@ -1167,7 +1169,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @throws Exception
      */
     protected String getFnameViaAbuseLink(final Browser br, final DownloadLink dl, final String fallbackFilename) throws Exception {
-        getPage(br, getMainPage() + "/?op=report_file&id=" + fuid, false);
+        getPage(br, getMainPage() + "/?op=report_file&id=" + this.getFUIDFromURL(dl), false);
         /*
          * 2019-07-10: ONLY "No such file" as response might always be wrong and should be treated as a failure! Example: xvideosharing.com
          */
@@ -1325,7 +1327,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     try {
                         logger.info("Trying to get link via vidembed");
                         final Browser brv = br.cloneBrowser();
-                        getPage(brv, "/vidembed-" + fuid, false);
+                        getPage(brv, "/vidembed-" + this.getFUIDFromURL(link), false);
                         dllink = brv.getRedirectLocation();
                         if (StringUtils.isEmpty(dllink)) {
                             logger.info("Failed to get link via vidembed because: " + br.toString());
@@ -2568,7 +2570,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             servName = servNameExt;
         }
         final String FFN;
-        if (StringUtils.equalsIgnoreCase(orgName, fuid)) {
+        if (StringUtils.equalsIgnoreCase(orgName, this.getFUIDFromURL(link))) {
             /* Current filename only consists of fuid --> Prefer full server filename */
             FFN = servNameExt;
             logger.info("fixFileName case 1: prefer servNameExt: orgName == fuid --> Use servNameExt");
@@ -2592,41 +2594,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         logger.info("fixFileName: before=" + orgNameExt + "|after=" + FFN);
         link.setFinalFileName(FFN);
-    }
-
-    /**
-     * Sets XFS file-ID which is usually present inside the downloadurl added by the user. Usually it is [a-z0-9]{12}. <br />
-     * Best to execute AFTER having accessed the downloadurl!
-     */
-    protected final void setFUID(final DownloadLink dl) throws PluginException {
-        fuid = getFUIDFromURL(dl);
-        /*
-         * Rare case: Hoster has exotic URLs (e.g. migrated from other script e.g. YetiShare to XFS) --> Correct (internal) fuid is only
-         * available via html
-         */
-        if (fuid == null) {
-            /*
-             * E.g. for hosts which migrate from other scripts such as YetiShare to XFS (example: hugesharing.net, up-4ever.org) and still
-             * have their old URLs without XFS-fuid redirecting to the typical XFS URLs containing our fuid.
-             */
-            logger.info("fuid not given inside URL, trying to find it inside html");
-            fuid = new Regex(correctedBR, "type=\"hidden\" name=\"id\" value=\"([a-z0-9]{12})\"").getMatch(0);
-            if (fuid == null) {
-                /* Last chance fallback */
-                fuid = new Regex(br.getURL(), "https?://[^/]+/([a-z0-9]{12})").getMatch(0);
-            }
-            if (fuid == null) {
-                /* fuid is crucial for us to have!! */
-                logger.warning("Failed to find fuid inside html");
-                /*
-                 * 2019-06-12: Display such URLs as offline as this case is so rare that, if it happens, chances are very high that the file
-                 * is offline anyways!
-                 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            logger.info("Found fuid inside html: " + fuid);
-            correctDownloadLink(dl);
-        }
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
@@ -2670,9 +2637,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /**
-     * Tries to get filename from URL and if this fails, will return <fuid> filename. <br/>
-     * Execute setFUID() BEFORE YOU EXECUTE THIS OR THE PLUGIN MAY FAIL TO FIND A (fallback-) FILENAME! In very rare cases (e.g. XFS owner
-     * migrated to XFS from other script) this is important! See description of setFUID for more information!
+     * Tries to get filename from URL and if this fails, will return <fuid> as filename. <br/>
      */
     public String getFallbackFilename(final DownloadLink dl) {
         String fallback_filename = this.getFilenameFromURL(dl);
@@ -2850,7 +2815,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /* Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
     protected void checkErrorsLastResort(final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
-        if (account != null && !this.isLoggedin()) {
+        if (account != null && br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin()) {
+            /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
         String website_error = new Regex(correctedBR, "class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
@@ -3342,34 +3308,38 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Implies that user is not logged-in. A full login with login-credentials is required! <br />
      */
     public boolean isLoggedin() {
+        return isLoggedin(this.br);
+    }
+
+    public boolean isLoggedin(final Browser brc) {
         /**
-         * please use valid combinations only! login or email alone without xfss is NOT valid!
+         * Please use valid combinations only! login or email alone without xfss is NOT valid!
          */
         /**
          * 2019-07-25: TODO: Maybe check for valid cookies on all supported domains (e.g. special case imgrock.info and some others in
          * ImgmazeCom plugin)
          */
-        final String mainpage = getMainPage();
+        final String mainpage = getMainPage(brc);
         logger.info("Doing login-cookiecheck for: " + mainpage);
-        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
+        final boolean login_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
         /* xfsts cookie is mostly used in xvideosharing sites (videohosters) example: vidoza.net */
-        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean login_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "login", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
         /* 2019-06-21: Example website which uses rare email cookie: filefox.cc (so far the only known!) */
-        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
-        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(br.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), br.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
+        final boolean email_xfss_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfss", Cookies.NOTDELETEDPATTERN));
+        final boolean email_xfsts_CookieOkay = StringUtils.isAllNotEmpty(brc.getCookie(mainpage, "email", Cookies.NOTDELETEDPATTERN), brc.getCookie(mainpage, "xfsts", Cookies.NOTDELETEDPATTERN));
         /* buttons or sites that are only available for logged in users */
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
-        final String htmlWithoutScriptTagsAndComments = br.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
+        final String htmlWithoutScriptTagsAndComments = brc.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
         final String ahref = "<a[^<]*href\\s*=\\s*\"[^\"]*";
         final boolean logoutOkay = new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=logout").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/(user_)?logout\"").matches();
         // unsafe, not every site does redirect
-        final boolean loginURLFailed = br.getURL().contains("op=") && br.getURL().contains("op=login");
+        final boolean loginURLFailed = brc.getURL().contains("op=") && brc.getURL().contains("op=login");
         /*
          * 2019-11-11: Set myAccountOkay to true if there is currently a redirect which means in this situation we rely on our cookie ONLY.
          * This may be the case if a user has direct downloads enabled. We access downloadurl --> Redirect happens --> We check for login
          */
-        final boolean isRedirect = br.getRedirectLocation() != null;
+        final boolean isRedirect = brc.getRedirectLocation() != null;
         final boolean myAccountOkay = (new Regex(htmlWithoutScriptTagsAndComments, ahref + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahref + "/my(-|_)account\"").matches() || isRedirect);
         logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
         logger.info("login_xfsts_CookieOkay:" + login_xfsts_CookieOkay);
@@ -4595,7 +4565,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     private final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
-        final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.fuid).matches();
+        final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         boolean allowed_by_auto_handling = true;
         final long last_failure = this.getPluginConfig().getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
         if (last_failure > 0) {

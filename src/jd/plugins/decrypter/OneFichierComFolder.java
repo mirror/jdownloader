@@ -28,7 +28,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -110,23 +109,21 @@ public class OneFichierComFolder extends PluginForDecrypt {
     }
 
     private void crawlWebsite(final CryptedLink param) throws Exception {
-        final String parameter = Request.getLocation("/dir/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0), br.createGetRequest(param.toString()));
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String folderURL = "https://" + this.getHost() + "/dir/" + folderID + "?lg=en";
         prepareBrowser(br);
         br.setLoadLimit(Integer.MAX_VALUE);
         final Browser jsonBR = br.cloneBrowser();
-        jsonBR.getPage(parameter + "?json=1");
+        jsonBR.getPage(folderURL + "?json=1");
         if (jsonBR.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Access folder without API just to find foldername ... */
-        br.getPage(parameter);
-        String fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
+        br.getPage(folderURL);
+        /* We prefer English but let's be prepared to parse both versions of their website, english and french. */
+        final String fpName = br.getRegex(">(?:Shared folder|Dossier partagé)\\s*(.*?)</").getMatch(0);
         // password handling
-        final String password = handlePassword(param, parameter);
-        if (fpName == null && password != null) {
-            fpName = br.getRegex(">Shared folder (.*?)</").getMatch(0);
-        }
+        final String password = handlePassword(param, folderURL);
         if (password == null && "application/json; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
             final List<Object> ressourcelist = JSonStorage.restoreFromString(jsonBR.toString(), TypeRef.LIST);
             for (final Object fileO : ressourcelist) {
