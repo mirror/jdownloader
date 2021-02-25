@@ -45,8 +45,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -55,7 +53,7 @@ import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.LocationStorage;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -100,6 +98,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
+        setDimensor(new RememberLastDialogDimension("Captcha-" + getHost() + "." + challenge.getClass().getSimpleName() + "." + challenge.getTypeID()));
         this.hosterInfo = domainInfo;
         this.type = type;
         this.challenge = captchaChallenge;
@@ -142,10 +141,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return ModalityType.MODELESS;
     }
 
-    private LocationStorage config;
-    protected boolean       hideCaptchasForHost    = false;
-    protected boolean       hideCaptchasForPackage = false;
-    private boolean         hideAllCaptchas;
+    protected boolean hideCaptchasForHost    = false;
+    protected boolean hideCaptchasForPackage = false;
+    private boolean   hideAllCaptchas;
 
     public boolean isHideAllCaptchas() {
         return hideAllCaptchas;
@@ -285,9 +283,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             }
             try {
                 if (dialog != null) {
-                    config.setX(getDialog().getWidth());
-                    config.setValid(true);
-                    config.setY(getDialog().getHeight());
                     if (openBrowserFocusListener != null) {
                         getDialog().removeWindowFocusListener(openBrowserFocusListener);
                     }
@@ -625,7 +620,6 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // header.setLabelMode(true);
             headerPanel.add(header);
         }
-        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogSize/" + Hash.getMD5(getHost() + "." + challenge.getClass().getSimpleName() + "." + challenge.getTypeID())), LocationStorage.class);
         HeaderScrollPane sp;
         iconPanel = new AbstractConfigPanel(5) {
             @Override
