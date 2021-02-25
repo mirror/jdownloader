@@ -274,7 +274,7 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
             if ("loaded".equals(pDo)) {
-                HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
+                final HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
                 final BrowserCaptchaSolverConfig config = BrowserSolverService.getInstance().getConfig();
                 if (config.isAutoClickEnabled()) {
                     // let bounds = element.getBoundingClientRect();
@@ -311,8 +311,16 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                     // loadedParams.etop = bounds.top;
                     // loadedParams.ew = bounds.width;
                     // loadedParams.eh = bounds.height;
+                    // loadedParams.dpi = window.devicePixelRatio;
                     try {
-                        final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh"))) {
+                        final int x = (int) Double.parseDouble(request.getParameterbyKey("x"));
+                        final int y = (int) Double.parseDouble(request.getParameterbyKey("y"));
+                        final int w = (int) Double.parseDouble(request.getParameterbyKey("w"));
+                        final int h = (int) Double.parseDouble(request.getParameterbyKey("h"));
+                        final int vw = (int) Double.parseDouble(request.getParameterbyKey("vw"));
+                        final int vh = (int) Double.parseDouble(request.getParameterbyKey("vh"));
+                        final Double dpi = request.getParameterbyKey("dpi") != null && !StringUtils.equalsIgnoreCase(request.getParameterbyKey("dpi"), "undefined") ? Double.valueOf(request.getParameterbyKey("dpi")) : null;
+                        final BrowserWindow browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), x, y, w, h, vw, vh, dpi) {
                             @Override
                             protected LogInterface getLogger() {
                                 return BrowserReference.this.getLogger();
@@ -323,7 +331,11 @@ public abstract class BrowserReference implements ExtendedHttpRequestHandler, Ht
                             config.setAutoClickEnabled(false);
                             config._getStorageHandler().write();
                         }
-                        final Rectangle elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
+                        final int eleft = (int) Double.parseDouble(request.getParameterbyKey("eleft"));
+                        final int etop = (int) Double.parseDouble(request.getParameterbyKey("etop"));
+                        final int ew = (int) Double.parseDouble(request.getParameterbyKey("ew"));
+                        final int eh = (int) Double.parseDouble(request.getParameterbyKey("eh"));
+                        final Rectangle elementBounds = new Rectangle(eleft, etop, ew, eh);
                         getLogger().info("Rectangle:" + elementBounds);
                         final BrowserViewport viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                         if (viewport != null) {

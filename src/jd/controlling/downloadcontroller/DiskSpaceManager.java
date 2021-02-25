@@ -1,20 +1,14 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
-import org.appwork.utils.Files17;
-import org.appwork.utils.ProcMounts;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.logging.LogController;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
@@ -25,12 +19,10 @@ public class DiskSpaceManager {
         FAILED
     }
 
-    private final HashMap<DiskSpaceReservation, Object> reservations;
-    private final GeneralSettings                       config;
-    private final AtomicBoolean                         SUPPORTED = new AtomicBoolean(Application.getJavaVersion() >= Application.JAVA16);
+    private final List<DiskSpaceChecker> reservations = new ArrayList<DiskSpaceChecker>();
+    private final GeneralSettings        config;
 
     public DiskSpaceManager() {
-        reservations = new HashMap<DiskSpaceReservation, Object>();
         config = JsonConfig.create(GeneralSettings.class);
     }
 
@@ -38,190 +30,96 @@ public class DiskSpaceManager {
         return checkAndReserve(reservation, null);
     }
 
-    public static String getRootFor(File file) {
-        String bestRootMatch = null;
-        if (CrossSystem.isUnix()) {
-            try {
-                final List<ProcMounts> procMounts = ProcMounts.list();
-                if (procMounts != null) {
-                    final String destination = file.getAbsolutePath();
-                    for (final ProcMounts procMount : procMounts) {
-                        if (!procMount.isReadOnly() && destination.startsWith(procMount.getMountPoint())) {
-                            if (bestRootMatch == null || (procMount.getMountPoint().length() > bestRootMatch.length())) {
-                                bestRootMatch = procMount.getMountPoint();
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                LogController.CL().log(e);
-            }
-        }
-        if (bestRootMatch == null) {
-            // fallback to File.listRoots
-            final String destination = file.getAbsolutePath();
-            if (!destination.startsWith("\\")) {
-                final File[] roots = File.listRoots();
-                if (roots != null) {
-                    for (final File root : roots) {
-                        final String rootString = root.getAbsolutePath();
-                        final boolean startsWith;
-                        if (CrossSystem.isWindows()) {
-                            startsWith = StringUtils.startsWithCaseInsensitive(destination, rootString);
-                        } else {
-                            startsWith = destination.startsWith(rootString);
-                        }
-                        if (startsWith) {
-                            bestRootMatch = rootString;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // simple unc support (netshares without assigned drive letter)
-                File existingFile = file;
-                while (existingFile != null) {
-                    if (existingFile.exists()) {
-                        bestRootMatch = existingFile.getAbsolutePath();
-                    }
-                    existingFile = existingFile.getParentFile();
-                }
-            }
-        }
-        return bestRootMatch;
+    private DISKSPACERESERVATIONRESULT handle(final DiskSpaceChecker checker, final DISKSPACERESERVATIONRESULT result, final Long requestedDiskSpace) {
+        final DiskSpaceReservation reservation = checker.getDiskSpaceReservation();
+        final LogInterface logger = reservation.getLogger();
+        logger.info("DiskSpaceManager:Result:" + result + "|File:" + reservation.getDestination() + "|Root(s):" + checker.getRoots() + "|Requestor:" + checker.getRequestor() + "|RequestedSpace:" + (requestedDiskSpace != null ? SizeFormatter.formatBytes(requestedDiskSpace.longValue()) : null) + "|UsableSpace:" + SizeFormatter.formatBytes(checker.getUsableSpace()));
+        return result;
     }
 
-    public boolean isSupported() {
-        return SUPPORTED.get();
-    }
-
-    public synchronized DISKSPACERESERVATIONRESULT checkAndReserve(DiskSpaceReservation reservation, Object requestor) {
+    public synchronized DISKSPACERESERVATIONRESULT checkAndReserve(final DiskSpaceReservation reservation, final Object requestor) {
         if (reservation == null) {
             throw new IllegalArgumentException("reservation must not be null!");
-        }
-        if (!isSupported()) {
-            /*
-             * File.getUsableSpace is >=1.6 only
-             */
-            return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
-        }
-        if (!config.isFreeSpaceCheckEnabled()) {
-            return DISKSPACERESERVATIONRESULT.OK;
-        }
-        if (reservation.getDestination() == null) {
-            return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
-        }
-        String bestRootMatch = null;
-        if (Application.getJavaVersion() >= Application.JAVA17 && Application.getJavaVersion() < Application.JAVA19 && (CrossSystem.isUnix() || CrossSystem.isMac())) {
-            try {
-                final File guessRootMatch = Files17.guessRoot(reservation.getDestination(), true);
-                if (guessRootMatch != null) {
-                    bestRootMatch = guessRootMatch.getAbsolutePath();
-                }
-            } catch (final IllegalArgumentException e) {
-                LogController.CL().log(e);
-                SUPPORTED.set(false);
-                return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
-            } catch (final IOException e) {
-                LogController.CL().log(e);
-                // https://bugs.openjdk.java.net/browse/JDK-8165852
-                // https://bugs.openjdk.java.net/browse/JDK-8166162
-                if (StringUtils.containsIgnoreCase(e.getMessage(), "mount point not found")) {
-                    SUPPORTED.set(false);
-                    return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
-                }
+        } else {
+            final DiskSpaceChecker checker;
+            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
+                checker = new DiskSpaceChecker17(reservation, requestor);
+            } else {
+                checker = new DiskSpaceChecker(reservation, requestor);
             }
-        }
-        if (bestRootMatch == null) {
-            bestRootMatch = getRootFor(reservation.getDestination());
-        }
-        if (bestRootMatch == null || !new File(bestRootMatch).exists()) {
-            return DISKSPACERESERVATIONRESULT.INVALIDDESTINATION;
-        }
-        final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
-        long requestedDiskSpace = Math.max(0, reservation.getSize()) + forcedFreeSpaceOnDisk;
-        long freeDiskSpace = new File(bestRootMatch).getUsableSpace();
-        if (freeDiskSpace == 0) {
-            switch (CrossSystem.getOSFamily()) {
-            case WINDOWS:
-                // File.getUsableSpace fails for subst drives, workaround is to call File.getUsableSpace on one of its directories
-                final File[] checks = new File(bestRootMatch).listFiles();
-                if (checks != null) {
-                    for (final File check : checks) {
-                        if (check.isDirectory()) {
-                            freeDiskSpace = check.getUsableSpace();
-                            break;
-                        }
+            if (false) {
+                return handle(checker, DISKSPACERESERVATIONRESULT.UNSUPPORTED, null);
+            } else if (!config.isFreeSpaceCheckEnabled()) {
+                return handle(checker, DISKSPACERESERVATIONRESULT.OK, null);
+            } else if (reservation.getDestination() == null) {
+                return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
+            } else {
+                final String bestRootMatch = checker.getRoot();
+                if (bestRootMatch == null || !new File(bestRootMatch).isDirectory()) {
+                    return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
+                }
+                final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
+                long requestedDiskSpace = Math.max(0, reservation.getSize()) + forcedFreeSpaceOnDisk;
+                for (final DiskSpaceChecker reservedDiskSpace : reservations) {
+                    if (reservedDiskSpace.isSameRoot(checker)) {
+                        requestedDiskSpace += Math.max(0, reservedDiskSpace.getSize());
                     }
                 }
-                break;
-            default:
-                break;
-            }
-        }
-        if (freeDiskSpace < 0) {
-            // unlimited, for example a virtual (distributed) filesystem
-            return DISKSPACERESERVATIONRESULT.OK;
-        }
-        if (freeDiskSpace < requestedDiskSpace) {
-            return DISKSPACERESERVATIONRESULT.FAILED;
-        }
-        for (final DiskSpaceReservation reserved : reservations.keySet()) {
-            final boolean startsWith;
-            if (CrossSystem.isWindows()) {
-                startsWith = StringUtils.startsWithCaseInsensitive(reserved.getDestination().getAbsolutePath(), bestRootMatch);
-            } else {
-                startsWith = reserved.getDestination().getAbsolutePath().startsWith(bestRootMatch);
-            }
-            if (startsWith) {
-                requestedDiskSpace += Math.max(0, reserved.getSize());
-                if (freeDiskSpace < requestedDiskSpace) {
-                    return DISKSPACERESERVATIONRESULT.FAILED;
+                final long freeDiskSpace = checker.getUsableSpace();
+                // freeDiskSpace <0 -> unlimited, for example a virtual (distributed) filesystem
+                if (freeDiskSpace >= 0 && freeDiskSpace < requestedDiskSpace) {
+                    return handle(checker, DISKSPACERESERVATIONRESULT.FAILED, requestedDiskSpace);
+                } else {
+                    if (requestor != null) {
+                        reservations.add(checker);
+                    }
+                    return handle(checker, DISKSPACERESERVATIONRESULT.OK, requestedDiskSpace);
                 }
             }
         }
-        if (requestor != null) {
-            reservations.put(reservation, requestor);
+    }
+
+    public synchronized boolean free(final DiskSpaceReservation reservation, final Object requestor) {
+        final DiskSpaceChecker reservedDiskSpace = getDiskSpaceChecker(reservation);
+        return reservedDiskSpace != null && reservedDiskSpace.getRequestor() == requestor && reservations.remove(reservedDiskSpace);
+    }
+
+    public synchronized boolean isReservedBy(final DiskSpaceReservation reservation, final Object requestor) {
+        final DiskSpaceChecker reservedDiskSpace = getDiskSpaceChecker(reservation);
+        return reservedDiskSpace != null && reservedDiskSpace.getRequestor() == requestor;
+    }
+
+    public synchronized boolean holdsReservations(final Object requestor) {
+        for (final DiskSpaceChecker reservedDiskSpace : reservations) {
+            if (reservedDiskSpace.getRequestor() == requestor) {
+                return true;
+            }
         }
-        return DISKSPACERESERVATIONRESULT.OK;
+        return false;
     }
 
-    public synchronized boolean free(DiskSpaceReservation reservation, Object requestor) {
-        final Object currentHolder = getRequestor(reservation);
-        if (currentHolder != null && requestor == currentHolder) {
-            reservations.remove(reservation);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public synchronized boolean isReservedBy(DiskSpaceReservation reservation, Object requestor) {
-        if (requestor == null) {
-            return false;
-        }
-        return reservations.get(reservation) == requestor;
-    }
-
-    public synchronized boolean holdsReservations(Object requestor) {
-        return reservations.containsValue(requestor);
-    }
-
-    public synchronized void freeAllReservationsBy(Object requestor) {
-        final Iterator<Entry<DiskSpaceReservation, Object>> it = reservations.entrySet().iterator();
+    public synchronized void freeAllReservationsBy(final Object requestor) {
+        final Iterator<DiskSpaceChecker> it = reservations.iterator();
         while (it.hasNext()) {
-            final Entry<DiskSpaceReservation, Object> next = it.next();
-            if (next.getValue() == requestor) {
+            final DiskSpaceChecker reservedDiskSpace = it.next();
+            if (reservedDiskSpace != null && reservedDiskSpace.getRequestor() == requestor) {
                 it.remove();
             }
         }
     }
 
-    public synchronized Object getRequestor(DiskSpaceReservation reservation) {
-        return reservations.get(reservation);
+    private synchronized DiskSpaceChecker getDiskSpaceChecker(final DiskSpaceReservation reservation) {
+        if (reservation != null) {
+            for (final DiskSpaceChecker reservedDiskSpace : reservations) {
+                if (reservedDiskSpace.getDiskSpaceReservation() == reservation) {
+                    return reservedDiskSpace;
+                }
+            }
+        }
+        return null;
     }
 
-    public synchronized boolean isReserved(DiskSpaceReservation reservation) {
-        return reservations.containsKey(reservation);
+    public synchronized boolean isReserved(final DiskSpaceReservation reservation) {
+        return getDiskSpaceChecker(reservation) != null;
     }
 }

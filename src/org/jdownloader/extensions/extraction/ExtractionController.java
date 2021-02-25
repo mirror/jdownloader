@@ -41,6 +41,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
@@ -375,6 +376,16 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                     @Override
                     public File getDestination() {
                         return getExtractToFolder();
+                    }
+
+                    @Override
+                    public Object getOwner() {
+                        return ExtractionController.this;
+                    }
+
+                    @Override
+                    public LogInterface getLogger() {
+                        return ExtractionController.this.getLogger();
                     }
                 };
                 DISKSPACERESERVATIONRESULT reservationResult = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(extractReservation, this);
