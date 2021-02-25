@@ -41,6 +41,15 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
+import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
@@ -76,15 +85,6 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
@@ -93,16 +93,16 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     public BrowserCaptchaDialog(int flag, DialogType type, DomainInfo domainInfo, AbstractBrowserChallenge captchaChallenge) {
         super(flag | Dialog.STYLE_HIDE_ICON, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), null, null, null);
+        this.hosterInfo = domainInfo;
+        this.type = type;
+        this.challenge = captchaChallenge;
+        setPlugin(captchaChallenge.getPlugin());
         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
         setDimensor(new RememberLastDialogDimension("Captcha-" + getHost() + "." + challenge.getClass().getSimpleName() + "." + challenge.getTypeID()));
-        this.hosterInfo = domainInfo;
-        this.type = type;
-        this.challenge = captchaChallenge;
-        setPlugin(captchaChallenge.getPlugin());
     }
 
     public static FrameState getWindowState() {
