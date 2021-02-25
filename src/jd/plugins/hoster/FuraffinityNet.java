@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,10 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/view/(\\d+)" })
 public class FuraffinityNet extends antiDDoSForHost {
@@ -108,7 +108,11 @@ public class FuraffinityNet extends antiDDoSForHost {
         if (dllink == null) {
             dllink = br.getRegex("data-fullview-src=\"([^\"]+)").getMatch(0);
         }
-        String filename = Plugin.getFileNameFromURL(br.getURL(dllink));
+        if (dllink == null) {
+            /* 2021-02-25 */
+            dllink = br.getRegex("\"([^\"]+/download/[^\"]+)\"").getMatch(0);
+        }
+        String filename = dllink != null ? Plugin.getFileNameFromURL(br.getURL(dllink)) : null;
         if (filename != null) {
             link.setFinalFileName(filename);
         } else {
