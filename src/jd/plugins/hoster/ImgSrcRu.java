@@ -143,6 +143,10 @@ public class ImgSrcRu extends PluginForHost {
         if (dllink == null) {
             /* 2020-11-16 > rev. 42336 */
             dllink = br.getRegex("img[^>]*class\\s*=\\s*'big'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
+            if (dllink == null) {
+                /* 2021-02-25 */
+                dllink = br.getRegex("img[^>]*id\\s*=\\s*'bpi'[^>]*src\\s*=\\s*'([^<>\"\\']+)").getMatch(0);
+            }
         }
         if (dllink == null) {
             /* Old: < rev. 42336 */

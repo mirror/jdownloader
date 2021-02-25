@@ -407,6 +407,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                                 public long getSize() {
                                     return remainingSize + Math.max(0, finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink));
                                 }
+
+                                @Override
+                                public Object getOwner() {
+                                    return SingleDownloadController.this;
+                                }
+
+                                @Override
+                                public LogInterface getLogger() {
+                                    return downloadLogger;
+                                }
                             };
                             final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(reservation);
                             switch (result) {

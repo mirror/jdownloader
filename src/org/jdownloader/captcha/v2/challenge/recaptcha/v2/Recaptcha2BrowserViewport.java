@@ -12,10 +12,6 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 public abstract class Recaptcha2BrowserViewport extends BrowserViewport {
     protected final Rectangle recaptchaIframe;
 
-    public double getScale() {
-        return scale;
-    }
-
     @Override
     public void onLoaded() {
         super.onLoaded();
@@ -109,8 +105,8 @@ public abstract class Recaptcha2BrowserViewport extends BrowserViewport {
         super(screenResource);
         recaptchaIframe = rect;
         scale = recaptchaIframe.width / 306d;
-        this.width = (int) (screenResource.getViewportWidth() * scale);
-        this.height = (int) (screenResource.getViewportHeight() * scale);
+        this.width = scale(screenResource.getViewportWidth());
+        this.height = scale(screenResource.getViewportHeight());
         if (elementBounds == null) {
             this.x = Math.max(screenResource.getX(), rect.x - scale(48));
             this.y = Math.max(screenResource.getY(), rect.y - scale(164));

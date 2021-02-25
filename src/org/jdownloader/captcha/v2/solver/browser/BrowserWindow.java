@@ -3,36 +3,38 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 
 public abstract class BrowserWindow extends ScreenResource {
-    private int viewportWidth;
+    private final double viewportWidth;
 
-    public int getViewportWidth() {
+    public double getViewportWidth() {
         return viewportWidth;
     }
 
-    public int getViewportHeight() {
+    public double getViewportHeight() {
         return viewportHeight;
     }
 
-    private int    viewportHeight;
-    private String userAgent;
+    private final double viewportHeight;
+    private final String userAgent;
+    private final Double dpi;
 
     public String getUserAgent() {
         return userAgent;
     }
 
-    public void setViewportWidth(int viewportWidth) {
-        this.viewportWidth = viewportWidth;
-    }
-
-    public void setViewportHeight(int viewportHeight) {
-        this.viewportHeight = viewportHeight;
-    }
-
-    public BrowserWindow(String userAgent, int x, int y, int width, int height, int viewportWidth, int viewportHeight) {
+    public BrowserWindow(String userAgent, int x, int y, int width, int height, double viewportWidth, double viewportHeight, Double dpi) {
         super(x, y, width, height);
         this.viewportWidth = viewportWidth;
         this.viewportHeight = viewportHeight;
         this.userAgent = userAgent;
+        this.dpi = dpi;
+    }
+
+    public double getDPI() {
+        if (dpi != null) {
+            return dpi.doubleValue();
+        } else {
+            return 1.0d;
+        }
     }
 
     public void screenShot() {

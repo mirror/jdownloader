@@ -474,6 +474,16 @@ public class DownloadLinkDownloadable implements Downloadable {
                 public File getDestination() {
                     return outputCompleteFile;
                 }
+
+                @Override
+                public Object getOwner() {
+                    return DownloadLinkDownloadable.this;
+                }
+
+                @Override
+                public LogInterface getLogger() {
+                    return DownloadLinkDownloadable.this.getLogger();
+                }
             };
             try {
                 try {
@@ -554,6 +564,16 @@ public class DownloadLinkDownloadable implements Downloadable {
             @Override
             public File getDestination() {
                 return new File(getFileOutput());
+            }
+
+            @Override
+            public Object getOwner() {
+                return DownloadLinkDownloadable.this;
+            }
+
+            @Override
+            public LogInterface getLogger() {
+                return DownloadLinkDownloadable.this.getLogger();
             }
         };
     }

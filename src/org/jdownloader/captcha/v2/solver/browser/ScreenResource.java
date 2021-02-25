@@ -19,7 +19,7 @@ import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 public abstract class ScreenResource {
-    protected int       x;
+    protected int       x         = 0;
     protected final int blockSize = 100;
 
     public ScreenResource(int x, int y, int width, int height) {
@@ -50,7 +50,7 @@ public abstract class ScreenResource {
 
     protected abstract LogInterface getLogger();
 
-    protected int    y;
+    protected int    y     = 0;
     protected int    width;
     protected int    height;
     protected Robot  robot;

@@ -2119,6 +2119,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             public File getDestination() {
                 return outputFile;
             }
+
+            @Override
+            public Object getOwner() {
+                return YoutubeDashV2.this;
+            }
+
+            @Override
+            public LogInterface getLogger() {
+                return YoutubeDashV2.this.getLogger();
+            }
         };
         //
         final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
