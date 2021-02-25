@@ -41,6 +41,8 @@ import org.jdownloader.myjdownloader.client.json.JSonHandler;
 import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
 import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 
+import com.formdev.flatlaf.util.StringUtils;
+
 public class Main {
     public static ParameterHandler PARAMETER_HANDLER = null;
     static {
@@ -79,7 +81,14 @@ public class Main {
 
     public static void checkLanguageSwitch(final String[] args) {
         try {
-            final String lng = JSonStorage.restoreFromFile("cfg/language.json", TranslationFactory.getDesiredLanguage());
+            final File language = Application.getResource("cfg/language.json");
+            String lng = null;
+            if (language.isFile()) {
+                lng = JSonStorage.restoreFrom(language, true, JSonStorage.KEY, TypeRef.STRING, TranslationFactory.getDesiredLanguage());
+            }
+            if (StringUtils.isEmpty(lng)) {
+                lng = TranslationFactory.getDesiredLanguage();
+            }
             TranslationFactory.setDesiredLanguage(lng);
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equalsIgnoreCase("-translatortest")) {
