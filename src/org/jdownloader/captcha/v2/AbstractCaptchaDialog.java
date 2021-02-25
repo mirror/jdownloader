@@ -37,18 +37,9 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 
-import jd.gui.swing.dialog.DialogType;
-import jd.gui.swing.jdgui.JDGui;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
-import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -56,7 +47,7 @@ import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.LocationStorage;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
@@ -81,10 +72,17 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
+import jd.gui.swing.dialog.DialogType;
+import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import net.miginfocom.swing.MigLayout;
+
 public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> implements MouseListener, MouseMotionListener {
-    private LocationStorage config;
-    protected boolean       hideCaptchasForHost = false;
-    private Point           lastMouse;
+    // private LocationStorage config;
+    protected boolean hideCaptchasForHost = false;
+    private Point     lastMouse;
 
     @Override
     protected FrameState getWindowStateOnVisible() {
@@ -310,6 +308,7 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         } else {
             setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
         }
+        setDimensor(new RememberLastDialogDimension("Captcha-" + domainInfo.getTld()));
         this.explain = explain;
         this.hosterInfo = domainInfo;
         this.type = type;
@@ -414,12 +413,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
     public void dispose() {
         if (!isInitialized()) {
             return;
-        }
-        if (dialog != null) {
-            // setx and sety store the dimension/size!
-            config.setX(getDialog().getWidth());
-            config.setValid(true);
-            config.setY(getDialog().getHeight());
         }
         super.dispose();
     }
@@ -562,22 +555,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
         default:
             return null;
         }
-    }
-
-    protected int getPreferredHeight() {
-        if (!config.isValid()) {
-            return super.getPreferredHeight();
-        }
-        return config.getY();
-    }
-
-    @Override
-    protected int getPreferredWidth() {
-        if (!config.isValid()) {
-            return super.getPreferredWidth();
-        }
-        System.out.println(config.getX());
-        return config.getX();
     }
 
     public DialogType getType() {
@@ -741,7 +718,6 @@ public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> impleme
             // header.setLabelMode(true);
             headerPanel.add(header);
         }
-        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getHost())), LocationStorage.class);
         HeaderScrollPane sp;
         addBeforeImage(field);
         iconPanel = createCaptchaPanel();
