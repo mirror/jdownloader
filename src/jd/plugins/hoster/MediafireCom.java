@@ -84,8 +84,6 @@ public class MediafireCom extends PluginForHost {
 
     // ?9579576935451
     // Referer: http://www.mediafire.com/file/nw1lc2pyrtp043c/1972+Fritz+the+Cat+-+Fritz+Bugs+Out%7BSirReal.rar
-    /* End of HbbTV agents */
-    /** end of random agents **/
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
     private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
     private static final String TYPE_DIRECT           = "https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)";
@@ -142,7 +140,6 @@ public class MediafireCom extends PluginForHost {
      * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
     private int                            max_number_of_free_retries = 3;
-    private String                         dlURL;
     private Browser                        api                        = null;
     private String                         session_token              = null;
 
@@ -225,29 +222,29 @@ public class MediafireCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void doFree(final DownloadLink link, final Account account) throws Exception {
         br = new Browser();
-        String url = null;
+        String finalDownloadurl = null;
         int trycounter = 0;
         boolean captchaCorrect = false;
         if (account == null) {
             br.getHeaders().put("User-Agent", MediafireCom.agent.get());
         }
         do {
-            if (url != null) {
+            if (finalDownloadurl != null) {
                 break;
             }
-            this.requestFileInformation(downloadLink);
-            if (downloadLink.getBooleanProperty("privatefile") && account == null) {
+            this.requestFileInformation(link);
+            if (link.getBooleanProperty("privatefile") && account == null) {
                 throw new AccountRequiredException(PRIVATEFILE);
             }
             // Check for direct link
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (con.isContentDisposition()) {
-                    url = downloadLink.getDownloadURL();
+                con = br.openGetConnection(link.getDownloadURL());
+                if (this.looksLikeDownloadableContent(con)) {
+                    finalDownloadurl = con.getURL().toString();
                 } else {
                     br.followConnection();
                 }
@@ -257,8 +254,8 @@ public class MediafireCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-            handleNonAPIErrors(downloadLink, br);
-            if (url == null) {
+            handleNonAPIErrors(link, br);
+            if (finalDownloadurl == null) {
                 // TODO: This errorhandling is missing for premium users!
                 captchaCorrect = false;
                 final Form captchaForm = br.getFormbyProperty("name", "form_captcha");
@@ -268,7 +265,7 @@ public class MediafireCom extends PluginForHost {
                         handleExtraReconnectSettingOnCaptcha(account);
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        String code = getCaptchaCode(cf, downloadLink);
+                        String code = getCaptchaCode(cf, link);
                         String chid = sm.getChallenge(code);
                         captchaForm.put("adcopy_challenge", chid);
                         captchaForm.put("adcopy_response", code.replace(" ", "+"));
@@ -303,7 +300,7 @@ public class MediafireCom extends PluginForHost {
                             final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                             boolean defect = false;
                             try {
-                                final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
+                                final String c = this.getCaptchaCode("recaptcha", cf, link);
                                 rc.setCode(c);
                                 final Form captchaForm2 = br.getFormbyProperty("name", "form_captcha");
                                 id = br.getRegex("challenge\\?k=(.+?)\"").getMatch(0);
@@ -342,21 +339,21 @@ public class MediafireCom extends PluginForHost {
                 }
             }
             captchaCorrect = true;
-            if (url == null) {
-                this.handlePW(downloadLink);
-                url = br.getRegex("kNO\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-                logger.info("Kno= " + url);
-                if (url == null) {
+            if (finalDownloadurl == null) {
+                this.handlePW(link);
+                finalDownloadurl = br.getRegex("kNO\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                logger.info("Kno= " + finalDownloadurl);
+                if (finalDownloadurl == null) {
                     /* pw protected files can directly redirect to download */
-                    url = br.getRedirectLocation();
+                    finalDownloadurl = br.getRedirectLocation();
                 }
-                if (url == null) {
-                    url = br.getRegex("(https?://download\\d+.mediafire\\.com/[^\"']+)").getMatch(0);
+                if (finalDownloadurl == null) {
+                    finalDownloadurl = br.getRegex("(https?://download\\d+.mediafire\\.com/[^\"']+)").getMatch(0);
                 }
             }
             trycounter++;
-        } while (trycounter < max_number_of_free_retries && url == null);
-        if (url == null) {
+        } while (trycounter < max_number_of_free_retries && finalDownloadurl == null);
+        if (finalDownloadurl == null) {
             if (!captchaCorrect) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
@@ -365,13 +362,13 @@ public class MediafireCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (!dl.getConnection().isContentDisposition()) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalDownloadurl, true, -15);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             handleServerErrors();
             logger.info("Error (3)");
             // logger.info(dl.getConnection() + "");
             br.followConnection();
-            handleNonAPIErrors(downloadLink, br);
+            handleNonAPIErrors(link, br);
             if (br.containsHTML("We apologize, but we are having difficulties processing your download request")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Please be patient while we try to repair your download request", 2 * 60 * 1000l);
             }
@@ -423,16 +420,16 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        if (downloadLink.getBooleanProperty("privatefolder")) {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        if (link.getBooleanProperty("privatefolder")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
         }
         login(br, account, false);
         if (account.getType() == AccountType.FREE) {
-            doFree(downloadLink, account);
+            doFree(link, account);
         } else {
-            apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(downloadLink));
+            apiCommand(account, "file/get_links.php", "link_type=direct_download&quick_key=" + getFUID(link));
             final String url = PluginJSonUtils.getJsonValue(api, "direct_download");
             if (url == null) {
                 // you can error under success.....
@@ -444,13 +441,13 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-            if (!dl.getConnection().isContentDisposition()) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 handleServerErrors();
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
                 br.followConnection();
-                handleNonAPIErrors(downloadLink, br);
+                handleNonAPIErrors(link, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.setFilenameFix(true);
