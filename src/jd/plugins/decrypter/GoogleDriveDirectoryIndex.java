@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,10 +42,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
 public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
@@ -56,25 +56,22 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.contains("?")) {
+        if (param.toString().contains("?")) {
             /* Remove all parameters */
-            parameter = parameter.substring(0, parameter.lastIndexOf("?"));
+            param.setCryptedUrl(param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?")));
         }
         br.setAllowedResponseCodes(new int[] { 500 });
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
             // TODO: add basicAuth support
-            final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
-            plg.setBrowser(this.br);
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
-            this.br = plg.getBrowser();
         }
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        final URLConnectionAdapter con = br.openPostConnection(parameter, "{\"password\":\"null\"}");
+        final URLConnectionAdapter con = br.openPostConnection(param.getCryptedUrl(), "password=&page_token=&page_index=0");
         if (con.isContentDisposition()) {
             con.disconnect();
-            final DownloadLink dl = new DownloadLink(null, null, this.getHost(), parameter, true);
+            final DownloadLink dl = new DownloadLink(null, null, this.getHost(), param.getCryptedUrl(), true);
             dl.setAvailable(true);
             dl.setName(Plugin.getFileNameFromHeader(con));
             dl.setDownloadSize(con.getCompleteContentLength());
@@ -91,28 +88,26 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         } else if (br.containsHTML("\"rateLimitExceeded\"")) {
             throw new DecrypterRetryException(RetryReason.HOST, "Rate Limit Exceeded");
         }
-        doThis(decryptedLinks, parameter);
+        crawlFolder(decryptedLinks, param);
         return decryptedLinks;
     }
 
-    private void doThis(ArrayList<DownloadLink> decryptedLinks, String parameter) throws Exception {
-        final boolean isParameterFile = !parameter.endsWith("/");
-        String subFolder = getAdoptedCloudFolderStructure();
-        if (subFolder == null) {
-            subFolder = "";
-        }
+    private void crawlFolder(ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
         final FilePackage fp = FilePackage.getInstance();
+        final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
+        String subFolder = getAdoptedCloudFolderStructure();
         /*
          * ok if the user imports a link just by itself should it also be placed into the correct packagename? We can determine this via url
          * structure, else base folder with files wont be packaged together just on filename....
          */
-        if ("".equals(subFolder)) {
-            final String[] split = parameter.split("/");
+        if (subFolder == null) {
+            subFolder = "";
+            final String[] split = param.getCryptedUrl().split("/");
             final String fpName = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
             fp.setName(fpName);
             subFolder = fpName;
@@ -122,60 +117,82 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         }
         final String baseUrl;
         // urls can already be encoded which breaks stuff, only encode non-encoded content
-        if (!new Regex(parameter, "%[a-z0-9]{2}").matches()) {
-            baseUrl = Encoding.urlEncode_light(parameter);
+        if (!new Regex(param.getCryptedUrl(), "%[a-z0-9]{2}").matches()) {
+            baseUrl = Encoding.urlEncode_light(param.getCryptedUrl());
         } else {
-            baseUrl = parameter;
+            baseUrl = param.getCryptedUrl();
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Object> ressourcelist;
-        Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
-        if (filesArray == null) {
-            filesArray = JavaScriptEngineFactory.walkJson(entries, "files");
-        }
-        if (filesArray != null) {
-            /* Multiple files */
-            ressourcelist = (List<Object>) filesArray;
-        } else {
-            /* Probably single file */
-            ressourcelist = new ArrayList<Object>();
-            ressourcelist.add(entries);
-        }
-        for (final Object fileO : ressourcelist) {
-            final Map<String, Object> entry = (Map<String, Object>) fileO;
-            final String name = (String) entry.get("name");
-            final String type = (String) entry.get("mimeType");
-            final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
-            if (StringUtils.isEmpty(name) || StringUtils.isEmpty(type)) {
-                /* Skip invalid objects */
-                continue;
+        /* TODO: Add pagination */
+        int page = 0;
+        do {
+            logger.info("Crawling page: " + (page + 1));
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final String nextPageToken = (String) entries.get("nextPageToken");
+            if (nextPageToken != null) {
+                logger.info("Pagination required for: " + param.getCryptedUrl());
             }
-            String url = baseUrl;
-            if (type.endsWith(".folder")) {
-                // folder urls have to END in "/" this is how it works in browser no need for workarounds
-                url += Encoding.urlEncode_light(name) + "/";
-            } else if (!isParameterFile) {
-                // do not this if base is a file!
-                url += Encoding.urlEncode_light(name);
+            final List<Object> ressourcelist;
+            Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
+            if (filesArray == null) {
+                filesArray = JavaScriptEngineFactory.walkJson(entries, "files");
             }
-            final DownloadLink dl;
-            if (type.endsWith(".folder")) {
-                dl = this.createDownloadlink(url);
-                final String thisfolder = subFolder + "/" + name;
-                dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
+            if (filesArray != null) {
+                /* Multiple files */
+                ressourcelist = (List<Object>) filesArray;
             } else {
-                dl = new DownloadLink(null, name, this.getHost(), url, true);
-                dl.setAvailable(true);
-                dl.setFinalFileName(name);
-                if (filesize > 0) {
-                    dl.setDownloadSize(filesize);
-                }
-                if (StringUtils.isNotEmpty(subFolder)) {
-                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
-                }
+                /* Probably single file */
+                ressourcelist = new ArrayList<Object>();
+                ressourcelist.add(entries);
             }
-            fp.add(dl);
-            decryptedLinks.add(dl);
-        }
+            for (final Object fileO : ressourcelist) {
+                final Map<String, Object> entry = (Map<String, Object>) fileO;
+                final String name = (String) entry.get("name");
+                final String type = (String) entry.get("mimeType");
+                final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
+                if (StringUtils.isEmpty(name) || StringUtils.isEmpty(type)) {
+                    /* Skip invalid objects */
+                    continue;
+                }
+                String url = baseUrl;
+                if (type.endsWith(".folder")) {
+                    // folder urls have to END in "/" this is how it works in browser no need for workarounds
+                    url += Encoding.urlEncode_light(name) + "/";
+                } else if (!isParameterFile) {
+                    // do not this if base is a file!
+                    url += Encoding.urlEncode_light(name);
+                }
+                final DownloadLink dl;
+                if (type.endsWith(".folder")) {
+                    dl = this.createDownloadlink(url);
+                    final String thisfolder = subFolder + "/" + name;
+                    dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisfolder);
+                } else {
+                    dl = new DownloadLink(null, name, this.getHost(), url, true);
+                    dl.setAvailable(true);
+                    dl.setFinalFileName(name);
+                    if (filesize > 0) {
+                        dl.setDownloadSize(filesize);
+                    }
+                    if (StringUtils.isNotEmpty(subFolder)) {
+                        dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, subFolder);
+                    }
+                }
+                fp.add(dl);
+                decryptedLinks.add(dl);
+            }
+            if (this.isAbort()) {
+                break;
+            } else if (StringUtils.isEmpty(nextPageToken)) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else {
+                page += 1;
+                final UrlQuery query = new UrlQuery();
+                query.add("password", "");
+                query.add("page_index", Integer.toString(page));
+                query.appendEncoded("page_token", nextPageToken);
+                br.postPage(br.getURL(), query);
+            }
+        } while (true);
     }
 }

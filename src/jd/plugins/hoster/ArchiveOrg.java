@@ -56,16 +56,17 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME               = true;
-    private final int     FREE_MAXCHUNKS            = 0;
-    private final int     FREE_MAXDOWNLOADS         = 20;
-    private final boolean ACCOUNT_FREE_RESUME       = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private final boolean       FREE_RESUME                         = true;
+    private final int           FREE_MAXCHUNKS                      = 0;
+    private final int           FREE_MAXDOWNLOADS                   = 20;
+    private final boolean       ACCOUNT_FREE_RESUME                 = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS              = 0;
+    private final int           ACCOUNT_FREE_MAXDOWNLOADS           = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private boolean       registered_only           = false;
+    private static final String PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN = "download_serverside_broken";
+    private boolean             registered_only                     = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -113,14 +114,18 @@ public class ArchiveOrg extends PluginForHost {
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
                 if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
                     registered_only = true;
-                    if (account == null) {
-                        throw new AccountRequiredException();
-                    } else {
-                        /* Error happened while we're logged in -> Dead end */
+                    /* First check for this flag */
+                    if (link.getBooleanProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN, false)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
+                    } else if (account != null) {
+                        /* Error happened while we're logged in -> Dead end --> Also set this flag to ensure that */
+                        link.setProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN, true);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
+                    } else {
+                        throw new AccountRequiredException();
                     }
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Item not available");
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -255,6 +260,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN);
     }
 }
