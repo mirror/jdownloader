@@ -54,6 +54,11 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public int getMaxConcurrentProcessingInstances() {
+        /* Without this we'll run into Cloudflare rate limits (error 500) */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
@@ -128,9 +133,6 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             logger.info("Crawling page: " + (page + 1));
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final String nextPageToken = (String) entries.get("nextPageToken");
-            if (nextPageToken != null) {
-                logger.info("Pagination required for: " + param.getCryptedUrl());
-            }
             final List<Object> ressourcelist;
             Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
             if (filesArray == null) {
