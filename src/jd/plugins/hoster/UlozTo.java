@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -47,6 +43,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
@@ -158,8 +158,7 @@ public class UlozTo extends PluginForHost {
         if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
             link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
-        }
-        if (link.getDownloadURL().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
+        } else if (link.getDownloadURL().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
             return AvailableStatus.FALSE;
         }
         finalDirectDownloadURL = handleDownloadUrl(link, isDownload);
@@ -176,6 +175,8 @@ public class UlozTo extends PluginForHost {
         // Wrong links show the mainpage so here we check if we got the mainpage or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (handleLimitExceeded(link, br, isDownload)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit exceeded");
         }
         passwordProtected = this.isPasswordProtected();
         if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
@@ -268,21 +269,34 @@ public class UlozTo extends PluginForHost {
                 return con.getRequest().getUrl();
             }
             br.followConnection();
-            if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
-                logger.info("Captcha required!");
-                if (!isDownload) {
-                    /* Don't ask for captchas during availablecheck */
-                    return null;
-                }
-                final Form f = br.getFormbyActionRegex(".*/limit-exceeded.*");
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                br.submitForm(f);
-            }
+            handleLimitExceeded(link, br, isDownload);
             i++;
         }
         responseCodeOfflineCheck();
         return null;
+    }
+
+    private boolean handleLimitExceeded(DownloadLink link, final Browser br, final boolean isDownload) throws Exception {
+        if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+            if (!isDownload) {
+                logger.info("\"limit exceeded\" captcha skipped");
+                /* Don't ask for captchas during availablecheck */
+                return true;
+            } else {
+                logger.info("\"limit exceeded\" captcha required");
+                final Form f = br.getFormbyActionRegex(".*/limit-exceeded.*");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(f);
+                if (br.containsHTML("/limit-exceeded") || StringUtils.containsIgnoreCase(br.getURL(), "/limit-exceeded")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    return true;
+                }
+            }
+        } else {
+            return false;
+        }
     }
 
     private void responseCodeOfflineCheck() throws PluginException {
@@ -449,9 +463,9 @@ public class UlozTo extends PluginForHost {
                     final String redirectToSecondCaptcha = PluginJSonUtils.getJson(br, "redirectDialogContent");
                     if (redirectToSecondCaptcha != null) {
                         /**
-                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br>
-                         * This can happen after downloading some files. The user is allowed to download more but has to solve two captchas
-                         * in a row to do so!
+                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br> This can
+                         * happen after downloading some files. The user is allowed to download more but has to solve two captchas in a row
+                         * to do so!
                          */
                         br.getPage(redirectToSecondCaptcha);
                         final Form f = br.getFormbyActionRegex(".*limit-exceeded.*");
@@ -683,7 +697,7 @@ public class UlozTo extends PluginForHost {
             doFree(link, account);
         } else {
             /* Premium Account */
-            requestFileInformation(link);
+            requestFileInformation(link, true);
             String dllink = finalDirectDownloadURL;
             if (dllink == null) {
                 if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {

@@ -1,5 +1,6 @@
 package org.jdownloader.controlling;
 
+import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -12,7 +13,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
@@ -23,10 +23,14 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 public class AggregatedNumbers {
     protected static final boolean FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
     private final long             totalBytes;
+    private static final SIZEUNIT  maxSizeUnit                    = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+    private final DecimalFormat    formatter                      = new DecimalFormat("0.00");
 
     public final String getFinishedString(final boolean inclDisabled) {
         if (inclDisabled) {
@@ -55,26 +59,29 @@ public class AggregatedNumbers {
     public String getTotalBytesString(boolean inclDisabled) {
         if (inclDisabled) {
             return format(totalBytes + disabledTotalBytes);
+        } else {
+            return format(totalBytes);
         }
-        return format(totalBytes);
     }
 
-    private String format(long totalBytes2) {
-        if (totalBytes2 < 0) {
+    private String format(final long fileSize) {
+        if (fileSize < 0) {
             return _GUI.T.lit_unknown();
+        } else {
+            return SIZEUNIT.formatValue(maxSizeUnit, formatter, fileSize);
         }
-        return SizeFormatter.formatBytes(totalBytes2);
     }
 
     public String getLoadedBytesString(boolean inclDisabled) {
         if (inclDisabled) {
-            format(loadedBytes + disabledLoadedBytes);
+            return format(loadedBytes + disabledLoadedBytes);
+        } else {
+            return format(loadedBytes);
         }
-        return format(loadedBytes);
     }
 
     public String getDownloadSpeedString() {
-        return SizeFormatter.formatBytes(downloadSpeed) + "/s";
+        return SIZEUNIT.formatValue(maxSizeUnit, formatter, downloadSpeed) + "/s";
     }
 
     public String getEtaString() {
