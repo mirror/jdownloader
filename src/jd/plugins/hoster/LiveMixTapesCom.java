@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -84,7 +85,8 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             return prepBr;
         }
         loadAntiCaptchaCookies(prepBr, host);
-        prepBr.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        prepBr.getHeaders().put("Accept-Encoding", "gzip, deflate, br");
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36");
         return super.prepBrowser(prepBr, host);
     }
 
@@ -119,8 +121,10 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     /* Check if final filename has been set in crawler before */
                     if (link.getFinalFileName() == null) {
                         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
@@ -271,15 +275,22 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             } else if (dlform.containsHTML("g-recaptcha-response")) {
-                /* 2021-02-25 */
+                /*
+                 * 2021-02-26: TODO: Fix this! Why does it take us to the "download" page only without returning a downloadurl? I've failed
+                 * to make this work...
+                 */
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 if (StringUtils.isEmpty(dlform.getAction())) {
                     dlform.setAction(br.getURL().replace("/mixtapes/", "/download/"));
                 }
-                br.getHeaders().put("Origin", "https://www.livemixtapes.com");
-                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
                 this.submitForm(dlform);
+                // final Form dlform2 = br.getFormbyProperty("id", "adfreedownload");
+                // dlform2.setAction(br.getURL().replace("/mixtapes/", "/download/"));
+                // final String recaptchaV2Response2 = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                // dlform2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response2));
+                // br.setFollowRedirects(false);
+                // br.submitForm(dlform2);
             }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
@@ -288,19 +299,20 @@ public class LiveMixTapesCom extends antiDDoSForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
-        /* Only set final filename here if it has not been set e.g. in crawler */
-        if (link.getFinalFileName() == null) {
-            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
