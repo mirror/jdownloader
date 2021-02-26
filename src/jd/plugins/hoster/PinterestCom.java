@@ -106,7 +106,7 @@ public class PinterestCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        jd.plugins.decrypter.PinterestComDecrypter.setInfoOnDownloadLink(this.br, link, pinMap, dllink, loggedIN);
+        jd.plugins.decrypter.PinterestComDecrypter.setInfoOnDownloadLink(link, pinMap, dllink, loggedIN);
         /* Check if our directlink is actually valid. */
         dllink = checkDirectLink(link, "free_directlink");
         if (dllink == null) {
@@ -222,7 +222,7 @@ public class PinterestCom extends PluginForHost {
             /* Fallback */
             internal_linkid = getPinID(pin_url);
         }
-        return internal_linkid;
+        return "pinterest://" + internal_linkid;
     }
 
     @Override
