@@ -116,7 +116,7 @@ public class ArchiveOrg extends PluginForDecrypt {
                 con.disconnect();
             }
         }
-        if (br.containsHTML("class=\"theatre-title\"|>\\s*You must log in to view this content")) {
+        if (br.containsHTML(">\\s*You must log in to view this content")) {
             /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
             throw new AccountRequiredException();
         }
