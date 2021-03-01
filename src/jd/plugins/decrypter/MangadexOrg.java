@@ -67,7 +67,10 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String hash = (String) map.get("hash");
             final String server = (String) map.get("server");
-            if (StringUtils.isEmpty(server)) {
+            final String status = (String) map.get("status");
+            if ("unavailable".equals(status)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (StringUtils.isEmpty(server)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.isEmpty(hash)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

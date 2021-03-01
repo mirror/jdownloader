@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -27,10 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luscious.net" }, urls = { "https?://(?:www\\.)?members\\.luscious\\.net/albums/[a-z0-9\\-_]+_\\d+/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luscious.net" }, urls = { "https?://(?:(?:www|members)\\.)?luscious\\.net/albums/[a-z0-9\\-_]+_\\d+/" })
 public class LusciousNetAlbum extends PluginForDecrypt {
     public LusciousNetAlbum(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,9 +52,6 @@ public class LusciousNetAlbum extends PluginForDecrypt {
         fp.setName(name_album);
         do {
             addedItems = 0;
-            if (this.isAbort()) {
-                return decryptedLinks;
-            }
             logger.info("Crawling page " + page);
             br.getPage("https://" + this.getHost() + "/c/wallpapers/pictures/album/" + name_album + "/sorted/newest/page/" + page + "/.json/");
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -76,7 +73,7 @@ public class LusciousNetAlbum extends PluginForDecrypt {
                 addedItems++;
             }
             page++;
-        } while (addedItems >= 50 && !paginator_complete);
+        } while (!this.isAbort() && addedItems >= 50 && !paginator_complete);
         return decryptedLinks;
     }
 }

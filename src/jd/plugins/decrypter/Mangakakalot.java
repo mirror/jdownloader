@@ -67,30 +67,44 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<]+) ?- Mangakakalot.com</title>").getMatch(0);
-        final String pageBlock = br.getRegex("<div class=\"vung-doc\"[^>]*>(.*)<div style=\"text-align:center;\">").getMatch(0);
-        final String[] pages = pageBlock == null ? null : HTMLParser.getHttpLinks(pageBlock, null);
-        if (pages == null || pages.length == 0 || fpName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String page : pages) {
-            if (!cryptedLinks.contains(page)) {
-                cryptedLinks.add(page);
-            }
-        }
         fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
-        final DecimalFormat df = new DecimalFormat(new String(new char[String.valueOf(cryptedLinks.size()).length()]).replace("\0", "0"));
-        int pageCounter = 1;
-        for (final String currentPage : cryptedLinks) {
-            if (isAbort()) {
-                break;
-            }
-            final String decryptedlink = currentPage;
-            final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
+        // final String pageBlock = br.getRegex("<div class=\"vung-doc\"[^>]*>(.*)<div style=\"text-align:center;\">").getMatch(0);
+        // final String[] pages = pageBlock == null ? null : HTMLParser.getHttpLinks(pageBlock, null);
+        // if (pages == null || pages.length == 0 || fpName == null) {
+        // logger.warning("Decrypter broken for link: " + parameter);
+        // return null;
+        // }
+        // for (final String page : pages) {
+        // if (!cryptedLinks.contains(page)) {
+        // cryptedLinks.add(page);
+        // }
+        // }
+        // final DecimalFormat df = new DecimalFormat(new String(new char[String.valueOf(cryptedLinks.size()).length()]).replace("\0",
+        // "0"));
+        // int pageCounter = 1;
+        // for (final String currentPage : cryptedLinks) {
+        // final String decryptedlink = currentPage;
+        // final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
+        // dd.setAvailable(true);
+        // dd.setFinalFileName(fpName + "_" + df.format(pageCounter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
+        // fp.add(dd);
+        // distribute(dd);
+        // decryptedLinks.add(dd);
+        // pageCounter++;
+        // if (isAbort()) {
+        // break;
+        // }
+        // }
+        final String[] pics = br.getRegex("<img src=\"(https?://[^\"]+\\d+\\.jpg)\"").getColumn(0);
+        final DecimalFormat df = new DecimalFormat("000");
+        int pageCounter = 0;
+        for (final String pic : pics) {
+            pageCounter += 1;
+            final DownloadLink dd = createDownloadlink("directhttp://" + pic);
             dd.setAvailable(true);
-            dd.setFinalFileName(fpName + "_" + df.format(pageCounter) + getFileNameExtensionFromString(decryptedlink, ".jpg"));
+            dd.setFinalFileName(fpName + "_" + df.format(pageCounter) + getFileNameExtensionFromString(pic, ".jpg"));
             fp.add(dd);
             distribute(dd);
             decryptedLinks.add(dd);
