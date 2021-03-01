@@ -45,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.PinterestComDecrypter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "decryptedpinterest://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:at|com|de|fr|it|es|co\\.uk)/pin/[A-Za-z0-9\\-_]+/" })
 public class PinterestCom extends PluginForHost {
@@ -69,50 +70,41 @@ public class PinterestCom extends PluginForHost {
         return new Regex(pin_url, "pin/([^/]+)/?$").getMatch(0);
     }
 
-    public static final long   trust_cookie_age = 300000l;
+    public static final long    trust_cookie_age   = 300000l;
     /* Site constants */
-    public static final String x_app_version    = "6cedd5c";
+    public static final String  x_app_version      = "6cedd5c";
     /* don't touch the following! */
-    private String             dllink           = null;
+    private String              dllink             = null;
+    private static final String PROPERTY_DIRECTURL = "free_directlink";
 
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String pin_id = getPinID(link.getContentUrl());
         /* Display ids for offline links */
-        link.setName(pin_id);
+        if (!link.isNameSet()) {
+            link.setName(pin_id);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        dllink = checkDirectLink(link, "free_directlink");
-        Map<String, Object> pinMap = null;
-        boolean loggedIN = false;
-        if (dllink == null) {
-            final String source_url = link.getStringProperty("source_url", null);
-            final String boardid = link.getStringProperty("boardid", null);
-            final String username = link.getStringProperty("username", null);
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa != null && source_url != null && boardid != null && username != null) {
-                login(aa, false);
-                loggedIN = true;
-                pinMap = jd.plugins.decrypter.PinterestComDecrypter.findPINMap(this.br, true, link.getContentUrl(), source_url, boardid, username);
-                /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
-                br.clearCookies(br.getHost());
-            } else {
-                loggedIN = false;
-                pinMap = jd.plugins.decrypter.PinterestComDecrypter.findPINMap(this.br, false, link.getContentUrl(), source_url, boardid, username);
-            }
-            dllink = jd.plugins.decrypter.PinterestComDecrypter.getDirectlinkFromPINMap(pinMap);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
+        if (dllink != null) {
+            /* Item has been checked before -> Done! */
+            return AvailableStatus.TRUE;
         }
-        jd.plugins.decrypter.PinterestComDecrypter.setInfoOnDownloadLink(link, pinMap, dllink, loggedIN);
-        /* Check if our directlink is actually valid. */
-        dllink = checkDirectLink(link, "free_directlink");
-        if (dllink == null) {
-            logger.info("Final downloadurl is not downloadable --> Offline?");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Map<String, Object> pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
+        final Account account = AccountController.getInstance().getValidAccount(this);
+        if (account != null) {
+            login(account, false);
+            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
+            /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
+            br.clearCookies(br.getHost());
+        } else {
+            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
         }
+        PinterestComDecrypter.setInfoOnDownloadLink(link, pinMap);
+        /* Property should have been set now -> Check if our directlink is actually valid. */
+        dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         return AvailableStatus.TRUE;
     }
 
@@ -154,25 +146,27 @@ public class PinterestCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link, false, 1, PROPERTY_DIRECTURL);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (!this.attemptStoredDownloadurlDownload(link, resumable, maxchunks)) {
+            requestFileInformation(link);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dllink);
         }
-        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -203,6 +197,28 @@ public class PinterestCom extends PluginForHost {
             }
         }
         return null;
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumes, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (url == null) {
+            return false;
+        }
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumes, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                dl.getConnection().disconnect();
+                return false;
+            }
+        } catch (final Throwable e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e2) {
+            }
+        }
+        return false;
     }
 
     /**
@@ -379,10 +395,7 @@ public class PinterestCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        /* We already logged in in requestFileInformation */
-        br.setFollowRedirects(false);
-        doFree(link, false, 1, "account_free_directlink");
+        handleDownload(link, false, 1, PROPERTY_DIRECTURL);
     }
 
     public static String getPictureDescription(final DownloadLink dl) {
