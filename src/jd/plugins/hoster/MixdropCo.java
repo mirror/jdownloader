@@ -173,7 +173,7 @@ public class MixdropCo extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            final String continueURL = br.getRegex("((?://[^/]+)?/f/[a-z0-9]+\\?download)").getMatch(0);
+            final String continueURL = br.getRegex("((?://[^/]+/f/[a-z0-9]+)?\\?download)").getMatch(0);
             if (continueURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

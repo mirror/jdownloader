@@ -457,7 +457,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://www.facebook.com/video/embed?video_id=" + videoID);
+        br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + videoID);
         /*
          * 2020-06-05: <div class="pam uiBoxRed"><div class="fsl fwb fcb">Video nicht verfügbar</div>Dieses Video wurde entweder entfernt
          * oder ist aufgrund der ‎Privatsphäre-Einstellungen nicht sichtbar.</div>
