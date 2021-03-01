@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.URL;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,9 +38,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
@@ -84,6 +84,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         br.setFollowRedirects(true);
         final String host = new URL(link.getPluginPatternMatcher()).getHost();
@@ -101,6 +105,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         String filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         dllink = checkDirectLink(link, "directlink");
+        if (dllink != null) {
+            /* This means we must have checked this one before so filesize/name has already been set -> Done! */
+            return AvailableStatus.TRUE;
+        }
         if (dllink == null) {
             dllink = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -135,12 +143,16 @@ public class SankakucomplexCom extends antiDDoSForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
+        if (Encoding.isHtmlEntityCoded(this.dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
+        }
         final String size = br.getRegex("<li>Original:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
         if (size != null) {
+            /* Size is given --> We don't have to check for it! */
             link.setDownloadSize(Long.parseLong(size.replace(",", "")));
             return AvailableStatus.TRUE;
         }
-        if (dllink != null) {
+        if (dllink != null && !isDownload) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
@@ -167,7 +179,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (this.accountRequired) {
             throw new AccountRequiredException();
         } else if (this.dllink == null) {
@@ -194,7 +206,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (this.looksLikeDownloadableContent(con)) {
+                    if (this.looksLikeDownloadableContent(con) && !con.getURL().toString().contains("expired.png")) {
                         return dllink;
                     } else {
                         return null;
@@ -277,7 +289,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {

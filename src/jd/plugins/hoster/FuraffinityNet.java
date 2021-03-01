@@ -93,7 +93,7 @@ public class FuraffinityNet extends antiDDoSForHost {
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many requests", 5 * 60 * 1000l);
-        } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML(">\\s*System Error|>\\s*The submission you are trying to find is not in")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML("<(title|h2)>\\s*System Error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*The owner of this page has elected to make it available to registered users only")) {
             /* Content is online but we can't view/download it! */

@@ -15,23 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VoeSx extends XFileSharingProBasic {
-    public VoeSx(final PluginWrapper wrapper) {
+public class DlFileCom extends XFileSharingProBasic {
+    public DlFileCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -39,27 +36,15 @@ public class VoeSx extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2020-11-27: Premium untested, set FREE limits <br />
-     * captchatype-info: 2020-08-19: null<br />
+     * limit-info:<br />
+     * captchatype-info: 2021-03-01: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "voe.sx" });
+        ret.add(new String[] { "dl-file.com" });
         return ret;
-    }
-
-    public static final String getDefaultAnnotationPatternPartVoeSx() {
-        return "/(?:embed-|e/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + VoeSx.getDefaultAnnotationPatternPartVoeSx());
-        }
-        return ret.toArray(new String[0]);
     }
 
     public static String[] getAnnotationNames() {
@@ -72,18 +57,7 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return VoeSx.buildAnnotationUrls(getPluginDomains());
-    }
-
-    @Override
-    public String getFUIDFromURL(final DownloadLink dl) {
-        try {
-            final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-|e/)?([a-z0-9]{12})").getMatch(0);
-            return result;
-        } catch (MalformedURLException e) {
-            logger.log(e);
-        }
-        return null;
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -106,13 +80,13 @@ public class VoeSx extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return -5;
+            return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -5;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -5;
+            return 1;
         }
     }
 
@@ -129,32 +103,5 @@ public class VoeSx extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        /* 2020-08-19 */
-        return true;
-    }
-
-    @Override
-    protected boolean supports_mass_linkcheck_over_api() {
-        return isAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    protected boolean supports_single_linkcheck_over_api() {
-        return isAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    protected String getDllinkVideohost(final String src) {
-        /** 2021-03-01: Prefer HLS over HTTP as they've hidden their http URLs via js */
-        final String hlsMaster = new Regex(correctedBR, "\"hls\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
-        if (hlsMaster != null) {
-            return hlsMaster;
-        } else {
-            return super.getDllinkVideohost(src);
-        }
     }
 }
