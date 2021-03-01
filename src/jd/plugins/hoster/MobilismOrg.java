@@ -25,7 +25,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
@@ -97,9 +96,6 @@ public class MobilismOrg extends antiDDoSForHost {
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
-            return false;
-        } else if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(link.getLinkInfo().getExtension())) {
-            // videos are no longer allowed
             return false;
         } else {
             return true;
@@ -306,7 +302,11 @@ public class MobilismOrg extends antiDDoSForHost {
                 /* E.g. successful response: {"ok":true,"url":"\/amember\/member"} */
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final boolean loginIsOK = ((Boolean) entries.get("ok")).booleanValue();
-                if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null && loginIsOK) {
+                if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null || !loginIsOK) {
+                    /*
+                     * 2021-03-01: This may also happen sometimes:
+                     * {"ok":false,"error":["Please wait 55 seconds before next login attempt"],"code":-4}
+                     */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 this.checkAndHandleLogin2(account);

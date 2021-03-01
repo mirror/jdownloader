@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,17 +31,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luscious.net" }, urls = { "https?://(?:www\\.)?luscious\\.net/c/[^/]+/pictures/.*?/id/\\d+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luscious.net" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?luscious\\.net/(?!albums/).*/id/(\\d+)/?" })
 public class LusciousNet extends PluginForHost {
     public LusciousNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // other:
     /* Extension which will be used if no correct extension is found */
     private static final String  default_extension = ".jpg";
     /* Connection stuff */
@@ -46,56 +44,75 @@ public class LusciousNet extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "https://luscious.net/terms/";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher("https://luscious.net/pictures/id/" + this.getFID(link) + "/");
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("We couldn\\'t find this picture")) {
+        this.dllink = checkDirectLink(link, "directlink");
+        if (this.dllink != null) {
+            /* Check has been done before -> Done! */
+            return AvailableStatus.TRUE;
+        }
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/pictures(.+)").getMatch(0).replace("/", "_");
-        String filename = br.getRegex("gallery\\.page_title = \\'([^<>\"]+)\\';").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        String filename = new Regex(br.getURL(), "/id/(.+)").getMatch(0);
+        dllink = br.getRegex("<picture><source[^>]*srcSet=\"(https?://[^\"]+)\"").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            final String ext;
+            if (!StringUtils.isEmpty(dllink)) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+            } else {
+                ext = default_extension;
+            }
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
         }
-        dllink = br.getRegex("<a href=\"(http[^<>\"]+)\"[^<>]*?class=\"icon\\-download\"></a>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             dllink = Encoding.htmlDecode(dllink);
             link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     link.setProperty("directlink", dllink);
-                } else {
-                    server_issues = true;
                 }
             } finally {
                 try {
@@ -111,15 +128,13 @@ public class LusciousNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -133,6 +148,29 @@ public class LusciousNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
     }
 
     @Override

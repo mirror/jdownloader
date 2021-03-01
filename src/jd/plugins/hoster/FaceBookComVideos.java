@@ -47,6 +47,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -216,6 +217,7 @@ public class FaceBookComVideos extends PluginForHost {
                 if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || br.containsHTML("<title>\\s*Content not found\\s*</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                this.checkErrors();
                 String fallback_downloadurl = null;
                 if (this.br.getURL().contains(videoID)) {
                     /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
@@ -325,6 +327,7 @@ public class FaceBookComVideos extends PluginForHost {
                     /* Rare case */
                     logger.info("Video is unavailable on mobile page");
                     br.getPage(link.getPluginPatternMatcher());
+                    this.checkErrors();
                     final String[] videoJsons = br.getRegex("\"adp_CometVideoHomeInjectedLiveVideoQueryRelayPreloader_[a-f0-9]+\",(\\{\"__bbox\".*?)" + Regex.escape("]]]});});});")).getColumn(0);
                     for (final String videoJson : videoJsons) {
                         boolean foundVideoJson = false;
@@ -496,7 +499,17 @@ public class FaceBookComVideos extends PluginForHost {
     public static boolean isOffline(final Browser br) {
         /* TODO: Add support for more languages here */
         /* Example: https://www.facebook.com/photo.php?fbid=624011957634791 */
-        return br.containsHTML(">The link you followed may have expired|>Leider ist dieser Inhalt derzeit nicht");
+        return br.containsHTML(">\\s*The link you followed may have expired|>\\s*Leider ist dieser Inhalt derzeit nicht");
+    }
+
+    private void checkErrors() throws AccountRequiredException {
+        if (br.getURL().contains("/login.php")) {
+            /*
+             * 2021-03-01: Lgin required: There are videos which are only available via account but additionally it seems like FB randomly
+             * enforces the need of an account for other videos also e.g. by country/IP.
+             */
+            throw new AccountRequiredException();
+        }
     }
 
     @Override
