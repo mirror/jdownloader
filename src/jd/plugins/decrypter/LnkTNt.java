@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -27,9 +26,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkto.net" }, urls = { "http://[\\w\\.]*?linkto\\.net/\\?[0-9a-z]+\\.[0-9]{8}" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkto.net" }, urls = { "https?://[\\w\\.]*?linkto\\.net/\\?[0-9a-z]+\\.[0-9]{8}" })
 public class LnkTNt extends PluginForDecrypt {
-
     public LnkTNt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,10 +35,17 @@ public class LnkTNt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*El Link No se encuentra o fue")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String finallink = br.getRegex("\"iframe\"  src=\"(.*?)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
@@ -49,5 +54,4 @@ public class LnkTNt extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

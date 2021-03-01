@@ -97,6 +97,11 @@ public class MagentaMusik360 extends PluginForDecrypt {
                 return ret;
             }
             br.getPage(String.format("https://wcps.t-online.de/cvss/magentamusic/vodplayer/v3/details/%s/%s", seriesID, assetID));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* E.g. streams that are not available yet but e.g. scheduled to go live in the future. */
+                ret.add(this.createOfflinelink(parameter.toString()));
+                return ret;
+            }
             final Map<String, Object> videoInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String playerURL = (String) JavaScriptEngineFactory.walkJson(videoInfo, "content/movie/features/{0}/player/href");
             if (StringUtils.isEmpty(playerURL)) {
