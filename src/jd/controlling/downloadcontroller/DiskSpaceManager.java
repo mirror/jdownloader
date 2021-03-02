@@ -55,7 +55,7 @@ public class DiskSpaceManager {
                 return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
             } else {
                 final String bestRootMatch = checker.getRoot();
-                if (bestRootMatch == null || !new File(bestRootMatch).isDirectory()) {
+                if (bestRootMatch == null || (!new File(bestRootMatch).isDirectory() && !new File(bestRootMatch).equals(reservation.getDestination()))) {
                     return handle(checker, DISKSPACERESERVATIONRESULT.INVALIDDESTINATION, null);
                 }
                 final long forcedFreeSpaceOnDisk = Math.max(0l, config.getForcedFreeSpaceOnDisk() * 1024l * 1024l);
