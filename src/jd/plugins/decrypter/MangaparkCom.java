@@ -30,7 +30,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "https://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me|net)/manga/[\\w\\-\\.\\%]+/i\\d+/c\\d+" })
@@ -62,8 +64,12 @@ public class MangaparkCom extends PluginForDecrypt {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("search?") || br.containsHTML("(>Sorry, the page you have requested cannot be found.<|Either the URL of your requested page is incorrect|page has been removed or moved to a new URL)")) {
-            logger.info("Link offline: " + parameter);
+        if (!this.canHandle(this.br.getURL()) || br.containsHTML("(>Sorry, the page you have requested cannot be found.<|Either the URL of your requested page is incorrect|page has been removed or moved to a new URL)")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.containsHTML("No chapter id found1?,")) {
+            /* 2021-03-02 */
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(https?://(?:[a-z0-9]+\\.){1,}mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(?:jpg|png))(?:\\?\\d+)?\"");
@@ -74,7 +80,7 @@ public class MangaparkCom extends PluginForDecrypt {
         }
         String[] fpname = br.getRegex(">([^<>\"]+)\\s*</a>\\s*/\\s*([^<>]+)<em class=\"refresh\"").getRow(0);
         if (fpname == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String fpName = (fpname[0] != null ? fpname[0] : "") + (fpname[1] != null ? " - " + fpname[1] : "");
         fpName = Encoding.htmlDecode(fpName).trim();
@@ -97,7 +103,7 @@ public class MangaparkCom extends PluginForDecrypt {
             }
         }
         if (totalPages == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int numberOfPages = Integer.parseInt(totalPages);
         FilePackage fp = FilePackage.getInstance();
@@ -154,7 +160,7 @@ public class MangaparkCom extends PluginForDecrypt {
                     }
                     url = br.getRegex("a class=\"img-num\" target=\"_blank\" href=\"((?:https?:)?//[^<>]+\\.(jpg|png)[^<>]*?)\"").getMatch(0);
                     if (url == null) {
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
                         url = br.getURL(url).toString();
                     }

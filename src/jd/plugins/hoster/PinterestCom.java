@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PinterestComDecrypter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "decryptedpinterest://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:at|com|de|fr|it|es|co\\.uk)/pin/[A-Za-z0-9\\-_]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pinterest.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?pinterest\\.(?:at|com|de|fr|it|es|co\\.uk)/pin/[A-Za-z0-9\\-_]+/" })
 public class PinterestCom extends PluginForHost {
     public PinterestCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,12 +58,6 @@ public class PinterestCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://about.pinterest.com/de/terms-service";
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Correct link - remove country related subdomains (e.g. 'es.pinterest.com'). */
-        final String pin_id = getPinID(link.getPluginPatternMatcher());
-        link.setContentUrl("https://www.pinterest.com/pin/" + pin_id + "/");
     }
 
     public static String getPinID(final String pin_url) {
@@ -80,10 +74,10 @@ public class PinterestCom extends PluginForHost {
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String pin_id = getPinID(link.getContentUrl());
+        final String pinID = getPinID(link.getPluginPatternMatcher());
         /* Display ids for offline links */
         if (!link.isNameSet()) {
-            link.setName(pin_id);
+            link.setName(pinID);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -92,15 +86,35 @@ public class PinterestCom extends PluginForHost {
             /* Item has been checked before -> Done! */
             return AvailableStatus.TRUE;
         }
-        Map<String, Object> pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
+        /* 2021-03-02: PINs may redirect to other PINs in very rare cases -> Check that */
+        br.getPage(link.getPluginPatternMatcher());
+        String redirect = br.getRegex("window\\.location\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+        if (redirect != null) {
+            /* We want the full URL. */
+            redirect = br.getURL(redirect).toString();
+        }
+        if (!br.getURL().matches(PinterestComDecrypter.TYPE_PIN)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (redirect != null && redirect.matches(PinterestComDecrypter.TYPE_PIN) && !redirect.contains(pinID)) {
+            final String newPinID = getPinID(redirect);
+            logger.info("Old pinID: " + pinID + " | New pinID: " + newPinID + " | New URL: " + redirect);
+            link.setContentUrl(redirect);
+            link.setPluginPatternMatcher(redirect);
+        } else if (redirect != null && redirect.contains("show_error=true")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        Map<String, Object> pinMap;
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             login(account, false);
-            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
+            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getPluginPatternMatcher());
             /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
             br.clearCookies(br.getHost());
         } else {
-            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getContentUrl());
+            pinMap = PinterestComDecrypter.getPINMap(this.br, link.getPluginPatternMatcher());
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         PinterestComDecrypter.setInfoOnDownloadLink(link, pinMap);
         /* Property should have been set now -> Check if our directlink is actually valid. */
