@@ -55,7 +55,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummydebrid-link.frv2BETA" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
@@ -63,8 +62,9 @@ public class DebridLinkFr2 extends PluginForHost {
     private static final String          PROPERTY_DIRECTURL                                   = "directurl";
     private static final String          PROPERTY_MAXCHUNKS                                   = "maxchunks";
     private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                        = "access_token";
+    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED      = "refresh_token_timestamp_created";
     private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                       = "refresh_token";
-    private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP = "refresh_token_valid_until_timestamp";
+    private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL = "refresh_token_timestamp_valid_until";
     private static final String          PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED         = "NEW_LOGIN_MESSAGE_DISPLAYED";
     // private static LinkedHashMap<String, Long> quotaReachedHosts = new LinkedHashMap<String, Long>();
     private static ArrayList<String>     quotaReachedHostsList                                = new ArrayList<String>();
@@ -100,12 +100,9 @@ public class DebridLinkFr2 extends PluginForHost {
     private String getApiBaseOauth() {
         return "https://" + getConfiguredDomain() + "/api/oauth";
     }
-    // private String getApiBaseOauthAuth() {
-    // return getApiBaseOauth() + "/auth";
-    // }
 
     private String getClientID() {
-        return "TODOHIDEME";
+        return "5PyzfhqQM0PgFPEArhBadw";
     }
 
     @Override
@@ -113,7 +110,7 @@ public class DebridLinkFr2 extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         login(account, true);
         if (!br.getURL().contains("/account/infos")) {
-            apiGetAccountInfo();
+            callAPIGetAccountInfo();
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("value");
@@ -140,7 +137,7 @@ public class DebridLinkFr2 extends PluginForHost {
         } else {
             logger.warning("Unknown account type: " + accountType);
         }
-        if (registerDate != null) {
+        if (!StringUtils.isEmpty(registerDate)) {
             ac.setCreateTime(TimeFormatter.getMilliSeconds(registerDate, "yyyy-MM-dd", Locale.ENGLISH));
         }
         /* Update list of supported hosts */
@@ -150,10 +147,10 @@ public class DebridLinkFr2 extends PluginForHost {
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Object> hosters = (List<Object>) entries.get("value");
         final HashMap<String, String> name2RealHostMap = new HashMap<String, String>();
+        final AccountInfo dummyAccInfo = new AccountInfo();
         for (final Object hostO : hosters) {
             entries = (Map<String, Object>) hostO;
             final String hostname = (String) entries.get("name");
-            /* TODO: Add hosts to list of supported hosts but don't use limited hosts for downloading! */
             final int status = ((Number) entries.get("status")).intValue();
             final boolean isFreeHost = ((Boolean) entries.get("isFree")).booleanValue();
             /* Don't add hosts if they are down or disabled, */
@@ -173,12 +170,19 @@ public class DebridLinkFr2 extends PluginForHost {
                     supportedHostsTmp.add((String) domainO);
                 }
                 /* Workaround: Find our "real host" which we internally use -> We need this later! */
-                ac.setMultiHostSupport(this, supportedHostsTmp);
-                final List<String> hostsReal = ac.getMultiHostSupport();
+                final List<String> hostsReal = dummyAccInfo.setMultiHostSupport(this, supportedHostsTmp);
                 if (hostsReal != null && !hostsReal.isEmpty()) {
-                    final String realHost = hostsReal.get(0);
-                    supportedHosts.add(realHost);
-                    name2RealHostMap.put(hostname, realHost);
+                    int index = -1;
+                    for (final String realHost : hostsReal) {
+                        index += 1;
+                        if (realHost == null) {
+                            continue;
+                        }
+                        supportedHosts.add(realHost);
+                        if (index == 0) {
+                            name2RealHostMap.put(hostname, realHost);
+                        }
+                    }
                 }
             }
         }
@@ -193,11 +197,7 @@ public class DebridLinkFr2 extends PluginForHost {
             ac.setStatus(ac.getStatus() + " | " + usedPercent + "% used");
         }
         final Map<String, Object> nextResetSecondsMap = (Map<String, Object>) entries.get("nextResetSeconds");
-        int nextResetSeconds = ((Number) nextResetSecondsMap.get("value")).intValue();
-        if (nextResetSeconds < 0) {
-            /* Fallback */
-            nextResetSeconds = 0;
-        }
+        final int nextResetSeconds = ((Number) nextResetSecondsMap.get("value")).intValue();
         quotaReachedHostsList.clear();
         nextQuotaReachedResetTimestamp = System.currentTimeMillis() + nextResetSeconds * 1001l;
         final List<Object> hosters2 = (List<Object>) entries.get("hosters");
@@ -226,7 +226,6 @@ public class DebridLinkFr2 extends PluginForHost {
         if (serverDetected != null && serverDetected instanceof Boolean && ((Boolean) serverDetected).booleanValue()) {
             throw new AccountUnavailableException("VPN/Proxy detected: Turn it off to be able to use this account", 5 * 60 * 1000l);
         }
-        // ac.setProperty("plain_hostinfo", br.toString());
         return ac;
     }
 
@@ -243,12 +242,12 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     private boolean accountAccessTokenExpired(final Account account) {
-        return System.currentTimeMillis() > account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP, 0);
+        return System.currentTimeMillis() > account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, 0);
     }
 
     private boolean accountAccessTokenNeedsRefresh(final Account account) {
-        /* Substract 3 days from "valid until" timestamp so we got more than enough time to refresh it. */
-        return account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP, 0) - System.currentTimeMillis() <= 3 * 24 * 60 * 60 * 1000l;
+        /* Refresh token every 24 hours. */
+        return System.currentTimeMillis() - account.getLongProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED, 0) > 24 * 60 * 60 * 1000l;
     }
 
     private String accountGetAccessToken(final Account account) {
@@ -262,10 +261,10 @@ public class DebridLinkFr2 extends PluginForHost {
     private void dumpSession(final Account account) {
         account.removeProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
         account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN);
-        account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP);
+        account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL);
     }
 
-    private void apiGetAccountInfo() throws IOException {
+    private void callAPIGetAccountInfo() throws IOException {
         br.getPage(this.getApiBase() + "/account/infos");
     }
 
@@ -300,18 +299,19 @@ public class DebridLinkFr2 extends PluginForHost {
                     logger.info("Trust token without check");
                     return;
                 }
-                this.apiGetAccountInfo();
+                this.callAPIGetAccountInfo();
                 if (br.getHttpConnection().getResponseCode() == 200) {
-                    logger.info("Token login successful | Token is valid for: " + TimeFormatter.formatMilliSeconds(account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP, 0) - System.currentTimeMillis(), 0));
+                    logger.info("Token login successful | Token is valid for: " + TimeFormatter.formatMilliSeconds(account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, 0) - System.currentTimeMillis(), 0));
                     return;
                 } else {
+                    /* This should never happen except maybe if the user has manually revoked API access! */
                     logger.info("Token login failed");
-                    br.clearAll();
+                    throw new AccountUnavailableException("Session expired(?)", 5 * 60 * 1000l);
                 }
-            } else if (accountAccessTokenExpired(account)) {
+            } else if (this.accountGetAccessToken(account) != null && accountAccessTokenExpired(account)) {
                 /* Show permanent error. We cannot perform a full login without the users intervention! */
                 this.dumpSession(account);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Access token expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Access token expired - refresh to re-login", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (this.accountGetAccessToken(account) != null && this.accountGetRefreshToken(account) != null) {
                 logger.info("Trying to refresh access_token");
                 final UrlQuery query = new UrlQuery();
@@ -326,66 +326,70 @@ public class DebridLinkFr2 extends PluginForHost {
                     logger.info("Refresh token successful");
                     br.getHeaders().put("Authorization", "Bearer " + tokenResponse.getAccess_token());
                     account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, tokenResponse.getAccess_token());
+                    account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED, System.currentTimeMillis());
                     this.accountSetTokenValidity(account, tokenResponse.getExpires_in());
                     return;
                 } else {
+                    /* This should never happen except maybe if the user has manually revoked API access! */
                     logger.info("Refresh token failed");
-                    // this.br.clearAll();
-                    /* Make sure we enter the handling below next time! */
-                    account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN);
+                    /* Make sure we do full login next time! */
+                    this.dumpSession(account);
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Sitzung abgelaufen: Aktualisiere diesen Account, um dich neu einzuloggen", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired: Refresh this account to re-login", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+            } else {
+                logger.info("Full login required");
+                final UrlQuery queryDevicecode = new UrlQuery();
+                queryDevicecode.add("client_id", Encoding.urlEncode(this.getClientID()));
+                queryDevicecode.add("scopes", "get.account,get.post.downloader");
+                prepBR(this.br);
+                br.postPage(this.getApiBaseOauth() + "/device/code", queryDevicecode);
+                final CodeResponse code = JSonStorage.restoreFromString(this.br.toString(), new TypeRef<CodeResponse>(CodeResponse.class) {
+                });
+                final Thread dialog = showPINLoginInformation(code.getVerification_url(), code.getUser_code());
+                final UrlQuery queryPollingLogin = new UrlQuery();
+                queryPollingLogin.add("client_id", Encoding.urlEncode(this.getClientID()));
+                queryPollingLogin.appendEncoded("code", code.getDevice_code());
+                queryPollingLogin.appendEncoded("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
+                // queryPollingLogin.add("grant_type", "http%3A%2F%2Foauth.net%2Fgrant_type%2Fdevice%2F1.0");
+                long waitedSeconds = 0;
+                final Browser br2 = this.br.cloneBrowser();
+                try {
+                    do {
+                        logger.info("Waiting for user to authorize application: " + waitedSeconds);
+                        Thread.sleep(code.getInterval() * 1000l);
+                        waitedSeconds += code.getInterval();
+                        br2.postPage(this.getApiBaseOauth() + "/token", queryPollingLogin);
+                        /*
+                         * E.g. returns the following as long as we're waiting for the user to authorize: {"error":"authorization_pending"}
+                         */
+                        final TokenResponse tokenResponse = JSonStorage.restoreFromString(br2.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
+                        });
+                        if (!StringUtils.isEmpty(tokenResponse.getAccess_token())) {
+                            expiresIn = tokenResponse.getExpires_in();
+                            account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, tokenResponse.getAccess_token());
+                            account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, tokenResponse.getRefresh_token());
+                            account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED, System.currentTimeMillis());
+                            this.accountSetTokenValidity(account, expiresIn);
+                            br.getHeaders().put("Authorization", "Bearer " + this.accountGetAccessToken(account));
+                            return;
+                        } else if (!dialog.isAlive()) {
+                            logger.info("Dialog closed!");
+                            break;
+                        }
+                        if (waitedSeconds >= code.getExpires_in()) {
+                            logger.info("Timeout reached: " + code.getExpires_in());
+                            break;
+                        }
+                    } while (true);
+                } finally {
+                    dialog.interrupt();
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            logger.info("Full login required");
-            final UrlQuery queryDevicecode = new UrlQuery();
-            queryDevicecode.add("client_id", Encoding.urlEncode(this.getClientID()));
-            queryDevicecode.add("scopes", "get.account,get.post.downloader");
-            prepBR(this.br);
-            br.postPage(this.getApiBaseOauth() + "/device/code", queryDevicecode);
-            final CodeResponse code = JSonStorage.restoreFromString(this.br.toString(), new TypeRef<CodeResponse>(CodeResponse.class) {
-            });
-            final Thread dialog = showPINLoginInformation(code.getVerification_url(), code.getUser_code());
-            final UrlQuery queryPollingLogin = new UrlQuery();
-            queryPollingLogin.add("client_id", Encoding.urlEncode(this.getClientID()));
-            queryPollingLogin.appendEncoded("code", code.getDevice_code());
-            queryPollingLogin.appendEncoded("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
-            // queryPollingLogin.add("grant_type", "http%3A%2F%2Foauth.net%2Fgrant_type%2Fdevice%2F1.0");
-            long waitedSeconds = 0;
-            final Browser br2 = this.br.cloneBrowser();
-            try {
-                do {
-                    logger.info("Waiting for user to authorize application: " + waitedSeconds);
-                    Thread.sleep(code.getInterval() * 1000l);
-                    waitedSeconds += code.getInterval();
-                    br2.postPage(this.getApiBaseOauth() + "/token", queryPollingLogin);
-                    /* E.g. returns the following as long as we're waiting for the user to authorize: {"error":"authorization_pending"} */
-                    final TokenResponse tokenResponse = JSonStorage.restoreFromString(br2.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
-                    });
-                    /* TODO: Quit on error response? */
-                    if (!StringUtils.isEmpty(tokenResponse.getAccess_token())) {
-                        expiresIn = tokenResponse.getExpires_in();
-                        account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, tokenResponse.getAccess_token());
-                        account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, tokenResponse.getRefresh_token());
-                        this.accountSetTokenValidity(account, expiresIn);
-                        br.getHeaders().put("Authorization", "Bearer " + this.accountGetAccessToken(account));
-                        return;
-                    } else if (!dialog.isAlive()) {
-                        logger.info("Dialog closed!");
-                        break;
-                    }
-                    if (waitedSeconds >= code.getExpires_in()) {
-                        logger.info("Timeout reached: " + code.getExpires_in());
-                        break;
-                    }
-                } while (true);
-            } finally {
-                dialog.interrupt();
-            }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -394,7 +398,7 @@ public class DebridLinkFr2 extends PluginForHost {
      * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
-        account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_VALID_UNTIL_TIMESTAMP, System.currentTimeMillis() + expiresIn * 1000l);
+        account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
     }
 
     private Thread showNewLoginMethodInformation() {
@@ -483,7 +487,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 /* Fallback */
                 error = "Unknown error";
             }
-            // generic errors not specific to download routine!
+            /* First handle account errors */
             if ("badToken".equals(error)) {
                 /* Should never happen */
                 throw new AccountUnavailableException("Session expired(?)", 5 * 60 * 1000l);
@@ -496,22 +500,21 @@ public class DebridLinkFr2 extends PluginForHost {
             } else if ("accountLocked".equals(error)) {
                 throw new AccountUnavailableException("Account locked", 1 * 60 * 60 * 1001l);
             }
-            // end of generic
-            // handling for download routines!
             if (link != null) {
                 if ("fileNotFound".equals(error)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
                 } else if ("disabledHost".equals(error)) {
-                    // The filehoster is disabled
+                    /* The filehoster is disabled */
                     mhm.putError(account, link, 5 * 60 * 1000l, "Disabled filehost");
                 } else if ("notFreeHost".equals(error)) {
                     mhm.putError(account, link, 60 * 60 * 1000l, "Disabled filehost as it is only available for premium users");
+                } else if ("maintenanceHost".equals(error) || "noServerHost".equals(error)) {
+                    /* Some generic "Host currently doesn't work" traits! */
+                    mhm.putError(account, link, 5 * 60 * 1000l, error);
                 } else if ("maxLinkHost".equals(error)) {
-                    /* TODO: Check if the exact waittime until quota reset is given at this stage */
                     quotaReachedHostsList.add(link.getHost());
                     mhm.putError(account, link, 5 * 60 * 1000l, "Max links per day limit reached for this host");
                 } else if ("maxDataHost".equals(error)) {
-                    /* TODO: Check if the exact waittime until quota reset is given at this stage */
                     quotaReachedHostsList.add(link.getHost());
                     mhm.putError(account, link, 5 * 60 * 1000l, "Max data per day limit reached for this host");
                 } else if ("maxLink".equals(error)) {
@@ -527,8 +530,9 @@ public class DebridLinkFr2 extends PluginForHost {
                 } else {
                     mhm.handleErrorGeneric(account, link, error, 50);
                 }
+            } else {
+                throw new AccountUnavailableException("Unknown error: " + error, 5 * 60 * 1001l);
             }
-            throw new AccountUnavailableException("Unknown error: " + error, 5 * 60 * 1001l);
         } catch (final JSonMapperException parserFailure) {
             logger.warning("Json parsing failed -> Probably HTML response");
             throw parserFailure;
@@ -557,7 +561,7 @@ public class DebridLinkFr2 extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        /* Extra check for pre-stored "quota reached" -> Saves a few http requests */
+        /* Extra check for pre-stored "quota reached" state -> Saves a few http requests */
         if (hostHasReachedQuotaLimit(link.getHost())) {
             mhm.putError(account, link, 5 * 60 * 1000l, "Quota reached");
         }
@@ -601,9 +605,8 @@ public class DebridLinkFr2 extends PluginForHost {
             if (chunkO != null && chunkO instanceof Number) {
                 maxChunks = -((Number) chunkO).intValue();
                 link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
-                logger.info("CustomMaxChunks:" + maxChunks);
+                logger.info("APIMaxChunks:" + maxChunks);
             }
-            /* 2021-02-04: TODO: Maybe save- and re-use generated download URLs! */
             final String dllink = (String) entries.get("downloadUrl");
             if (dllink == null) {
                 logger.warning("Failed to find dllink");
@@ -620,7 +623,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 logger.warning("Unhandled download error on Service Provider side:");
                 mhm.handleErrorGeneric(account, link, "final_downloadurl_isnot_a_file", 50, 5 * 60 * 1000l);
             }
-            link.setProperty(PROPERTY_DIRECTURL, dllink);
+            link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
         }
         /*
          * 2019-09-06: They sometimes return wrong final filenames e.g. for vidoza.net filenames will all get changed to "video.mp4". This
@@ -670,20 +673,11 @@ public class DebridLinkFr2 extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        final String currenthost = link.getHost();
-        final String plain_hostinfo = account.getAccountInfo().getStringProperty("plain_hostinfo", null);
-        if (account.getType() == AccountType.FREE && plain_hostinfo != null) {
-            final String[] hostinfo = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(plain_hostinfo, "hosters"));
-            if (hostinfo != null) {
-                for (final String singlehostinfo : hostinfo) {
-                    final boolean free_host = Boolean.parseBoolean(PluginJSonUtils.getJsonValue(singlehostinfo, "free_host"));
-                    if (singlehostinfo.contains(currenthost) && !free_host) {
-                        return false;
-                    }
-                }
-            }
+        if (account != null) {
+            return true;
+        } else {
+            return false;
         }
-        return true;
     }
 
     @Override
@@ -696,12 +690,11 @@ public class DebridLinkFr2 extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        /* Only login captcha sometimes */
         return false;
     }
 
     protected String getConfiguredDomain() {
-        /* Returns user-set value which can be used to circumvent GEO-block. */
+        /* Returns user-defined value which can be used to circumvent GEO-block. */
         PreferredDomain cfgdomain = PluginJsonConfig.get(DebridLinkFrConfig.class).getPreferredDomain();
         if (cfgdomain == null) {
             cfgdomain = PreferredDomain.DEFAULT;
