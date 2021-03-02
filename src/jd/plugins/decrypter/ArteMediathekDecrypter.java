@@ -26,6 +26,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -40,17 +47,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     PATTERN_SUPPORTED_LANGUAGES                 = "(?:de|fr|en|it|pl|es)";
-    private static final String     EXCEPTION_LINKOFFLINE                       = "EXCEPTION_LINKOFFLINE";
+    private static final String     TYPE_VIDEOS                                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+[A-Z])/([^/]+)";
     private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/.+";
     private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
@@ -123,7 +123,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(new int[] { 410, 503 });
-        br.getPage(parameter);
         final String desiredLanguage = TranslationFactory.getDesiredLanguage();
         final boolean isGerman = "de".equalsIgnoreCase(desiredLanguage);
         final boolean isFrancais = "fr".equalsIgnoreCase(desiredLanguage);
@@ -133,478 +132,478 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final boolean isSpanish = "es".equalsIgnoreCase(desiredLanguage);
         String videoid_base = null;
         String video_section = null;
-        try {
+        /* First we need to have some basic data - this part is link-specific. */
+        if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
+            br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* First we need to have some basic data - this part is link-specific. */
-            if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
-                videoid_base = new Regex(this.parameter, "/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
-                int status = br.getHttpConnection().getResponseCode();
-                if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
-                    decryptedLinks.add(createofflineDownloadLink(parameter));
-                    return decryptedLinks;
-                }
-                /* new arte+7 handling */
-                if (status != 200) {
-                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                }
-                /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
-                video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
-                if (video_section == null) {
-                    video_section = this.br.toString();
-                }
-                this.example_arte_vp_url = getArteVPUrl(video_section);
-                if (this.example_arte_vp_url == null) {
-                    /* We cannot be entirely sure but no videourl == we have no video == offline link */
-                    decryptedLinks.add(createofflineDownloadLink(parameter));
-                    return decryptedLinks;
-                }
-            } else {
-                /* TODO: Find out when we can actually do this. */
-                videoid_base = new Regex(this.parameter, "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+            videoid_base = new Regex(this.parameter, "/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+            int status = br.getHttpConnection().getResponseCode();
+            if (br.getHttpConnection().getResponseCode() == 400 || br.containsHTML("<h1>Error 404</h1>") || (!parameter.contains("tv/guide/") && status == 200)) {
+                decryptedLinks.add(createofflineDownloadLink(parameter));
+                return decryptedLinks;
+            }
+            /* new arte+7 handling */
+            if (status != 200) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Make sure not to download trailers or announcements to movies by grabbing the whole section of the videoplayer! */
+            video_section = br.getRegex("(<section class=\\'focus\\' data-action=.*?</section>)").getMatch(0);
+            if (video_section == null) {
                 video_section = this.br.toString();
-                scanForExternalUrls();
-                if (decryptedLinks.size() > 0) {
-                    return decryptedLinks;
-                }
-                Regex playerinfo = this.br.getRegex("\"(https?://[^/]+)/" + PATTERN_SUPPORTED_LANGUAGES + "/player/(\\d+)\"");
-                final String player_host = playerinfo.getMatch(0);
-                fid = playerinfo.getMatch(1);
-                if (player_host != null && fid != null) {
-                    hybridAPIUrl = player_host + "/%s/player/%s";
-                } else {
-                    /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
-                    playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
-                    final String link_ending = playerinfo.getMatch(1);
-                    fid = br.getRegex("api\\.arte\\.tv(?:/|%2F)api(?:/|%2F)player(?:/|%2F)v\\d+(?:/|%2F)config(?:/|%2F)" + PATTERN_SUPPORTED_LANGUAGES + "(?:/|%2F)([A-Za-z0-9\\-]+)").getMatch(0);
-                    if (fid != null && link_ending != null) {
-                        hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
-                    } else {
-                        this.example_arte_vp_url = getArteVPUrl(video_section);
-                        if (this.example_arte_vp_url == null) {
-                            /* Seems like there is no content for us to download ... */
-                            logger.info("Found no downloadable content");
-                            return decryptedLinks;
-                        }
-                    }
-                }
             }
-            if (this.example_arte_vp_url != null || fid == null) {
-                if (this.example_arte_vp_url.matches(API_TYPE_OTHER_PATTERN)) {
-                    fid = videoid_base;
-                    hybridAPIUrl = API_HYBRID_URL_1;
-                } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED_PATTERN)) {
-                    /*
-                     * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
-                     * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
-                     */
-                    final Regex info = new Regex(this.example_arte_vp_url, API_TYPE_OEMBED_PATTERN);
-                    fid = info.getMatch(0);
-                    final String link_ending = info.getMatch(1);
+            this.example_arte_vp_url = getArteVPUrl(video_section);
+            if (this.example_arte_vp_url == null) {
+                /* We cannot be entirely sure but no videourl == we have no video == offline link */
+                decryptedLinks.add(createofflineDownloadLink(parameter));
+                return decryptedLinks;
+            }
+        } else if (parameter.matches(TYPE_VIDEOS)) {
+            /* 2021-03-02: Testing if this will work for all URLs and completely without using their website. */
+            final Regex urlinfo = new Regex(this.parameter, TYPE_VIDEOS);
+            final String languageURL = urlinfo.getMatch(0);
+            final String videoID = urlinfo.getMatch(1);
+            this.example_arte_vp_url = "https://api.arte.tv/api/player/v2/config/" + languageURL + "/" + videoID;
+        } else {
+            /* TODO: Find out when we can actually do this. */
+            br.getPage(parameter);
+            if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            videoid_base = new Regex(this.parameter, "/(\\d+\\-\\d+(?:\\-[ADF])?)").getMatch(0);
+            video_section = this.br.toString();
+            scanForExternalUrls();
+            if (decryptedLinks.size() > 0) {
+                return decryptedLinks;
+            }
+            Regex playerinfo = this.br.getRegex("\"(https?://[^/]+)/" + PATTERN_SUPPORTED_LANGUAGES + "/player/(\\d+)\"");
+            final String player_host = playerinfo.getMatch(0);
+            fid = playerinfo.getMatch(1);
+            if (player_host != null && fid != null) {
+                hybridAPIUrl = player_host + "/%s/player/%s";
+            } else {
+                /* Fallback - maybe they simply embed a normal ARTE TYPE_GUIDE video ... */
+                playerinfo = this.br.getRegex("api\\.arte\\.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?[^<>\"\\']+)");
+                final String link_ending = playerinfo.getMatch(1);
+                fid = br.getRegex("api\\.arte\\.tv(?:/|%2F)api(?:/|%2F)player(?:/|%2F)v\\d+(?:/|%2F)config(?:/|%2F)" + PATTERN_SUPPORTED_LANGUAGES + "(?:/|%2F)([A-Za-z0-9\\-]+)").getMatch(0);
+                if (fid != null && link_ending != null) {
                     hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
                 } else {
-                    fid = new Regex(example_arte_vp_url, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
-                    /*
-                     * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
-                     * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
-                     */
-                    hybridAPIUrl = API_HYBRID_URL_2;
-                }
-                if (fid == null) {
-                    /* Initially this complete errorhandling- was only for types: TYPE_ARTETV_GUIDE, TYPE_ARTETV_EMBED */
-                    if (!br.containsHTML("arte_vp_config=")) {
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    /* Title is only available on DVD (buyable) */
-                    if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
-                        title = "only_available_on_DVD_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    } else if (video_section.contains("class='badge-live'")) {
-                        title = "livestreams_are_not_supported_" + title;
-                        throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-                    }
-                    throw new DecrypterException("Decrypter broken: " + parameter);
-                }
-            }
-            /*
-             * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get
-             * the different languages so let's keep the load low by only grabbing what the user selected.
-             */
-            final boolean germanSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_GERMAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_GERMAN);
-            final boolean francaisSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_FRENCH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_FRENCH);
-            final boolean polishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_POLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_POLISH);
-            final boolean italianSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ITALIAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ITALIAN);
-            final boolean englishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ENGLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ENGLISH);
-            final boolean spanishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_SPANISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_SPANISH);
-            final boolean loadURLLanguage = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_URL, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_URL);
-            final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
-            final String urlLanguage = this.getUrlLang();
-            if (loadURLLanguage) {
-                if (urlLanguage != null) {
-                    selectedLanguages.add(urlLanguage);
-                } else {
-                    selectedLanguages.add(LANG_DE);
-                }
-            } else {
-                if (germanSelected) {
-                    if (isGerman) {
-                        selectedLanguages.add(0, LANG_DE);
-                    } else {
-                        selectedLanguages.add(LANG_DE);
-                    }
-                }
-                if (francaisSelected) {
-                    if (isFrancais) {
-                        selectedLanguages.add(0, LANG_FR);
-                    } else {
-                        selectedLanguages.add(LANG_FR);
-                    }
-                }
-                if (englishSelected) {
-                    if (isEnglish) {
-                        selectedLanguages.add(0, LANG_EN);
-                    } else {
-                        selectedLanguages.add(LANG_EN);
-                    }
-                }
-                if (italianSelected) {
-                    if (isItalian) {
-                        selectedLanguages.add(0, LANG_IT);
-                    } else {
-                        selectedLanguages.add(LANG_IT);
-                    }
-                }
-                if (polishSelected) {
-                    if (isPolish) {
-                        selectedLanguages.add(0, LANG_PL);
-                    } else {
-                        selectedLanguages.add(LANG_PL);
-                    }
-                }
-                if (spanishSelected) {
-                    if (isSpanish) {
-                        selectedLanguages.add(0, LANG_ES);
-                    } else {
-                        selectedLanguages.add(LANG_ES);
-                    }
-                }
-                if (selectedLanguages.size() == 0) {
-                    /* Fallback - nothing selected --> Download everything */
-                    logger.info("User selected no language at all --> Downloading all languages");
-                    selectedLanguages.add(LANG_DE);
-                    selectedLanguages.add(LANG_FR);
-                    selectedLanguages.add(LANG_EN);
-                    selectedLanguages.add(LANG_IT);
-                    selectedLanguages.add(LANG_PL);
-                    selectedLanguages.add(LANG_ES);
-                }
-            }
-            if (urlLanguage != null) {
-                // put urlLanguage at first position
-                selectedLanguages.remove(urlLanguage);
-                selectedLanguages.add(0, urlLanguage);
-            }
-            final HashMap<String, DownloadLink> results = new HashMap<String, DownloadLink>();
-            /* Finally, grab all we can get (in the selected language(s)) */
-            for (final String selectedLanguage : selectedLanguages) {
-                final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
-                br.getPage(apiurl);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    /* In most cases this simply means that one of the selected languages is not available so let's go on. */
-                    logger.info("This language is not available: " + selectedLanguage);
-                    continue;
-                }
-                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
-                final Object error_info = videoJsonPlayer.get("custom_msg");
-                if (error_info != null) {
-                    final LinkedHashMap<String, Object> errorInfomap = (LinkedHashMap<String, Object>) error_info;
-                    final String errmsg = (String) errorInfomap.get("msg");
-                    final String type = (String) errorInfomap.get("type");
-                    if ((type.equals("error") || type.equals("info")) && errmsg != null) {
-                        title = errmsg + "_" + title;
-                    } else {
-                        title = "Unknown_error_" + title;
-                    }
-                    logger.warning("Unknown error:msg='" + errmsg + "',type=" + type);
-                    continue;
-                }
-                final Object vsro = videoJsonPlayer.get("VSR");
-                if (!(vsro instanceof LinkedHashMap)) {
-                    /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
-                    logger.info("This language is not available: " + selectedLanguage);
-                    continue;
-                }
-                // final String sourceURL = (String) videoJsonPlayer.get("VTR");
-                /* Title is sometimes null e.g. for expired videos */
-                final String json_title = (String) videoJsonPlayer.get("VTI");
-                final String json_subtitle = (String) videoJsonPlayer.get("subtitle");
-                if (json_title != null) {
-                    title = encodeUnicode(json_title);
-                    if (json_subtitle != null) {
-                        title += " - " + encodeUnicode(json_subtitle);
-                    }
-                }
-                String description = (String) videoJsonPlayer.get("VDE");
-                if (description == null) {
-                    description = (String) videoJsonPlayer.get("V7T");
-                }
-                final String errormessage = (String) entries.get("msg");
-                if (errormessage != null) {
-                    final DownloadLink offline = createofflineDownloadLink(parameter);
-                    offline.setFinalFileName(title + errormessage);
-                    offline.setComment(description);
-                    ret.add(offline);
-                    return ret;
-                }
-                if (thumbnailUrl == null) {
-                    thumbnailUrl = (String) videoJsonPlayer.get("programImage");
-                    if (thumbnailUrl == null) {
-                        Object VTU = videoJsonPlayer.get("VTU");
-                        if (VTU != null && VTU instanceof Map) {
-                            thumbnailUrl = (String) ((Map) VTU).get("IUR");
-                        }
-                    }
-                }
-                final String vru = (String) videoJsonPlayer.get("VRU");
-                final String vra = (String) videoJsonPlayer.get("VRA");
-                final String vdb = (String) videoJsonPlayer.get("VDB");
-                final String vpi = (String) videoJsonPlayer.get("VPI");
-                if ((vru != null && vra != null) || vdb != null) {
-                    dateFormatted = formatDate(vra);
-                    /*
-                     * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
-                     * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
-                     */
-                    final String expired_message;
-                    if (vdb != null) {
-                        expired_message = String.format(jd.plugins.hoster.ArteTv.getPhrase("ERROR_CONTENT_NOT_AVAILABLE_YET"), jd.plugins.hoster.ArteTv.getNiceDate2(vdb));
-                    } else {
-                        expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
-                    }
-                    if (expired_message != null) {
-                        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                        link.setComment(description);
-                        link.setProperty("offline", true);
-                        link.setFinalFileName(expired_message + "_" + title);
-                        decryptedLinks.add(link);
+                    this.example_arte_vp_url = getArteVPUrl(video_section);
+                    if (this.example_arte_vp_url == null) {
+                        /* Seems like there is no content for us to download ... */
+                        logger.info("Found no downloadable content");
                         return decryptedLinks;
                     }
                 }
-                final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
-                /* One packagename for every language */
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(getFormattedFilePackageName(dateFormatted, title));
-                for (final Object o : vsr_quals) {
-                    foundFormatsNum++;
-                    final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
-                    final String url = (String) qualitymap.get("url");
-                    if (!url.startsWith("http")) {
-                        continue;
-                    }
-                    final String versionCode = (String) qualitymap.get("versionCode");
-                    final String versionLibelle = (String) qualitymap.get("versionLibelle");
-                    final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
-                    final VersionInfo versionInfo = parseVersionInfo(versionCode);
-                    if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_NORMAL, jd.plugins.hoster.ArteTv.default_V_NORMAL) && !(SubtitleType.FULL.equals(versionInfo.getSubtitleType()) || SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType()))) {
-                        /* User does not want the non-subtitled version */
-                        continue;
-                    } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLE_DISABLED_PEOPLE, jd.plugins.hoster.ArteTv.default_V_SUBTITLE_DISABLED_PEOPLE) && SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType())) {
-                        /* User does not want the subtitled-for-.disabled-people version */
-                        continue;
-                    } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLED, jd.plugins.hoster.ArteTv.default_V_SUBTITLED) && SubtitleType.FULL.equals(versionInfo.getSubtitleType())) {
-                        /* User does not want the subtitled version */
-                        continue;
-                    } else if (!francaisSelected && !loadURLLanguage && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    } else if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    } else if (!englishSelected && !loadURLLanguage && SubtitleLanguage.ENGLISH.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    } else if (!polishSelected && !loadURLLanguage && SubtitleLanguage.POLISH.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    } else if (!italianSelected && !loadURLLanguage && SubtitleLanguage.ITALIAN.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    } else if (!spanishSelected && !loadURLLanguage && SubtitleLanguage.SPANISH.equals(versionInfo.getSubtitleLanguage())) {
-                        continue;
-                    }
-                    if (url.contains(".m3u8")) {
-                        if (!cfg.getBooleanProperty("hls", false)) {
-                            continue;
-                        }
-                        final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), url);
-                        if (hlsContainers != null) {
-                            for (HlsContainer container : hlsContainers) {
-                                final int videoBitrate = container.getBandwidth();
-                                final String quality_intern = "hls_" + videoBitrate;
-                                Number width = null;
-                                if (container.getWidth() > 0) {
-                                    width = container.getWidth();
-                                }
-                                Number height = null;
-                                if (container.getHeight() > 0) {
-                                    height = container.getHeight();
-                                }
-                                String videoResolution = "";
-                                if (height != null && width != null) {
-                                    videoResolution = width + "x" + height;
-                                }
-                                final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
-                                if (!results.containsKey(linkID)) {
-                                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
-                                    link.setContentUrl(parameter);
-                                    link._setFilePackage(fp);
-                                    link.setProperty("versionCode", versionCode);
-                                    link.setProperty("directURL", container.getDownloadurl());
-                                    link.setProperty("date", dateFormatted);
-                                    link.setProperty("title", title);
-                                    link.setProperty("vpi", vpi);
-                                    link.setProperty("versionLibelle", versionLibelle);
-                                    link.setProperty("versionShortLibelle", versionShortLibelle);
-                                    link.setProperty("quality_intern", quality_intern);
-                                    link.setProperty("langShort", selectedLanguage);
-                                    link.setProperty("mainlink", parameter);
-                                    link.setProperty("apiurl", apiurl);
-                                    link.setProperty("width", width);
-                                    link.setProperty("height", height);
-                                    link.setProperty("resolution", videoResolution);
-                                    link.setProperty("bitrate", videoBitrate);
-                                    link.setProperty("ext", "mp4");
-                                    final String filename = getFormattedFileName(link);
-                                    link.setProperty("directName", filename);
-                                    link.setFinalFileName(filename);
-                                    if (vra != null && vru != null) {
-                                        link.setProperty("VRA", convertDateFormat(vra));
-                                        link.setProperty("VRU", convertDateFormat(vru));
-                                    }
-                                    link.setComment(description);
-                                    link.setContentUrl(parameter);
-                                    link.setLinkID(linkID);
-                                    if (fastLinkcheck) {
-                                        link.setAvailable(true);
-                                    }
-                                    results.put(linkID, link);
-                                }
-                            }
-                        }
-                    } else {
-                        final Object widtho = qualitymap.get("width");
-                        final Object heighto = qualitymap.get("height");
-                        String videoResolution = "";
-                        Number width = null;
-                        Number height = null;
-                        final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
-                        if (widtho != null && heighto != null) {
-                            /* These parameters are available in 95+% of all cases! */
-                            width = ((Number) qualitymap.get("width"));
-                            height = ((Number) qualitymap.get("height"));
-                            videoResolution = width + "x" + height;
-                        }
-                        final String quality_intern = "http_" + videoBitrate;
-                        if (!cfg.getBooleanProperty(quality_intern, true)) {
-                            /* User does not want this bitrate --> Skip it */
-                            logger.info("Skipping " + quality_intern);
-                            continue;
-                        }
-                        // TODO
-                        // if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_AUDIO_DESCRIPTION,
-                        // jd.plugins.hoster.ArteTv.default_V_AUDIO_DESCRIPTION) && format_code == format_intern_audio_description) {
-                        // /* User does not want the audio-description version */
-                        // continue;
-                        // }
-                        final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
-                        if (!results.containsKey(linkID)) {
-                            final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
-                            link.setContentUrl(parameter);
-                            link._setFilePackage(fp);
-                            link.setProperty("versionCode", versionCode);
-                            link.setProperty("directURL", url);
-                            link.setProperty("date", dateFormatted);
-                            link.setProperty("title", title);
-                            link.setProperty("vpi", vpi);
-                            link.setProperty("versionLibelle", versionLibelle);
-                            link.setProperty("versionShortLibelle", versionShortLibelle);
-                            link.setProperty("quality_intern", quality_intern);
-                            link.setProperty("langShort", selectedLanguage);
-                            link.setProperty("mainlink", parameter);
-                            link.setProperty("apiurl", apiurl);
-                            link.setProperty("width", width);
-                            link.setProperty("height", height);
-                            link.setProperty("resolution", videoResolution);
-                            link.setProperty("bitrate", videoBitrate);
-                            link.setProperty("ext", "mp4");
-                            final String filename = getFormattedFileName(link);
-                            link.setProperty("directName", filename);
-                            link.setFinalFileName(filename);
-                            if (vra != null && vru != null) {
-                                link.setProperty("VRA", convertDateFormat(vra));
-                                link.setProperty("VRU", convertDateFormat(vru));
-                            }
-                            link.setComment(description);
-                            link.setContentUrl(parameter);
-                            link.setLinkID(linkID);
-                            if (fastLinkcheck) {
-                                link.setAvailable(true);
-                            }
-                            results.put(linkID, link);
-                        }
-                    }
-                }
             }
-            if (loadBest) {
-                final HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
-                for (final DownloadLink downloadLink : results.values()) {
-                    final String versionCode = downloadLink.getStringProperty("versionCode");
-                    final String langShort = downloadLink.getStringProperty("langShort");
-                    final Number height = (Number) downloadLink.getProperty("height");
-                    final String id = versionCode + "_" + langShort;
-                    final DownloadLink best = map.get(id);
-                    if (best == null) {
-                        map.put(id, downloadLink);
-                    } else {
-                        final Number bheight = (Number) best.getProperty("height");
-                        if (height != null && bheight != null) {
-                            if (height.intValue() > bheight.intValue()) {
-                                map.put(id, downloadLink);
-                            }
-                        }
-                    }
-                }
-                decryptedLinks.addAll(map.values());
+        }
+        if (this.example_arte_vp_url != null || fid == null) {
+            if (this.example_arte_vp_url.matches(API_TYPE_OTHER_PATTERN)) {
+                fid = videoid_base;
+                hybridAPIUrl = API_HYBRID_URL_1;
+            } else if (this.example_arte_vp_url.matches(API_TYPE_OEMBED_PATTERN)) {
+                /*
+                 * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
+                 * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
+                 */
+                final Regex info = new Regex(this.example_arte_vp_url, API_TYPE_OEMBED_PATTERN);
+                fid = info.getMatch(0);
+                final String link_ending = info.getMatch(1);
+                hybridAPIUrl = API_HYBRID_URL_1 + link_ending;
             } else {
-                decryptedLinks.addAll(results.values());
+                fid = new Regex(example_arte_vp_url, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
+                /*
+                 * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
+                 * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
+                 */
+                hybridAPIUrl = API_HYBRID_URL_2;
             }
-            /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
-            if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
-                title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            if (fid == null) {
+                /* Initially this complete errorhandling- was only for types: TYPE_ARTETV_GUIDE, TYPE_ARTETV_EMBED */
+                if (!br.containsHTML("arte_vp_config=")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                /* Title is only available on DVD (buyable) */
+                if (video_section.contains("class='badge-vod'>VOD DVD</span>")) {
+                    title = "only_available_on_DVD_" + title;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (video_section.contains("class='badge-live'")) {
+                    title = "livestreams_are_not_supported_" + title;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new DecrypterException("Decrypter broken: " + parameter);
             }
-            /* Check if user wants to download the thumbnail as well. */
-            if (cfg.getBooleanProperty(THUMBNAIL, true) && thumbnailUrl != null) {
-                final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
-                link.setProperty("date", dateFormatted);
-                link.setProperty("title", title);
-                link.setProperty("ext", "jpg");
-                final String filename = getFormattedThumbnailName(link);
-                link.setProperty("directName", filename);
-                link.setFinalFileName(filename);
-                decryptedLinks.add(link);
+        }
+        /*
+         * Now let's check which languages the user wants. We'll do the quality selection later but we have to access webpages to get the
+         * different languages so let's keep the load low by only grabbing what the user selected.
+         */
+        final boolean germanSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_GERMAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_GERMAN);
+        final boolean francaisSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_FRENCH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_FRENCH);
+        final boolean polishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_POLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_POLISH);
+        final boolean italianSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ITALIAN, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ITALIAN);
+        final boolean englishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_ENGLISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_ENGLISH);
+        final boolean spanishSelected = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_SPANISH, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_SPANISH);
+        final boolean loadURLLanguage = cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.LOAD_LANGUAGE_URL, jd.plugins.hoster.ArteTv.default_LOAD_LANGUAGE_URL);
+        final boolean loadBest = cfg.getBooleanProperty(LOAD_BEST, false);
+        final String urlLanguage = this.getUrlLang();
+        if (loadURLLanguage) {
+            if (urlLanguage != null) {
+                selectedLanguages.add(urlLanguage);
+            } else {
+                selectedLanguages.add(LANG_DE);
             }
-            if (decryptedLinks.size() > 0) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(getFormattedFilePackageName(dateFormatted, title));
-                fp.addLinks(decryptedLinks);
+        } else {
+            if (germanSelected) {
+                if (isGerman) {
+                    selectedLanguages.add(0, LANG_DE);
+                } else {
+                    selectedLanguages.add(LANG_DE);
+                }
             }
-        } catch (final Exception e) {
-            logger.log(e);
-            if (e instanceof DecrypterException && e.getMessage().equals(EXCEPTION_LINKOFFLINE)) {
+            if (francaisSelected) {
+                if (isFrancais) {
+                    selectedLanguages.add(0, LANG_FR);
+                } else {
+                    selectedLanguages.add(LANG_FR);
+                }
+            }
+            if (englishSelected) {
+                if (isEnglish) {
+                    selectedLanguages.add(0, LANG_EN);
+                } else {
+                    selectedLanguages.add(LANG_EN);
+                }
+            }
+            if (italianSelected) {
+                if (isItalian) {
+                    selectedLanguages.add(0, LANG_IT);
+                } else {
+                    selectedLanguages.add(LANG_IT);
+                }
+            }
+            if (polishSelected) {
+                if (isPolish) {
+                    selectedLanguages.add(0, LANG_PL);
+                } else {
+                    selectedLanguages.add(LANG_PL);
+                }
+            }
+            if (spanishSelected) {
+                if (isSpanish) {
+                    selectedLanguages.add(0, LANG_ES);
+                } else {
+                    selectedLanguages.add(LANG_ES);
+                }
+            }
+            if (selectedLanguages.size() == 0) {
+                /* Fallback - nothing selected --> Download everything */
+                logger.info("User selected no language at all --> Downloading all languages");
+                selectedLanguages.add(LANG_DE);
+                selectedLanguages.add(LANG_FR);
+                selectedLanguages.add(LANG_EN);
+                selectedLanguages.add(LANG_IT);
+                selectedLanguages.add(LANG_PL);
+                selectedLanguages.add(LANG_ES);
+            }
+        }
+        if (urlLanguage != null) {
+            // put urlLanguage at first position
+            selectedLanguages.remove(urlLanguage);
+            selectedLanguages.add(0, urlLanguage);
+        }
+        final HashMap<String, DownloadLink> results = new HashMap<String, DownloadLink>();
+        /* Finally, grab all we can get (in the selected language(s)) */
+        for (final String selectedLanguage : selectedLanguages) {
+            final String apiurl = this.getAPIUrl(hybridAPIUrl, selectedLanguage, fid);
+            br.getPage(apiurl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* In most cases this simply means that one of the selected languages is not available so let's go on. */
+                logger.info("This language is not available: " + selectedLanguage);
+                continue;
+            }
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final LinkedHashMap<String, Object> videoJsonPlayer = (LinkedHashMap<String, Object>) entries.get("videoJsonPlayer");
+            final Object error_info = videoJsonPlayer.get("custom_msg");
+            if (error_info != null) {
+                final LinkedHashMap<String, Object> errorInfomap = (LinkedHashMap<String, Object>) error_info;
+                final String errmsg = (String) errorInfomap.get("msg");
+                final String type = (String) errorInfomap.get("type");
+                if ((type.equals("error") || type.equals("info")) && errmsg != null) {
+                    title = errmsg + "_" + title;
+                } else {
+                    title = "Unknown_error_" + title;
+                }
+                logger.warning("Unknown error:msg='" + errmsg + "',type=" + type);
+                continue;
+            }
+            final Object vsro = videoJsonPlayer.get("VSR");
+            if (!(vsro instanceof LinkedHashMap)) {
+                /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
+                logger.info("This language is not available: " + selectedLanguage);
+                continue;
+            }
+            // final String sourceURL = (String) videoJsonPlayer.get("VTR");
+            /* Title is sometimes null e.g. for expired videos */
+            final String json_title = (String) videoJsonPlayer.get("VTI");
+            final String json_subtitle = (String) videoJsonPlayer.get("subtitle");
+            if (json_title != null) {
+                title = encodeUnicode(json_title);
+                if (json_subtitle != null) {
+                    title += " - " + encodeUnicode(json_subtitle);
+                }
+            }
+            String description = (String) videoJsonPlayer.get("VDE");
+            if (description == null) {
+                description = (String) videoJsonPlayer.get("V7T");
+            }
+            final String errormessage = (String) entries.get("msg");
+            if (errormessage != null) {
                 final DownloadLink offline = createofflineDownloadLink(parameter);
-                offline.setFinalFileName(title);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                offline.setFinalFileName(title + errormessage);
+                offline.setComment(description);
+                ret.add(offline);
+                return ret;
             }
-            throw e;
+            if (thumbnailUrl == null) {
+                thumbnailUrl = (String) videoJsonPlayer.get("programImage");
+                if (thumbnailUrl == null) {
+                    Object VTU = videoJsonPlayer.get("VTU");
+                    if (VTU != null && VTU instanceof Map) {
+                        thumbnailUrl = (String) ((Map) VTU).get("IUR");
+                    }
+                }
+            }
+            final String vru = (String) videoJsonPlayer.get("VRU");
+            final String vra = (String) videoJsonPlayer.get("VRA");
+            final String vdb = (String) videoJsonPlayer.get("VDB");
+            final String vpi = (String) videoJsonPlayer.get("VPI");
+            if ((vru != null && vra != null) || vdb != null) {
+                dateFormatted = formatDate(vra);
+                /*
+                 * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
+                 * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
+                 */
+                final String expired_message;
+                if (vdb != null) {
+                    expired_message = String.format(jd.plugins.hoster.ArteTv.getPhrase("ERROR_CONTENT_NOT_AVAILABLE_YET"), jd.plugins.hoster.ArteTv.getNiceDate2(vdb));
+                } else {
+                    expired_message = jd.plugins.hoster.ArteTv.getExpireMessage(selectedLanguage, convertDateFormat(vra), convertDateFormat(vru));
+                }
+                if (expired_message != null) {
+                    final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                    link.setComment(description);
+                    link.setProperty("offline", true);
+                    link.setFinalFileName(expired_message + "_" + title);
+                    decryptedLinks.add(link);
+                    return decryptedLinks;
+                }
+            }
+            final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
+            /* One packagename for every language */
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(getFormattedFilePackageName(dateFormatted, title));
+            for (final Object o : vsr_quals) {
+                foundFormatsNum++;
+                final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                final String url = (String) qualitymap.get("url");
+                if (!url.startsWith("http")) {
+                    continue;
+                }
+                final String versionCode = (String) qualitymap.get("versionCode");
+                final String versionLibelle = (String) qualitymap.get("versionLibelle");
+                final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
+                final VersionInfo versionInfo = parseVersionInfo(versionCode);
+                if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_NORMAL, jd.plugins.hoster.ArteTv.default_V_NORMAL) && !(SubtitleType.FULL.equals(versionInfo.getSubtitleType()) || SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType()))) {
+                    /* User does not want the non-subtitled version */
+                    continue;
+                } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLE_DISABLED_PEOPLE, jd.plugins.hoster.ArteTv.default_V_SUBTITLE_DISABLED_PEOPLE) && SubtitleType.HEARING_IMPAIRED.equals(versionInfo.getSubtitleType())) {
+                    /* User does not want the subtitled-for-.disabled-people version */
+                    continue;
+                } else if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_SUBTITLED, jd.plugins.hoster.ArteTv.default_V_SUBTITLED) && SubtitleType.FULL.equals(versionInfo.getSubtitleType())) {
+                    /* User does not want the subtitled version */
+                    continue;
+                } else if (!francaisSelected && !loadURLLanguage && SubtitleLanguage.FRANCAIS.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                } else if (!germanSelected && !loadURLLanguage && SubtitleLanguage.GERMAN.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                } else if (!englishSelected && !loadURLLanguage && SubtitleLanguage.ENGLISH.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                } else if (!polishSelected && !loadURLLanguage && SubtitleLanguage.POLISH.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                } else if (!italianSelected && !loadURLLanguage && SubtitleLanguage.ITALIAN.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                } else if (!spanishSelected && !loadURLLanguage && SubtitleLanguage.SPANISH.equals(versionInfo.getSubtitleLanguage())) {
+                    continue;
+                }
+                if (url.contains(".m3u8")) {
+                    if (!cfg.getBooleanProperty("hls", false)) {
+                        continue;
+                    }
+                    final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(br.cloneBrowser(), url);
+                    if (hlsContainers != null) {
+                        for (HlsContainer container : hlsContainers) {
+                            final int videoBitrate = container.getBandwidth();
+                            final String quality_intern = "hls_" + videoBitrate;
+                            Number width = null;
+                            if (container.getWidth() > 0) {
+                                width = container.getWidth();
+                            }
+                            Number height = null;
+                            if (container.getHeight() > 0) {
+                                height = container.getHeight();
+                            }
+                            String videoResolution = "";
+                            if (height != null && width != null) {
+                                videoResolution = width + "x" + height;
+                            }
+                            final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                            if (!results.containsKey(linkID)) {
+                                final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
+                                link.setContentUrl(parameter);
+                                link._setFilePackage(fp);
+                                link.setProperty("versionCode", versionCode);
+                                link.setProperty("directURL", container.getDownloadurl());
+                                link.setProperty("date", dateFormatted);
+                                link.setProperty("title", title);
+                                link.setProperty("vpi", vpi);
+                                link.setProperty("versionLibelle", versionLibelle);
+                                link.setProperty("versionShortLibelle", versionShortLibelle);
+                                link.setProperty("quality_intern", quality_intern);
+                                link.setProperty("langShort", selectedLanguage);
+                                link.setProperty("mainlink", parameter);
+                                link.setProperty("apiurl", apiurl);
+                                link.setProperty("width", width);
+                                link.setProperty("height", height);
+                                link.setProperty("resolution", videoResolution);
+                                link.setProperty("bitrate", videoBitrate);
+                                link.setProperty("ext", "mp4");
+                                final String filename = getFormattedFileName(link);
+                                link.setProperty("directName", filename);
+                                link.setFinalFileName(filename);
+                                if (vra != null && vru != null) {
+                                    link.setProperty("VRA", convertDateFormat(vra));
+                                    link.setProperty("VRU", convertDateFormat(vru));
+                                }
+                                link.setComment(description);
+                                link.setContentUrl(parameter);
+                                link.setLinkID(linkID);
+                                if (fastLinkcheck) {
+                                    link.setAvailable(true);
+                                }
+                                results.put(linkID, link);
+                            }
+                        }
+                    }
+                } else {
+                    final Object widtho = qualitymap.get("width");
+                    final Object heighto = qualitymap.get("height");
+                    String videoResolution = "";
+                    Number width = null;
+                    Number height = null;
+                    final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
+                    if (widtho != null && heighto != null) {
+                        /* These parameters are available in 95+% of all cases! */
+                        width = ((Number) qualitymap.get("width"));
+                        height = ((Number) qualitymap.get("height"));
+                        videoResolution = width + "x" + height;
+                    }
+                    final String quality_intern = "http_" + videoBitrate;
+                    if (!cfg.getBooleanProperty(quality_intern, true)) {
+                        /* User does not want this bitrate --> Skip it */
+                        logger.info("Skipping " + quality_intern);
+                        continue;
+                    }
+                    // TODO
+                    // if (!cfg.getBooleanProperty(jd.plugins.hoster.ArteTv.V_AUDIO_DESCRIPTION,
+                    // jd.plugins.hoster.ArteTv.default_V_AUDIO_DESCRIPTION) && format_code == format_intern_audio_description) {
+                    // /* User does not want the audio-description version */
+                    // continue;
+                    // }
+                    final String linkID = getHost() + "://" + vpi + "/" + versionInfo.toString() + "/" + quality_intern;
+                    if (!results.containsKey(linkID)) {
+                        final DownloadLink link = createDownloadlink("http://" + plain_domain_decrypter + "/" + UniqueAlltimeID.next());
+                        link.setContentUrl(parameter);
+                        link._setFilePackage(fp);
+                        link.setProperty("versionCode", versionCode);
+                        link.setProperty("directURL", url);
+                        link.setProperty("date", dateFormatted);
+                        link.setProperty("title", title);
+                        link.setProperty("vpi", vpi);
+                        link.setProperty("versionLibelle", versionLibelle);
+                        link.setProperty("versionShortLibelle", versionShortLibelle);
+                        link.setProperty("quality_intern", quality_intern);
+                        link.setProperty("langShort", selectedLanguage);
+                        link.setProperty("mainlink", parameter);
+                        link.setProperty("apiurl", apiurl);
+                        link.setProperty("width", width);
+                        link.setProperty("height", height);
+                        link.setProperty("resolution", videoResolution);
+                        link.setProperty("bitrate", videoBitrate);
+                        link.setProperty("ext", "mp4");
+                        final String filename = getFormattedFileName(link);
+                        link.setProperty("directName", filename);
+                        link.setFinalFileName(filename);
+                        if (vra != null && vru != null) {
+                            link.setProperty("VRA", convertDateFormat(vra));
+                            link.setProperty("VRU", convertDateFormat(vru));
+                        }
+                        link.setComment(description);
+                        link.setContentUrl(parameter);
+                        link.setLinkID(linkID);
+                        if (fastLinkcheck) {
+                            link.setAvailable(true);
+                        }
+                        results.put(linkID, link);
+                    }
+                }
+            }
+        }
+        if (loadBest) {
+            final HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
+            for (final DownloadLink downloadLink : results.values()) {
+                final String versionCode = downloadLink.getStringProperty("versionCode");
+                final String langShort = downloadLink.getStringProperty("langShort");
+                final Number height = (Number) downloadLink.getProperty("height");
+                final String id = versionCode + "_" + langShort;
+                final DownloadLink best = map.get(id);
+                if (best == null) {
+                    map.put(id, downloadLink);
+                } else {
+                    final Number bheight = (Number) best.getProperty("height");
+                    if (height != null && bheight != null) {
+                        if (height.intValue() > bheight.intValue()) {
+                            map.put(id, downloadLink);
+                        }
+                    }
+                }
+            }
+            decryptedLinks.addAll(map.values());
+        } else {
+            decryptedLinks.addAll(results.values());
+        }
+        /* User did not activate all versions --> Show this info in filename so he can correct his mistake. */
+        if (decryptedLinks.isEmpty() && foundFormatsNum > 0) {
+            title = jd.plugins.hoster.ArteTv.getPhrase("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION") + title;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Check if user wants to download the thumbnail as well. */
+        if (cfg.getBooleanProperty(THUMBNAIL, true) && thumbnailUrl != null) {
+            final DownloadLink link = createDownloadlink("directhttp://" + thumbnailUrl);
+            link.setProperty("date", dateFormatted);
+            link.setProperty("title", title);
+            link.setProperty("ext", "jpg");
+            final String filename = getFormattedThumbnailName(link);
+            link.setProperty("directName", filename);
+            link.setFinalFileName(filename);
+            decryptedLinks.add(link);
+        }
+        if (decryptedLinks.size() > 0) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(getFormattedFilePackageName(dateFormatted, title));
+            fp.addLinks(decryptedLinks);
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
@@ -662,6 +661,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FRANCAIS,
         GERMAN,
         OTHER;
+
         private static VideoLanguage parse(final String apiosCode) {
             final String originalVersion = new Regex(apiosCode, "^VO(F|A)($|-)").getMatch(0);
             if (originalVersion != null) {
@@ -697,6 +697,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         ITALIAN,
         ENGLISH,
         OTHER;
+
         private static SubtitleLanguage parse(final String apiosCode) {
             final String subtitleLanguage = new Regex(apiosCode, "-STM?(A|F)").getMatch(0);
             if (subtitleLanguage != null) {
@@ -726,6 +727,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
+
         private static SubtitleType parse(final String apiosCode) {
             if (StringUtils.equalsIgnoreCase(apiosCode, "VF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VA-STA") || StringUtils.equalsIgnoreCase(apiosCode, "VOF-STF") || StringUtils.equalsIgnoreCase(apiosCode, "VOA-STA")) {
                 return PARTIAL;
@@ -746,6 +748,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
+
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;

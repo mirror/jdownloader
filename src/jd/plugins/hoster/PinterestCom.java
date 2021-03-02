@@ -86,7 +86,7 @@ public class PinterestCom extends PluginForHost {
             /* Item has been checked before -> Done! */
             return AvailableStatus.TRUE;
         }
-        /* 2021-03-02: PINs may redirect to other PINs in very rare cases -> Check that */
+        /* 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that */
         br.getPage(link.getPluginPatternMatcher());
         String redirect = br.getRegex("window\\.location\\s*=\\s*\"([^\"]+)\"").getMatch(0);
         if (redirect != null) {
@@ -98,7 +98,6 @@ public class PinterestCom extends PluginForHost {
         } else if (redirect != null && redirect.matches(PinterestComDecrypter.TYPE_PIN) && !redirect.contains(pinID)) {
             final String newPinID = getPinID(redirect);
             logger.info("Old pinID: " + pinID + " | New pinID: " + newPinID + " | New URL: " + redirect);
-            link.setContentUrl(redirect);
             link.setPluginPatternMatcher(redirect);
         } else if (redirect != null && redirect.contains("show_error=true")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -161,10 +160,10 @@ public class PinterestCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, false, 1, PROPERTY_DIRECTURL);
+        handleDownload(link, false, 1);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         if (!this.attemptStoredDownloadurlDownload(link, resumable, maxchunks)) {
             requestFileInformation(link);
             if (dllink == null) {
@@ -179,7 +178,6 @@ public class PinterestCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty(directlinkproperty, dllink);
         }
         dl.startDownload();
     }
@@ -409,7 +407,7 @@ public class PinterestCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        handleDownload(link, false, 1, PROPERTY_DIRECTURL);
+        handleDownload(link, false, 1);
     }
 
     public static String getPictureDescription(final DownloadLink dl) {
