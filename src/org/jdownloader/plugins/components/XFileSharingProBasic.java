@@ -1486,7 +1486,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
-        String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>\\s*download_video\\(.*?</td></tr>").getColumn(-1);
+        String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
         if (videoQualityHTMLs.length == 0) {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
