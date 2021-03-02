@@ -92,9 +92,8 @@ public class HotlinkCc extends XFileSharingProBasic {
 
     @Override
     public Form findFormDownload2Free() {
-        /* 2019-05-15: Special */
+        /* 2019-05-15: Special: grab "download_orig" Form */
         final Form formf1Free = super.findFormDownload2Free();
-        /* Should only be required for premium but we're doing it for free mode anyways! */
         fixFormF1(formf1Free);
         return formf1Free;
     }
@@ -217,6 +216,10 @@ public class HotlinkCc extends XFileSharingProBasic {
     public String[] scanInfo(final String[] fileInfo) {
         /* 2021-01-22: Prefer this as template will pickup filename without extension */
         fileInfo[0] = new Regex(correctedBR, "<i class=\"glyphicon glyphicon-download\"></i>([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2021-03-02 */
+            fileInfo[0] = new Regex(correctedBR, "class=\"glyphicon glyphicon-play-circle\"[^>]*></i>([^<>\"]+)<").getMatch(0);
+        }
         return super.scanInfo(fileInfo);
     }
 
@@ -224,7 +227,8 @@ public class HotlinkCc extends XFileSharingProBasic {
 
     @Override
     protected String getDllinkVideohost(final String src) {
-        if (premiumWorkaroundActive) {
+        final Form officialDownloadForm = br.getFormbyProperty("name", "F1");
+        if (premiumWorkaroundActive || officialDownloadForm != null) {
             return null;
         } else {
             return super.getDllinkVideohost(src);
@@ -253,7 +257,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         /** 2021-01-26: Special */
-        String dllink = new Regex(correctedBR, "href=\"(https?://[^\"]+)\"[^>]*>Direct Download Link<").getMatch(0);
+        String dllink = new Regex(correctedBR, "href=\"(https?://[^\"]+)\"[^>]*>Direct Download Link").getMatch(0);
         if (dllink != null) {
             return dllink;
         } else {
@@ -272,6 +276,17 @@ public class HotlinkCc extends XFileSharingProBasic {
     protected boolean supports_availablecheck_alt() {
         /** 2021-01-28 */
         return false;
+    }
+
+    @Override
+    protected boolean isVideohosterEmbedHTML() {
+        /* 2021-03-02: Do not prefer download of potentially encrypted HLS -> Return false to force official video download */
+        final Form officialDownloadForm = br.getFormbyProperty("name", "F1");
+        if (officialDownloadForm != null) {
+            return false;
+        } else {
+            return super.isVideohosterEmbedHTML();
+        }
     }
 
     @Override
