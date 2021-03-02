@@ -219,7 +219,7 @@ public class MegaConz extends PluginForHost {
                 if (isPro) {
                     if (uq.containsKey("mxfer") && uq.containsKey("csxfer")) {
                         final Number max = (getNumber(uq, "mxfer")).longValue();
-                        final Number used = (getNumber(uq, "caxfer")).longValue();
+                        final Number used = (getNumber(uq, "csxfer")).longValue();
                         final long reserved;
                         if (getPluginConfig().getBooleanProperty(CHECK_RESERVED, true)) {
                             final Number rua = getNumber(uq, "rua");

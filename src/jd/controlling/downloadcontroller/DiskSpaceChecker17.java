@@ -12,15 +12,9 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
     }
 
     @Override
-    public String getRoot() {
-        return super.getRoot();
-    }
-
-    @Override
     protected void findRoots() {
-        super.findRoots();
-        final File dest = getDestination();
         try {
+            final File dest = getDestination();
             final Path normalRoot = Files17.guessRoot(dest.toPath());
             if (normalRoot != null) {
                 roots.addIfAbsent(normalRoot.toString());
@@ -45,6 +39,9 @@ public class DiskSpaceChecker17 extends DiskSpaceChecker {
             }
         } catch (Throwable e) {
             getLogger().log(e);
+        }
+        if (roots.size() == 0) {
+            super.findRoots();
         }
     }
 
