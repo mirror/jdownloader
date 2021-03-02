@@ -65,7 +65,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private boolean                 loggedIN                            = false;
     private boolean                 enable_description_inside_filenames = false;
     private boolean                 enable_crawl_alternative_URL        = false;
-    private static final String     TYPE_PIN                            = ".+/pin/.+";
+    public static final String      TYPE_PIN                            = "https?://[^/]+/pin/(\\d+)/?";
     private static final String     TYPE_BOARD                          = "https?://[^/]+/([^/]+)/([^/]+)/?";
     private static final String     TYPE_BOARD_SECTION                  = "https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
 
@@ -90,7 +90,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private void crawlSinglePIN(final CryptedLink param) throws Exception {
-        final DownloadLink singlePIN = this.createPINDownloadUrl(param.getCryptedUrl());
+        final DownloadLink singlePIN = this.createDownloadlink(param.getCryptedUrl());
         final String pin_id = PinterestCom.getPinID(param.getCryptedUrl());
         if (enable_crawl_alternative_URL) {
             /* The more complicated way (if wished by user). */
@@ -117,8 +117,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     public static void setInfoOnDownloadLink(final DownloadLink dl, final Map<String, Object> pinMap) {
         final String pin_id = jd.plugins.hoster.PinterestCom.getPinID(dl.getPluginPatternMatcher());
         String filename = null;
-        String directlink = getDirectlinkFromPINMap(pinMap);
         final Map<String, Object> data = pinMap.containsKey("data") ? (Map<String, Object>) pinMap.get("data") : pinMap;
+        String directlink = getDirectlinkFromPINMap(data);
         if (StringUtils.isEmpty(filename)) {
             filename = (String) data.get("title");
         }
@@ -181,8 +181,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         for (final Object resource_object : resource_data_cache) {
             entries = (Map<String, Object>) resource_object;
             final String this_pin_id = (String) JavaScriptEngineFactory.walkJson(entries, "data/id");
-            final boolean pins_matched = this_pin_id.equals(pinID);
-            if (pins_matched || resource_data_cache.size() == 1) {
+            if (StringUtils.equals(this_pin_id, pinID) || resource_data_cache.size() == 1) {
                 /* We've reached our goal */
                 pinMap = entries;
                 break;
@@ -547,7 +546,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             return true;
         } else {
             dupeList.add(pin_id);
-            final DownloadLink dl = createPINDownloadUrl("https://www." + this.getHost() + "/pin/" + pin_id + "/");
+            final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/pin/" + pin_id + "/");
             if (!StringUtils.isEmpty(board_id)) {
                 dl.setProperty("boardid", board_id);
             }
@@ -708,11 +707,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             distribute(dl);
         }
-    }
-
-    private DownloadLink createPINDownloadUrl(String url) {
-        url = url.replaceAll("https?://", "decryptedpinterest://");
-        return this.createDownloadlink(url);
     }
 
     private DownloadLink getOffline(final String parameter) {

@@ -302,8 +302,11 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
              * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is typically
              * stored in "video_alt_url" labeled as "720p" and html will also contain: "video_alt_url_redirect: '1'" (= "safe place") </br>
              */
-            String realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
-            // trustURL = realURL != null && br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'");
+            String realURL = null;
+            if (br.containsHTML("video_alt_url_redirect\\s*:\\s*'1'")) {
+                /* Examples which would fail without this extra check: frprn.com */
+                realURL = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+            }
             /*
              * Tries to find original URL based on different default patterns --> "Unsafe attempt". Examples: porngem.com, nudogram.com
              */
