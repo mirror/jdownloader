@@ -47,20 +47,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+", "https?://concert\\.arte\\.tv/.+", "https?://creative\\.arte\\.tv/(?:de|fr|en|it|pl|es)/(?!scald_dmcloud_json).+", "https?://future\\.arte\\.tv/.+", "https?://cinema\\.arte\\.tv/.+", "https?://(?:www\\.)?theoperaplatform\\.eu/.+", "https?://info\\.arte\\.tv/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv" }, urls = { "https?://(?:www\\.)?arte\\.tv/.+" })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     PATTERN_SUPPORTED_LANGUAGES                 = "(?:de|fr|en|it|pl|es)";
-    private static final String     TYPE_VIDEOS                                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+[A-Z])/([^/]+)";
-    private static final String     TYPE_CONCERT                                = "https?://concert\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/[a-z0-9\\-]+";
-    private static final String     TYPE_CREATIVE                               = "https?://creative\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/.+";
-    private static final String     TYPE_FUTURE                                 = "https?://future\\.arte\\.tv/.+";
-    private static final String     TYPE_ARTETV_GUIDE                           = "https?://(?:www\\.)?arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/\\d+\\-\\d+(?:\\-[ADF])?/[a-z0-9\\-_]+.*?";
+    private static final String     TYPE_VIDEOS                                 = "https?://[^/]+/(?:guide/)?([a-z]{2})/videos/(\\d+-\\d+[ADF])/([^/]+)";
+    private static final String     TYPE_GUIDE                                  = "https?://[^/]+/guide/([a-z]{2})/(\\d+-\\d+-[ADF])?/([^/]+)";
     private static final String     TYPE_ARTETV_EMBED                           = "https?://(?:www\\.)?arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/embed/.+";
-    private static final String     TYPE_CINEMA                                 = "https?://cinema\\.arte\\.tv/.+";
-    private static final String     TYPE_THEOPERAPLATFORM                       = "https?://(?:www\\.)?theoperaplatform\\.eu/.+";
     private static final String     API_TYPE_GUIDE                              = "^https?://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/[ADF]/.+\\.json$";
     // 28.11.2019: v1 doesn't require authentication, v2 requires bearer-authentication
-    private static final String     API_TYPE_CINEMA_PATTERN                     = "^https?://api\\.arte\\.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)\\?vector=.+";
     private static final String     API_TYPE_OEMBED_PATTERN                     = "https?://api.arte.tv/api/player/v\\d+/oembed/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?platform=.+)";
     private static final String     API_TYPE_OTHER_PATTERN                      = "https?://api.arte.tv/api/player/v\\d+/config/" + PATTERN_SUPPORTED_LANGUAGES + "/([A-Za-z0-9\\-]+)(\\?.+)?";
     /* ?autostart=0&lifeCycle=1 = get lower qualities too. */
@@ -133,7 +127,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         String videoid_base = null;
         String video_section = null;
         /* First we need to have some basic data - this part is link-specific. */
-        if (parameter.matches(TYPE_ARTETV_GUIDE) || parameter.matches(TYPE_ARTETV_EMBED)) {
+        if (parameter.matches(TYPE_ARTETV_EMBED)) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() != 200 && this.br.getHttpConnection().getResponseCode() != 301) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -162,6 +156,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         } else if (parameter.matches(TYPE_VIDEOS)) {
             /* 2021-03-02: Testing if this will work for all URLs and completely without using their website. */
             final Regex urlinfo = new Regex(this.parameter, TYPE_VIDEOS);
+            final String languageURL = urlinfo.getMatch(0);
+            final String videoID = urlinfo.getMatch(1);
+            this.example_arte_vp_url = "https://api.arte.tv/api/player/v2/config/" + languageURL + "/" + videoID;
+        } else if (parameter.matches(TYPE_GUIDE)) {
+            final Regex urlinfo = new Regex(this.parameter, TYPE_GUIDE);
             final String languageURL = urlinfo.getMatch(0);
             final String videoID = urlinfo.getMatch(1);
             this.example_arte_vp_url = "https://api.arte.tv/api/player/v2/config/" + languageURL + "/" + videoID;
@@ -902,15 +901,6 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
         }
         return s;
-    }
-
-    @SuppressWarnings("unused")
-    private String getURLFilename(final String parameter) {
-        if (parameter.matches(TYPE_CONCERT)) {
-            return new Regex(parameter, "concert\\.arte\\.tv/" + PATTERN_SUPPORTED_LANGUAGES + "/(.+)").getMatch(1);
-        } else {
-            return new Regex(parameter, "arte\\.tv/guide/" + PATTERN_SUPPORTED_LANGUAGES + "/(.+)").getMatch(0);
-        }
     }
 
     private String getUrlLang() {
