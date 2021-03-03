@@ -92,13 +92,6 @@ public class HotlinkCc extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    // @Override
-    // public Form findFormDownload2Free() {
-    // /* 2019-05-15: Special: grab "download_orig" Form */
-    // final Form formf1Free = super.findFormDownload2Free();
-    // fixFormF1(formf1Free);
-    // return formf1Free;
-    // }
 
     @Override
     public Form findFormDownload2Premium() throws Exception {
