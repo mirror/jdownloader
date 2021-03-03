@@ -100,8 +100,4 @@ public class CFG_EXTRACTION {
      **/
     public static final ObjectKeyHandler                 PASSWORD_LIST                                                    = SH.getKeyHandler("PasswordList", ObjectKeyHandler.class);
     public static final StringKeyHandler                 SUB_PATH                                                         = SH.getKeyHandler("SubPath", StringKeyHandler.class);
-    /**
-     * Extract Log files in logs/extraction/...
-     **/
-    public static final BooleanKeyHandler                WRITE_EXTRACTION_LOG_ENABLED                                     = SH.getKeyHandler("WriteExtractionLogEnabled", BooleanKeyHandler.class);
 }
