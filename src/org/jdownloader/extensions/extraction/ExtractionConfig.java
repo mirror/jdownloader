@@ -160,13 +160,6 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry("Extract Log files in logs/extraction/...")
-    boolean isWriteExtractionLogEnabled();
-
-    void setWriteExtractionLogEnabled(boolean b);
-
-    @DefaultBooleanValue(true)
-    @AboutConfig
     @DescriptionForConfigEntry("Show Bubbles for Extration Jobs")
     boolean isBubbleEnabledIfArchiveExtractionIsInProgress();
 

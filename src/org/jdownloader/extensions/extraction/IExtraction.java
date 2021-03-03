@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.util.ArrayList;
@@ -23,7 +22,6 @@ import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -36,14 +34,11 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
  *
  */
 public abstract class IExtraction {
-
     private ExtractionController controller;
     protected LogSource          logger;
     private ExtractionConfig     config;
     private Exception            exception;
     private ArchiveFile          lastAccessedArchiveFile;
-    private ExtractLogFileWriter crashLog;
-
     private List<Matcher>        filters = new ArrayList<Matcher>();
 
     protected void initFilters() {
@@ -79,7 +74,6 @@ public abstract class IExtraction {
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
         this.lastAccessedArchiveFile = lastAccessedArchiveFile;
-        writeCrashLog("Extracting from: " + lastAccessedArchiveFile);
     }
 
     public Exception getException() {
@@ -88,7 +82,6 @@ public abstract class IExtraction {
 
     public void setException(Exception exception) {
         this.exception = exception;
-        writeCrashLog("Exception: \r\n" + Exceptions.getStackTrace(exception));
     }
 
     /**
@@ -194,7 +187,6 @@ public abstract class IExtraction {
     // * @return
     // */
     // public abstract boolean isArchivSupportedFileFilter(String file);
-
     /**
      * Ends the extraction.
      */
@@ -218,16 +210,4 @@ public abstract class IExtraction {
     public ArchiveFile getLastAccessedArchiveFile() {
         return lastAccessedArchiveFile;
     }
-
-    public void writeCrashLog(String string) {
-        final ExtractLogFileWriter crashLog = this.crashLog;
-        if (crashLog != null) {
-            crashLog.write(string);
-        }
-    }
-
-    public void setCrashLog(ExtractLogFileWriter crashLog) {
-        this.crashLog = crashLog;
-    }
-
 }

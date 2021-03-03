@@ -32,7 +32,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -41,16 +40,12 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
-import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.ExceptionDialog;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.contextmenu.ActionData;
@@ -79,7 +74,6 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.Cle
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractArchiveNowAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractPasswordAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.SetExtractToAction;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ShowExtractionResultAction;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ValidateArchivesAction;
 import org.jdownloader.extensions.extraction.gui.bubble.ExtractionBubbleSupport;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
@@ -346,8 +340,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     protected void stop() throws StopException {
         ShutdownController.getInstance().removeShutdownVetoListener(listener);
         LinkCollector.getInstance().setArchiver(null);
-        MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
-        MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
+        if (!org.appwork.utils.Application.isHeadless()) {
+            MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
+            MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
+            MenuManagerMainmenu.getInstance().unregisterExtender(this);
+            MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+        }
         DownloadController.getInstance().removeVetoListener(this);
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         if (!org.appwork.utils.Application.isHeadless()) {
@@ -458,50 +456,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             public void onShutdownVeto(ShutdownRequest request) {
             }
         });
-        new Thread() {
-            public void run() {
-                try {
-                    FileCreationManager.getInstance().mkdir(Application.getResource("logs/extracting/open"));
-                    final File[] files = Application.getResource("logs/extracting/open").listFiles();
-                    if (files != null) {
-                        String latestLog = null;
-                        for (final File f : files) {
-                            if (f.getName().matches("\\w+\\.txt")) {
-                                getLogger().log(new Exception("Extraction Crashlog found! " + f.getName()));
-                                int i = 1;
-                                File renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
-                                while (renamedTo.exists()) {
-                                    i++;
-                                    renamedTo = new File(f.getParentFile().getParentFile(), "crashed_" + i + "_" + f.getName());
-                                }
-                                f.renameTo(renamedTo);
-                                final byte[] bytes = IO.readFile(renamedTo, 512 * 1024);
-                                latestLog = new String(bytes, "UTF-8");
-                                getLogger().info(latestLog);
-                            }
-                        }
-                        if (!org.appwork.utils.Application.isHeadless()) {
-                            /* currently disabled as headless does not support log upload */
-                            if (StringUtils.isNotEmpty(latestLog)) {
-                                final ExceptionDialog ed = new ExceptionDialog(0, T.crash_title(), T.crash_message(), null, null, null);
-                                ed.setMore(latestLog);
-                                final ExceptionDialogInterface dialog = UIOManager.I().show(ExceptionDialogInterface.class, ed);
-                                dialog.throwCloseExceptions();
-                                new EDTRunner() {
-                                    @Override
-                                    protected void runInEDT() {
-                                        final LogAction la = new LogAction();
-                                        la.actionPerformed(null);
-                                    }
-                                };
-                            }
-                        }
-                    }
-                } catch (Throwable e) {
-                    getLogger().log(e);
-                }
-            }
-        }.start();
     }
 
     private void lazyInitOnceOnStart() {
@@ -957,7 +911,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             final ArchivesSubMenu root = new ArchivesSubMenu();
             root.add(new MenuItemData(new ActionData(ExtractArchiveNowAction.class)));
             root.add(new MenuItemData(new ActionData(AbortExtractionAction.class)));
-            root.add(new MenuItemData(new ActionData(ShowExtractionResultAction.class)));
             root.add(new MenuItemData(new ActionData(ValidateArchivesAction.class)));
             root.add(new SeparatorData());
             root.add(new MenuItemData(new ActionData(AutoExtractEnabledToggleAction.class)));

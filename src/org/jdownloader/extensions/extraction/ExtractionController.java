@@ -38,7 +38,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogInterface;
@@ -199,13 +198,16 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
     }
 
     public void kill() {
-        if (gotStarted()) {
-            logger.info("abort extraction");
-            logger.flush();
-        } else {
-            logger.close();
+        try {
+            if (gotStarted()) {
+                logger.info("abort extraction");
+                logger.flush();
+            } else {
+                logger.close();
+            }
+        } finally {
+            super.kill();
         }
-        super.kill();
     }
 
     public LogSource getLogger() {
@@ -217,13 +219,14 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
         return true;
     }
 
-    private boolean checkPassword(ExtractLogFileWriter crashLog, String pw, boolean optimized) throws ExtractionException {
-        crashLog.write("Check Password: '" + pw + "'");
+    private boolean checkPassword(String pw, boolean optimized) throws ExtractionException {
+        logger.info("Check Password: '" + pw + "'");
         if (StringUtils.isEmpty(pw)) {
             return false;
+        } else {
+            fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
+            return extractor.findPassword(this, pw, optimized);
         }
-        fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
-        return extractor.findPassword(this, pw, optimized);
     }
 
     private void fireEvent(ExtractionEvent.Type event) {
@@ -237,73 +240,59 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
 
     @Override
     public Void run() {
-        final boolean deleteExtractionLog = !CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled();
         // let's write an info file. and delete if after extraction. this why we have infosfiles if the extraction crashes jd
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
-        final ExtractLogFileWriter crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getArchiveID()) {
-            @Override
-            public void write(String string) {
-                super.write(string);
-                logger.info(string);
-            }
-
-            @Override
-            protected boolean deleteOnShutDown() {
-                return deleteExtractionLog;
-            }
-        };
         try {
             fireEvent(ExtractionEvent.Type.START);
             archive.onStartExtracting();
-            crashLog.write("Date:" + new Date());
-            crashLog.write("Start Extracting");
-            crashLog.write("Extension Setup: \r\n" + extension.getSettings().toString());
-            crashLog.write("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
-            extractor.setCrashLog(crashLog);
-            crashLog.write("Start unpacking of " + firstArchiveFile.getFilePath());
+            logger.info("Date:" + new Date());
+            logger.info("Start Extracting");
+            logger.info("Extension Setup: \r\n" + extension.getSettings().toString());
+            logger.info("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
+            logger.info("Start unpacking of " + firstArchiveFile.getFilePath());
             for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!archiveFile.exists(true)) {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
-                        crashLog.write("Missing (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());
+                        logger.info("Missing (DownloadLinkArchiveFile)File: " + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists());
                     } else if (archiveFile instanceof FileArchiveFile) {
-                        crashLog.write("Missing (FileArchiveFile)File: " + archiveFile.getFilePath());
+                        logger.info("Missing (FileArchiveFile)File: " + archiveFile.getFilePath());
                     } else {
-                        crashLog.write("Missing File: " + archiveFile.getFilePath());
+                        logger.info("Missing File: " + archiveFile.getFilePath());
                     }
-                    crashLog.write("Could not find archive file " + archiveFile.getFilePath());
+                    logger.info("Could not find archive file " + archiveFile.getFilePath());
                     archive.addCrcError(archiveFile);
                 } else {
                     if (archiveFile instanceof DownloadLinkArchiveFile) {
                         final DownloadLinkArchiveFile downloadLinkArchiveFile = (DownloadLinkArchiveFile) archiveFile;
-                        crashLog.write(" (DownloadLinkArchiveFile)File:" + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists() + "|FileSize:" + archiveFile.getFileSize());
+                        logger.info(" (DownloadLinkArchiveFile)File:" + archiveFile.getFilePath() + "|FileArchiveFileExists:" + downloadLinkArchiveFile.isFileArchiveFileExists() + "|FileSize:" + archiveFile.getFileSize());
                     } else if (archiveFile instanceof FileArchiveFile) {
-                        crashLog.write(" (FileArchiveFile)File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
+                        logger.info(" (FileArchiveFile)File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
                     } else {
-                        crashLog.write(" File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
+                        logger.info(" File:" + archiveFile.getFilePath() + "|FileSize:" + archiveFile.getFileSize());
                     }
                 }
             }
             if (archive.getCrcError().size() > 0) {
                 fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
-                crashLog.write("Failed");
+                logger.info("Failed");
                 return null;
             }
             if (gotKilled()) {
                 return null;
             }
-            crashLog.write("Prepare - " + new Date());
+            logger.info("Prepare - " + new Date());
             if (extractor.prepare()) {
                 if (archive.isProtected()) {
                     final boolean isPasswordFindOptimizationEnabled = getExtension().getSettings().isPasswordFindOptimizationEnabled();
-                    crashLog.write("Archive is Protected - " + new Date());
-                    if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(crashLog, archive.getFinalPassword(), false)) {
+                    logger.info("Archive is Protected - " + new Date());
+                    if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(archive.getFinalPassword(), false)) {
                         /* open archive with found pw */
-                        crashLog.write("Password " + archive.getFinalPassword() + " is invalid, try to find correct one");
+                        logger.info("Password " + archive.getFinalPassword() + " is invalid, try to find correct one");
                         archive.setFinalPassword(null);
                     }
                     if (StringUtils.isEmpty(archive.getFinalPassword())) {
-                        crashLog.write("Try to find password");
+                        logger.info("Try to find password");
                         /* pw unknown yet */
                         List<String> spwList = archive.getSettings().getPasswords();
                         if (spwList != null) {
@@ -317,7 +306,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         }
                         passwordList.addAll(pwList);
                         fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
-                        crashLog.write("Start password finding for " + archive + " - " + new Date());
+                        logger.info("Start password finding for " + archive + " - " + new Date());
                         String correctPW = null;
                         for (final String password : passwordList) {
                             if (password == null) {
@@ -326,17 +315,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                             if (gotKilled()) {
                                 return null;
                             }
-                            if (checkPassword(crashLog, password, isPasswordFindOptimizationEnabled)) {
+                            if (checkPassword(password, isPasswordFindOptimizationEnabled)) {
                                 correctPW = password;
-                                crashLog.write("Found password: \"" + correctPW + "\"" + " - " + new Date());
+                                logger.info("Found password: \"" + correctPW + "\"" + " - " + new Date());
                                 break;
                             } else {
                                 // try trimmed password
                                 final String trimmed = password.trim();
                                 if (trimmed.length() != password.length()) {
-                                    if (checkPassword(crashLog, trimmed, isPasswordFindOptimizationEnabled)) {
+                                    if (checkPassword(trimmed, isPasswordFindOptimizationEnabled)) {
                                         correctPW = trimmed;
-                                        crashLog.write("Found password: \"" + correctPW + "\"" + " - " + new Date());
+                                        logger.info("Found password: \"" + correctPW + "\"" + " - " + new Date());
                                         break;
                                     }
                                 }
@@ -344,27 +333,27 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         }
                         if (correctPW == null) {
                             fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
-                            crashLog.write("Ask for password");
-                            crashLog.write("Found no password in passwordlist " + archive);
+                            logger.info("Ask for password");
+                            logger.info("Found no password in passwordlist " + archive);
                             if (gotKilled()) {
                                 return null;
                             }
-                            if (!checkPassword(crashLog, archive.getFinalPassword(), false)) {
+                            if (!checkPassword(archive.getFinalPassword(), false)) {
                                 fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
-                                crashLog.write("No password found for " + archive);
-                                crashLog.write("Failed");
+                                logger.info("No password found for " + archive);
+                                logger.info("Failed");
                                 return null;
                             }
                         }
                         fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                        crashLog.write("Found password for " + archive + "->" + archive.getFinalPassword() + " - " + new Date());
+                        logger.info("Found password for " + archive + "->" + archive.getFinalPassword() + " - " + new Date());
                     }
                     if (StringUtils.isNotEmpty(archive.getFinalPassword())) {
                         getExtension().addPassword(archive.getFinalPassword());
                     }
                 }
                 extractToFolder = getExtension().getFinalExtractToFolder(archive, false);
-                crashLog.write("Extract To: " + extractToFolder + " - " + new Date());
+                logger.info("Extract To: " + extractToFolder + " - " + new Date());
                 final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
                     @Override
                     public long getSize() {
@@ -392,33 +381,29 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                 try {
                     switch (reservationResult) {
                     case FAILED:
-                        crashLog.write("Not enough harddisk space for unpacking archive " + firstArchiveFile.getFilePath());
-                        crashLog.write("Diskspace Problem: " + reservationResult);
-                        crashLog.write("Failed");
                         fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
                         return null;
                     case INVALIDDESTINATION:
-                        crashLog.write("Could use create subpath");
-                        crashLog.write("Could use create subpath: " + getExtractToFolder());
-                        crashLog.write("Failed");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                         return null;
+                    default:
+                        break;
                     }
                     fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
                     if (!getExtractToFolder().exists()) {
                         if (!FileCreationManager.getInstance().mkdir(getExtractToFolder())) {
-                            crashLog.write("Could not create subpath: " + getExtractToFolder());
-                            crashLog.write("Failed");
+                            logger.info("Could not create subpath: " + getExtractToFolder());
+                            logger.info("Failed");
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             return null;
                         }
                     }
-                    crashLog.write("Execute unpacking of:" + archive);
-                    crashLog.write("Extract to " + getExtractToFolder());
-                    crashLog.write("Use Password: " + archive.getFinalPassword() + "|PW Protected:" + archive.isProtected() + ":" + archive.isPasswordRequiredToOpen());
+                    logger.info("Execute unpacking of:" + archive);
+                    logger.info("Extract to " + getExtractToFolder());
+                    logger.info("Use Password: " + archive.getFinalPassword() + "|PW Protected:" + archive.isProtected() + ":" + archive.isPasswordRequiredToOpen());
                     ScheduledExecutorService scheduler = null;
                     try {
-                        crashLog.write("Start Extracting " + extractor + " - " + new Date());
+                        logger.info("Start Extracting " + extractor + " - " + new Date());
                         scheduler = DelayedRunnable.getNewScheduledExecutorService();
                         timer = scheduler.scheduleWithFixedDelay(new Runnable() {
                             public void run() {
@@ -428,7 +413,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                         extractor.extract(this);
                     } finally {
                         extractor.close();
-                        crashLog.write("Extractor Returned - " + new Date());
+                        logger.info("Extractor Returned - " + new Date());
                         if (timer != null) {
                             timer.cancel(false);
                         }
@@ -436,7 +421,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                             scheduler.shutdown();
                         }
                         if (extractor.getLastAccessedArchiveFile() != null) {
-                            crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
+                            logger.info("Last used File: " + extractor.getLastAccessedArchiveFile());
                         }
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
                     }
@@ -451,88 +436,60 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                     logger.log(exception);
                 }
                 if (exception != null) {
-                    crashLog.write("Exception occured: \r\n" + Exceptions.getStackTrace(exception));
+                    logger.log(exception);
                 }
-                crashLog.write("ExitCode: " + archive.getExitCode());
+                logger.info("ExitCode: " + archive.getExitCode());
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
-                    crashLog.write("Unpacking successful for " + archive);
+                    logger.info("Unpacking successful for " + archive);
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
-                    crashLog.write("Info: \r\n" + JSonStorage.serializeToJson(new ExtractionInfo(getExtractToFolder(), archive)));
-                    crashLog.write("Successful");
+                    logger.info("Info: \r\n" + JSonStorage.serializeToJson(new ExtractionInfo(getExtractToFolder(), archive)));
+                    logger.info("Successful");
                     successful = true;
                     fireEvent(ExtractionEvent.Type.FINISHED);
                     logger.clear();
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
-                    crashLog.write("Archive seems to be incomplete " + archive);
-                    crashLog.write("Incomplete Archive");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    crashLog.write("A CRC error occurred when unpacking " + archive);
-                    crashLog.write("CRC Error occured");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
-                    crashLog.write("User interrupted unpacking of " + archive);
-                    crashLog.write("Interrupted by User");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
-                    crashLog.write("Could not create Outputfile for" + archive);
-                    crashLog.write("Could not create Outputfile");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR:
-                    crashLog.write("Unable to write unpacked data on harddisk for " + archive);
                     this.exception = new ExtractionException("Write to disk error");
-                    crashLog.write("Harddisk write Error");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
-                    crashLog.write("A unknown fatal error occurred while unpacking " + archive);
-                    crashLog.write("Unknown Fatal Error");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-                    crashLog.write("Non fatal error(s) occurred while unpacking " + archive);
-                    crashLog.write("Unknown Non Fatal Error");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 default:
-                    crashLog.write("Failed...unknown reason");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 }
                 return null;
             } else {
+                logger.info("ExitCode(Prepare failed): " + archive.getExitCode());
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    crashLog.write("A CRC error occurred when unpacking " + archive);
-                    crashLog.write("CRC Error occured");
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 default:
-                    crashLog.write("Failed");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 }
             }
         } catch (Exception e) {
-            logger.log(e);
             this.exception = e;
-            crashLog.write("Exception occured: \r\n" + Exceptions.getStackTrace(e));
-            crashLog.write("Failed");
+            logger.log(e);
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
             try {
@@ -540,12 +497,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
                     extractor.close();
                 } catch (final Throwable e) {
                 }
-                crashLog.close();
-                if (deleteExtractionLog) {
-                    crashLog.delete();
-                }
                 if (gotKilled()) {
-                    crashLog.write("ExtractionController has been killed");
                     logger.clear();
                 }
                 fireEvent(ExtractionEvent.Type.CLEANUP);
