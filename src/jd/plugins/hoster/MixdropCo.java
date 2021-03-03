@@ -173,11 +173,14 @@ public class MixdropCo extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            /** 2021-03-03: E.g. extra step needed for .mp4 files but not for .zip files (which they call "folders"). */
             final String continueURL = br.getRegex("((?://[^/]+/f/[a-z0-9]+)?\\?download)").getMatch(0);
-            if (continueURL == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (continueURL != null) {
+                logger.info("Found continueURL");
+                getPage(continueURL);
+            } else {
+                logger.info("Failed to find continueURL");
             }
-            getPage(continueURL);
             String csrftoken = br.getRegex("name=\"csrf\" content=\"([^<>\"]+)\"").getMatch(0);
             if (csrftoken == null) {
                 csrftoken = "";

@@ -1491,6 +1491,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
         }
+        if (videoQualityHTMLs.length == 0) {
+            logger.info("Failed to find any official video downloads");
+            return null;
+        }
         /*
          * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
          */
@@ -1506,9 +1510,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         String targetHTML = null;
         final String userSelectedQualityValue = getPreferredDownloadQuality();
         boolean foundUserSelectedQuality = false;
-        if (videoQualityHTMLs.length == 0) {
-            logger.info("Failed to find any official video downloads");
-        }
         if (userSelectedQualityValue == null) {
             logger.info("Trying to find highest quality for official video download");
         } else {
@@ -1528,6 +1529,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 /*
                  * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything fails!
                  */
+                logger.warning("Found unidentifyable video quality");
                 continue;
             } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
                 /*
@@ -1669,7 +1671,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         l = low </br>
      *         null = No selection/Grab BEST available
      */
-    private String getPreferredDownloadQuality() {
+    protected String getPreferredDownloadQuality() {
         final Class<? extends XFSConfigVideo> cfgO = this.getConfigInterface();
         if (cfgO != null) {
             final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
