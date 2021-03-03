@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +33,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MixdropCo extends antiDDoSForHost {
@@ -121,7 +121,6 @@ public class MixdropCo extends antiDDoSForHost {
         this.setBrowserExclusive();
         final String fid = this.getFID(link);
         String filename = null;
-        String filesize = null;
         if (USE_API_FOR_LINKCHECK) {
             /* 2019-09-30: Let's just use it that way and hope it keeps working. */
             /*
@@ -132,21 +131,30 @@ public class MixdropCo extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || !"true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "success"))) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final boolean isDeleted = "true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "deleted"));
-            if (isDeleted) {
+            } else if ("true".equalsIgnoreCase(PluginJSonUtils.getJson(br, "deleted"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                filename = PluginJSonUtils.getJson(br, "title");
+                if (filename != null) {
+                    link.setFinalFileName(filename);
+                }
+                final String filesize = PluginJSonUtils.getJson(br, "size");
+                if (filesize != null) {
+                    link.setVerifiedFileSize(Long.parseLong(filesize));
+                }
             }
-            filename = PluginJSonUtils.getJson(br, "title");
-            filesize = PluginJSonUtils.getJson(br, "size");
         } else {
             getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/imgs/illustration-notfound\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                final Regex fileinfo = br.getRegex("imgs/icon-file\\.png\"[^>]*/> <span title=\"([^\"]+)\">[^<>]*</span>([^<>\"]+)</div>");
+                filename = fileinfo.getMatch(0);
+                final String filesize = fileinfo.getMatch(1);
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
             }
-            final Regex fileinfo = br.getRegex("imgs/icon-file\\.png\"[^>]*/> <span title=\"([^\"]+)\">[^<>]*</span>([^<>\"]+)</div>");
-            filename = fileinfo.getMatch(0);
-            filesize = fileinfo.getMatch(1);
         }
         if (StringUtils.isEmpty(filename)) {
             /* Fallback */
@@ -154,9 +162,6 @@ public class MixdropCo extends antiDDoSForHost {
         }
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
         return AvailableStatus.TRUE;
     }
 
@@ -191,11 +196,10 @@ public class MixdropCo extends antiDDoSForHost {
             /* 2019-12-13: Invisible reCaptcha */
             final boolean requiresCaptcha = true;
             if (requiresCaptcha) {
-                // final String reCaptchaID = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
                 final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 query.appendEncoded("token", recaptchaV2Response);
             }
-            postPage(continueURL, query.toString());
+            postPage(br.getURL(), query.toString());
             dllink = PluginJSonUtils.getJson(br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 if (br.containsHTML("Failed captcha verification")) {
@@ -214,7 +218,7 @@ public class MixdropCo extends antiDDoSForHost {
             /* 2019-09-30: Skip short pre-download waittime */
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -224,8 +228,9 @@ public class MixdropCo extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -246,28 +251,30 @@ public class MixdropCo extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     @Override
