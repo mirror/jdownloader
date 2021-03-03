@@ -59,7 +59,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummydebrid-link.frv2BETA" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 0, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
     private static MultiHosterManagement mhm                                                  = new MultiHosterManagement("debrid-link.fr");
     private static final String          PROPERTY_DIRECTURL                                   = "directurl";
@@ -112,7 +112,7 @@ public class DebridLinkFr2 extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         login(account, true);
-        if (!br.getURL().contains("/account/infos")) {
+        if (br.getRequest() == null || !br.getURL().contains("/account/infos")) {
             callAPIGetAccountInfo();
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -285,10 +285,10 @@ public class DebridLinkFr2 extends PluginForHost {
                         counter += 1;
                     } while (thread.isAlive() && counter < 120);
                 } finally {
+                    /* We only want to display this message once */
+                    account.setProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, true);
                     thread.interrupt();
                 }
-                /* We only want to display this message once */
-                account.setProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, true);
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Aktualisiere diesen Account, um dich neu einzuloggen", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
