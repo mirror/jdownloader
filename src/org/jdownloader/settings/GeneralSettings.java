@@ -3,8 +3,6 @@ package org.jdownloader.settings;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -27,10 +25,12 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             if (CrossSystem.isLinux()) {
                 if (new File("/volume1/@appstore").exists()) {
                     // synology
