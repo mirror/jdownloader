@@ -243,27 +243,30 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         @Override
         protected String getDateFormatString() {
-            String custom = CFG_GUI.CFG.getDateTimeFormatAccountManagerExpireDateColumn();
+            final String custom = CFG_GUI.CFG.getDateTimeFormatAccountManagerExpireDateColumn();
             if (StringUtils.isNotEmpty(custom)) {
                 return custom;
+            } else {
+                final DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+                if (sd instanceof SimpleDateFormat) {
+                    return ((SimpleDateFormat) sd).toPattern();
+                } else {
+                    return _GUI.T.PremiumAccountTableModel_getDateFormatString_();
+                }
             }
-            DateFormat sd = SimpleDateFormat.getDateTimeInstance();
-            if (sd instanceof SimpleDateFormat) {
-                return ((SimpleDateFormat) sd).toPattern();
-            }
-            return _GUI.T.PremiumAccountTableModel_getDateFormatString_();
         }
 
         @Override
         protected Date getDate(AccountEntry o2, Date date) {
-            AccountInfo ai = o2.getAccount().getAccountInfo();
+            final AccountInfo ai = o2.getAccount().getAccountInfo();
             if (ai == null) {
                 return null;
             } else {
                 if (ai.getValidUntil() <= 0) {
                     return null;
+                } else {
+                    return new Date(ai.getValidUntil());
                 }
-                return new Date(ai.getValidUntil());
             }
         }
     }

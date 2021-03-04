@@ -527,26 +527,27 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         final long validUntil = ai.getValidUntil();
         if (validUntil <= 0) {
             return null;
-        }
-        final Date date = new Date(validUntil);
-        final long left = validUntil - System.currentTimeMillis();
-        if (left <= 0) {
-            return formatDate(date) + " (" + _GUI.T.PremiumAccountTableModel_getStringValue_status_expired() + ")";
         } else {
-            return formatDate(date) + " (" + TimeFormatter.formatMilliSeconds(left, TimeFormatter.HIDE_SECONDS) + ")";
+            final Date date = new Date(validUntil);
+            final long left = validUntil - System.currentTimeMillis();
+            if (left <= 0) {
+                return formatDate(date) + " (" + _GUI.T.PremiumAccountTableModel_getStringValue_status_expired() + ")";
+            } else {
+                return formatDate(date) + " (" + TimeFormatter.formatMilliSeconds(left, TimeFormatter.HIDE_SECONDS) + ")";
+            }
         }
     }
 
-    protected String formatDate(Date date) {
+    protected String formatDate(final Date date) {
         String custom = CFG_GUI.CFG.getDateTimeFormatAccountManagerExpireDateColumn();
         if (StringUtils.isEmpty(custom)) {
-            DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+            final DateFormat sd = SimpleDateFormat.getDateTimeInstance();
             if (sd instanceof SimpleDateFormat) {
                 custom = ((SimpleDateFormat) sd).toPattern();
+                if (StringUtils.isEmpty(custom)) {
+                    custom = _GUI.T.PremiumAccountTableModel_getDateFormatString_();
+                }
             }
-        }
-        if (StringUtils.isEmpty(custom)) {
-            custom = _GUI.T.PremiumAccountTableModel_getDateFormatString_();
         }
         return new SimpleDateFormat(custom).format(date);
     }

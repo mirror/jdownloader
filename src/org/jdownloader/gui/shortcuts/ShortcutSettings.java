@@ -17,42 +17,42 @@ import org.appwork.storage.config.handler.KeyHandler;
 public interface ShortcutSettings extends ConfigInterface {
     class DefaultTextFieldCopy extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
     class DefaultTextFieldCut extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
     class DefaultTextFieldDelete extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0).toString();
         }
     }
 
     class DefaultTextFieldPaste extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
     class DefaultTextFieldSelect extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return org.appwork.utils.Application.isHeadless() ? null : KeyStroke.getKeyStroke(KeyEvent.VK_A, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toString();
         }
     }
 
     class KeyStrokeValidator extends AbstractValidator<String> {
         @Override
-        public void validate(String keystroke) throws ValidationException {
+        public void validate(KeyHandler<String> keyHandler, String keystroke) throws ValidationException {
             if (KeyStroke.getKeyStroke(keystroke) == null) {
                 throw new ValidationException("Invalid KeyStroke: " + keystroke);
             }

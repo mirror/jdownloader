@@ -73,7 +73,7 @@ public interface InternetConnectionSettings extends ConfigInterface {
 
     public static class ProxyVoleAutodetectionFactory extends AbstractDefaultFactory<Boolean> {
         @Override
-        public Boolean getDefaultValue(KeyHandler<?> keyHandler) {
+        public Boolean getDefaultValue(KeyHandler<Boolean> keyHandler) {
             return !Application.isHeadless();
         }
     }

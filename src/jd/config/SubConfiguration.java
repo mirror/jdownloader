@@ -32,6 +32,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO.SYNC;
 
 @Deprecated
 /**
@@ -49,11 +50,11 @@ public class SubConfiguration extends Property implements Serializable {
     protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
     protected static final byte[]                               KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
     protected static final DelayedRunnable                      SAVEDELAYER      = new DelayedRunnable(5000, 30000) {
-        @Override
-        public void delayedrun() {
-            saveAll();
-        }
-    };
+                                                                                     @Override
+                                                                                     public void delayedrun() {
+                                                                                         saveAll();
+                                                                                     }
+                                                                                 };
     static {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
@@ -128,7 +129,7 @@ public class SubConfiguration extends Property implements Serializable {
                                     JSonStorage.unLock(file);
                                 }
                             } else {
-                                JSonStorage.saveTo(file, false, KEY, json);
+                                JSonStorage.saveTo(file, false, KEY, json, SYNC.META_AND_DATA);
                             }
                         }
                     };

@@ -17,31 +17,30 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
-
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -8841119846403017974L;
-
     private final String      bad              = _GUI.T.added_date_column_invalid();
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     public AddedDateColumn() {
         super(_GUI.T.added_date_column_title());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
-
     }
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
-        if (obj instanceof FilePackage) { return ((FilePackage) obj).getView().isEnabled(); }
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
-        return obj.isEnabled();
+        if (obj instanceof FilePackage) {
+            return ((FilePackage) obj).getView().isEnabled();
+        } else if (obj instanceof CrawledPackage) {
+            return ((CrawledPackage) obj).getView().isEnabled();
+        } else {
+            return obj.isEnabled();
+        }
     }
 
     @Override
@@ -65,17 +64,26 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     }
 
     protected String getDateFormatString() {
-        String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListAddedDateColumn();
-        if (StringUtils.isNotEmpty(custom)) { return custom; }
-        DateFormat sd = SimpleDateFormat.getDateTimeInstance();
-        if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
-        return _GUI.T.added_date_column_dateformat();
+        final String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListAddedDateColumn();
+        if (StringUtils.isNotEmpty(custom)) {
+            return custom;
+        } else {
+            final DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+            if (sd instanceof SimpleDateFormat) {
+                return ((SimpleDateFormat) sd).toPattern();
+            } else {
+                return _GUI.T.added_date_column_dateformat();
+            }
+        }
     }
 
     @Override
     protected Date getDate(AbstractNode node, Date date) {
-        if (node.getCreated() <= 0) return null;
-        date.setTime(node.getCreated());
-        return date;
+        if (node.getCreated() <= 0) {
+            return null;
+        } else {
+            date.setTime(node.getCreated());
+            return date;
+        }
     }
 }
