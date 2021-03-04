@@ -38,7 +38,7 @@ public class RarlinkCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info: 2019-10-01: Untested (all URLs = premiumonly), set default limits <br />
-     * captchatype-info: 2019-10-01: unknown<br />
+     * captchatype-info: 2021-03-04: reCaptchaV2 <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -111,8 +111,11 @@ public class RarlinkCom extends XFileSharingProBasic {
          * another errormessage.
          */
         boolean isPremiumonlyHTML = super.isPremiumOnly(br);
+        /*
+         * 2021-03-04: Website always contains: "<center><strong>Upgrade Premium to Download this File Immediately!:</strong></center>" -->
+         */
         if (!isPremiumonlyHTML) {
-            isPremiumonlyHTML = br.containsHTML("Upgrade Premium to Download this File");
+            isPremiumonlyHTML = br.containsHTML(">\\s*This file is available for .*Premium Users.* only");
         }
         return isPremiumonlyHTML;
     }
