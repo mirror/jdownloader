@@ -85,7 +85,7 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public static class DeviceNameFactory extends AbstractDefaultFactory<String> {
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             return "JDownloader@" + System.getProperty("user.name", "User");
         }
     }

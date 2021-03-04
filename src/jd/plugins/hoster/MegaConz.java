@@ -155,17 +155,20 @@ public class MegaConz extends PluginForHost {
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
             String statusAddition = "";
-            try {
-                final List<Object> trafficInfo = (List<Object>) uq.get("tah");
-                long bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 2)).longValue();
-                if (bandwidthUsed == 0) {
-                    /* TODO: Where are the API docs? Why are there sometimes more elements? */
-                    bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 1)).longValue();
+            if (false) {
+                // TODO: what are the elements of tah? maybe last 15/30/60 minutes?
+                try {
+                    final List<Object> trafficInfo = (List<Object>) uq.get("tah");
+                    long bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 2)).longValue();
+                    if (bandwidthUsed == 0) {
+                        /* TODO: Where are the API docs? Why are there sometimes more elements? */
+                        bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 1)).longValue();
+                    }
+                    final String bandwidthUsedFormatted = SizeFormatter.formatBytes(bandwidthUsed).toString();
+                    statusAddition = " | Bandwidth used: " + bandwidthUsedFormatted;
+                } catch (final Throwable e) {
+                    logger.log(e);
                 }
-                final String bandwidthUsedFormatted = SizeFormatter.formatBytes(bandwidthUsed).toString();
-                statusAddition = " | Bandwidth used: " + bandwidthUsedFormatted;
-            } catch (final Throwable e) {
-                logger.log(e);
             }
             if (uq == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -33,6 +33,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO.SYNC;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.httpserver.HttpConnection;
@@ -280,7 +281,7 @@ public class DeprecatedAPIServer extends HttpServer {
                 final Runnable run = new Runnable() {
                     @Override
                     public void run() {
-                        JSonStorage.saveTo(APICERTSFILE, false, JSonStorage.KEY, json);
+                        JSonStorage.saveTo(APICERTSFILE, false, JSonStorage.KEY, json, SYNC.META_AND_DATA);
                     }
                 };
                 StorageHandler.enqueueWrite(run, APICERTSFILE.getAbsolutePath(), true);

@@ -25,8 +25,10 @@ import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
+import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.validators.DefaultSimpleDateValidator;
 import org.appwork.utils.Application;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.ReflectionUtils;
@@ -54,10 +56,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public static class CustomIsConfigViewVisible extends AbstractCustomValueGetter<Boolean> {
         @Override
         public Boolean getValue(KeyHandler<Boolean> keyHandler, Boolean value) {
-            if (CrossSystem.isMac() && Application.getJavaVersion() < Application.JAVA17) {
+            if (CrossSystem.isMac() && !JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
                 return Boolean.TRUE;
+            } else {
+                return value;
             }
-            return value;
         }
     }
 
@@ -626,7 +629,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     class DefaultLookAndFeelTheme extends AbstractDefaultFactory<LookAndFeelType> {
         @Override
-        public LookAndFeelType getDefaultValue(KeyHandler<?> keyHandler) {
+        public LookAndFeelType getDefaultValue(KeyHandler<LookAndFeelType> keyHandler) {
             if (Application.isHeadless()) {
                 return LookAndFeelType.JAVA_SYSTEM;
             } else {
@@ -1211,19 +1214,19 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setCustomLookAndFeelClass(String clazz);
 
     @AboutConfig
-    @RequiresRestart("Restart is Required")
+    @ValidatorFactory(DefaultSimpleDateValidator.class)
     String getDateTimeFormatAccountManagerExpireDateColumn();
 
     void setDateTimeFormatAccountManagerExpireDateColumn(String df);
 
     @AboutConfig
-    @RequiresRestart("Restart is Required")
+    @ValidatorFactory(DefaultSimpleDateValidator.class)
     String getDateTimeFormatDownloadListAddedDateColumn();
 
     void setDateTimeFormatDownloadListAddedDateColumn(String df);
 
     @AboutConfig
-    @RequiresRestart("Restart is Required")
+    @ValidatorFactory(DefaultSimpleDateValidator.class)
     String getDateTimeFormatDownloadListFinishedDateColumn();
 
     void setDateTimeFormatDownloadListFinishedDateColumn(String df);

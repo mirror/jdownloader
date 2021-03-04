@@ -20,7 +20,7 @@ import org.jdownloader.settings.advanced.AdvancedValueEditorFactory;
 public interface FFmpegSetup extends ConfigInterface {
     class BinayPathValidator extends AbstractValidator<String> {
         @Override
-        public void validate(String binaryPath) throws ValidationException {
+        public void validate(KeyHandler<String> keyHandler, String binaryPath) throws ValidationException {
             if (StringUtils.isNotEmpty(binaryPath)) {
                 final File file = new File(binaryPath);
                 if (!file.exists()) {
@@ -40,13 +40,13 @@ public interface FFmpegSetup extends ConfigInterface {
         final String binary = "ffmpeg";
 
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
                     try {
                         final String binaryPath = path + binary;
-                        binaryPathValidator.validate(binaryPath);
+                        binaryPathValidator.validate(keyHandler, binaryPath);
                         return binaryPath;
                     } catch (ValidationException ignore) {
                     }
@@ -60,13 +60,13 @@ public interface FFmpegSetup extends ConfigInterface {
         final String binary = "ffprobe";
 
         @Override
-        public String getDefaultValue(KeyHandler<?> keyHandler) {
+        public String getDefaultValue(KeyHandler<String> keyHandler) {
             if (CrossSystem.isLinux() || CrossSystem.isMac()) {
                 final BinayPathValidator binaryPathValidator = new BinayPathValidator();
                 for (final String path : new String[] { "/usr/bin/", "/usr/local/bin/" }) {
                     try {
                         final String binaryPath = path + binary;
-                        binaryPathValidator.validate(binaryPath);
+                        binaryPathValidator.validate(keyHandler, binaryPath);
                         return binaryPath;
                     } catch (ValidationException ignore) {
                     }

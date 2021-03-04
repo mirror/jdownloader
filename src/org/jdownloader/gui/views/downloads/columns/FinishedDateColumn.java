@@ -7,15 +7,14 @@ import java.util.Date;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-import jd.controlling.packagecontroller.AbstractNode;
-
 public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
-
     /**
      *
      */
@@ -27,9 +26,7 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
     }
 
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-
     }
 
     @Override
@@ -52,27 +49,23 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
         return false;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 110;
-    // }
-
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
 
     protected String getDateFormatString() {
-        String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListFinishedDateColumn();
+        final String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListFinishedDateColumn();
         if (StringUtils.isNotEmpty(custom)) {
             return custom;
+        } else {
+            final DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+            if (sd instanceof SimpleDateFormat) {
+                return ((SimpleDateFormat) sd).toPattern();
+            } else {
+                return _GUI.T.added_date_column_dateformat();
+            }
         }
-        DateFormat sd = SimpleDateFormat.getDateTimeInstance();
-        if (sd instanceof SimpleDateFormat) {
-            return ((SimpleDateFormat) sd).toPattern();
-        }
-        return _GUI.T.added_date_column_dateformat();
     }
 
     @Override
@@ -85,5 +78,4 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
             return date;
         }
     }
-
 }

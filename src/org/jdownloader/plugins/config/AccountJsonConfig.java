@@ -89,26 +89,46 @@ public class AccountJsonConfig {
                 final boolean autoPutDefaultValue = autoPutValue == null ? isAutoPutValues() : Boolean.TRUE.equals(autoPutValue);
                 Object ret = contains ? account.getProperty(PREFIX_PRIMITIVE + key) : null;
                 if (ret != null && def != null && ret.getClass() != def.getClass()) {
-                    /* ret class different from def class, so we have to convert */
-                    if (def instanceof Long) {
-                        if (ret instanceof Number) {
-                            ret = ((Number) ret).longValue();
-                        } else if (ret instanceof String) {
-                            ret = Long.parseLong((String) ret);
-                        }
-                    } else if (def instanceof Integer) {
-                        if (ret instanceof Number) {
-                            ret = ((Number) ret).intValue();
-                        } else if (ret instanceof String) {
-                            ret = Integer.parseInt((String) ret);
-                        }
-                    } else if (def instanceof Double) {
-                        if (ret instanceof Float) {
-                            ret = ((Double) ret).doubleValue();
-                        }
-                    } else if (def instanceof Float) {
-                        if (ret instanceof Double) {
-                            ret = ((Float) ret).floatValue();
+                    if (ret instanceof String && "null".equalsIgnoreCase((String) ret)) {
+                        ret = null;
+                    } else {
+                        /* ret class different from def class, so we have to convert */
+                        if (def instanceof Byte) {
+                            if (ret instanceof Number) {
+                                ret = ((Number) ret).byteValue();
+                            } else if (ret instanceof String) {
+                                ret = Byte.parseByte((String) ret);
+                            }
+                        } else if (def instanceof Short) {
+                            if (ret instanceof Number) {
+                                ret = ((Number) ret).shortValue();
+                            } else if (ret instanceof String) {
+                                ret = Short.parseShort((String) ret);
+                            }
+                        } else if (def instanceof Long) {
+                            if (ret instanceof Number) {
+                                ret = ((Number) ret).longValue();
+                            } else if (ret instanceof String) {
+                                ret = Long.parseLong((String) ret);
+                            }
+                        } else if (def instanceof Integer) {
+                            if (ret instanceof Number) {
+                                ret = ((Number) ret).intValue();
+                            } else if (ret instanceof String) {
+                                ret = Integer.parseInt((String) ret);
+                            }
+                        } else if (def instanceof Double) {
+                            if (ret instanceof Float) {
+                                ret = ((Double) ret).doubleValue();
+                            } else if (ret instanceof String) {
+                                ret = Double.parseDouble((String) ret);
+                            }
+                        } else if (def instanceof Float) {
+                            if (ret instanceof Double) {
+                                ret = ((Float) ret).floatValue();
+                            } else if (ret instanceof String) {
+                                ret = Float.parseFloat((String) ret);
+                            }
                         }
                     }
                 }
@@ -116,22 +136,24 @@ public class AccountJsonConfig {
                 if (!contains) {
                     ret = def;
                     if (autoPutDefaultValue) {
-                        if (def instanceof Boolean) {
-                            this.put(key, (Boolean) def);
+                        if (def instanceof Byte) {
+                            this.put(key, (Byte) def);
+                        } else if (def instanceof Short) {
+                            this.put(key, (Short) def);
                         } else if (def instanceof Long) {
                             this.put(key, (Long) def);
                         } else if (def instanceof Integer) {
                             this.put(key, (Integer) def);
-                        } else if (def instanceof Byte) {
-                            this.put(key, (Byte) def);
-                        } else if (def instanceof String || def == null) {
-                            this.put(key, (String) def);
-                        } else if (def instanceof Enum<?>) {
-                            this.put(key, (Enum<?>) def);
                         } else if (def instanceof Double) {
                             this.put(key, (Double) def);
                         } else if (def instanceof Float) {
                             this.put(key, (Float) def);
+                        } else if (def instanceof Boolean) {
+                            this.put(key, (Boolean) def);
+                        } else if (def instanceof String || def == null) {
+                            this.put(key, (String) def);
+                        } else if (def instanceof Enum<?>) {
+                            this.put(key, (Enum<?>) def);
                         } else {
                             throw new StorageException("Invalid datatype: " + (def != null ? def.getClass() : "null"));
                         }
@@ -170,8 +192,9 @@ public class AccountJsonConfig {
             public boolean hasProperty(String key) {
                 if (key != null) {
                     return account.hasProperty(PREFIX_PRIMITIVE + key);
+                } else {
+                    return false;
                 }
-                return false;
             }
 
             @Override
@@ -181,6 +204,11 @@ public class AccountJsonConfig {
 
             @Override
             public void put(String key, Boolean value) throws StorageException {
+                putInternal(key, value);
+            }
+
+            @Override
+            public void put(String key, Short value) throws StorageException {
                 putInternal(key, value);
             }
 
