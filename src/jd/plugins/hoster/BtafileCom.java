@@ -21,7 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -107,11 +107,11 @@ public class BtafileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /* 2020-05-08: Special */
-        boolean premiumonly = super.isPremiumOnly();
+        boolean premiumonly = super.isPremiumOnly(br);
         if (!premiumonly) {
-            premiumonly = new Regex(correctedBR, ">\\s*This file reached max free downloads limit").matches();
+            premiumonly = br.containsHTML(">\\s*This file reached max free downloads limit");
         }
         return premiumonly;
     }

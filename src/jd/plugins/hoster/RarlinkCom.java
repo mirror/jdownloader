@@ -21,7 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -105,15 +105,14 @@ public class RarlinkCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /*
          * 2019-10-01: Special: According to website, free users can download files smaller than 1 MB but for those, they will just display
          * another errormessage.
          */
-        boolean isPremiumonlyHTML = super.isPremiumOnly();
+        boolean isPremiumonlyHTML = super.isPremiumOnly(br);
         if (!isPremiumonlyHTML) {
-            final boolean premiumonly_filehost = new Regex(correctedBR, "Upgrade Premium to Download this File").matches();
-            isPremiumonlyHTML = premiumonly_filehost;
+            isPremiumonlyHTML = br.containsHTML("Upgrade Premium to Download this File");
         }
         return isPremiumonlyHTML;
     }
