@@ -335,17 +335,18 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         pinPaginationPostData.put("options", pinPaginationPostDataOptions);
         pinPaginationPostData.put("context", pinPaginationpostDataContext);
         ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
-        pinsLoop: do {
+        do {
             logger.info("Crawling section " + sectionID + " page: " + pageCounter);
             final Map<String, Object> sectionPaginationInfo = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
             final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks");
             final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
             final List<Object> pins = (ArrayList) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
+            final int sizeBefore = decryptedLinks.size();
             for (final Object pinO : pins) {
                 final Map<String, Object> pinMap = (Map<String, Object>) pinO;
                 if (!proccessMap(pinMap, boardID, fp)) {
                     logger.info("Stopping PIN pagination because: Found unprocessable PIN map");
-                    break pinsLoop;
+                    break;
                 }
                 decryptedPINCounter++;
             }
@@ -353,14 +354,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (this.isAbort()) {
                 logger.info("Crawler aborted by user");
                 break;
+            } else if (decryptedLinks.size() <= sizeBefore) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
             } else if (StringUtils.isEmpty(bookmarks) || bookmarks.equals("-end-") || bookmarksO == null) {
                 /* Looks as if we've reached the end */
                 logger.info("Stopping because: Reached end");
-                break pinsLoop;
-            } else if (pins.size() < maxPINsPerRequest) {
-                /* Fail safe */
-                logger.info("Stopping because: Current page contains less items than: " + maxPINsPerRequest);
-                break pinsLoop;
+                break;
             } else {
                 pinPaginationPostDataOptions.put("bookmarks", bookmarksO);
                 ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
@@ -457,11 +457,22 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final Map<String, Object> postDataOptions = new HashMap<String, Object>();
             final String source_url = new URL(param.getCryptedUrl()).getPath();
             postDataOptions.put("isPrefetch", false);
-            postDataOptions.put("is_own_profile_pins", false);
-            postDataOptions.put("username", username);
-            postDataOptions.put("field_set_key", "grid_item");
-            postDataOptions.put("pin_filter", null);
+            postDataOptions.put("board_id", boardID);
+            postDataOptions.put("board_url", "/" + username + "/" + boardSlug);
+            postDataOptions.put("currentFilter", -1);
+            postDataOptions.put("field_set_key", "react_grid_pin");
+            postDataOptions.put("filter_section_pins", true);
+            postDataOptions.put("sort", "default");
+            postDataOptions.put("layout", "default");
+            postDataOptions.put("page_size", 25);
+            postDataOptions.put("redux_normalize_feed", true);
             postDataOptions.put("no_fetch_context_on_resource", false);
+            // postDataOptions.put("", "");
+            // postDataOptions.put("is_own_profile_pins", false);
+            // postDataOptions.put("username", username);
+            // postDataOptions.put("field_set_key", "grid_item");
+            // postDataOptions.put("pin_filter", null);
+            // postDataOptions.put("no_fetch_context_on_resource", false);
             Map<String, Object> postData = new HashMap<String, Object>();
             postData.put("options", postDataOptions);
             postData.put("context", new HashMap<String, Object>());
@@ -471,7 +482,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             do {
                 page += 1;
                 logger.info("Crawling sectionless PINs page: " + page + " | " + crawledSectionlessPINs + " / " + sectionlessPinCount + " PINs crawled");
-                br.getPage("/resource/UserPinsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+                br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
                 Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("resource_response");
                 final String bookmark = (String) entries.get("bookmark");

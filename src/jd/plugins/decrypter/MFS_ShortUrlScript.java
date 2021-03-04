@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -43,7 +42,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mfs_shorturlscript", "gourl.us", "shori.xyz" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?gourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?shori\\.xyz/([a-zA-Z0-9_\\-]+)$" })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
-
     public MFS_ShortUrlScript(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -80,6 +78,7 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         final String redirect = br.getRedirectLocation();
         if (!inValidate(redirect)) {
             if (StringUtils.containsIgnoreCase(redirect, Browser.getHost(redirect) + "/error.html?")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             getPage(redirect);
@@ -148,5 +147,4 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         }
         return super.siteTesterDisabled();
     }
-
 }

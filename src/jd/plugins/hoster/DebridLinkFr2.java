@@ -278,6 +278,7 @@ public class DebridLinkFr2 extends PluginForHost {
         synchronized (account) {
             prepBR(this.br);
             if (account.getLastValidTimestamp() != -1 && this.accountGetAccessToken(account) == null && this.accountGetRefreshToken(account) == null && !account.getBooleanProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, false)) {
+                /** TODO: Remove this some time after 2021-05 */
                 final Thread thread = showNewLoginMethodInformation();
                 try {
                     int counter = 0;
@@ -317,6 +318,8 @@ public class DebridLinkFr2 extends PluginForHost {
             } else if (this.accountGetAccessToken(account) != null && accountAccessTokenExpired(account)) {
                 /* Show permanent error. We cannot perform a full login without the users intervention! */
                 this.dumpSession(account);
+                /* Don't jump into handling designed for the transition of old<->new plugin! */
+                account.setProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, true);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Access token expired - refresh to re-login", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (this.accountGetAccessToken(account) != null && this.accountGetRefreshToken(account) != null) {
                 logger.info("Trying to refresh access_token");
