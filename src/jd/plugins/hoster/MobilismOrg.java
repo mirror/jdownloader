@@ -44,14 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 
-/**
- *
- * note: cloudflare<br/>
- * note: transloads downloads<br/>
- *
- * @author raztoki
- *
- */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "" })
 public class MobilismOrg extends antiDDoSForHost {
     /* Tags: Script vinaget.us */
@@ -95,7 +87,6 @@ public class MobilismOrg extends antiDDoSForHost {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
-            /* without account its not possible to download the link */
             return false;
         } else {
             return true;
@@ -131,8 +122,7 @@ public class MobilismOrg extends antiDDoSForHost {
             link.setChunksProgress(null);
             link.setProperty(MobilismOrg.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -227,6 +217,10 @@ public class MobilismOrg extends antiDDoSForHost {
         return null;
     }
 
+    /**
+     * 2021-03-04: Free Accounts are not supported as downloading is impossible with them. </br>
+     * Expired premium -> Account will be permanently disabled!
+     */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -234,11 +228,10 @@ public class MobilismOrg extends antiDDoSForHost {
         if (!br.getURL().contains("/amember/member")) {
             this.getPage("/amember/member");
         }
-        /* Here is free account check */
-        // url(/amember/downloader/manual/) will redirect, /amember/no-access/folder/id/4?url=/amember/downloader/manual/?
         if (br.getURL().contains("/amember/no-access/") && br.containsHTML("<title>Access Denied</title>")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        /* E.g. "expires 03/04/21" means: Expires 2021-03-03: 23:59:59 */
         final String expireDateStr = br.getRegex("expires (\\d{1,2}/\\d{1,2}/\\d{1,2})").getMatch(0);
         if (expireDateStr != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "MM/dd/yy", Locale.ENGLISH), this.br);
@@ -262,9 +255,9 @@ public class MobilismOrg extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
@@ -284,8 +277,6 @@ public class MobilismOrg extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                /* this will redirect. */
-                br.setFollowRedirects(true);
                 getPage(WEBSITE_BASE + "/amember/login");
                 final Form login = br.getFormbyProperty("name", "login");
                 if (login == null) {
@@ -316,8 +307,6 @@ public class MobilismOrg extends antiDDoSForHost {
                     account.clearCookies("");
                 }
                 throw e;
-            } finally {
-                br.setFollowRedirects(ifr);
             }
         }
     }
@@ -339,6 +328,10 @@ public class MobilismOrg extends antiDDoSForHost {
             }
         } else {
             logger.info("Login2: All good we're already logged in");
+        }
+        if (br.containsHTML(">\\s*Account expired")) {
+            /* Double check just in case normal login fails to detect expiredate. */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
