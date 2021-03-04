@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -111,11 +112,11 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /* 2019-07-23: Special */
-        boolean premiumonlyHTML = super.isPremiumOnly();
+        boolean premiumonlyHTML = super.isPremiumOnly(br);
         if (!premiumonlyHTML) {
-            premiumonlyHTML = new Regex(correctedBR, "This file can only be downloaded by").matches();
+            premiumonlyHTML = br.containsHTML("This file can only be downloaded by");
         }
         return premiumonlyHTML;
     }

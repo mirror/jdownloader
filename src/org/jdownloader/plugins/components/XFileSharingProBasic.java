@@ -637,7 +637,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @return true: Link only downloadable for premium users (sometimes also for registered users). <br />
      *         false: Link is downloadable for all users.
      */
-    private boolean isPremiumOnlyURL() {
+    private boolean isPremiumOnlyURL(final Browser br) {
         return br.getURL() != null && br.getURL().contains("/?op=login&redirect=");
     }
 
@@ -647,11 +647,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * @return true: Link only downloadable for premium users (sometimes also for registered users). <br />
      *         false: Link is downloadable for all users.
      */
-    public boolean isPremiumOnly() {
-        final boolean premiumonly_by_url = isPremiumOnlyURL();
-        final boolean premiumonly_filehost = new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|>\\s*This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members|>\\s*File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+    public boolean isPremiumOnly(final Browser br) {
+        final boolean premiumonly_by_url = isPremiumOnlyURL(br);
+        final boolean premiumonly_filehost = br.getRegex("( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|>\\s*This file reached max downloads limit|>\\s*This file is available for Premium Users only|>\\s*Available Only for Premium Members|>\\s*File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
         /* 2019-05-30: Example: xvideosharing.com */
-        final boolean premiumonly_videohost = new Regex(correctedBR, ">\\s*This video is available for Premium users only").matches();
+        final boolean premiumonly_videohost = br.containsHTML(">\\s*This video is available for Premium users only");
         return premiumonly_by_url || premiumonly_filehost || premiumonly_videohost;
     }
 
@@ -707,7 +707,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         final String fallback_filename = this.getFallbackFilename(link);
         altbr = br.cloneBrowser();
-        if (isPremiumOnlyURL()) {
+        if (isPremiumOnlyURL(this.br)) {
             /*
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
              * There are 2 alternative ways to get this information anyways!
@@ -2096,7 +2096,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             // /* Try short version without hardcoded domains and wide */
             // dllink = new Regex(src, "(" + String.format(dllinkRegexFile_2, getHostsPatternPart()) + ")").getMatch(0);
             // }
-            /* 2019-02-02: TODO: Maybe add attempt to find downloadlink by the first url which ends with the filename */
             if (StringUtils.isEmpty(dllink)) {
                 final String cryptedScripts[] = new Regex(src, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -2281,7 +2280,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (StringUtils.isEmpty(dllink)) {
             /* 2019-07-04: Examplehost: vidoza.net */
-            /* TODO: Check if we can remove regexVideoStreamDownloadURL or integrate it in this function. */
+            /* TODO: Check if we can remove 'regexVideoStreamDownloadURL' or integrate it in this function. */
             dllink = regexVideoStreamDownloadURL(src);
         }
         if (StringUtils.isEmpty(dllink)) {
@@ -2673,14 +2672,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        checkErrors(this.br, this.correctedBR, link, account, checkAll);
+    }
+
     /**
      * Checks for (-& handles) all kinds of errors e.g. wrong captcha, wrong downloadpassword, waittimes and server error-responsecodes such
      * as 403, 404 and 503. <br />
      * checkAll: If enabled, ,this will also check for wrong password, wrong captcha and 'Skipped countdown' errors. <br/>
      */
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, ">\\s*Wrong password").matches()) {
+            if (new Regex(html, ">\\s*Wrong password").matches()) {
                 final boolean websiteDidAskForPassword = link.getBooleanProperty(PROPERTY_pw_required, false);
                 if (!websiteDidAskForPassword) {
                     /*
@@ -2696,8 +2699,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-            }
-            if (correctedBR.contains("Wrong captcha")) {
+            } else if (html.contains(">\\s*Wrong captcha")) {
                 logger.warning("Wrong captcha (or wrong password as well)!");
                 /*
                  * TODO: Find a way to avoid using a property for this or add the property in very plugin which overrides handleCaptcha e.g.
@@ -2709,15 +2711,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong captcha' but never prompted for one");
                 }
-            }
-            if (new Regex(correctedBR, ">\\s*Skipped countdown\\s*<").matches()) {
+            } else if (new Regex(html, ">\\s*Skipped countdown\\s*<").matches()) {
                 /* 2019-08-28: e.g. "<br><b class="err">Skipped countdown</b><br>" */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
         }
         /** Wait time reconnect handling */
-        final String limitBasedOnNumberofFilesAndTime = new Regex(correctedBR, ">(You have reached the maximum limit \\d+ files in \\d+ hours)").getMatch(0);
-        final String preciseWaittime = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+        final String limitBasedOnNumberofFilesAndTime = new Regex(html, ">(You have reached the maximum limit \\d+ files in \\d+ hours)").getMatch(0);
+        final String preciseWaittime = new Regex(html, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
         if (preciseWaittime != null) {
             /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
             final String tmphrs = new Regex(preciseWaittime, "\\s*(\\d+)\\s*hours?").getMatch(0);
@@ -2765,14 +2766,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             /* Typically '>You have reached the maximum limit 150 files in 24 hours' */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitBasedOnNumberofFilesAndTime);
-        } else if (correctedBR.contains("You're using all download slots for IP")) {
+        } else if (html.contains("You're using all download slots for IP")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
-        } else if (correctedBR.contains("Error happened when generating Download Link")) {
+        } else if (html.contains("Error happened when generating Download Link")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Error happened when generating Download Link'", 10 * 60 * 1000l);
         }
         /** Error handling for premiumonly links */
-        if (isPremiumOnly()) {
-            String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
+        if (isPremiumOnly(br)) {
+            String filesizelimit = new Regex(html, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 throw new AccountRequiredException("As free user you can download files up to " + filesizelimit + " only");
@@ -2780,18 +2781,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 logger.info("Only downloadable via premium");
                 throw new AccountRequiredException();
             }
-        } else if (isPremiumOnly()) {
-            logger.info("Only downloadable via premium");
-            throw new AccountRequiredException();
-        } else if (new Regex(correctedBR, ">\\s*Expired download session").matches()) {
+        } else if (new Regex(html, ">\\s*Expired download session").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Expired download session'", 10 * 60 * 1000l);
-        }
-        if (isWebsiteUnderMaintenance()) {
+        } else if (isWebsiteUnderMaintenance()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is under maintenance", 2 * 60 * 60 * 1000l);
         }
         /* Host-type specific errors */
         /* Videohoster */
-        if (new Regex(correctedBR, ">\\s*Video is processing now").matches()) {
+        if (new Regex(html, ">\\s*Video is processing now").matches()) {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
         }
@@ -2801,8 +2798,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * every request you do on the website will redirect to /?op=my_account along with an errormessage (sometimes).
          */
         if (account != null && (StringUtils.containsIgnoreCase(br.getURL(), "op=my_account") || StringUtils.containsIgnoreCase(br.getRedirectLocation(), "op=my_account"))) {
-            /* Try to make this language-independant: Rely only on URL and NOT html! */
-            // if (new Regex(correctedBR, ">\\s*?Please enter your e-mail").matches())
+            /* Attempt to make this work language-independant: Rely only on URL and NOT html! */
             final String accountErrorMsg;
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 accountErrorMsg = String.format("Ergänze deine E-Mail Adresse unter %s/?op=my_account um diesen Account verwenden zu können!", this.getHost());
@@ -2814,14 +2810,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         checkResponseCodeErrors(br.getHttpConnection());
     }
 
-    /* Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
     protected void checkErrorsLastResort(final Account account) throws PluginException {
+        checkErrorsLastResort(this.br, account);
+    }
+
+    /** Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
+    protected void checkErrorsLastResort(final Browser br, final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
         if (account != null && br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin()) {
             /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
-        String website_error = new Regex(correctedBR, "class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
+        String website_error = br.getRegex("class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
         if (website_error != null) {
             if (Encoding.isHtmlEntityCoded(website_error)) {
                 website_error = Encoding.htmlDecode(website_error);
@@ -2830,7 +2830,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, website_error, 5 * 60 * 1000l);
         }
         /* 2020-06-05 E.g. <div id="over_player_msg">File is awaiting for moderation</div> */
-        String website_error_videoplayer = new Regex(correctedBR, "id=\"over_player_msg\"[^>]*?>([^<>\"]+)<").getMatch(0);
+        String website_error_videoplayer = br.getRegex("id=\"over_player_msg\"[^>]*?>([^<>\"]+)<").getMatch(0);
         if (website_error_videoplayer != null) {
             if (Encoding.isHtmlEntityCoded(website_error_videoplayer)) {
                 website_error = Encoding.htmlDecode(website_error_videoplayer);
@@ -3495,16 +3495,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     } else {
                         logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
                     }
-                    /*
-                     * TODO 2020-04-20: Modify text and only include the "or login captcha" part if user was actually asked to enter a login
-                     * captcha or completely remove that.
-                     */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNieprawidłowa nazwa użytkownika / hasło!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 account.saveCookies(br.getCookies(getMainPage()), "");

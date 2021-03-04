@@ -202,9 +202,14 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /* 2019-08-21 */
-        return new Regex(correctedBR, ">\\s*This file can only be downloaded by Premium").matches();
+        final boolean premiumonly = super.isPremiumOnly(br);
+        if (premiumonly) {
+            return true;
+        } else {
+            return br.containsHTML(">\\s*This file can only be downloaded by Premium");
+        }
     }
 
     @Override

@@ -187,18 +187,18 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /*
          * 2020-01-30: Special because template code matches also on ">\\s*Available Only for Premium Members" which is always present in
          * their html
          */
-        boolean premiumonly_filehost = new Regex(correctedBR, "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>File is available only for Premium users|>\\s*This file can be downloaded by)").matches();
+        boolean premiumonly_filehost = br.containsHTML("( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|This file reached max downloads limit|>\\s*This file is available for Premium Users only|>File is available only for Premium users|>\\s*This file can be downloaded by)");
         if (!premiumonly_filehost) {
             /** 2021-01-28 */
-            premiumonly_filehost = new Regex(correctedBR, "This video.{1,6}is available for viewing and downloading.{1,6}only for premium users").matches();
+            premiumonly_filehost = br.containsHTML("This video.{1,6}is available for viewing and downloading.{1,6}only for premium users");
         }
         /* 2019-05-30: Example: xvideosharing.com */
-        final boolean premiumonly_videohost = new Regex(correctedBR, ">\\s*This video is available for Premium users only").matches();
+        final boolean premiumonly_videohost = br.containsHTML(">\\s*This video is available for Premium users only");
         return premiumonly_filehost || premiumonly_videohost;
     }
 

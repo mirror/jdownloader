@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class QtyFilesCom extends XFileSharingProBasic {
@@ -105,16 +105,17 @@ public class QtyFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPremiumOnly() {
+    public boolean isPremiumOnly(final Browser br) {
         /*
          * 2019-06-13: Special: Seems like all files are premiumonly and FREE account users cannot even download their own files as they
          * have only 1MB/day traffic ...
          */
-        boolean isPremiumonly = super.isPremiumOnly();
-        if (!isPremiumonly) {
-            isPremiumonly = new Regex(correctedBR, "class=\"err\"><input type=\"submit\" name=\"method_premium\"").matches();
+        final boolean isPremiumonly = super.isPremiumOnly(br);
+        if (isPremiumonly) {
+            return true;
+        } else {
+            return br.containsHTML("class=\"err\"><input type=\"submit\" name=\"method_premium\"");
         }
-        return isPremiumonly;
     }
 
     @Override
