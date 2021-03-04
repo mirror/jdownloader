@@ -49,7 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 0, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr extends PluginForHost {
     private static Map<Account, Map<String, String>> accountInfo    = new HashMap<Account, Map<String, String>>();
     private static final String                      PUBLIC_API_KEY = "kMREtSnp61OgLvG8";

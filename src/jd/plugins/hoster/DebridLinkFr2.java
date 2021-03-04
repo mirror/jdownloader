@@ -59,7 +59,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 0, names = { "debrid-link.fr" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
     private static MultiHosterManagement mhm                                                  = new MultiHosterManagement("debrid-link.fr");
     private static final String          PROPERTY_DIRECTURL                                   = "directurl";
@@ -144,8 +144,8 @@ public class DebridLinkFr2 extends PluginForHost {
             ac.setCreateTime(TimeFormatter.getMilliSeconds(registerDate, "yyyy-MM-dd", Locale.ENGLISH));
         }
         /* Update list of supported hosts */
-        // br.getPage(this.getApiBase() + "/downloader/limits/all");
-        br.getPage(this.getApiBase() + "/downloader/hosts");
+        /* https://debrid-link.com/api_doc/v2/downloader-regex */
+        br.getPage(this.getApiBase() + "/downloader/hosts?keys=status%2CisFree%2Cname%2Cdomains");
         List<String> supportedHosts = new ArrayList<String>();
         entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final List<Object> hosters = (List<Object>) entries.get("value");
