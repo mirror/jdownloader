@@ -160,7 +160,6 @@ public class GoogleDrive extends PluginForHost {
     private boolean             isStreamable                                   = false;
     private String              dllink                                         = null;
 
-    /** Only call this if the user is not logged in! */
     public Browser prepBrowser(final Browser pbr) {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
@@ -335,9 +334,8 @@ public class GoogleDrive extends PluginForHost {
         }
         if (account != null) {
             login(this.br, account, false);
-        } else {
-            prepBrowser(this.br);
         }
+        prepBrowser(this.br);
         if (this.getFID(link) == null) {
             /** This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

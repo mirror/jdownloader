@@ -467,12 +467,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             postDataOptions.put("page_size", 25);
             postDataOptions.put("redux_normalize_feed", true);
             postDataOptions.put("no_fetch_context_on_resource", false);
-            // postDataOptions.put("", "");
-            // postDataOptions.put("is_own_profile_pins", false);
-            // postDataOptions.put("username", username);
-            // postDataOptions.put("field_set_key", "grid_item");
-            // postDataOptions.put("pin_filter", null);
-            // postDataOptions.put("no_fetch_context_on_resource", false);
             Map<String, Object> postData = new HashMap<String, Object>();
             postData.put("options", postDataOptions);
             postData.put("context", new HashMap<String, Object>());
