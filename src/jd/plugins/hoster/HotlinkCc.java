@@ -286,6 +286,16 @@ public class HotlinkCc extends XFileSharingProBasic {
 
     @Override
     protected String getDllinkViaOfficialVideoDownload(final Browser brc, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        /* 2021-03-04: Free- and premium users get different versions of the website... */
+        String[] videoQualityHTMLsDefault = new Regex(brc.toString(), "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
+        if (videoQualityHTMLsDefault.length == 0) {
+            /* Match on line - safe attempt but this may not include filesize! */
+            videoQualityHTMLsDefault = new Regex(brc.toString(), "download_video\\([^\r\t\n]+").getColumn(-1);
+        }
+        if (videoQualityHTMLsDefault.length > 0) {
+            logger.info("Returning to stock getDllinkViaOfficialVideoDownload handling");
+            return super.getDllinkViaOfficialVideoDownload(brc, link, account, returnFilesize);
+        }
         if (returnFilesize) {
             logger.info("[FilesizeMode] Trying to find official video downloads");
         } else {
@@ -442,6 +452,11 @@ public class HotlinkCc extends XFileSharingProBasic {
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.info("Failed to find final downloadurl");
+                /* Check for errors and keep htmo of previous browser-instance (workaround)... */
+                final String correctedBROld = this.correctedBR;
+                this.correctedBR = brc.toString();
+                this.checkErrors(link, account, false);
+                this.correctedBR = correctedBROld;
             }
         } catch (final InterruptedException e) {
             throw e;
