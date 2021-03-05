@@ -25,21 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -59,22 +44,36 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
-    private static MultiHosterManagement mhm                                                  = new MultiHosterManagement("debrid-link.fr");
-    private static final String          PROPERTY_DIRECTURL                                   = "directurl";
-    private static final String          PROPERTY_MAXCHUNKS                                   = "maxchunks";
-    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                        = "access_token";
-    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED      = "refresh_token_timestamp_created";
-    private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                       = "refresh_token";
-    private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL = "refresh_token_timestamp_valid_until";
-    private static final String          PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED         = "NEW_LOGIN_MESSAGE_DISPLAYED";
-    // private static LinkedHashMap<String, Long> quotaReachedHosts = new LinkedHashMap<String, Long>();
-    private static Set<String>           quotaReachedHostsList                                = new HashSet<String>();
-    /** Contains timestamp when quotas of single "Quota reached" hosts will be reset. */
-    private static AtomicLong            nextQuotaReachedResetTimestamp                       = new AtomicLong(0l);
-    private static final boolean         LIMIT_resume                                         = true;
-    private static final int             LIMIT_chunks                                         = 1;
+    private static MultiHosterManagement mhm                                                 = new MultiHosterManagement("debrid-link.fr");
+    private static final String          PROPERTY_DIRECTURL                                  = "directurl";
+    private static final String          PROPERTY_MAXCHUNKS                                  = "maxchunks";
+    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                       = "access_token";
+    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED     = "refresh_token_timestamp_created";
+    private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL = "access_token_timestamp_valid_until";
+    private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                      = "refresh_token";
+    private static final String          PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED        = "NEW_LOGIN_MESSAGE_DISPLAYED";
+    private static Set<String>           quotaReachedHostsList                               = new HashSet<String>();
+    /** Contains timestamp when quotas of single "Quota reached" of all quota limited hosts will be reset. */
+    private static AtomicLong            nextQuotaReachedResetTimestamp                      = new AtomicLong(0l);
+    private static final boolean         LIMIT_resume                                        = true;
+    private static final int             LIMIT_chunks                                        = 1;
 
     public DebridLinkFr2(PluginWrapper wrapper) {
         super(wrapper);
@@ -226,8 +225,8 @@ public class DebridLinkFr2 extends PluginForHost {
         }
         ac.setMultiHostSupport(this, supportedHosts);
         /**
-         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br> Accounts can be checked but downloads
-         * will not work!
+         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br>
+         * Accounts can be checked but downloads will not work!
          */
         if (serverDetected != null && serverDetected instanceof Boolean && ((Boolean) serverDetected).booleanValue()) {
             throw new AccountUnavailableException("VPN/Proxy detected: Turn it off to be able to use this account", 5 * 60 * 1000l);
@@ -248,7 +247,7 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     private boolean accountAccessTokenExpired(final Account account) {
-        return System.currentTimeMillis() > account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, 0);
+        return System.currentTimeMillis() > account.getLongProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, 0);
     }
 
     private boolean accountAccessTokenNeedsRefresh(final Account account) {
@@ -267,7 +266,7 @@ public class DebridLinkFr2 extends PluginForHost {
     private void dumpSession(final Account account) {
         account.removeProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
         account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN);
-        account.removeProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL);
+        account.removeProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL);
     }
 
     private void callAPIGetAccountInfo() throws IOException {
@@ -305,23 +304,13 @@ public class DebridLinkFr2 extends PluginForHost {
                 if (!verifyLogin) {
                     logger.info("Trust token without check");
                     return;
-                }
-                this.callAPIGetAccountInfo();
-                if (br.getHttpConnection().getResponseCode() == 200) {
-                    logger.info("Token login successful | Token is valid for: " + TimeFormatter.formatMilliSeconds(account.getLongProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, 0) - System.currentTimeMillis(), 0));
-                    return;
                 } else {
-                    /* This should never happen except maybe if the user has manually revoked API access! */
-                    logger.info("Token login failed");
-                    throw new AccountUnavailableException("Session expired(?)", 5 * 60 * 1000l);
+                    this.callAPIGetAccountInfo();
+                    errHandling(account, null);
+                    logger.info("Token login successful | Token is valid for: " + TimeFormatter.formatMilliSeconds(account.getLongProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, 0) - System.currentTimeMillis(), 0));
+                    return;
                 }
-            } else if (this.accountGetAccessToken(account) != null && accountAccessTokenExpired(account)) {
-                /* Show permanent error. We cannot perform a full login without the users intervention! */
-                this.dumpSession(account);
-                /* Don't jump into handling designed for the transition of old<->new plugin! */
-                account.setProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, true);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Access token expired - refresh to re-login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (this.accountGetAccessToken(account) != null && this.accountGetRefreshToken(account) != null) {
+            } else if (this.accountGetRefreshToken(account) != null) {
                 logger.info("Trying to refresh access_token");
                 final UrlQuery query = new UrlQuery();
                 query.add("client_id", Encoding.urlEncode(this.getClientID()));
@@ -341,7 +330,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 } else {
                     /* This should never happen except maybe if the user has manually revoked API access! */
                     logger.info("Refresh token failed");
-                    /* Make sure we do full login next time! */
+                    /* Dump session to make sure we do full login next time! */
                     this.dumpSession(account);
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Sitzung abgelaufen: Aktualisiere diesen Account, um dich neu einzuloggen", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -403,10 +392,11 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     /**
-     * Sets token validity. </br> 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
+     * Sets token validity. </br>
+     * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
-        account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
+        account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
     }
 
     private Thread showNewLoginMethodInformation() {
@@ -497,8 +487,11 @@ public class DebridLinkFr2 extends PluginForHost {
             }
             /* First handle account errors */
             if ("badToken".equals(error)) {
-                /* Should never happen */
-                throw new AccountUnavailableException("Session expired(?)", 5 * 60 * 1000l);
+                /**
+                 * E.g. if user revokes access via debrid-link website. Delete access_token so next time we can try to refresh session.
+                 */
+                account.removeProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
+                throw new AccountUnavailableException("Session expired", 1 * 60 * 1000l);
             } else if ("serverNotAllowed".equals(error) || "disabledServerHost".equals(error)) {
                 // ip ban (dedicated server)
                 throw new AccountUnavailableException("Dedicated Server/VPN/Proxy detected, account disabled!", 30 * 60 * 1000l);
