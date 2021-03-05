@@ -89,46 +89,42 @@ public class AccountJsonConfig {
                 final boolean autoPutDefaultValue = autoPutValue == null ? isAutoPutValues() : Boolean.TRUE.equals(autoPutValue);
                 Object ret = contains ? account.getProperty(PREFIX_PRIMITIVE + key) : null;
                 if (ret != null && def != null && ret.getClass() != def.getClass()) {
-                    if (ret instanceof String && "null".equalsIgnoreCase((String) ret)) {
-                        ret = null;
-                    } else {
-                        /* ret class different from def class, so we have to convert */
-                        if (def instanceof Byte) {
-                            if (ret instanceof Number) {
-                                ret = ((Number) ret).byteValue();
-                            } else if (ret instanceof String) {
-                                ret = Byte.parseByte((String) ret);
-                            }
-                        } else if (def instanceof Short) {
-                            if (ret instanceof Number) {
-                                ret = ((Number) ret).shortValue();
-                            } else if (ret instanceof String) {
-                                ret = Short.parseShort((String) ret);
-                            }
-                        } else if (def instanceof Long) {
-                            if (ret instanceof Number) {
-                                ret = ((Number) ret).longValue();
-                            } else if (ret instanceof String) {
-                                ret = Long.parseLong((String) ret);
-                            }
-                        } else if (def instanceof Integer) {
-                            if (ret instanceof Number) {
-                                ret = ((Number) ret).intValue();
-                            } else if (ret instanceof String) {
-                                ret = Integer.parseInt((String) ret);
-                            }
-                        } else if (def instanceof Double) {
-                            if (ret instanceof Float) {
-                                ret = ((Double) ret).doubleValue();
-                            } else if (ret instanceof String) {
-                                ret = Double.parseDouble((String) ret);
-                            }
-                        } else if (def instanceof Float) {
-                            if (ret instanceof Double) {
-                                ret = ((Float) ret).floatValue();
-                            } else if (ret instanceof String) {
-                                ret = Float.parseFloat((String) ret);
-                            }
+                    /* ret class different from def class, so we have to convert */
+                    if (def instanceof Byte) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).byteValue();
+                        } else if (ret instanceof String) {
+                            ret = Byte.parseByte((String) ret);
+                        }
+                    } else if (def instanceof Short) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).shortValue();
+                        } else if (ret instanceof String) {
+                            ret = Short.parseShort((String) ret);
+                        }
+                    } else if (def instanceof Long) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).longValue();
+                        } else if (ret instanceof String) {
+                            ret = Long.parseLong((String) ret);
+                        }
+                    } else if (def instanceof Integer) {
+                        if (ret instanceof Number) {
+                            ret = ((Number) ret).intValue();
+                        } else if (ret instanceof String) {
+                            ret = Integer.parseInt((String) ret);
+                        }
+                    } else if (def instanceof Double) {
+                        if (ret instanceof Float) {
+                            ret = ((Double) ret).doubleValue();
+                        } else if (ret instanceof String) {
+                            ret = Double.parseDouble((String) ret);
+                        }
+                    } else if (def instanceof Float) {
+                        if (ret instanceof Double) {
+                            ret = ((Float) ret).floatValue();
+                        } else if (ret instanceof String) {
+                            ret = Float.parseFloat((String) ret);
                         }
                     }
                 }
