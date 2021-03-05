@@ -16,7 +16,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 public class LAFOptions {
-
     public static BooleanKeyHandler TABLE_ALTERNATE_ROW_HIGHLIGHT_ENABLED;
     public static IntegerKeyHandler CUSTOM_TABLE_ROW_HEIGHT;
     private static LAFOptions       INSTANCE;
@@ -25,7 +24,6 @@ public class LAFOptions {
      * Increase this value and set ColorForTableRowGap to show a gap between two links. Check CustomTableRowHeight as well
      **/
     // public static IntegerKeyHandler LINK_TABLE_HORIZONTAL_ROW_LINE_WEIGHT;
-
     /**
      * get the only existing instance of LAFOptions. This is a singleton
      *
@@ -63,6 +61,7 @@ public class LAFOptions {
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
                 ext = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
+            } catch (ClassNotFoundException ignore) {
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);
             }
@@ -70,10 +69,8 @@ public class LAFOptions {
         if (ext == null) {
             ext = new DefaultLookAndFeelExtension();
         }
-
         LAFEXTENSION = ext;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
-
     }
 
     public LookAndFeelExtension getExtension() {
@@ -117,7 +114,6 @@ public class LAFOptions {
                 return ret;
             }
             try {
-
                 if (str == null) {
                     return null;
                 }
@@ -136,7 +132,6 @@ public class LAFOptions {
                     str = "F" + str;
                 }
                 long rgb = Long.parseLong(str, 16);
-
                 ret = new Color((int) rgb, true);
                 CACHE.put(str, ret);
                 return ret;
@@ -144,17 +139,13 @@ public class LAFOptions {
                 return null;
             }
         }
-
     }
 
     public void applyConfigDescriptionTextColor(JLabel lbl) {
-
         Color c = createColor(cfg.getColorForConfigPanelDescriptionText());
         if (c != null) {
             lbl.setForeground(c);
-
         }
-
     }
 
     public boolean applyConfigLabelEnabledTextColor(JLabel lbl) {
@@ -167,7 +158,6 @@ public class LAFOptions {
     }
 
     public boolean applyConfigLabelDisabledTextColor(JLabel lbl) {
-
         Color c = createColor(cfg.getConfigLabelDisabledTextColor());
         if (c != null) {
             lbl.setForeground(c);
@@ -177,13 +167,10 @@ public class LAFOptions {
     }
 
     public void applyConfigHeaderTextColor(JLabel lbl) {
-
         Color c = createColor(cfg.getColorForConfigHeaderTextColor());
         if (c != null) {
             lbl.setForeground(c);
-
         }
-
     }
 
     public void applyBackground(String color, JComponent field) {
@@ -349,5 +336,4 @@ public class LAFOptions {
     public Color getColorForPanelBorders() {
         return createColor(cfg.getColorForPanelBorders());
     }
-
 }
