@@ -185,7 +185,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @CustomValueGetter(CustomIsConfigViewVisible.class)
     boolean isConfigViewVisible();
 
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isMyJDownloaderViewVisible();
 
     @AboutConfig
@@ -270,9 +270,6 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @RequiresRestart("A JDownloader Restart is Required")
     @AboutConfig
     boolean isLinkgrabberSidebarVisible();
-
-    @DefaultBooleanValue(false)
-    boolean isLogViewVisible();
 
     @DefaultBooleanValue(false)
     @AboutConfig
@@ -369,15 +366,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setLinkgrabberSidebarVisible(boolean b);
 
-    void setLogViewVisible(boolean b);
-
     public void setPassword(String password);
 
     public void setPasswordProtectionEnabled(boolean b);
 
-    void setPremiumAlertETAColumnEnabled(boolean b);
-
     void setPremiumAlertSpeedColumnEnabled(boolean b);
+
+    void setPremiumAlertETAColumnEnabled(boolean b);
 
     void setPremiumAlertTaskColumnEnabled(boolean b);
 
@@ -1215,18 +1210,21 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @ValidatorFactory(DefaultSimpleDateValidator.class)
+    @RequiresRestart("Restart is Required")
     String getDateTimeFormatAccountManagerExpireDateColumn();
 
     void setDateTimeFormatAccountManagerExpireDateColumn(String df);
 
     @AboutConfig
     @ValidatorFactory(DefaultSimpleDateValidator.class)
+    @RequiresRestart("Restart is Required")
     String getDateTimeFormatDownloadListAddedDateColumn();
 
     void setDateTimeFormatDownloadListAddedDateColumn(String df);
 
     @AboutConfig
     @ValidatorFactory(DefaultSimpleDateValidator.class)
+    @RequiresRestart("Restart is Required")
     String getDateTimeFormatDownloadListFinishedDateColumn();
 
     void setDateTimeFormatDownloadListFinishedDateColumn(String df);

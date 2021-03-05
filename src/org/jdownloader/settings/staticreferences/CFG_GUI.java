@@ -142,7 +142,6 @@ public class CFG_GUI {
      **/
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                                = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_FILENAME_VISIBLE             = SH.getKeyHandler("DownloadsPropertiesPanelFilenameVisible", BooleanKeyHandler.class);
-    public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                                        = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
     /**
      * Choose how many 'Are you sure?' warnings you want to see (Bug me not).
      **/
