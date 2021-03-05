@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.URLConnectionAdapter;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -27,6 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videacesky.cz" }, urls = { "https?://(?:www\\.)?(?:videacesky\\.cz)/(?:video)/[A-Za-z0-9-]+" })
 public class VideaCesky extends PluginForDecrypt {
@@ -51,37 +52,18 @@ public class VideaCesky extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
+        fp.setProperty(LinkCrawler.PACKAGE_ALLOW_INHERITANCE, true);
         fp.setName(title);
         // Add link to youtube video
         decryptedLinks.add(createDownloadlink(link));
         // Add link to srt file for player
-        final String srt_link = "http://videacesky.cz" + srtfile;
-        DownloadLink dl2 = createDownloadlink(srt_link);
-        dl2.setContentUrl(srt_link);
+        final String srt_link = br.getURL(srtfile).toString();
+        DownloadLink subtitle = createDownloadlink(srt_link);
+        subtitle.setContentUrl(srt_link);
         final String srt_file = title + "." + srtlabel + ".srt";
-        dl2.setName(srt_file);
-        dl2.setFinalFileName(srt_file);
-        dl2.setAvailable(true);
-        decryptedLinks.add(dl2);
-        for (DownloadLink d : decryptedLinks) {
-            logger.info(d.getContentUrl());
-        }
-        long filesize = -1;
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(srt_link);
-            if (!con.getContentType().contains("html")) {
-                filesize = con.getLongContentLength();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        dl2.setDownloadSize(filesize);
+        subtitle.setProperty(DirectHTTP.FIXNAME, srt_file);
+        subtitle.setFinalFileName(srt_file);
+        decryptedLinks.add(subtitle);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
