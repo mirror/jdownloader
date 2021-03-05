@@ -104,6 +104,10 @@ public class MixdropCo extends antiDDoSForHost {
         }
     }
 
+    private String getNormalFileURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("/e/", "/f/");
+    }
+
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
@@ -144,7 +148,7 @@ public class MixdropCo extends antiDDoSForHost {
                 }
             }
         } else {
-            getPage(link.getPluginPatternMatcher());
+            getPage(getNormalFileURL(link));
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("/imgs/illustration-notfound\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -175,7 +179,7 @@ public class MixdropCo extends antiDDoSForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             if (USE_API_FOR_LINKCHECK) {
-                getPage(link.getPluginPatternMatcher());
+                getPage(getNormalFileURL(link));
             }
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
             /** 2021-03-03: E.g. extra step needed for .mp4 files but not for .zip files (which they call "folders"). */
