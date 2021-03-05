@@ -18,6 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,13 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DiskYandexNetFolder;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" })
 public class DiskYandexNet extends PluginForHost {
@@ -624,7 +624,7 @@ public class DiskYandexNet extends PluginForHost {
             }
             if (moveIntoAccHandlingActive || downloadableViaAccountOnly || StringUtils.isEmpty(dllink)) {
                 if (downloadableViaAccountOnly) {
-                    logger.info("forcedmoveIntoAccHandling active");
+                    logger.info("FORCED moveIntoAccHandling active");
                 }
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("Content-Type", "text/plain");
@@ -633,9 +633,10 @@ public class DiskYandexNet extends PluginForHost {
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
                     /**
-                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br> public_web_copy_limit is
-                     * usually used if the files is currently quota limited and cannot be downloaded at all at this moment. </br> Both will
-                     * work but we'll try to choose the one which would also be used via browser.
+                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
+                     * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
+                     * moment. </br>
+                     * Both will work but we'll try to choose the one which would also be used via browser.
                      */
                     final String copySource;
                     if (this.isFileDownloadQuotaReached(link)) {
@@ -690,7 +691,11 @@ public class DiskYandexNet extends PluginForHost {
                     logger.warning("MoveFileIntoAccount: Fatal failure - failed to generate downloadurl ");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                moveToTrashAfterDownloading = getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
+                /*
+                 * In plugins, the "move to trash" setting will be greyed out when disabling the first setting but we can still step into
+                 * this handling -> Ensure that functionality is consistent with GUI settings!
+                 */
+                moveToTrashAfterDownloading = moveIntoAccHandlingActive && getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
             }
         }
         boolean resume = ACCOUNT_FREE_RESUME;
