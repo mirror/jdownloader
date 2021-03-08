@@ -41,6 +41,8 @@ public class SubyShareCom extends XFileSharingProBasic {
     public SubyShareCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+        /* 2021-03-08: Trying to avoid running into "/checkddos.php" */
+        this.setStartIntervall(10 * 60 * 1000l);
     }
 
     /**
@@ -123,13 +125,15 @@ public class SubyShareCom extends XFileSharingProBasic {
             } else {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
             }
-        }
-        if (new Regex(correctedBR, ">\\s*The owner of this file blocked you to download it").matches()) {
+        } else if (new Regex(correctedBR, ">\\s*The owner of this file blocked you to download it").matches()) {
             /*
              * 2020-07-17: This may sometimes happen in premium mode - user is then supposed to contact the uploader to ask for permission
              * to download the file (WTF?!)
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The owner of this file blocked you to download it");
+        } else if (br.getURL().contains("/checkddos.php")) {
+            /* 2021-03-08 */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Antiddos check triggered", 2 * 60 * 1000l);
         }
     }
 
