@@ -47,6 +47,7 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
@@ -75,6 +76,8 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForCryptedLinkDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -329,6 +332,37 @@ public abstract class PluginForDecrypt extends Plugin {
      * Die Methode entschlüsselt einen einzelnen Link.
      */
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
+
+    /**
+     *
+     * @param message
+     *            The message to be displayed or <code>null</code> to display a Password prompt
+     * @param link
+     *            the {@link CryptedLink}
+     * @return the entered password
+     * @throws DecrypterException
+     *             if the user aborts the input
+     */
+    public String getUserInput(final String title, final String message, CryptedLink link) throws DecrypterException {
+        if (link == null) {
+            link = getCurrentLink().getCryptedLink();
+        }
+        final AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkDialog(title, message, link, getCurrentActivePlugin()));
+        if (handle.getCloseReason() == CloseReason.OK) {
+            final String password = handle.getText();
+            if (StringUtils.isEmpty(password)) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            } else {
+                return password;
+            }
+        } else {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+    }
+
+    public String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
+        return getUserInput(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, link);
+    }
 
     private boolean processCaptchaException(Throwable e) {
         if (e instanceof CaptchaException) {

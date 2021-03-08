@@ -239,6 +239,15 @@ public class PornHubCom extends PluginForDecrypt {
         return ret;
     }
 
+    @Override
+    public String getUserInput(String title, String message, CryptedLink link) throws DecrypterException {
+        try {
+            return super.getUserInput(title, message, link);
+        } catch (DecrypterException e) {
+            return null;
+        }
+    }
+
     /** Handles pornhub.com/bla/(model|pornstar)/bla */
     private boolean decryptAllVideosOf(Browser br, Account account, Set<String> dupes) throws Exception {
         if (isOfflineGeneral(br)) {

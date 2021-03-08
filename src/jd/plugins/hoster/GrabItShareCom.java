@@ -21,9 +21,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,11 +35,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "http://(www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" })
 public class GrabItShareCom extends PluginForHost {
@@ -178,7 +177,7 @@ public class GrabItShareCom extends PluginForHost {
                 }
                 if (br.containsHTML("class=textinput name=downloadpw")) {
                     if (link.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", link);
+                        passCode = getUserInput("Password?", link);
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = link.getStringProperty("pass", null);
@@ -376,7 +375,7 @@ public class GrabItShareCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     if (parameter.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", parameter);
+                        passCode = getUserInput("Password?", parameter);
                     } else {
                         /* gespeicherten PassCode holen */
                         passCode = parameter.getStringProperty("pass", null);

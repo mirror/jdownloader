@@ -96,6 +96,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TrackerJob;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -149,6 +150,8 @@ import org.jdownloader.controlling.linkcrawler.GenericVariants;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -164,6 +167,7 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.SleepPluginProgress;
+import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.config.AccountConfigInterface;
@@ -1494,6 +1498,56 @@ public abstract class PluginForHost extends Plugin {
 
     public void setDownloadLink(DownloadLink link) {
         this.link = link;
+    }
+
+    public DownloadLink buildAccountCheckDownloadLink(final Account account) {
+        String user = account.getUser();
+        if (StringUtils.isEmpty(user)) {
+            user = "";
+        }
+        return new DownloadLink(this, "Account (" + user + ")@" + account.getHoster(), getHost(), "https://" + account.getHoster(), true);
+    }
+
+    /**
+     *
+     * @param message
+     *            The message to be displayed or <code>null</code> to display a Password prompt
+     * @param link
+     *            the {@link DownloadLink}
+     * @return the entered password
+     * @throws PluginException
+     *             if the user aborts the input
+     */
+    public String getUserInput(final String title, String message, DownloadLink link) throws PluginException {
+        if (message == null) {
+            message = _GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_();
+        }
+        if (link == null) {
+            link = getDownloadLink();
+        }
+        final UserIOProgress prg = new UserIOProgress(message);
+        prg.setProgressSource(getCurrentActivePlugin());
+        prg.setDisplayInProgressColumnEnabled(false);
+        try {
+            link.addPluginProgress(prg);
+            final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(title, message, link));
+            if (handle.getCloseReason() == CloseReason.OK) {
+                final String password = handle.getText();
+                if (StringUtils.isEmpty(password)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
+                } else {
+                    return password;
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
+            }
+        } finally {
+            link.removePluginProgress(prg);
+        }
+    }
+
+    public String getUserInput(String message, final DownloadLink link) throws PluginException {
+        return getUserInput(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, link);
     }
 
     public long getAvailableStatusTimeout(DownloadLink link, AvailableStatus availableStatus) {

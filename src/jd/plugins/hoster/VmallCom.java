@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
@@ -31,15 +30,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(?:www\\.)?vmalldecrypted\\.com/\\d+" })
 public class VmallCom extends PluginForHost {
-
     public VmallCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -87,21 +84,17 @@ public class VmallCom extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         String dllink = downloadLink.getStringProperty("mainlink");
         br.getPage(dllink);
-
         /* Password protected link */
         if (br.getURL().contains("/m_accessPassword.html")) {
             String passCode = null;
             String id = new Regex(br.getURL(), "id=(\\w+)$").getMatch(0);
             id = id == null ? dllink.substring(dllink.lastIndexOf("/") + 1) : id;
-
             for (int i = 0; i < 3; i++) {
-
                 if (downloadLink.getStringProperty("password", null) == null) {
-                    passCode = Plugin.getUserInput(null, downloadLink);
+                    passCode = getUserInput(null, downloadLink);
                 } else {
                     passCode = downloadLink.getStringProperty("password");
                 }
-
                 br.postPage("http://dl.vmall.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
                 if (br.getRegex("\"retcode\":\"0000\"").matches()) {
                     break;
@@ -112,10 +105,8 @@ public class VmallCom extends PluginForHost {
             }
             br.getPage(dllink);
         }
-
         String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
         String downloadurl = null;
-
         String json = br.getRegex("var globallinkdata = (\\{[^<]+\\});").getMatch(0);
         if (json == null) {
             json = br.getRegex("var globallinkdata = (\\{.*?\\});").getMatch(0);
@@ -155,12 +146,10 @@ public class VmallCom extends PluginForHost {
                 break;
             }
         }
-
         /* fail */
         if (downloadurl == null || key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
         downloadLink.setProperty("downloadurl", downloadurl);
         downloadLink.setProperty("encryKey", key);
         return AvailableStatus.TRUE;
@@ -169,11 +158,9 @@ public class VmallCom extends PluginForHost {
     private void doFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getStringProperty("mainlink"));
-
         String key = downloadLink.getStringProperty("encryKey", null);
         String enc = downloadLink.getStringProperty("downloadurl", null);
         String dllink = decrypt(enc, key);
-
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -223,7 +210,6 @@ public class VmallCom extends PluginForHost {
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), MAINPAGE, true);
                 final String code = getCaptchaCode("https://hwid1.vmall.com/casserver/randomcode", dummyLink);
                 postData += "&authcode=" + Encoding.urlEncode(code);
-
                 this.br.postPage("https://hwid1.vmall.com/casserver/remoteLogin", postData);
                 if (!"1".equals(br.getCookie(MAINPAGE, "logintype"))) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -344,5 +330,4 @@ public class VmallCom extends PluginForHost {
         }
         return ret.equals("") ? null : ret;
     }
-
 }

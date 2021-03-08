@@ -1086,7 +1086,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 i -= 1;
                 password = passwords.remove(0);
             } else {
-                password = Plugin.getUserInput("Password for link: " + param.toString() + " ?", param);
+                password = getUserInput("Password for link: " + param.toString() + " ?", param);
             }
             if (password == null || "".equals(password)) {
                 // empty pass?? not good...

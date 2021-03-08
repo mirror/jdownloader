@@ -13,12 +13,9 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,14 +25,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[\\w\\-\\.]+" })
 public class TwoSharedCom extends PluginForHost {
-
     private static final String MAINPAGE = "http://www.2shared.com";
 
     public TwoSharedCom(final PluginWrapper wrapper) {
@@ -103,7 +100,7 @@ public class TwoSharedCom extends PluginForHost {
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
             String passCode = downloadLink.getStringProperty("pass", null);
             for (int i = 0; i <= 3; i++) {
-                passCode = passCode == null ? Plugin.getUserInput(null, downloadLink) : passCode;
+                passCode = passCode == null ? getUserInput(null, downloadLink) : passCode;
                 pwform.put("userPass2", passCode);
                 br.submitForm(pwform);
                 pwform = br.getForm(0);

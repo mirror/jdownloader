@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -27,9 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fayloobmennik.cloud" }, urls = { "https?://(?:www\\.)?fayloobmennik\\.(?:net|cloud)/\\d+" })
 public class FayloobmennikCloud extends PluginForHost {
@@ -129,7 +128,7 @@ public class FayloobmennikCloud extends PluginForHost {
         if (dllink == null) {
             if (br.containsHTML(pwprotected)) {
                 if (passCode == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                    passCode = getUserInput("Password?", downloadLink);
                 }
                 br.postPage(br.getURL(), "file_user_password=" + Encoding.urlEncode(passCode));
                 if (br.containsHTML(pwprotected)) {

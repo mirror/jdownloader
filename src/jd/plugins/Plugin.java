@@ -34,39 +34,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
-import org.jdownloader.gui.dialog.AskForCryptedLinkDialog;
-import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
-import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
-import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.UserIOProgress;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
@@ -89,6 +56,34 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
+import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.UserIOProgress;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.translate._JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -350,9 +345,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dot(s) to this! </br>
-     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
+     * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
      *
      * @param filenameOrg
      *            Original filename
@@ -386,34 +380,6 @@ public abstract class Plugin implements ActionListener {
         } else {
             return filenameOrg + fileExtension;
         }
-    }
-
-    /**
-     *
-     * @param message
-     *            The message to be displayed or <code>null</code> to display a Password prompt
-     * @param link
-     *            the {@link CryptedLink}
-     * @return the entered password
-     * @throws DecrypterException
-     *             if the user aborts the input
-     */
-    public static String getUserInput(final String title, final String message, final CryptedLink link) throws DecrypterException {
-        final AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkDialog(title, message, link, getCurrentActivePlugin()));
-        if (handle.getCloseReason() == CloseReason.OK) {
-            final String password = handle.getText();
-            if (StringUtils.isEmpty(password)) {
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            } else {
-                return password;
-            }
-        } else {
-            throw new DecrypterException(DecrypterException.PASSWORD);
-        }
-    }
-
-    public static String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
-        return getUserInput(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, link);
     }
 
     public static Plugin getCurrentActivePlugin() {
@@ -521,45 +487,6 @@ public abstract class Plugin implements ActionListener {
         } finally {
             link.removePluginProgress(prg);
         }
-    }
-
-    /**
-     *
-     * @param message
-     *            The message to be displayed or <code>null</code> to display a Password prompt
-     * @param link
-     *            the {@link DownloadLink}
-     * @return the entered password
-     * @throws PluginException
-     *             if the user aborts the input
-     */
-    public static String getUserInput(final String title, String message, final DownloadLink link) throws PluginException {
-        if (message == null) {
-            message = "Please enter the password to continue...";
-        }
-        final UserIOProgress prg = new UserIOProgress(message);
-        prg.setProgressSource(getCurrentActivePlugin());
-        prg.setDisplayInProgressColumnEnabled(false);
-        try {
-            link.addPluginProgress(prg);
-            final AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForDownloadLinkDialog(title, message, link));
-            if (handle.getCloseReason() == CloseReason.OK) {
-                final String password = handle.getText();
-                if (StringUtils.isEmpty(password)) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
-                } else {
-                    return password;
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT.T.plugins_errors_wrongpassword());
-            }
-        } finally {
-            link.removePluginProgress(prg);
-        }
-    }
-
-    public static String getUserInput(String message, final DownloadLink link) throws PluginException {
-        return getUserInput(null, message, link);
     }
 
     private volatile ConfigContainer config;

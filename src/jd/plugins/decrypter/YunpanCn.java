@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +29,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yunpan.cn" }, urls = { "https?://(?:www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan(?:\\.360)?\\.cn/lk/[A-Za-z0-9_]+(?:#\\d+)?(?:\\-0)?(?:\\&downloadpassword=[^<>\"\\&=]+)?|yunpan(?:\\.360)\\.cn/[a-zA-Z0-9]{13})" })
 public class YunpanCn extends antiDDoSForDecrypt {
@@ -157,7 +156,7 @@ public class YunpanCn extends antiDDoSForDecrypt {
         boolean failed = true;
         for (int i = 0; i != 3; i++) {
             if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", param);
+                passCode = getUserInput("Password?", param);
             }
             br.postPage(host_with_protocol + "/share/verifyPassword", "shorturl=" + fid + "&linkpassword=" + Encoding.urlEncode(passCode));
             if (br.containsHTML("\"errno\":0,")) {

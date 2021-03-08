@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -24,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -33,7 +31,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "https?://(?:www\\.)?(files\\.)?(?:indowebster\\.com|idws\\.id)/(download/(files|audio|video)/.+|[^\\s]+\\.html)" })
 public class Indowebster extends PluginForHost {
-
     private static final String PASSWORDTEXT = "(>THIS FILE IS PASSWORD PROTECTED<|>INSERT PASSWORD<|class=\"redbtn\" value=\"Unlock\"|method=\"post\" id=\"form_pass\")";
 
     public Indowebster(final PluginWrapper wrapper) {
@@ -152,7 +149,7 @@ public class Indowebster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", link);
+                passCode = getUserInput("Password?", link);
             }
             br.postPage(link.getDownloadURL(), valueName + "=" + Encoding.urlEncode(passCode));
             if (br.containsHTML(PASSWORDTEXT)) {
@@ -192,12 +189,10 @@ public class Indowebster extends PluginForHost {
         br.setDebug(true);
         br.setReadTimeout(180 * 1001);
         br.setConnectTimeout(180 * 1001);
-
         int maxChunks = 0;
         if (link.getBooleanProperty(Indowebster.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -234,5 +229,4 @@ public class Indowebster extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

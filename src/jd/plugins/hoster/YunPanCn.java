@@ -23,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -76,7 +75,7 @@ public class YunPanCn extends PluginForHost {
             for (int i = 0; i != 3; i++) {
                 String passCode = link.getDownloadPassword();
                 if (passCode == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+                    passCode = getUserInput("Password?", link);
                 }
                 if (passCode == null) {
                     logger.info("User has entered blank password, exiting handlePassword");
