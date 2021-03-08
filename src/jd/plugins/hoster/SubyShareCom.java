@@ -18,9 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,7 +47,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
         /* 2021-03-08: Trying to avoid running into "/checkddos.php" */
-        this.setStartIntervall(10 * 60 * 1000l);
+        this.setStartIntervall(10 * 1000l);
     }
 
     /**
@@ -131,9 +136,6 @@ public class SubyShareCom extends XFileSharingProBasic {
              * to download the file (WTF?!)
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The owner of this file blocked you to download it");
-        } else if (br.getURL().contains("/checkddos.php")) {
-            /* 2021-03-08 */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Antiddos check triggered", 2 * 60 * 1000l);
         }
     }
 
@@ -379,5 +381,67 @@ public class SubyShareCom extends XFileSharingProBasic {
             pwprotected = new Regex(correctedBR, "><b>Password</b>").matches();
         }
         return pwprotected;
+    }
+
+    @Override
+    protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
+        getPage(br, page);
+        handleAntiDdosChallenge(br);
+        if (correctBr) {
+            correctBR();
+        }
+    }
+
+    @Override
+    protected void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
+        postPage(br, page, postdata);
+        handleAntiDdosChallenge(br);
+        if (correctBr) {
+            correctBR();
+        }
+    }
+
+    @Override
+    protected void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
+        submitForm(br, form);
+        handleAntiDdosChallenge(br);
+        if (correctBr) {
+            correctBR();
+        }
+    }
+
+    private void handleAntiDdosChallenge(final Browser br) throws PluginException, IOException {
+        if (br.getURL().contains("/checkddos.php")) {
+            /* 2021-03-08 */
+            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Antiddos check triggered", 2 * 60 * 1000l);
+            final Form form = br.getFormbyProperty("id", "checkDDOS");
+            if (form == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (!form.hasInputFieldByName("b")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String calcChallenge = br.getRegex("Verify\\s*:\\s*</span>\\s*<strong>([0-9\\-\\+\\*x ]+)=\\?</strong>").getMatch(0);
+            calcChallenge = calcChallenge.trim().toLowerCase(Locale.ENGLISH);
+            /* E.g. "3 x 3" -> "3 * 3" */
+            calcChallenge = calcChallenge.replace("x", "*");
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            String res = null;
+            try {
+                final String js = "var res = " + calcChallenge + ";";
+                engine.eval(js);
+                res = Integer.toString(((Number) engine.get("res")).intValue());
+            } catch (final Exception e) {
+                logger.info(e.toString());
+                e.printStackTrace();
+            }
+            form.put("b", res);
+            br.submitForm(form);
+            if (br.getURL().contains("/checkddos.php")) {
+                logger.warning("Failed to solve challenge(?)");
+            } else {
+                logger.info("Checkddos challenge solved successfully");
+            }
+        }
     }
 }
