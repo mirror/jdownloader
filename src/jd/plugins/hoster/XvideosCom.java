@@ -671,9 +671,16 @@ public class XvideosCom extends PluginForHost {
         }
     }
 
-    /** Only use this when on this page: https://www.xvideos.red/account/premium */
+    /**
+     * Only use this when on this page: https://www.xvideos.red/account/premium </br>
+     * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     */
     private static boolean isPremium(final Browser br) {
-        return br.containsHTML("id=\"btn-cancel-subscription\"");
+        /*
+         * 2021-03-08: "Cancel subsrciption" button is not always there is they also got packages that are a one time pay thing and don't
+         * have to be cancelled by the user!
+         */
+        return br.containsHTML("id=\"btn-cancel-subscription\"|id=\"account-content-block\"");
     }
 
     /** Works for free- and premium domain! */
