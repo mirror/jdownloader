@@ -122,6 +122,16 @@ public class CloudvideoTv extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean isOffline(final DownloadLink link) {
+        if (super.isOffline(link)) {
+            return true;
+        } else {
+            /* 2021-03-08 */
+            return new Regex(correctedBR, "class=\"error-title\">\\s*404|>\\s*You may have mistyped the address").matches();
+        }
+    }
+
+    @Override
     public Class<? extends XFSConfigVideoCloudvideoTv> getConfigInterface() {
         return XFSConfigVideoCloudvideoTv.class;
     }
