@@ -19,9 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -34,29 +37,29 @@ public class PasteBinCom extends PluginForDecrypt {
 
     /* DEV NOTES */
     // Tags: pastebin
-    private final String type_invalid = "https?://(www\\.)?pastebin\\.com/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
+    private final String type_invalid = "https?://[^/]+/(messages|report|dl|scraping|languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
             return decryptedLinks;
-        } else if (parameter.contains("/download.php?i=") || parameter.contains(".com/dl/")) {
-            final DownloadLink link = createDownloadlink("directhttp://" + parameter);
-            link.setProperty("Referer", parameter.replaceFirst("(/download\\.php\\?i=|/dl/)", "/"));
-            decryptedLinks.add(link);
-            return decryptedLinks;
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
-        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/") || br.getURL().equals("https://pastebin.com/") || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || !this.canHandle(this.br.getURL()) || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        }
+        Form pwprotected = getPwProtectedForm();
+        if (pwprotected != null) {
+            final String passCode = this.getUserInput("Enter password", param);
+            pwprotected.put("PostPasswordVerificationForm[password]", Encoding.urlEncode(passCode));
+            this.br.submitForm(pwprotected);
+            if (getPwProtectedForm() != null) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
         if (plaintxt == null && (parameter.contains("raw.php") || parameter.contains("/raw/"))) {
@@ -84,5 +87,14 @@ public class PasteBinCom extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private Form getPwProtectedForm() {
+        for (final Form form : this.br.getForms()) {
+            if (form.containsHTML("postpasswordverificationform-password")) {
+                return form;
+            }
+        }
+        return null;
     }
 }
