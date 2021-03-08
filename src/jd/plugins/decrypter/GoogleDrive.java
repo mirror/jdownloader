@@ -354,10 +354,12 @@ public class GoogleDrive extends PluginForDecrypt {
             String nextPageToken = null;
             boolean firstRequest = true;
             int addedlinks;
-            final int maxItemsPerPage = 50;
+            int page = -1;
             do {
+                page++;
+                logger.info("Crawling page: " + (page + 1));
                 addedlinks = 0;
-                if (decryptedLinks.size() >= 50 || firstRequest) {
+                if (decryptedLinks.size() > 0 || firstRequest) {
                     final Browser brc = br.cloneBrowser();
                     brc.addAllowedResponseCodes(400);
                     try {
@@ -395,7 +397,7 @@ public class GoogleDrive extends PluginForDecrypt {
                     Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
                     final ArrayList<Object> items = (ArrayList<Object>) entries.get("items");
                     if (items == null || items.isEmpty()) {
-                        logger.info("break1");
+                        logger.info("Stopping because: 'items' array in json response is empty or missing");
                         break;
                     }
                     addedlinks = items.size();
@@ -405,15 +407,15 @@ public class GoogleDrive extends PluginForDecrypt {
                      */
                     nextPageToken = (String) entries.get("nextPageToken");
                     parseFolderJsonWebsite(decryptedLinks, entries, subfolderPath, currentFolderTitle);
-                    logger.info("added:" + addedlinks);
+                    logger.info("Number of items found on current page:" + addedlinks);
                     if (StringUtils.isEmpty(nextPageToken)) {
-                        logger.info("break2");
                         /* Either we found everything or plugin failure ... */
+                        logger.info("break2");
                         break;
                     }
                 }
-                if (addedlinks < maxItemsPerPage) {
-                    logger.info("Stopping because current page contains less than " + maxItemsPerPage + " elements");
+                if (addedlinks == 0) {
+                    logger.info("Stopping because: Failed to find any items on current page");
                     break;
                 }
             } while (key != null && !isAbort());
