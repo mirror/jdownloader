@@ -87,6 +87,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -495,7 +496,7 @@ public abstract class PluginForDecrypt extends Plugin {
                         }
                     } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
                         throw new DecrypterRetryException(RetryReason.PASSWORD, null, null, e);
-                    } else if (DecrypterException.ACCOUNT.equals(e.getMessage()) || e instanceof AccountRequiredException) {
+                    } else if (e instanceof AccountRequiredException) {
                         throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, null, null, e);
                     } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
                         return results;
@@ -510,6 +511,11 @@ public abstract class PluginForDecrypt extends Plugin {
                             throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, null, null, e);
                         case LinkStatus.ERROR_RETRY:
                             continue retry;
+                        case LinkStatus.ERROR_FATAL:
+                            if (StringUtils.equals(_JDT.T.plugins_errors_wrongpassword(), e.getMessage())) {
+                                throw new DecrypterRetryException(RetryReason.PASSWORD, null, null, e);
+                            }
+                            break;
                         default:
                             break;
                         }
