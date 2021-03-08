@@ -116,6 +116,13 @@ public class DebridLinkFr2 extends PluginForHost {
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("value");
+        /* Set censored E-Mail address of user as username. */
+        final String emailCensored = (String) entries.get("email");
+        if (!StringUtils.isEmpty(emailCensored)) {
+            account.setUser(emailCensored);
+        }
+        /* User could have entered his real password -> We don't want to store that! */
+        account.setPass(null);
         final int accountType = ((Number) entries.get("accountType")).intValue();
         final long premiumLeft = ((Number) entries.get("premiumLeft")).longValue();
         final String registerDate = (String) entries.get("registerDate");
