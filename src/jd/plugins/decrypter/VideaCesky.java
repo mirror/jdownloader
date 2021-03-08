@@ -40,7 +40,10 @@ public class VideaCesky extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Toto video je dočasně nedostupné")) {
+            decryptedLinks.add(this.createOfflinelink(parameter, null, "Toto video je dočasně nedostupné"));
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
