@@ -120,24 +120,41 @@ public class DebridLinkFr2 extends PluginForHost {
         final long premiumLeft = ((Number) entries.get("premiumLeft")).longValue();
         final String registerDate = (String) entries.get("registerDate");
         final Object serverDetected = entries.get("serverDetected");
-        boolean isFree = false;
-        if (accountType == 0) {
+        final boolean isFree;
+        switch (accountType) {
+        case 0:
             ac.setStatus("Free Account");
             account.setType(AccountType.FREE);
             ac.setValidUntil(-1);
             isFree = true;
-        } else if (accountType == 1) {
-            ac.setStatus("Premium Account");
-            account.setType(AccountType.PREMIUM);
+            break;
+        case 1:
             if (premiumLeft > 0) {
                 ac.setValidUntil(System.currentTimeMillis() + (premiumLeft * 1000l));
             }
-        } else if (accountType == 2) {
+            if (premiumLeft < 0 || ac.isExpired()) {
+                ac.setStatus("(Expired)Premium Account");
+                account.setType(AccountType.FREE);
+                ac.setValidUntil(-1);
+                isFree = true;
+            } else {
+                ac.setStatus("Premium Account");
+                account.setType(AccountType.PREMIUM);
+                isFree = false;
+            }
+            break;
+        case 2:
             ac.setStatus("Life Account");
             account.setType(AccountType.PREMIUM);
             ac.setValidUntil(-1);
-        } else {
+            isFree = false;
+            break;
+        default:
+            isFree = true;
+            ac.setStatus("Unknown account type: " + accountType);
+            account.setType(AccountType.FREE);
             logger.warning("Unknown account type: " + accountType);
+            break;
         }
         if (!StringUtils.isEmpty(registerDate)) {
             ac.setCreateTime(TimeFormatter.getMilliSeconds(registerDate, "yyyy-MM-dd", Locale.ENGLISH));
