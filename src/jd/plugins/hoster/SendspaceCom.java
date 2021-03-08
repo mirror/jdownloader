@@ -18,11 +18,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,10 +37,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
@@ -319,7 +318,7 @@ public class SendspaceCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         if (link.getStringProperty("pass", null) == null) {
-                            passCode = Plugin.getUserInput("Password?", link);
+                            passCode = getUserInput("Password?", link);
                         } else {
                             /* gespeicherten PassCode holen */
                             passCode = link.getStringProperty("pass", null);

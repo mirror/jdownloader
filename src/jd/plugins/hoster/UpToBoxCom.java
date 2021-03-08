@@ -24,6 +24,26 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
+
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -42,27 +62,6 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuali
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -561,7 +560,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             // boolean passwordRequiredOrEnteredWrong = link.getBooleanProperty(PROPERTY_is_password_protected, false);
             do {
                 if (tries > 0 || passwordRequiredOrEnteredWrong) {
-                    passCode = Plugin.getUserInput("Enter download password", link);
+                    passCode = getUserInput("Enter download password", link);
                     queryDownload.append("password", passCode, true);
                 }
                 this.getPage(API_BASE + "/link?" + queryDownload.toString());

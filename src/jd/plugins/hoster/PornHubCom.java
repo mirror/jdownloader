@@ -36,16 +36,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,8 +59,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubCom extends PluginForHost {
@@ -94,15 +94,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
@@ -820,6 +820,19 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String getUserInput(String title, String message, DownloadLink link) throws PluginException {
+        try {
+            return super.getUserInput(title, message, link);
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_FATAL) {
+                return null;
+            } else {
+                throw e;
+            }
+        }
+    }
+
     public static boolean login(Plugin plugin, final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -920,8 +933,8 @@ public class PornHubCom extends PluginForHost {
                 br.submitForm(loginform);
                 Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 // final String success = PluginJSonUtils.getJsonValue(br, "success");
-                final int twoStepVerification = ((Number) entries.get("twoStepVerification")).intValue();
-                if (twoStepVerification == 1) {
+                final Number twoStepVerification = ((Number) entries.get("twoStepVerification"));
+                if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
                     /* At this point we know that username and password are correct! */
                     final String authyId = (String) entries.get("authyId");
                     final String authyIdHashed = (String) entries.get("authyIdHashed");
@@ -931,23 +944,17 @@ public class PornHubCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     plugin.getLogger().info("2FA code required");
-                    final DownloadLink dl_dummy;
+                    String twoFACode = null;
                     if (plugin instanceof PluginForHost) {
-                        if (((PluginForHost) plugin).getDownloadLink() != null) {
-                            dl_dummy = ((PluginForHost) plugin).getDownloadLink();
-                        } else {
-                            dl_dummy = new DownloadLink((PluginForHost) plugin, "Account", plugin.getHost(), "https://" + account.getHoster(), true);
-                        }
+                        twoFACode = ((PluginForHost) plugin).getUserInput("Enter 2-Factor SMS Authentication code for number " + phoneNumber, null);
                     } else {
-                        final PluginForHost hostPlg = JDUtilities.getPluginForHost(plugin.getHost());
-                        dl_dummy = new DownloadLink(hostPlg, "Account", plugin.getHost(), "https://" + account.getHoster(), true);
+                        twoFACode = ((PluginForDecrypt) plugin).getUserInput("Enter 2-Factor SMS Authentication code for number " + phoneNumber, null);
                     }
-                    String twoFACode = getUserInput("Enter 2-Factor SMS Authentication code for number " + phoneNumber, dl_dummy);
                     if (twoFACode != null) {
                         twoFACode = twoFACode.trim();
                     }
                     /* 2021-03-08: I also got 7-digit codes... */
-                    if (twoFACode == null || !twoFACode.matches("\\d{4,}")) {
+                    if (twoFACode == null || !twoFACode.matches("^\\d{4,}$")) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
@@ -988,7 +995,7 @@ public class PornHubCom extends PluginForHost {
                     }
                 }
                 if (!isLoggedInHtml(br)) {
-                    if (twoStepVerification == 1) {
+                    if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid 2-factor-authentication code", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

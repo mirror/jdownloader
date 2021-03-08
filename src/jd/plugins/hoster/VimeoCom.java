@@ -733,7 +733,7 @@ public class VimeoCom extends PluginForHost {
             /* Get password */
             String passCode = link.getDownloadPassword();
             if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", link);
+                passCode = getUserInput("Password?", link);
                 if (passCode == null) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
                 }
@@ -755,7 +755,7 @@ public class VimeoCom extends PluginForHost {
             }
             String passCode = link.getDownloadPassword();
             if (passCode == null) {
-                passCode = Plugin.getUserInput("Password?", link);
+                passCode = getUserInput("Password?", link);
                 if (passCode == null) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
                 }

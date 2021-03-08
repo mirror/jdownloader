@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -22,15 +21,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u-file.net" }, urls = { "http://[\\w\\.]*?(?:u-file\\.net|uf\\.pe)/f-[a-z0-9]+" })
 public class UFileNet extends PluginForHost {
-
     public UFileNet(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -97,7 +94,7 @@ public class UFileNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (link.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", link);
+                    passCode = getUserInput("Password?", link);
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);
@@ -151,5 +148,4 @@ public class UFileNet extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

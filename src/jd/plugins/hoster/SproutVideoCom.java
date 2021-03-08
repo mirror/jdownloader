@@ -2,12 +2,6 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -17,9 +11,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -118,7 +117,7 @@ public class SproutVideoCom extends PluginForHost {
             }
             /* No stored pw available? Ask user. */
             if (password == null) {
-                password = Plugin.getUserInput("Password?", link);
+                password = getUserInput("Password?", link);
             }
             logger.info("f: " + f);
             logger.info("password: " + Encoding.urlEncode(password));

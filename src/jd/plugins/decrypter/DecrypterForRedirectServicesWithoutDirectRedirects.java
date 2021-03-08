@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,8 +31,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1short.us", "f16f.com", "manteb.in", "nifteam.info", "animeforce.org", "link.achanime.net", "sipkur.net", "otrkeyfinder.com", "xiaomengku.com", "anyt.ml", "fastgo.cu.cc", "linkdecode.com", "is.gd", "djurl.com", "umhq.net", "url.fm", "searchonzippy.eu", "hnzoom.com", "guardlink.org", "q32.ru", "adfoc.us", "damasgate.com", "freeonsmash.com", "lnk.co", "myurl.in", "4p5.com", "href.hu", "migre.me", "altervista.org", "agaleradodownload.com", "songspk.info", "deurl.me", "muzgruz.ru", "chip.de", "nbanews.us", "academicearth.org", "tm-exchange.com", "adiarimore.com", "mafia.to", "warcraft.ingame.de", "mp3.wp.pl", "gantrack.com" }, urls = { "https?://(?:www\\.)?1short\\.us/[A-Za-z0-9]+", "https?://(?:\\w+\\.)?f16f\\.com/\\?i=\\d+", "https?://(?:\\w+\\.)?manteb\\.in/[a-zA-Z0-9]+$",
         "http://nifteam\\.info/link\\.php\\?file=.+", "http://(?:www\\.)?animeforce\\.org/ds(?:\\d+)?\\.php\\?file=.+", "https?://link\\.achanime\\.net/(short/\\?id=[a-f0-9]{32}|link/\\?[^/]+)", "http://sipkur\\.net/[a-z0-9\\-_]+\\.html", "https?://otrkeyfinder\\.com/de/go\\-to\\-mirror\\?otrkey=.+", "https?://(?:www\\.)?xiaomengku\\.com/files\\?id=\\d+", "http://anyt\\.ml/[A-Za-z0-9]+", "https?://(www\\.)?fastgo\\.cu\\.cc/[a-zA-Z0-9]{6}", "http://(www\\.)?(linkdecode|fastdecode)\\.com/\\?[a-zA-Z0-9_/\\+\\=\\-%]+", "http://(www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://(www\\.)?umhq\\.net/[A-Z0-9]+/rdf\\.php\\?link=[a-z0-9]+", "http://(www\\.)?url\\.fm/[a-z0-9]+", "http://(www\\.)?searchonzippy\\.eu/out\\.php\\?link=\\d+", "http://(www\\.)?hnzoom\\.com/(\\?[A-Za-z0-9]{20}|folder/[a-zA-Z0-9\\-]{11})", "http://(www\\.)?guardlink\\.org/[A-Za-z0-9]+",
@@ -289,7 +288,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     if (br.containsHTML("\"status\":2") && br.containsHTML("\"link\":null")) {
                         // requires password
                         for (int i = 0; i <= 3; i++) {
-                            final String pass = Plugin.getUserInput("Password Required", param);
+                            final String pass = getUserInput("Password Required", param);
                             if (pass == null) {
                                 return decryptedLinks;
                             } else {

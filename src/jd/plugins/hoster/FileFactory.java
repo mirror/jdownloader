@@ -635,7 +635,7 @@ public class FileFactory extends PluginForHost {
                 checkErrorsWebsite(true, false);
                 if (br.containsHTML(PASSWORDPROTECTED)) {
                     if (passCode == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
+                        passCode = getUserInput("Password?", downloadLink);
                     }
                     // stable is lame
                     br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
@@ -1226,7 +1226,7 @@ public class FileFactory extends PluginForHost {
             if (link.getBooleanProperty("passwordRequired", false)) {
                 // dl requires pre download password
                 if (StringUtils.isEmpty(passCode)) {
-                    passCode = Plugin.getUserInput("Password Required!", link);
+                    passCode = getUserInput("Password Required!", link);
                 }
                 if (StringUtils.isEmpty(passCode)) {
                     logger.info("User has entered blank password!");

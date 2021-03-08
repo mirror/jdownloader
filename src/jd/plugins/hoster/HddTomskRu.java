@@ -2,8 +2,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.nutils.encoding.Encoding;
@@ -12,9 +10,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "https?://(?:www|download\\.)?hdd\\.tomsk\\.ru/file/(?!notfound)([a-z]{8})" })
 public class HddTomskRu extends PluginForHost {
@@ -75,7 +74,7 @@ public class HddTomskRu extends PluginForHost {
         /* Password protected file */
         if (redirectLocation == null && br.containsHTML(PWTEXT)) {
             for (int i = 0; i <= 3; i++) {
-                final String passCode = Plugin.getUserInput("Enter password for: " + fileTitle, link);
+                final String passCode = getUserInput("Enter password for: " + fileTitle, link);
                 br.postPage(FILE_ENTER_PASSWORD, "password=" + Encoding.urlEncode(passCode) + "&signature=" + fileId);
                 if (br.getRedirectLocation() != null) {
                     br.getPage(br.getRedirectLocation());

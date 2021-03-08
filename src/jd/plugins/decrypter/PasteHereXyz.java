@@ -29,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.controlling.PasswordUtils;
@@ -72,7 +71,7 @@ public class PasteHereXyz extends PluginForDecrypt {
                 if (passwords.size() > 0) {
                     passCode = passwords.remove(0);
                 } else {
-                    passCode = Plugin.getUserInput(null, param);
+                    passCode = getUserInput(null, param);
                 }
                 form.put("mypass", Encoding.urlEncode(passCode));
                 br.submitForm(form);

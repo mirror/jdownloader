@@ -79,11 +79,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
-    };
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -304,6 +304,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 final Browser br = new Browser();
                 br.setLogger(logger);
                 plugin.setBrowser(br);
+                plugin.setDownloadLink(plugin.buildAccountCheckDownloadLink(account));
                 plugin.init();
                 /* not every plugin sets this info correct */
                 account.setError(null, -1, null);

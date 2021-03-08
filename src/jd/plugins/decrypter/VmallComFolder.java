@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -29,14 +28,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "https?://(?:www\\.)?dl\\.(?:dbank|vmall)\\.com/[a-z0-9]+" })
 public class VmallComFolder extends PluginForDecrypt {
-
     public VmallComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -88,9 +85,8 @@ public class VmallComFolder extends PluginForDecrypt {
         if (br.getURL().contains("/m_accessPassword.html")) {
             String id = new Regex(br.getURL(), "id=(\\w+)$").getMatch(0);
             id = id == null ? parameter.substring(parameter.lastIndexOf("/") + 1) : id;
-
             for (int i = 0; i < 3; i++) {
-                passCode = Plugin.getUserInput(null, param);
+                passCode = getUserInput(null, param);
                 br.postPage("http://dl.vmall.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
                 if (br.getRegex("\"retcode\":\"0000\"").matches()) {
                     break;
@@ -101,9 +97,7 @@ public class VmallComFolder extends PluginForDecrypt {
             }
             br.getPage(parameter);
         }
-
         String fpName = null;
-
         String json = br.getRegex("var globallinkdata = (\\{[^<]+\\});").getMatch(0);
         if (json == null) {
             json = br.getRegex("var globallinkdata = (\\{.*?\\});").getMatch(0);
@@ -135,12 +129,10 @@ public class VmallComFolder extends PluginForDecrypt {
         if (links == null) {
             links = new Regex(json, "\"files\":\\[(.*?)\\],").getMatch(0);
         }
-
         if (links == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
@@ -181,5 +173,4 @@ public class VmallComFolder extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

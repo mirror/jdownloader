@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Set;
 
-import org.jdownloader.controlling.PasswordUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +30,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  *
@@ -73,7 +72,7 @@ public class TuPasteInfo extends PluginForDecrypt {
                 }
                 // site is fucked they mess up the action url, so the password is never accepted even in browser!
                 password.setAction(br.getURL());
-                final String psw = Plugin.getUserInput(null, param);
+                final String psw = getUserInput(null, param);
                 password.put("password", Encoding.urlEncode(psw));
                 br.submitForm(password);
                 if (br.containsHTML(passwordProtection)) {

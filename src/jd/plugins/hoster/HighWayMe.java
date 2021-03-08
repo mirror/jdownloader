@@ -37,7 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
@@ -378,7 +377,7 @@ public class HighWayMe extends UseNet {
                 int counter = 0;
                 do {
                     if (counter > 0) {
-                        passCode = Plugin.getUserInput("Password?", link);
+                        passCode = getUserInput("Password?", link);
                     }
                     getPageAndEnsureLogin(account, "https://high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
                     counter++;
