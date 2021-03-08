@@ -20,7 +20,6 @@ import org.jdownloader.translate._JDT;
 public class DecrypterException extends Exception {
     private static final long serialVersionUID = -413359039728789194L;
     public static String      PASSWORD         = _JDT.T.decrypter_wrongpassword();
-    public static String      ACCOUNT          = _JDT.T.decrypter_invalidaccount();
 
     public DecrypterException() {
         super(_JDT.T.decrypter_unknownerror());

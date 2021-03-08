@@ -23,10 +23,6 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -40,6 +36,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -425,20 +425,19 @@ public class SubyShareCom extends XFileSharingProBasic {
             /* E.g. "3 x 3" -> "3 * 3" */
             calcChallenge = calcChallenge.replace("x", "*");
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            String res = null;
             try {
+                final ScriptEngine engine = manager.getEngineByName("javascript");
                 final String js = "var res = " + calcChallenge + ";";
                 engine.eval(js);
-                res = Integer.toString(((Number) engine.get("res")).intValue());
+                final String res = engine.get("res").toString();
+                form.put("b", res);
             } catch (final Exception e) {
-                logger.info(e.toString());
-                e.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
-            form.put("b", res);
             br.submitForm(form);
             if (br.getURL().contains("/checkddos.php")) {
                 logger.warning("Failed to solve challenge(?)");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.info("Checkddos challenge solved successfully");
             }
