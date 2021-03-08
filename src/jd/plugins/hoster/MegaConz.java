@@ -106,7 +106,7 @@ import org.jdownloader.translate._JDT;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(https?://(www\\.)?mega\\.(co\\.)?nz/.*?(#!?N?|\\$)|chrome://mega/content/secure\\.html#)(!|%21|\\?)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((=###n=|!)[a-zA-Z0-9]+)?|mega:/*#(?:!|%21)[a-zA-Z0-9]+(?:!|%21)[a-zA-Z0-9_,\\-%]{16,}" })
 public class MegaConz extends PluginForHost {
     private final String   USE_SSL                                                       = "USE_SSL_V3";
-    private final String   CHECK_RESERVED                                                = "CHECK_RESERVED";
+    private final String   CHECK_RESERVED                                                = "CHECK_RESERVED_V2";
     private final String   USE_TMP                                                       = "USE_TMP_V2";
     private final String   HIDE_APP                                                      = "HIDE_APP_V2";
     private final String   ALLOW_MULTIHOST_USAGE                                         = "ALLOW_MULTIHOST_USAGE";
@@ -136,6 +136,15 @@ public class MegaConz extends PluginForHost {
         return "https://mega.co.nz/#terms";
     }
 
+    private Number getNumber(Map<String, Object> map, final String key, final Number defaultValue) {
+        final Number ret = getNumber(map, key);
+        if (ret == null) {
+            return defaultValue;
+        } else {
+            return ret;
+        }
+    }
+
     private Number getNumber(Map<String, Object> map, final String key) {
         final Object ret = map.get(key);
         if (ret instanceof Number) {
@@ -143,7 +152,7 @@ public class MegaConz extends PluginForHost {
         } else if (ret instanceof String) {
             return Long.parseLong(ret.toString());
         } else {
-            return null;
+            return 0l;
         }
     }
 
@@ -152,6 +161,28 @@ public class MegaConz extends PluginForHost {
         synchronized (account) {
             final String sid = apiLogin(account);
             final Map<String, Object> uq = apiRequest(account, sid, null, "uq"/* userQuota */, new Object[] { "xfer"/* xfer */, 1 }, new Object[] { "pro"/* pro */, 1 });
+            // mxfer - maximum transfer allowance
+            // caxfer - PRO transfer quota consumed by yourself
+            // csxfer - PRO transfer quota served to others
+            // tuo - Transfer usage by the owner on quotad which hasn't yet been committed back to the API DB. Supplements caxfer
+            // tua - Transfer usage served to other users which hasn't yet been committed back to the API DB. Supplements csxfer
+            // srvratio - The ratio of your PRO transfer quota that is able to be served to others
+            // utype - PRO type. 0 means Free; 4 is Pro Lite as it was added late; 100 indicates a business.
+            // stype - Flag indicating if this is a recurring subscription or one-off. "O" is one off, "R" is recurring.
+            // suntil - Time the last active PRO plan will expire (may be different from current one)
+            // srenew - Only provided for recurring subscriptions to indicate the best estimate of when the subscription will renew
+            // scycle - subscription_cycle
+            // bt - "Base time age", this is number of seconds since the start of the current quota buckets
+            // tah - the free IP-based quota buckets, 6 entries for 6 hours
+            // tar - IP transfer reserved
+            // rua - Actor reserved quota
+            // ruo - Owner reserved quota
+            // cstrg - Your total account storage usage
+            // mstrg - maximum storage allowance
+            // uslw - The percentage (in 1000s) indicating the limit at which you are 'nearly' over. Currently 98% for PRO, 90% for free.
+            // balance - Balance of your account
+            // rtt - ?
+            // sgw - subscription ?
             // https://github.com/meganz/sdk/blob/master/src/commands.cpp
             // https://github.com/meganz/sdk/blob/master/bindings/ios/MEGAAccountDetails.h
             String statusAddition = "";
@@ -161,7 +192,6 @@ public class MegaConz extends PluginForHost {
                     final List<Object> trafficInfo = (List<Object>) uq.get("tah");
                     long bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 2)).longValue();
                     if (bandwidthUsed == 0) {
-                        /* TODO: Where are the API docs? Why are there sometimes more elements? */
                         bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 1)).longValue();
                     }
                     final String bandwidthUsedFormatted = SizeFormatter.formatBytes(bandwidthUsed).toString();
@@ -181,32 +211,32 @@ public class MegaConz extends PluginForHost {
                 }
                 final AccountInfo ai = new AccountInfo();
                 boolean isPro = false;
-                final String status;
+                String accountStatus = null;
                 // https://docs.mega.nz/sdk/api/classmega_1_1_mega_account_details.html
                 switch (getNumber(uq, "utype").intValue()) {
                 case 1:
-                    status = "Pro I Account" + subscriptionCycle;
+                    accountStatus = "Pro I Account" + subscriptionCycle;
                     isPro = true;
                     break;
                 case 2:
-                    status = "Pro II Account" + subscriptionCycle;
+                    accountStatus = "Pro II Account" + subscriptionCycle;
                     isPro = true;
                     break;
                 case 3:
-                    status = "Pro III Account" + subscriptionCycle;
+                    accountStatus = "Pro III Account" + subscriptionCycle;
                     isPro = true;
                     break;
                 case 4:
-                    status = "Pro Lite Account" + subscriptionCycle;
+                    accountStatus = "Pro Lite Account" + subscriptionCycle;
                     isPro = true;
                     break;
                 case 100:
-                    status = "Business Account" + subscriptionCycle;
+                    accountStatus = "Business Account" + subscriptionCycle;
                     isPro = true;
                     break;
                 case 0:
                 default:
-                    status = "Free Account";
+                    accountStatus = "Free Account";
                     isPro = false;
                     break;
                 }
@@ -214,30 +244,38 @@ public class MegaConz extends PluginForHost {
                     final Number expire = getNumber(uq, "suntil");
                     ai.setValidUntil(expire.longValue() * 1000);
                     if (ai.isExpired()) {
+                        accountStatus += "(expired)";
                         isPro = false;
                     }
                 } else {
                     isPro = false;
                 }
+                ai.setStatus(accountStatus + statusAddition);
                 if (isPro) {
-                    if (uq.containsKey("mxfer") && uq.containsKey("csxfer")) {
-                        final Number max = (getNumber(uq, "mxfer")).longValue();
-                        final Number used = (getNumber(uq, "csxfer")).longValue();
+                    if (uq.containsKey("mxfer")) {
+                        final Number max = getNumber(uq, "mxfer");
+                        final Number usedOwner = getNumber(uq, "caxfer", 0l);
+                        final Number uncommitedOwner = getNumber(uq, "tuo", 0l);
+                        final long transfer_own_used = usedOwner.longValue() + uncommitedOwner.longValue();
+                        final Number usedServed = getNumber(uq, "csxfer", 0l);
+                        final Number uncommitedServed = getNumber(uq, "tua", 0l);
+                        final long transfer_srv_used = usedServed.longValue() + uncommitedServed.longValue();
                         final long reserved;
-                        if (getPluginConfig().getBooleanProperty(CHECK_RESERVED, true)) {
-                            final Number rua = getNumber(uq, "rua");
-                            reserved = rua != null ? rua.longValue() : 0;
+                        if (getPluginConfig().getBooleanProperty(CHECK_RESERVED, false)) {
+                            // Reserved transfer quota for ongoing transfers (currently ignored by clients)
+                            final long transfer_srv_reserved = getNumber(uq, "rua", 0l).longValue();// own account
+                            final long transfer_own_reserved = getNumber(uq, "ruo", 0l).longValue(); // 3rd party
+                            // final long transfer_reserved = getNumber(uq, "tar", 0l).longValue(); //free IP-based
+                            reserved = transfer_own_reserved + transfer_srv_reserved;
                         } else {
                             reserved = 0;
                         }
                         ai.setTrafficMax(max.longValue());
-                        ai.setTrafficLeft(max.longValue() - (used.longValue() + reserved));
+                        ai.setTrafficLeft(max.longValue() - (transfer_own_used + transfer_srv_used + reserved));
                     }
-                    ai.setStatus(status + statusAddition);
                     account.setType(AccountType.PREMIUM);
                 } else {
                     ai.setValidUntil(-1);
-                    ai.setStatus("Free Account" + statusAddition);
                     account.setType(AccountType.FREE);
                 }
                 account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
@@ -1539,7 +1577,7 @@ public class MegaConz extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_RESERVED, JDL.L("plugins.hoster.megaconz.checkreserved", "Check reserved traffic?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_SSL, JDL.L("plugins.hoster.megaconz.usessl", "Use SSL?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HIDE_APP, JDL.L("plugins.hoster.megaconz.hideapp", "Use minimal set of http headers?")).setDefaultValue(true));
