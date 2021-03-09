@@ -21,12 +21,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,10 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv", "theoperaplatform.eu", "info.arte.tv" }, urls = { "http://arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://concert\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://creative\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://future\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://cinema\\.arte\\.tv\\.artejd_decrypted_jd/\\d+", "http://theoperaplatform\\.eu\\.artejd_decrypted_jd/\\d+", "http://info\\.arte\\.tv\\.artejd_decrypted_jd/\\d+" })
 public class ArteTv extends PluginForHost {
@@ -50,7 +48,7 @@ public class ArteTv extends PluginForHost {
     private static final String http_1500                             = "http_1500";
     private static final String http_2200                             = "http_2200";
     private static final String hls                                   = "hls";
-    /* creative.arte.tv extern qualities */ 
+    /* creative.arte.tv extern qualities */
     private static final String http_extern_1000                      = "http_extern_1000";
     private static final String hls_extern_250                        = "hls_extern_250";
     private static final String hls_extern_500                        = "hls_extern_500";
@@ -108,37 +106,37 @@ public class ArteTv extends PluginForHost {
 
     /** Important information: RTMP player: http://www.arte.tv/player/v2//jwplayer6/mediaplayer.6.3.3242.swf */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        quality_intern = downloadLink.getStringProperty("quality_intern", null);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        quality_intern = link.getStringProperty("quality_intern", null);
         br.setFollowRedirects(true);
-        if (downloadLink.getBooleanProperty("offline", false)) {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String apiurl = downloadLink.getStringProperty("apiurl", null);
-        final String link = downloadLink.getStringProperty("mainlink", null);
-        final String lang = downloadLink.getStringProperty("langShort", null);
+        final String apiurl = link.getStringProperty("apiurl", null);
+        final String mainlink = link.getStringProperty("mainlink", null);
+        final String lang = link.getStringProperty("langShort", null);
         String expiredBefore = null, expiredAfter = null, status = null, fileName = null, ext = "";
         br.getPage(apiurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        expiredBefore = downloadLink.getStringProperty("VRA", null);
-        expiredAfter = downloadLink.getStringProperty("VRU", null);
-        fileName = downloadLink.getStringProperty("directName", null);
-        dllink = downloadLink.getStringProperty("directURL", null);
+        expiredBefore = link.getStringProperty("VRA", null);
+        expiredAfter = link.getStringProperty("VRU", null);
+        fileName = link.getStringProperty("directName", null);
+        dllink = link.getStringProperty("directURL", null);
         if (expiredBefore != null && expiredAfter != null) {
             status = getExpireMessage(lang, expiredBefore, expiredAfter);
             /* TODO: Improve this case! */
             if (status != null) {
                 logger.warning(status);
-                downloadLink.setName(status + "_" + fileName);
+                link.setName(status + "_" + fileName);
                 return AvailableStatus.FALSE;
             }
         }
         if (fileName == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!link.matches(TYPE_GUIDE) && !link.matches(TYPE_CONCERT)) {
+        if (!mainlink.matches(TYPE_GUIDE) && !mainlink.matches(TYPE_CONCERT)) {
             ext = dllink.substring(dllink.lastIndexOf("."), dllink.length());
             if (ext.length() > 4) {
                 ext = new Regex(ext, Pattern.compile("\\w/(mp4):", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -153,11 +151,9 @@ public class ArteTv extends PluginForHost {
             br2.setFollowRedirects(true);
             try {
                 con = br2.openHeadConnection(dllink);
-                final long contentLength = con.getLongContentLength();
-                if (con.isOK() && !con.getContentType().contains("html")) {
-                    if (contentLength > 1000) {
-                        /* Only show filesize if we're sure that it definitely is a file. */
-                        downloadLink.setDownloadSize(contentLength);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -170,7 +166,7 @@ public class ArteTv extends PluginForHost {
             }
         } else if (quality_intern.contains("hls_")) {
         }
-        downloadLink.setFinalFileName(fileName);
+        link.setFinalFileName(fileName);
         return AvailableStatus.TRUE;
     }
 
@@ -250,46 +246,26 @@ public class ArteTv extends PluginForHost {
         return nicedate;
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
-        if (quality_intern.startsWith("rtmp_")) {
-            downloadRTMP(downloadLink);
-        } else if (quality_intern.startsWith("http_")) {
+    private void download(final DownloadLink link) throws Exception {
+        if (quality_intern.startsWith("http_")) {
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         } else if (quality_intern.startsWith("hls_")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
-    /* Currently not used! */
-    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        if (dllink.startsWith("rtmp")) {
-            try {
-                dl = new RTMPDownload(this, downloadLink, dllink);
-            } catch (final NoClassDefFoundError e) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-            }
-            setupRTMPConnection(dl);
-            if (!((RTMPDownload) dl).startDownload()) {
-                if (downloadLink.getBooleanProperty("STREAMURLISEXPIRED", false)) {
-                    downloadLink.setProperty("STREAMURLISEXPIRED", false);
-                    refreshStreamingUrl(downloadLink.getStringProperty("tvguideUrl", null), downloadLink);
-                }
-            }
         }
     }
 
@@ -299,61 +275,9 @@ public class ArteTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
-    /* TODO: Fix! */
-    private void refreshStreamingUrl(String s, DownloadLink d) throws Exception {
-        if (s == null) {
-            return;
-        }
-        br.getPage(s);
-        HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
-        HashMap<String, String> streamValue;
-        String vsr = br.getRegex("\"VSR\":\\{(.*?\\})\\}").getMatch(0);
-        if (vsr != null) {
-            for (String[] ss : new Regex(vsr, "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}").getMatches()) {
-                streamValue = new HashMap<String, String>();
-                for (String[] peng : new Regex(ss[1], "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,").getMatches()) {
-                    streamValue.put(peng[0], peng[1]);
-                }
-                streamValues.put(ss[0], streamValue);
-            }
-            String streamingType = d.getStringProperty("streamingType", null);
-            if (streamingType == null) {
-                return;
-            }
-            if (streamValues.containsKey(streamingType)) {
-                streamValue = new HashMap<String, String>(streamValues.get(streamingType));
-                String url = streamValue.get("url");
-                if (!url.startsWith("mp4:")) {
-                    url = "mp4:" + url;
-                }
-                d.setProperty("directURL", streamValue.get("streamer") + url);
-            }
-        }
-    }
-
-    private void setupRTMPConnection(DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        setupRtmp(rtmp, dllink);
-        rtmp.setResume(true);
-    }
-
-    public void setupRtmp(jd.network.rtmp.url.RtmpUrlConnection rtmp, String clipuri) {
-        String app = new Regex(clipuri, "rtmp://[^\\/]+/(.*?)/").getMatch(0);
-        String playPath = new Regex(clipuri, "rtmp://[^\\/]+/(.*?)/(.+)").getMatch(1);
-        String tcUrl = new Regex(clipuri, "(rtmp://[^\\/]+/.*?/)").getMatch(0);
-        String arteVpLang = br.getRegex("arte_vp_url=\'(.*?)\'").getMatch(0);
-        String pageUrl = "http://www.arte.tv/player/v2/index.php?json_url=" + Encoding.urlTotalEncode(arteVpLang) + "&lang=de_DE&config=arte_tvguide&rendering_place=" + Encoding.urlTotalEncode(br.getURL());
-        rtmp.setSwfVfy("http://www.arte.tv/arte_vp/jwplayer6/6.9.4867/jwplayer.flash.6.9.4867.swf");
-        rtmp.setTcUrl(tcUrl);
-        rtmp.setPageUrl(pageUrl);
-        rtmp.setPlayPath(playPath);
-        rtmp.setApp(app + "/");
-        rtmp.setUrl(clipuri);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        download(link);
     }
 
     @Override
@@ -374,19 +298,19 @@ public class ArteTv extends PluginForHost {
     }
 
     public static HashMap<String, String> phrasesEN = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
-        }
-    });
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Check_your_plugin_settings_activate_missing_formats_e_g_subtitled_versions_or_other_language_versions_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "This video is not available anymore since %s!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "This content is not available yet. It will be available from the %s!_");
+                                                        }
+                                                    });
     public static HashMap<String, String> phrasesDE = new HashMap<String, String>(new HashMap<String, String>() {
-        {
-            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
-            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
-        }
-    });
+                                                        {
+                                                            put("ERROR_USER_NEEDS_TO_CHANGE_FORMAT_SELECTION", "Überprüfe_deine_Plugineinstellungen_aktiviere_fehlende_Formate_z_B_Untertitelte_Version_oder_andere_Sprachversionen_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_ANYMORE_COPYRIGHTS_EXPIRED", "Dieses Video ist seit dem %s nicht mehr verfügbar!_");
+                                                            put("ERROR_CONTENT_NOT_AVAILABLE_YET", "Dieses Video ist noch nicht verfügbar. Es ist erst ab dem %s verfügbar!_");
+                                                        }
+                                                    });
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
