@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muzyka.interia.pl" }, urls = { "http://(www\\.)?muzyka\\.interia\\.pl/teledyski/teledysk/.*?,\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muzyka.interia.pl" }, urls = { "http://(www\\.)?muzyka\\.interia\\.pl/teledyski/teledysk/.*?,\\d+" })
 public class MuzykaInteriaPl extends PluginForDecrypt {
-
     public MuzykaInteriaPl(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -36,12 +34,22 @@ public class MuzykaInteriaPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage("http://muzyka.interia.pl/getVideoInfo?id=" + new Regex(parameter, "(\\d+)$").getMatch(0));
+        br.setFollowRedirects(true);
+        final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
+        br.getPage("https://muzyka.interia.pl/getVideoInfo?id=" + fid);
+        if (!br.getURL().contains(fid) || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String artist = br.getRegex("<artist>(.*?)</artist>").getMatch(0);
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (artist == null || title == null) return null;
+        if (artist == null || title == null) {
+            return null;
+        }
         String[] links = br.getRegex("<url_(lo|hi)>(http://.*?)</url_(lo|hi)>").getColumn(1);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            return null;
+        }
         for (String dl : links) {
             DownloadLink finallink = createDownloadlink("directhttp://" + dl);
             finallink.setFinalFileName(artist + " - " + title + ".mp4");
@@ -54,5 +62,4 @@ public class MuzykaInteriaPl extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

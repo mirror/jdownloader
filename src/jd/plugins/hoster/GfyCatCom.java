@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,14 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -108,8 +108,15 @@ public class GfyCatCom extends PluginForHost {
         final PreferredFormat format = getPreferredFormat();
         if (br.getHost().equalsIgnoreCase("gifdeliverynetwork.com")) {
             /* 2020-06-18: New and should not be needed! */
-            link.setName(this.getFID(link) + ".webm");
             dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
+            }
+            if (dllink == null || dllink.contains(".webm")) {
+                link.setName(this.getFID(link) + ".webm");
+            } else {
+                link.setName(this.getFID(link) + ".mp4");
+            }
         } else {
             final String simpleJSON = br.getRegex("<script data-react-helmet\\s*=\\s*\"true\"\\s*type\\s*=\\s*\"application/ld\\+json\">\\s*(.*?)\\s*</script>").getMatch(0);
             final String complicatedJSON = br.getRegex("___INITIAL_STATE__\\s*=\\s*(\\{.*?)\\s*</script").getMatch(0);
@@ -221,7 +228,7 @@ public class GfyCatCom extends PluginForHost {
                 dllink = PluginJSonUtils.getJsonValue(complicatedJSON, "webmUrl");
             }
         }
-        if (!isDownload) {
+        if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();

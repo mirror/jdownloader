@@ -183,58 +183,90 @@ public class EvoloadIo extends PluginForHost {
         if (status == AvailableStatus.FALSE) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            if (this.usedAPIDuringAvailablecheck) {
-                br.getPage(link.getPluginPatternMatcher());
-            }
-            final String recaptchaV2Response;
-            final String reCaptchaKey = br.getRegex("recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
-            if (StringUtils.isNotEmpty(reCaptchaKey)) {
-                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
-            } else {
-                recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, null).getToken();
-            }
-            final Map<String, Object> postdata = new HashMap<String, Object>();
-            postdata.put("code", this.getFID(link));
-            postdata.put("token", recaptchaV2Response);
-            br.getHeaders().put("Accept", "application/json, text/plain, */*");
-            final boolean doExtraRequest = false;
-            if (doExtraRequest) {
-                br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdata));
-                final String xstatus = PluginJSonUtils.getJson(this.br, "xstatus");
-                if (!StringUtils.isEmpty(xstatus)) {
-                    /* E.g. status "del" */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String original_name = PluginJSonUtils.getJson(this.br, "original_name");
-                if (!StringUtils.isEmpty(original_name)) {
-                    link.setFinalFileName(original_name);
-                }
-            }
-            br.postPageRaw("/SecurePlayer", JSonStorage.serializeToJson(postdata));
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        if (attemptStoredDownloadurlDownload(link, resumable, maxchunks)) {
+            logger.info("Resuming with stored directurl");
+            dl.startDownload();
+            return;
+        }
+        if (this.usedAPIDuringAvailablecheck) {
+            br.getPage(link.getPluginPatternMatcher());
+        }
+        final String recaptchaV2Response;
+        final String reCaptchaKey = br.getRegex("recaptcha/api\\.js\\?render=([^<>\"]+)\"").getMatch(0);
+        if (StringUtils.isNotEmpty(reCaptchaKey)) {
+            recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
+        } else {
+            recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br, null).getToken();
+        }
+        final Map<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("code", this.getFID(link));
+        postdata.put("token", recaptchaV2Response);
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        final boolean doExtraRequest = false;
+        if (doExtraRequest) {
+            br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdata));
             final String xstatus = PluginJSonUtils.getJson(this.br, "xstatus");
             if (!StringUtils.isEmpty(xstatus)) {
                 /* E.g. status "del" */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = PluginJSonUtils.getJson(br, "src");
-            /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
-            final String name = PluginJSonUtils.getJson(this.br, "name");
-            if (!StringUtils.isEmpty(name) && link.getFinalFileName() == null) {
-                link.setFinalFileName(name);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String original_name = PluginJSonUtils.getJson(this.br, "original_name");
+            if (!StringUtils.isEmpty(original_name)) {
+                link.setFinalFileName(original_name);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
+        br.postPageRaw("/SecurePlayer", JSonStorage.serializeToJson(postdata));
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (entries.containsKey("xstatus")) {
+            /* E.g. status "del" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. */
+        final ArrayList<String> downloadCandidates = new ArrayList<String>();
+        final Map<String, Object> streamMap = (Map<String, Object>) entries.get("stream");
+        final String streamDownload1 = (String) streamMap.get("src");
+        final String streamDownload2 = (String) streamMap.get("backup");
+        final Map<String, Object> premiumBackupMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "premium/backup");
+        final String premiumBackupDownload1 = (String) premiumBackupMap.get("original_src");
+        final String premiumBackupDownload2 = (String) premiumBackupMap.get("encoded_src");
+        /* Add collected candidates in preferred order (e.g. original > encoded version). */
+        if (!StringUtils.isEmpty(premiumBackupDownload1)) {
+            downloadCandidates.add(premiumBackupDownload1);
+        }
+        if (!StringUtils.isEmpty(premiumBackupDownload2)) {
+            downloadCandidates.add(premiumBackupDownload2);
+        }
+        if (!StringUtils.isEmpty(streamDownload1)) {
+            downloadCandidates.add(streamDownload1);
+        }
+        if (!StringUtils.isEmpty(streamDownload2)) {
+            downloadCandidates.add(streamDownload2);
+        }
+        /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
+        final String name = (String) entries.get("name");
+        if (!StringUtils.isEmpty(name) && link.getFinalFileName() == null) {
+            link.setFinalFileName(name);
+        }
+        if (downloadCandidates.isEmpty()) {
+            logger.warning("Failed to find final downloadurl");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Number of possible download candidates: " + downloadCandidates.size());
+        boolean fail = true;
+        for (final String downloadCandidate : downloadCandidates) {
+            logger.info("Checking stream: " + downloadCandidate);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadCandidate, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                fail = false;
+                break;
+            }
+        }
+        if (fail) {
+            logger.warning("All stream candidates failed");
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -250,8 +282,30 @@ public class EvoloadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty("free_directlink", dl.getConnection().getURL().toString());
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumes, final int chunks) throws Exception {
+        final String url = link.getStringProperty("free_directlink");
+        if (url == null) {
+            return false;
+        }
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumes, chunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                dl.getConnection().disconnect();
+                return false;
+            }
+        } catch (final Throwable e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e2) {
+            }
+        }
+        return false;
     }
 
     protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, final String reCaptchaKey) throws PluginException {

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -36,23 +38,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com", "hardsextube.com" }, urls = { "https?://(?:www\\.)?hardsextube\\.com/(video/)?(video|embed)/?-?\\d+|https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" })
-public class HardSexTubeCom extends antiDDoSForHost {
-    public HardSexTubeCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gotporn.com" }, urls = { "https?://(?:www\\.)?gotporn\\.com/[a-z0-9\\-]+/video\\-\\d+|https?://(?:www\\.)?gotporn\\.com/video/\\d+" })
+public class GotpornCom extends antiDDoSForHost {
+    public GotpornCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.gotporn.com/");
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if ("hardsextube.com".equals(getHost())) {
-            if (host == null || "hardsextube.com".equals(host)) {
-                return "gotporn.com";
-            }
-        }
-        return super.rewriteHost(host);
     }
 
     @Override
@@ -92,18 +82,18 @@ public class HardSexTubeCom extends antiDDoSForHost {
     // "&start=0");
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Make sure to correct old urls! */
-        correctDownloadLink(downloadLink);
+        correctDownloadLink(link);
         dllink = null;
-        final String vid = getVID(downloadLink);
+        final String vid = getVID(link);
         String ext = null;
-        if (!downloadLink.isNameSet()) {
-            downloadLink.setName(vid);
+        if (!link.isNameSet()) {
+            link.setName(vid);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(downloadLink.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (!br.containsHTML("video-player-wrap") || !br.getURL().contains("/video/") || br.getRedirectLocation() != null || br.getHttpConnection().getResponseCode() == 302 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -122,7 +112,7 @@ public class HardSexTubeCom extends antiDDoSForHost {
             filename = vid;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        downloadLink.setProperty("plain_title", filename);
+        link.setProperty("plain_title", filename);
         if (enable_site) {
             dllink = this.br.getRegex("\"(http[^<>\"]*?)\" type=(\"|\\')video/mp4(\"|\\')").getMatch(0);
             if (dllink == null) {
@@ -171,17 +161,19 @@ public class HardSexTubeCom extends antiDDoSForHost {
         }
         ext = getEXT(dllink);
         if (only_downloadable_via_free_account) {
-            downloadLink.getLinkStatus().setStatusText("Only downloadable via free account");
-            downloadLink.setName(filename + ext);
+            link.getLinkStatus().setStatusText("Only downloadable via free account");
+            link.setName(filename + ext);
             return AvailableStatus.TRUE;
         }
-        downloadLink.setFinalFileName(filename + ext);
+        link.setFinalFileName(filename + ext);
         URLConnectionAdapter con = null;
         dllink = HTMLEntities.unhtmlentities(dllink);
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(dllink));
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -195,8 +187,8 @@ public class HardSexTubeCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (only_downloadable_via_free_account) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -208,21 +200,21 @@ public class HardSexTubeCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         boolean resume = true;
-        if (downloadLink.getBooleanProperty(HardSexTubeCom.NORESUME, false)) {
+        if (link.getBooleanProperty(GotpornCom.NORESUME, false)) {
             logger.info("Resume is disabled for this try");
             resume = false;
-            downloadLink.setProperty(HardSexTubeCom.NORESUME, Boolean.valueOf(false));
+            link.setProperty(GotpornCom.NORESUME, Boolean.valueOf(false));
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 416) {
                 logger.info("Resume impossible, disabling it for the next try");
-                downloadLink.setChunksProgress(null);
-                downloadLink.setProperty(HardSexTubeCom.NORESUME, Boolean.valueOf(true));
+                link.setChunksProgress(null);
+                link.setProperty(GotpornCom.NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             br.followConnection();
