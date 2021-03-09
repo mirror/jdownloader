@@ -204,13 +204,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
-        externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add("//www.hardsextube.com/video/" + externID + "/");
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
         if (externID == null) {
             externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
@@ -325,13 +318,6 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add("//stileproject.com/video/" + externID);
-            if (!processAll) {
-                return decryptedLinks;
-            }
-        }
-        externID = br.getRegex("\"((?:https?:)?//(www\\.)?deviantclip\\.com/watch/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(externID);
             if (!processAll) {
                 return decryptedLinks;
             }

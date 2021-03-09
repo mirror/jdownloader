@@ -20,14 +20,18 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VoeSx extends XFileSharingProBasic {
@@ -148,13 +152,40 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean isVideohosterEmbed() {
+        /* 2021-03-09 */
+        return true;
+    }
+
+    @Override
     protected String getDllinkVideohost(final String src) {
         /** 2021-03-01: Prefer HLS over HTTP as they've hidden their http URLs via js */
-        final String hlsMaster = new Regex(correctedBR, "\"hls\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
+        final String hlsMaster = new Regex(src, "\"hls\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
         if (hlsMaster != null) {
             return hlsMaster;
         } else {
             return super.getDllinkVideohost(src);
         }
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        // if (br.containsHTML(">\\s*This video can be watched as embed only")) {
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
+        // }
+    }
+
+    @Override
+    protected String requestFileInformationVideoEmbed(final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+        /* 2021-03-09: Special: New browser required else they won't let us stream some videos at all! */
+        final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
+        final Browser brc = new Browser();
+        brc.getPage("https://" + this.getHost() + "/e/" + this.getFUIDFromURL(link));
+        final String dllink = getDllinkVideohost(brc.toString());
+        if (StringUtils.isEmpty(dllink) && embedOnly) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
+        }
+        return dllink;
     }
 }

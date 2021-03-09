@@ -80,7 +80,7 @@ public class SoundcloudCom extends PluginForHost {
      */
     public final static String   CLIENTID_8TRACKS                            = "3904229f42df3999df223f6ebf39a8fe";
     /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
-    public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM             = "PtMyqifCQMKLqwP0A6YQ";
+    // public final static String CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
     /* json: media/encodings */
     public static final String[] stream_qualities                            = { "stream_url", "http_mp3_128_url", "hls_mp3_128_url" };
     // public static final String[] streamtypes = { "download", "stream", "streams" };

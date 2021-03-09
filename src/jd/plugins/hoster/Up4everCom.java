@@ -116,6 +116,7 @@ public class Up4everCom extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(String host) {
+        /* 2021-03-09: Main domain has changed from up-4ever.org to upload-4ever.com */
         return rewriteHost(getPluginDomains(), host, (String[]) null);
     }
 
@@ -130,7 +131,7 @@ public class Up4everCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "up-4ever.org", "up-4ever.com", "up-4ever.net", "up-4.net" });
+        ret.add(new String[] { "upload-4ever.com", "up-4ever.org", "up-4ever.com", "up-4ever.net", "up-4.net" });
         return ret;
     }
 }

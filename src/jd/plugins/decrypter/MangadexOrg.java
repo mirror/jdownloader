@@ -30,6 +30,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         getPage(parameter.getCryptedUrl().replace("mangadex.cc", "mangadex.org"));
+        final String apiBase = "https://api.mangadex.org/v2";
         String urlTitle = new Regex(parameter.getCryptedUrl(), "/title/\\d+/([^/]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/covers")) {
@@ -63,8 +64,10 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             }
         } else if (StringUtils.containsIgnoreCase(parameter.getCryptedUrl(), "/chapter/")) {
             final String chapterID = new Regex(parameter, "/chapter/(\\d+)").getMatch(0);
-            getPage("/api/?id=" + chapterID + "&type=chapter");
-            final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            getPage(apiBase + "/chapter/" + chapterID + "?saver=0&include=manga");
+            Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            map = (Map<String, Object>) map.get("data");
+            map = (Map<String, Object>) map.get("chapter");
             final String hash = (String) map.get("hash");
             final String server = (String) map.get("server");
             final String status = (String) map.get("status");
@@ -79,12 +82,14 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             final StringBuilder sb = new StringBuilder();
             final String mangaTitle;
             if (StringUtils.isNotEmpty(mangaID)) {
-                getPage("/api/?id=" + mangaID + "&type=manga");
-                final Map<String, Object> manga = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                mangaTitle = (String) ((Map<String, Object>) manga.get("manga")).get("title");
-                if (StringUtils.isNotEmpty(mangaTitle)) {
-                    sb.append(mangaTitle);
-                }
+                /* 2021-03-09: TODO */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // getPage("/api/?id=" + mangaID + "&type=manga");
+                // final Map<String, Object> manga = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                // mangaTitle = (String) ((Map<String, Object>) manga.get("manga")).get("title");
+                // if (StringUtils.isNotEmpty(mangaTitle)) {
+                // sb.append(mangaTitle);
+                // }
             } else {
                 mangaTitle = null;
             }
@@ -117,7 +122,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 title = "";
             }
             fp.setName(sb.toString());
-            final List<Object> page_array = (List<Object>) map.get("page_array");
+            final List<Object> page_array = (List<Object>) map.get("pages");
             if (page_array == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -98,10 +98,6 @@ public class VideoOneLife extends PornEmbedParser {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (externID.contains("hardsextube.com/video/")) { // Fix for crypted version
-                decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + embedID + "/"));
-                return decryptedLinks;
-            }
             if (externID.contains("seabliss.com/")) {
                 externID = "directhttp://" + externID + "/" + embedID + ".mp4";
                 decryptedLinks.add(createDownloadlink(externID));
