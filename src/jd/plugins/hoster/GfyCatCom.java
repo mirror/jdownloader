@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.GfycatConfig;
@@ -131,7 +132,7 @@ public class GfyCatCom extends PluginForHost {
                 }
                 final String username = (String) entries.get("author");
                 String title = null;
-                if (!true) {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
                     /* Alternative ways to find title */
                     if (complicatedJSON != null) {
                         try {
@@ -152,6 +153,8 @@ public class GfyCatCom extends PluginForHost {
                     /* 2020-11-26: Remove stuff we don't want! */
                     title = title.replaceFirst("(\\s*Porn\\s*GIF\\s*(by.+)?)", "");
                 }
+                /* 2021-03-09: Fallback - title can be "" (empty) [after title-correction]! */
+                title = this.getFID(link);
                 if (!StringUtils.isAllNotEmpty(datePublished, username, title)) {
                     /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -205,7 +208,13 @@ public class GfyCatCom extends PluginForHost {
                      * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be
                      * published on the same date (very rare case).
                      */
-                    link.setFinalFileName(dateFormatted + "_" + username + " - " + this.getFID(link) + " - " + title + ext);
+                    String filename = dateFormatted + "_" + username;
+                    /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
+                    if (!title.equals(this.getFID(link))) {
+                        filename += " - " + this.getFID(link);
+                    }
+                    filename += " - " + title + ext;
+                    link.setFinalFileName(filename);
                 }
             } else {
                 /* Old handling */
