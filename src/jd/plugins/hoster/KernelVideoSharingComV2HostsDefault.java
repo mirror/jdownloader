@@ -70,7 +70,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "upornia.com" });
         ret.add(new String[] { "finevids.xxx" });
         ret.add(new String[] { "txxx.com", "tubecup.com" });
-        ret.add(new String[] { "freepornvs.com" });
         ret.add(new String[] { "vr.pornhat.com" });
         ret.add(new String[] { "xxxymovies.com" });
         ret.add(new String[] { "needgayporn.com" });
