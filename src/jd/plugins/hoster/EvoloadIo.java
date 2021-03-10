@@ -227,24 +227,47 @@ public class EvoloadIo extends PluginForHost {
         }
         /* 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. */
         final ArrayList<String> downloadCandidates = new ArrayList<String>();
+        /* 2021-03-10: Don't do this as we would have to solve another reCaptchaV2 for this! */
+        final boolean allowExtraStepForDownload = false;
+        final String allow_download = (String) entries.get("allow_download");
+        if ("yes".equalsIgnoreCase(allow_download) && allowExtraStepForDownload) {
+            final Map<String, Object> postdataExtra = postdata;
+            postdataExtra.put("type", "download");
+            br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdataExtra));
+            Map<String, Object> entries2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries2 = (Map<String, Object>) entries2.get("download_data");
+            if (entries2 != null) {
+                final String freeOfficialDownload = (String) entries2.get("original_src");
+                final String freeOfficialStreamDownload = (String) entries2.get("encoded_src");
+                if (!StringUtils.isEmpty(freeOfficialDownload)) {
+                    downloadCandidates.add(freeOfficialDownload);
+                }
+                if (!StringUtils.isEmpty(freeOfficialStreamDownload)) {
+                    downloadCandidates.add(freeOfficialStreamDownload);
+                }
+            }
+        }
         final Map<String, Object> streamMap = (Map<String, Object>) entries.get("stream");
-        final String streamDownload1 = (String) streamMap.get("src");
-        final String streamDownload2 = (String) streamMap.get("backup");
         final Map<String, Object> premiumBackupMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "premium/backup");
-        final String premiumBackupDownload1 = (String) premiumBackupMap.get("original_src");
-        final String premiumBackupDownload2 = (String) premiumBackupMap.get("encoded_src");
-        /* Add collected candidates in preferred order (e.g. original > encoded version). */
-        if (!StringUtils.isEmpty(premiumBackupDownload1)) {
-            downloadCandidates.add(premiumBackupDownload1);
+        if (premiumBackupMap != null) {
+            final String premiumBackupDownload1 = (String) premiumBackupMap.get("original_src");
+            final String premiumBackupDownload2 = (String) premiumBackupMap.get("encoded_src");
+            if (!StringUtils.isEmpty(premiumBackupDownload1)) {
+                downloadCandidates.add(premiumBackupDownload1);
+            }
+            if (!StringUtils.isEmpty(premiumBackupDownload2)) {
+                downloadCandidates.add(premiumBackupDownload2);
+            }
         }
-        if (!StringUtils.isEmpty(premiumBackupDownload2)) {
-            downloadCandidates.add(premiumBackupDownload2);
-        }
-        if (!StringUtils.isEmpty(streamDownload1)) {
-            downloadCandidates.add(streamDownload1);
-        }
-        if (!StringUtils.isEmpty(streamDownload2)) {
-            downloadCandidates.add(streamDownload2);
+        if (streamMap != null) {
+            final String streamDownload1 = (String) streamMap.get("src");
+            final String streamDownload2 = (String) streamMap.get("backup");
+            if (!StringUtils.isEmpty(streamDownload1)) {
+                downloadCandidates.add(streamDownload1);
+            }
+            if (!StringUtils.isEmpty(streamDownload2)) {
+                downloadCandidates.add(streamDownload2);
+            }
         }
         /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
         final String name = (String) entries.get("name");
@@ -279,7 +302,7 @@ public class EvoloadIo extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find any downloadable stream");
             }
         }
         link.setProperty("free_directlink", dl.getConnection().getURL().toString());

@@ -117,10 +117,10 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             }
             fp.setName(sb.toString());
             final String titleForFilename;
-            if (!StringUtils.isEmpty(mangaTitle)) {
-                titleForFilename = mangaTitle;
-            } else {
+            if (!StringUtils.isEmpty(title)) {
                 titleForFilename = title;
+            } else {
+                titleForFilename = mangaTitle;
             }
             final List<Object> page_array = (List<Object>) map.get("pages");
             if (page_array == null) {

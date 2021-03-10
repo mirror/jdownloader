@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/.*" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/.*\\.mp4.*" })
 public class AnyhentaiCom extends PluginForHost {
     private String dllink            = null;
     private String customFavIconHost = null;
@@ -38,7 +38,7 @@ public class AnyhentaiCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "https://anyhentai.com/";
     }
 
     @Override
@@ -46,39 +46,46 @@ public class AnyhentaiCom extends PluginForHost {
         return -1;
     }
 
+    /** 2021-03-10: Small helper plugin so JD can handle directURLs of this CDN. */
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         /*
-         * To process anyhentai media link from javhub and highporn with reference. Filename should be renamed manually
+         * To process anyhentai media link from javhub and highporn with reference.
          */
-        dllink = downloadLink.getDownloadURL(); // The link is a final link
+        dllink = link.getPluginPatternMatcher(); // The link is the final downloadlink
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", "https://javhub.net");
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         br.getHeaders().put("Referer", "https://javhub.net");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -170,5 +171,67 @@ public class FlorenfileCom extends XFileSharingProBasic {
         /* 2020-03-19: Special: jdlog://4986715302851/ */
         final Form loginform = this.findLoginform(br);
         return super.isLoggedin() && loginform == null;
+    }
+    // @Override
+    // protected String getDllinkVideohost(final String src) {
+    // /*
+    // * 2021-03-10: Don't download stream if official download is available: They provide previews of videos as streams - we want to
+    // * download the original files!
+    // */
+    // Form freeDownloadForm = null;
+    // Form premiumDownloadForm = null;
+    // try {
+    // freeDownloadForm = this.findFormDownload1Free();
+    // premiumDownloadForm = this.findFormDownload2Premium();
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // }
+    // if (freeDownloadForm != null || premiumDownloadForm != null) {
+    // return null;
+    // } else {
+    // return super.getDllinkVideohost(src);
+    // }
+    // }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /*
+         * 2021-03-10: Don't download stream if official download is available: They provide previews of videos as streams - we want to
+         * download the original files!
+         */
+        Form freeDownloadForm = null;
+        Form premiumDownloadForm = null;
+        try {
+            freeDownloadForm = this.findFormDownload1Free();
+            premiumDownloadForm = this.findFormDownload2Premium();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (freeDownloadForm != null || premiumDownloadForm != null) {
+            return null;
+        } else {
+            return super.getDllink(link, account, br, src);
+        }
+    }
+
+    @Override
+    protected boolean isVideohosterEmbedHTML() {
+        /*
+         * 2021-03-10: Don't download stream if official download is available: They provide previews of videos as streams - we want to
+         * download the original files!
+         */
+        Form freeDownloadForm = null;
+        Form premiumDownloadForm = null;
+        try {
+            freeDownloadForm = this.findFormDownload1Free();
+            premiumDownloadForm = this.findFormDownload2Premium();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (freeDownloadForm != null || premiumDownloadForm != null) {
+            return false;
+        } else {
+            return super.isVideohosterEmbedHTML();
+        }
     }
 }
