@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -29,11 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -178,11 +178,15 @@ public class TakefileLink extends XFileSharingProBasic {
         final AccountInfo aiNormal;
         try {
             aiNormal = super.fetchAccountInfoWebsite(account);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.removeProperty("takefileVip");
             }
-            throw e;
+            if (br.containsHTML(">\\s*Your IP is banned")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your IP is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw e;
+            }
         }
         if (account.getType() == AccountType.PREMIUM && !account.hasProperty("takefileVip")) {
             return aiNormal;

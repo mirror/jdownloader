@@ -22,6 +22,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.jdserv.JDServUtils;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -41,17 +50,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.jdserv.JDServUtils;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 /**
- * alternative log downloader
+ * Alternative AppWork log downloader
  *
  * @author raztoki
  *
@@ -74,17 +74,17 @@ public class JdLog extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-        downloadLink.setFinalFileName(uid + ".log");
+        final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        link.setFinalFileName(uid + ".log");
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String uid = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         final String url = JDServUtils.BASE + "logunsorted?" + uid;
         final List<AuthenticationFactory> authenticationFactories = AuthenticationController.getInstance().getSortedAuthenticationFactories(URLHelper.createURL(url), null);
         authenticationFactories.add(new CallbackAuthenticationFactory() {
@@ -93,7 +93,7 @@ public class JdLog extends PluginForHost {
             @Override
             protected Authentication askAuthentication(Browser browser, Request request, String realm) {
                 try {
-                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), realm, downloadLink);
+                    final Login login = requestLogins(org.jdownloader.translate._JDT.T.DirectHTTP_getBasicAuth_message(), realm, link);
                     if (login != null) {
                         final Authentication ret = new DefaultAuthenticanFactory(request.getURL().getHost(), realm, login.getUsername(), login.getPassword()).buildAuthentication(browser, request);
                         addAuthentication(ret);
@@ -124,7 +124,7 @@ public class JdLog extends PluginForHost {
         });
         for (final AuthenticationFactory authenticationFactory : authenticationFactories) {
             br.setCustomAuthenticationFactory(authenticationFactory);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
             if (dl.getConnection().getResponseCode() == 401) {
                 dl.getConnection().disconnect();
             } else {
@@ -132,11 +132,13 @@ public class JdLog extends PluginForHost {
             }
         }
         if (dl == null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         }
         if (dl.getConnection().getResponseCode() == 401) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
+        } else if (dl.getConnection().getCompleteContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
         // the following determine is its empty container.
@@ -148,9 +150,9 @@ public class JdLog extends PluginForHost {
                 final String out = parseLocalFile(file);
                 if (StringUtils.equals(out, "LogID: " + uid + "\r\n\r\n")) {
                     // set as offline
-                    downloadLink.setProperty("offlineByRegexConfirmation", true);
+                    link.setProperty("offlineByRegexConfirmation", true);
                     // delete method
-                    downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                    link.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
                         @Override
                         public void interrupt() {
                         }
@@ -158,7 +160,7 @@ public class JdLog extends PluginForHost {
                         @Override
                         public void execute(DownloadSession currentSession) {
                             final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
-                            delete.add(downloadLink);
+                            delete.add(link);
                             DownloadWatchDog.getInstance().delete(delete, null);
                         }
 
@@ -172,7 +174,7 @@ public class JdLog extends PluginForHost {
                 }
             } else if (dlsize < 125) {
                 // delete method
-                downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                link.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
                     @Override
                     public void interrupt() {
                     }
@@ -180,7 +182,7 @@ public class JdLog extends PluginForHost {
                     @Override
                     public void execute(DownloadSession currentSession) {
                         final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
-                        delete.add(downloadLink);
+                        delete.add(link);
                         DownloadWatchDog.getInstance().delete(delete, null);
                     }
 

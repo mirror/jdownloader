@@ -112,6 +112,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
+    /** TODO: Review NOCHUNKS handling: https://svn.jdownloader.org/issues/89232 */
     private static final String NOCHUNKS          = "NOCHUNKS";
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
