@@ -42,13 +42,10 @@ import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spon.de" }, urls = { "https?://(?:www\\.)?spiegel\\.de/.+", "https?://(?:www\\.)?spon\\.de/[A-Za-z0-9]+" })
 public class SpiegelDe extends PluginForDecrypt {
-    private static final Pattern PATTERN_SUPPORED_FOTOSTRECKE         = Pattern.compile("https?://[^/]+/fotostrecke/[a-z0-9\\-]+\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE        = Pattern.compile("https?://[^/]+/fotostrecke/([a-z0-9\\-]+)-(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final String  PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE = "https?://[^/]+/fotostrecke/[a-z0-9\\-]+\\d+\\-\\d+\\.html";
     private static final String  PATTERN_SUPPORTED_SPON_SHORT_URL     = ".+spon\\.de/[A-Za-z0-9]+";
     private static final String  PATTERN_SUPPORTED_REDIRECT_ARTICLE   = ".+/artikel/.+";
-    // Patterns für Fotostrecken
-    private static final Pattern PATTERN_IMG_URL                      = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
-    private static final Pattern PATTERN_IMG_TITLE                    = Pattern.compile("<meta name=\"description\" content=\"(.+?)\" />");
 
     public SpiegelDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +66,7 @@ public class SpiegelDe extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(finallink));
             }
             return decryptedLinks;
-        } else if (new Regex(param.getCryptedUrl(), PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
+        } else if (new Regex(param.getCryptedUrl(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             return crawlGallery(param);
         } else {
             return this.crawlSpiegelVideo(param);
@@ -81,12 +78,7 @@ public class SpiegelDe extends PluginForDecrypt {
         /* Picture galleries */
         br.setFollowRedirects(true);
         this.br.getPage(param.getCryptedUrl());
-        String title = br.getRegex(SpiegelDe.PATTERN_IMG_TITLE).getMatch(0);
-        if (title == null) {
-            logger.warning("Decrypter broken for link: " + param.toString());
-            return null;
-        }
-        title = Encoding.htmlDecode(title.trim());
+        final String title = new Regex(param.getCryptedUrl(), PATTERN_SUPPORTED_FOTOSTRECKE).getMatch(0).replace("-", " ").trim();
         if (new Regex(param.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE_SINGLE).matches()) {
             final String finallink = br.getRegex("<div class=\"biga\\-image\".*?<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
@@ -95,38 +87,21 @@ public class SpiegelDe extends PluginForDecrypt {
             }
             final String finalname = title + ".jpg";
             final DownloadLink dlLink = this.createDownloadlink(finallink);
-            dlLink.setProperty("decryptedfilename", finalname);
             dlLink.setFinalFileName(finalname);
             decryptedLinks.add(dlLink);
-        } else if (new Regex(param.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
-            int count = 1;
+        } else if (new Regex(param.getCryptedUrl(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
+            int index = 0;
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setName(title.trim());
-            String next = param.getCryptedUrl();
-            while (next != null) {
-                if (count > 1) {
-                    br.getPage(next);
-                }
-                next = br.getRegex("<link rel=\"next\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-                final String imgLink = br.getRegex("<div class=\"biga\\-image\".*?<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (imgLink == null) {
-                    break;
-                }
-                final String ending = getFileNameExtensionFromString(imgLink);
-                if (imgLink != null) {
-                    final String finalname = title + "-" + count + ending;
-                    final DownloadLink dlLink = this.createDownloadlink(imgLink);
-                    filePackage.add(dlLink);
-                    dlLink.setProperty("decryptedfilename", finalname);
-                    dlLink.setFinalFileName(title + "-" + count + ending);
-                    dlLink.setAvailable(true);
-                    decryptedLinks.add(dlLink);
-                    count++;
-                }
-                if (decryptedLinks.size() == 0) {
-                    logger.warning("Decrypter broken for link: " + param.toString());
-                    return null;
-                }
+            final String[] images = br.getRegex("class=\"block w-auto h-full mx-auto\"[^>]*src=\"(https?://[^\"]+)").getColumn(0);
+            for (final String image : images) {
+                final String ending = getFileNameExtensionFromString(image);
+                final DownloadLink dl = this.createDownloadlink(image);
+                filePackage.add(dl);
+                dl.setFinalFileName(title + "-" + (index + 1) + ending);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                index++;
             }
         }
         return decryptedLinks;
