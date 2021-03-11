@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -34,17 +31,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hd-area.org", "movie-blog.org", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me", "linx.cloud", "cgpersia.com" }, urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl|be)/episode/.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+",
-        "https?://(www\\.)?linx\\.cloud/[\\w\\-]+\\d+/", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hoerbuch.in", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me", "linx.cloud", "cgpersia.com" }, urls = { "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl|be)/episode/.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+", "https?://(www\\.)?linx\\.cloud/[\\w\\-]+\\d+/", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
 public class Wrdprss extends antiDDoSForDecrypt {
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
     public Wrdprss(PluginWrapper wrapper) {
         super(wrapper);
         /* Die defaultpasswörter der einzelnen seiten */
-        defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
         defaultPasswords.put("cgpersia.com", new String[] { "cgpersia.com" });
-        defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
     }
 
     @Override
@@ -167,14 +164,11 @@ public class Wrdprss extends antiDDoSForDecrypt {
         final boolean ch = !canHandle(link);
         if (!ch) {
             return ch;
-        }
-        if ("hd-area.org".equalsIgnoreCase(this.getHost())) {
-            return !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+");
-        }
-        if ("urbanmusicdaily.me".equalsIgnoreCase(this.getHost())) {
+        } else if ("urbanmusicdaily.me".equalsIgnoreCase(this.getHost())) {
             return !link.contains("urbanmusicdaily.me") && !link.matches(".+(\\.|/)(css|xml|jpe?g|png|gif|ico).*");
+        } else {
+            return !link.matches(".+\\.(css|xml)(.*)?");
         }
-        return !link.matches(".+\\.(css|xml)(.*)?");
     }
 
     /* NO OVERRIDE!! */

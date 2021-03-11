@@ -48,6 +48,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.Regex;
@@ -56,6 +57,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
+import org.appwork.utils.os.LibCDetector;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.appwork.utils.os.hardware.RaspberryPi;
@@ -280,7 +282,7 @@ public class Multi extends IExtraction {
         } else {
             final Set<String> libIDs = new LinkedHashSet<String>();
             final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
-            if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE && StringUtils.isNotEmpty(lastWorkingLibID)) {
                 libIDs.add(lastWorkingLibID);
                 extractionExtension.getSettings().setLastWorkingLibID(null);
                 extractionExtension.getSettings()._getStorageHandler().write();
@@ -354,11 +356,22 @@ public class Multi extends IExtraction {
                     break;
                 case X86:
                     if (is64BitJvm) {
+                        if (LibCDetector.isMuslSupported()) {
+                            // Testing on Ubuntu
+                            // apt-get install musl-dev
+                            // ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
+                            libIDs.add("Linux-amd64-musl");
+                        }
                         libIDs.add("Linux-amd64");
                         libIDs.remove("Linux-i386");
+                        libIDs.remove("Linux-i386-musl");
                     } else {
+                        if (LibCDetector.isMuslSupported()) {
+                            libIDs.add("Linux-i386-musl");
+                        }
                         libIDs.add("Linux-i386");
                         libIDs.remove("Linux-amd64");
+                        libIDs.remove("Linux-amd64-musl");
                     }
                     break;
                 case PPC:

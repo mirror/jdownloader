@@ -14,6 +14,8 @@ public abstract class Recaptcha2BrowserViewport extends BrowserViewport {
 
     @Override
     public void onLoaded() {
+        // https://stackoverflow.com/questions/22154415/java-use-mousemove-with-multiple-monitors
+        // https://bugs.openjdk.java.net/browse/JDK-8190326
         super.onLoaded();
         try {
             Thread.sleep((long) (Math.random() * 1000));
