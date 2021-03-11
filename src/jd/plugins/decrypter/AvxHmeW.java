@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -30,11 +29,14 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -51,7 +53,7 @@ public class AvxHmeW extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         /* Always add current domain to first position! */
-        ret.add(new String[] { "avh.world", "avaxhome.ws", "avaxhome.bz", "avaxhome.cc", "avaxhome.in", "avaxhome.pro", "avaxho.me", "avaxhm.com", "avxhm.is", "avxhm.se", "avxhome.se", "avxhome.in" });
+        ret.add(new String[] { "avh.world", "avaxhome.ws", "avaxhome.bz", "avaxhome.cc", "avaxhome.in", "avaxhome.pro", "avaxho.me", "avaxhm.com", "avxhm.is", "avxhm.se", "avxhome.se", "avxhome.in", "avxde.org" });
         return ret;
     }
 
@@ -76,16 +78,24 @@ public class AvxHmeW extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    private static final String TYPE_REDIRECT = "https?://[^/]+/(go/\\d+/[^\"]+|go/[a-f0-9]{32}/\\d+/?)";
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2021-03-11: Test to see if we got less captcha failures with this... */
+        return 2;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // for when you're testing
         br = new Browser();
         br.setAllowedResponseCodes(new int[] { 401 });
-        // two different sites, do not rename, avaxhome.pro doesn't belong to the following template.
-        final String parameter = cryptedLink.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(cryptedLink.toString())), this.getHost());
-        if (parameter.matches(".*/go/\\d+/.*")) {
+        /* 2021-03-11: Do not replace hosts inside URLs anymore as this can lead to wrong redirectURLs breaking the crawling process. */
+        // final String parameter = param.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(param.toString())), this.getHost());
+        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
             /* 2021-01-20: Login whenever possible -> No captchas required then */
             final Account acc = AccountController.getInstance().getValidAccount("avxhm.se");
             if (acc != null) {
@@ -95,25 +105,39 @@ public class AvxHmeW extends PluginForDecrypt {
                 this.br = hostPlugin.getBrowser();
             }
             br.setFollowRedirects(false);
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             followInternalRedirects();
             String link = br.getRedirectLocation();
             if (link == null) {
-                final Form captchaForm = br.getForm(0);
-                if (captchaForm.hasInputFieldByName("g-recaptcha-response")) {
-                    final String siteURL = br.getURL("/").toString();
-                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
-                        protected String getSiteUrl() {
-                            // special handling
-                            // being logged in can result in auto redirect/no captcha
-                            return siteURL;
-                        };
-                    }.getToken();
-                    captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                boolean captchaError = false;
+                int counter = 0;
+                do {
+                    counter++;
+                    logger.info("Captcha attempt " + counter);
+                    final Form captchaForm = br.getForm(0);
+                    if (captchaForm.hasInputFieldByName("g-recaptcha-response")) {
+                        final String siteURL = br.getURL("/").toString();
+                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
+                            protected String getSiteUrl() {
+                                // special handling
+                                // being logged in can result in auto redirect/no captcha
+                                return siteURL;
+                            };
+                        }.getToken();
+                        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    br.submitForm(captchaForm);
+                    followInternalRedirects();
+                    /*
+                     * 2021-03-11: Sometimes they may first ask for an invisible reCaptchaV2 and then for a normal reCaptchaV2 afterwards...
+                     */
+                    captchaError = br.containsHTML(">\\s*Captcha error");
+                    link = br.getRedirectLocation();
+                } while (link == null && captchaError && counter <= 3);
+                if (captchaError) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                br.submitForm(captchaForm);
-                followInternalRedirects();
-                link = br.getRedirectLocation();
             }
             if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
@@ -122,80 +146,66 @@ public class AvxHmeW extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
                 return decryptedLinks;
             }
             final String notThis = "(?:https?:)?" + buildHostsPatternPart(getPluginDomains().get(0)) + "[\\S&]+";
             final HashSet<String> dupe = new HashSet<String>();
-            if (!parameter.contains("avaxhome.pro/")) {
-                // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
-                // images/self site refs + imdb refs
-                String[] links = br.getRegex("<a[^>]*?href=\"(/go/\\d+/[^\"]+)").getColumn(0);
-                if (links == null || links.length == 0) {
-                    links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
-                }
-                if (links != null && links.length != 0) {
-                    for (String link : links) {
-                        if (!dupe.add(link)) {
-                            continue;
-                        }
-                        if (!link.matches(this.getSupportedLinks().pattern()) || link.startsWith("/go/")) {
-                            decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
-                        }
+            // 1.st try: <a href="LINK" target="_blank" rel="nofollow"> but ignore
+            // images/self site refs + imdb refs
+            String[] links = br.getRegex("<a href=\"(" + notThis + ")\"(?:\\s+[^>]*target=\"_blank\" rel=\"nofollow[^>]*|>Download from)").getColumn(0);
+            if (links != null && links.length != 0) {
+                for (String link : links) {
+                    if (!dupe.add(link)) {
+                        continue;
+                    }
+                    if (!this.canHandle(link)) {
+                        decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
                     }
                 }
-                // try also LINK</br>, but ignore self site refs + imdb refs
-                links = null;
-                links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
-                if (links != null && links.length != 0) {
-                    for (String link : links) {
-                        // strip html tags
-                        link = link.replaceAll("<[^>]+>", "");
-                        if (!dupe.add(link)) {
-                            continue;
-                        }
-                        if (!link.matches(this.getSupportedLinks().pattern())) {
-                            decryptedLinks.add(createDownloadlink(link));
-                        }
+            }
+            /* Now find single redirect-URLs */
+            final String[] allURLs = HTMLParser.getHttpLinks(this.br.toString(), br.getURL());
+            for (final String url : allURLs) {
+                if (url.matches(TYPE_REDIRECT)) {
+                    decryptedLinks.add(createDownloadlink(url));
+                }
+            }
+            logger.info("Found " + allURLs.length + " redirectURLs");
+            // try also LINK</br>, but ignore self site refs + imdb refs
+            links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
+            if (links.length > 0) {
+                for (String link : links) {
+                    // strip html tags
+                    link = link.replaceAll("<[^>]+>", "");
+                    if (!dupe.add(link)) {
+                        continue;
+                    }
+                    if (!this.canHandle(link)) {
+                        decryptedLinks.add(createDownloadlink(link));
                     }
                 }
-                final String[] covers = br.getRegex("\"((?:https?:)?//(pi?xhst|pixhost)\\.(com|co|icu)[^<>\"]*?)\"").getColumn(0);
-                if (covers != null && covers.length != 0) {
-                    for (String coverlink : covers) {
-                        coverlink = Request.getLocation(coverlink, br.getRequest());
-                        if (!dupe.add(coverlink)) {
-                            continue;
-                        }
-                        decryptedLinks.add(createDownloadlink(coverlink));
+            }
+            final String[] covers = br.getRegex("\"((?:https?:)?//(pi?xhst|pixhost)\\.(com|co|icu)[^<>\"]*?)\"").getColumn(0);
+            if (covers != null && covers.length != 0) {
+                for (String coverlink : covers) {
+                    coverlink = Request.getLocation(coverlink, br.getRequest());
+                    if (!dupe.add(coverlink)) {
+                        continue;
                     }
+                    decryptedLinks.add(createDownloadlink(coverlink));
                 }
-                String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-                }
-                if (fpName != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(Encoding.htmlOnlyDecode(fpName.trim()));
-                    fp.addLinks(decryptedLinks);
-                }
-            } else {
-                br.setFollowRedirects(false);
-                String[] links = br.getRegex("<h3>Download Link: <a href=\"https?://(www\\.)?avaxhome\\.pro/[a-z0-9\\-_]+/(\\d+)\"").getColumn(1);
-                if (links != null && links.length != 0) {
-                    for (final String id : links) {
-                        br.getPage("http://www.avaxhome.pro/wp-content/plugins/download-monitor/download.php?id=" + id);
-                        String redirect = br.getRedirectLocation();
-                        if (redirect == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
-                        if (!redirect.matches(this.getSupportedLinks().pattern())) {
-                            decryptedLinks.add(createDownloadlink(redirect));
-                        }
-                    }
-                }
+            }
+            String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlOnlyDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;
