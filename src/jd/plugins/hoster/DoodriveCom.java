@@ -125,6 +125,25 @@ public class DoodriveCom extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             /* Step 1 - redirect to "/file-download" (should always be there but we handle this optionally!) */
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2021-03-11: Plugin is unfinished. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            Form preDlForm = br.getFormbyActionRegex(".*bot-verify");
+            if (preDlForm != null) {
+                logger.info("Submitting Form " + preDlForm);
+                br.getHeaders().put("Origin", "https://doodrive.com");
+                // br.getHeaders().put("Accept",
+                // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
+                br.submitForm(preDlForm);
+                preDlForm = br.getFormbyActionRegex(".*bot-verify");
+                if (preDlForm != null) {
+                    logger.info("Found preDlForm again this time with captcha");
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    br.submitForm(preDlForm);
+                }
+            }
             Form dlform0 = br.getFormbyActionRegex(".*file-download");
             if (dlform0 == null) {
                 dlform0 = br.getForm(0);
@@ -142,11 +161,6 @@ public class DoodriveCom extends PluginForHost {
                     dlform = br.getForm(0);
                 }
                 if (dlform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final boolean pluginUnfinished = !DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-                if (pluginUnfinished) {
-                    /* 2020-10-31 */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();

@@ -112,8 +112,6 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    /** TODO: Review NOCHUNKS handling: https://svn.jdownloader.org/issues/89232 */
-    private static final String NOCHUNKS          = "NOCHUNKS";
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
@@ -741,7 +739,7 @@ public class GoogleDrive extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         boolean resume = true;
         int maxChunks = 0;
-        if (link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
+        if (!resume) {
             maxChunks = 1;
         }
         String streamDownloadlink = null;
@@ -837,34 +835,11 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        try {
-            /** Set final filename here in case previous handling failed to find a good final filename. */
-            if (link.getFinalFileName() == null && !StringUtils.isEmpty(getFileNameFromHeader(dl.getConnection()))) {
-                link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-            }
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
-                    link.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
-                link.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
+        /** Set final filename here in case previous handling failed to find a good final filename. */
+        if (link.getFinalFileName() == null && !StringUtils.isEmpty(getFileNameFromHeader(dl.getConnection()))) {
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         }
+        this.dl.startDownload();
     }
 
     private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1226,7 +1201,6 @@ public class GoogleDrive extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
         if (link != null) {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
-            link.removeProperty(GoogleDrive.NOCHUNKS);
             link.removeProperty(GoogleDrive.PROPERTY_USED_QUALITY);
         }
     }
