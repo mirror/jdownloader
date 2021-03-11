@@ -472,22 +472,33 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Convert hds --> hls */
             dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
         }
-        final String[][] bitrates = { { "2400", "_2400.mp4" }, { "1800", "_1800.mp4" }, { "1200", "_1200.mp4" }, { "700", "_700.mp4" } };
-        String bitrate = null;
+        final String[] staticBitrateList = new String[] { "2400", "1800", "1200", "700" };
         if (dllink.contains(".m3u8")) {
-            /* 2020-08-05: psp: HLS --> HTTP URL conversion doesn't work anymore with "newer content" URLs ... */
-            // maybe something like this?
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
-            final String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
+            String http_url_part = new Regex(dllink, "https?://[^/]+/i/(podcastcdn/[^/]+/[^/]+/[^/]+/[^/]+_)[0-9,]+\\.mp4(?:\\.csmil)?/master\\.m3u8").getMatch(0);
+            if (http_url_part == null) {
+                http_url_part = new Regex(dllink, "/(podcastcdn.*/\\d+_),\\d+.*").getMatch(0);
+            }
             if (http_url_part != null) {
                 /*
                  * 2017-02-09: Convert hls urls to http urls and add higher quality 1800 url! doesn't work for everyone
                  */
-                for (final String[] qualityInfo : bitrates) {
-                    bitrate = qualityInfo[0];
-                    final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
+                final String possibleBitratesStr = new Regex(dllink, "_,?(\\d+[0-9,]+)(?:\\.mp4|/playlist\\.m3u8)").getMatch(0);
+                final String[] bitrateList;
+                if (possibleBitratesStr != null) {
+                    logger.info("Using dynamic bitratelist via: " + possibleBitratesStr);
+                    bitrateList = possibleBitratesStr.split(",");
+                } else {
+                    logger.info("Using static bitratelist");
+                    bitrateList = staticBitrateList;
+                }
+                logger.info("Converting HLS -> HTTP URLs");
+                for (final String staticBitrate : bitrateList) {
+                    // final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
+                    /* 2021-03-11 */
+                    final String directlink_http = "http://creativemedia7-rai-it.akamaized.net/" + http_url_part + staticBitrate + ".mp4";
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
-                    dl.setFinalFileName(title + "_" + bitrate + "." + extension);
+                    dl.setFinalFileName(title + "_" + staticBitrateList + "." + extension);
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
@@ -495,6 +506,8 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             } else {
+                /* https://svn.jdownloader.org/issues/84276 */
+                logger.warning("Crawling HLS: Split audio/video could cause JD to only download video without audio");
                 this.br.getPage(dllink);
                 if (br.getRegex("Access Denied").matches()) {
                     logger.severe("Access denied! The hmac is corrupt, maybe. Try to set a coherent User-Agent.");
@@ -516,12 +529,10 @@ public class RaiItDecrypter extends PluginForDecrypt {
             /* Single http url --> We can sometimes grab multiple qualities */
             if (dllink.contains("_1800.mp4")) {
                 /* Multiple qualities availab.e */
-                for (final String[] qualityInfo : bitrates) {
-                    bitrate = qualityInfo[0];
-                    final String url_bitrate_string = qualityInfo[1];
-                    final String directlink = dllink.replace("_1800.mp4", url_bitrate_string);
+                for (final String staticBitrate : staticBitrateList) {
+                    final String directlink = dllink.replace("_1800.mp4", "_" + staticBitrate + ".mp4");
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
-                    dl.setFinalFileName(title + "_" + bitrate + "." + extension);
+                    dl.setFinalFileName(title + "_" + staticBitrate + "." + extension);
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
