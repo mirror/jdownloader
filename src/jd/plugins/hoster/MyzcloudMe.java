@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.ru", "myzcloud.me" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)", "https?://(?:www\\.)?myzcloud\\.me/(?:[a-z]{2}/)?Song/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.club", "myzcloud.me" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)", "https?://(?:www\\.)?myzcloud\\.me/(?:[a-z]{2}/)?Song/(\\d+)" })
 public class MyzcloudMe extends antiDDoSForHost {
     public MyzcloudMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,11 +46,9 @@ public class MyzcloudMe extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Forced https */
-        if ("myzuka.ru".equals(getHost())) {
-            final String newURL = "https://myzuka.me/song/" + new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
-            link.setUrlDownload(newURL);
-            link.setPluginPatternMatcher(newURL);
-        }
+        final String newURL = "https://" + this.getHost() + "/Song/" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        link.setUrlDownload(newURL);
+        link.setPluginPatternMatcher(newURL);
     }
 
     @Override
@@ -95,11 +93,10 @@ public class MyzcloudMe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 403 (limit reached?)", 2 * 60 * 60 * 1000l);
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        final String filesize = br.getRegex("(\\d{1,2},\\d{1,2}) Мб").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String filesize = br.getRegex("(\\d{1,2},\\d{1,2})\\s*Мб").getMatch(0);
+        if (filename != null) {
+            link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".mp3");
         }
-        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".mp3");
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize + "MB"));
         }
@@ -111,6 +108,9 @@ public class MyzcloudMe extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         String dllink = br.getRegex("\"(/Song/dl/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(/Song/Download/[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("\"(/Song/Play/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
@@ -130,7 +130,9 @@ public class MyzcloudMe extends antiDDoSForHost {
             }
         }
         if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlDecode(dllink);
+            }
             br.setFollowRedirects(false);
             br.getPage(dllink);
             dllink = br.getRedirectLocation();
@@ -142,7 +144,7 @@ public class MyzcloudMe extends antiDDoSForHost {
         // dllink = dllink + "?t=" + System.currentTimeMillis();
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("gif")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection();
             } catch (final IOException e) {
@@ -158,6 +160,8 @@ public class MyzcloudMe extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (dl.getConnection().getContentType().contains("gif")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
         }
         link.setProperty("directlink", dllink);
         dl.startDownload();
