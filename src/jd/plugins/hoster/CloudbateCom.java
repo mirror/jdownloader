@@ -83,13 +83,15 @@ public class CloudbateCom extends antiDDoSForHost {
         }
         final String dataXV = br.getRegex("data-xv=\"([^\"]+)\"").getMatch(0);
         final String dataMO = br.getRegex("data-mo=\"([^\"]+)\"").getMatch(0);
-        if (dataXV != null && dataMO != null) {
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            this.postPage("/wp-admin/admin-ajax.php", "action=my_xv_mo&post_type=POST&xv=" + Encoding.urlEncode(dataXV) + "&mo=" + Encoding.urlEncode(dataMO));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            br.getRequest().setHtmlCode((String) entries.get("video"));
-            this.dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        if (dataXV == null || dataMO == null) {
+            /* Assume it's not video content */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        this.postPage("/wp-admin/admin-ajax.php", "action=my_xv_mo&post_type=POST&xv=" + Encoding.urlEncode(dataXV) + "&mo=" + Encoding.urlEncode(dataMO));
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        br.getRequest().setHtmlCode((String) entries.get("video"));
+        this.dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {

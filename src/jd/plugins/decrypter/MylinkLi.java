@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -38,17 +39,19 @@ public class MylinkLi extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String linkID = new Regex(parameter, "/([A-Za-z0-9]+)$").getMatch(0);
+        /* 2021-03-11: Website produces "myl.li" URLs which are broken -> Use mylink.how to fix these! */
+        final String url = param.toString().replaceFirst("(?i)" + Browser.getHost(param.getCryptedUrl()), "mylink.how");
+        param.setCryptedUrl(url);
+        final String linkID = new Regex(url, "/([A-Za-z0-9]+)$").getMatch(0);
         br = new Browser();
         br.setFollowRedirects(true);
-        if (true) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             logger.warning("This crawler does not yet work!");
             return null;
         }
-        getPage(parameter);
+        getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(url));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
@@ -129,7 +132,7 @@ public class MylinkLi extends antiDDoSForDecrypt {
         submitForm(goForm);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             return null;
         }
         decryptedLinks.add(createDownloadlink(finallink));
