@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+|\\?xlink=.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newasiantv.tv" }, urls = { "https?://(?:\\w+\\.)?newasiantv\\.(tv|ch|biz|com)/(?:(?:watch|files)/.+\\.html?|embed\\.php\\?.+|\\?xlink=.+)" })
 public class NewAsianTv extends PluginForDecrypt {
     public NewAsianTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,7 +59,7 @@ public class NewAsianTv extends PluginForDecrypt {
                 final Object[] jsonArray = JSonStorage.restoreFromString(episodeJSON, TypeRef.OBJECT_ARRAY);
                 for (Object jsonObject : jsonArray) {
                     final Browser br2 = br.cloneBrowser();
-                    final String apiUrl = "https://player.newasiantv.ch/v2/loader.php";
+                    final String apiUrl = "https://player.newasiantv.com/v2/loader.php";
                     HashMap map = (HashMap) jsonObject;
                     String url = String.valueOf(map.getOrDefault("url", ""));
                     String subUrl = String.valueOf(map.getOrDefault("subUrl", ""));
