@@ -97,12 +97,22 @@ public class DebridplanetCom2 extends PluginForHost {
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("listurl", new ArrayList<String>().add(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
+            final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (jsonO instanceof Map) {
+                /* Error happened e.g. {"success":0,"status":400,"message":"Error: You must be premium"} */
+                final Map<String, Object> entries = (Map<String, Object>) jsonO;
+                final String error = (String) entries.get("message");
+                if (!StringUtils.isEmpty(error)) {
+                    /* 2021-03-12: Handle all as generic errors for now */
+                    mhm.handleErrorGeneric(account, link, error, 50);
+                } else {
+                    mhm.handleErrorGeneric(account, link, "Unknown error", 50);
+                }
+            }
+            /* TODO */
             final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
             final Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
             final String dllink = (String) entries.get("link");
-            if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
-            }
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
@@ -182,8 +192,9 @@ public class DebridplanetCom2 extends PluginForHost {
             if (!currently_working) {
                 logger.info("Skipping offline host: " + domain);
                 continue;
+            } else {
+                supportedHosts.add(domain);
             }
-            supportedHosts.add(domain);
         }
         ai.setMultiHostSupport(this, supportedHosts);
         account.setConcurrentUsePossible(true);

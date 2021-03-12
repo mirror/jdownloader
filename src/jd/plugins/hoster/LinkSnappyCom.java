@@ -58,12 +58,6 @@ import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 
 /**
- * 24.11.15 Update by Bilal Ghouri:
- *
- * - Host has removed captcha and added attempts-account based system. API calls have been updated as well.<br />
- * - Cookies are valid for 30 days after last use. After that, Session Expired error will occur. In which case, Login() should be called to
- * get new cookies and store them for further use. <br />
- * - Better Error handling through exceptions.
  *
  * @author raztoki
  * @author psp
