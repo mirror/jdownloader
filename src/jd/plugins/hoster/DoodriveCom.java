@@ -19,13 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -100,130 +97,121 @@ public class DoodriveCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*File Not Found|>\\s*The file has expired")) { // 2020-11-30
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /**
+         * 2021-03-12: This is NOT a real availablecheck! </br>
+         * Website returns error 404 for invalid fileIDs but for expired/deleted files, status will be unclear until download is started!
+         */
+        if (isDownload) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        final String filename = br.getRegex("<title>Download ([^<>}\"]+) - DooDrive</title>").getMatch(0);
-        if (filename != null) {
-            link.setName(filename);
-        }
-        return AvailableStatus.TRUE;
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        requestFileInformation(link, true);
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            /* Step 1 - redirect to "/file-download" (should always be there but we handle this optionally!) */
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2021-03-11: Plugin is unfinished. */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             Form preDlForm = br.getFormbyActionRegex(".*bot-verify");
             if (preDlForm != null) {
-                logger.info("Submitting Form " + preDlForm);
+                /* Step1 */
                 br.getHeaders().put("Origin", "https://doodrive.com");
-                // br.getHeaders().put("Accept",
-                // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9");
                 br.submitForm(preDlForm);
+                /* Step2 */
                 preDlForm = br.getFormbyActionRegex(".*bot-verify");
                 if (preDlForm != null) {
+                    final long timestampBeforeCaptcha = System.currentTimeMillis();
+                    int waitSeconds = 10;
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        brc.getPage("https://" + this.br.getHost() + "/assets/js/global.js");
+                        final String waitStr = brc.getRegex("time\\s*:\\s*(\\d+)").getMatch(0);
+                        if (waitStr != null) {
+                            waitSeconds = Integer.parseInt(waitStr);
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        logger.warning("Failed to find pre-download-waittime in js");
+                    }
                     logger.info("Found preDlForm again this time with captcha");
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     preDlForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    /* Very important! */
+                    preDlForm.put("verify", "");
+                    /* Substract the time the user took to solve the captcha so that time is not wasted. */
+                    final long timeToWait = waitSeconds * 1001l - (System.currentTimeMillis() - timestampBeforeCaptcha);
+                    this.sleep(timeToWait, link);
                     br.submitForm(preDlForm);
                 }
             }
-            Form dlform0 = br.getFormbyActionRegex(".*file-download");
-            if (dlform0 == null) {
-                dlform0 = br.getForm(0);
+            /* Only now can we know whether or not that file is online. */
+            if (br.containsHTML("<title>\\s*File Not Found|>\\s*The file you are trying to download is no longer available|>\\s*The file has expired>\\s*The file was deleted by")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (dlform0 != null && !CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform0)) {
-                br.setFollowRedirects(false);
-                br.submitForm(dlform0);
-                dllink = br.getRedirectLocation();
+            /* Step3 */
+            br.setFollowRedirects(false);
+            Form dlform = br.getFormbyKey("f");
+            if (dlform == null) {
+                dlform = br.getForm(0);
             }
-            if (dllink == null) {
-                /* [Optional] Step 2 - Captcha & Pre-download-waittime (10 seconds - unsure if those are skippable) */
-                br.setFollowRedirects(true);
-                Form dlform = br.getFormbyActionRegex(".*file-download");
-                if (dlform == null) {
-                    dlform = br.getForm(0);
-                }
-                if (dlform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                /* Should redirect to "/f/<fuid>?f=blabla" */
-                br.submitForm(dlform);
-                /* Step 3 - Download */
-                final Form dlform2 = br.getFormbyActionRegex(".*/f/" + this.getFID(link));
-                if (dlform2 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setFollowRedirects(false);
-                br.submitForm(dlform2);
-                br.submitForm(dlform);
-                dllink = br.getRedirectLocation();
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
+            if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            dl.setFilenameFix(true);
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (url == null) {
+            return false;
+        }
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                dl.getConnection().disconnect();
+                return false;
+            }
+        } catch (final Throwable e) {
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+                dl.getConnection().disconnect();
+            } catch (final Throwable e2) {
             }
         }
-        return null;
+        return false;
     }
 
     @Override
