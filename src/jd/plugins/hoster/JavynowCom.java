@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)[A-Za-z0-9]+.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javynow.com" }, urls = { "https?://(?:www\\.)?javynow\\.com/video(?:\\.php\\?id=|/)([A-Za-z0-9]+).*" })
 public class JavynowCom extends PluginForHost {
     public JavynowCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,7 +58,6 @@ public class JavynowCom extends PluginForHost {
         return "http://javynow.com/tos.php";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
@@ -77,31 +76,31 @@ public class JavynowCom extends PluginForHost {
         // // <a href="https://javynow.com/video/20805072/">
         // br.getPage(br.getRegex("<a href=\"(http[^<>\"]+)\"").getMatch(0));
         // }
-        final String url_filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0).replace("-", " ");
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
         String filename = br.getRegex("<title>([^<>\"]+) JavyNow</title>").getMatch(0);
         if (StringUtils.isEmpty(filename) || "no title".equals(filename)) {
-            filename = url_filename;
+            filename = url_filename.replace("-", " ");
         }
-        dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        final String cryptedScripts[] = br.getRegex("eval\\s*\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getColumn(0);
+        if (cryptedScripts.length != 0) {
+            for (String javascript : cryptedScripts) {
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                String result = null;
+                try {
+                    engine.eval("var res = " + javascript);
+                    result = (String) engine.get("res");
+                    dllink = new Regex(result, "<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')application/x-mpegURL(?:\"|\\')").getMatch(0);
+                    if (dllink != null) {
+                        break;
+                    }
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        if (dllink == null) {
-            dllink = br.getRegex("file:\"(http[^\"]+)\"").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dllink == null && !br.containsHTML("id=\"playerArea\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (dllink == null) {
-            dllink = decodeDownloadLink();
-        }
-        dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (!filename.endsWith(default_Extension)) {
             filename += default_Extension;
         }
@@ -121,24 +120,6 @@ public class JavynowCom extends PluginForHost {
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
-    }
-
-    private String decodeDownloadLink() {
-        final String js = br.getRegex("eval\\((function\\(p.+?)\\)\\s*</").getMatch(0);
-        if (js != null) {
-            String decoded = null;
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval("var result=" + js);
-                decoded = (String) engine.get("result");
-            } catch (final Exception e) {
-                getLogger().log(e);
-            }
-            return new Regex(decoded, "(https?://[^\"]*\\.(?:m3u8|mp4)[^\"]*)").getMatch(0);
-        } else {
-            return null;
-        }
     }
 
     @Override
