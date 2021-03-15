@@ -11,6 +11,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
@@ -64,8 +65,24 @@ public class MetArtCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         this.login(account, true);
-        ai.setStatus("Account valid");
+        if (br.getURL() == null || !br.getURL().contains("/api/user-data")) {
+            br.getPage("https://www." + account.getHoster() + "/api/user-data");
+            getSetAccountType(account);
+        }
         return ai;
+    }
+
+    private void getSetAccountType(final Account account) {
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("initialState");
+        entries = (Map<String, Object>) entries.get("auth");
+        entries = (Map<String, Object>) entries.get("user");
+        final boolean isPremium = ((Boolean) entries.get("validSubscription")).booleanValue();
+        if (isPremium) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
     }
 
     public void login(final Account account, final boolean verifyCredentials) throws PluginException, IOException {
@@ -79,8 +96,13 @@ public class MetArtCom extends PluginForHost {
                 return;
             } else {
                 br.getPage("https://www." + account.getHoster() + "/api/user-data");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                final boolean loggedIN = ((Boolean) entries.get("user")).booleanValue();
+                boolean loggedIN = false;
+                try {
+                    getSetAccountType(account);
+                    /* Not logged in = Different json -> Exception */
+                    loggedIN = true;
+                } catch (final Throwable e) {
+                }
                 if (loggedIN) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
@@ -119,9 +141,10 @@ public class MetArtCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 401) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired?", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.getHttpConnection().getResponseCode() == 404) {
-                /* Should never happen */
+                /* Should never happen as their URLs are static */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
+                /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired?");
             }
         }
