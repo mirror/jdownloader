@@ -101,6 +101,13 @@ public class MirroredTo extends PluginForDecrypt {
                 }
             }
             {
+                /* 2021-03-15: New step */
+                final String continuelinkExtra = br.getRegex("\"([^\"]+\\&dl=0)").getMatch(0);
+                if (continuelinkExtra != null) {
+                    br.getPage(continuelinkExtra);
+                }
+            }
+            {
                 final String continuelink = br.getRegex("\"(/m(?:ir)?stats?\\.php\\?uid=" + uid + "[^\"]*)\"").getMatch(0);
                 if (continuelink != null) {
                     br.getPage(continuelink);
