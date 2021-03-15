@@ -865,6 +865,15 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
                 return decryptedLinks;
             }
         }
+        /* 2021-03-15: anon-v.com */
+        externID = br.getRegex("\"(https?://(?:www\\.)?anon-v\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = this.createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            if (!processAll) {
+                return decryptedLinks;
+            }
+        }
         /************************************************************************************************************/
         // filename needed for all IDs below
         /************************************************************************************************************/
