@@ -19,6 +19,10 @@ import java.util.ArrayList;
 
 import javax.script.ScriptEngine;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,10 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.(?:net|com)/\\w+-\\d+[^/]*" })
 public class FbjavNet extends antiDDoSForDecrypt {
@@ -47,6 +47,9 @@ public class FbjavNet extends antiDDoSForDecrypt {
         getPage(parameter);
         String fpName = null;
         fpName = br.getRegex("<title>\\s*([^<]+)\\s*").getMatch(0);
+        if (fpName != null) {
+            fpName = Encoding.htmlDecode(fpName).trim();
+        }
         String[][] videoSources = br.getRegex("eid\\s*=\\s*[\"']*(\\d+)[\"']*\\s+dtl\\s*=\\s*[\"']*(\\w+)[\"']*").getMatches();
         if (videoSources != null && videoSources.length > 0) {
             final ScriptEngine engine = JavaScriptEngineFactory.getScriptEngineManager(null).getEngineByName("javascript");
@@ -58,7 +61,12 @@ public class FbjavNet extends antiDDoSForDecrypt {
                 try {
                     engine.eval("var res = link_decode(\"" + dtl + "\");");
                     String result = engine.get("res").toString();
-                    decryptedLinks.add(createDownloadlink(result));
+                    final DownloadLink dl = createDownloadlink(result);
+                    /* Workaround as their own cdn-API does not return any filenames! */
+                    if (result.contains("imfb.xyz") && fpName != null) {
+                        dl.setFinalFileName(fpName + ".mp4");
+                    }
+                    decryptedLinks.add(dl);
                 } catch (Exception e) {
                     getLogger().log(e);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
@@ -77,11 +85,18 @@ public class FbjavNet extends antiDDoSForDecrypt {
         final StringBuilder str = new StringBuilder();
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String scriptURL = "https://static.fbjav.com/wp-content/themes/fbjav/assets/js/custom28919.js";
+        // final String scriptURL = "https://static.fbjav.com/wp-content/themes/fbjav/assets/js/custom28919.js";
+        /* 2021-03-15 */
+        final String scriptURL = "https://fbjav.com/wp-content/themes/fbjav/assets/js/custom.min.js?v11020";
         getPage(brc, scriptURL);
-        str.append(brc.getRegex("(function\\s*reverse\\s*\\(\\s*s\\s*\\)\\s*\\{[^§]+return link;\\s*\\})").getMatch(0));
+        str.append(brc.getRegex("(function\\s*reverse\\s*\\(\\s*t\\s*\\)\\s*\\{\\s*return[^\\}]+\\s*\\})").getMatch(0));
         str.append("\r\n");
-        str.append(brc.getRegex("(var\\s*Base64\\s*=\\s*\\{[^$]+\\}\\s*;)").getMatch(0));
+        str.append(brc.getRegex("(function\\s*strtr[^\\{]+\\{.*?)function link_decode").getMatch(0));
+        str.append("\r\n");
+        str.append(brc.getRegex("(function\\s*link_decode\\(t\\)\\s*\\{[^\\}]+\\})").getMatch(0));
+        /* Finally add base64 decode function */
+        str.append("\r\n");
+        str.append("function atob (f){var g={},b=65,d=0,a,c=0,h,e='',k=String.fromCharCode,l=f.length;for(a='';91>b;)a+=k(b++);a+=a.toLowerCase()+'0123456789+/';for(b=0;64>b;b++)g[a.charAt(b)]=b;for(a=0;a<l;a++)for(b=g[f.charAt(a)],d=(d<<6)+b,c+=6;8<=c;)((h=d>>>(c-=8)&255)||a<l-2)&&(e+=k(h));return e};");
         final String result = str.toString().trim().replace("window.location.host", "\"" + brc.getHost() + "\"");
         if (StringUtils.isEmpty(result)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
