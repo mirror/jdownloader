@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nfo.scene-rls.com" }, urls = { "http://(?:www\\.)?nfo\\.scene-rls\\.com/view/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scene-rls.com" }, urls = { "https?://(?:\\w+\\.)?scene-rls\\.(?:com|net)/view/\\d+" })
 public class NfScRlCm extends PluginForDecrypt {
-
     public NfScRlCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,7 +39,6 @@ public class NfScRlCm extends PluginForDecrypt {
         br.getPage(parameter);
         /* Error handling */
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -49,16 +46,14 @@ public class NfScRlCm extends PluginForDecrypt {
         /* avoid recursion */
         for (int i = 0; i < links.length; i++) {
             final String dlLink = links[i];
-            if (!canHandle(dlLink)) {
+            if (!this.canHandle(dlLink)) {
                 decryptedLinks.add(createDownloadlink(dlLink));
             }
         }
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

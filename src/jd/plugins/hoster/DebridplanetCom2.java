@@ -92,7 +92,7 @@ public class DebridplanetCom2 extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        this.loginWebsite(account, false);
+        this.login(account, false);
         if (!attemptStoredDownloadurlDownload(link)) {
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("listurl", new ArrayList<String>().add(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
@@ -155,7 +155,7 @@ public class DebridplanetCom2 extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginWebsite(account, true);
+        login(account, true);
         /* TODO */
         // if (br.getRequest() == null || !br.getURL().contains("/login.php")) {
         // br.getPage("/account");
@@ -201,7 +201,7 @@ public class DebridplanetCom2 extends PluginForHost {
         return ai;
     }
 
-    private void loginWebsite(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
+    private void login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
                 prepBR(this.br);
