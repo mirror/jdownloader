@@ -210,9 +210,10 @@ public class Shareplacecom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private String rhino(final DownloadLink link, final String s, final boolean checkResult) {
+    private String rhino(final DownloadLink link, final String s, final boolean checkResult) throws Exception {
         final String cleanup = new Regex(s, "(var.*?)var zzipitime").getMatch(0);
         final String[] vars = new Regex(s, "<a href=\"[a-z0-9 \\+]*'\\s*\\+\\s*(.*?)\\s*\\+\\s*'\"").getColumn(0);
+        Exception lastException = null;
         if (vars != null) {
             final ArrayList<String> vrrs = new ArrayList<String>(Arrays.asList(vars));
             // Collections.reverse(vrrs);
@@ -249,17 +250,22 @@ public class Shareplacecom extends PluginForHost {
                             logger.info("Skipping potential final downloadurl: " + result);
                             try {
                                 dl.getConnection().disconnect();
-                            } catch (final Throwable t) {
+                            } catch (final Exception e) {
                             }
                             continue;
                         }
                     } catch (final Exception e) {
                         logger.log(e);
+                        lastException = e;
                     }
                 } else {
                     return result;
                 }
             }
+        }
+        if (lastException != null) {
+            logger.info("Failed to find any working final downloadurl -> Throwing last Exception");
+            throw lastException;
         }
         return null;
     }

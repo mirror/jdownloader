@@ -43,8 +43,14 @@ public class StreamsbNet extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamsb.net" });
+        ret.add(new String[] { "streamsb.com", "streamsb.net" });
         return ret;
+    }
+
+    /** 2021-03-15: Main domain has changed from streamsb.net to streamsb.com */
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {

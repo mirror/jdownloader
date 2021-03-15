@@ -16,7 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -41,22 +47,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("http://www.sendspace.com/joinpro_pay.html");
+        enablePremium("https://www.sendspace.com/joinpro_pay.html");
         setConfigElements();
         setStartIntervall(5000l);
     }
 
     private final static String SSL_CONNECTION    = "SSL_CONNECTION";
     private final String        JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
+    private static final String API_BASE          = "https://api.sendspace.com/rest/";
     // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
     private String              CURRENTERRORCODE;
     private String              SESSIONTOKEN;
@@ -74,7 +76,7 @@ public class SendspaceCom extends PluginForHost {
      */
     @Override
     public String getAGBLink() {
-        return "http://www.sendspace.com/terms.html";
+        return "https://www.sendspace.com/terms.html";
     }
 
     @Override
@@ -378,27 +380,33 @@ public class SendspaceCom extends PluginForHost {
             /* Datei herunterladen */
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
-            URLConnectionAdapter con = dl.getConnection();
-            if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
-                br.followConnection();
+            final URLConnectionAdapter con = dl.getConnection();
+            if (!this.looksLikeDownloadableContent(con)) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 handleErrors(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (con.getResponseCode() == 416) {
+            } else if (con.getResponseCode() == 416) {
                 // HTTP/1.1 416 Requested Range Not Satisfiable
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-            }
-            if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+            } else if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
             link.setProperty("savedlink", linkurl);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-            URLConnectionAdapter con = dl.getConnection();
-            if (con.getContentType().contains("html")) {
-                br.followConnection();
+            final URLConnectionAdapter con = dl.getConnection();
+            if (!this.looksLikeDownloadableContent(con)) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 handleErrors(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -433,11 +441,11 @@ public class SendspaceCom extends PluginForHost {
         // requestFileInformation(link, true);
         login(account);
         try {
-            apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         } catch (final Exception e) {
             logger.info("Unexpected error while trying to download, maybe old sessionkey, logging in again...");
             login(account);
-            apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         }
         String linkurl = br.getRegex("url=\"(https?[^<>\"]*?)\"").getMatch(0);
         if (linkurl == null) {
@@ -556,7 +564,7 @@ public class SendspaceCom extends PluginForHost {
     }
 
     private void createSessToken() throws Exception {
-        apiRequest("http://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
+        apiRequest("https://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
         SESSIONTOKEN = get("token");
         if (SESSIONTOKEN == null) {
             logger.warning("sessiontoken could not be found!");
@@ -567,7 +575,7 @@ public class SendspaceCom extends PluginForHost {
     /** https://www.sendspace.com/dev_method.html?method=auth.checksession */
     private boolean sessionOk() {
         try {
-            apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
+            apiRequest(API_BASE, "?method=auth.checksession&session_key=" + SESSIONKEY);
             if ("ok".equals(get("session"))) {
                 return true;
             } else {
@@ -585,7 +593,7 @@ public class SendspaceCom extends PluginForHost {
     }
 
     private void apiLogin(final String username, final String password) throws Exception {
-        apiRequest("http://api.sendspace.com/rest/", "?method=auth.login&token=" + SESSIONTOKEN + "&user_name=" + username + "&tokened_password=" + JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(password).toLowerCase()));
+        apiRequest(API_BASE, "?method=auth.login&token=" + SESSIONTOKEN + "&user_name=" + username + "&tokened_password=" + JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(password).toLowerCase()));
         SESSIONKEY = get("session_key");
         if (SESSIONKEY == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
