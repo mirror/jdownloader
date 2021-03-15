@@ -573,7 +573,7 @@ public class RaiItDecrypter extends PluginForDecrypt {
                     /* 2021-03-11 */
                     final String directlink_http = "http://creativemedia7-rai-it.akamaized.net/" + http_url_part + staticBitrate + ".mp4";
                     final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink_http);
-                    dl.setFinalFileName(title + "_" + staticBitrateList + "." + extension);
+                    dl.setFinalFileName(title + "_" + staticBitrate + "." + extension);
                     dl._setFilePackage(fp);
                     if (description != null) {
                         dl.setComment(description);
