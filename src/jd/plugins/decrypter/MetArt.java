@@ -15,7 +15,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -46,8 +45,6 @@ public class MetArt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String host = Browser.getHost(param.toString());
-        final String host_for_url = "decrypted" + host.replaceAll("(\\.|\\-)", "") + "://";
         final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
         Account useAcc = null;
         if (accounts != null && accounts.size() != 0) {
@@ -66,7 +63,6 @@ public class MetArt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         plg.setBrowser(this.br);
-        /* TODO: We should be able to login without verifying to speed-up this crawler! */
         ((jd.plugins.hoster.MetArtCom) plg).login(useAcc, false);
         if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
             /* New 2020-12-07 */
@@ -177,7 +173,6 @@ public class MetArt extends PluginForDecrypt {
         return ret;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
