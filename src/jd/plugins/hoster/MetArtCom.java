@@ -109,25 +109,20 @@ public class MetArtCom extends PluginForHost {
         if (cookies != null) {
             logger.info("Attempting cookie login");
             br.setCookies(account.getHoster(), cookies);
-            // br.setCookies(cookies);
             if (!verifyCredentials) {
                 logger.info("Not verifying cookies");
                 return;
             } else {
                 br.getPage("https://www." + account.getHoster() + "/api/user-data");
-                boolean loggedIN = false;
                 try {
                     getSetAccountType(account);
-                    loggedIN = true;
-                } catch (final Throwable e) {
-                    /* Not logged in = Different json -> Exception */
-                }
-                if (loggedIN) {
                     logger.info("Cookie login successful");
                     account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
-                } else {
+                } catch (final Throwable e) {
+                    /* Not logged in = Different json -> Exception */
                     logger.info("Cookie login failed");
+                    br.clearAll();
                 }
             }
         }
@@ -135,6 +130,10 @@ public class MetArtCom extends PluginForHost {
         logger.info("Performing full login");
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
         br.setFollowRedirects(true);
+        /*
+         * 2021-03-16: TODO: Add support for their other portals/domains, visible only when logged in here:
+         * https://account-new.metartnetwork.com/ (about 13 more websites)
+         */
         final URLConnectionAdapter con = br.openGetConnection("https://members." + account.getHoster() + "/members/");
         if (con.getResponseCode() == 401) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
