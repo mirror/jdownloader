@@ -533,27 +533,52 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     password = handlePW(param, this.br);
                 }
                 if (VIMEO_URL_TYPE.SHOWCASE.equals(urlType)) {
-                    final String jsonString = br.getRegex("<script\\s*id\\s*=\\s*\"app-data\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
-                    if (jsonString == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Map<String, Object> json = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
-                    final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
-                    if (clips == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     final String appendReferer;
                     if (referer.get() != null) {
                         appendReferer = "#forced_referer=" + HexFormatter.byteArrayToHex(referer.get().getBytes("UTF-8"));
                     } else {
                         appendReferer = "";
                     }
-                    for (Map<String, Object> clip : clips) {
-                        final String config = (String) clip.get("config");
-                        if (config != null) {
-                            final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
-                            decryptedLinks.add(clipEntry);
+                    final String jsonStringOld = br.getRegex("<script\\s*id\\s*=\\s*\"app-data\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
+                    if (jsonStringOld != null) {
+                        final Map<String, Object> json = JSonStorage.restoreFromString(jsonStringOld, TypeRef.HASHMAP);
+                        final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
+                        if (clips == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
+                        for (Map<String, Object> clip : clips) {
+                            final String config = (String) clip.get("config");
+                            if (config != null) {
+                                final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
+                                decryptedLinks.add(clipEntry);
+                            }
+                        }
+                    }
+                    Browser brc = br.cloneBrowser();
+                    brc.getPage("https://vimeo.com/_rv/viewer");
+                    final String jwtToken = PluginJSonUtils.getJson(brc, "jwt");
+                    if (StringUtils.isEmpty(jwtToken)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
+                    while (nextPage != null) {
+                        brc = br.cloneBrowser();
+                        brc.getHeaders().put("Authorization", "jwt " + jwtToken);
+                        String response = brc.getPage("//api.vimeo.com" + nextPage);
+                        if (response.matches("(?s)^\\s*\\{.+\\}\\s*$")) {
+                            final Map<String, Object> map = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+                            final List<Map<String, Object>> data = (List<Map<String, Object>>) map.get("data");
+                            if (data != null && data.size() > 0) {
+                                for (Map<String, Object> entry : data) {
+                                    final String link = (String) entry.get("link");
+                                    final DownloadLink clipEntry = this.createDownloadlink(link + appendReferer);
+                                    decryptedLinks.add(clipEntry);
+                                }
+                                nextPage = (String) JavaScriptEngineFactory.walkJson(map, "paging/next");
+                                continue;
+                            }
+                        }
+                        break;
                     }
                     return decryptedLinks;
                 }

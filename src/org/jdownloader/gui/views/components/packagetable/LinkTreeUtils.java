@@ -16,6 +16,7 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -24,7 +25,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.UrlDisplayType;
 
 public class LinkTreeUtils {
-
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static <T extends AbstractNode> java.util.List<T> getPackages(AbstractNode contextObject, java.util.List<AbstractNode> selection, java.util.List<T> container) {
         HashSet<T> ret = new HashSet<T>();
@@ -76,7 +76,6 @@ public class LinkTreeUtils {
                             } else {
                                 containsAll = false;
                             }
-
                         }
                         if (containsAll || containsNone) {
                             ret.addAll(childs);
@@ -114,7 +113,6 @@ public class LinkTreeUtils {
         } else {
             throw new WTFException("Unknown Type: " + node.getClass());
         }
-
     }
 
     public static File getRawDownloadDirectory(AbstractNode node) {
@@ -185,12 +183,16 @@ public class LinkTreeUtils {
         case ORIGIN:
             return link.getOriginUrl();
         case CONTENT:
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                return link.getPluginPatternMatcher();
+            }
             switch (link.getUrlProtection()) {
             case UNSET:
                 if (link.getContentUrl() != null) {
                     return link.getContentUrl();
+                } else {
+                    return link.getPluginPatternMatcher();
                 }
-                return link.getPluginPatternMatcher();
             default:
                 return null;
             }
@@ -238,5 +240,4 @@ public class LinkTreeUtils {
         }
         return urls;
     }
-
 }

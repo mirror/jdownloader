@@ -1140,10 +1140,10 @@ public class OneFichierCom extends PluginForHost {
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
-            } catch (final Throwable e2) {
+            } catch (Throwable ignore) {
             }
+            return false;
         }
-        return false;
     }
 
     /** Required to authenticate via API. Wrapper for setPremiumAPIHeaders(String). */
