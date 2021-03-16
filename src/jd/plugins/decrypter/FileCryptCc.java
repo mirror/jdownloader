@@ -19,24 +19,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -60,6 +46,21 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -287,26 +288,38 @@ public class FileCryptCc extends PluginForDecrypt {
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         // mirrors - note: containers can contain uid within path... -raztoki20161204
-        String[] mirrors;
-        if (mirrorIdFromURL != null && PluginJsonConfig.get(this.getConfigInterface()).getCrawlMode() == CrawlMode.PREFER_GIVEN_MIRROR_ID) {
-            logger.info("Crawl mirror according to mirrorID from URL");
-            mirrors = new String[] { parameter + "?mirror=" + mirrorIdFromURL };
-        } else {
-            logger.info("Crawling all existing mirrors");
-            mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)").getColumn(0);
-            if (mirrors.length < 1) {
-                /* Fallback -> Only 1 mirror available */
-                mirrors = new String[1];
-                mirrors[0] = parameter + "?mirror=0";
+        String[] availableMirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)").getColumn(0);
+        if (availableMirrors == null || availableMirrors.length < 1) {
+            /* Fallback -> Only 1 mirror available */
+            availableMirrors = new String[1];
+            if (mirrorIdFromURL != null) {
+                availableMirrors[0] = parameter;
             } else {
-                // first mirror shown should be mirror 0;
-                Arrays.sort(mirrors);
+                availableMirrors[0] = parameter + "?mirror=0";
             }
         }
-        int index = -1;
+        final List<String> mirrors = new ArrayList<String>();
+        if (mirrorIdFromURL != null && PluginJsonConfig.get(this.getConfigInterface()).getCrawlMode() == CrawlMode.PREFER_GIVEN_MIRROR_ID) {
+            for (String mirror : availableMirrors) {
+                final String mirrorID = new Regex(mirror, "mirror=(\\d+)").getMatch(0);
+                if (StringUtils.equals(mirrorID, mirrorIdFromURL)) {
+                    mirrors.add(mirror);
+                    break;
+                }
+            }
+            if (mirrors.size() == 0) {
+                logger.info("Crawl mirror not found:" + mirrorIdFromURL);
+            }
+        }
+        if (mirrors.size() > 0) {
+            logger.info("Crawl mirror according to mirrorID from URL:" + mirrors);
+        } else {
+            mirrors.addAll(Arrays.asList(availableMirrors));
+            logger.info("Crawling all existing mirrors:" + mirrors);
+        }
+        Collections.sort(mirrors);
         for (final String mirrorURL : mirrors) {
-            index += 1;
-            logger.info("Crawling mirror " + (index + 1) + " / " + mirrors.length);
+            logger.info("Crawling mirror:" + mirrorURL + " / " + mirrors.size());
             br.getPage(mirrorURL);
             final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
             // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!

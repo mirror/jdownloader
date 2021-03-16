@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +30,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -105,8 +105,8 @@ public class DoodriveCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         /**
-         * 2021-03-12: This is NOT a real availablecheck! </br>
-         * Website returns error 404 for invalid fileIDs but for expired/deleted files, status will be unclear until download is started!
+         * 2021-03-12: This is NOT a real availablecheck! </br> Website returns error 404 for invalid fileIDs but for expired/deleted files,
+         * status will be unclear until download is started!
          */
         if (isDownload) {
             br.getPage(link.getPluginPatternMatcher());
@@ -205,8 +205,12 @@ public class DoodriveCom extends PluginForHost {
             }
         } catch (final Throwable e) {
             logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
         }
-        return false;
     }
 
     @Override
