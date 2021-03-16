@@ -32,5 +32,5 @@ public interface MetartConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry("Select preferred photo crawl mode")
     PhotoCrawlMode getPhotoCrawlMode();
 
-    void setPhotoCrawlMode(PhotoCrawlMode cm);
+    void setPhotoCrawlMode(PhotoCrawlMode pcm);
 }

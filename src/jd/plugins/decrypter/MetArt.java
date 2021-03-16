@@ -65,10 +65,10 @@ public class MetArt extends PluginForDecrypt {
         if (useAcc == null) {
             throw new AccountRequiredException();
         }
-        br.setFollowRedirects(true);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         plg.setBrowser(this.br);
         ((jd.plugins.hoster.MetArtCom) plg).login(useAcc, false);
+        br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
             /* New 2020-12-07 */
             final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_GALLERY);
@@ -183,6 +183,7 @@ public class MetArt extends PluginForDecrypt {
                 final DownloadLink dl = new DownloadLink(plg, filename, this.getHost(), downloadurl, true);
                 dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 dl.setAvailable(true);
+                /* Prefer server-filename which will be set on downloadstart. */
                 // dl.setFinalFileName(modelname + " - " + title + "_" + id + "." + ext);
                 if (!StringUtils.isEmpty(description)) {
                     dl.setComment(description);
