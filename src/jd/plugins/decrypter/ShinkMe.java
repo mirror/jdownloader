@@ -54,6 +54,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
         final String parameter = param.toString().replace(".in/", ".me/");
         br.setFollowRedirects(true);
         Form dform = null;
+        /* 2021-03-16: reCaptcha not present anymore */
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
         // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
         synchronized (CTRLLOCK) {
@@ -79,8 +80,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(false);
         submitForm(dform);
-        // now a form
-        final Form f = br.getFormbyActionRegex("/redirect/");
+        final Form f = br.getFormbyProperty("id", "skip");
         if (f != null) {
             submitForm(f);
         }
@@ -100,7 +100,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return true;
+        return false;
     }
 
     public boolean hasAutoCaptcha() {

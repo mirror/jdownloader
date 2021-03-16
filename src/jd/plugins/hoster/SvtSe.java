@@ -16,10 +16,18 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -28,13 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" })
 public class SvtSe extends PluginForHost {
@@ -47,12 +48,13 @@ public class SvtSe extends PluginForHost {
         return "http://www.svtplay.se/";
     }
 
-    private String                        videoid = null;
-    private LinkedHashMap<String, Object> entries = null;
+    private String              videoid = null;
+    private Map<String, Object> entries = null;
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
@@ -81,14 +83,14 @@ public class SvtSe extends PluginForHost {
             /* Strange result on 404: {"message":"To many retry attempts to video API","status":404} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        final String channel = "svtplay";
-        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "rights/date/forDate");
-        final String title = (String) entries.get("programTitle");
-        String subtitle = (String) entries.get("episodeTitle");
-        if (title == null || channel == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        if (((Boolean) entries.get("live")).booleanValue()) {
+            logger.info("Livestreams are not supported");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String date = (String) JavaScriptEngineFactory.walkJson(entries, "rights/date/forDate");
+        String title = (String) entries.get("programTitle");
+        String subtitle = (String) entries.get("episodeTitle");
         if (subtitle == null) {
             subtitle = "";
         }
@@ -97,7 +99,11 @@ public class SvtSe extends PluginForHost {
         if (date_formatted != null) {
             filename += date_formatted + "_";
         }
-        filename += channel + "_" + title + " - " + subtitle + ".mp4";
+        filename += "svtplay" + "_";
+        if (!StringUtils.isEmpty(title)) {
+            filename += title;
+        }
+        filename += subtitle + ".mp4";
         filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
@@ -105,12 +111,12 @@ public class SvtSe extends PluginForHost {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String hls_master = null;
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("videoReferences");
+        final List<Object> ressourcelist = (List) entries.get("videoReferences");
         for (final Object videoo : ressourcelist) {
-            this.entries = (LinkedHashMap<String, Object>) videoo;
+            this.entries = (Map<String, Object>) videoo;
             final String format = (String) entries.get("format");
             if (format == null) {
                 continue;
@@ -122,7 +128,7 @@ public class SvtSe extends PluginForHost {
                 }
             }
         }
-        if (hls_master == null) {
+        if (StringUtils.isEmpty(hls_master)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.br.getPage(hls_master);
@@ -134,8 +140,8 @@ public class SvtSe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String url_hls = hlsbest.getDownloadurl();
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls);
+        checkFFmpeg(link, "Download a HLS Stream");
+        dl = new HLSDownloader(link, br, url_hls);
         dl.startDownload();
     }
 

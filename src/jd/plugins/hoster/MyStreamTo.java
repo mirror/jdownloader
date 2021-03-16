@@ -15,13 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.appwork.utils.StringUtils;
-import org.jdownloader.encoding.AADecoder;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,119 +34,142 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystream.to" }, urls = { "https?://(?:(?:www|embed)\\.)?mystream\\.(?:la|to)/(?:external/|embed-)?[A-Za-z0-9]{12}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MyStreamTo extends PluginForHost {
     public MyStreamTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/external/"));
-    }
-
-    private String dllink = null;
-
-    @Override
     public String getAGBLink() {
         return "https://mystream.la/terms-of-service";
     }
 
-    @Override
-    public String rewriteHost(String host) {
-        if ("mystream.la".equals(getHost())) {
-            if (host == null || "mystream.la".equals(host)) {
-                return "mystream.to";
-            }
-        }
-        return super.rewriteHost(host);
+    public static final String getDefaultAnnotationPatternPart() {
+        return "/(?:external/|embed-)?([A-Za-z0-9]{12})";
     }
 
-    @SuppressWarnings("deprecation")
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.|embed\\.)?" + buildHostsPatternPart(domains) + MyStreamTo.getDefaultAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mystream.to", "mystream.la", "mstream.xyz", "mstream.cloud", "mstream.fun", "mstream.press" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        correctDownloadLink(downloadLink);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]{12})$").getMatch(0);
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return MyStreamTo.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        br.getPage(downloadLink.getPluginPatternMatcher());
-        if (br.containsHTML(">File Not Found<|The video has been blocked|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted|>We are unable to find the video you're looking for") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        br.getPage("https://embed." + this.getHost() + "/" + this.getFID(link));
+        if (br.containsHTML(">\\s*File Not Found<|The video has been blocked|The file you were looking for could not be found|>The file was deleted by administration because|File was deleted|>We are unable to find the video you're looking for") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJsonValue(br, "title");
-        if (filename == null) {
+        if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("title\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
         }
-        final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* 2016-09-19: Fallback to fuid as we do not always have a title/filename available. */
-            filename = fid;
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(filename, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        if (filesize != null) {
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            filename = encodeUnicode(filename);
+            final String ext = getFileNameExtensionFromString(filename, ".mp4");
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dllink = checkDirectLink(downloadLink, "directlink");
-        if (dllink == null) {
-            try {
-                final String aaa_decoded_result = new AADecoder().decode(br.toString());
-                dllink = new Regex(aaa_decoded_result, "TYPE\\.setAttribute\\(\\'src\\'\\s*,\\s*\\'(http[^<>\"\\']+)").getMatch(0);
-            } catch (final Throwable e) {
-                e.printStackTrace();
-                logger.warning("AADecoder failed");
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                dllink = PluginJSonUtils.getJsonValue(br, "file");
-            }
+    public void handleFree(final DownloadLink link) throws Exception {
+        final boolean resume = true;
+        final int maxChunks = -2;
+        if (!attemptStoredDownloadurlDownload(link, "directlink", resume, maxChunks)) {
+            requestFileInformation(link);
+            final String dllink = getDllink();
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("directlink", br.getURL());
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty("directlink", br.getURL());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            final Browser br2 = br.cloneBrowser();
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable t) {
-                }
+    private String getDllink() {
+        /* 2021-03-16: TODO */
+        return null;
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String property, final boolean resume, final int maxchunks) throws Exception {
+        String url = link.getStringProperty(property);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        } else {
+            final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
+            if (preferSSL && url.startsWith("http://")) {
+                url = url.replace("http://", "https://");
             }
         }
-        return dllink;
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e2) {
+            }
+        }
+        return false;
     }
 
     @Override
