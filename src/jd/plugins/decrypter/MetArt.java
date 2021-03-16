@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -10,6 +11,9 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.MetartConfig;
+import org.jdownloader.plugins.components.config.MetartConfig.PhotoCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -26,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.MetArtCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https://(?:www\\.)?metart\\.com/model/[^/]+/(gallery|movie)/\\d+/[A-Za-z0-9\\-_]+", "https://(?:www\\.)?sexart\\.com/model/[^/]+/(gallery|movie)/\\d+/[A-Za-z0-9\\-_]+" })
 public class MetArt extends PluginForDecrypt {
@@ -72,28 +77,60 @@ public class MetArt extends PluginForDecrypt {
             final String galleryname = urlinfo.getMatch(2);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(modelname + " - " + date + " - " + galleryname);
-            br.getPage("https://www." + this.getHost() + "/api/image?name=" + galleryname + "&date=" + date + "&order=5&mediaType=gallery");
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                return ret;
-            }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final List<Object> imagesO = (List<Object>) entries.get("media");
-            for (final Object imageO : imagesO) {
-                entries = (Map<String, Object>) imageO;
-                final String url = (String) JavaScriptEngineFactory.walkJson(entries, "src_downloadable/high");
-                if (StringUtils.isEmpty(url)) {
-                    /* Skip invalid objects */
-                    continue;
+            if (PluginJsonConfig.get(this.getConfigInterface()).getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
+                br.getPage("https://www." + this.getHost() + "/api/gallery?name=" + galleryname + "&date=" + date + "&mediaFirst=42&page=1");
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    ret.add(this.createOfflinelink(param.getCryptedUrl()));
+                    return ret;
                 }
-                final String filenameURL = UrlQuery.parse(url).get("filename");
-                final DownloadLink dl = new DownloadLink(plg, filenameURL, this.getHost(), url, true);
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final String uuid = (String) entries.get("UUID");
+                entries = (Map<String, Object>) entries.get("files");
+                entries = (Map<String, Object>) entries.get("sizes");
+                final List<Object> zipFilesO = (List<Object>) entries.get("zips");
+                /* Assume that their array is sorted from highest to lowest. */
+                entries = (Map<String, Object>) zipFilesO.get(0);
+                String filename = (String) entries.get("fileName");
+                if (!filename.toLowerCase(Locale.ENGLISH).endsWith(".zip")) {
+                    filename += ".zip";
+                }
+                final String filesize = (String) entries.get("size");
+                final String quality = (String) entries.get("quality");
+                final DownloadLink dl = this.createDownloadlink("https://www.metart.com/api/download-media/" + uuid + "/photos/" + quality);
+                dl.setFinalFileName(filename);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
-                if (filenameURL != null) {
-                    dl.setName(filenameURL);
-                }
                 dl._setFilePackage(fp);
+                dl.setProperty(MetArtCom.PROPERTY_UUID, uuid);
+                dl.setProperty(MetArtCom.PROPERTY_QUALITY, quality);
                 ret.add(dl);
+            } else {
+                br.getPage("https://www." + this.getHost() + "/api/image?name=" + galleryname + "&date=" + date + "&order=5&mediaType=gallery");
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    ret.add(this.createOfflinelink(param.getCryptedUrl()));
+                    return ret;
+                }
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final List<Object> imagesO = (List<Object>) entries.get("media");
+                for (final Object imageO : imagesO) {
+                    entries = (Map<String, Object>) imageO;
+                    final String uuid = (String) entries.get("UUID");
+                    final String url = (String) JavaScriptEngineFactory.walkJson(entries, "src_downloadable/high");
+                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(uuid)) {
+                        /* Skip invalid objects */
+                        continue;
+                    }
+                    final String filenameURL = UrlQuery.parse(url).get("filename");
+                    final DownloadLink dl = new DownloadLink(plg, filenameURL, this.getHost(), url, true);
+                    dl.setAvailable(true);
+                    if (filenameURL != null) {
+                        dl.setName(filenameURL);
+                    }
+                    dl._setFilePackage(fp);
+                    dl.setProperty(MetArtCom.PROPERTY_UUID, uuid);
+                    dl.setProperty(MetArtCom.PROPERTY_QUALITY, "high");
+                    ret.add(dl);
+                }
             }
         } else if (param.getCryptedUrl().matches(TYPE_MOVIE)) {
             /* New 2020-12-08 */
@@ -136,14 +173,14 @@ public class MetArt extends PluginForDecrypt {
                     /* E.g. avi, wmv */
                     ext = id;
                 }
-                final String url = "https://www.metart.com/api/download-media/" + uuid + "/film/" + id;
+                final String downloadurl = "https://www.metart.com/api/download-media/" + uuid + "/film/" + id;
                 String filename = modelname + " - " + title;
                 /* Do not e.g. generate filenames like "title_avi.avi" */
                 if (!ext.equals(id)) {
                     filename += "_" + id;
                 }
                 filename += "." + ext;
-                final DownloadLink dl = new DownloadLink(plg, filename, this.getHost(), url, true);
+                final DownloadLink dl = new DownloadLink(plg, filename, this.getHost(), downloadurl, true);
                 dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 dl.setAvailable(true);
                 // dl.setFinalFileName(modelname + " - " + title + "_" + id + "." + ext);
@@ -151,6 +188,8 @@ public class MetArt extends PluginForDecrypt {
                     dl.setComment(description);
                 }
                 dl._setFilePackage(fp);
+                dl.setProperty(MetArtCom.PROPERTY_UUID, uuid);
+                dl.setProperty(MetArtCom.PROPERTY_QUALITY, id);
                 ret.add(dl);
             }
             if (ret.isEmpty() && !teasersO.isEmpty()) {
@@ -175,5 +214,10 @@ public class MetArt extends PluginForDecrypt {
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Class<? extends MetartConfig> getConfigInterface() {
+        return MetartConfig.class;
     }
 }

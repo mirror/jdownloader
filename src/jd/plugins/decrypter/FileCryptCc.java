@@ -22,19 +22,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -76,7 +77,7 @@ public class FileCryptCc extends PluginForDecrypt {
         return true;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
@@ -88,15 +89,14 @@ public class FileCryptCc extends PluginForDecrypt {
         br.setFollowRedirects(true);
         FilePackage fp = null;
         br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
-        final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
-        final String containsMirror = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        if (containsMirror == null) {
-            getPage(parameter + "/.html");
-        } else {
+        final String mirrorIdFromURL = UrlQuery.parse(parameter).get("mirror");
+        if (mirrorIdFromURL != null) {
             getPage(parameter);
+        } else {
+            getPage(parameter + "/.html");
         }
-        if (br.getURL().matches(".*filecrypt\\.(cc|co)/404\\.html.*")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("https?://[^/]+/404\\.html.*")) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -287,19 +287,27 @@ public class FileCryptCc extends PluginForDecrypt {
         final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         // mirrors - note: containers can contain uid within path... -raztoki20161204
-        String[] mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+" + (containsMirror != null ? Pattern.quote(containsMirror) : "\\.html\\?mirror=\\d+") + ")\"").getColumn(0);
-        if (mirrors.length < 1) {
-            mirrors = new String[1];
-            mirrors[0] = parameter + "?mirror=0";
+        String[] mirrors;
+        if (mirrorIdFromURL != null && PluginJsonConfig.get(this.getConfigInterface()).getCrawlMode() == CrawlMode.PREFER_GIVEN_MIRROR_ID) {
+            logger.info("Crawl mirror according to mirrorID from URL");
+            mirrors = new String[] { parameter + "?mirror=" + mirrorIdFromURL };
         } else {
-            // first mirror shown should be mirror 0;
-            Arrays.sort(mirrors);
-        }
-        for (String mirror : mirrors) {
-            // if 0 we don't need to get new page
-            if (!mirror.endsWith("mirror=0")) {
-                br.getPage(mirror);
+            logger.info("Crawling all existing mirrors");
+            mirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)").getColumn(0);
+            if (mirrors.length < 1) {
+                /* Fallback -> Only 1 mirror available */
+                mirrors = new String[1];
+                mirrors[0] = parameter + "?mirror=0";
+            } else {
+                // first mirror shown should be mirror 0;
+                Arrays.sort(mirrors);
             }
+        }
+        int index = -1;
+        for (final String mirrorURL : mirrors) {
+            index += 1;
+            logger.info("Crawling mirror " + (index + 1) + " / " + mirrors.length);
+            br.getPage(mirrorURL);
             final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
             // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
             handleCnl2(tdl, parameter);
@@ -313,21 +321,21 @@ public class FileCryptCc extends PluginForDecrypt {
                     fp.addLinks(tdl);
                 }
                 distribute(tdl.toArray(new DownloadLink[0]));
-                if (containsMirror != null) {
-                    return decryptedLinks;
+            } else {
+                /* Second try DLC, then single links */
+                final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
+                if (dlc_id != null) {
+                    logger.info("DLC found - trying to add it");
+                    tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
+                    if (tdl.isEmpty()) {
+                        logger.warning("DLC for current mirror is empty or something is broken!");
+                        continue;
+                    }
+                    decryptedLinks.addAll(tdl);
                 }
-                continue;
             }
-            /* Second try DLC, then single links */
-            final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
-            if (dlc_id != null) {
-                logger.info("DLC found - trying to add it");
-                tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
-                if (tdl.isEmpty()) {
-                    logger.warning("DLC is empty or something is broken!");
-                    continue;
-                }
-                decryptedLinks.addAll(tdl);
+            if (this.isAbort()) {
+                break;
             }
         }
         if (!decryptedLinks.isEmpty()) {

@@ -3,6 +3,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.components.config.MetartConfig;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -19,14 +23,28 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://(?:www\\.)?metart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+", "https?://(?:www\\.)?sexart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://(?:www\\.)?metart\\.com/api/download-media/[A-F0-9]{32}.+", "https?://(?:www\\.)?sexart\\.com/api/download-media/[A-F0-9]{32}.+" })
 public class MetArtCom extends PluginForHost {
     public MetArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://signup.met-art.com/model.htm?from=homepage");
+    }
+
+    public static final String PROPERTY_UUID    = "uuid";
+    public static final String PROPERTY_QUALITY = "quality";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String uuid = link.getStringProperty(PROPERTY_UUID);
+        if (uuid != null) {
+            String linkid = this.getHost() + "://" + uuid;
+            if (link.hasProperty(PROPERTY_QUALITY)) {
+                linkid += link.getStringProperty(PROPERTY_QUALITY);
+            }
+            return linkid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @Override
@@ -36,6 +54,7 @@ public class MetArtCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* URLs are added via crawler and will get checked there already. */
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -49,10 +68,10 @@ public class MetArtCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             return false;
         } else {
@@ -128,8 +147,7 @@ public class MetArtCom extends PluginForHost {
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        /* TODO: Find a way to set cookies without the need to check them again prior to download */
-        this.login(account, true);
+        this.login(account, false);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -152,5 +170,10 @@ public class MetArtCom extends PluginForHost {
             link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         }
         dl.startDownload();
+    }
+
+    @Override
+    public Class<? extends MetartConfig> getConfigInterface() {
+        return MetartConfig.class;
     }
 }
