@@ -18,6 +18,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -27,14 +28,11 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.NewPackageDialog;
 import org.jdownloader.translate._JDT;
 
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
-
     /**
      *
      */
     private static final long   serialVersionUID = 2636706677433058054L;
-
     private boolean             mergePackages    = false;
-
     private final static String NAME             = _GUI.T.SplitPackagesByHost_SplitPackagesByHost_object_();
 
     public SplitPackagesByHost() {
@@ -70,7 +68,6 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
     }
 
     private boolean        askForNewDownloadFolderAndPackageName = true;
-
     private LocationInList location                              = LocationInList.AFTER_SELECTION;
 
     public static String getTranslationForLocation() {
@@ -117,7 +114,6 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
             newDownloadFolder = null;
         }
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
             @Override
             protected Void run() throws RuntimeException {
                 final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
@@ -182,7 +178,8 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                                 if (sourcePackage != null) {
                                     sourcePackage.copyPropertiesTo(destPackage);
                                 } else {
-                                    destPackage.setDownloadDirectory(newDownloadFolder);
+                                    final String downloadFolder = PackagizerController.replaceDynamicTags(newDownloadFolder, newPackageName, destPackage);
+                                    destPackage.setDownloadDirectory(downloadFolder);
                                 }
                                 destPackage.setName(newPackageName);
                                 mergedPackages.put(newPackageName, destPackage);
@@ -193,9 +190,9 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                             if (sourcePackage != null) {
                                 sourcePackage.copyPropertiesTo(newPkg);
                             } else {
-                                newPkg.setDownloadDirectory(newDownloadFolder);
+                                final String downloadFolder = PackagizerController.replaceDynamicTags(newDownloadFolder, newPackageName, newPkg);
+                                newPkg.setDownloadDirectory(downloadFolder);
                             }
-
                             newPkg.setName(newPackageName);
                         }
                         DownloadController.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);

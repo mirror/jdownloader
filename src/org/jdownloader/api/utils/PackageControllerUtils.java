@@ -45,7 +45,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public List<AbstractNode> getAbstractNodes(long[] linkIds, long[] packageIds) {
-        ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
+        final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
         if ((packageIds != null && packageIds.length > 0) || (linkIds != null && linkIds.length > 0)) {
             convertIdsToObjects(ret, linkIds, packageIds);
             if (ret.size() == 0) {
@@ -83,8 +83,9 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             return (PackageType) FilePackage.getInstance();
         } else if (ct instanceof CrawledLink) {
             return (PackageType) new CrawledPackage();
+        } else {
+            return null;
         }
-        return null;
     }
 
     public PackageType getPackageInstance(PackageType ct) {
@@ -92,8 +93,9 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             return (PackageType) FilePackage.getInstance();
         } else if (ct instanceof CrawledPackage) {
             return (PackageType) new CrawledPackage();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -140,12 +142,13 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     public static HashSet<Long> createLookupSet(long[] linkIds) {
         if (linkIds == null || linkIds.length == 0) {
             return null;
+        } else {
+            final HashSet<Long> linkLookup = new HashSet<Long>();
+            for (long l : linkIds) {
+                linkLookup.add(l);
+            }
+            return linkLookup;
         }
-        final HashSet<Long> linkLookup = new HashSet<Long>();
-        for (long l : linkIds) {
-            linkLookup.add(l);
-        }
-        return linkLookup;
     }
 
     public void setEnabled(boolean enabled, final long[] linkIds, final long[] packageIds) {
@@ -271,15 +274,22 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return destPkg;
     }
 
-    public PackageType setDirectory(PackageType pt, String directory) {
-        if (pt instanceof FilePackage) {
-            ((FilePackage) pt).setDownloadDirectory(directory);
-            DownloadPathHistoryManager.getInstance().listPaths(directory);
-        } else if (pt instanceof CrawledPackage) {
-            ((CrawledPackage) pt).setDownloadFolder(directory);
-            DownloadPathHistoryManager.getInstance().listPaths(directory);
-        }
-        return pt;
+    public void setDirectory(final PackageType pt, final String directory) {
+        pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                if (pt instanceof FilePackage) {
+                    final FilePackage fp = (FilePackage) pt;
+                    final String finalDirectory = PackagizerController.replaceDynamicTags(directory, fp.getName(), fp);
+                    DownloadWatchDog.getInstance().setDownloadDirectory(fp, finalDirectory);
+                    DownloadPathHistoryManager.getInstance().add(directory);
+                } else if (pt instanceof CrawledPackage) {
+                    ((CrawledPackage) pt).setDownloadFolder(directory);
+                    DownloadPathHistoryManager.getInstance().add(directory);
+                }
+                return null;
+            }
+        });
     }
 
     public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {
@@ -343,20 +353,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         for (PackageView<PackageType, ChildType> pkg : selection.getPackageViews()) {
             if (pkg.isPackageSelected()) {
                 final PackageType pt = pkg.getPackage();
-                final String finalDirectory = directory.replaceAll(PackagizerController.PACKAGETAG, pt.getName());
-                if (pt instanceof FilePackage) {
-                    DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, finalDirectory);
-                    DownloadPathHistoryManager.getInstance().add(directory);
-                } else if (pt instanceof CrawledPackage) {
-                    pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
-                        @Override
-                        protected Void run() throws RuntimeException {
-                            ((CrawledPackage) pt).setDownloadFolder(finalDirectory);
-                            DownloadPathHistoryManager.getInstance().add(directory);
-                            return null;
-                        }
-                    });
-                }
+                setDirectory(pt, directory);
             }
         }
     }

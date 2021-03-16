@@ -3,9 +3,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -21,6 +18,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metart.com", "sexart.com" }, urls = { "https?://(?:www\\.)?metart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+", "https?://(?:www\\.)?sexart\\.com/api/[a-z0-9]+/[A-F0-9]{32}\\.[a-z0-9]+" })
 public class MetArtCom extends PluginForHost {
@@ -99,9 +99,9 @@ public class MetArtCom extends PluginForHost {
                 boolean loggedIN = false;
                 try {
                     getSetAccountType(account);
-                    /* Not logged in = Different json -> Exception */
                     loggedIN = true;
                 } catch (final Throwable e) {
+                    /* Not logged in = Different json -> Exception */
                 }
                 if (loggedIN) {
                     logger.info("Cookie login successful");
