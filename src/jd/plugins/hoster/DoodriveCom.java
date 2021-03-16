@@ -201,14 +201,10 @@ public class DoodriveCom extends PluginForHost {
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
-                dl.getConnection().disconnect();
-                return false;
+                throw new IOException();
             }
         } catch (final Throwable e) {
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e2) {
-            }
+            logger.log(e);
         }
         return false;
     }
