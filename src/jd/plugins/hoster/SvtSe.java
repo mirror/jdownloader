@@ -29,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -55,10 +57,16 @@ public class SvtSe extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
         this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
-        if (videoid == null) {
+        if (StringUtils.isEmpty(videoid)) {
             videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-            if (videoid == null) {
+            if (StringUtils.isEmpty(videoid)) {
                 videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
+                if (StringUtils.isEmpty(videoid)) {
+                    final String id = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
+                    if (id != null) {
+                        videoid = this.br.getRegex("/video/" + id + "[^\"]*?modalId=(.*?)\"").getMatch(0);
+                    }
+                }
             }
         }
         /* 404 --> Offline, videoid not found --> No video on page --> Offline */
