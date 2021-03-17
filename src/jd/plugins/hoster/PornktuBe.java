@@ -15,11 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornktuBe extends KernelVideoSharingComV2 {
@@ -56,5 +63,43 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         if (redirect != null) {
             this.getPage(redirect);
         }
+    }
+
+    @Override
+    protected String getDllink(final Browser br) throws PluginException, IOException {
+        final String id = this.getFUID(this.getDownloadLink());
+        // final String s = br.getRegex("data-s=\"(\\d+)\"").getMatch(0);
+        // final String t = br.getRegex("data-t=\"(\\d+)\"").getMatch(0);
+        final String server = br.getRegex("data-n=\"(\\d+)\"").getMatch(0);
+        if (server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String qualitiesStr = br.getRegex("data-q=\"([^\"]+)\"").getMatch(0);
+        final String[] qualities = qualitiesStr.split(",");
+        int best = 0;
+        final int nt = Integer.parseInt(id) / 1000;
+        final int n = nt * 1000;
+        String dllink = null;
+        for (final String qualityItems : qualities) {
+            final Regex qualityInfo = new Regex(qualityItems, "\\&nbsp;(\\d+)p;\\d+;(\\d+);([^;]+)");
+            final String qualityStr = qualityInfo.getMatch(0);
+            final String number = qualityInfo.getMatch(1);
+            final String key = qualityInfo.getMatch(2);
+            if (qualityStr == null || number == null || key == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String url = "https://s" + server + ".stormedia.info/whpvid/" + number + "/" + key + "/" + n + "/" + id + "/" + id + "_" + qualityStr + "p.mp4";
+            /* Special case */
+            url = url.replace("_720p", "");
+            final int quality = Integer.parseInt(qualityStr);
+            if (quality > best) {
+                best = quality;
+                dllink = url;
+            }
+        }
+        if (dllink != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.getDownloadLink().setComment("SelectedQuality: " + best + "p");
+        }
+        return dllink;
     }
 }
