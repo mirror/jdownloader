@@ -17,7 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
@@ -141,7 +145,49 @@ public class MyStreamTo extends PluginForHost {
     }
 
     private String getDllink() {
-        /* 2021-03-16: TODO */
+        final String encodedjs = new Regex(br.toString(), Pattern.compile("(\\$=.+?;)\\s*<", Pattern.DOTALL)).getMatch(0);
+        final int beginning = encodedjs.indexOf("\"\\\"\"+") + 5;
+        final int end = encodedjs.indexOf("\"\\\"\")())()");
+        String group1 = encodedjs.substring(beginning, end);
+        final String pos = new Regex(group1, "(\\(\\!\\[\\]\\+\\\"\\\"\\)\\[.+?\\]\\+)").getMatch(0);
+        group1 = group1.replace(pos, "l").replace("$.__+", "t").replace("$._+", "u").replace("$._$+", "o");
+        final String js = new Regex(encodedjs, "(\\$=\\{.+?\\});").getMatch(0);
+        final String js1 = js.substring(3, js.length() - 1);
+        // final String js2 = js1.substring(0, js1.length() - 1);
+        final String[] jsgroups = js1.split(",");
+        // final ArrayList<String> tmpArray = new ArrayList<String>();
+        final HashMap<String, String> tmpMap = new HashMap<String, String>();
+        int i = -1;
+        for (final String jsgroup : jsgroups) {
+            final String[] groupmembers = jsgroup.split(":");
+            final String a = groupmembers[0];
+            final String b = groupmembers[1];
+            if (b.equals("++$")) {
+                i += 1;
+                tmpMap.put(String.format("$.%s+", a), Integer.toString(i));
+            } else if (b.equals("(![]+\"\")[$]")) {
+                tmpMap.put(String.format("$.%s+", a), Character.toString("false".charAt(i)));
+            } else if (b.equals("({}+\"\")[$]")) {
+                tmpMap.put(String.format("$.%s+", a), Character.toString("[object Object]".charAt(i)));
+            } else if (b.equals("($[$]+\"\")[$]")) {
+                tmpMap.put(String.format("$.%s+", a), Character.toString("undefined".charAt(i)));
+            } else if (b.equals("(!\"\"+\"\")[$]")) {
+                tmpMap.put(String.format("$.%s+", a), Character.toString("true".charAt(i)));
+            }
+        }
+        final TreeMap<String, String> sortedMap = new TreeMap<String, String>();
+        for (Map.Entry<String, String> entry : tmpMap.entrySet()) {
+            sortedMap.put(entry.getValue(), entry.getKey());
+        }
+        for (Map.Entry<String, String> entry : sortedMap.entrySet()) {
+            group1 = group1.replace(entry.getValue(), entry.getKey());
+        }
+        group1 = group1.replace("\\\"", "\\");
+        group1 = group1.replace("\"\\\\\\\\\"", "\\\\");
+        group1 = group1.replace("\\\"", "\\");
+        group1 = group1.replace("\"", "");
+        group1 = group1.replace("+", "");
+        /* TODO: Decode this properly and return final downloadurl. */
         return null;
     }
 
