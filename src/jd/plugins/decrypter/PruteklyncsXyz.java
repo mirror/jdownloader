@@ -18,10 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,11 +39,17 @@ public class PruteklyncsXyz extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2021-03-17: Preventive measure */
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">\\s*Page Not Found\\s*<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Page Not Found\\s*<") || br.toString().length() <= 100) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -67,19 +75,29 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             /* 2020-10-26: Cheap clientside captcha */
             final String nonce = PluginJSonUtils.getJson(br, "nonce");
             final String post_id = PluginJSonUtils.getJson(br, "post_id");
+            final String captchaID = br.getRegex("data-psid=\"([^\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(nonce) || StringUtils.isEmpty(post_id)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final UrlQuery query = new UrlQuery();
-            query.add("action", "validate_input");
-            query.add("nonce", nonce);
-            query.add("captcha", "success");
-            query.add("post_id", post_id);
-            query.add("type", "captcha");
-            query.add("protection", "");
-            query.add("elementor_content", "");
+            Form captchaForm = br.getFormbyProperty("class", "captcha-form");
+            if (captchaForm == null) {
+                captchaForm = new Form();
+                captchaForm.setMethod(MethodType.POST);
+            }
+            captchaForm.put("action", "validate_input");
+            captchaForm.put("nonce", nonce);
+            captchaForm.put("captcha", "success");
+            captchaForm.put("post_id", post_id);
+            captchaForm.put("type", "captcha");
+            // captchaForm.put("protection", "");
+            /* 2021-03-17 */
+            captchaForm.put("protection", "full");
+            captchaForm.put("elementor_content", "");
+            captchaForm.put("captcha_id", Encoding.urlEncode(captchaID));
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            br.postPage("/wp-admin/admin-ajax.php", query);
+            captchaForm.setAction("/wp-admin/admin-ajax.php");
+            // br.postPage("/wp-admin/admin-ajax.php", query);
+            this.br.submitForm(captchaForm);
             br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
         }
         String[] links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"").getColumn(0);
@@ -92,7 +110,7 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            if (!singleLink.equals(parameter)) {
+            if (!this.canHandle(singleLink)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
