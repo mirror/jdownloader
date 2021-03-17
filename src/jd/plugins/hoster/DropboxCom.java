@@ -17,7 +17,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import jd.PluginWrapper;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -107,7 +106,6 @@ public class DropboxCom extends PluginForHost {
     /* 2019-09-26: API does currently not support this kind of URL. A feature request to support those has been forwarded! */
     public static final String              TYPE_SC_GALLERY                                  = "https?://[^/]+/sc/.+";
     private static HashMap<String, Cookies> accountMap                                       = new HashMap<String, Cookies>();
-    private String                          dllink                                           = null;
     private boolean                         temp_unavailable_file_generates_too_much_traffic = false;
     public static final String              API_BASE                                         = "https://api.dropboxapi.com/2";
     private static final String             API_BASE_CONTENT                                 = "https://content.dropboxapi.com/2";
@@ -137,7 +135,6 @@ public class DropboxCom extends PluginForHost {
          * also handling for 'TYPE_SC' linktype! </br> This might not be necessary for any other linktype as the old '?dl=1' method is
          * working just fine!
          */
-        dllink = null;
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             String url = link.getPluginPatternMatcher();
             url = url.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
@@ -154,12 +151,7 @@ public class DropboxCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             try {
                 brc.setFollowRedirects(true);
-                if (Thread.currentThread() instanceof SingleDownloadController) {
-                    // 2021-03-16 ->generated dl url is bound to request method, head request -> get request will result in 403 Forbidden
-                    con = brc.openGetConnection(dllink);
-                } else {
-                    con = brc.openHeadConnection(dllink);
-                }
+                con = brc.openHeadConnection(dllink);
                 if (con.getResponseCode() == 404) {
                     try {
                         brc.followConnection(true);
@@ -218,7 +210,7 @@ public class DropboxCom extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
                 } else if (this.looksLikeDownloadableContent(con)) {
-                    this.dllink = con.getURL().toString();
+                    // this.dllink = con.getURL().toString();
                     link.setProperty("directlink", dllink);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -238,7 +230,7 @@ public class DropboxCom extends PluginForHost {
                     logger.info("File is not direct-downloadable");
                     if (brc.getURL().contains("/speedbump/")) {
                         /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
-                        this.dllink = brc.getURL().replace("/speedbump/", "/speedbump/dl/");
+                        // brc.getURL().replace("/speedbump/", "/speedbump/dl/");
                     }
                     if (isPasswordProtectedWebsite(brc)) {
                         /* Password handling is located in download handling. */
@@ -396,6 +388,7 @@ public class DropboxCom extends PluginForHost {
          * password again! This is why it is crucial to also check for isPasswordProtectedWebsite here!!
          */
         final boolean resume_supported;
+        String dllink = null;
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
             /* Complete image gallery */
             if (link.getFinalFileName() != null && link.getFinalFileName().endsWith(".zip")) {
@@ -472,9 +465,7 @@ public class DropboxCom extends PluginForHost {
             dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "?dl=1");
         } else {
             resume_supported = true;
-            if (dllink == null) {
-                dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
-            }
+            dllink = URLHelper.parseLocation(new URL(this.getRootFolderURL(link, link.getPluginPatternMatcher())), "&dl=1");
         }
         handleDownload(link, dllink, resume_supported);
     }
