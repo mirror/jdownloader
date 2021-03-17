@@ -480,7 +480,7 @@ public class TvnowDe extends PluginForHost {
                 errorNoDownloadurlFound(acc, isFree);
             }
             if (link.getComment() == null || cfg.isShowQualityInfoInComment()) {
-                link.setComment(hlsDownloadCandidate.toString());
+                link.setComment(hlsDownloadCandidate.toString() + " | " + hlsDownloadCandidate.getDownloadurl());
             }
             logger.info("Downloading quality: " + hlsDownloadCandidate.toString());
             checkFFmpeg(link, "Download a HLS Stream");
