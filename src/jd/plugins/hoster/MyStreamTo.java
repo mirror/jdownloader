@@ -153,9 +153,7 @@ public class MyStreamTo extends PluginForHost {
         group1 = group1.replace(pos, "l").replace("$.__+", "t").replace("$._+", "u").replace("$._$+", "o");
         final String js = new Regex(encodedjs, "(\\$=\\{.+?\\});").getMatch(0);
         final String js1 = js.substring(3, js.length() - 1);
-        // final String js2 = js1.substring(0, js1.length() - 1);
         final String[] jsgroups = js1.split(",");
-        // final ArrayList<String> tmpArray = new ArrayList<String>();
         final HashMap<String, String> tmpMap = new HashMap<String, String>();
         int i = -1;
         for (final String jsgroup : jsgroups) {
