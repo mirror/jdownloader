@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
@@ -116,10 +117,10 @@ public class ProSevenDe extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         /* Let's find the downloadlink */
-        final String clip_id = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String clip_id = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         if (clip_id == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -174,7 +175,7 @@ public class ProSevenDe extends PluginForHost {
         }
         if (json.startsWith("rtmp")) {
             /* rtmp */
-            downloadRTMP(downloadLink);
+            downloadRTMP(link);
         } else if (failed) {
             /* hls - try hls fallback! */
             /* 2016-06-16: TODO: Try APIV2 instead to find higher quality hds versions */
@@ -190,6 +191,10 @@ public class ProSevenDe extends PluginForHost {
             // final String sources_api_url = "http://vas.sim-technik.de/vas/live/v2/videos/" + clip_id + "/sources?" + "access_token=" +
             // access_token + "&client_name=" + client_name + "&client_location=" + client_location;
             this.br.setFollowRedirects(true);
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2021-03-17 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected content");
+            }
             br.getPage("http://vas.sim-technik.de/video/playlist.m3u8?ClipID=" + clip_id);
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
             if (hlsbest == null) {
@@ -198,8 +203,8 @@ public class ProSevenDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
             }
             final String url_hls = hlsbest.getDownloadurl();
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, url_hls);
             dl.startDownload();
         } else {
             /* Happens if usually the clip is streamed via rtmpe --> No HbbTV version available either. */
@@ -227,7 +232,7 @@ public class ProSevenDe extends PluginForHost {
                     }
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, json, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, json, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);

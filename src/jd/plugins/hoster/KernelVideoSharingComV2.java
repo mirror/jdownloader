@@ -968,7 +968,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
             if (video_url == null) {
                 video_url = br.getRegex("var\\s+video_url=Dpww3Dw64\\(\"([^\"]+)").getMatch(0);
                 if (video_url == null) {
-                    // tubepornclassic.com
+                    // tubepornclassic.com, vjav.com
                     video_url = br.getRegex("\"video_url\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                     if (video_url != null) {
                         video_url = JSonStorage.restoreFromString("\"" + video_url + "\"", TypeRef.STRING);
@@ -1012,7 +1012,7 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink)) {
             final String query = br.getRegex("\"query\"\\s*:\\s*(\\{[^\\{\\}]*?\\})").getMatch(0);
             if (query != null) {
-                // tubepornclassic.com
+                // tubepornclassic.com, vjav.com
                 final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
                 final String videoID = (String) queryMap.get("video_id");
                 if (StringUtils.isNotEmpty(videoID) && queryMap.containsKey("lifetime")) {
