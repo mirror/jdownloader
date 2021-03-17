@@ -38,8 +38,8 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /*
          * 2020-10-27: cwtvembeds.com is part of camwhoreshd.com - it is very unlikely going to happen that a user inserts a single
-         * camwhoreshd.com URL but just in case, we will support that too. Usually camwhoreshd.com will embed camwhoreshd.com videos
-         * (special case as cwtvembeds.com is their own website too.)!
+         * camwhoreshd.com URL but just in case, we will support that too. Usually camwhoreshd.com will embed camwhoreshd.com (= their own)
+         * videos (special case as cwtvembeds.com is their own website too.)!
          */
         ret.add(new String[] { "camwhoreshd.com", "cwtvembeds.com" });
         return ret;

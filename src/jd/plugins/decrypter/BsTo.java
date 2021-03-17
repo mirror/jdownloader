@@ -74,7 +74,7 @@ public class BsTo extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
+        // final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
         if (parameter.matches(TYPE_SINGLE)) {
             String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
@@ -131,7 +131,7 @@ public class BsTo extends PluginForDecrypt {
                 /* Crawl all episodes of a series --> All mirrors in that */
                 mirrorlist = br.getRegex("<table class=\"episodes\">.*?</table>").getMatch(-1);
             }
-            final String[] mirrors = new Regex(mirrorlist, "<a href=\"(/?[^\"]+)\"").getColumn(0);
+            final String[] mirrors = new Regex(mirrorlist, "<a[^>]*href=\"(/?[^\"]+)\"").getColumn(0);
             if (mirrors == null || mirrors.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
