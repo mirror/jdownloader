@@ -23,10 +23,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,6 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MyStreamTo extends PluginForHost {
@@ -136,7 +136,11 @@ public class MyStreamTo extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection();
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("directlink", br.getURL());
@@ -185,8 +189,13 @@ public class MyStreamTo extends PluginForHost {
         group1 = group1.replace("\\\"", "\\");
         group1 = group1.replace("\"", "");
         group1 = group1.replace("+", "");
-        /* TODO: Decode this properly and return final downloadurl. */
-        return null;
+        for (int r = 255; r >= 0; r--) {
+            if (group1.contains("\\\\" + r)) {
+                final char replacement = (char) Long.parseLong(String.valueOf(r), 8);
+                group1 = group1.replace("\\\\" + r, String.valueOf(replacement));
+            }
+        }
+        return new Regex(group1, "'src'\\s*,\\s*'(https?://.*?)'").getMatch(0);
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String property, final boolean resume, final int maxchunks) throws Exception {
@@ -212,8 +221,8 @@ public class MyStreamTo extends PluginForHost {
                 dl.getConnection().disconnect();
             } catch (final Throwable e2) {
             }
+            return false;
         }
-        return false;
     }
 
     @Override
