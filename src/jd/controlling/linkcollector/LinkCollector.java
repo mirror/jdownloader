@@ -80,6 +80,9 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
@@ -591,6 +594,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCrawlerFinished() {
             }
         });
+        org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                logger.info("LinkChecker Changed:" + newValue);
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+        logger.info("LinkChecker Enabled:" + org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled());
     }
 
     public AutoStartManager getAutoStartManager() {

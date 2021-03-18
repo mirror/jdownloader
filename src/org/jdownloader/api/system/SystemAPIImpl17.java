@@ -68,7 +68,7 @@ public class SystemAPIImpl17 {
         if (roots.isEmpty()) {
             for (final FileStore fileStore : Files17.getFileStores()) {
                 final Path fileStorePath = getPath(fileStore);
-                if (fileStorePath != null) {
+                if (fileStorePath != null && Files.isDirectory(fileStorePath)) {
                     roots.put(fileStorePath, fileStore);
                 }
             }
