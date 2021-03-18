@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -118,4 +119,15 @@ public class FastfileCc extends XFileSharingProBasic {
     // protected boolean enable_account_api_only_mode() {
     // return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     // }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        String dllink = super.getDllink(link, account, br, src);
+        if (dllink != null) {
+            /* 2021-03-18: Workaround for missing browser auto https upgrade: https://svn.jdownloader.org/issues/89679 */
+            return dllink.replaceFirst("(?i)http://", "https://");
+        } else {
+            return null;
+        }
+    }
 }
