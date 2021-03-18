@@ -274,22 +274,22 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return destPkg;
     }
 
-    public void setDirectory(final PackageType pt, final String directory) {
-        pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
-            @Override
-            protected Void run() throws RuntimeException {
-                if (pt instanceof FilePackage) {
-                    final FilePackage fp = (FilePackage) pt;
-                    final String finalDirectory = PackagizerController.replaceDynamicTags(directory, fp.getName(), fp);
-                    DownloadWatchDog.getInstance().setDownloadDirectory(fp, finalDirectory);
-                    DownloadPathHistoryManager.getInstance().add(directory);
-                } else if (pt instanceof CrawledPackage) {
+    protected void setDirectory(final PackageType pt, final String directory) {
+        if (pt instanceof FilePackage) {
+            final FilePackage fp = (FilePackage) pt;
+            final String finalDirectory = PackagizerController.replaceDynamicTags(directory, fp.getName(), fp);
+            DownloadWatchDog.getInstance().setDownloadDirectory(fp, finalDirectory);
+            DownloadPathHistoryManager.getInstance().add(directory);
+        } else if (pt instanceof CrawledPackage) {
+            packageController.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                protected Void run() throws RuntimeException {
                     ((CrawledPackage) pt).setDownloadFolder(directory);
                     DownloadPathHistoryManager.getInstance().add(directory);
+                    return null;
                 }
-                return null;
-            }
-        });
+            });
+        }
     }
 
     public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {

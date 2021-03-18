@@ -8,7 +8,6 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkCollectorConfig extends ConfigInterface {
-
     @AboutConfig
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
@@ -18,7 +17,6 @@ public interface LinkCollectorConfig extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("check links for on/offline status")
     boolean getDoLinkCheck();
 
@@ -52,5 +50,4 @@ public interface LinkCollectorConfig extends ConfigInterface {
     long getMaximumSaveDelay();
 
     void setMaximumSaveDelay(long delay);
-
 }
