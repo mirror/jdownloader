@@ -230,6 +230,17 @@ public class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    /** Items with different FUIDs but same filenames should not get treated as mirrors! */
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        final String fuid = getFUID(link);
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && fuid != null) {
+            return getHost() + "://" + fuid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;

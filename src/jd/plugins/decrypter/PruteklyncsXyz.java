@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLParser;
@@ -33,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?(pruteklyncs\\.xyz|dirtybandit\\.com)/[A-Za-z0-9\\-]+($|/|\\?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pruteklyncs.xyz" }, urls = { "https?://(?:www\\.)?(?:pruteklyncs\\.xyz|dirtybandit\\.com)/([A-Za-z0-9\\-]+)($|/|\\?)" })
 public class PruteklyncsXyz extends PluginForDecrypt {
     public PruteklyncsXyz(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,6 +49,7 @@ public class PruteklyncsXyz extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String contentID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Page Not Found\\s*<") || br.toString().length() <= 100) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -91,7 +93,12 @@ public class PruteklyncsXyz extends PluginForDecrypt {
             captchaForm.put("type", "captcha");
             // captchaForm.put("protection", "");
             /* 2021-03-17 */
-            captchaForm.put("protection", "full");
+            if (contentID.contains("-")) {
+                /* 2021-03-18: Just an assumption */
+                captchaForm.put("protection", "");
+            } else {
+                captchaForm.put("protection", "full");
+            }
             captchaForm.put("elementor_content", "");
             captchaForm.put("captcha_id", Encoding.urlEncode(captchaID));
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
