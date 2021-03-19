@@ -19,9 +19,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orangedox.com" }, urls = { "https?://(?:www\\.)?dl\\.orangedox\\.com/([A-Za-z0-9]+)" })
@@ -32,20 +35,38 @@ public class OrangedoxCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        // br.getPage(parameter);
+        // if (br.getHttpConnection().getResponseCode() == 404) {
+        // decryptedLinks.add(this.createOfflinelink(parameter));
+        // return decryptedLinks;
+        // }
+        // br.setFollowRedirects(true);
+        // br.getPage(br.getURL() + "?dl=1");
+        final URLConnectionAdapter con = br.openGetConnection(param.getCryptedUrl());
+        if (this.looksLikeDownloadableContent(con)) {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
+            }
+            final DownloadLink direct = this.createDownloadlink("directhttp://" + con.getURL().toString());
+            if (con.getCompleteContentLength() > 0) {
+                direct.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            if (con.isContentDisposition()) {
+                direct.setFinalFileName(Plugin.getFileNameFromHeader(con));
+            }
+            direct.setAvailable(true);
+            decryptedLinks.add(direct);
+        } else {
+            br.followConnection();
+            if (br.containsHTML("type=\"password\" name=\"pwd\"")) {
+                logger.info("Password protected URLs are not yet supported");
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            } else {
+                logger.info("Failed to find any content");
+            }
         }
-        br.setFollowRedirects(false);
-        br.getPage(br.getURL() + "?dl=1");
-        final String redirect = br.getRedirectLocation();
-        if (redirect == null) {
-            return null;
-        }
-        decryptedLinks.add(this.createDownloadlink(redirect));
         return decryptedLinks;
     }
 }

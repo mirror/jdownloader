@@ -40,7 +40,14 @@ public class OneFiveThreeNews extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String fpName = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+153News\\.net\\s+-\\s+Because\\s+Censorship\\s+Kills").getMatch(0);
+        String fpName = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+153News\\.net\\s+-\\s+Because\\s+Censorship\\s+Kills").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("var videotitle\\s*=\\s*\"([^\"]+)\"").getMatch(0);
+        }
+        if (fpName == null) {
+            /* Dontcare */
+            fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         String[][] links = br.getRegex("<source[^>]+src\\s*=\\s*[\"']([^\"']+)[\"'][^>]+res\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>").getMatches();
         for (String[] link : links) {
             String decodedLink = link[0];

@@ -44,6 +44,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -55,6 +56,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -1615,7 +1617,29 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("PATTERN_WALL_LOOPBACK_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
             this.apiGetPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         } else {
-            this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
+            /* The URL could also be a directURL or unsupported -> Let's check for that first */
+            logger.info("URL leads to downloadable content");
+            URLConnectionAdapter con = this.br.openGetConnection(this.CRYPTEDLINK_ORIGINAL);
+            if (this.looksLikeDownloadableContent(con)) {
+                /* Very rare case */
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
+                final DownloadLink direct = this.createDownloadlink("directhttp://" + con.getURL().toString());
+                if (con.getCompleteContentLength() > 0) {
+                    direct.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String filename = Plugin.getFileNameFromURL(con.getURL());
+                if (filename != null) {
+                    direct.setName(filename);
+                }
+                direct.setAvailable(true);
+                this.decryptedLinks.add(direct);
+                return;
+            }
+            br.followConnection();
+            // this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
             /* 2020-02-07: This is most likely not given but we have other fail safes in place to stop once we're done. */
             json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
             if (json_source != null) {

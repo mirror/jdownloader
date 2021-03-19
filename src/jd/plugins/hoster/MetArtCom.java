@@ -136,7 +136,7 @@ public class MetArtCom extends PluginForHost {
          */
         final URLConnectionAdapter con = br.openGetConnection("https://members." + account.getHoster() + "/members/");
         if (con.getResponseCode() == 401) {
-            throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             /* Multiple redirects */
             br.followConnection();
@@ -156,7 +156,7 @@ public class MetArtCom extends PluginForHost {
                 logger.log(e);
             }
             if (dl.getConnection().getResponseCode() == 401) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Session expired?", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 404) {
                 /* Should never happen as their URLs are static */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
