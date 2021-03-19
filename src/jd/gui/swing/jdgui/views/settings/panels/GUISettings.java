@@ -30,6 +30,13 @@ import javax.swing.Icon;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
+import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
@@ -48,6 +55,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.appwork.utils.swing.locationstore.LocationStorageManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -70,13 +78,6 @@ import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyRestartRequest;
-
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
-import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 
 public class GUISettings extends AbstractConfigPanel implements StateUpdateListener {
     private static final long                     serialVersionUID = 1L;
@@ -309,50 +310,40 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (Application.getResource("cfg/").listFiles(new FileFilter() {
+                final boolean reset = LocationStorageManager.INSTANCE.reset();
+                /* cleanup old cfg files */
+                Application.getResource("cfg/").listFiles(new FileFilter() {
                     @Override
-                    public boolean accept(File pathname) {
-                        if (pathname.getName().startsWith("org.appwork.utils.swing.locator.")) {
-                            pathname.deleteOnExit();
-                            return true;
+                    public boolean accept(final File file) {
+                        final String fileName = file.getName();
+                        final boolean deleteFlag;
+                        if (fileName.startsWith("org.appwork.utils.swing.locator.")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("org.appwork.utils.swing.dimensor.")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("RememberRelativeLocator")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("RememberAbsoluteLocator-")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("RememberAbsoluteLocator-")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("gui.windows.dimensionsandlocations")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("RememberLastDimensor-")) {
+                            deleteFlag = true;
+                        } else if (fileName.startsWith("CaptchaDialogDimensions")) {
+                            deleteFlag = true;
+                        } else {
+                            deleteFlag = false;
                         }
-                        if (pathname.getName().startsWith("org.appwork.utils.swing.dimensor.")) {
-                            pathname.deleteOnExit();
-                            return true;
+                        if (deleteFlag) {
+                            file.deleteOnExit();
                         }
-                        if (pathname.getName().startsWith("RememberRelativeLocator")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        if (pathname.getName().startsWith("gui.windows.dimensionsandlocations")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        if (pathname.getName().startsWith("RememberLastDimensor-")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        if (pathname.getName().startsWith("CaptchaDialogDimensions")) {
-                            pathname.deleteOnExit();
-                            return true;
-                        }
-                        return false;
+                        return deleteFlag;
                     }
-                }).length > 0) {
-                    try {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion_title(), _GUI.T.jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion(), NewTheme.getInstance().getIcon("desktop", 32), null, null);
-                        RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
-                    } catch (DialogClosedException e2) {
-                    } catch (DialogCanceledException e2) {
-                    }
+                });
+                if (reset) {
+                    Dialog.getInstance().showMessageDialog(_GUI.T.GUISettings_actionPerformed_reset_location_done());
                 }
             }
         });
