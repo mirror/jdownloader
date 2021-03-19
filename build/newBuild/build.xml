@@ -22,14 +22,16 @@
 
 	<path id="classpath">
 		<fileset dir="${cls}" />
+		
+		<fileset dir="${res}/libs" includes="**/*.jar" />
+		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
 		<!-- Dependencies -->
-		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
+		<fileset dir="${dep.awu}/libs" includes="**/*.jar" excludes="**/*jackson*" />
 		<fileset dir="${dep.jdc}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
 		<fileset dir="${dep.updateclient}/libs" includes="**/*.jar" />
 
-		<fileset dir="${res}/libs" includes="**/*.jar" />
-		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
+
 	</path>
 
 	<!-- Deletes the old build -->
@@ -109,12 +111,14 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
 				<exclude name="**/*.info" />
+				
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
 				<exclude name="miglayout.jar" />
 				<exclude name="**/*.info" />
+				<exclude name="**/*jackson*"/> 
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
@@ -132,11 +136,12 @@
 		</copy>
 
 		<copy todir="${dist}/licenses">
-			<fileset dir="${res}/licenses" includes="**/*" />
-			<fileset dir="${res}/libs/" includes="**/*.info" />
-			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
+			
+			<fileset dir="${dep.awu}/libs/" includes="**/*.info" excludes="**/*jackson*" />
 			<fileset dir="${dep.jdc}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
+				<fileset dir="${res}/licenses" includes="**/*" />
+			<fileset dir="${res}/libs/" includes="**/*.info" />
 		</copy>
 
 		<copy todir="${dist}/tools">
