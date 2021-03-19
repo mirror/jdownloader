@@ -239,18 +239,23 @@ public abstract class SimpleFTP {
         }
         final List<String> bestMatches = new ArrayList<String>();
         for (final String bestMatchEncoding : bestMatchRound1) {
-            bestMatches.add(results.get(bestMatchEncoding));
+            final String result = results.get(bestMatchEncoding);
+            if (!bestMatches.contains(result)) {
+                bestMatches.add(result);
+            }
         }
-        Collections.sort(bestMatches, new Comparator<String>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+        if (bestMatches.size() > 0) {
+            Collections.sort(bestMatches, new Comparator<String>() {
+                private final int compare(int x, int y) {
+                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                }
 
-            @Override
-            public final int compare(String o1, String o2) {
-                return compare(o1.length(), o2.length());
-            }
-        });
+                @Override
+                public final int compare(String o1, String o2) {
+                    return compare(o1.length(), o2.length());
+                }
+            });
+        }
         if (bestMatches.size() > 0) {
             return bestMatches;
         } else {
