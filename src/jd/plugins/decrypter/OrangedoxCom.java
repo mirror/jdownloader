@@ -36,13 +36,6 @@ public class OrangedoxCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        // br.getPage(parameter);
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // return decryptedLinks;
-        // }
-        // br.setFollowRedirects(true);
-        // br.getPage(br.getURL() + "?dl=1");
         final URLConnectionAdapter con = br.openGetConnection(param.getCryptedUrl());
         if (this.looksLikeDownloadableContent(con)) {
             try {

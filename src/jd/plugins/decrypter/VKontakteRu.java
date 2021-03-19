@@ -1639,7 +1639,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 return;
             }
             br.followConnection();
-            // this.getPageSafe(this.CRYPTEDLINK_ORIGINAL);
             /* 2020-02-07: This is most likely not given but we have other fail safes in place to stop once we're done. */
             json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
             if (json_source != null) {
@@ -1973,6 +1972,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* There is no official URL to these mp3 files --> Use url of the post whenever possible. */
                 if (wall_single_post_url != null) {
                     dl.setContentUrl(wall_single_post_url);
+                } else {
+                    dl.setContentUrl(url_source);
                 }
                 if (fp != null) {
                     dl._setFilePackage(fp);
