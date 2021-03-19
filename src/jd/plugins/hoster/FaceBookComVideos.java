@@ -65,7 +65,6 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_VIDEO_WITH_UPLOADER_NAME          = "(?i)https://[^/]+/([^/]+)/videos/(\\d+).*";
     // private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final long   trust_cookie_age                       = 300000l;
-    private boolean             accountNeeded                          = false;
     private int                 maxChunks                              = 0;
     private static final String PROPERTY_DATE_FORMATTED                = "date_formatted";
     private static final String PROPERTY_TITLE                         = "title";
@@ -73,6 +72,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String PROPERTY_UPLOADER_URL                  = "uploader_url";
     private static final String PROPERTY_DIRECTURL                     = "directurl";
     private static final String PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED = "is_checkable_via_plugin_embed";
+    private static final String PROPERTY_ACCOUNT_REQUIRED              = "account_required";
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
@@ -158,13 +158,14 @@ public class FaceBookComVideos extends PluginForHost {
                             mobileCheckResult = requestFileInformationMobile(link, isDownload);
                         } catch (final AccountRequiredException aq) {
                             logger.info("Don't trust AccountRequiredException during mobile website linkcheck...");
+                            maybeAccountRequired = true;
                         }
                         if (mobileCheckResult == AvailableStatus.UNCHECKABLE && link.getPluginPatternMatcher().matches(TYPE_VIDEO_WATCH)) {
                             /* Rare case */
-                            logger.info("Video is unavailable on mobile page --> Trying availablecheck via website...");
+                            logger.info("Video isn't available on mobile page --> Trying availablecheck via website...");
                             requestFileInformationWebsite(link, isDownload);
                         } else if (mobileCheckResult == AvailableStatus.UNCHECKABLE) {
-                            logger.info("Video is unavailable on mobile page...");
+                            logger.info("Video isn't available on mobile page...");
                         }
                     } catch (final AccountRequiredException aq) {
                         if (link.getBooleanProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, false)) {
@@ -174,10 +175,17 @@ public class FaceBookComVideos extends PluginForHost {
                             throw aq;
                         }
                     }
+                    if (maybeAccountRequired) {
+                        link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
+                    } else {
+                        link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
+                    }
                     if (!link.hasProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED)) {
                         try {
                             requestFileInformationPluginEmbed(link, isDownload);
                             link.setProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, true);
+                            /* Downloadable without account */
+                            link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
                         } catch (final PluginException e) {
                             /* Flag URL so we don't do this check again. */
                             link.setProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, false);
@@ -866,22 +874,16 @@ public class FaceBookComVideos extends PluginForHost {
         handleDownload(link);
     }
 
-    private String embedGetHighQualityStream() {
-        final String result = PluginJSonUtils.getJsonValue(br, "hd_src");
-        return result;
-    }
-
-    private String embedGetLowQualityStream() {
-        final String result = PluginJSonUtils.getJsonValue(br, "sd_src");
-        return result;
-    }
-
     public void handleDownload(final DownloadLink link) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
             requestFileInformation(link, true);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
-                if (accountNeeded) {
+                if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false)) {
+                    /*
+                     * If this happens while an account is active this means that the user is either missing the rights to access that item
+                     * or the item is offline.
+                     */
                     throw new AccountRequiredException();
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -894,7 +896,7 @@ public class FaceBookComVideos extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
             }
         }
         dl.startDownload();
@@ -1221,6 +1223,7 @@ public class FaceBookComVideos extends PluginForHost {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             link.removeProperty(PROPERTY_DIRECTURL);
             link.removeProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED);
+            link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
         }
     }
 
