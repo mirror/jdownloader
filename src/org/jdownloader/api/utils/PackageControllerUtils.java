@@ -242,23 +242,37 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         } else {
             final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
             if (selection.getChildren().size() > 0) {
-                final PackageType pt = getPackageInstanceByChildrenType(selection.getChildren().get(0));
-                setPackageName(pt, newPkgName);
-                if (!StringUtils.isEmpty(downloadPath) && !StringUtils.equalsIgnoreCase(downloadPath, "<DEFAULT PATH>")) {
-                    setDirectory(pt, downloadPath);
-                }
-                if (pt != null) {
-                    packageController.moveOrAddAt(pt, selection.getChildren(), 0, -1);
+                final PackageType newPackage = getPackageInstanceByChildrenType(selection.getChildren().get(0));
+                if (newPackage != null) {
+                    setPackageName(newPackage, newPkgName);
+                    if (!StringUtils.isEmpty(downloadPath) && !StringUtils.equalsIgnoreCase(downloadPath, "<DEFAULT PATH>")) {
+                        setDirectory(newPackage, downloadPath);
+                    }
+                    packageController.moveOrAddAt(newPackage, selection.getChildren(), 0, -1);
                 }
             }
         }
     }
 
-    public PackageType setPackageName(PackageType pt, String pkgName) {
-        if (pt instanceof FilePackage) {
-            ((FilePackage) pt).setName(pkgName);
-        } else if (pt instanceof CrawledPackage) {
-            ((CrawledPackage) pt).setName(pkgName);
+    public PackageType setPackageName(final PackageType pt, final String pkgName) {
+        if (pt.getControlledBy() == null) {
+            if (pt instanceof FilePackage) {
+                ((FilePackage) pt).setName(pkgName);
+            } else if (pt instanceof CrawledPackage) {
+                ((CrawledPackage) pt).setName(pkgName);
+            }
+        } else {
+            packageController.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                @Override
+                protected Void run() throws RuntimeException {
+                    if (pt instanceof FilePackage) {
+                        ((FilePackage) pt).setName(pkgName);
+                    } else if (pt instanceof CrawledPackage) {
+                        ((CrawledPackage) pt).setName(pkgName);
+                    }
+                    return null;
+                }
+            });
         }
         return pt;
     }
@@ -275,20 +289,28 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     protected void setDirectory(final PackageType pt, final String directory) {
+        DownloadPathHistoryManager.getInstance().add(directory);
         if (pt instanceof FilePackage) {
             final FilePackage fp = (FilePackage) pt;
             final String finalDirectory = PackagizerController.replaceDynamicTags(directory, fp.getName(), fp);
-            DownloadWatchDog.getInstance().setDownloadDirectory(fp, finalDirectory);
-            DownloadPathHistoryManager.getInstance().add(directory);
+            if (fp.getControlledBy() == null) {
+                fp.setDownloadDirectory(finalDirectory);
+            } else {
+                DownloadWatchDog.getInstance().setDownloadDirectory(fp, finalDirectory);
+            }
         } else if (pt instanceof CrawledPackage) {
-            packageController.getQueue().add(new QueueAction<Void, RuntimeException>() {
-                @Override
-                protected Void run() throws RuntimeException {
-                    ((CrawledPackage) pt).setDownloadFolder(directory);
-                    DownloadPathHistoryManager.getInstance().add(directory);
-                    return null;
-                }
-            });
+            final CrawledPackage cp = (CrawledPackage) pt;
+            if (pt.getControlledBy() == null) {
+                cp.setDownloadFolder(directory);
+            } else {
+                packageController.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        cp.setDownloadFolder(directory);
+                        return null;
+                    }
+                });
+            }
         }
     }
 

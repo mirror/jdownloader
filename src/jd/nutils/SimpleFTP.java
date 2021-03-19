@@ -58,6 +58,7 @@ import java.util.StringTokenizer;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
@@ -186,15 +187,28 @@ public abstract class SimpleFTP {
         }
     }
 
-    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
-    public static String BestEncodingGuessingURLDecode(String urlCoded) throws IOException {
-        if (StringUtils.isEmpty(urlCoded)) {
+    public static String BestEncodingGuessingURLDecode(final String urlCoded) throws IOException {
+        final List<String> ret = getEncodingGuessingURIDecode(urlCoded, null);
+        if (ret != null && ret.size() > 0) {
+            return ret.get(0);
+        } else {
             return urlCoded;
         }
+    }
+
+    // very simple and dumb guessing for the correct encoding, checks for 'Replacement Character'
+    public static List<String> getEncodingGuessingURIDecode(final String urlCoded, final String tryEncoding) {
+        if (StringUtils.isEmpty(urlCoded)) {
+            return null;
+        }
         final LinkedHashMap<String, String> results = new LinkedHashMap<String, String>();
-        for (final String encoding : new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }) {
+        final List<String> encodings = new ArrayList<String>(Arrays.asList(new String[] { "UTF-8", "cp1251", "ISO-8859-5", "KOI8-R" }));
+        if (tryEncoding != null) {
+            encodings.add(tryEncoding);
+        }
+        for (final String encoding : encodings) {
             try {
-                results.put(encoding, URLDecoder.decode(urlCoded, encoding));
+                results.put(encoding, URLEncode.decodeURIComponent(urlCoded, encoding, true));
             } catch (final Throwable ignore) {
                 ignore.printStackTrace();
             }
@@ -238,9 +252,9 @@ public abstract class SimpleFTP {
             }
         });
         if (bestMatches.size() > 0) {
-            return bestMatches.get(0);
+            return bestMatches;
         } else {
-            return urlCoded;
+            return null;
         }
     }
 
