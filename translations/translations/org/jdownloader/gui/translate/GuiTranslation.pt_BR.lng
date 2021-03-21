@@ -563,6 +563,7 @@ GUISettings_GUISettings_resetdialogs_=Redefinir marcadores 'Não mostrar novamen
 GUISettings_GUISettings_sielntMode=Modo Silencioso
 GUISettings_GUISettings_sielntMode_description=Se o modo silencioso estiver ativado, você não vai ver nenhum popup, diálogo, captcha ou outras notificações a não ser que o JDownloader seja a janela ativa.
 GUISettings_actionPerformed_reset_done=Diálogo 'Não mostrar novamente' redefinido agora!
+GUISettings_actionPerformed_reset_location_done=As 'posições e dimensões' do diálogo foram redefinidas agora!
 GUISettings_getTitle=Interface do Usuário
 GUISettings_save_language_changed_restart_required_msg=Você precisa reiniciar o JDownloader para alterar o idioma. Reiniciar agora?
 GUISettings_save_language_changed_restart_required_title=É necessário reiniciar!
