@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,36 +25,32 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastewitaly.tk" }, urls = { "http://(www\\.)?pastewitaly\\.tk/[a-z0-9]+\\.html" }) 
-public class PastewitalyTk extends PluginForDecrypt {
-
-    public PastewitalyTk(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lupaste.com" }, urls = { "https?://(?:www\\.)?lupaste\\.com/index\\.php\\?v=\\d+" })
+public class LupasteCom extends PluginForDecrypt {
+    public LupasteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<b>\\s*Error:")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String linkText = br.getRegex("class=\"tab_content\"(.*?)<table style=").getMatch(0);
+        if (linkText == null) {
+            /* Fallback */
+            linkText = br.toString();
         }
+        final String[] links = HTMLParser.getHttpLinks(linkText, br.getURL());
         for (final String singleLink : links) {
-            if (!singleLink.matches("http://(www\\.)?pastewitaly\\.tk/[a-z0-9]+\\.html")) {
+            if (!this.canHandle(singleLink)) {
                 decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
-
         return decryptedLinks;
     }
 }
