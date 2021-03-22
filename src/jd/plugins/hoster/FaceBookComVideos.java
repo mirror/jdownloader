@@ -57,7 +57,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:www\\.|m\\.)?facebook\\.com/(?:.*?video\\.php\\?v=|photo\\.php\\?fbid=|video/embed\\?video_id=|.*?/videos/(?:[^/]+/)?|watch/\\?v=|watch/live/\\?v=)(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?facebook\\.com/(?:.*?video\\.php\\?v=|photo\\.php\\?fbid=|video/embed\\?video_id=|.*?/videos/(?:[^/]+/)?|watch/\\?v=|watch/live/\\?v=)(\\d+)" })
 public class FaceBookComVideos extends PluginForHost {
     /* 2020-06-05: TODO: This linktype can (also) lead to video content! */
     private static final String TYPE_PHOTO                             = "(?i)https?://[^/]+/photo\\.php\\?fbid=\\d+";
