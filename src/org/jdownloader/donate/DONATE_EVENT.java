@@ -265,7 +265,7 @@ public enum DONATE_EVENT {
     }
 
     public static DONATE_EVENT getNow() {
-        if (true && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             return DONATE_EVENT.DEBUG;
         } else {
             for (final DONATE_EVENT donateEvent : values()) {

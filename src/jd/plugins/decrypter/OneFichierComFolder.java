@@ -20,10 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,6 +40,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.OneFichierCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierComFolder extends PluginForDecrypt {
@@ -156,8 +156,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
             }
             for (String singleLinkInfo[] : linkInfo) {
                 final DownloadLink dl = createDownloadlink(singleLinkInfo[1]);
-                dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[2]));
-                dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[3]));
+                dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[3]));
+                dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[4]));
                 if (password != null) {
                     dl.setDownloadPassword(password);
                 }
