@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -88,8 +89,8 @@ public class FaceBookComVideos extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         /* 2021-03-22: E.g. remove mobile page subdomain. */
-        final String domain = new Regex(link.getPluginPatternMatcher(), "(?i)https?://([^/]+/).*").getMatch(0);
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst(domain, "www.facebook.com/"));
+        final String domain = new Regex(link.getPluginPatternMatcher(), "(?i)https?://([^/]+)/.*").getMatch(0);
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)" + Pattern.quote(domain), "www.facebook.com"));
     }
 
     @Override
