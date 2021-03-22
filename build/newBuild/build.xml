@@ -22,7 +22,7 @@
 
 	<path id="classpath">
 		<fileset dir="${cls}" />
-		
+
 		<fileset dir="${res}/libs" includes="**/*.jar" />
 		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
 		<!-- Dependencies -->
@@ -111,14 +111,14 @@
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
 				<exclude name="**/*.info" />
-				
+
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
 				<exclude name="miglayout.jar" />
 				<exclude name="**/*.info" />
-				<exclude name="**/*jackson*"/> 
+				<exclude name="**/*jackson*" />
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
@@ -136,11 +136,11 @@
 		</copy>
 
 		<copy todir="${dist}/licenses">
-			
+
 			<fileset dir="${dep.awu}/libs/" includes="**/*.info" excludes="**/*jackson*" />
 			<fileset dir="${dep.jdc}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
-				<fileset dir="${res}/licenses" includes="**/*" />
+			<fileset dir="${res}/licenses" includes="**/*" />
 			<fileset dir="${res}/libs/" includes="**/*.info" />
 		</copy>
 
@@ -367,6 +367,10 @@
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 			<attribute name="Main-Class" value="org.jdownloader.update.launcher.JDLauncher" />
+			<!-- Synthetica JPMS, http://www.javasoft.de/synthetica/faq/#general-23-->
+			<attribute name="Add-Exports" value="java.desktop/sun.swing java.desktop/sun.swing.table java.desktop/sun.swing.plaf.synth java.desktop/com.sun.java.swing.plaf.windows java.desktop/sun.awt.shell java.desktop/com.sun.awt java.base/sun.security.action" />
+			<attribute name="Add-Opens" value="java.desktop/javax.swing.plaf.synth java.desktop/javax.swing.plaf.basic java.desktop/javax.swing java.desktop/javax.swing.tree java.desktop/java.awt.event" />
+					
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<!--<attribute name="Class-Path" value="" />-->
 
@@ -408,9 +412,9 @@
 			</fileset>
 
 			<fileset dir="${dep.jdupdateclient}/src">
-						<include name="resources/**/*" />
-						<exclude name="**/*.java" />
-					</fileset>
+				<include name="resources/**/*" />
+				<exclude name="**/*.java" />
+			</fileset>
 			<fileset dir="themes">
 				<include name="themes/standard/**/images/dialog/**/*" />
 				<include name="themes/standard/**/images/update*" />

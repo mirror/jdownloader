@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,11 +36,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workers.dev" }, urls = { "https?://(?:[a-z0-9\\-\\.]+\\.)?workers\\.dev/.+" })
-public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
+public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
         return new String[] { getHost() };
@@ -73,7 +73,11 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
             ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
         }
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        final URLConnectionAdapter con = br.openPostConnection(param.getCryptedUrl(), "password=&page_token=&page_index=0");
+        URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), "password=&page_token=&page_index=0"));
+        if (con.getResponseCode() == 405) {
+            br.followConnection(true);
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+        }
         if (con.isContentDisposition()) {
             con.disconnect();
             final DownloadLink dl = new DownloadLink(null, null, this.getHost(), param.getCryptedUrl(), true);
@@ -193,7 +197,7 @@ public class GoogleDriveDirectoryIndex extends PluginForDecrypt {
                 query.add("password", "");
                 query.add("page_index", Integer.toString(page));
                 query.appendEncoded("page_token", nextPageToken);
-                br.postPage(br.getURL(), query);
+                sendRequest(br.createPostRequest(br.getURL(), query));
             }
         } while (true);
     }
