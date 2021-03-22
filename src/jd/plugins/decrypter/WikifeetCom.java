@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wikifeet.com" }, urls = { "https?://(?!pics\\.)(?:\\w+\\.)?wikifeetx?\\.com/(?!celebs|feetoftheyear)[^/]+" })
 public class WikifeetCom extends PluginForDecrypt {
     public WikifeetCom(PluginWrapper wrapper) {
         super(wrapper);
