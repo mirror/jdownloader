@@ -168,6 +168,10 @@ public class PanBaiduCom extends PluginForDecrypt {
          */
         String shorturl_id = new Regex(br.getURL(), "(?:/s/|surl=)([A-Za-z0-9-_]+)").getMatch(0);
         uk = br.getRegex("\"uk\":(\\d+),").getMatch(0);
+        if (uk == null) {
+            /* 2021-03-22: Now represented as a string */
+            uk = br.getRegex("\"uk\":\"(\\d+)\",").getMatch(0);
+        }
         String shareid = br.getRegex("\"shareid\":(\\d+),").getMatch(0);
         JDUtilities.getPluginForHost(this.getHost());
         if (br.getURL().contains("/share/init")) {
@@ -291,13 +295,21 @@ public class PanBaiduCom extends PluginForDecrypt {
                 }
                 ressourcelist = (ArrayList) entries.get("list");
             } else {
-                final String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
+                String json = this.br.getRegex("setData\\((\\{.+?\\})\\);").getMatch(0);
+                if (json == null) {
+                    /* 2021-03-22 */
+                    json = this.br.getRegex("locals\\.mset\\((\\{.+\\})\\);").getMatch(0);
+                }
                 if (json == null) {
                     logger.warning("json is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
                 ressourcelist = (ArrayList) JavaScriptEngineFactory.walkJson(entries, "file_list/list");
+                if (ressourcelist == null) {
+                    /* 2021-03-22 */
+                    ressourcelist = (ArrayList) entries.get("file_list");
+                }
             }
             if (ressourcelist.size() == 0 && errno == 0) {
                 /* Empty folder */
