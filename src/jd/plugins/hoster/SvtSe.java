@@ -21,14 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,6 +28,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" })
 public class SvtSe extends PluginForHost {
@@ -58,16 +58,14 @@ public class SvtSe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
-        this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
+        final String id = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
+        videoid = this.br.getRegex("/video/" + id + "[^\"]*?modalId=(.*?)\"").getMatch(0);
         if (StringUtils.isEmpty(videoid)) {
-            videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+            this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
             if (StringUtils.isEmpty(videoid)) {
-                videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
+                videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (StringUtils.isEmpty(videoid)) {
-                    final String id = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
-                    if (id != null) {
-                        videoid = this.br.getRegex("/video/" + id + "[^\"]*?modalId=(.*?)\"").getMatch(0);
-                    }
+                    videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
                 }
             }
         }
