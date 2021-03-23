@@ -112,7 +112,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
     private Browser prepBR(final Browser br) {
@@ -125,7 +125,7 @@ public class FaceBookComVideos extends PluginForHost {
         return br;
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
         if (link.getPluginPatternMatcher().matches(TYPE_PHOTO)) {
             return this.requestFileInformationPhoto(link, isDownload);
         } else {
@@ -142,9 +142,12 @@ public class FaceBookComVideos extends PluginForHost {
                     logger.info("Availablecheck via saved directurl failed -> Doing full availablecheck");
                 }
             }
-            final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-            if (aa != null && aa.isValid()) {
-                login(aa, this.br, false);
+            if (account == null) {
+                /* Try to get ANY account */
+                account = AccountController.getInstance().getValidAccount(this.getHost());
+            }
+            if (account != null) {
+                login(account, this.br, false);
             }
             final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
             final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
@@ -153,45 +156,27 @@ public class FaceBookComVideos extends PluginForHost {
             if (useEmbedOnly) {
                 this.requestFileInformationEmbed(link, isDownload);
             } else {
-                if (link.getBooleanProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, false)) {
-                    /* Allow to check via this was only -> Only do this if it has worked before -> It's faster. */
-                    requestFileInformationPluginEmbed(link, isDownload);
-                } else {
-                    /*
-                     * First round = do this as this is the best way to find all required filename information especially the upload-date!
-                     */
-                    boolean maybeAccountRequired = false;
-                    AvailableStatus websiteCheckResult = AvailableStatus.UNCHECKABLE;
-                    try {
-                        websiteCheckResult = requestFileInformationWebsite(link, isDownload);
-                    } catch (final AccountRequiredException aq) {
-                        if (link.getBooleanProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, false)) {
-                            logger.info("Continue to check possible accountonly URL via PluginEmbed method");
-                            maybeAccountRequired = true;
-                        } else {
-                            throw aq;
-                        }
+                /*
+                 * First round = do this as this is the best way to find all required filename information especially the upload-date!
+                 */
+                AvailableStatus websiteCheckResult = AvailableStatus.UNCHECKABLE;
+                try {
+                    websiteCheckResult = requestFileInformationWebsite(link, isDownload);
+                    if (websiteCheckResult == AvailableStatus.FALSE) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    if (maybeAccountRequired) {
-                        link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
-                    } else {
+                    if (account == null) {
                         link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
                     }
-                    if (websiteCheckResult == AvailableStatus.UNCHECKABLE && !link.hasProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED)) {
-                        try {
-                            requestFileInformationPluginEmbed(link, isDownload);
-                            link.setProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, true);
-                            /* Downloadable without account */
-                            link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
-                        } catch (final PluginException e) {
-                            /* Flag URL so we don't do this check again. */
-                            link.setProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED, false);
-                            if (maybeAccountRequired) {
-                                throw new AccountRequiredException();
-                            } else {
-                                throw e;
-                            }
-                        }
+                } catch (final AccountRequiredException aq) {
+                    if (account != null) {
+                        /*
+                         * We're already logged in -> Item must be offline (or can only be accessed via another account with has the
+                         * required permissions).
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw aq;
                     }
                 }
             }
@@ -247,6 +232,7 @@ public class FaceBookComVideos extends PluginForHost {
      * In some cases, this may also work for videos for which an account is required otherwise. </br>
      * Not all videos can be accessed via this way!
      */
+    @Deprecated
     private AvailableStatus requestFileInformationMobile(final DownloadLink link, final boolean isDownload) throws PluginException, IOException {
         /* 2021-01-11: Always try mobile website first!! Website crawler will fail for some videos otherwise! */
         br.setAllowedResponseCodes(new int[] { 500 });
@@ -402,10 +388,12 @@ public class FaceBookComVideos extends PluginForHost {
      * 2. Get higher video quality. </br>
      * 3. Do superfast linkcheck as it's much faster than the FB website.
      */
+    @Deprecated
     private AvailableStatus requestFileInformationPluginEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www.facebook.com/v2.10/plugins/video.php?app_id=&channel=https%3A%2F%2Fstaticxx.facebook.com%2Fx%2Fconnect%2Fxd_arbiter%2F%3Fversion%3D46&container_width=678&href=https%3A%2F%2Fwww.facebook.com%2Fvideo.php%3Fv%3D" + this.getFID(link) + "&locale=de_DE&sdk=joey&width=500");
         final Object jsonO = websiteFindAndParseJson();
         final Object videoO = this.websiteFindVideoMap1(jsonO, this.getFID(link));
+        /* TODO: Improve offline detection */
         if (videoO == null) {
             /**
              * 2021-03-18: We assume that if no video-json object is available, the video is either offline or not embeddable. </br>
@@ -490,64 +478,55 @@ public class FaceBookComVideos extends PluginForHost {
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         br.getPage(link.getPluginPatternMatcher());
         this.checkErrors();
-        // if (!br.getURL().matches(TYPE_VIDEO_WATCH)) {
-        // logger.info("TYPE_VIDEO_WATCH redirected to unsupported URL --> Cannot check --> Unsupported URL: " + br.getURL());
-        // /*
-        // * 2021-03-22: Bad idea as depending on whether user is logged in or not we can get redirected to somewhere elses! Don't do
-        // * this!
-        // */
-        // // if (br.getURL().contains(this.getFID(link)) && this.canHandle(this.br.getURL())) {
-        // // logger.info("Setting new PluginPatternMatcher: " + this.br.getURL());
-        // // link.setPluginPatternMatcher(this.br.getURL());
-        // // }
-        // return AvailableStatus.UNCHECKABLE;
-        // }
         if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_WATCH) && !br.getURL().contains(this.getFID(link))) {
             /* E.g. https://www.facebook.com/watch/?v=2739449049644930 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.getURL().contains(this.getFID(link))) {
-            logger.info("TYPE_VIDEO_WATCH redirected to unsupported URL --> Cannot check --> Unsupported URL: " + br.getURL());
-            return AvailableStatus.UNCHECKABLE;
         }
         String dllink = null;
-        // final String[] jsons1 = br.getRegex("bigPipe\\.onPageletArrive\\((\\{.+)\\);\\}\\)\\);</script>").getColumn(0);
-        // Object jsonO1 = null;
-        // for (final String json : jsons1) {
-        // try {
-        // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
-        // jsonO1 = websiteFindVideoMap1(jsonO, fid);
-        // if (jsonO1 != null) {
-        // break;
-        // }
-        // } catch (final Throwable ignore) {
-        // }
-        // }
-        // if (jsonO1 != null) {
-        // /* Work in progress */
-        // logger.info("Found jsonO1");
-        // }
+        Object jsonO1 = null;
         Object jsonO2 = null;
-        //
-        String[] jsons2 = br.getRegex("\"adp_CometVideoHomeInjectedLiveVideoQueryRelayPreloader_[a-f0-9]+\",(\\{\"__bbox\".*?)" + Regex.escape("]]]});});});")).getColumn(0);
-        if (jsons2.length == 0) {
-            /* 2021-03-19: E.g. when user is loggedIN */
-            jsons2 = br.getRegex(org.appwork.utils.Regex.escape("{(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Regex.escape(");});});</script>")).getColumn(0);
-        }
+        Object errorO = null;
+        final Form loginform = br.getFormbyProperty("id", "login_form");
+        /* Different sources to parse their json. */
+        final String[] jsonRegExes = new String[4];
+        jsonRegExes[0] = "\"adp_CometVideoHomeInjectedLiveVideoQueryRelayPreloader_[a-f0-9]+\",(\\{\"__bbox\".*?)" + Regex.escape("]]]});});});");
+        /* 2021-03-19: E.g. when user is loggedIN */
+        jsonRegExes[1] = org.appwork.utils.Regex.escape("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Regex.escape(");});});</script>");
+        /* Same as previous RegEx but lazier. */
+        jsonRegExes[2] = org.appwork.utils.Regex.escape("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Regex.escape(");");
+        jsonRegExes[3] = org.appwork.utils.Regex.escape("{bigPipe.onPageletArrive(") + "(\\{.*?\\})" + Regex.escape(");");
         final String fid = this.getFID(link);
-        for (final String json : jsons2) {
-            try {
-                final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
-                jsonO2 = websiteFindVideoMap2(jsonO, fid);
-                if (jsonO2 != null) {
-                    break;
+        for (final String jsonRegEx : jsonRegExes) {
+            final String[] jsons = br.getRegex(jsonRegEx).getColumn(0);
+            for (final String json : jsons) {
+                try {
+                    final Object jsonO = JavaScriptEngineFactory.jsonToJavaMap(json);
+                    /* 2021-03-23: Use JavaScriptEngineFactory as they can also have json without quotes around the keys. */
+                    // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
+                    jsonO1 = this.websiteFindVideoMap1(jsonO, fid);
+                    if (jsonO1 != null) {
+                        break;
+                    }
+                    jsonO2 = this.websiteFindVideoMap2(jsonO, fid);
+                    if (jsonO2 != null) {
+                        break;
+                    }
+                    if (errorO == null) {
+                        errorO = this.websiteFindErrorMap(jsonO, fid);
+                    }
+                } catch (final Throwable ignore) {
                 }
-            } catch (final Throwable ignore) {
             }
         }
-        if (jsonO2 != null) {
+        if (jsonO1 != null) {
+            this.websitehandleVideoJson(link, jsonO1);
+            return AvailableStatus.TRUE;
+        } else if (jsonO2 != null) {
             logger.info("Found jsonO2");
-            final String thisjson = JSonStorage.serializeToJson(jsonO2);
-            System.out.print(thisjson);
+            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // final String thisjson = JSonStorage.serializeToJson(jsonO2);
+            // System.out.print(thisjson);
+            // }
             Map<String, Object> entries = (Map<String, Object>) jsonO2;
             final boolean isLivestream = ((Boolean) entries.get("is_live_streaming")).booleanValue();
             if (isLivestream) {
@@ -601,24 +580,54 @@ public class FaceBookComVideos extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL, dllink);
             }
             return AvailableStatus.TRUE;
+        } else if (errorO != null) {
+            /*
+             * Video offline or we don't have access to it -> Website doesn't return a clear errormessage either -> Let's handle it as
+             * offline!
+             */
+            return AvailableStatus.FALSE;
+        } else if (loginform != null) {
+            throw new AccountRequiredException();
         } else {
             logger.warning("Failed to find jsonO2");
             return AvailableStatus.UNCHECKABLE;
         }
-        /*
-         * 2020-06-12: Get downloadurl from embedded URL --> Best possible http quality --> Use this one only as a fallback e.g. for content
-         * which is not available embedded because it is officially only available via MDP streaming:
-         * https://svn.jdownloader.org/issues/88438 </br> fallback_downloadurl is generally lower quality than e.g. possible via MDP
-         * streaming!
-         */
-        /* 2021-03-22: Removed this for now */
-        // if (StringUtils.isEmpty(dllink)) {
-        // dllink = br.getRegex("property=\"og:video\" content=\"(https?://[^<>\"]+)\"").getMatch(0);
-        // if (dllink != null) {
-        // dllink = Encoding.htmlDecode(dllink);
-        // logger.info("Dev-Information: Higher quality versions might be available! Check this handling!");
-        // }
-        // }
+    }
+
+    private Object websiteFindErrorMap(final Object o, final String videoid) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> cookieEntry : entrymap.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final Object value = cookieEntry.getValue();
+                if (key.equals("rootView") && value instanceof Map && entrymap.containsKey("tracePolicy")) {
+                    final String tracePolicy = (String) entrymap.get("tracePolicy");
+                    final String videoidTmp = (String) JavaScriptEngineFactory.walkJson(entrymap, "params/video_id");
+                    if (StringUtils.equals(tracePolicy, "comet.error") && StringUtils.equals(videoidTmp, videoid)) {
+                        return o;
+                    }
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object pico = websiteFindErrorMap(value, videoid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object pico = websiteFindErrorMap(arrayo, videoid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
     }
 
     private Object websiteFindVideoMap1(final Object o, final String videoid) {
@@ -876,17 +885,17 @@ public class FaceBookComVideos extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link);
+        handleDownload(link, null);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        handleDownload(link);
+        handleDownload(link, account);
     }
 
-    public void handleDownload(final DownloadLink link) throws Exception {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
-            requestFileInformation(link, true);
+            requestFileInformation(link, account, true);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false)) {
