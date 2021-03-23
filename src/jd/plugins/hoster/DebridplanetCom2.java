@@ -22,6 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -29,6 +35,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,12 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 0, names = { "debridplanet.com" }, urls = { "" })
 public class DebridplanetCom2 extends PluginForHost {
@@ -97,6 +98,8 @@ public class DebridplanetCom2 extends PluginForHost {
             final Map<String, Object> postdata = new HashMap<String, Object>();
             postdata.put("listurl", new ArrayList<String>().add(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
+            /* TODO */
+            this.checkErrors(account);
             final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
             if (jsonO instanceof Map) {
                 /* Error happened e.g. {"success":0,"status":400,"message":"Error: You must be premium"} */
@@ -156,10 +159,6 @@ public class DebridplanetCom2 extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        /* TODO */
-        // if (br.getRequest() == null || !br.getURL().contains("/login.php")) {
-        // br.getPage("/account");
-        // }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("user");
         final String accountType = (String) entries.get("account_type");
@@ -213,15 +212,17 @@ public class DebridplanetCom2 extends PluginForHost {
                         return;
                     } else {
                         logger.info("Validating login token...");
-                        br.getPage(API_BASE + "/login.php");
-                        /* TODO */
-                        // if (this.isLoggedIN()) {
-                        // logger.info("Cookie login successful");
-                        // account.saveCookies(br.getCookies(br.getHost()), "");
-                        // return;
-                        // } else {
-                        // logger.info("Cookie login failed");
-                        // }
+                        br.postPage(API_BASE + "/user-info.php", "");
+                        try {
+                            checkErrors(account);
+                            logger.info("Token login successful");
+                            // if (true) {
+                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "This is a test");
+                            // }
+                            return;
+                        } catch (final PluginException e) {
+                            logger.info("Token login failed");
+                        }
                     }
                 }
                 logger.info("Performing full login");
@@ -241,6 +242,21 @@ public class DebridplanetCom2 extends PluginForHost {
                     account.clearCookies("");
                 }
                 throw e;
+            }
+        }
+    }
+
+    private void checkErrors(final Account account) throws PluginException {
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final int success = ((Number) entries.get("success")).intValue();
+        if (success != 1) {
+            /* TODO: Add support for more error-cases */
+            /* TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} */
+            final int status = ((Number) entries.get("status")).intValue();
+            if (status == 422) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new AccountUnavailableException("Unknown error happened: " + status, 5 * 60 * 1000l);
             }
         }
     }
