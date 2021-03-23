@@ -398,6 +398,7 @@ public class PCloudCom extends PluginForHost {
             getAPISafe("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
             final String ownerisme = PluginJSonUtils.getJson(br, "ownerisme");
             if (StringUtils.equals(ownerisme, "true")) {
+                // TODO: store Account.getId() or "userid"(userinfo) to DownloadLink, to avoid same handling on next download try
                 publicDownload = false;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_ONLY, cause);
@@ -407,7 +408,7 @@ public class PCloudCom extends PluginForHost {
             if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
                 /*
                  * only possible to copy files on same data center region!
-                 *
+                 * 
                  * not yet implemented for complete folder(zip)
                  */
                 /* tofolderid --> 0 = root */
