@@ -205,8 +205,8 @@ public class FaceBookComVideos extends PluginForHost {
         String filename = "";
         final String title = link.getStringProperty(PROPERTY_TITLE);
         final String dateFormatted = link.getStringProperty(PROPERTY_DATE_FORMATTED);
-        final String uploader = getUploaderURL(link);
-        final String uploaderURL = link.getStringProperty(PROPERTY_UPLOADER_URL);
+        final String uploader = link.getStringProperty(PROPERTY_UPLOADER);
+        final String uploaderURL = getUploaderURL(link);
         if (dateFormatted != null) {
             filename += dateFormatted + "_";
         }
@@ -215,7 +215,7 @@ public class FaceBookComVideos extends PluginForHost {
             filename += uploaderNameForFilename + "_";
         }
         if (!StringUtils.isEmpty(title)) {
-            filename += title.replace(" | Facebook", "");
+            filename += title.replaceAll("\\s*\\| Facebook\\s*$", "");
             if (!filename.contains(this.getFID(link))) {
                 filename = filename + "_" + this.getFID(link);
             }
@@ -255,13 +255,13 @@ public class FaceBookComVideos extends PluginForHost {
         }
         /* Use whatever is in this variable as a fallback downloadurl if we fail to find one via embedded video call. */
         /* Get standardized json object "VideoObject" */
-        String json = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getMatch(0);
+        String json = null;
         Map<String, Object> entries = null;
         String title = null;
         String uploader = null;
         String dateFormatted = null;
         try {
-            entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            entries = (Map<String, Object>) findSchemaJsonVideoObject();
             title = (String) entries.get("name");
             final String uploadDate = (String) entries.get("uploadDate");
             uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
@@ -411,6 +411,18 @@ public class FaceBookComVideos extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private Object findSchemaJsonVideoObject() throws Exception {
+        final String[] jsons = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getColumn(0);
+        for (final String json : jsons) {
+            if (!json.contains("VideoObject")) {
+                continue;
+            } else {
+                return JavaScriptEngineFactory.jsonToJavaObject(json);
+            }
+        }
+        return null;
+    }
+
     private Object websiteFindAndParseJson() {
         final String json = br.getRegex(org.appwork.utils.Regex.escape("<script>requireLazy([\"TimeSliceImpl\",\"ServerJS\"],function(TimeSlice,ServerJS){var s=(new ServerJS());s.handle(") + "(\\{.*?\\})\\);requireLazy\\(").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.OBJECT);
@@ -519,14 +531,52 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         if (jsonO1 != null) {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                System.out.print(JSonStorage.serializeToJson(jsonO1));
+            }
             this.websitehandleVideoJson(link, jsonO1);
+            // if (!link.hasProperty(PROPERTY_UPLOADER) && link.hasProperty(PROPERTY_UPLOADER_URL)) {
+            // final String uploaderURL = link.getStringProperty(PROPERTY_UPLOADER_URL);
+            // final String uploader = br.getRegex("<a href=\"/watch/" + org.appwork.utils.Regex.escape(uploaderURL) +
+            // "/?\"[^>]*id=\"[^\"]+\"[^>]*>([^<>\"]+)</a>").getMatch(0);
+            // if (uploader != null) {
+            // link.setProperty(PROPERTY_UPLOADER, uploader);
+            // }
+            // }
+            // if (!link.hasProperty(PROPERTY_TITLE)) {
+            // final String title = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
+            // if (title != null) {
+            // link.setProperty(PROPERTY_TITLE, title);
+            // }
+            // }
+            /**
+             * Try to find extra data for nicer filenames. </br>
+             * Do not trust this source 100% so only set properties which haven't been set before!
+             */
+            try {
+                final Map<String, Object> entries = (Map<String, Object>) findSchemaJsonVideoObject();
+                final String title = (String) entries.get("name");
+                final String uploadDate = (String) entries.get("uploadDate");
+                final String uploader = (String) JavaScriptEngineFactory.walkJson(entries, "author/name");
+                if (!StringUtils.isEmpty(uploadDate)) {
+                    final String dateFormatted = new Regex(uploadDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+                    if (dateFormatted != null && !link.hasProperty(PROPERTY_DATE_FORMATTED)) {
+                        link.setProperty(PROPERTY_DATE_FORMATTED, dateFormatted);
+                    }
+                }
+                if (!StringUtils.isEmpty(title) && !link.hasProperty(PROPERTY_TITLE)) {
+                    link.setProperty(PROPERTY_TITLE, title);
+                }
+                if (!StringUtils.isEmpty(uploader) && !link.hasProperty(PROPERTY_UPLOADER)) {
+                    link.setProperty(PROPERTY_UPLOADER, uploader);
+                }
+                /* 2021-03-23: Don't use this. Normal website video json provides higher quality! */
+                // fallback_downloadurl = (String) entries.get("contentUrl");
+            } catch (final Throwable ignore) {
+            }
             return AvailableStatus.TRUE;
         } else if (jsonO2 != null) {
             logger.info("Found jsonO2");
-            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // final String thisjson = JSonStorage.serializeToJson(jsonO2);
-            // System.out.print(thisjson);
-            // }
             Map<String, Object> entries = (Map<String, Object>) jsonO2;
             final boolean isLivestream = ((Boolean) entries.get("is_live_streaming")).booleanValue();
             if (isLivestream) {
@@ -1243,6 +1293,9 @@ public class FaceBookComVideos extends PluginForHost {
             link.removeProperty(PROPERTY_DIRECTURL);
             link.removeProperty(PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED);
             link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
+            link.removeProperty(PROPERTY_TITLE);
+            link.removeProperty(PROPERTY_UPLOADER);
+            link.removeProperty(PROPERTY_UPLOADER_URL);
         }
     }
 
