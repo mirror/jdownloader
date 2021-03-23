@@ -23,11 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,6 +33,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LiteroticaCom extends PluginForHost {
@@ -99,7 +99,7 @@ public class LiteroticaCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex finfo = br.getRegex("/c/[^\"]+\">([^<>\"]+)</a>([^<>\"]+)</div>");
+        final Regex finfo = br.getRegex("/c/[^\"]+\"[^>]*>\\s*([^<>\"]+)\\s*</a>.*?>\\s*([^<>\"]+)\\s*</(div|span)>");
         String author = finfo.getMatch(0);
         String filename = finfo.getMatch(1);
         if (StringUtils.isEmpty(filename)) {

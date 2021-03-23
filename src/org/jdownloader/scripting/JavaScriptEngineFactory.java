@@ -981,7 +981,7 @@ public class JavaScriptEngineFactory {
             return org.appwork.storage.JSonStorage.restoreFromString(string, new org.appwork.storage.TypeRef<Object>() {
             });
         } catch (JSonMapperException e) {
-            // jd 09 workaround. use rhino
+            /* supports unquoted keys, example {_test:true} */
             try {
                 final ScriptEngineManager mgr = getScriptEngineManager(null);
                 final ScriptEngine engine = mgr.getEngineByName("JavaScript");
