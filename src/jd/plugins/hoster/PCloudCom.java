@@ -370,15 +370,14 @@ public class PCloudCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        boolean publicDownload = true;
+        PluginException cause = null;
         try {
             requestFileInformation(link);
         } catch (PluginException e) {
             switch (statusCode) {
             case STATUS_CODE_PREMIUMONLY:
-                break;
             case STATUS_CODE_MAYBE_OWNER_ONLY:
-                publicDownload = false;
+                cause = e;
                 break;
             default:
                 throw e;
@@ -391,6 +390,17 @@ public class PCloudCom extends PluginForHost {
             account_api = account.getStringProperty("account_api", null);
             if (account_api == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        boolean publicDownload = true;
+        if (STATUS_CODE_MAYBE_OWNER_ONLY == statusCode) {
+            final String code = getCODE(link);
+            getAPISafe("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
+            final String ownerisme = PluginJSonUtils.getJson(br, "ownerisme");
+            if (StringUtils.equals(ownerisme, "true")) {
+                publicDownload = false;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_ONLY, cause);
             }
         }
         if (STATUS_CODE_PREMIUMONLY == statusCode) {
