@@ -96,7 +96,9 @@ public class DebridplanetCom2 extends PluginForHost {
         this.login(account, false);
         if (!attemptStoredDownloadurlDownload(link)) {
             final Map<String, Object> postdata = new HashMap<String, Object>();
-            postdata.put("listurl", new ArrayList<String>().add(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final ArrayList<String> urllist = new ArrayList<String>();
+            urllist.add(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+            postdata.put("listurl", urllist);
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
             /* TODO */
             this.checkErrors(account);
@@ -112,9 +114,10 @@ public class DebridplanetCom2 extends PluginForHost {
                     mhm.handleErrorGeneric(account, link, "Unknown error", 50);
                 }
             }
-            /* TODO */
+            /* TODO: check how they're returning errors here. */
             final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
-            final Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+            Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+            entries = (Map<String, Object>) entries.get("data");
             final String dllink = (String) entries.get("link");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
@@ -216,9 +219,6 @@ public class DebridplanetCom2 extends PluginForHost {
                         try {
                             checkErrors(account);
                             logger.info("Token login successful");
-                            // if (true) {
-                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "This is a test");
-                            // }
                             return;
                         } catch (final PluginException e) {
                             logger.info("Token login failed");
@@ -247,7 +247,11 @@ public class DebridplanetCom2 extends PluginForHost {
     }
 
     private void checkErrors(final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+        if (jsonO == null || !(jsonO instanceof Map)) {
+            return;
+        }
+        final Map<String, Object> entries = (Map<String, Object>) jsonO;
         final int success = ((Number) entries.get("success")).intValue();
         if (success != 1) {
             /* TODO: Add support for more error-cases */
