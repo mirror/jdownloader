@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
@@ -69,18 +71,16 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        // String recepientID = br.getRegex("data-recipient=\"([a-z0-9]+)\"").getMatch(0); --> is now in json: recipient_id
-        // if (recepientID == null) {
-        // recepientID = "";
-        // }
-        final String json = br.getRegex(">\\s*var _preloaded_transfer_\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
-        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final String refererValue = this.br.getURL();
+        final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
+        if (csrftoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("x-csrf-token", csrftoken);
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.postPageRaw("/api/v4/transfers/" + id_main + "/prepare-download", "{\"security_hash\":\"" + security_hash + "\"}");
+        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final String state = (String) map.get("state");
-        // final int transfer_type = ((Number)map.get("transfer_type")).intValue();
-        // if ("invalid".equals(state) || "expired".equals(state)) {
-        // decryptedLinks.add(this.createOfflinelink(parameter));
-        // return decryptedLinks;
-        // }
         if (!"downloadable".equals(state)) {
             final DownloadLink link = this.createOfflinelink(parameter);
             link.setName(("(") + state + ")" + link.getName());
@@ -111,7 +111,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink("http://wetransferdecrypted/" + id_main + "/" + security_hash + "/" + id_single);
-            dl.setProperty("referer", br.getURL());
+            dl.setProperty("referer", refererValue);
             String filename = null;
             /* Add folderID as root of the path because otherwise files could be mixed up - there is no real "base folder name" given! */
             String thisPath;
