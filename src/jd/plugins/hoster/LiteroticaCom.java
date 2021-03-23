@@ -21,8 +21,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -118,14 +122,31 @@ public class LiteroticaCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link) throws Exception, PluginException {
+        final String contentID = br.getRegex("\"favorite_count\":\\d+,\"id\":(\\d+)").getMatch(0);
+        if (contentID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* Collect text content of all pages if multiple pages are available. */
         final StringBuilder sb = new StringBuilder();
         int pageCounter = 0;
+        int maxPages = -1;
         do {
             pageCounter++;
-            logger.info("Crawling page: " + pageCounter);
-            final String text = br.getRegex("class=\"b-story-body-x x-r15\"[^>]*><div>(.*?</p>)</div></div>").getMatch(0);
-            if (text == null) {
+            logger.info("Crawling page: " + pageCounter + " / " + maxPages);
+            br.getPage("https://" + this.getHost() + "/api/3/stories/" + contentID + "?params=%7B%22contentPage%22%3A" + pageCounter + "%7D");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                if (pageCounter == 1) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+                }
+            }
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if (maxPages == -1) {
+                maxPages = ((Number) JavaScriptEngineFactory.walkJson(entries, "meta/pages_count")).intValue();
+            }
+            final String text = (String) entries.get("pageText");
+            if (StringUtils.isEmpty(text)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Add page marker */
@@ -133,12 +154,11 @@ public class LiteroticaCom extends PluginForHost {
             sb.append("***** Page " + pageCounter + " *****");
             sb.append("<br  />");
             sb.append(text);
-            final String nextPage = br.getRegex("(/s/" + this.getFID(link) + "\\?page=" + (pageCounter + 1) + ")").getMatch(0);
-            if (nextPage != null) {
-                br.getPage(nextPage);
-                continue;
-            } else {
-                logger.info("Reached end");
+            if (maxPages == -1) {
+                logger.info("Stopping because: Failed to find maxPages");
+                break;
+            } else if (pageCounter >= maxPages) {
+                logger.info("Stopping because: Reached end");
                 break;
             }
         } while (!this.isAbort());
