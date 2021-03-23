@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,6 +41,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -72,6 +72,7 @@ public class PCloudCom extends PluginForHost {
     /* Errorcodes */
     private static final int     STATUS_CODE_OKAY                                = 0;
     private static final int     STATUS_CODE_PREMIUMONLY                         = 7005;
+    private static final int     STATUS_CODE_MAYBE_OWNER_ONLY                    = 2003;
     private static final int     STATUS_CODE_WRONG_LOCATION                      = 2321;
     private static final int     STATUS_CODE_INVALID_LOGIN                       = 2000;
     /* Connection stuff */
@@ -114,7 +115,7 @@ public class PCloudCom extends PluginForHost {
         } else {
             link.setFinalFileName(filename);
             link.setDownloadSize(Long.parseLong(filesize));
-            downloadURL = getDownloadURL(link, null, null);
+            downloadURL = getDownloadURL(link, null, null, true);
             return AvailableStatus.TRUE;
         }
     }
@@ -122,15 +123,15 @@ public class PCloudCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doDownloadURL(link, null, null);
+        doDownloadURL(link, null, null, true);
     }
 
-    public void doDownloadURL(final DownloadLink link, final Account account, final String account_auth) throws Exception, PluginException {
+    public void doDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception, PluginException {
         final String directLinkID = account != null ? "account_dllink" : "free_dllink";
         if (downloadURL == null) {
             downloadURL = checkDirectLink(link, directLinkID);
             if (downloadURL == null) {
-                downloadURL = getDownloadURL(link, account, account_auth);
+                downloadURL = getDownloadURL(link, account, account_auth, publicDownload);
                 if (downloadURL == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -180,7 +181,7 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth) throws Exception {
+    private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception {
         final String code = getCODE(link);
         if (isCompleteFolder(link)) {
             if (account_auth != null) {
@@ -215,7 +216,15 @@ public class PCloudCom extends PluginForHost {
         } else {
             final String fileid = getFID(link);
             if (account_auth != null) {
-                br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
+                if (publicDownload) {
+                    br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
+                    this.updatestatuscode();
+                    if (statusCode == STATUS_CODE_MAYBE_OWNER_ONLY) {
+                        br.getPage("https://" + getAPIDomain(link) + "/getfilelink?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
+                    }
+                } else {
+                    br.getPage("https://" + getAPIDomain(link) + "/getfilelink?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
+                }
             } else {
                 br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             }
@@ -361,10 +370,17 @@ public class PCloudCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        boolean publicDownload = true;
         try {
             requestFileInformation(link);
         } catch (PluginException e) {
-            if (STATUS_CODE_PREMIUMONLY != statusCode) {
+            switch (statusCode) {
+            case STATUS_CODE_PREMIUMONLY:
+                break;
+            case STATUS_CODE_MAYBE_OWNER_ONLY:
+                publicDownload = false;
+                break;
+            default:
                 throw e;
             }
         }
@@ -425,7 +441,7 @@ public class PCloudCom extends PluginForHost {
             // use cached Link or generate fresh one with account
             downloadURL = null;
         }
-        doDownloadURL(link, account, account_auth);
+        doDownloadURL(link, account, account_auth, publicDownload);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -521,6 +537,10 @@ public class PCloudCom extends PluginForHost {
             case 7002:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case STATUS_CODE_PREMIUMONLY:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            case STATUS_CODE_MAYBE_OWNER_ONLY:
+                /* file might be set to preview only download */
+                /* "error": "Access denied. You do not have permissions to perform this operation." */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             case 7014:
                 /*
