@@ -71,7 +71,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationUrls() {
-        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK + "|" + TYPE_PHOTOS_LINK_2 + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
+        return new String[] { TYPE_FBSHORTLINK + "|" + TYPE_FB_REDIRECT_TO_EXTERN_SITE + "|" + TYPE_SET_LINK_PHOTO + "|" + TYPE_SET_LINK_VIDEO + "|" + TYPE_PHOTOS_ALBUMS_LINK + "|" + TYPE_PHOTOS_OF_LINK + "|" + TYPE_PHOTOS_ALL_LINK + "|" + TYPE_PHOTOS_STREAM_LINK + "|" + TYPE_PHOTOS_STREAM_LINK_2 + "|" + TYPE_PHOTOS_LINK_2 + "|" + TYPE_GROUPS_PHOTOS + "|" + TYPE_GROUPS_FILES + "|" + TYPE_PROFILE_PHOTOS + "|" + TYPE_PROFILE_ALBUMS + "|" + TYPE_NOTES + "|" + TYPE_MESSAGE };
     }
 
     // can be url encoded
@@ -86,7 +86,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String         TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
     private static final String         TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
     private static final String         TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
-    private static final String         TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/" + COMPONENT_USERNAME + "/photos.*";
+    // private static final String TYPE_PHOTOS_LINK = "https?://(?:www\\.)?facebook\\.com/" + COMPONENT_USERNAME + "/photos.*";
     private static final String         TYPE_PHOTOS_LINK_2              = "https?://(?:www\\.)?facebook\\.com/pg/" + COMPONENT_USERNAME + "/photos.*";
     private static final String         TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String         TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
@@ -116,7 +116,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
      * tomatoe sauce and eat it but if not, well have fun re-writing this from scratch ;) Wikipedia:
      * http://en.wikipedia.org/wiki/Spaghetti_code
      */
-    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // for debugging
         if (debug) {
@@ -182,10 +181,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptPhotosAll();
             } else if (parameter.matches(TYPE_PHOTOS_STREAM_LINK) || parameter.matches(TYPE_PHOTOS_STREAM_LINK_2) || parameter.matches(TYPE_SET_LINK_PHOTO)) {
                 v2decryptSets();
-            } else if (parameter.matches(TYPE_PHOTOS_LINK)) {
-                // Old handling removed 05.12.13 in rev 23262
-                // decryptPicsGeneral(null); 2018 doesn't work anymore for single photo link
-                decryptSinglePic();
             } else if (parameter.matches(TYPE_PHOTOS_LINK_2)) { // pg = photo gallery?
                 // Needs a method to get the content
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
