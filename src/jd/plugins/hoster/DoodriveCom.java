@@ -31,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -193,14 +194,16 @@ public class DoodriveCom extends PluginForHost {
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
         final String url = link.getStringProperty(directlinkproperty);
-        if (url == null) {
+        if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumable, maxchunks);
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {

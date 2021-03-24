@@ -22,20 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,7 +37,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 0, names = { "debridplanet.com" }, urls = { "" })
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
 public class DebridplanetCom2 extends PluginForHost {
     private static final String          API_BASE               = "https://debridplanet.com/v1";
     private static MultiHosterManagement mhm                    = new MultiHosterManagement("debridplanet.com");
@@ -77,8 +77,17 @@ public class DebridplanetCom2 extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            return super.canHandle(downloadLink, account);
+        }
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new AccountRequiredException();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -129,14 +138,16 @@ public class DebridplanetCom2 extends PluginForHost {
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
         final String url = link.getStringProperty(this.getHost() + "directlink");
-        if (url == null) {
+        if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resume, maxchunks);
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
@@ -212,7 +223,7 @@ public class DebridplanetCom2 extends PluginForHost {
                             logger.info("Token login successful");
                             return;
                         } catch (final PluginException e) {
-                            logger.info("Token login failed");
+                            logger.exception("Token login failed", e);
                         }
                     }
                 }
@@ -230,6 +241,7 @@ public class DebridplanetCom2 extends PluginForHost {
                 account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
                     account.clearCookies("");
                 }
                 throw e;
@@ -275,7 +287,7 @@ public class DebridplanetCom2 extends PluginForHost {
             if (this.getDownloadLink() != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "API did not return json", 50, 5 * 60 * 1000l);
             } else {
-                throw new AccountUnavailableException("API did not return json", 5 * 60 * 1000l);
+                throw Exceptions.addSuppressed(new AccountUnavailableException("API did not return json", 5 * 60 * 1000l), jme);
             }
         }
     }

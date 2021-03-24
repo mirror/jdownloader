@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -209,10 +210,12 @@ public class MyStreamTo extends PluginForHost {
             }
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resume, maxchunks);
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {

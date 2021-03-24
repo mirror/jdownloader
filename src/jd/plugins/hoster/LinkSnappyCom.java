@@ -553,14 +553,16 @@ public class LinkSnappyCom extends antiDDoSForHost {
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (url == null) {
+        if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumes, chunks);
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, chunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {

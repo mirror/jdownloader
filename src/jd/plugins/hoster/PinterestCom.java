@@ -213,14 +213,16 @@ public class PinterestCom extends PluginForHost {
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumes, final int maxchunks) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (url == null) {
+        if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resumes, maxchunks);
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
+                brc.followConnection(true);
                 throw new IOException();
             }
         } catch (final Throwable e) {
