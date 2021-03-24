@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -100,22 +101,12 @@ public class DebridplanetCom2 extends PluginForHost {
             urllist.add(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             postdata.put("listurl", urllist);
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
-            /* TODO */
             this.checkErrors(account);
-            final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
-            if (jsonO instanceof Map) {
-                /* Error happened e.g. {"success":0,"status":400,"message":"Error: You must be premium"} */
-                final Map<String, Object> entries = (Map<String, Object>) jsonO;
-                final String error = (String) entries.get("message");
-                if (!StringUtils.isEmpty(error)) {
-                    /* 2021-03-12: Handle all as generic errors for now */
-                    mhm.handleErrorGeneric(account, link, error, 50);
-                } else {
-                    mhm.handleErrorGeneric(account, link, "Unknown error", 50);
-                }
-            }
-            /* TODO: check how they're returning errors here. */
             final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            /* 2021-03-24: Sometimes they just return "[]" -> wtf */
+            if (ressourcelist.size() == 0) {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "API returned empty array", 50, 5 * 60 * 1000l);
+            }
             Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
             entries = (Map<String, Object>) entries.get("data");
             final String dllink = (String) entries.get("link");
@@ -246,21 +237,45 @@ public class DebridplanetCom2 extends PluginForHost {
         }
     }
 
-    private void checkErrors(final Account account) throws PluginException {
-        final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
-        if (jsonO == null || !(jsonO instanceof Map)) {
-            return;
-        }
-        final Map<String, Object> entries = (Map<String, Object>) jsonO;
-        final int success = ((Number) entries.get("success")).intValue();
-        if (success != 1) {
-            /* TODO: Add support for more error-cases */
-            /* TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} */
-            final int status = ((Number) entries.get("status")).intValue();
-            if (status == 422) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void checkErrors(final Account account) throws PluginException, InterruptedException {
+        try {
+            final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (jsonO == null || !(jsonO instanceof Map)) {
+                return;
+            }
+            final Map<String, Object> entries = (Map<String, Object>) jsonO;
+            final int success = ((Number) entries.get("success")).intValue();
+            if (success != 1) {
+                /* TODO: Add support for more error-cases */
+                /*
+                 * TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} --> 2021-03-24: Seems like they've removed
+                 * that
+                 */
+                final int status = ((Number) entries.get("status")).intValue();
+                String message = (String) entries.get("message");
+                if (StringUtils.isEmpty(message)) {
+                    message = "Unknown error";
+                }
+                if (status == 401) {
+                    /* Wrong auth token -> Session expired? */
+                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                } else if (status == 422) {
+                    /* E.g. {"success":0,"status":422,"message":"Invalid Credential!"} */
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    /* Unknown error */
+                    if (this.getDownloadLink() != null) {
+                        mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 5 * 60 * 1000l);
+                    } else {
+                        throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
+                    }
+                }
+            }
+        } catch (final JSonMapperException jme) {
+            if (this.getDownloadLink() != null) {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), "API did not return json", 50, 5 * 60 * 1000l);
             } else {
-                throw new AccountUnavailableException("Unknown error happened: " + status, 5 * 60 * 1000l);
+                throw new AccountUnavailableException("API did not return json", 5 * 60 * 1000l);
             }
         }
     }
