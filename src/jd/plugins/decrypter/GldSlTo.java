@@ -19,10 +19,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GldSlTo extends antiDDoSForDecrypt {
@@ -123,7 +123,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final File file = this.getLocalCaptchaFile();
-                    getCaptchaBrowser(br).getDownload(file, "https://" + this.getHost() + capLink);
+                    getCaptchaBrowser(br).getDownload(file, "https://" + this.getHost() + "/" + capLink);
                     String click_on;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         click_on = "Klicke in den gestrichelten Kreis!";
