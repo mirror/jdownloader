@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -33,10 +34,38 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "https?://(www\\.)?goldesel\\.to/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{4,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GldSlTo extends antiDDoSForDecrypt {
     public GldSlTo(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "goldesel.to", "goldesel.sx", "saugen.to", "laden.to", "blockbuster.to" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9]+(/[a-z0-9\\-]+)?/\\d+.{4,}");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private static final String HTML_CAPTCHA       = "Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet";
@@ -74,17 +103,14 @@ public class GldSlTo extends antiDDoSForDecrypt {
         int counter = 1;
         boolean captchafailed = false;
         for (final String decryptID : decryptIDs) {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return decryptedLinks;
-            }
+            logger.info("Crawling item " + counter + " / " + decryptIDs.length + " | " + decryptID);
             // br.setCookie("goldesel.to", "__utma", "222304525.384242273.1432990594.1432990594.1433159390.2");
             // br.setCookie("goldesel.to", "__utmz", "222304525.1432990594.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
             // br.setCookie("goldesel.to", "__utmb", "222304525.1.10.1433159390");
             // br.setCookie("goldesel.to", "__utmc", "222304525");
             /* IMPORTANT */
-            br.setCookie("goldesel.to", "__utmt", "1");
-            postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+            br.setCookie(this.br.getHost(), "__utmt", "1");
+            postPage("/res/links", "data=" + Encoding.urlEncode(decryptID));
             if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
                     if (this.isAbort()) {
@@ -97,18 +123,18 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final File file = this.getLocalCaptchaFile();
-                    getCaptchaBrowser(br).getDownload(file, "https://goldesel.to/" + capLink);
+                    getCaptchaBrowser(br).getDownload(file, "https://" + this.getHost() + capLink);
                     String click_on;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         click_on = "Klicke in den gestrichelten Kreis!";
                     } else {
                         click_on = "Click in the dashed circle!";
                     }
-                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
+                    final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Goldesel\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
                     if (cp == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
+                    postPage("https://" + this.br.getHost() + "/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
                     if (br.containsHTML(HTML_LIMIT_REACHED)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
@@ -120,7 +146,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                             break;
                         }
                         this.sleep(wait * 1001, param);
-                        br.postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+                        br.postPage("/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
                     }
                     if (br.containsHTML(HTML_CAPTCHA)) {
@@ -136,7 +162,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 }
             } else if (br.containsHTML("\"g\\-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                postPage("https://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
+                postPage("/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
             if (br.containsHTML(HTML_LIMIT_REACHED)) {
                 logger.info("Probably hourly limit is reached --> Stopping decryption");
@@ -150,6 +176,9 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 decryptedLinks.add(dl);
             }
             counter++;
+            if (this.isAbort()) {
+                break;
+            }
         }
         /* Only 1 link + wrong captcha --> */
         if (decryptedLinks.size() == 0 && captchafailed) {
@@ -167,8 +196,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
         return 1;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 }
