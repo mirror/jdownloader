@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -55,6 +56,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -866,6 +868,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformationPhoto(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
+            /* 2021-03-24: Images are usually .jpg or .png */
             link.setName(this.getFID(link) + ".png");
         }
         this.prepBR(this.br);
@@ -885,10 +888,17 @@ public class FaceBookComVideos extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(dllink)) {
+            final String filename = Plugin.getFileNameFromURL(new URL(dllink));
+            if (filename != null) {
+                if (filename.contains(".")) {
+                    /* Set custom filename with given extension */
+                    link.setFinalFileName(this.getFID(link) + filename.substring(filename.lastIndexOf(".")));
+                } else {
+                    link.setFinalFileName(filename);
+                }
+            }
             maxChunks = 1;
             this.checkDirecturlAndSetFilesize(link, dllink);
-            /* TODO: Improve filenames */
-            link.setFinalFileName(this.getFID(link) + ".png");
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
         return AvailableStatus.TRUE;
