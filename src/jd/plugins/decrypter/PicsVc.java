@@ -92,7 +92,8 @@ public class PicsVc extends PluginForDecrypt {
         do {
             page += 1;
             logger.info("Crawling page: " + page);
-            final String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)").getColumn(0);
+            /* 2021-03-24: Avoid grabbing "related" pictures listed below the actual pictures belonging to a category! */
+            final String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
             if (links == null || links.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

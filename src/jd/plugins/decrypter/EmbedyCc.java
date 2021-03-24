@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import org.appwork.utils.parser.UrlQuery;
@@ -56,21 +57,32 @@ public class EmbedyCc extends PluginForDecrypt {
             fpName = linkid;
         }
         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        /* Pretend that we're using their browser-extension -> Adds 1080p quality for some streams. */
+        this.br.getHeaders().put("embedyExt", "1");
         /* 2020-05-29: New */
         final boolean forceOfficialDownload = true;
         if (forceOfficialDownload) {
             br.postPage("https://embedy.cc/down/", "id=" + Encoding.urlEncode(linkid));
-            final String[] qualities = br.getRegex("(\\d+p)").getColumn(0);
+            final String[] qualities = br.getRegex("(\\d{3,}p)").getColumn(0);
             final String[] urls = br.getRegex("(https://[^/]+/download/[^<>\"]+)\"").getColumn(0);
+            int index = -1;
             for (final String url : urls) {
+                index += 1;
                 final DownloadLink dl = createDownloadlink("directhttp://" + url);
                 final UrlQuery query = new UrlQuery().parse(url);
                 final String fname_crypted = query.get("title");
                 if (fname_crypted != null) {
                     String fname_decrypted = Encoding.Base64Decode(fname_crypted);
-                    if (!fname_decrypted.endsWith(".mp4")) {
-                        fname_decrypted += ".mp4";
+                    /* Remove .mp4 extension if present */
+                    if (fname_decrypted.toLowerCase(Locale.ENGLISH).endsWith(".mp4")) {
+                        fname_decrypted = fname_decrypted.substring(0, fname_decrypted.lastIndexOf("."));
                     }
+                    /* Add quality identifier if possible */
+                    if (qualities.length == urls.length) {
+                        fname_decrypted += "_" + qualities[index];
+                    }
+                    /* Add file-extension */
+                    fname_decrypted += ".mp4";
                     dl.setFinalFileName(fname_decrypted);
                 }
                 dl.setAvailable(true);
