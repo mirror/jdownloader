@@ -70,7 +70,7 @@ public class DebridLinkFr2 extends PluginForHost {
     private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                      = "refresh_token";
     private static final String          PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED        = "NEW_LOGIN_MESSAGE_DISPLAYED";
     private static Set<String>           quotaReachedHostsList                               = new HashSet<String>();
-    /** Contains timestamp when quotas of single "Quota reached" of all quota limited hosts will be reset. */
+    /** Contains timestamp when quotas of all quota limited hosts will be reset. */
     private static AtomicLong            nextQuotaReachedResetTimestamp                      = new AtomicLong(0l);
     private static final boolean         LIMIT_resume                                        = true;
     private static final int             LIMIT_chunks                                        = 1;
@@ -86,7 +86,7 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     private static Browser prepBR(final Browser prepBr) {
-        // define custom browser headers and language settings.
+        /* Define custom browser headers and language settings. */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCustomCharset("UTF-8");
@@ -403,8 +403,7 @@ public class DebridLinkFr2 extends PluginForHost {
                         } else if (!dialog.isAlive()) {
                             logger.info("Dialog closed!");
                             break;
-                        }
-                        if (waitedSeconds >= code.getExpires_in()) {
+                        } else if (waitedSeconds >= code.getExpires_in()) {
                             logger.info("Timeout reached: " + code.getExpires_in());
                             break;
                         }
