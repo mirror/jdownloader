@@ -20,9 +20,14 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -30,7 +35,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -63,33 +68,36 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /* Settings values */
-    private final String         MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private final String         DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD = "EMPTY_TRASH_AFTER_DOWNLOAD";
-    private static final String  NORESUME                           = "NORESUME";
+    private final String         MOVE_FILES_TO_ACCOUNT                 = "MOVE_FILES_TO_ACCOUNT";
+    private final String         DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD    = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private static final String  NORESUME                              = "NORESUME";
     /* Some constants which they used in browser */
-    public static final String   CLIENT_ID                          = "2784000881613056614464";
+    public static final String   CLIENT_ID                             = "2784000881613056614464";
     /* Connection limits */
-    private final boolean        FREE_RESUME                        = true;
-    private final int            FREE_MAXCHUNKS                     = 0;
-    private static final int     FREE_MAXDOWNLOADS                  = 20;
-    private final boolean        ACCOUNT_FREE_RESUME                = true;
-    private final int            ACCOUNT_FREE_MAXCHUNKS             = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS          = 20;
+    private final boolean        FREE_RESUME                           = true;
+    private final int            FREE_MAXCHUNKS                        = 0;
+    private static final int     FREE_MAXDOWNLOADS                     = 20;
+    private final boolean        ACCOUNT_FREE_RESUME                   = true;
+    private final int            ACCOUNT_FREE_MAXCHUNKS                = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS             = 20;
     /* Domains & other login stuff */
-    private final String[]       cookie_domains                     = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/", "https://disk.yandex.com.tr/" };
-    public static final String[] sk_domains                         = new String[] { "disk.yandex.com", "disk.yandex.ru", "disk.yandex.com.tr", "disk.yandex.ua", "disk.yandex.az", "disk.yandex.com.am", "disk.yandex.com.ge", "disk.yandex.co.il", "disk.yandex.kg", "disk.yandex.lt", "disk.yandex.lv", "disk.yandex.md", "disk.yandex.tj", "disk.yandex.tm", "disk.yandex.uz", "disk.yandex.fr", "disk.yandex.ee", "disk.yandex.kz", "disk.yandex.by" };
+    private final String[]       cookie_domains                        = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/", "https://disk.yandex.com.tr/" };
+    public static final String[] sk_domains                            = new String[] { "disk.yandex.com", "disk.yandex.ru", "disk.yandex.com.tr", "disk.yandex.ua", "disk.yandex.az", "disk.yandex.com.am", "disk.yandex.com.ge", "disk.yandex.co.il", "disk.yandex.kg", "disk.yandex.lt", "disk.yandex.lv", "disk.yandex.md", "disk.yandex.tj", "disk.yandex.tm", "disk.yandex.uz", "disk.yandex.fr", "disk.yandex.ee", "disk.yandex.kz", "disk.yandex.by" };
     /* Properties */
-    public static final String   PROPERTY_HASH                      = "hash_main";
-    public static final String   PROPERTY_INTERNAL_FUID             = "INTERNAL_FUID";
-    public static final String   PROPERTY_QUOTA_REACHED             = "quoty_reached";
-    public static final String   PROPERTY_CRAWLED_FILENAME          = "plain_filename";
-    public static final String   PROPERTY_PATH_INTERNAL             = "path_internal";
+    public static final String   PROPERTY_HASH                         = "hash_main";
+    public static final String   PROPERTY_INTERNAL_FUID                = "INTERNAL_FUID";
+    public static final String   PROPERTY_QUOTA_REACHED                = "quoty_reached";
+    public static final String   PROPERTY_CRAWLED_FILENAME             = "plain_filename";
+    public static final String   PROPERTY_PATH_INTERNAL                = "path_internal";
+    public static final String   PROPERTY_LAST_AUTH_SK                 = "last_auth_sk";
+    public static final String   PROPERTY_LAST_URL                     = "last_url";
+    public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN = "enforce_cookie_login";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!!
      */
-    private static final boolean use_api_file_free_availablecheck   = true;
-    private static final boolean use_api_file_free_download         = true;
+    private static final boolean use_api_file_free_availablecheck      = true;
+    private static final boolean use_api_file_free_download            = true;
 
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) throws Exception {
@@ -280,94 +288,102 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        String dllink = null;
-        if (isFileDownloadQuotaReached(link)) {
-            /*
-             * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case the
-             * user can only download the link by importing it into his account and downloading it "from there".
-             */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        }
-        PluginException exceptionDuringLinkcheck = null;
-        try {
-            requestFileInformation(link, account);
-            if (use_api_file_free_availablecheck) {
+        if (!this.attemptStoredDownloadurlDownload(link, "directurl", FREE_RESUME, FREE_MAXCHUNKS)) {
+            String dllink = null;
+            if (isFileDownloadQuotaReached(link)) {
                 /*
-                 * 2018-08-09: Randomly found this during testing - this seems to be a good way to easily get downloadlinks PLUS via this
-                 * way, it is possible to download files which otherwise require the usage of an account e.g. errormessage
-                 * "Download limit reached. You can still save this file to your Yandex.Disk" [And then download it via own account]
+                 * link is only downloadable via account because the public overall download limit (traffic limit) is exceeded. In this case
+                 * the user can only download the link by importing it into his account and downloading it "from there".
                  */
-                dllink = PluginJSonUtils.getJson(br, "file");
+                if (account != null) {
+                    /* 2021-03-24: At this moment this function should never get called with available Account object. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Public download quota reached: Try again later or add account", 30 * 60 * 1000l);
+                }
             }
-        } catch (final PluginException exc) {
-            logger.info("Exception happened during availablecheck!");
-            exceptionDuringLinkcheck = exc;
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /**
-             * 2021-02-08: Workaround for error "DiskResourceDownloadLimitExceededError": API request for availablecheck will fail while
-             * download is usually possible!
-             */
+            PluginException exceptionDuringLinkcheck = null;
             try {
-                if (use_api_file_free_download) {
-                    /**
-                     * Download API:
-                     *
-                     * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
+                requestFileInformation(link, account);
+                if (use_api_file_free_availablecheck) {
+                    /*
+                     * 2018-08-09: Randomly found this during testing - this seems to be a good way to easily get downloadlinks PLUS via
+                     * this way, it is possible to download files which otherwise require the usage of an account e.g. errormessage
+                     * "Download limit reached. You can still save this file to your Yandex.Disk" [And then download it via own account]
                      */
-                    /* Free API download. */
-                    getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
-                    this.handleErrorsAPI(link, account);
-                    final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
-                    dllink = (String) entries.get("href");
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                } else {
-                    if (StringUtils.isEmpty(dllink)) {
-                        /* Free website download */
-                        if (use_api_file_free_availablecheck) {
-                            this.requestFileInformationWebsite(link, account);
-                        }
-                        final String sk = getSK(this.br);
-                        if (sk == null) {
-                            logger.warning("sk in website download handling is null");
+                    dllink = PluginJSonUtils.getJson(br, "file");
+                }
+            } catch (final PluginException exc) {
+                logger.info("Exception happened during availablecheck!");
+                exceptionDuringLinkcheck = exc;
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                /**
+                 * 2021-02-08: Workaround for error "DiskResourceDownloadLimitExceededError": API request for availablecheck will fail while
+                 * download is usually possible!
+                 */
+                try {
+                    if (use_api_file_free_download) {
+                        /**
+                         * Download API:
+                         *
+                         * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
+                         */
+                        /* Free API download. */
+                        getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+                        this.handleErrorsAPI(link, account);
+                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                        dllink = (String) entries.get("href");
+                        if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        br.getHeaders().put("Accept", "*/*");
-                        br.getHeaders().put("Content-Type", "text/plain");
-                        br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
-                        handleErrorsFree();
-                        dllink = PluginJSonUtils.getJsonValue(br, "url");
+                    } else {
                         if (StringUtils.isEmpty(dllink)) {
-                            logger.warning("Failed to find final downloadurl");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            /* Free website download */
+                            if (use_api_file_free_availablecheck) {
+                                this.requestFileInformationWebsite(link, account);
+                            }
+                            final String sk = getSK(this.br);
+                            if (sk == null) {
+                                logger.warning("sk in website download handling is null");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            br.getHeaders().put("Accept", "*/*");
+                            br.getHeaders().put("Content-Type", "text/plain");
+                            br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
+                            handleErrorsFree();
+                            dllink = PluginJSonUtils.getJsonValue(br, "url");
+                            if (StringUtils.isEmpty(dllink)) {
+                                logger.warning("Failed to find final downloadurl");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            /* Don't do htmldecode because the link will become invalid then */
+                            /* sure json will return url with htmlentities? */
+                            dllink = HTMLEntities.unhtmlentities(dllink);
                         }
-                        /* Don't do htmldecode because the link will become invalid then */
-                        /* sure json will return url with htmlentities? */
-                        dllink = HTMLEntities.unhtmlentities(dllink);
+                    }
+                } catch (final Exception exc) {
+                    if (exceptionDuringLinkcheck != null) {
+                        logger.info("Throwing Exception that happened during linkcheck");
+                        throw exceptionDuringLinkcheck;
+                    } else {
+                        logger.info("Throwing exception that happened while trying to find final downloadurl");
+                        throw exc;
                     }
                 }
-            } catch (final Exception exc) {
-                if (exceptionDuringLinkcheck != null) {
-                    logger.info("Throwing Exception that happened during linkcheck");
-                    throw exceptionDuringLinkcheck;
-                } else {
-                    logger.info("Throwing exception that happened while trying to find final downloadurl");
-                    throw exc;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
+                handleServerErrors(link);
+                /* This will most likely happen for 0 byte filesize files / serverside broken files. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            handleServerErrors(link);
-            /* This will most likely happen for 0 byte filesize files / serverside broken files. */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+            link.setProperty("directurl", dl.getConnection().getURL().toString());
         }
         dl.startDownload();
     }
@@ -385,7 +401,7 @@ public class DiskYandexNet extends PluginForHost {
                     link.setProperty(PROPERTY_QUOTA_REACHED, true);
                 }
                 if (account == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File has reached quota limit: Wait or add account and retry", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File has reached quota limit: Wait or add account and retry", 30 * 60 * 1000l);
                 } else {
                     /* This should never happen */
                     logger.warning("Single file quota reached although account is given");
@@ -469,71 +485,98 @@ public class DiskYandexNet extends PluginForHost {
                     logger.info("Attempting cookie login...");
                     this.setCookies(userCookies);
                     if (this.checkCookies(account)) {
+                        /*
+                         * Set username by cookie in an attempt to get a unique username because in theory user can enter whatever he wants
+                         * when doing cookie-login!
+                         */
+                        final String usernameByCookie = br.getCookie(br.getURL(), "yandex_login");
+                        if (!StringUtils.isEmpty(usernameByCookie)) {
+                            account.setUser(usernameByCookie);
+                        }
                         return;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                logger.info("Performing full login");
-                boolean isLoggedIN = false;
-                boolean requiresCaptcha;
-                final Browser ajaxBR = br.cloneBrowser();
-                ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                ajaxBR.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.getPage("https://passport.yandex.com/auth?from=cloud&origin=disk_landing_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.com%2F%3Fsource%3Dlanding_web_signin&backpath=https%3A%2F%2Fdisk.yandex.com");
-                for (int i = 0; i <= 4; i++) {
-                    final Form[] forms = br.getForms();
-                    if (forms.length == 0) {
-                        logger.warning("Failed to find loginform");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                try {
+                    logger.info("Performing full login");
+                    /* Check if previous login attempt failed and cookie login is enforced. */
+                    if (account.getBooleanProperty(PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN, false)) {
+                        showCookieLoginInformation();
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    final Form loginform = forms[0];
-                    loginform.remove("twoweeks");
-                    loginform.put("source", "password");
-                    loginform.put("login", Encoding.urlEncode(account.getUser()));
-                    loginform.put("passwd", Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML("\\&quot;captchaRequired\\&quot;:true")) {
-                        /** TODO: 2018-08-10: Fix captcha support */
-                        /* 2018-04-18: Only required after 10 bad login attempts or bad IP */
-                        requiresCaptcha = true;
-                        final String csrf_token = loginform.hasInputFieldByName("csrf_token") ? loginform.getInputField("csrf_token").getValue() : null;
-                        final String idkey = loginform.hasInputFieldByName("idkey") ? loginform.getInputField("idkey").getValue() : null;
-                        if (csrf_token == null || idkey == null) {
+                    boolean isLoggedIN = false;
+                    boolean requiresCaptcha;
+                    final Browser ajaxBR = br.cloneBrowser();
+                    ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    ajaxBR.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    br.getPage("https://passport.yandex.com/auth?from=cloud&origin=disk_landing_web_signin_ru&retpath=https%3A%2F%2Fdisk.yandex.com%2F%3Fsource%3Dlanding_web_signin&backpath=https%3A%2F%2Fdisk.yandex.com");
+                    for (int i = 0; i <= 4; i++) {
+                        final Form[] forms = br.getForms();
+                        if (forms.length == 0) {
+                            logger.warning("Failed to find loginform");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        ajaxBR.postPage("/registration-validations/textcaptcha", "csrf_token=" + csrf_token + "&track_id=" + idkey);
-                        final String url_captcha = PluginJSonUtils.getJson(ajaxBR, "image_url");
-                        final String id = PluginJSonUtils.getJson(ajaxBR, "id");
-                        if (StringUtils.isEmpty(url_captcha) || StringUtils.isEmpty(id)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        final Form loginform = forms[0];
+                        loginform.remove("twoweeks");
+                        loginform.put("source", "password");
+                        loginform.put("login", Encoding.urlEncode(account.getUser()));
+                        loginform.put("passwd", Encoding.urlEncode(account.getPass()));
+                        if (br.containsHTML("\\&quot;captchaRequired\\&quot;:true")) {
+                            /** TODO: 2018-08-10: Fix captcha support */
+                            /* 2018-04-18: Only required after 10 bad login attempts or bad IP */
+                            requiresCaptcha = true;
+                            final String csrf_token = loginform.hasInputFieldByName("csrf_token") ? loginform.getInputField("csrf_token").getValue() : null;
+                            final String idkey = loginform.hasInputFieldByName("idkey") ? loginform.getInputField("idkey").getValue() : null;
+                            if (csrf_token == null || idkey == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            ajaxBR.postPage("/registration-validations/textcaptcha", "csrf_token=" + csrf_token + "&track_id=" + idkey);
+                            final String url_captcha = PluginJSonUtils.getJson(ajaxBR, "image_url");
+                            final String id = PluginJSonUtils.getJson(ajaxBR, "id");
+                            if (StringUtils.isEmpty(url_captcha) || StringUtils.isEmpty(id)) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
+                            final String c = getCaptchaCode(url_captcha, dummyLink);
+                            loginform.put("captcha_answer", c);
+                            // loginform.put("idkey", id);
+                        } else {
+                            requiresCaptcha = false;
                         }
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "https://" + account.getHoster(), true);
-                        final String c = getCaptchaCode(url_captcha, dummyLink);
-                        loginform.put("captcha_answer", c);
-                        // loginform.put("idkey", id);
-                    } else {
-                        requiresCaptcha = false;
+                        br.submitForm(loginform);
+                        isLoggedIN = br.getCookie(br.getURL(), "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
+                        if (!isLoggedIN) {
+                            /* 2021-02-11: Small workaround/test */
+                            isLoggedIN = br.getCookie("yandex.com", "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
+                        }
+                        if (!requiresCaptcha) {
+                            /* No captcha -> Only try login once! */
+                            break;
+                        } else if (requiresCaptcha && i > 0) {
+                            /* Probably wrong password and we only allow one captcha attempt. */
+                            break;
+                        } else if (isLoggedIN) {
+                            break;
+                        }
                     }
-                    br.submitForm(loginform);
-                    isLoggedIN = br.getCookie(br.getURL(), "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
                     if (!isLoggedIN) {
-                        /* 2021-02-11: Small workaround/test */
-                        isLoggedIN = br.getCookie("yandex.com", "yandex_login", Cookies.NOTDELETEDPATTERN) != null;
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                    if (!requiresCaptcha) {
-                        /* No captcha -> Only try login once! */
-                        break;
-                    } else if (requiresCaptcha && i > 0) {
-                        /* Probably wrong password and we only allow one captcha attempt. */
-                        break;
-                    } else if (isLoggedIN) {
-                        break;
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                        logger.info("Normal login failed -> Enforcing cookie login");
+                        account.setProperty(PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN, true);
+                        /* Don't display dialog e.g. during linkcheck/download-attempt. */
+                        if (this.getDownloadLink() == null) {
+                            showCookieLoginInformation();
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failed - try cookie login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw e;
                     }
                 }
-                if (!isLoggedIN) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -541,6 +584,42 @@ public class DiskYandexNet extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "disk.yandex.net - Login";
+                        message += "Hallo liebe(r) disk.yandex.net NutzerIn\r\n";
+                        message += "Um deinen disk.yandex.net Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "disk.yandex.net - Login";
+                        message += "Hello dear disk.yandex.net user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private void setCookies(final Cookies cookies) {
@@ -591,25 +670,48 @@ public class DiskYandexNet extends PluginForHost {
          * 2021-02-10: Use website only as because API linkcheck could throw "quota reached" errors which we do avoid in this handling
          * anyways!
          */
-        requestFileInformationWebsite(link, account);
-        final String userID = getUserID(account);
-        final String authSk = PluginJSonUtils.getJson(this.br, "authSk");
-        if (authSk == null || userID == null) {
-            /* This should never happen */
-            logger.warning("authSk or userID is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        boolean resume = ACCOUNT_FREE_RESUME;
+        int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
+        if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
+            logger.info("Resume is disabled for this try");
+            resume = false;
+            /* Allow resume for next try */
+            link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
         }
-        String dllink = checkDirectLink(link, "directlink_account");
-        boolean moveToTrashAfterDownloading = false;
-        if (dllink == null) {
+        /*
+         * In plugins, the "move to trash" setting will be grayed out when disabling the first setting but we can still step into this
+         * handling -> Ensure that functionality is consistent with GUI settings!
+         */
+        final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
+        final boolean moveToTrashAfterDownloading = moveIntoAccHandlingActive && getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
+        final Browser br2;
+        final String authSk;
+        if (this.attemptStoredDownloadurlDownload(link, "directlink_account", resume, maxchunks)) {
+            br2 = this.br.cloneBrowser();
+            /* Very important! */
+            if (link.hasProperty(PROPERTY_LAST_URL)) {
+                br2.setRequest(new GetRequest(link.getStringProperty(PROPERTY_LAST_URL)));
+            }
+            authSk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
+        } else {
+            requestFileInformationWebsite(link, account);
+            final String userID = getUserID(account);
+            authSk = PluginJSonUtils.getJson(this.br, "authSk");
+            if (authSk == null || userID == null) {
+                /* This should never happen */
+                logger.warning("authSk or userID is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(PROPERTY_LAST_AUTH_SK, authSk);
+            link.setProperty(PROPERTY_LAST_URL, this.br.getURL());
             // final String id0 = diskGetID0(link);
             /*
              * Move files into account and download them "from there" although user might not have selected this? --> Forced handling, only
              * required if not possible via different way
              */
-            final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
             final boolean downloadableViaAccountOnly = isFileDownloadQuotaReached(link);
             Map<String, Object> entries = null;
+            String dllink = null;
             if (!moveIntoAccHandlingActive && !downloadableViaAccountOnly) {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getHeaders().put("Accept", "*/*");
@@ -691,37 +793,25 @@ public class DiskYandexNet extends PluginForHost {
                     logger.warning("MoveFileIntoAccount: Fatal failure - failed to generate downloadurl ");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /*
-                 * In plugins, the "move to trash" setting will be greyed out when disabling the first setting but we can still step into
-                 * this handling -> Ensure that functionality is consistent with GUI settings!
-                 */
-                moveToTrashAfterDownloading = moveIntoAccHandlingActive && getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
             }
-        }
-        boolean resume = ACCOUNT_FREE_RESUME;
-        int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
-        if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
-            logger.info("Resume is disabled for this try");
-            resume = false;
-            link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
-        }
-        /* Small workaround - use stored browser as it contains our originally used host. */
-        final Browser br2 = this.br.cloneBrowser();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            /* Small workaround - use stored browser as it contains our originally used host. */
+            br2 = this.br.cloneBrowser();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                handleServerErrors(link);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            handleServerErrors(link);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (link.getFinalFileName() == null) {
+                dl.setFilenameFix(true);
+            }
+            link.setProperty("directlink_account", dllink);
         }
-        if (link.getFinalFileName() == null) {
-            dl.setFilenameFix(true);
-        }
-        link.setProperty("directlink_account", dllink);
         try {
             dl.startDownload();
         } finally {
@@ -733,6 +823,28 @@ public class DiskYandexNet extends PluginForHost {
                 moveFileToTrash(br2, link, authSk);
                 emptyTrash(br2, authSk);
             }
+        }
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resume, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (url == null) {
+            return false;
+        }
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resume, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
         }
     }
 
@@ -776,7 +888,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void moveFileToTrash(final Browser br2, final DownloadLink dl, final String authSk) {
         final String filepath = getInternalFilePath(dl);
-        if (!StringUtils.isEmpty(filepath)) {
+        if (!StringUtils.isEmpty(filepath) && !StringUtils.isEmpty(authSk) && br2.getRequest() != null) {
             logger.info("Trying to move file to trash: " + filepath);
             try {
                 br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
@@ -792,7 +904,7 @@ public class DiskYandexNet extends PluginForHost {
                 logger.warning("Failed to move file to trash - Exception!");
             }
         } else {
-            logger.info("Cannot move any file to trash as there is no stored internal path available");
+            logger.info("Cannot move any file to trash as there is no stored internal path or authSk available");
         }
     }
 
@@ -818,36 +930,17 @@ public class DiskYandexNet extends PluginForHost {
 
     /** Deletes all items inside users' Yandex trash folder. */
     private void emptyTrash(final Browser br2, final String authSk) {
-        try {
-            logger.info("Trying to empty trash");
-            br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
-            logger.info("Successfully emptied trash");
-        } catch (final Throwable e) {
-            logger.warning("Failed to empty trash");
-        }
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
+        if (!StringUtils.isEmpty(authSk) && br2.getRequest() != null) {
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
+                logger.info("Trying to empty trash");
+                br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
+                logger.info("Successfully emptied trash");
+            } catch (final Throwable e) {
+                logger.warning("Failed to empty trash");
             }
+        } else {
+            logger.info("Cannot empty trash as authSk is null or no browser-request is available");
         }
-        return null;
     }
 
     @Override

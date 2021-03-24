@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,11 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LiteroticaCom extends PluginForHost {
@@ -145,10 +145,12 @@ public class LiteroticaCom extends PluginForHost {
             if (maxPages == -1) {
                 maxPages = ((Number) JavaScriptEngineFactory.walkJson(entries, "meta/pages_count")).intValue();
             }
-            final String text = (String) entries.get("pageText");
+            String text = (String) entries.get("pageText");
             if (StringUtils.isEmpty(text)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Use HTML linebreaks. */
+            text = text.replace("\r\n", "<br  />");
             /* Add page marker */
             sb.append("<br  />");
             sb.append("***** Page " + pageCounter + " *****");
