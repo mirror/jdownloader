@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,6 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericXFileShareProShortUrlCrawler extends antiDDoSForDecrypt {
@@ -43,6 +43,7 @@ public class GenericXFileShareProShortUrlCrawler extends antiDDoSForDecrypt {
         ret.add(new String[] { "deimos.click", "phobos.click" });
         ret.add(new String[] { "file.al", "1f.al" });
         ret.add(new String[] { "daofile.com", "dsht.link" });
+        ret.add(new String[] { "send.cm" });
         /* 2021-01-27: Not sure whether filecheck.link and container.cool actually belong to hotlink.cc */
         ret.add(new String[] { "hotlink.cc", "redirect.codes", "filecheck.link", "container.cool" });
         return ret;
