@@ -118,7 +118,7 @@ public class DebridplanetCom2 extends PluginForHost {
             }
             Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
             entries = (Map<String, Object>) entries.get("data");
-            final String dllink = (String) entries.get("link");
+            final String dllink = (String) (entries != null ? entries.get("link") : null);
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
