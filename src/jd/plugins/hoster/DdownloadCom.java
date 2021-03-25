@@ -202,7 +202,15 @@ public class DdownloadCom extends XFileSharingProBasic {
     public String[] scanInfo(final String[] fileInfo) {
         /* 2020-05-17 */
         fileInfo[0] = new Regex(correctedBR, "<div class=\"name position-relative\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            /* 2021-03-25 */
+            fileInfo[0] = new Regex(correctedBR, ">File\\s*:\\s*<font[^>]*>([^<>\"]+)<").getMatch(0);
+        }
         fileInfo[1] = new Regex(correctedBR, "class=\"file-size\">([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(fileInfo[1])) {
+            /* 2021-03-25 */
+            fileInfo[1] = new Regex(correctedBR, "\\[<font[^>]*>(\\d+[^<>\"]+)</font>\\]").getMatch(0);
+        }
         if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
             /* Fallback to template handling */
             super.scanInfo(fileInfo);
