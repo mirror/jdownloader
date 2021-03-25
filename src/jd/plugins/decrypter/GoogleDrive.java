@@ -20,12 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,6 +36,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "drive.google.com" }, urls = { "https?://(?:www\\.)?drive\\.google\\.com/open\\?id=[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|https?://(?:www\\.)?(?:docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+|https?://(?:www\\.)?drive\\.google\\.com/drive/(?:[\\w\\-]+/)*folders/[a-zA-Z0-9\\-_=\\&]+" })
 public class GoogleDrive extends PluginForDecrypt {
@@ -135,9 +135,9 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.add("supportsAllDrives", "true");
         queryFolder.add("includeItemsFromAllDrives", "true");
         /**
-         * Returns up to 1000 items per request (default = 100). </br>
-         * 2021-02-25: Appearently the GDrive API decides randomly how many items it wants to return but it doesn't matter as we got
-         * pagination. It worked fine in my tests in their API explorer but in reality the max number of items I got was 30.
+         * Returns up to 1000 items per request (default = 100). </br> 2021-02-25: Appearently the GDrive API decides randomly how many
+         * items it wants to return but it doesn't matter as we got pagination. It worked fine in my tests in their API explorer but in
+         * reality the max number of items I got was 30.
          */
         queryFolder.add("pageSize", "200");
         queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
@@ -168,8 +168,8 @@ public class GoogleDrive extends PluginForDecrypt {
                 try {
                     /**
                      * 2020-12-09: psp: This is a workaround because API doesn't return name of the current folder or I'm just too stupid
-                     * ... </br>
-                     * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
+                     * ... </br> Basically for big folder structures we really only need to do this once and after that we'll use the API
+                     * only!
                      */
                     final Browser websiteBR = new Browser();
                     /*
@@ -332,18 +332,11 @@ public class GoogleDrive extends PluginForDecrypt {
         }
         if (results != null && results.length != 0) {
             /* Handle the json way. */
-            final String key;
-            final String key_json = br.getRegex("\\]([^\\[\\]]+),\"https://client\\-channel\\.google\\.com/client\\-channel/client\"").getMatch(0);
-            if (key_json != null) {
-                /* 2017-05-10: New - but this is still a bad solution! */
-                final String[] keys = new Regex(key_json, "\"([A-Za-z0-9\\-_]{10,})\"").getColumn(0);
-                key = keys[0];
-                logger.info("Keys:" + Arrays.toString(keys));
-                logger.info("Key:" + key);
-            } else {
-                /* Old fallback */
-                key = br.getRegex("\"([A-Za-z0-9\\-_]+)\",{1,}1000,1,\"https?://client\\-channel\\.google\\.com/client\\-channel/client").getMatch(0);
-                logger.info("KeyOld:" + key);
+            String key = null;
+            final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
+            logger.info("Keys:" + Arrays.asList(keys));
+            if (keys != null && keys.length == 2) {
+                key = keys[0] + keys[1];
             }
             if (StringUtils.isEmpty(key)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -364,11 +357,13 @@ public class GoogleDrive extends PluginForDecrypt {
                     /* Required to get the first "nextPageToken". */
                     if (teamDriveID != null) {
                         /* 2020-10-08 */
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
+                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                                + folderID
                                 + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2Cowners(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ClastModifyingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ChasThumbnail%2CthumbnailVersion%2Ctitle%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CmimeType%2CquotaBytesUsed%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2Cspaces%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CcreatedDate%2CtrashingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2CtrashedDate%2Cparents(id)%2CshortcutDetails(targetId%2CtargetMimeType%2CtargetLookupStatus)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem)%2Clabels(starred%2Ctrashed%2Crestricted%2Cviewed))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&supportsTeamDrives=true&includeTeamDriveItems=true&teamDriveId="
                                 + teamDriveID + "&corpora=teamDrive&orderBy=folder%2Ctitle_natural%20asc&retryCount=0&key=" + key);
                     } else {
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
+                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                                + folderID
                                 + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                 + key);
                     }
@@ -376,11 +371,13 @@ public class GoogleDrive extends PluginForDecrypt {
                 } else {
                     if (teamDriveID != null) {
                         /* 2020-10-08 */
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
+                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                                + folderID
                                 + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2Cowners(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ClastModifyingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2ChasThumbnail%2CthumbnailVersion%2Ctitle%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CmimeType%2CquotaBytesUsed%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2Cspaces%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CcreatedDate%2CtrashingUser(kind%2CpermissionId%2CdisplayName%2Cpicture)%2CtrashedDate%2Cparents(id)%2CshortcutDetails(targetId%2CtargetMimeType%2CtargetLookupStatus)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem)%2Clabels(starred%2Ctrashed%2Crestricted%2Cviewed))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&supportsTeamDrives=true&includeTeamDriveItems=true&teamDriveId="
                                 + teamDriveID + "&corpora=teamDrive&orderBy=folder%2Ctitle_natural%20asc&retryCount=0&key=" + key + "&pageToken=" + nextPageToken);
                     } else {
-                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'" + folderID
+                        brc.getPage("https://clients6.google.com/drive/v2beta/files?openDrive=true&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'"
+                                + folderID
                                 + "'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2Ctitle%2CmimeType%2CcreatedDate%2CmodifiedDate%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2ClastModifyingUser(kind%2C%20displayName%2C%20picture%2C%20permissionId%2C%20emailAddress)%2ChasThumbnail%2CthumbnailVersion%2CiconLink%2Cid%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CquotaBytesUsed%2Cshareable%2Ccopyable%2CfileExtension%2CsharingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2Cspaces%2Ceditable%2Cversion%2CteamDriveId%2ChasAugmentedPermissions%2CtrashingUser(kind%2CdisplayName%2Cpicture%2CpermissionId%2CemailAddress)%2CtrashedDate%2Cparents(id)%2Clabels(starred%2Chidden%2Ctrashed%2Crestricted%2Cviewed)%2Cowners(permissionId%2CdisplayName%2Cpicture%2Ckind)%2Ccapabilities(canCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=DRIVE&maxResults=50&orderBy=folder%2Ctitle%20asc&key="
                                 + key + "&pageToken=" + nextPageToken);
                     }
