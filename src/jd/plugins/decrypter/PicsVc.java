@@ -72,7 +72,7 @@ public class PicsVc extends PluginForDecrypt {
         final String parameter = param.toString();
         final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=.gall_not_found")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
