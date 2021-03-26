@@ -57,6 +57,7 @@ public class VimeoContainer extends VideoContainer {
         SD,
         HD,
         UHD,
+        UHD_4K,
         ORIGINAL,
         SOURCE
     }
@@ -147,7 +148,9 @@ public class VimeoContainer extends VideoContainer {
         if (height == -1) {
             return null;
         } else {
-            if (height >= 1440) {
+            if (height >= 2160) {
+                return Quality.UHD_4K;
+            } else if (height >= 1440) {
                 return Quality.UHD;
             } else if (height >= 720) {
                 return Quality.HD;

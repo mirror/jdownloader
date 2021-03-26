@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -539,30 +538,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     } else {
                         appendReferer = "";
                     }
-                    final String jsonStringOld = br.getRegex("<script\\s*id\\s*=\\s*\"app-data\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
-                    if (jsonStringOld != null) {
-                        final Map<String, Object> json = JSonStorage.restoreFromString(jsonStringOld, TypeRef.HASHMAP);
-                        final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
-                        if (clips == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        for (Map<String, Object> clip : clips) {
-                            final String config = (String) clip.get("config");
-                            if (config != null) {
-                                final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
-                                decryptedLinks.add(clipEntry);
-                            }
-                        }
-                    }
-                    Browser brc = br.cloneBrowser();
-                    brc.getPage("https://vimeo.com/_rv/viewer");
-                    final String jwtToken = PluginJSonUtils.getJson(brc, "jwt");
-                    if (StringUtils.isEmpty(jwtToken)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    final String jwtToken = VimeoCom.getJWT(br);
                     String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
                     while (nextPage != null) {
-                        brc = br.cloneBrowser();
+                        final Browser brc = br.cloneBrowser();
                         brc.getHeaders().put("Authorization", "jwt " + jwtToken);
                         String response = brc.getPage("//api.vimeo.com" + nextPage);
                         if (response.matches("(?s)^\\s*\\{.+\\}\\s*$")) {
@@ -599,85 +578,91 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 String description = null;
                 try {
                     final String json = getJsonFromHTML(this.br);
-                    final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                    if (!StringUtils.isEmpty(PluginJSonUtils.getJson(json, "reviewHash"))) {
-                        /* E.g. 'review' URLs (new handling 2020-06-25) */
-                        final LinkedHashMap<String, Object> root = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(json);
-                        final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) root.get("clipData");
-                        title = (String) clipData.get("title");
-                        if (StringUtils.isEmpty(unlistedHash)) {
-                            unlistedHash = (String) clipData.get("unlistedHash");
-                        }
-                        if (StringUtils.isEmpty(reviewHash)) {
-                            reviewHash = (String) clipData.get("reviewHash");
-                        }
-                    } else if (entries.containsKey("vimeo_esi")) {
-                        /* E.g. 'review' URLs (old handling) */
-                        final LinkedHashMap<String, Object> clipData = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
-                        final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clipData.get("user");
-                        title = (String) clipData.get("title");
-                        if (StringUtils.isEmpty(unlistedHash)) {
-                            unlistedHash = (String) clipData.get("unlistedHash");
-                        }
-                        if (StringUtils.isEmpty(reviewHash)) {
-                            reviewHash = (String) clipData.get("reviewHash");
-                        }
-                    } else if (entries.containsKey("video")) {
-                        /* player.vimeo.com or normal vimeo.com */
-                        final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
-                        if (video.containsKey("owner")) {
-                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) video.get("owner");
-                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                            ownerName = (String) ownerMap.get("name");
-                        }
-                        title = (String) video.get("title");
-                        if (StringUtils.isEmpty(unlistedHash)) {
-                            unlistedHash = (String) video.get("unlisted_hash");
-                        }
-                    } else if (entries.containsKey("clip")) {
-                        /* E.g. normal URLs */
-                        final LinkedHashMap<String, Object> clip = (LinkedHashMap<String, Object>) entries.get("clip");
-                        if (clip.containsKey("owner")) {
-                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) clip.get("owner");
-                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                            ownerName = (String) ownerMap.get("name");
-                        } else if (entries != null && entries.containsKey("owner")) {
-                            final LinkedHashMap<String, Object> ownerMap = (LinkedHashMap<String, Object>) entries.get("owner");
-                            ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
-                            ownerName = (String) ownerMap.get("name");
-                        }
-                        title = (String) clip.get("title");
-                        if (StringUtils.isEmpty(unlistedHash)) {
-                            unlistedHash = (String) clip.get("unlisted_hash");
-                        }
-                    } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
-                        if (videoID != null && JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}") != null) {
-                            final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
-                            if (clips != null) {
-                                for (final Map<String, Object> clip : clips) {
-                                    if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
-                                        title = (String) clip.get("name");
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (StringUtils.isEmpty(title) && JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}") != null) {
-                            final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
-                            if (clips != null) {
-                                if (videoID == null && clips.size() == 1) {
-                                    videoID = String.valueOf(clips.get(0).get("id"));
-                                }
-                                for (final Map<String, Object> clip : clips) {
-                                    if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
-                                        title = (String) clip.get("name");
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (StringUtils.isEmpty(title)) {
+                    final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+                    if (entries != null) {
+                        if (StringUtils.containsIgnoreCase(br.getURL(), "api.vimeo.com")) {
                             title = (String) entries.get("name");
+                            ownerName = (String) JavaScriptEngineFactory.walkJson(entries, "user/name");
+                            ownerUrl = (String) JavaScriptEngineFactory.walkJson(entries, "user/link");
+                        }
+                        if (!StringUtils.isEmpty(PluginJSonUtils.getJson(json, "reviewHash"))) {
+                            /* E.g. 'review' URLs (new handling 2020-06-25) */
+                            final Map<String, Object> clipData = (Map<String, Object>) entries.get("clipData");
+                            title = (String) clipData.get("title");
+                            if (StringUtils.isEmpty(unlistedHash)) {
+                                unlistedHash = (String) clipData.get("unlistedHash");
+                            }
+                            if (StringUtils.isEmpty(reviewHash)) {
+                                reviewHash = (String) clipData.get("reviewHash");
+                            }
+                        } else if (entries.containsKey("vimeo_esi")) {
+                            /* E.g. 'review' URLs (old handling) */
+                            final Map<String, Object> clipData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
+                            final Map<String, Object> ownerMap = (Map<String, Object>) clipData.get("user");
+                            title = (String) clipData.get("title");
+                            if (StringUtils.isEmpty(unlistedHash)) {
+                                unlistedHash = (String) clipData.get("unlistedHash");
+                            }
+                            if (StringUtils.isEmpty(reviewHash)) {
+                                reviewHash = (String) clipData.get("reviewHash");
+                            }
+                        } else if (entries.containsKey("video")) {
+                            /* player.vimeo.com or normal vimeo.com */
+                            final Map<String, Object> video = (Map<String, Object>) entries.get("video");
+                            if (video.containsKey("owner")) {
+                                final Map<String, Object> ownerMap = (Map<String, Object>) video.get("owner");
+                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("name");
+                            }
+                            title = (String) video.get("title");
+                            if (StringUtils.isEmpty(unlistedHash)) {
+                                unlistedHash = (String) video.get("unlisted_hash");
+                            }
+                        } else if (entries.containsKey("clip")) {
+                            /* E.g. normal URLs */
+                            final Map<String, Object> clip = (Map<String, Object>) entries.get("clip");
+                            if (clip.containsKey("owner")) {
+                                final Map<String, Object> ownerMap = (Map<String, Object>) clip.get("owner");
+                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("name");
+                            } else if (entries != null && entries.containsKey("owner")) {
+                                final Map<String, Object> ownerMap = (Map<String, Object>) entries.get("owner");
+                                ownerUrl = new Regex(ownerMap.get("url"), "vimeo\\.com/(.+)").getMatch(0);
+                                ownerName = (String) ownerMap.get("name");
+                            }
+                            title = (String) clip.get("title");
+                            if (StringUtils.isEmpty(unlistedHash)) {
+                                unlistedHash = (String) clip.get("unlisted_hash");
+                            }
+                        } else if (StringUtils.containsIgnoreCase(parameter, "/ondemand/")) {
+                            if (videoID != null && JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}") != null) {
+                                final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/extras_groups/{0}/clips");
+                                if (clips != null) {
+                                    for (final Map<String, Object> clip : clips) {
+                                        if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                            title = (String) clip.get("name");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (StringUtils.isEmpty(title) && JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}") != null) {
+                                final List<Map<String, Object>> clips = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "clips/main_groups/{0}/clips");
+                                if (clips != null) {
+                                    if (videoID == null && clips.size() == 1) {
+                                        videoID = String.valueOf(clips.get(0).get("id"));
+                                    }
+                                    for (final Map<String, Object> clip : clips) {
+                                        if (StringUtils.equals(videoID, String.valueOf(clip.get("id")))) {
+                                            title = (String) clip.get("name");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (StringUtils.isEmpty(title)) {
+                                title = (String) entries.get("name");
+                            }
                         }
                     }
                 } catch (final Throwable e) {
@@ -1009,6 +994,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         case ORIGINAL:
         case SOURCE:
             return qORG;
+        case UHD_4K:
         case UHD:
         case HD:
             return qHD;
@@ -1016,8 +1002,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             return qSD;
         case MOBILE:
             return qMOBILE;
+        default:
+            return false;
         }
-        return false;
     }
 
     private boolean pRatingAllowed(final VimeoContainer quality) {
