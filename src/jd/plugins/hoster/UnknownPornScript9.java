@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,12 +36,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "winporn.com", "proporn.com", "vivatube.com", "tubeon.com", "viptube.com", "hd21.com", "iceporn.com", "nuvid.com", "yeptube.com" }, urls = { "https?://(?:www\\.)?winporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?proporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?vivatube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tubeon\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?viptube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?hd21\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?iceporn\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?nuvid\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?",
-"https?://(?:www\\.)?yeptube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?" })
+        "https?://(?:www\\.)?yeptube\\.com/(?:[a-z]{2}/)?video/\\d+(?:/[a-z0-9\\-]+)?" })
 public class UnknownPornScript9 extends PluginForHost {
     public UnknownPornScript9(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,19 +56,44 @@ public class UnknownPornScript9 extends PluginForHost {
         return "http://www.winporn.com/static/terms";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/video/(\\d+)").getMatch(0);
+    }
+
+    /** Items with different FUIDs but same filenames should not get treated as mirrors! */
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        final String fid = getFID(link);
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && fid != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         server_issues = false;
-        downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\"notifications__item notifications__item-error\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        final String url_filename = new Regex(link.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
         /* Access player json */
         final String videoid = PluginJSonUtils.getJson(br, "vid");
         if (StringUtils.isEmpty(videoid)) {
@@ -102,7 +127,7 @@ public class UnknownPornScript9 extends PluginForHost {
         }
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         URLConnectionAdapter con = null;
         try {
             final Browser brc = br.cloneBrowser();
@@ -117,7 +142,7 @@ public class UnknownPornScript9 extends PluginForHost {
             }
             if (looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } else {
                 server_issues = true;
@@ -132,17 +157,17 @@ public class UnknownPornScript9 extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (downloadLink.getDownloadURL().contains("iceporn") || downloadLink.getDownloadURL().contains("viptube")) {
+        if (link.getDownloadURL().contains("iceporn") || link.getDownloadURL().contains("viptube")) {
             free_maxchunks = 1; // https://svn.jdownloader.org/issues/84428, /84735
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
