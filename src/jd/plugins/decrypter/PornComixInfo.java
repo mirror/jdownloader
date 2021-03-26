@@ -16,7 +16,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bestporncomix.com" }, urls = { "https?://(?:www\\.)?(?:porncomix\\.info|bestporncomix\\.com)/gallery/([a-z0-9\\-]+)/?" })
 public class PornComixInfo extends PluginForDecrypt {
-    /** 2020-11-16: bestporncomix.com got routing issues in germany. Use a US VPN to make the website load faster/load at all. */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -35,7 +34,7 @@ public class PornComixInfo extends PluginForDecrypt {
             /* Fallback */
             postTitle = urltitle.replace("-", " ");
         }
-        String[] images = br.getRegex("<li><a href=\"(https?://[^/]+/content/[^<>\"]+)").getColumn(0);
+        String[] images = br.getRegex("<figure[^>]*class='dgwt-jg-item'[^>]*><a href=\\'([^<>\"\\']+)'").getColumn(0);
         if (images != null) {
             for (final String imageurl : images) {
                 final DownloadLink link = createDownloadlink(imageurl);
