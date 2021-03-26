@@ -15,11 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,16 +36,48 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animeout.com" }, urls = { "https?://[a-z0-9\\-]+\\.animeout\\.(?:com|xyz)/series/.+" })
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AnimeoutCom extends PluginForHost {
     public AnimeoutCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://ddl.animeout.com/index.php");
+        this.enablePremium("http://ddl.animeout.xyz/index.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://ddl.animeout.com/index.php";
+        return "http://ddl.animeout.xyz/index.php";
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "animeout.xyz", "animeout.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/series/(.+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
@@ -72,7 +106,7 @@ public class AnimeoutCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String continue_url = br.getRegex("(https?://ddl\\.animeout\\.com/public\\.php[^<>\"]+)").getMatch(0);
+            final String continue_url = br.getRegex("(https?://ddl\\.animeout\\.(?:xyz|com)/public\\.php[^<>\"]+)").getMatch(0);
             br.getPage(continue_url);
             dllink = br.getRegex("var url\\s*?=\\s*?\"(http[^<>\"]+)\";").getMatch(0);
             if (dllink == null) {
@@ -81,9 +115,12 @@ public class AnimeoutCom extends PluginForHost {
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            final Browser brc = br.cloneBrowser();
+            con = brc.openHeadConnection(dllink);
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(getFileNameFromHeader(con));
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -112,14 +149,19 @@ public class AnimeoutCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -129,14 +171,12 @@ public class AnimeoutCom extends PluginForHost {
         return MAXDOWNLOADS;
     }
 
-    private static Object LOCK = new Object();
-
-    private boolean isLoggedinHTML() {
-        return br.containsHTML(">You are Logged In");
+    private boolean isLoggedinHTML(Browser br) {
+        return br.containsHTML(">\\s*You are Logged In");
     }
 
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
@@ -148,7 +188,7 @@ public class AnimeoutCom extends PluginForHost {
                         return;
                     }
                     br.getPage("http://ddl." + account.getHoster() + "/");
-                    if (isLoggedinHTML()) {
+                    if (isLoggedinHTML(br)) {
                         /* Save cookies to save new timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
@@ -157,7 +197,7 @@ public class AnimeoutCom extends PluginForHost {
                 }
                 br.getPage("http://ddl." + account.getHoster() + "/index.php");
                 br.postPage("http://ddl." + account.getHoster() + "/index.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedinHTML()) {
+                if (!isLoggedinHTML(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -166,7 +206,9 @@ public class AnimeoutCom extends PluginForHost {
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -176,12 +218,7 @@ public class AnimeoutCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(MAXDOWNLOADS);
