@@ -85,6 +85,9 @@ public class ImgurComGallery extends PluginForDecrypt {
             final StringBuilder sb = new StringBuilder();
             final String hostsPatternPart = buildHostsPatternPart(domains);
             final String protocolPart = "https?://(?:www\\.|m\\.)?";
+            /* Tag URLs */
+            sb.append(protocolPart + hostsPatternPart + "/(?:t/[^/]+)/[A-Za-z0-9]{5,7}");
+            sb.append("|");
             /* Gallery URLs */
             sb.append(protocolPart + hostsPatternPart + "/(?:gallery|a)/[A-Za-z0-9]{5,7}");
             sb.append("|");
@@ -110,6 +113,7 @@ public class ImgurComGallery extends PluginForDecrypt {
     private final String            type_subreddit_single_post     = "https?://[^/]+/r/([^/]+/[A-Za-z0-9]{5,7})";
     private final String            type_subreddit_gallery         = "https?://[^/]+/r/([^/]+)$";
     private final String            type_album                     = "https?://[^/]+/a/([A-Za-z0-9]{5,7})";
+    private final String            type_tag                       = "https?://[^/]+/t/[^/]+/([A-Za-z0-9]{5,7})";
     private final String            type_gallery                   = "https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
     public final static String      type_single_direct             = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
     public final static String      type_single_direct_without_ext = "https?://i\\.[^/]+/([A-Za-z0-9]{5,7})$";
@@ -145,7 +149,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                 } else {
                     this.siteCrawlSubredditStyleGallery();
                 }
-            } else if (parameter.matches(type_album)) {
+            } else if (parameter.matches(type_album) || parameter.matches(type_tag)) {
                 if (useAPI) {
                     this.apiCrawlAlbum();
                 } else {
@@ -545,8 +549,15 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
     }
 
-    private void siteCrawlAlbum() throws DecrypterException, ParseException, IOException {
-        final String albumID = new Regex(this.parameter, type_album).getMatch(0);
+    private void siteCrawlAlbum() throws DecrypterException, ParseException, IOException, PluginException {
+        final String albumID;
+        if (parameter.matches(type_album)) {
+            albumID = new Regex(this.parameter, type_album).getMatch(0);
+        } else if (parameter.matches(type_tag)) {
+            albumID = new Regex(this.parameter, type_tag).getMatch(0);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.fp = FilePackage.getInstance();
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
@@ -663,6 +674,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             /* Fallback in case of RegEx failure AND because not all galleries/albums have a title set! */
             title = itemID;
         }
+        title = Encoding.htmlOnlyDecode(title);
         return getFormattedPackagename(""/* username is only available via api */, title, itemID);
     }
 

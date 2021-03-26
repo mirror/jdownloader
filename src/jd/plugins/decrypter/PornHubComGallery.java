@@ -26,10 +26,12 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -77,8 +79,11 @@ public class PornHubComGallery extends PluginForDecrypt {
         while (true) {
             final String[] links = br.getRegex("\"/photo/(\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                if (privateImage) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             for (final String singleID : links) {
                 final DownloadLink dl = createDownloadlink("https://www.pornhub.com/photo/" + singleID);
