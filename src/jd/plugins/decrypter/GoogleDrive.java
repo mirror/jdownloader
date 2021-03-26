@@ -388,10 +388,6 @@ public class GoogleDrive extends PluginForDecrypt {
                     logger.info("Stopping because: 'items' array in json response is empty or missing");
                     break;
                 }
-                /*
-                 * TODO: Add parser for this json which will work via API and website (json is the same.) Also adjust "fields" value to
-                 * return more information such as MD5 hash.
-                 */
                 nextPageToken = (String) entries.get("nextPageToken");
                 parseFolderJsonWebsite(decryptedLinks, entries, subfolderPath, currentFolderTitle);
                 logger.info("Number of items found on current page: " + items.size());
