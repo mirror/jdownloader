@@ -1153,18 +1153,20 @@ public class YetiShareCore extends antiDDoSForHost {
                 break;
             }
             final String mappedErrorKey;
-            synchronized (errorMap) {
-                mappedErrorKey = errorMap.get(exception.getMessage());
+            synchronized (errorMsgURLMap) {
+                mappedErrorKey = errorMsgURLMap.get(exception.getMessage());
             }
             if (mightBeOkayWithAccountLogin.contains(mappedErrorKey)) {
-                logger.exception("special handling to ignore:" + exception.getMessage(), exception);
+                logger.exception("special handling to ignore:" + exception.getMessage() + "|" + mappedErrorKey, exception);
                 return;
+            } else {
+                logger.info("no special handling for:" + exception.getMessage() + "|" + mappedErrorKey);
             }
         }
         throw exception;
     }
 
-    protected static HashMap<String, String> errorMap = new HashMap<String, String>();
+    protected static HashMap<String, String> errorMsgURLMap = new HashMap<String, String>();
 
     /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
     protected void checkErrorsLanguageIndependant(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1180,8 +1182,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
             }
             final String errorkey = (String) errorMap.get("error_key");
-            synchronized (errorMap) {
-                errorMap.put(errorMsgURL, errorkey);
+            synchronized (errorMsgURLMap) {
+                errorMsgURLMap.put(errorMsgURL, errorkey);
             }
             logger.info("Found key to errormessage: " + errorkey);
             Map<String, String> errorProperties = null;
