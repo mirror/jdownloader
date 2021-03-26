@@ -16,6 +16,7 @@
 package org.jdownloader.plugins.components;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -52,8 +53,7 @@ public class YetiShareCoreNew extends YetiShareCore {
     }
 
     /**
-     * @return true: Cookies were validated</br>
-     *         false: Cookies were not validated
+     * @return true: Cookies were validated</br> false: Cookies were not validated
      */
     public boolean loginWebsiteSpecial(final Account account, boolean force) throws Exception {
         super.loginWebsite(account, force);
@@ -61,8 +61,8 @@ public class YetiShareCoreNew extends YetiShareCore {
     }
 
     @Override
-    public boolean isLoggedin() {
-        boolean loggedIN = super.isLoggedin();
+    public boolean isLoggedin(Browser br) {
+        boolean loggedIN = super.isLoggedin(br);
         if (!loggedIN) {
             /*
              * Traits depend on where user currently is: Case 1: For whenever logout button is visible (e.g. account overview) | Case 2:
@@ -79,8 +79,8 @@ public class YetiShareCoreNew extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        super.checkErrors(link, account);
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+        super.checkErrors(br, link, account);
         /* 2020-10-12 */
         final String waittimeBetweenDownloadsStr = br.getRegex(">\\s*You must wait (\\d+) minutes? between downloads").getMatch(0);
         if (waittimeBetweenDownloadsStr != null) {

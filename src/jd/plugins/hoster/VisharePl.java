@@ -24,6 +24,7 @@ import org.jdownloader.plugins.components.YetiShareCore;
 import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -126,7 +127,7 @@ public class VisharePl extends YetiShareCoreNew {
     // }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
         String errorMsgURL = null;
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
@@ -145,7 +146,7 @@ public class VisharePl extends YetiShareCoreNew {
         if (reconnectWaitStr != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaitStr) * 60 * 60 * 1001l);
         }
-        super.checkErrors(link, account);
+        super.checkErrors(br, link, account);
     }
 
     @Override

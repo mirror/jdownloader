@@ -19,14 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -45,6 +37,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.components.YetiShareCoreNew;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GenericYetiShareFolder extends antiDDoSForDecrypt {
@@ -129,13 +129,11 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         if (account != null && this.getHost().equals("erai-ddl3.info")) {
             synchronized (account) {
                 final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-                plg.setBrowser(this.br);
-                plg.setLogger(getLogger());
                 try {
                     final boolean validatedCookies = ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
                     br.setFollowRedirects(true);
                     getPage(parameter);
-                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedin()) {
+                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedin(br)) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
                         ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, true);
                         br.setFollowRedirects(true);

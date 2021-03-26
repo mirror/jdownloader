@@ -21,10 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -34,6 +32,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BrfilesCom extends YetiShareCore {
@@ -165,7 +166,7 @@ public class BrfilesCom extends YetiShareCore {
     }
 
     @Override
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         return br.containsHTML("/logout/?\"");
     }
 

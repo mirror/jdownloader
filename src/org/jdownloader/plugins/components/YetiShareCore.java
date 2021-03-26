@@ -22,31 +22,15 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -71,6 +55,24 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -270,8 +272,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -322,9 +324,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed e.g. filemia.com </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -359,7 +359,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 getPage(this.getMainPage() + "/" + this.getFUID(link) + "~i");
                 /* Offline check is unsafe which is why we need to check for other errors first! */
                 try {
-                    this.checkErrors(link, account);
+                    this.checkErrors(br, link, account);
                 } catch (final PluginException e) {
                     if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         /* File offline or error during download -> Always throw exception. */
@@ -378,7 +378,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 getPage(link.getPluginPatternMatcher());
                 /* Offline check is very unsafe which is why we need to check for other errors first! */
                 try {
-                    this.checkErrors(link, account);
+                    this.checkErrors(br, link, account);
                 } catch (final PluginException e) {
                     if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         /* File offline or error during download -> Always throw exception. */
@@ -543,7 +543,11 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null, true);
+        try {
+            requestFileInformation(link, null, true);
+        } catch (PluginException e) {
+            ignorePluginException(e, br, link, null);
+        }
         handleDownloadWebsite(link, null);
     }
 
@@ -633,7 +637,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Now handle pre-download-waittime, captcha and other pre download steps. */
                 if (this.dl == null) {
                     if (StringUtils.isEmpty(continue_link)) {
-                        checkErrors(link, account);
+                        checkErrors(br, link, account);
                         continue_link = getContinueLink();
                     }
                     /* Handle up to x pre-download pages before the (eventually existing) captcha */
@@ -666,7 +670,7 @@ public class YetiShareCore extends antiDDoSForHost {
                                 if (i == startValue && continueform == null) {
                                     /* First loop and no Form -> Give up */
                                     logger.info("No continue_form/continue_link available, plugin broken --> Step: " + (i + 1));
-                                    checkErrorsLastResort(link, account);
+                                    checkErrorsLastResort(br, link, account);
                                 } else if (continueform == null) {
                                     logger.info("No continue_form/continue_link available, stepping out of pre-download loop");
                                     break;
@@ -722,9 +726,9 @@ public class YetiShareCore extends antiDDoSForHost {
                                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                                 } else {
                                     if (continue_link == null) {
-                                        checkErrors(link, account);
+                                        checkErrors(br, link, account);
                                         logger.warning("Failed to find continue_link");
-                                        checkErrorsLastResort(link, account);
+                                        checkErrorsLastResort(br, link, account);
                                     }
                                     br.setFollowRedirects(false);
                                     waitTime(link, timeBeforeCaptchaInput);
@@ -772,7 +776,7 @@ public class YetiShareCore extends antiDDoSForHost {
                             }
                             /* Get new continue_link for the next run */
                             continue_link = getContinueLink();
-                            checkErrors(link, account);
+                            checkErrors(br, link, account);
                             if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                                 logger.info("Wrong captcha");
                                 continue;
@@ -784,8 +788,8 @@ public class YetiShareCore extends antiDDoSForHost {
             }
         }
         if (dl == null) {
-            checkErrors(link, account);
-            checkErrorsLastResort(link, account);
+            checkErrors(br, link, account);
+            checkErrorsLastResort(br, link, account);
         }
         final URLConnectionAdapter con = dl.getConnection();
         /*
@@ -812,8 +816,8 @@ public class YetiShareCore extends antiDDoSForHost {
             if (captcha && !captchaSuccess) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            checkErrors(link, account);
-            checkErrorsLastResort(link, account);
+            checkErrors(br, link, account);
+            checkErrorsLastResort(br, link, account);
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
@@ -1007,16 +1011,16 @@ public class YetiShareCore extends antiDDoSForHost {
         return SPECIAL_REGEX_CHARS.matcher(str).replaceAll("\\\\$0");
     }
 
-    private HashMap<String, Object> getErrorKeyFromErrorMessage(final String errorStr) {
+    private Map<String, Object> getErrorKeyFromErrorMessage(final String errorStr) {
         if (StringUtils.isEmpty(errorStr)) {
             return null;
         }
         try {
             final String language_keys_json = br.getRegex("l\\s*=\\s*(\\{.*?\\});\\s*?return").getMatch(0);
-            final HashMap<String, Object> language_keys_map = (HashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(language_keys_json);
+            final Map<String, Object> language_keys_map = JavaScriptEngineFactory.jsonToJavaMap(language_keys_json);
             final Iterator<Entry<String, Object>> iterator = language_keys_map.entrySet().iterator();
             String found_key_for_errormessage = null;
-            final HashMap<String, String> errorProperties = new HashMap<String, String>();
+            final Map<String, String> errorProperties = new HashMap<String, String>();
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
                 final String key = entry.getKey();
@@ -1048,7 +1052,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (found_key_for_errormessage != null) {
-                HashMap<String, Object> errorMap = new HashMap<String, Object>();
+                final Map<String, Object> errorMap = new HashMap<String, Object>();
                 errorMap.put("error_key", found_key_for_errormessage);
                 if (!errorProperties.isEmpty()) {
                     errorMap.put("error_properties", errorProperties);
@@ -1065,7 +1069,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Returns urldecoded errormessage inside current URL (parameter "e"). */
-    protected String getErrorMsgURL() {
+    protected String getErrorMsgURL(Browser br) {
         String errorMsgURL = null;
         try {
             final UrlQuery query = UrlQuery.parse(br.getURL());
@@ -1079,148 +1083,25 @@ public class YetiShareCore extends antiDDoSForHost {
         return errorMsgURL;
     }
 
-    /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
-    private void checkErrorsLanguageIndependant(final DownloadLink link, final Account account) throws PluginException {
-        final String errorMsgURL = this.getErrorMsgURL();
-        if (!StringUtils.isEmpty(errorMsgURL)) {
-            logger.info("Found errormessage in current URL: " + errorMsgURL);
-            final HashMap<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
-            if (errorMap == null) {
-                /* Not all websites have (all) language keys present e.g. ultimbox.com */
-                logger.info("Failed to find error_key --> Trying checkErrorsURL");
-                checkErrorsURL(link, account);
-                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
-            }
-            final String errorkey = (String) errorMap.get("error_key");
-            logger.info("Found key to errormessage: " + errorkey);
-            HashMap<String, String> errorProperties = null;
-            if (errorMap.containsKey("error_properties")) {
-                /* This is really only for logging purposes */
-                errorProperties = (HashMap<String, String>) errorMap.get("error_properties");
-                final Iterator<Entry<String, String>> dynVarsIterator = errorProperties.entrySet().iterator();
-                int counter = 0;
-                while (dynVarsIterator.hasNext()) {
-                    counter++;
-                    final Entry<String, String> entry = dynVarsIterator.next();
-                    final String key = entry.getKey();
-                    final String value = entry.getValue();
-                    logger.info("Found ErrorProperty " + counter + " | " + key + " : " + value);
-                }
-            }
-            final long default_waittime = 15 * 60 * 1000l;
-            /* Now handle errors */
-            if (errorkey.equalsIgnoreCase("error_file_has_been_removed_by_admin") || errorkey.equalsIgnoreCase("error_file_has_been_removed_by_user") || errorkey.equalsIgnoreCase("error_file_has_been_removed_due_to_copyright") || errorkey.equalsIgnoreCase("error_file_has_expired")) {
-                // VERIFIED
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsgURL);
-            }
-            /** premiumonly errorhandling */
-            else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
-                throw new AccountRequiredException(errorMsgURL);
-            } else if (errorkey.equalsIgnoreCase("error_you_must_be_a_x_user_to_download_this_file")) {
-                throw new AccountRequiredException(errorMsgURL);
-            } else if (errorkey.equalsIgnoreCase("error_you_must_register_for_a_premium_account_for_filesize")) {
-                throw new AccountRequiredException(errorMsgURL);
-            } else if (errorkey.equalsIgnoreCase("error_file_is_not_publicly_shared")) {
-                /* Very very rare case */
-                logger.info("This file can only be downloaded by the initial uploader");
-                throw new AccountRequiredException(errorMsgURL);
-            } /** Limit errorhandling */
-            else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_download_limit_this_file")) {
-                /* "You do not have enough bandwidth left to download this file." */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit")) {
-                /* "You have reached the maximum download bandwidth today, please upgrade or try again later." */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours")) {
-                /* 2020-12-11: sundryshare.com */
-                /* "You have reached the maximum permitted downloads  band width per day." */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, 1 * 60 * 60 * 1000l);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_daily_download_limit_this_file")) {
-                /* "You do not have enough bandwidth left today to download this file." */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
-            } else if (errorkey.equalsIgnoreCase("error_you_have_reached_the_max_permitted_downloads")) {
-                /*
-                 * "You have reached the maximum concurrent downloads. Please wait for your existing downloads to complete or register for a premium account above."
-                 */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, 5 * 60 * 1000l);
-            } else if (errorkey.equalsIgnoreCase("error_you_must_wait_between_downloads")) {
-                // VERIFIED
-                /* E.g. "30 minutes" */
-                final String waitStr = errorProperties.get("WAITING_TIME_LABEL");
-                long waittime = parseWaittime(waitStr);
-                if (waittime <= 0) {
-                    waittime = default_waittime;
-                }
-                if (waittime < 180000) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, waittime);
-                } else if (account != null) {
-                    throw new AccountUnavailableException(errorMsgURL, waittime);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, waittime);
-                }
-            } else {
-                logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURL");
-                checkErrorsURL(link, account);
-                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsgURL + " | Errorkey: " + errorkey);
-            }
-        }
-    }
-
-    private long parseWaittime(final String src) {
-        /*
-         * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we need!
-         */
-        final String wait_hours = new Regex(src, "(\\d+)\\s*?hours?").getMatch(0);
-        final String wait_minutes = new Regex(src, "(\\d+)\\s*?minutes?").getMatch(0);
-        final String wait_seconds = new Regex(src, "(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
-        int minutes = 0, seconds = 0, hours = 0;
-        if (wait_hours != null) {
-            hours = Integer.parseInt(wait_hours);
-        }
-        if (wait_minutes != null) {
-            minutes = Integer.parseInt(wait_minutes);
-        }
-        if (wait_seconds != null) {
-            seconds = Integer.parseInt(wait_seconds);
-        }
-        final int extraWaittimeSeconds = 1;
-        int waittime = ((3600 * hours) + (60 * minutes) + seconds + extraWaittimeSeconds) * 1000;
-        if (waittime <= 0) {
-            /* Fallback */
-            logger.info("Waittime RegExes seem to be broken or given String does not contain any waittime");
-        }
-        return waittime;
-    }
-
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        checkErrorsLanguageIndependant(link, account);
-        /*
-         * Now check for errors which checkErrorsLanguageIndependant failed to handle
-         */
-        checkErrorsURL(link, account);
-        if (br.toString().equals("unknown user")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
-        } else if (br.toString().equals("ERROR: Wrong IP")) {
-            /*
-             * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
-        }
-    }
+    private final String error_you_have_reached_the_download_limit                                   = "error_you_have_reached_the_download_limit";
+    private final String error_you_have_reached_the_download_limit_this_file                         = "error_you_have_reached_the_download_limit_this_file";
+    private final String error_you_must_register_for_a_premium_account_for_filesize                  = "error_you_must_register_for_a_premium_account_for_filesize";
+    private final String error_file_is_not_publicly_shared                                           = "error_file_is_not_publicly_shared";
+    private final String error_you_must_be_a_x_user_to_download_this_file                            = "error_you_must_be_a_x_user_to_download_this_file";
+    private final String error_you_have_reached_the_maximum_daily_download_limit                     = "error_you_have_reached_the_maximum_daily_download_limit";
+    private final String error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours  = "error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours";
+    private final String error_you_have_reached_the_maximum_daily_download_limit_this_file           = "error_you_have_reached_the_maximum_daily_download_limit_this_file";
+    private final String error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours = "error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours";
+    private final String error_you_have_reached_the_max_permitted_downloads                          = "error_you_have_reached_the_max_permitted_downloads";
+    private final String error_you_must_wait_between_downloads                                       = "error_you_must_wait_between_downloads";
 
     /**
      * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
      * YetiShare are using different errors and not all have their full language keys available. Newer versions of YetiShare don't provide
      * any language keys at all.
      */
-    private void checkErrorsURL(final DownloadLink link, final Account account) throws PluginException {
-        final String errorMsgURL = this.getErrorMsgURL();
+    protected void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final String errorMsgURL = this.getErrorMsgURL(br);
         final String url = getCurrentURLDecoded();
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
@@ -1257,20 +1138,175 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    protected void loggedInOrException(final Account account) throws PluginException {
+    protected void ignorePluginException(PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (account != null) {
+            // TODO: update with more account specific error handling
+            final Set<String> mightBeOkayWithAccountLogin = new HashSet<String>();
+            switch (account.getType()) {
+            case PREMIUM:
+                mightBeOkayWithAccountLogin.add(error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours);
+                mightBeOkayWithAccountLogin.add(error_you_must_register_for_a_premium_account_for_filesize);
+                mightBeOkayWithAccountLogin.add(error_you_must_be_a_x_user_to_download_this_file);
+                break;
+            default:
+                mightBeOkayWithAccountLogin.add(error_you_must_be_a_x_user_to_download_this_file);
+                break;
+            }
+            if (mightBeOkayWithAccountLogin.contains(exception.getMessage())) {
+                logger.exception("special handling to ignore:" + exception.getMessage(), exception);
+                return;
+            }
+        }
+        throw exception;
+    }
+
+    /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
+    protected void checkErrorsLanguageIndependant(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final String errorMsgURL = this.getErrorMsgURL(br);
+        if (!StringUtils.isEmpty(errorMsgURL)) {
+            logger.info("Found errormessage in current URL: " + errorMsgURL);
+            final Map<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
+            if (errorMap == null) {
+                /* Not all websites have (all) language keys present e.g. ultimbox.com */
+                logger.info("Failed to find error_key --> Trying checkErrorsURL");
+                checkErrorsURL(br, link, account);
+                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
+            }
+            final String errorkey = (String) errorMap.get("error_key");
+            logger.info("Found key to errormessage: " + errorkey);
+            Map<String, String> errorProperties = null;
+            if (errorMap.containsKey("error_properties")) {
+                /* This is really only for logging purposes */
+                errorProperties = (Map<String, String>) errorMap.get("error_properties");
+                final Iterator<Entry<String, String>> dynVarsIterator = errorProperties.entrySet().iterator();
+                int counter = 0;
+                while (dynVarsIterator.hasNext()) {
+                    counter++;
+                    final Entry<String, String> entry = dynVarsIterator.next();
+                    final String key = entry.getKey();
+                    final String value = entry.getValue();
+                    logger.info("Found ErrorProperty " + counter + " | " + key + " : " + value);
+                }
+            }
+            final long default_waittime = 15 * 60 * 1000l;
+            /* Now handle errors */
+            if (errorkey.equalsIgnoreCase("error_file_has_been_removed_by_admin") || errorkey.equalsIgnoreCase("error_file_has_been_removed_by_user") || errorkey.equalsIgnoreCase("error_file_has_been_removed_due_to_copyright") || errorkey.equalsIgnoreCase("error_file_has_expired")) {
+                // VERIFIED
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errorMsgURL);
+            }
+            /** premiumonly errorhandling */
+            else if (errorkey.equalsIgnoreCase(error_you_must_register_for_a_premium_account_for_filesize)) {
+                throw new AccountRequiredException(errorMsgURL);
+            } else if (errorkey.equalsIgnoreCase(error_you_must_be_a_x_user_to_download_this_file)) {
+                throw new AccountRequiredException(errorMsgURL);
+            } else if (errorkey.equalsIgnoreCase(error_file_is_not_publicly_shared)) {
+                /* Very very rare case */
+                logger.info("This file can only be downloaded by the initial uploader");
+                throw new AccountRequiredException(errorMsgURL);
+            }/** Limit errorhandling */
+            else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit_this_file)) {
+                /* "You do not have enough bandwidth left to download this file." */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_daily_download_limit)) {
+                /* "You have reached the maximum download bandwidth today, please upgrade or try again later." */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours)) {
+                /* 2020-12-11: sundryshare.com */
+                /* "You have reached the maximum permitted downloads  band width per day." */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, 1 * 60 * 60 * 1000l);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_daily_download_limit_this_file)) {
+                /* "You do not have enough bandwidth left today to download this file." */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, default_waittime);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
+            } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_max_permitted_downloads)) {
+                /*
+                 * "You have reached the maximum concurrent downloads. Please wait for your existing downloads to complete or register for a premium account above."
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, 5 * 60 * 1000l);
+            } else if (errorkey.equalsIgnoreCase(error_you_must_wait_between_downloads)) {
+                // VERIFIED
+                /* E.g. "30 minutes" */
+                final String waitStr = errorProperties.get("WAITING_TIME_LABEL");
+                long waittime = parseWaittime(waitStr);
+                if (waittime <= 0) {
+                    waittime = default_waittime;
+                }
+                if (waittime < 180000) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, waittime);
+                } else if (account != null) {
+                    throw new AccountUnavailableException(errorMsgURL, waittime);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, waittime);
+                }
+            } else {
+                logger.warning("Unknown errorkey: " + errorkey + " --> Trying checkErrorsURL");
+                checkErrorsURL(br, link, account);
+                logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: " + errorMsgURL + " | Errorkey: " + errorkey);
+            }
+        }
+    }
+
+    private long parseWaittime(final String src) {
+        /*
+         * Important: URL Might contain htmlencoded parts! Be sure that these RegExes are tolerant enough to get the information we need!
+         */
+        final String wait_hours = new Regex(src, "(\\d+)\\s*?hours?").getMatch(0);
+        final String wait_minutes = new Regex(src, "(\\d+)\\s*?minutes?").getMatch(0);
+        final String wait_seconds = new Regex(src, "(\\d+)\\s*?(?:seconds?|segundos)").getMatch(0);
+        int minutes = 0, seconds = 0, hours = 0;
+        if (wait_hours != null) {
+            hours = Integer.parseInt(wait_hours);
+        }
+        if (wait_minutes != null) {
+            minutes = Integer.parseInt(wait_minutes);
+        }
+        if (wait_seconds != null) {
+            seconds = Integer.parseInt(wait_seconds);
+        }
+        final int extraWaittimeSeconds = 1;
+        int waittime = ((3600 * hours) + (60 * minutes) + seconds + extraWaittimeSeconds) * 1000;
+        if (waittime <= 0) {
+            /* Fallback */
+            logger.info("Waittime RegExes seem to be broken or given String does not contain any waittime");
+        }
+        return waittime;
+    }
+
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+        checkErrorsLanguageIndependant(br, link, account);
+        /*
+         * Now check for errors which checkErrorsLanguageIndependant failed to handle
+         */
+        checkErrorsURL(br, link, account);
+        if (br.toString().equals("unknown user")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
+        } else if (br.toString().equals("ERROR: Wrong IP")) {
+            /*
+             * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
+        }
+    }
+
+    protected void loggedInOrException(Browser br, final Account account) throws PluginException {
         if (account == null) {
             /* Programmer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin()) {
+        } else if (br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin(br)) {
             /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
     }
 
-    protected void checkErrorsLastResort(final DownloadLink link, final Account account) throws PluginException {
+    protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         logger.info("Last resort errorhandling");
         if (account != null) {
-            this.loggedInOrException(account);
+            this.loggedInOrException(br, account);
         } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
             /* Handle redirect to mainpage as premiumonly */
             throw new AccountRequiredException();
@@ -1296,8 +1332,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
@@ -1446,8 +1481,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                     logger.info("Verifying login-cookies");
                     getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade());
-                    if (isLoggedin()) {
-                        logger.info("Successfully logged in via cookies");
+                    if (isLoggedin(br)) {
                         /* Refresh stored cookies */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         /* Set/Update account-type */
@@ -1456,6 +1490,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         } else {
                             setAccountLimitsByType(account, AccountType.FREE);
                         }
+                        logger.info("Successfully logged in via cookies:" + account.getType());
                         return;
                     } else {
                         logger.info("Failed to login via cookies");
@@ -1563,7 +1598,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                     }
                     submitForm(loginform);
-                    if (br.containsHTML(">\\s*Your username and password are invalid<") || !isLoggedin()) {
+                    if (br.containsHTML(">\\s*Your username and password are invalid<") || !isLoggedin(br)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -1577,7 +1612,7 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         return br.containsHTML("/logout\\.html\"");
     }
 
@@ -1746,7 +1781,11 @@ public class YetiShareCore extends antiDDoSForHost {
         if (this.supports_api()) {
             this.handleDownloadAPI(link, account);
         } else {
-            requestFileInformation(link, account, true);
+            try {
+                requestFileInformation(link, account, true);
+            } catch (PluginException e) {
+                ignorePluginException(e, br, link, account);
+            }
             loginWebsite(account, false);
             br.setFollowRedirects(false);
             getPage(link.getPluginPatternMatcher());
@@ -2073,7 +2112,7 @@ public class YetiShareCore extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            checkErrors(link, account);
+            checkErrors(br, link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
