@@ -110,9 +110,6 @@ public class FcLc extends antiDDoSForDecrypt {
              * of their working domains.
              */
             output = input.replace("curs.io", "cuto.io");
-        } else if (input.contains("fc.lc/")) {
-            /* 2020-10-26 */
-            output = input.replace("fc.lc/", "short.fc-lc.com/");
         } else {
             /* Nothing to correct */
             output = input;
@@ -169,7 +166,7 @@ public class FcLc extends antiDDoSForDecrypt {
         }
         final Form beforeCaptcha = br.getFormbyProperty("id", "before-captcha");
         if (beforeCaptcha != null) {
-            /* 2019-10-30: E.g. exe.io */
+            /* 2019-10-30: E.g. exe.io, redirecto.link */
             logger.info("Found pre-captcha Form");
             this.submitForm(beforeCaptcha);
         }
@@ -193,35 +190,6 @@ public class FcLc extends antiDDoSForDecrypt {
             /* 2020-10-26: short.fc-lc.com */
             this.submitForm(form);
         }
-        {
-            /* TODO 2020-10-26: Very unsure about that! */
-            boolean hasFoundNextForm = false;
-            Form nextForm = br.getFormbyActionRegex(".*redirecto\\.link/.+");
-            if (nextForm != null) {
-                hasFoundNextForm = true;
-                this.submitForm(nextForm);
-            }
-            nextForm = br.getFormbyActionRegex(".*fcc\\.lc/.+");
-            if (nextForm != null) {
-                hasFoundNextForm = true;
-                this.submitForm(nextForm);
-            }
-            if (hasFoundNextForm) {
-                form = getCaptchaForm();
-                if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        }
-        // form.remove("_Token%5Bunlocked%5D");
-        // form.put("_Token%5Bunlocked%5D", "adcopy_challenge%7Cadcopy_response%7Ccoinhive-captcha-token%7Cg-recaptcha-response");
-        // final InputField ifield = form.getInputField("_Token%5Bfields%5D");
-        // if (ifield != null) {
-        // final String value = ifield.getValue();
-        // final String valueNew = value.replace("%253Aref", "%3Aref");
-        // form.remove("_Token%5Bfields%5D");
-        // form.put("_Token%5Bfields%5D", valueNew);
-        // }
         if (form.hasInputFieldByName("captcha")) {
             /* original captcha/ VERY OLD way! [2018-07-18: Very rare or non existent anymore!] */
             logger.info("OLD captcha required");
@@ -390,6 +358,10 @@ public class FcLc extends antiDDoSForDecrypt {
                     } else {
                         logger.info("Skipping waittime");
                     }
+                    /* 2021-03-26: Wait some extra time otherwise we might get error 400 bad request */
+                    final int extraSeconds = 5;
+                    logger.info("Waiting extra seconds: " + extraSeconds);
+                    this.sleep(extraSeconds * 1000l, param);
                 }
                 /** TODO: 2020-07-06: Descramble js vars to fix this */
                 submitForm(f2);
