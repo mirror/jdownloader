@@ -13,10 +13,13 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,13 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pony.fm" }, urls = { "https?://(www\\.)?pony\\.fm/tracks/[a-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pony.fm" }, urls = { "https?://(?:www\\.)?pony\\.fm/tracks/\\d+" })
 public class PonyFm extends PluginForDecrypt {
-
     public PonyFm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,54 +42,31 @@ public class PonyFm extends PluginForDecrypt {
         final String fid = new Regex(parameter, "pony\\.fm/tracks/(\\d+)").getMatch(0);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("https://pony.fm/api/web/tracks/" + fid + "?log=true");
-        if (br.containsHTML("\"Track not found")) {
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"Track not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String song_name = PluginJSonUtils.getJsonValue(br, "title");
-        final String linktext = br.getRegex("\"formats\":\\[(\\{.*?\\})\\]").getMatch(0);
-        if (linktext == null || song_name == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String[] links = linktext.split("\\},\\{");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String linkinfo : links) {
-            final String url = PluginJSonUtils.getJsonValue(linkinfo, "url");
-            final String fsize = PluginJSonUtils.getJsonValue(linkinfo, "size");
-            final String ext = PluginJSonUtils.getJsonValue(linkinfo, "extension");
-            final DownloadLink fina = createDownloadlink("directhttp://" + url.replace("\\", ""));
-            fina.setFinalFileName(song_name + "." + ext);
-            fina.setDownloadSize(SizeFormatter.getSize(fsize));
-            fina.setAvailable(true);
-            decryptedLinks.add(fina);
-        }
-
-        /* Add covers */
-        final String covertext = br.getRegex("\"covers\":(\\{.*?\\})").getMatch(0);
-        if (covertext != null) {
-            final String[][] covers = new Regex(covertext, "\"([a-z0]+)\":\"(http[^<>\"]*?)\"").getMatches();
-            if (covers != null && covers.length != 0) {
-                for (final String linkinfo[] : covers) {
-                    final String type = linkinfo[0];
-                    final String url = linkinfo[1].replace("\\", "");
-                    final String ext = getFileNameExtensionFromString(url);
-                    final DownloadLink fina = createDownloadlink("directhttp://" + url.replace("\\", ""));
-                    fina.setFinalFileName(song_name + "_cover_" + type + "." + ext);
-                    fina.setAvailable(true);
-                    decryptedLinks.add(fina);
-                }
-            }
-        }
-
+        entries = (Map<String, Object>) entries.get("track");
+        final String song_name = (String) entries.get("title");
+        Map<String, Object> streams = (Map<String, Object>) entries.get("streams");
+        Map<String, Object> covers = (Map<String, Object>) entries.get("covers");
+        final String url = (String) streams.get("mp3");
+        final String ext = ".mp3";
+        final DownloadLink fina = createDownloadlink(url);
+        fina.setFinalFileName(song_name + "." + ext);
+        fina.setAvailable(true);
+        decryptedLinks.add(fina);
+        /* Add cover */
+        final String urlCover = (String) covers.get("original");
+        final String extCover = getFileNameExtensionFromString(urlCover);
+        final DownloadLink dlcover = createDownloadlink(urlCover);
+        dlcover.setFinalFileName(song_name + "_cover" + "." + extCover);
+        dlcover.setAvailable(true);
+        decryptedLinks.add(dlcover);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(song_name);
         fp.addLinks(decryptedLinks);
-
         return decryptedLinks;
     }
-
 }
