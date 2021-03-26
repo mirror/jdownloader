@@ -252,8 +252,9 @@ public class MegaConz extends PluginForHost {
                 }
                 if (isPro && uq.containsKey("srvratio")) {
                     final Number srvratio = getNumber(uq, "srvratio");
+                    final long transfer_srv_reserved = getNumber(uq, "ruo", 0l).longValue();// 3rd party
                     if (srvratio.intValue() > 0) {
-                        statusAddition += " | TrafficShare Radio: " + srvratio.intValue() + "%";
+                        statusAddition += " | TrafficShare Radio: " + srvratio.intValue() + "%(" + SizeFormatter.formatBytes(transfer_srv_reserved) + ")";
                     }
                 }
                 ai.setStatus(accountStatus + statusAddition);
