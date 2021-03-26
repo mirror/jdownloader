@@ -195,7 +195,7 @@ public class MegaConz extends PluginForHost {
                         bandwidthUsed = ((Number) trafficInfo.get(trafficInfo.size() - 1)).longValue();
                     }
                     final String bandwidthUsedFormatted = SizeFormatter.formatBytes(bandwidthUsed).toString();
-                    statusAddition = " | Bandwidth used: " + bandwidthUsedFormatted;
+                    statusAddition += " | Bandwidth used: " + bandwidthUsedFormatted;
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
@@ -249,6 +249,12 @@ public class MegaConz extends PluginForHost {
                     }
                 } else {
                     isPro = false;
+                }
+                if (isPro && uq.containsKey("srvratio")) {
+                    final Number srvratio = getNumber(uq, "srvratio");
+                    if (srvratio.intValue() > 0) {
+                        statusAddition += " | TrafficShare Radio: " + srvratio.intValue() + "%";
+                    }
                 }
                 ai.setStatus(accountStatus + statusAddition);
                 if (isPro) {

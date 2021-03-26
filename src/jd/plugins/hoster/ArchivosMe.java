@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -128,12 +129,12 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
         /* 2020-01-18: Special */
         if (br.containsHTML(">\\s*You must have a premium status to download")) {
             throw new AccountRequiredException();
         }
-        super.checkErrors(link, account);
+        super.checkErrors(br, link, account);
     }
 
     @Override

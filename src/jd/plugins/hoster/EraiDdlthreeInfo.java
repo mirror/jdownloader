@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class EraiDdlthreeInfo extends YetiShareCoreNew {
@@ -140,7 +140,7 @@ public class EraiDdlthreeInfo extends YetiShareCoreNew {
     }
 
     @Override
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         final boolean loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account/edit\"");
         return loggedIN;
     }
@@ -153,8 +153,8 @@ public class EraiDdlthreeInfo extends YetiShareCoreNew {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        super.checkErrors(link, account);
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+        super.checkErrors(br, link, account);
         if (br.containsHTML(">\\s*Please enter your information to register for an account")) {
             throw new AccountRequiredException();
         }

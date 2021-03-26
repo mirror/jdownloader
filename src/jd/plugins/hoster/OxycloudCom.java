@@ -217,8 +217,8 @@ public class OxycloudCom extends YetiShareCoreNew {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
-        super.checkErrors(link, account);
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+        super.checkErrors(br, link, account);
         if (br.containsHTML(">\\s*Musisz być użytkownikiem premium aby pobrać ten plik")) {
             /* 2020-10-21 */
             throw new AccountRequiredException();

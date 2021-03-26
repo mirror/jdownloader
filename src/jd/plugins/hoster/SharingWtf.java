@@ -178,7 +178,7 @@ public class SharingWtf extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account) throws PluginException {
+    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
         /* 2020-02-17: Special */
         if (br.containsHTML("you need to be a registered user to download any files")) {
             throw new AccountRequiredException();
@@ -199,7 +199,7 @@ public class SharingWtf extends YetiShareCore {
                 throw new AccountRequiredException(errorMsg);
             }
         }
-        super.checkErrors(link, account);
+        super.checkErrors(br, link, account);
     }
 
     @Override
