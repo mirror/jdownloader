@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -24,7 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com", "tubeharmony.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[a-z0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[a-z0-9\\-_]+\\&d=.+", "https?://(?:www\\.)?tubeharmony\\.com/video\\?id=[a-z0-9\\-_]+\\&d=.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornado.co", "tubesafari.com" }, urls = { "https?://(?:www\\.)?pornado\\.co/video\\?id=[a-z0-9\\-_]+(?:\\&d=.+)?", "https?://(?:www\\.)?tubesafari\\.com/video\\?id=[a-z0-9\\-_]+(?:\\&d=.+)?" })
 public class PornadoCo extends PornEmbedParser {
     public PornadoCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -33,22 +35,28 @@ public class PornadoCo extends PornEmbedParser {
     /** E.g. more domains: xvirgo.com */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        final String id = query.get("id");
+        final String d = query.get("d");
+        if (id.matches("ph[a-f0-9]+") && d == null) {
+            /* 2021-03-26 */
+            decryptedLinks.add(this.createDownloadlink("https://www.pornhub.com/embed/" + id));
+            return decryptedLinks;
+        }
+        br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]+) \\- [^<>\"/]+</title>").getMatch(0);
         if (filename == null) {
-            filename = new Regex(parameter, "\\&d=(.+)$").getMatch(0);
+            filename = new Regex(param.getCryptedUrl(), "\\&d=(.+)$").getMatch(0);
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
