@@ -1152,13 +1152,19 @@ public class YetiShareCore extends antiDDoSForHost {
                 mightBeOkayWithAccountLogin.add(error_you_must_be_a_x_user_to_download_this_file);
                 break;
             }
-            if (mightBeOkayWithAccountLogin.contains(exception.getMessage())) {
+            final String mappedErrorKey;
+            synchronized (errorMap) {
+                mappedErrorKey = errorMap.get(exception.getMessage());
+            }
+            if (mightBeOkayWithAccountLogin.contains(mappedErrorKey)) {
                 logger.exception("special handling to ignore:" + exception.getMessage(), exception);
                 return;
             }
         }
         throw exception;
     }
+
+    protected static HashMap<String, String> errorMap = new HashMap<String, String>();
 
     /* 2020-03-25: No plugin should ever have to override this. Please create a ticket before changing this! */
     protected void checkErrorsLanguageIndependant(final Browser br, final DownloadLink link, final Account account) throws PluginException {
@@ -1174,6 +1180,9 @@ public class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
             }
             final String errorkey = (String) errorMap.get("error_key");
+            synchronized (errorMap) {
+                errorMap.put(errorMsgURL, errorkey);
+            }
             logger.info("Found key to errormessage: " + errorkey);
             Map<String, String> errorProperties = null;
             if (errorMap.containsKey("error_properties")) {
