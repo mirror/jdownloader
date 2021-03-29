@@ -21,17 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,6 +38,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.ArchiveOrgConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+" })
 public class ArchiveOrg extends PluginForDecrypt {
@@ -97,10 +97,10 @@ public class ArchiveOrg extends PluginForDecrypt {
                 final String host = Browser.getHost(con.getURL(), true);
                 if ((this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org")) && !isArchiveContent) {
                     final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                    if (con.getCompleteContentLength() > 0) {
-                        fina.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
                     if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            fina.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                         fina.setFinalFileName(getFileNameFromHeader(con));
                         fina.setAvailable(true);
                     } else {
@@ -113,7 +113,9 @@ public class ArchiveOrg extends PluginForDecrypt {
                     br.followConnection();
                 }
             } finally {
-                con.disconnect();
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         if (br.containsHTML(">\\s*You must log in to view this content")) {
