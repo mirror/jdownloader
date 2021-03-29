@@ -25,6 +25,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.swing.action.BasicAction;
@@ -54,16 +55,12 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
 public class YoutubeLinkGrabberExtender {
-
     private JComponent                          parent;
     private PluginView<CrawledLink>             pv;
     private Collection<PluginView<CrawledLink>> allPvs;
     private PluginForHost                       plg;
-
     private JMenuItem                           addVariants;
-
     // protected HashMap<String, AbstractVariant> map;
-
     private JMenu                               youtubeMenu;
     private HashMap<VariantGroup, JMenuItem>    groupMenuItems;
     private LogInterface                        logger;
@@ -80,29 +77,21 @@ public class YoutubeLinkGrabberExtender {
     private JMenu                    setVariantMenu;
 
     public void run() {
-
         addVariants = new JMenuItem(new BasicAction() {
             {
-
                 setSmallIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
                 setName(_GUI.T.youtube_add_variant());
-
             }
 
             @Override
             public void actionPerformed(final ActionEvent e) {
-
                 addVariants();
             }
-
         });
         // addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
-
         parent.add(youtubeMenu = new JMenu("youtube.com"));
         Icon icon = DomainInfo.getInstance("youtube.com").getFavIcon();
-
         youtubeMenu.setIcon(icon);
-
         youtubeMenu.add(setVariantMenu = new JMenu(_GUI.T.youtube_choose_variant()));
         setVariantMenu.setIcon(new AbstractIcon(IconKey.ICON_REFRESH, 18));
         groupMenuItems = new HashMap<VariantGroup, JMenuItem>();
@@ -113,41 +102,31 @@ public class YoutubeLinkGrabberExtender {
             JMenuItem menu;
             setVariantMenu.add(menu = new JMenuItem(new BasicAction() {
                 {
-
                     setSmallIcon(g.getIcon(18));
                     setName(_GUI.T.youtube_choose_variant_group(g.getLabel()));
-
                 }
 
                 @Override
                 public void actionPerformed(final ActionEvent e) {
-
                     setVariants(g);
                 }
-
             }));
             groupMenuItems.put(g, menu);
         }
-
         youtubeMenu.add(addVariants);
         new Thread("Collect Variants") {
-
             public void run() {
                 groupCount = new CounterMap<VariantGroup>();
                 for (CrawledLink cl : pv.getChildren()) {
                     if (cl.getDownloadLink().getHost().equals("youtube.com")) {
                         try {
                             groupCount.increment(((AbstractVariant) cl.gethPlugin().getActiveVariantByLink(cl.getDownloadLink())).getGroup());
-
                         } catch (Throwable e) {
                             e.printStackTrace();
                         }
                     }
-
                 }
-
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         int active = 0;
@@ -161,9 +140,7 @@ public class YoutubeLinkGrabberExtender {
                                 last = groupMenuItems.get(g);
                                 active++;
                             }
-
                             groupMenuItems.get(g).setText(_GUI.T.youtube_choose_variant_group_linkcount(g.getLabel(), groupCount.getInt(g)));
-
                         }
                         if (active == 1) {
                             youtubeMenu.remove(setVariantMenu);
@@ -172,12 +149,9 @@ public class YoutubeLinkGrabberExtender {
                             youtubeMenu.add(addVariants);
                         }
                     }
-
                 };
-
             };
         }.start();
-
     }
 
     protected void addVariants() {
@@ -186,43 +160,34 @@ public class YoutubeLinkGrabberExtender {
             return;
         }
         ProgressGetter pg = new ProgressGetter() {
-
             private int done;
 
             protected void aggregate(CrawledLink cl, final CounterMap<String> matchingLinks, HashSet<String> dupeAdd, final ArrayList<VariantInfo> vs, List<VariantInfo> variants) {
                 HashSet<String> dupe = new HashSet<String>();
                 ;
                 for (VariantInfo vi : variants) {
-
                     String id = new VariantIDStorable(vi.getVariant()).createUniqueID();
                     if (vi.getVariant() instanceof SubtitleVariant) {
                         id = vi.getVariant()._getUniqueId();
                     }
                     if (dupe.add(id)) {
-
                         matchingLinks.increment(id);
                     }
                     if (dupeAdd.add(id)) {
                         vs.add(vi);
-
                     }
-
                 }
             }
 
             @Override
             public void run() throws Exception {
-
                 final CounterMap<String> matchingLinks = new CounterMap<String>();
                 HashSet<String> dupeAdd = new HashSet<String>();
                 final ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
                 final HashSet<String> videoIDDupe = new HashSet<String>();
                 done = 0;
-
                 for (CrawledLink cl : pv.getChildren()) {
-
                     try {
-
                         YoutubeHelper helper;
                         final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
                         if (!videoIDDupe.add(clipData.videoID)) {
@@ -232,32 +197,25 @@ public class YoutubeLinkGrabberExtender {
                         helper.extendedDataLoading(variants);
                         aggregate(cl, matchingLinks, dupeAdd, vs, variants);
                         aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
-
                         aggregate(cl, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
-
                     } finally {
                         done++;
                     }
                 }
-
                 new Thread("Add Youtube Variant") {
                     public void run() {
                         YoutubeVariantSelectionDialogAddMulti d;
                         try {
-
                             UIOManager.I().show(null, d = new YoutubeVariantSelectionDialogAddMulti(matchingLinks, videoIDDupe.size(), vs)).throwCloseExceptions();
-
                             boolean alternativesEnabled = d.isAutoAlternativesEnabled();
                             final List<LinkVariant> choosenVariant = d.getVariants();
                             java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                             for (LinkVariant lv : choosenVariant) {
                                 HashSet<String> dupe = new HashSet<String>();
                                 for (CrawledLink cl : pv.getChildren()) {
-
                                     if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
                                         continue;
                                     }
-
                                     AbstractVariant found = findBestVariant(cl, ((AbstractVariant) lv).getGroup(), ((AbstractVariant) lv), alternativesEnabled);
                                     if (found != null) {
                                         CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, found);
@@ -277,9 +235,7 @@ public class YoutubeLinkGrabberExtender {
                             e.printStackTrace();
                         }
                     }
-
                 }.start();
-
             }
 
             @Override
@@ -307,64 +263,51 @@ public class YoutubeLinkGrabberExtender {
             return;
         }
         ProgressGetter pg = new ProgressGetter() {
-
             private int done;
 
             @Override
             public void run() throws Exception {
-
                 final CounterMap<String> matchingLinks = new CounterMap<String>();
                 HashSet<String> dupeAdd = new HashSet<String>();
                 final ArrayList<VariantInfo> vs = new ArrayList<VariantInfo>();
                 HashSet<String> videoIDDupe = new HashSet<String>();
+                final ArrayList<CrawledLink> children = new ArrayList<CrawledLink>();
                 done = 0;
-
-                for (CrawledLink cl : pv.getChildren()) {
-
+                for (final CrawledLink child : pv.getChildren()) {
                     try {
-
-                        LinkVariant activeVariant = cl.gethPlugin().getActiveVariantByLink(cl.getDownloadLink());
+                        final DownloadLink downloadLink = child.getDownloadLink();
+                        LinkVariant activeVariant = child.gethPlugin().getActiveVariantByLink(downloadLink);
                         if (((AbstractVariant) activeVariant).getGroup() != g) {
                             continue;
                         }
-                        YoutubeHelper helper;
-                        final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
+                        final YoutubeHelper helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger());
+                        final YoutubeClipData clipData = ClipDataCache.get(helper, downloadLink);
                         if (!videoIDDupe.add(clipData.videoID)) {
                             continue;
                         }
-                        List<VariantInfo> variants = clipData.findVariants();
+                        children.add(child);
+                        final List<VariantInfo> variants = clipData.findVariants();
                         helper.extendedDataLoading(variants);
-                        aggregate(cl, g, matchingLinks, dupeAdd, vs, variants);
-                        aggregate(cl, g, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
-
-                        aggregate(cl, g, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
-
+                        aggregate(child, g, matchingLinks, dupeAdd, vs, variants);
+                        aggregate(child, g, matchingLinks, dupeAdd, vs, clipData.findDescriptionVariant());
+                        aggregate(child, g, matchingLinks, dupeAdd, vs, clipData.findSubtitleVariants());
                     } finally {
                         done++;
                     }
                 }
-
                 new Thread("Choose Youtube Variant") {
                     public void run() {
-                        YoutubeVariantSelectionDialogSetMulti d;
                         try {
-
-                            UIOManager.I().show(null, d = new YoutubeVariantSelectionDialogSetMulti(matchingLinks, g, groupCount.getInt(g), vs)).throwCloseExceptions();
-
-                            boolean alternativesEnabled = d.isAutoAlternativesEnabled();
+                            YoutubeVariantSelectionDialogSetMulti d = new YoutubeVariantSelectionDialogSetMulti(matchingLinks, g, groupCount.getInt(g), vs);
+                            UIOManager.I().show(null, d).throwCloseExceptions();
+                            final boolean alternativesEnabled = d.isAutoAlternativesEnabled();
                             final AbstractVariant choosenVariant = (AbstractVariant) d.getVariant();
-                            HashSet<String> dupe = new HashSet<String>();
-                            for (CrawledLink cl : pv.getChildren()) {
-
-                                if (!dupe.add(cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID))) {
-                                    continue;
-                                }
-                                AbstractVariant found = findBestVariant(cl, g, choosenVariant, alternativesEnabled);
+                            for (CrawledLink child : children) {
+                                final AbstractVariant found = findBestVariant(child, g, choosenVariant, alternativesEnabled);
                                 if (found != null) {
-                                    LinkCollector.getInstance().setActiveVariantForLink(cl, found);
+                                    LinkCollector.getInstance().setActiveVariantForLink(child, found);
                                 }
                             }
-
                         } catch (DialogClosedException e) {
                             e.printStackTrace();
                         } catch (DialogCanceledException e) {
@@ -373,14 +316,11 @@ public class YoutubeLinkGrabberExtender {
                             e.printStackTrace();
                         }
                     }
-
                 }.start();
-
             }
 
             protected void aggregate(CrawledLink cl, final VariantGroup g, final CounterMap<String> matchingLinks, HashSet<String> dupeAdd, final ArrayList<VariantInfo> vs, List<VariantInfo> variants) {
                 HashSet<String> dupe = new HashSet<String>();
-                ;
                 for (VariantInfo vi : variants) {
                     if (vi.getVariant().getGroup() == g) {
                         String id = new VariantIDStorable(vi.getVariant()).createUniqueID();
@@ -388,12 +328,10 @@ public class YoutubeLinkGrabberExtender {
                             id = vi.getVariant()._getUniqueId();
                         }
                         if (dupe.add(id)) {
-
                             matchingLinks.increment(id);
                         }
                         if (dupeAdd.add(id)) {
                             vs.add(vi);
-
                         }
                     }
                 }
@@ -416,14 +354,12 @@ public class YoutubeLinkGrabberExtender {
         };
         ProgressDialog dialog = new ProgressDialog(pg, 0, _GUI.T.lit_please_wait(), _GUI.T.youtube_scan_variants(), new AbstractIcon(IconKey.ICON_WAIT, 32));
         UIOManager.I().show(null, dialog);
-
     }
 
     private void addAdditionalVariant(final PluginView<CrawledLink> pv, final String id, final AbstractVariant requested) {
         new Thread("Add Additional YoutubeLinks") {
             public void run() {
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-
                 HashSet<String> dupecheck = new HashSet<String>();
                 main: for (CrawledLink cl : pv.getChildren()) {
                     String videoID = cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID);
@@ -432,9 +368,7 @@ public class YoutubeLinkGrabberExtender {
                     }
                     if (requested != null) {
                         CrawledPackage pkg = cl.getParentNode();
-
                         final boolean readL = pkg.getModifyLock().readLock();
-
                         ArrayList<CrawledLink> lst;
                         try {
                             lst = new ArrayList<CrawledLink>(pkg.getChildren());
@@ -446,7 +380,6 @@ public class YoutubeLinkGrabberExtender {
                         for (CrawledLink brother : lst) {
                             if (StringUtils.equals(brother.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID, null), cl.getDownloadLink().getStringProperty(YoutubeHelper.YT_ID, null))) {
                                 // link form the same videoID
-
                                 List<? extends LinkVariant> brotherVariants = plg.getVariantsByLink(brother.getDownloadLink());
                                 if (brotherVariants != null) {
                                     for (LinkVariant brotherVariant : brotherVariants) {
@@ -464,41 +397,31 @@ public class YoutubeLinkGrabberExtender {
                                         }
                                     }
                                 }
-
                             }
-
                         }
                     }
-
                     String dummyUrl = "https://www.youtube.com/watch?v=" + videoID + "#variant=" + Encoding.urlEncode(id);
-
                     LinkCollectingJob job = new LinkCollectingJob(cl.getOriginLink().getOrigin() == null ? LinkOrigin.ADD_LINKS_DIALOG.getLinkOriginDetails() : cl.getOriginLink().getOrigin());
                     job.setText(dummyUrl);
                     job.setCustomSourceUrl(cl.getOriginLink().getURL());
                     job.setDeepAnalyse(false);
                     LinkCollector.getInstance().addCrawlerJob(job);
-
                 }
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                 linkChecker.check(checkableLinks);
             }
-
         }.start();
-
     };
 
     private AbstractVariant findBestVariant(final CrawledLink cl, VariantGroup g, final AbstractVariant choosenVariant, final boolean alternativesEnabled) throws Exception {
-
         final YoutubeHelper helper;
         final YoutubeClipData clipData = ClipDataCache.get(helper = new YoutubeHelper(new Browser(), LoggerFactory.getDefaultLogger()), cl.getDownloadLink());
-
         switch (g) {
         case DESCRIPTION:
             return null;
         case SUBTITLES:
             List<VariantInfo> subtitles = clipData.findSubtitleVariants();
             if (subtitles != null) {
-
                 for (VariantInfo v : subtitles) {
                     if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
                         return v.getVariant();
@@ -513,7 +436,6 @@ public class YoutubeLinkGrabberExtender {
                         }
                     }
                 }
-
             }
             break;
         case AUDIO:
@@ -523,29 +445,23 @@ public class YoutubeLinkGrabberExtender {
             helper.extendedDataLoading(variants);
             // sorts the best matching variants first. (based on quality rating)
             Collections.sort(variants, new Comparator<VariantInfo>() {
-
                 @Override
                 public int compare(VariantInfo o1, VariantInfo o2) {
                     return o2.compareTo(o1);
                 }
             });
-
             for (VariantInfo v : variants) {
                 if (StringUtils.equals(v.getVariant()._getUniqueId(), choosenVariant._getUniqueId())) {
                     return v.getVariant();
                 }
             }
-
             VariantInfo vCur = null;
             VariantInfo vLast = null;
-
             for (int i = 0; i < variants.size(); i++) {
                 vCur = variants.get(i);
                 int comCur = choosenVariant.compareTo(vCur.getVariant());
                 if (comCur == 0) {
-
                     return vCur.getVariant();
-
                 } else if (comCur > 0) {
                     if (vLast != null) {
                         return vLast.getVariant();
@@ -553,18 +469,14 @@ public class YoutubeLinkGrabberExtender {
                         return vCur.getVariant();
                     }
                 }
-
                 vLast = vCur;
             }
-
             for (VariantInfo v : variants) {
                 if (StringUtils.equals(v.getVariant().getTypeId(), choosenVariant.getTypeId())) {
                     return v.getVariant();
                 }
             }
-
             if (alternativesEnabled) {
-
                 for (VariantInfo v : variants) {
                     if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
                         if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
@@ -580,25 +492,18 @@ public class YoutubeLinkGrabberExtender {
                                         return v.getVariant();
                                     }
                                 }
-
                             }
                         }
-
                     }
-
                 }
-
                 for (VariantInfo v : variants) {
                     if (v.getVariant().getGroup() == choosenVariant.getGroup()) {
                         if (v.getVariant().getContainer() == choosenVariant.getContainer()) {
                             return v.getVariant();
                         }
                     }
-
                 }
-
             }
-
         }
         return null;
     };
@@ -606,7 +511,6 @@ public class YoutubeLinkGrabberExtender {
     private String getHost() {
         return plg.getHost();
     }
-
     // private void buildVariantsMaps() {
     // // contains all variants
     // listMapAdd = new HashMap<String, ArrayList<AbstractVariant>>();
@@ -716,5 +620,4 @@ public class YoutubeLinkGrabberExtender {
     // Collections.sort(es.getValue(), comp);
     // }
     // }
-
 }
