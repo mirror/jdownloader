@@ -538,7 +538,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     } else {
                         appendReferer = "";
                     }
-                    final String jwtToken = VimeoCom.getJWT(br);
+                    final String jwtToken = VimeoCom.getJWT(this, br);
                     String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
                     while (nextPage != null) {
                         final Browser brc = br.cloneBrowser();
@@ -584,6 +584,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             title = (String) entries.get("name");
                             ownerName = (String) JavaScriptEngineFactory.walkJson(entries, "user/name");
                             ownerUrl = (String) JavaScriptEngineFactory.walkJson(entries, "user/link");
+                            description = (String) JavaScriptEngineFactory.walkJson(entries, "description");
+                            if (StringUtils.isEmpty(unlistedHash)) {
+                                final String link = (String) JavaScriptEngineFactory.walkJson(entries, "link");
+                                unlistedHash = new Regex(link, "\\.com/\\d+/([a-f0-9]+)").getMatch(0);
+                            }
+                            date = (String) JavaScriptEngineFactory.walkJson(entries, "created_time");
                         }
                         if (!StringUtils.isEmpty(PluginJSonUtils.getJson(json, "reviewHash"))) {
                             /* E.g. 'review' URLs (new handling 2020-06-25) */
@@ -669,7 +675,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     logger.log(e);
                 }
                 final boolean tryToFindOfficialDownloadURLs = this.qORG;
-                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
                 if (containers == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

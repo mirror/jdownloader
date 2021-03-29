@@ -19,13 +19,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -38,7 +31,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=\\d+)?" })
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,7 +54,7 @@ public class GofileIo extends PluginForHost {
     }
 
     private String getFileID(final DownloadLink link) throws PluginException {
-        return new Regex(link.getPluginPatternMatcher(), "#file=(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "#file=([a-f0-9]+)").getMatch(0);
     }
 
     /* Connection stuff */
@@ -111,7 +111,7 @@ public class GofileIo extends PluginForHost {
                     downloadURL = (String) entry.get("link");
                     final Number size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
                     if (size.longValue() >= 0) {
-                        link.setDownloadSize(size.longValue());
+                        link.setVerifiedFileSize(size.longValue());
                     }
                     final String name = (String) entry.get("name");
                     final String md5 = (String) entry.get("md5");
@@ -139,11 +139,11 @@ public class GofileIo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
-        if (dl.getConnection().isOK() && (dl.getConnection().isContentDisposition() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "application"))) {
+        if (looksLikeDownloadableContent(dl.getConnection())) {
             dl.startDownload();
         } else {
             try {
-                br.followConnection();
+                br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
