@@ -8,3 +8,4 @@ LogTable_onContextMenu_disable_=Kijelölés megszüntetése
 LogTable_onContextMenu_enable_=Kijelöl
 SendLogDialog_SendLogDialog_title_=Hibajelentés küldése
 SendLogDialog_layoutDialogContent_desc_=Mit tegyen probléma esetén? Kérjük ellenőrizze a beírt adatokat. Lehet, hogy érdemes!
+SendLogDialog_layoutDialogContent_nologs_=Nincs elérhető napló!

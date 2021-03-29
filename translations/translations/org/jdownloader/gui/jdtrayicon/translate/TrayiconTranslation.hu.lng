@@ -13,6 +13,7 @@ TrayMenuManager_getName=Tálcaikon kezelő
 getName=Tálca ikon
 jd_plugins_optional_jdtrayicon_jdlighttray=Tálca fény
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Lehetővé teszi, a JDownloader minimalizálását vagy bezárását az értesítési területre.\nEgyéb kapcsolódó szolgáltatások beállítására ad lehetőséget, mint a jelszavas védelem.
+plugins_optional_JDLightTray_clipboardindicator=A tálca ikonja jelzi a letiltott vágólap felügyeletét
 plugins_optional_JDLightTray_closetotray2=A bezárás gombra < X > kattintás művelete
 plugins_optional_JDLightTray_hideifframevisible=Értesítési terület ikonjának elrejtése, ha az ablak látható
 plugins_optional_JDLightTray_minimizetotray=A Minimalizálás gombra < _ > kattintás művelete
