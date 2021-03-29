@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -35,6 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com", "boards.wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}", "https?://boards\\.wetransfer\\.com/board/[a-z0-9]+" })
 public class WeTransferCom extends PluginForHost {
@@ -106,6 +106,7 @@ public class WeTransferCom extends PluginForHost {
             if (recipient_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
             final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
             final Map<String, Object> map = new HashMap<String, Object>();
             map.put("security_hash", security_hash);
@@ -114,9 +115,14 @@ public class WeTransferCom extends PluginForHost {
             if (recipient_id.length == 4) {
                 map.put("recipient_id", recipient_id[2]);
             }
+            if (domain_user_id != null) {
+                map.put("domain_user_id", domain_user_id);
+            }
             final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/download")));
             post.getHeaders().put("Accept", "application/json");
             post.getHeaders().put("Content-Type", "application/json");
+            post.getHeaders().put("Origin", "https://wetransfer.com");
+            post.getHeaders().put("X-Requested-With", " XMLHttpRequest");
             if (csrfToken != null) {
                 post.getHeaders().put("X-CSRF-Token", csrfToken);
             }
