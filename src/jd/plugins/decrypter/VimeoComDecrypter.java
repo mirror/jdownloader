@@ -561,7 +561,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
-                final String cleanVimeoURL = br.getURL();
                 /*
                  * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only
                  * be accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will
@@ -576,6 +575,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 String channelUrl = null;
                 String title = null;
                 String description = null;
+                String embed_privacy = null;
+                boolean tryAlternativeMetaInfos = true;
                 try {
                     final String json = getJsonFromHTML(this.br);
                     final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
@@ -590,17 +591,22 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                 unlistedHash = new Regex(link, "\\.com/\\d+/([a-f0-9]+)").getMatch(0);
                             }
                             date = (String) JavaScriptEngineFactory.walkJson(entries, "created_time");
+                            tryAlternativeMetaInfos = false;
                         }
                         if (!StringUtils.isEmpty(PluginJSonUtils.getJson(json, "reviewHash"))) {
                             /* E.g. 'review' URLs (new handling 2020-06-25) */
                             final Map<String, Object> clipData = (Map<String, Object>) entries.get("clipData");
                             title = (String) clipData.get("title");
+                            description = (String) JavaScriptEngineFactory.walkJson(clipData, "description");
                             if (StringUtils.isEmpty(unlistedHash)) {
                                 unlistedHash = (String) clipData.get("unlistedHash");
                             }
                             if (StringUtils.isEmpty(reviewHash)) {
                                 reviewHash = (String) clipData.get("reviewHash");
                             }
+                            ownerName = (String) JavaScriptEngineFactory.walkJson(clipData, "user/name");
+                            ownerUrl = (String) JavaScriptEngineFactory.walkJson(clipData, "user/url");
+                            tryAlternativeMetaInfos = false;
                         } else if (entries.containsKey("vimeo_esi")) {
                             /* E.g. 'review' URLs (old handling) */
                             final Map<String, Object> clipData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
@@ -687,9 +693,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                  * us if the user has e.g. added a private/password protected video.
                  */
                 final boolean isPublicContent = VIMEO_URL_TYPE.NORMAL.equals(urlType) || VIMEO_URL_TYPE.RAW.equals(urlType);
-                String embed_privacy = null;
                 try {
-                    if (!StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                    if (tryAlternativeMetaInfos && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent && reviewHash == null) {
                         final Browser brc = br.cloneBrowser();
                         brc.setRequest(null);
                         brc.getPage("https://vimeo.com/api/v2/video/" + videoID + ".json");
@@ -715,7 +720,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 try {
                     /* Fallback to find additional information */
-                    if ((embed_privacy == null || StringUtils.equalsIgnoreCase(embed_privacy, "anywhere")) && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
+                    if (tryAlternativeMetaInfos && (embed_privacy == null || StringUtils.equalsIgnoreCase(embed_privacy, "anywhere")) && !StringUtils.isAllNotEmpty(title, date, description, ownerName, ownerUrl) && isPublicContent) {
                         /*
                          * We're doing this request ONLY to find additional information which we were not able to get before (upload_date,
                          * description) - also this can be used as a fallback to find data which should have been found before (e.g. title,
@@ -763,6 +768,28 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 final HashMap<String, DownloadLink> dedupeMap = new HashMap<String, DownloadLink>();
                 final List<DownloadLink> subtitles = new ArrayList<DownloadLink>();
+                final String cleanVimeoURL;
+                if (br.getURL().contains("api.vimeo.com")) {
+                    switch (urlType) {
+                    case PLAYER:
+                    case UNLISTED:
+                        if (unlistedHash != null) {
+                            cleanVimeoURL = "https://vimeo.com/" + videoID + "/" + unlistedHash;
+                        } else {
+                            cleanVimeoURL = "https://player.vimeo.com/" + videoID;
+                        }
+                        break;
+                    default:
+                    case RAW:
+                        cleanVimeoURL = parameter;
+                        break;
+                    }
+                } else {
+                    cleanVimeoURL = br.getURL();
+                }
+                if (ownerUrl != null) {
+                    ownerUrl = URLHelper.parseLocation(new URL("https://vimeo.com/"), ownerUrl);
+                }
                 for (final VimeoContainer container : containers) {
                     final boolean isSubtitle = VimeoContainer.Source.SUBTITLE.equals(container.getSource());
                     if (!isSubtitle && (!qualityAllowed(container) || !pRatingAllowed(container))) {

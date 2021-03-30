@@ -6,14 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -27,6 +19,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -168,8 +168,7 @@ public class LinkifierCom extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                     try {
-                        dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
-                        br.followConnection();
+                        br.followConnection(true);
                     } catch (final IOException e) {
                         logger.log(e);
                     }
@@ -211,7 +210,11 @@ public class LinkifierCom extends PluginForHost {
                     }
                 }
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    dl.getConnection().disconnect();
+                    try {
+                        br.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile12", 50, 5 * 60 * 1000l);
                 }
                 dl.startDownload();

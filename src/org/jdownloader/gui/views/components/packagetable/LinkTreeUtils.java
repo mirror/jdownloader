@@ -16,7 +16,6 @@ import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -183,9 +182,6 @@ public class LinkTreeUtils {
         case ORIGIN:
             return link.getOriginUrl();
         case CONTENT:
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                return link.getPluginPatternMatcher();
-            }
             switch (link.getUrlProtection()) {
             case UNSET:
                 if (link.getContentUrl() != null) {

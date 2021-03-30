@@ -9,17 +9,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,6 +31,17 @@ import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.utils.JDHexUtils;
+
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -101,9 +101,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -736,6 +736,23 @@ public class TurbobitCore extends antiDDoSForHost {
         return fuid;
     }
 
+    protected void handlePremiumCaptcha(final Browser br, final DownloadLink link, final Account account) throws Exception {
+        Form premiumCaptchaForm = null;
+        for (final Form form : br.getForms()) {
+            if (form.hasInputFieldByName("captcha_type") && form.hasInputFieldByName("check")) {
+                premiumCaptchaForm = form;
+                break;
+            }
+        }
+        if (premiumCaptchaForm != null) {
+            /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
+            logger.info("Detected premium download-captcha");
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            premiumCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            this.submitForm(premiumCaptchaForm);
+        }
+    }
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
@@ -750,20 +767,7 @@ public class TurbobitCore extends antiDDoSForHost {
             login(account, false);
             sleep(2000, link);
             accessDownloadURL(br, link);
-            Form premiumCaptchaForm = null;
-            for (final Form form : this.br.getForms()) {
-                if (form.hasInputFieldByName("captcha_type") && form.hasInputFieldByName("check")) {
-                    premiumCaptchaForm = form;
-                    break;
-                }
-            }
-            if (premiumCaptchaForm != null) {
-                /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
-                logger.info("Detected premium download-captcha");
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                premiumCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                this.submitForm(premiumCaptchaForm);
-            }
+            handlePremiumCaptcha(br, link, account);
             String dllink = null;
             final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
