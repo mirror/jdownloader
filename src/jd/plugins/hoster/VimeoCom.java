@@ -458,6 +458,7 @@ public class VimeoCom extends PluginForHost {
             jwt = getJWT(plugin, br);
         }
         apiRequest.getHeaders().put("Authorization", "jwt " + jwt);
+        apiRequest.setCustomCharset("UTF-8");
         br.getPage(apiRequest);
         final Map<String, Object> apiResponse = apiResponseValidator(plugin, br);
         return apiResponse;
@@ -490,6 +491,17 @@ public class VimeoCom extends PluginForHost {
             if (reviewHash != null) {
                 ret = getUrlType(url_source);
                 br.getPage(url_source.replace("/review/", "/review/data/"));
+                final String jwt = PluginJSonUtils.getJson(br, "jwtToken");
+                if (false && jwt != null && apiMode) {
+                    // doesn't contain any config_url/streams
+                    if (unlistedHash == null) {
+                        unlistedHash = PluginJSonUtils.getJson(br, "unlistedHash");
+                    }
+                    Browser brc = br.cloneBrowser();
+                    if (accessVimeoAPI(plugin, brc, videoID, unlistedHash, jwt) != null) {
+                        br.setRequest(brc.getRequest());
+                    }
+                }
                 if (isPasswordProtectedReview(br)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
                 }

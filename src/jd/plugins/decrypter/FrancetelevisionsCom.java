@@ -50,7 +50,7 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String domain : getAnnotationNames()) {
-            ret.add("https?://(?:www\\.)?" + Pattern.quote(domain) + "/.+(?<!\\.jpg)$");
+            ret.add("https?://(?:www\\.|[a-z0-9\\-]+\\.)?" + Pattern.quote(domain) + "/.+(?<!\\.jpg)$");
         }
         return ret.toArray(new String[0]);
     }
@@ -123,13 +123,21 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
             String[] links = br.getRegex("(NI_\\d+@[A-Za-z0-9\\-_]+)").getColumn(0);
             if (links == null || links.length == 0) {
                 links = br.getRegex("videos\\.francetv\\.fr/video/(\\d+@[^<>\"/]+)\"").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("data-id\\s*=\\s*[\"\']([\\da-f]{8}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{12})").getColumn(0);
+                }
             }
             if (links != null) {
                 videoids = Arrays.asList(links);
             }
         }
         for (final String singleid : videoids) {
-            final DownloadLink dl = createDownloadlink("http://francetelevisionsdecrypted/" + singleid);
+            final DownloadLink dl;
+            if (singleid.contains("@")) {
+                dl = createDownloadlink("http://francetelevisionsdecrypted/" + singleid);
+            } else {
+                dl = createDownloadlink("http://francetelevisionsdecrypted/" + singleid + "@null");
+            }
             dl.setContentUrl(parameter);
             decryptedLinks.add(dl);
         }

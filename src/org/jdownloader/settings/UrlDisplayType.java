@@ -49,7 +49,6 @@ public enum UrlDisplayType {
             return _JDT.T.UrlDisplayType_CONTENT_description();
         }
     };
-
     public String getTranslatedName() {
         return name();
     }
