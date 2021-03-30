@@ -60,32 +60,31 @@ public class LinkifierCom extends PluginForHost {
         userRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
         final HashMap<String, Object> userResponse = JSonStorage.restoreFromString(br.getPage(userRequest), TypeRef.HASHMAP);
         if (Boolean.TRUE.equals(userResponse.get("isActive")) && !Boolean.TRUE.equals(userResponse.get("hasErrors"))) {
+            final PostRequest hosterRequest = new PostRequest(API_BASE + "/DownloadAPI.svc/hosters");
+            hosterRequest.setContentType("application/json; charset=utf-8");
+            hosterRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
+            final HashMap<String, Object> hosterResponse = JSonStorage.restoreFromString(br.getPage(hosterRequest), TypeRef.HASHMAP);
             if ("unlimited".equalsIgnoreCase(String.valueOf(userResponse.get("extraTraffic")))) {
                 ai.setUnlimitedTraffic();
             }
+            // final long serverDate = ((Number) hosterResponse.get("ServerDate")).longValue();
             final Number expiryDate = (Number) userResponse.get("expirydate");
-            if (expiryDate != null) {
-                ai.setValidUntil(expiryDate.longValue());
-                if (!ai.isExpired()) {
-                    final PostRequest hosterRequest = new PostRequest(API_BASE + "/DownloadAPI.svc/hosters");
-                    hosterRequest.setContentType("application/json; charset=utf-8");
-                    hosterRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
-                    final HashMap<String, Object> hosterResponse = JSonStorage.restoreFromString(br.getPage(hosterRequest), TypeRef.HASHMAP);
-                    final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hosterResponse.get("hosters");
-                    if (hosters != null) {
-                        final List<String> supportedHosts = new ArrayList<String>();
-                        for (Map<String, Object> host : hosters) {
-                            final String hostername = host.get("hostername") != null ? String.valueOf(host.get("hostername")) : null;
-                            if (Boolean.TRUE.equals(host.get("isActive")) && StringUtils.isNotEmpty(hostername)) {
-                                supportedHosts.add(hostername);
-                            }
+            ai.setValidUntil(expiryDate.longValue());
+            if (!ai.isExpired()) {
+                final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hosterResponse.get("hosters");
+                if (hosters != null) {
+                    final List<String> supportedHosts = new ArrayList<String>();
+                    for (Map<String, Object> host : hosters) {
+                        final String hostername = host.get("hostername") != null ? String.valueOf(host.get("hostername")) : null;
+                        if (Boolean.TRUE.equals(host.get("isActive")) && StringUtils.isNotEmpty(hostername)) {
+                            supportedHosts.add(hostername);
                         }
-                        ai.setMultiHostSupport(this, supportedHosts);
                     }
-                    account.setType(AccountType.PREMIUM);
-                    account.setMaxSimultanDownloads(0);
-                    return ai;
+                    ai.setMultiHostSupport(this, supportedHosts);
                 }
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(0);
+                return ai;
             }
         }
         final String errorMsg = userResponse.get("ErrorMSG") != null ? String.valueOf(userResponse.get("ErrorMSG")) : null;
@@ -112,7 +111,7 @@ public class LinkifierCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         return account != null && account.getType() == AccountType.PREMIUM;
     }
 
@@ -127,13 +126,13 @@ public class LinkifierCom extends PluginForHost {
     }
 
     @Override
-    public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
-        mhm.runCheck(account, downloadLink);
+    public void handleMultiHost(final DownloadLink link, Account account) throws Exception {
+        mhm.runCheck(account, link);
         final HashMap<String, Object> downloadJson = new HashMap<String, Object>();
         downloadJson.put("login", account.getUser());
         downloadJson.put("md5Pass", Hash.getMD5(account.getPass()));
         downloadJson.put("apiKey", API_KEY);
-        downloadJson.put("url", downloadLink.getDefaultPlugin().buildExternalDownloadURL(downloadLink, this));
+        downloadJson.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
         Browser br = new Browser();
         final PostRequest downloadRequest = new PostRequest(API_BASE + "/downloadapi.svc/stream");
         downloadRequest.setContentType("application/json; charset=utf-8");
@@ -166,7 +165,7 @@ public class LinkifierCom extends PluginForHost {
                 }
             }
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
                     try {
                         dl.getConnection().setAllowedResponseCodes(new int[] { dl.getConnection().getResponseCode() });
@@ -183,8 +182,8 @@ public class LinkifierCom extends PluginForHost {
                     if (dl.getConnection().getResponseCode() == 500 && br.containsHTML("<title>[^<]*Error[^<]*</title>")) {
                         // throw new PluginException(LinkStatus.ERROR_RETRY, ErrDesc == null ? "Server Error" : ErrDesc,
                         // PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        int requests = ((Number) downloadLink.getProperty("retryRequests", 0)).intValue() + 1;
-                        downloadLink.setProperty("retryRequests", requests);
+                        int requests = ((Number) link.getProperty("retryRequests", 0)).intValue() + 1;
+                        link.setProperty("retryRequests", requests);
                         int waitTime = 0;
                         switch (requests) {
                         case 1:
@@ -211,7 +210,7 @@ public class LinkifierCom extends PluginForHost {
                         mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile1", 50, 5 * 60 * 1000l);
                     }
                 }
-                if (!dl.getConnection().isContentDisposition()) {
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     dl.getConnection().disconnect();
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile12", 50, 5 * 60 * 1000l);
                 }
@@ -221,7 +220,7 @@ public class LinkifierCom extends PluginForHost {
                     // the server often returns errors on multichunk connections. I aggreed with the admin to auto reduce chunk count to 1
                     // if we detect this
                     logger.severe("Server error with multichunk loading. Limiting Link to 1 chunk");
-                    downloadLink.setChunks(1);
+                    link.setChunks(1);
                     throw e;
                 } else {
                     throw e;
@@ -238,13 +237,13 @@ public class LinkifierCom extends PluginForHost {
             } else if (StringUtils.containsIgnoreCase(errorMsg, "Account expired")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (StringUtils.containsIgnoreCase(errorMsg, "Customer reached daily limit for current hoster")) {
-                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
+                mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
             } else if (StringUtils.containsIgnoreCase(errorMsg, "Accounts are maxed out for current hoster")) {
-                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
+                mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
             } else if (StringUtils.containsIgnoreCase(errorMsg, "Downloads blocked until")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, errorMsg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (StringUtils.containsIgnoreCase(errorMsg, "Hoster is not supported")) {
-                mhm.putError(account, downloadLink, 5 * 60 * 1000l, errorMsg);
+                mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
             }
         } else {
             final Number expiryDate = (Number) downloadResponse.get("expirydate");
