@@ -16,8 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,13 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
@@ -58,10 +59,11 @@ public class GofileIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = -2;
-    private static final int     FREE_MAXDOWNLOADS = -1;
-    private String               downloadURL       = null;
+    private static final boolean FREE_RESUME             = true;
+    private static final int     FREE_MAXCHUNKS          = -2;
+    private static final int     FREE_MAXDOWNLOADS       = -1;
+    private String               downloadURL             = null;
+    private static final String  PROPERTY_DANGEROUS_FILE = "dangerous_file";
 
     /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
     @Override
@@ -121,6 +123,16 @@ public class GofileIo extends PluginForHost {
                     if (!StringUtils.isEmpty(md5)) {
                         link.setMD5Hash(md5);
                     }
+                    /*
+                     * 2021-03-30: Check if the file contains malicious software according to their system. We could still download it but
+                     * it's impossible via website so let's not do it either.
+                     */
+                    final List<Object> dangers = (List<Object>) entry.get("v" + "i" + "ruses");
+                    if (dangers != null && !dangers.isEmpty()) {
+                        link.setProperty(PROPERTY_DANGEROUS_FILE, true);
+                    } else {
+                        link.removeProperty(PROPERTY_DANGEROUS_FILE);
+                    }
                     return AvailableStatus.TRUE;
                 }
             }
@@ -129,16 +141,18 @@ public class GofileIo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        if (downloadURL == null) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        if (link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file contains malicious software");
+        } else if (downloadURL == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
         if (looksLikeDownloadableContent(dl.getConnection())) {
             dl.startDownload();
         } else {
