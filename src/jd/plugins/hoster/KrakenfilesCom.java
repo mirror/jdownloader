@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -75,8 +74,10 @@ public class KrakenfilesCom extends PluginForHost {
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
-        link.setName(this.getFID(link));
+        if (!link.isNameSet()) {
+            /* Set Fallback-name */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         /* This json is part of their embed functions :) */
         br.getPage("https://" + this.getHost() + "/json/" + this.getFID(link));
@@ -88,11 +89,8 @@ public class KrakenfilesCom extends PluginForHost {
         final String filesize = PluginJSonUtils.getJson(br, "size");
         if (!StringUtils.isEmpty(filename)) {
             link.setName(Encoding.htmlDecode(filename).trim());
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link));
         }
-        if (filesize != null) {
+        if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
