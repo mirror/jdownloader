@@ -77,6 +77,9 @@ public class DeimosClick extends XFileSharingProBasic {
 
     @Override
     public String getFUIDFromURL(final DownloadLink dl) {
+        if (dl.getPluginPatternMatcher() == null) {
+            return null;
+        }
         try {
             final String result;
             if (dl.getPluginPatternMatcher().matches(".+/\\?op=login\\&redirect=([a-z0-9]{12})")) {
