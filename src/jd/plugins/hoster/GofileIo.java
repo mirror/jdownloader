@@ -28,6 +28,8 @@ import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
 import jd.parser.Regex;
@@ -43,6 +45,7 @@ import jd.plugins.components.UserAgents;
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
     }
 
     @Override
@@ -59,11 +62,13 @@ public class GofileIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME             = true;
-    private static final int     FREE_MAXCHUNKS          = -2;
-    private static final int     FREE_MAXDOWNLOADS       = -1;
-    private String               downloadURL             = null;
-    private static final String  PROPERTY_DANGEROUS_FILE = "dangerous_file";
+    private static final boolean FREE_RESUME                                                  = true;
+    private static final int     FREE_MAXCHUNKS                                               = -2;
+    private static final int     FREE_MAXDOWNLOADS                                            = -1;
+    private String               downloadURL                                                  = null;
+    private static final String  PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
+    private static final String  SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS         = "allow_download_of_files_flagged_as_malicious";
+    private static final boolean default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS = false;
 
     /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
     @Override
@@ -147,9 +152,14 @@ public class GofileIo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        if (link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file contains malicious software");
-        } else if (downloadURL == null) {
+        final boolean isDangerousFile = link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false);
+        if (isDangerousFile && (StringUtils.isEmpty(downloadURL) || !this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS, default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS))) {
+            String errorMsg = "This file was flagged as to contain malicious software by " + this.getHost() + "!";
+            if (!StringUtils.isEmpty(downloadURL)) {
+                errorMsg += " You can allow the download of such files in the plugin settings of this host";
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
+        } else if (StringUtils.isEmpty(downloadURL)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, 0);
@@ -168,6 +178,10 @@ public class GofileIo extends PluginForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS, "Allow download of files flagged as 'malicious' by gofile.io?").setDefaultValue(default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS));
     }
 
     @Override

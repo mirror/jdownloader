@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,8 +26,14 @@ public class OrfAt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_OLD = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
-    private static final String TYPE_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+    private static final String                  TYPE_OLD      = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private static final String                  TYPE_NEW      = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+    /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
+    private static LinkedHashMap<String, String> CHANNEL_CACHE = new LinkedHashMap<String, String>() {
+                                                                   protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                                                                       return size() > 50;
+                                                                   };
+                                                               };
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -45,6 +52,21 @@ public class OrfAt extends PluginForDecrypt {
         if (broadCastID == null || broadCastKey == null || domainID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        synchronized (CHANNEL_CACHE) {
+            /* 2021-03-31 */
+            if (!CHANNEL_CACHE.containsKey(domainID)) {
+                br.getPage("https://radiothek.orf.at/js/app.6e8eab89.js");
+                final String[][] shortnameToChannelNames = br.getRegex("/([^/]+)/json/" + Regex.escape("4.0/broadcast{/programKey}{/broadcastDay}\")}") + ".*?,channel:\"([^\"]+)\"").getMatches();
+                for (final String[] channelInfo : shortnameToChannelNames) {
+                    CHANNEL_CACHE.put(channelInfo[0], channelInfo[1]);
+                }
+                if (!CHANNEL_CACHE.containsKey(domainID)) {
+                    logger.warning("Failed to find channel for: " + domainID);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        final String channel = CHANNEL_CACHE.get(domainID);
         br.getPage("https://audioapi.orf.at/" + domainID + "/api/json/current/broadcast/" + broadCastID + "/" + broadCastKey + "?_s=" + System.currentTimeMillis());
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String broadCastDay = response.get("broadcastDay").toString();
@@ -60,7 +82,7 @@ public class OrfAt extends PluginForDecrypt {
             if (loopStreamId == null) {
                 continue;
             }
-            final DownloadLink link = createDownloadlink("directhttp://http://loopstream01.apa.at/?channel=" + domainID + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId);
+            final DownloadLink link = createDownloadlink("directhttp://http://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId);
             if (streams.size() > 1) {
                 link.setFinalFileName(title + "_" + broadCastDay + "_" + (++index) + ".mp3");
             } else {

@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -27,8 +30,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KrakenfilesComFolder extends PluginForDecrypt {
@@ -72,6 +73,9 @@ public class KrakenfilesComFolder extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.containsHTML(">\\s*This profile is private")) {
+            /* 2021-03-31: Either only visible to owner or only specified users. */
+            throw new AccountRequiredException();
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(profileName);
@@ -84,9 +88,6 @@ public class KrakenfilesComFolder extends PluginForDecrypt {
             final String[] fileIDs = br.getRegex("/view/([a-z0-9]+)/file\\.html").getColumn(0);
             if (fileIDs.length == 0) {
                 if (decryptedLinks.isEmpty()) {
-                    if (br.containsHTML(">\\s*This profile is private\\s*<")) {
-                        break;
-                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     /* This should never happen! */
