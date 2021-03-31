@@ -19,13 +19,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeplink.in", "alfalink.to" }, urls = { "https?://(www\\.)?peeplink\\.in/[a-z0-9]+", "https?://(www\\.)?alfalink\\.(info|to)/[a-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peeplink.in", "alfalink.to" }, urls = { "https?://(?:www\\.)?peeplink\\.in/[a-f0-9]+", "https?://(?:www\\.)?alfalink\\.(?:info|to)/[a-f0-9]+" })
 public class PrrpLinkIn extends PluginForDecrypt {
     public PrrpLinkIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,39 +38,31 @@ public class PrrpLinkIn extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink dead = createDownloadlink("directhttp://" + parameter);
-            dead.setAvailable(false);
-            dead.setProperty("offline", true);
-            decryptedLinks.add(dead);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.containsHTML("value=\"Enter Access Password\"")) {
-            logger.info("Password protected links are not yet supported");
-            final DownloadLink dead = createDownloadlink("directhttp://" + parameter);
-            dead.setAvailable(false);
-            dead.setProperty("offline", true);
-            decryptedLinks.add(dead);
+            logger.info("Password protected URLs are not yet supported");
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        }
-        if (br.containsHTML(">Shoot</a></li>")) {
-            br.postPage("/qaptcha/php/Qaptcha.jquery.php", "action=qaptcha");
-            br.postPage(parameter, "iQapTcha=");
-        }
-        String finallink = br.getRegex("<article.*?>(.*?)</article").getMatch(0);
-        if (finallink != null) {
-            final String[] finallinks = HTMLParser.getHttpLinks(finallink, "");
-            if (finallinks != null && finallinks.length != 0) {
-                for (final String aLink : finallinks) {
-                    decryptedLinks.add(createDownloadlink(aLink));
-                }
-                return decryptedLinks;
-            } else {
-                finallink = null;
-            }
-        }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Out of date: " + parameter);
+        } else if (br.containsHTML("hcaptcha\\.com")) {
+            logger.warning("Unsupported captcha type hcaptcha");
             return null;
+        }
+        if (br.containsHTML("class=\"QapTcha\"")) {
+            final Browser brc = this.br.cloneBrowser();
+            brc.postPage("/qaptcha/php/Qaptcha.jquery.php", "action=qaptcha");
+            br.postPage(this.br.getURL(), "iQapTcha=");
+        }
+        String urlText = br.getRegex("<article.*?>(.*?)</article").getMatch(0);
+        if (urlText == null) {
+            logger.warning("Fallback to scanning complete HTML");
+            urlText = this.br.toString();
+        }
+        final String[] finallinks = HTMLParser.getHttpLinks(urlText, "");
+        for (final String aLink : finallinks) {
+            if (!this.canHandle(aLink)) {
+                decryptedLinks.add(createDownloadlink(aLink));
+            }
         }
         return decryptedLinks;
     }

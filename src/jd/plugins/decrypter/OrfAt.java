@@ -71,18 +71,27 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String broadCastDay = response.get("broadcastDay").toString();
         final String title = (String) response.get("title");
+        final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
+        long duration = 0;
+        for (final Map<String, Object> item : items) {
+            duration = ((Number) item.get("duration")).longValue();
+            break;
+        }
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) response.get("streams");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title + "_" + broadCastDay);
         int index = 0;
         final String userid = UUID.randomUUID().toString();
-        for (Map<String, Object> stream : streams) {
+        for (final Map<String, Object> stream : streams) {
             final String loopStreamId = (String) stream.get("loopStreamId");
             if (loopStreamId == null) {
                 continue;
             }
-            final DownloadLink link = createDownloadlink("directhttp://http://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId);
+            final long startTime = ((Number) stream.get("start")).longValue();
+            final long endTime = ((Number) stream.get("end")).longValue();
+            final long offsetende = endTime - startTime;
+            final DownloadLink link = createDownloadlink("directhttp://http://loopstream01.apa.at/?channel=" + channel + "&shoutcast=0&player=" + domainID + "_v1&referer=" + domainID + ".orf.at&_=" + System.currentTimeMillis() + "&userid=" + userid + "&id=" + loopStreamId + "&offset=" + duration + "&offsetende=" + offsetende);
             if (streams.size() > 1) {
                 link.setFinalFileName(title + "_" + broadCastDay + "_" + (++index) + ".mp3");
             } else {
