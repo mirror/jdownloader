@@ -1623,7 +1623,7 @@ public class YoutubeHelper {
         // br.setCookie("youtube.com", "VISITOR_INFO1_LIVE", "Qa1hUZu3gtk");
         br.addAllowedResponseCodes(429);
         // &disable_polymer=true is causing missing file information, check/update handling
-        br.getPage(base + "/watch?has_verified=1&bpctr=9999999999&hl=en&v=" + vid.videoID + "&gl=US");
+        br.getPage(base + "/watch?bpctr=9999999999&has_verified=1&hl=en&v=" + vid.videoID + "&gl=US");
         if (br.getRequest().getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too Many Requests", 10 * 60 * 1000l);
         }
