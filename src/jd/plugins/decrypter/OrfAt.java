@@ -71,6 +71,7 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String broadCastDay = response.get("broadcastDay").toString();
         final String title = (String) response.get("title");
+        /* TODO: What are the other items there for? */
         final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("items");
         long duration = 0;
         for (final Map<String, Object> item : items) {
