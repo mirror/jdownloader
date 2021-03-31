@@ -22,6 +22,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -36,14 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debridplanet.com" }, urls = { "" })
 public class DebridplanetCom2 extends PluginForHost {
@@ -117,6 +117,7 @@ public class DebridplanetCom2 extends PluginForHost {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "API returned empty array", 50, 5 * 60 * 1000l);
             }
             Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+            handleErrorMap(account, entries);
             entries = (Map<String, Object>) entries.get("data");
             final String dllink = (String) (entries != null ? entries.get("link") : null);
             if (StringUtils.isEmpty(dllink)) {
@@ -255,39 +256,41 @@ public class DebridplanetCom2 extends PluginForHost {
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return;
             }
-            final Map<String, Object> entries = (Map<String, Object>) jsonO;
-            final int success = ((Number) entries.get("success")).intValue();
-            if (success != 1) {
-                /* TODO: Add support for more error-cases */
-                /*
-                 * TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} --> 2021-03-24: Seems like they've removed
-                 * that
-                 */
-                final int status = ((Number) entries.get("status")).intValue();
-                String message = (String) entries.get("message");
-                if (StringUtils.isEmpty(message)) {
-                    message = "Unknown error";
-                }
-                if (status == 401) {
-                    /* Wrong auth token -> Session expired? */
-                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
-                } else if (status == 422) {
-                    /* E.g. {"success":0,"status":422,"message":"Invalid Credential!"} */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    /* Unknown error */
-                    if (this.getDownloadLink() != null) {
-                        mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 5 * 60 * 1000l);
-                    } else {
-                        throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
-                    }
-                }
-            }
+            handleErrorMap(account, (Map<String, Object>) jsonO);
         } catch (final JSonMapperException jme) {
             if (this.getDownloadLink() != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "API did not return json", 50, 5 * 60 * 1000l);
             } else {
                 throw Exceptions.addSuppressed(new AccountUnavailableException("API did not return json", 5 * 60 * 1000l), jme);
+            }
+        }
+    }
+
+    private void handleErrorMap(final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
+        final int success = ((Number) entries.get("success")).intValue();
+        if (success != 1) {
+            /* TODO: Add support for more error-cases */
+            /*
+             * TODO: E.g. {"success":0,"status":400,"message":"Error: You must be premium"} --> 2021-03-24: Seems like they've removed that
+             */
+            final int status = ((Number) entries.get("status")).intValue();
+            String message = (String) entries.get("message");
+            if (StringUtils.isEmpty(message)) {
+                message = "Unknown error";
+            }
+            if (status == 401) {
+                /* Wrong auth token -> Session expired? */
+                throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+            } else if (status == 422) {
+                /* E.g. {"success":0,"status":422,"message":"Invalid Credential!"} */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                /* Unknown error */
+                if (this.getDownloadLink() != null) {
+                    mhm.handleErrorGeneric(account, this.getDownloadLink(), message, 50, 5 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Unknown error happened: " + message, 5 * 60 * 1000l);
+                }
             }
         }
     }
