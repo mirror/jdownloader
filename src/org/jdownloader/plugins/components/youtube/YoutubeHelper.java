@@ -1632,17 +1632,33 @@ public class YoutubeHelper {
         }
     }
 
+    public void setConsentCookie(final Browser browser, String id) {
+        if (StringUtils.isEmpty(id)) {
+            id = String.valueOf(new Random().nextInt(899) + 100);
+        }
+        String host = br.getHost();
+        if (host == null) {
+            host = "youtube.com";
+        }
+        // br.setCookie(host, "CONSENT", "YES+cb.20210328-17-p0.en+FX+" + id);
+        br.setCookie(host, "CONSENT", "YES+cb.20210328-17-p0.en+F+" + id);
+    }
+
+    private static volatile boolean CONSENT_COOKIE_REQUIRED = false;
+
+    public boolean isConsentCookieRequired() {
+        return CONSENT_COOKIE_REQUIRED;
+    }
+
     protected boolean handleConsent(Browser br) throws Exception {
         final String consentCookie = br.getCookie(br.getHost(), "CONSENT");
         if (consentCookie != null) {
             if (StringUtils.startsWithCaseInsensitive(consentCookie, "YES")) {
                 return false;
             }
-            String id = new Regex(consentCookie, "PENDING\\+(.+)").getMatch(0);
-            if (StringUtils.isEmpty(id)) {
-                id = String.valueOf(new Random().nextInt(899) + 100);
-            }
-            br.setCookie(br.getHost(), "CONSENT", "YES+cb.20210328-17-p0.en+FX+" + id);
+            CONSENT_COOKIE_REQUIRED = true;
+            final String id = new Regex(consentCookie, "PENDING\\+(.+)").getMatch(0);
+            setConsentCookie(br, id);
             return true;
         }
         return false;
