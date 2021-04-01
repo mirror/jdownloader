@@ -110,7 +110,7 @@ public class YetiShareCore extends antiDDoSForHost {
     // return this.rewriteHost(getPluginDomains(), host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?!folder)[A-Za-z0-9]+(?:/[^/<>]+)?";
+        return "/(?!folder|shared)[A-Za-z0-9]+(?:/[^/<>]+)?";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -545,41 +545,76 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        try {
-            requestFileInformation(link, null, true);
-        } catch (PluginException e) {
-            ignorePluginException(e, br, link, null);
-        }
         handleDownloadWebsite(link, null);
     }
 
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
+        try {
+            requestFileInformation(link, account, true);
+        } catch (PluginException e) {
+            ignorePluginException(e, br, link, account);
+        }
+        if (account != null) {
+            loginWebsite(account, false);
+            br.setFollowRedirects(false);
+            getPage(link.getPluginPatternMatcher());
+        }
         final boolean resume = this.isResumeable(link, account);
         final int maxchunks = this.getMaxChunks(account);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String continue_link = null;
         boolean captcha = false;
         boolean captchaSuccess = false;
         long timeBeforeCaptchaInput;
-        continue_link = checkDirectLink(link, account);
-        if (StringUtils.isEmpty(continue_link) && this.dl == null && this.isDownloadlink(br.getRedirectLocation())) {
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                dl = null;
-            }
-        }
-        if (!this.isLoggedin(this.br)) {
+        /* Try to re-used stored direct downloadurl */
+        String continue_link = checkDirectLink(link, account);
+        if (this.dl == null) {
             /*
-             * TODO: Check/improve handling: Some websites only allow 1 session per user. If a user then logs in again via browser while JD
-             * is logged in, we might download as a free-user without noticing that. Example host: Przeslij.com
+             * Check for direct-download and ensure that we're logged in! </br> This is needed because we usually load- and set stored
+             * cookies without verifying them to save time!
              */
-            logger.warning("Possible login issue");
+            boolean hasTriedToLoginOnce = false;
+            do {
+                if (this.isDownloadlink(br.getRedirectLocation())) {
+                    br.setFollowRedirects(true);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
+                    if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                        logger.info("Direct download");
+                        break;
+                    } else {
+                        try {
+                            br.followConnection(true);
+                        } catch (final IOException e) {
+                            logger.log(e);
+                        }
+                        dl = null;
+                    }
+                }
+                /* Follow redirects just in case */
+                this.br.followRedirect(true);
+                if (account == null) {
+                    break;
+                } else if (this.isLoggedin(this.br)) {
+                    break;
+                } else if (hasTriedToLoginOnce) {
+                    /*
+                     * Only try once! </br> We HAVE to be logged in at this stage!
+                     */
+                    this.loggedInOrException(this.br, account);
+                    break;
+                } else {
+                    /*
+                     * Some websites only allow 1 session per user. If a user then logs in again via browser while JD is logged in, we might
+                     * download as a free-user without noticing that. Example host: Przeslij.com </br> This may also help in other
+                     * situations in which we get logged out all of the sudden.
+                     */
+                    logger.warning("Possible login failure -> Trying again");
+                    loginWebsite(account, true);
+                    br.setFollowRedirects(false);
+                    getPage(link.getPluginPatternMatcher());
+                    hasTriedToLoginOnce = true;
+                    continue;
+                }
+            } while (true);
         }
         if (StringUtils.isEmpty(continue_link) && this.dl == null) {
             br.setFollowRedirects(false);
@@ -1112,7 +1147,7 @@ public class YetiShareCore extends antiDDoSForHost {
     protected void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
         final String url = getCurrentURLDecoded();
-        if (br.containsHTML("Error: Too many concurrent download requests")) {
+        if (br.containsHTML("(?i)Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum concurrent downloads")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
@@ -1145,8 +1180,16 @@ public class YetiShareCore extends antiDDoSForHost {
         } else if (errorMsgURL != null) {
             logger.info("Unidentified error happened: " + errorMsgURL);
         }
+        /* YetiShareCoreNew */
+        if (br.getURL().matches("(?i)https?://[^/]+/register\\?f=[a-f0-9]{32}")) {
+            throw new AccountRequiredException();
+        }
     }
 
+    /**
+     * Checks for reasons to ignore given PluginExceptions. </br>
+     * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
+     */
     protected void ignorePluginException(PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
             // TODO: update with more account specific error handling
@@ -1405,12 +1448,10 @@ public class YetiShareCore extends antiDDoSForHost {
         final int maxchunks = this.getMaxChunks(account);
         final Browser br2 = this.br.cloneBrowser();
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
         boolean valid = false;
         try {
             // con = br2.openHeadConnection(dllink);
             this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
-            con = dl.getConnection();
             if (br2.getHttpConnection().getResponseCode() == 429) {
                 logger.info("Stored directurl lead to 429 | too many connections");
                 try {
@@ -1424,7 +1465,7 @@ public class YetiShareCore extends antiDDoSForHost {
                  */
                 valid = true;
                 return dllink;
-            } else if (!looksLikeDownloadableContent(con)) {
+            } else if (!looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br2.followConnection(true);
                 } catch (IOException e) {
@@ -1444,7 +1485,7 @@ public class YetiShareCore extends antiDDoSForHost {
         } finally {
             if (!valid) {
                 try {
-                    con.disconnect();
+                    dl.getConnection().disconnect();
                 } catch (final Throwable e) {
                 }
                 this.dl = null;
@@ -1496,8 +1537,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !force) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
+                    if (!force) {
+                        logger.info("Trust given login cookies");
                         return;
                     }
                     logger.info("Verifying login-cookies");
@@ -1524,7 +1565,7 @@ public class YetiShareCore extends antiDDoSForHost {
                  * TODO: Optimize recognition of required login type see all plugins that override enforce_old_login_method (not many - low
                  * priority)
                  */
-                if (br.containsHTML("flow\\-login\\.js") && !enforce_old_login_method()) {
+                if (br.containsHTML("flow-login\\.js") && !enforce_old_login_method()) {
                     final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                     /* New (ajax) login method - mostly used - example: iosddl.net */
                     logger.info("Using new login method");
@@ -1802,15 +1843,7 @@ public class YetiShareCore extends antiDDoSForHost {
         if (this.supports_api()) {
             this.handleDownloadAPI(link, account);
         } else {
-            try {
-                requestFileInformation(link, account, true);
-            } catch (PluginException e) {
-                ignorePluginException(e, br, link, account);
-            }
-            loginWebsite(account, false);
-            br.setFollowRedirects(false);
-            getPage(link.getPluginPatternMatcher());
-            handleDownloadWebsite(link, account);
+            this.handleDownloadWebsite(link, account);
         }
     }
 
@@ -2019,12 +2052,13 @@ public class YetiShareCore extends antiDDoSForHost {
         final Map<String, Object> postLogin = new HashMap<String, Object>();
         postLogin.put("key1", key1);
         postLogin.put("key2", key2);
-        this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
+        // this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
+        this.postPage(this.getAPIBase() + "/authorize", "key1=" + Encoding.urlEncode(key1) + "&key2=" + Encoding.urlEncode(key2));
         access_token = PluginJSonUtils.getJson(br, "access_token");
         account_id = PluginJSonUtils.getJson(br, "account_id");
         /*
          * 2020-08-27: API can basically return anything except expected json --> Do not check for errors here - just check for the expected
-         * token --> Account should be invalid of token is not available. Only check for errors if this account has been valid before
+         * token --> Account should be invalid if token is not available. Only check for errors if this account has been valid before
          * already!
          */
         if (account.getBooleanProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), false)) {
@@ -2157,6 +2191,11 @@ public class YetiShareCore extends antiDDoSForHost {
          * {"status":"error",
          * "response":"Your account level does not have access to the file upload API. Please contact site support for more information."
          * ,"_datetime":"2021-01-19 16:48:28"}
+         */
+        /*
+         * 2021-04-01: TODO: New API seems to provide different json e.g. { "response":
+         * "Your account level does not have access to the file upload API. Please contact site support for more information.", "_status":
+         * "error", "_datetime": "2021-04-01 11:04:23"}
          */
         boolean result = true;
         String msg = null;
