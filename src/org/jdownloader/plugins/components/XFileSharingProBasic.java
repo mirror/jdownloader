@@ -124,7 +124,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     // return this.rewriteHost(getPluginDomains(), host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?";
+        return "/(?:d/[A-Za-z0-9]+|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -145,6 +145,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     protected static final String PROPERTY_ACCOUNT_apikey                                           = "apikey";
     private static final String   PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
     private static final String   PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
+    private static final String   TYPE_NORMAL                                                       = "(?i)https?://[^/]+/([a-z0-9]{12})";
+    private static final String   TYPE_SHORTURL                                                     = "(?i)https?://[^/]+/d/([A-Za-z0-9]+)";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
@@ -520,6 +522,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return "/" + fuid;
     }
 
+    protected String buildShortURLPath(final String fuid) {
+        return "/d/" + fuid;
+    }
+
     /**
      * Returns the desired host. Override is required in some cases where given host can contain unwanted subdomains e.g. imagetwist.com.
      */
@@ -535,13 +541,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 final URL url = new URL(link.getPluginPatternMatcher());
                 final String urlHost = getCorrectHost(link, url);
-                if (isEmbedURL(link)) {
-                    /*
-                     * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
-                     * inside this URL!
-                     */
-                    link.setContentUrl(url.getProtocol() + "://" + urlHost + buildEmbedURLPath(fuid));
-                }
                 final String protocolCorrected;
                 if (this.supports_https()) {
                     protocolCorrected = "https://";
@@ -563,7 +562,18 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     // only append www when no other subDomain is set
                     hostCorrected = "www." + hostCorrected;
                 }
-                link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(fuid));
+                if (link.getPluginPatternMatcher().matches(TYPE_SHORTURL)) {
+                    link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildShortURLPath(fuid));
+                } else {
+                    if (isEmbedURL(link)) {
+                        /*
+                         * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
+                         * inside this URL!
+                         */
+                        link.setContentUrl(url.getProtocol() + "://" + urlHost + buildEmbedURLPath(fuid));
+                    }
+                    link.setPluginPatternMatcher(protocolCorrected + hostCorrected + buildNormalURLPath(fuid));
+                }
             } catch (final MalformedURLException e) {
                 logger.log(e);
             }
@@ -694,18 +704,50 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String[] fileInfo = internal_getFileInfoArray();
-        Browser altbr = null;
         correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link);
+        }
+        if (link.getPluginPatternMatcher().matches(TYPE_SHORTURL)) {
+            /* Short URLs -> We need to find the long FUID! */
+            br.setFollowRedirects(true);
+            getPage(link.getPluginPatternMatcher());
+            if (isOffline(link)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String realFUID = null;
+            /* Check for direct-redirect */
+            if (br.getURL().matches(TYPE_NORMAL)) {
+                realFUID = new Regex(br.getURL(), TYPE_NORMAL).getMatch(0);
+            } else {
+                final Form form = br.getFormbyProperty("name", "F1");
+                if (form != null) {
+                    realFUID = form.getInputFieldByName("id").getValue();
+                }
+                if (realFUID == null || !realFUID.matches("[a-z0-9]{12}")) {
+                    /**
+                     * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br>
+                     * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
+                     * now!
+                     */
+                    this.checkErrors(link, account, false);
+                    /* Assume that this URL is offline */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            /* Success! */
+            final String urlNew = this.getMainPage() + "/" + realFUID;
+            logger.info("URL old: " + link.getPluginPatternMatcher());
+            logger.info("URL new: " + urlNew);
+            link.setPluginPatternMatcher(urlNew);
         }
         getPage(link.getPluginPatternMatcher());
         if (isOffline(link)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fallback_filename = this.getFallbackFilename(link);
-        altbr = br.cloneBrowser();
+        final Browser altbr = br.cloneBrowser();
         if (isPremiumOnlyURL(this.br)) {
             /*
              * Hosts whose urls are all premiumonly usually don't display any information about the URL at all - only maybe online/ofline.
@@ -2597,11 +2639,15 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
-    public String getFUIDFromURL(final DownloadLink dl) {
+    public String getFUIDFromURL(final DownloadLink link) {
         try {
-            if (dl != null && dl.getPluginPatternMatcher() != null) {
-                final String result = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
-                return result;
+            if (link != null && link.getPluginPatternMatcher() != null) {
+                if (link.getPluginPatternMatcher().matches(TYPE_SHORTURL)) {
+                    return new Regex(link.getPluginPatternMatcher(), TYPE_SHORTURL).getMatch(0);
+                } else {
+                    final String result = new Regex(new URL(link.getPluginPatternMatcher()).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
+                    return result;
+                }
             } else {
                 return null;
             }
@@ -4274,14 +4320,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         String errorCodeStr = null;
         String errorMsg = null;
-        int errorcode = -1;
+        int statuscode = -1;
         try {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Object statusO = entries.get("status");
             if (statusO instanceof String) {
                 errorCodeStr = (String) statusO;
             } else {
-                errorcode = ((Number) statusO).intValue();
+                statuscode = ((Number) statusO).intValue();
             }
             errorMsg = (String) entries.get("msg");
         } catch (final Throwable e) {
@@ -4291,7 +4337,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (StringUtils.isEmpty(errorMsg)) {
             errorMsg = "Unknown error";
         }
-        switch (errorcode) {
+        /**
+         * TODO: Maybe first check for errormessage based on text, then handle statuscode. </br>
+         * One statuscode can be returned with different errormessages!
+         */
+        switch (statuscode) {
         case -1:
             /* No error */
             break;
@@ -4300,6 +4350,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             break;
         case 400:
             /* {"msg":"Invalid key","server_time":"2019-10-31 17:20:02","status":400} */
+            /* 2021-04-01: This can also happen: {"msg":"Invalid file codes","server_time":"2021-04-01 13:39:48","status":400} */
             /*
              * This should never happen!
              */
