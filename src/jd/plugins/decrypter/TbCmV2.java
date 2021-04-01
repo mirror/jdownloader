@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -239,9 +238,8 @@ public class TbCmV2 extends PluginForDecrypt {
             videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
         }
         helper = new YoutubeHelper(br, getLogger());
-        if (true) {
-            // try avoid CONSENT redirect
-            br.setCookie(getHost(), "CONSENT", "YES+cb.20210328-17-p0.en+FX+" + new Random().nextInt(899) + 100);
+        if (helper.isConsentCookieRequired()) {
+            helper.setConsentCookie(br, null);
         }
         helper.login(getLogger(), false);
         /*
