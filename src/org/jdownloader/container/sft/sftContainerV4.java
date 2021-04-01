@@ -6,9 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
 
 public class sftContainerV4 extends sftContainer {
     public static String            MAGIC_SHA512_CALL = "callstackapi";
@@ -69,7 +68,7 @@ public class sftContainerV4 extends sftContainer {
     @Override
     public boolean setPassword(char[] cs) {
         try {
-            byte[] checkHeader = DatatypeConverter.parseHexBinary(this.strHeader);
+            byte[] checkHeader = HexFormatter.hexToByteArray(this.strHeader);
             byte[] pass = ("callstackapi" + (cs == null ? "" : new String(cs))).getBytes("UTF-8");
             byte[] sha512_pass = MessageDigest.getInstance(CRYPT_SHA512).digest(pass);
             sha512_pass = Arrays.copyOf(sha512_pass, sha512_pass.length / 2);
@@ -103,19 +102,19 @@ public class sftContainerV4 extends sftContainer {
                     String Dirname = neDirname == null ? null : neDirname.getValue();
                     String Filename = neFilename == null ? null : neFilename.getValue();
                     if (Host != null) {
-                        bHost = DatatypeConverter.parseHexBinary(Host);
+                        bHost = HexFormatter.hexToByteArray(Host);
                     }
                     if (Username != null) {
-                        bUsername = DatatypeConverter.parseHexBinary(Username);
+                        bUsername = HexFormatter.hexToByteArray(Username);
                     }
                     if (Password != null) {
-                        bPassword = DatatypeConverter.parseHexBinary(Password);
+                        bPassword = HexFormatter.hexToByteArray(Password);
                     }
                     if (Dirname != null) {
-                        bDirname = DatatypeConverter.parseHexBinary(Dirname);
+                        bDirname = HexFormatter.hexToByteArray(Dirname);
                     }
                     if (Filename != null) {
-                        bFilename = DatatypeConverter.parseHexBinary(Filename);
+                        bFilename = HexFormatter.hexToByteArray(Filename);
                     }
                     sha512_pass[0] ^= (byte) i;
                     rcx.init(sha512_pass);
