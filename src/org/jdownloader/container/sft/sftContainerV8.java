@@ -8,9 +8,8 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 
@@ -129,17 +128,17 @@ public class sftContainerV8 extends sftContainer {
                         String Dirname = neDirname == null ? null : neDirname.getValue();
                         String Filename = neFilename == null ? null : neFilename.getValue();
                         if (Host != null) {
-                            bHost = DatatypeConverter.parseHexBinary(Host);
+                            bHost = HexFormatter.hexToByteArray(Host);
                         }
                         // if (Port != null) bPort = Port.getBytes();
                         if (Username != null) {
-                            bUsername = DatatypeConverter.parseHexBinary(Username);
+                            bUsername = HexFormatter.hexToByteArray(Username);
                         }
                         if (Password != null) {
-                            bPassword = DatatypeConverter.parseHexBinary(Password);
+                            bPassword = HexFormatter.hexToByteArray(Password);
                         }
                         if (Dirname != null) {
-                            bDirname = DatatypeConverter.parseHexBinary(Dirname);
+                            bDirname = HexFormatter.hexToByteArray(Dirname);
                         }
                         if (Filename != null) {
                             bFilename = Filename.getBytes("UTF-8");

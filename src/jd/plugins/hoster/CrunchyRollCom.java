@@ -33,9 +33,28 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 import java.util.zip.InflaterInputStream;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -56,25 +75,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "https?://(?:\\w+.\\w+|www|api-manga)\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|i/croll_manga/e/\\w+)" })
 public class CrunchyRollCom extends antiDDoSForHost {
@@ -131,8 +131,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
             final String subData = xmlData.getTextContent();
             // Generate the AES parameters
             final byte[] key = this.subsGenerateKey(subId, 32);
-            final byte[] ivData = DatatypeConverter.parseBase64Binary(subIv);
-            final byte[] encData = DatatypeConverter.parseBase64Binary(subData);
+            final byte[] ivData = Base64.decode(subIv);
+            final byte[] encData = Base64.decode(subData);
             byte[] decrypted = null;
             try {
                 final KeyParameter keyParam = new KeyParameter(key);
@@ -678,20 +678,20 @@ public class CrunchyRollCom extends antiDDoSForHost {
         // Calculate magic number
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
-                    magicStr += magic2;
-                    // Calculate the hash using SHA-1
-                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
-                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-                    final byte[] magicBytes = magicStr.getBytes();
-                    md.update(magicBytes, 0, magicBytes.length);
-                    final byte[] hashBytes = md.digest();
-                    // Create the key using the given length
-                    final byte[] key = new byte[size];
-                    Arrays.fill(key, (byte) 0);
-                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-                        key[i] = hashBytes[i];
-                    }
-                    return key;
+        magicStr += magic2;
+        // Calculate the hash using SHA-1
+        final MessageDigest md = MessageDigest.getInstance("SHA-1");
+        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+        final byte[] magicBytes = magicStr.getBytes();
+        md.update(magicBytes, 0, magicBytes.length);
+        final byte[] hashBytes = md.digest();
+        // Create the key using the given length
+        final byte[] key = new byte[size];
+        Arrays.fill(key, (byte) 0);
+        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+            key[i] = hashBytes[i];
+        }
+        return key;
     }
 
     /**
