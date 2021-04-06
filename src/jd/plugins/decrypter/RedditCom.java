@@ -19,8 +19,10 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -290,13 +292,12 @@ public class RedditCom extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
             }
-            final ArrayList<Object> gallery = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "gallery_data/items");
             title = dateFormatted + "_" + subredditTitle + " - " + title;
             /* 2020-07-23: TODO: This field might indicate selfhosted content: is_reddit_media_domain */
             /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
             boolean addedRedditSelfhostedVideo = false;
             final String externalURL = (String) entries.get("url");
-            if (!StringUtils.isEmpty(externalURL)) {
+            if (!StringUtils.isEmpty(externalURL) && !this.canHandle(externalURL)) {
                 logger.info("Found external URL");
                 final DownloadLink dl = this.createDownloadlink(externalURL);
                 if (externalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
@@ -322,17 +323,28 @@ public class RedditCom extends PluginForDecrypt {
                     }
                 }
             }
-            if (gallery != null) {
-                int counter = 0;
-                for (final Object galleryO : gallery) {
-                    counter++;
-                    final Map<String, Object> mediaInfo = (Map<String, Object>) galleryO;
-                    final String media_id = (String) mediaInfo.get("media_id");
-                    final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + media_id + ".jpg");
-                    image.setFinalFileName(title + "_" + df.format(counter) + ".jpg");
+            if (entries.containsKey("is_gallery") && ((Boolean) entries.get("is_gallery")).booleanValue()) {
+                final Map<String, Object> media_metadata = (Map<String, Object>) entries.get("media_metadata");
+                final Iterator<Entry<String, Object>> iterator = media_metadata.entrySet().iterator();
+                int imageNumber = 0;
+                while (iterator.hasNext()) {
+                    imageNumber += 1;
+                    final Entry<String, Object> entry = iterator.next();
+                    final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
+                    String extension = "jpg";
+                    /* "image/png" --> "png" */
+                    String mediaType = (String) mediaInfo.get("m");
+                    if (mediaType.contains("/")) {
+                        final String[] mediaTypeSplit = mediaType.split("/");
+                        extension = mediaTypeSplit[mediaTypeSplit.length - 1];
+                    }
+                    final String media_id = (String) mediaInfo.get("id");
+                    final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + media_id + "." + extension);
+                    image.setFinalFileName(title + "_" + df.format(imageNumber) + "." + extension);
                     image.setAvailable(true);
                     decryptedLinks.add(image);
                 }
+                return;
             }
             /* Look for selfhosted video content. Prefer content without https */
             if (!addedRedditSelfhostedVideo) {

@@ -17,10 +17,14 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.BsToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -70,7 +74,7 @@ public class BsTo extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Seite nicht gefunden<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*Seite nicht gefunden<")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
@@ -136,6 +140,27 @@ public class BsTo extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            /* Add only user preferred host or all available hosts. */
+            String userHosterPrioListStr = PluginJsonConfig.get(BsToConfig.class).getHosterPriorityString();
+            if (userHosterPrioListStr != null && userHosterPrioListStr.contains(",")) {
+                logger.info("Trying to add only one user priorized host");
+                userHosterPrioListStr = userHosterPrioListStr.replace(" ", "").toLowerCase(Locale.ENGLISH);
+                final String[] userHosterPrioList = userHosterPrioListStr.split(",");
+                for (final String userPriorizedHoster : userHosterPrioList) {
+                    for (final String singleLink : mirrors) {
+                        logger.info("singleLink: " + singleLink);
+                        final String url = Request.getLocation("/" + singleLink, br.getRequest());
+                        if (url.toLowerCase(Locale.ENGLISH).endsWith(userPriorizedHoster)) {
+                            logger.info("Adding ONLY the following user priorized host: " + userPriorizedHoster);
+                            decryptedLinks.add(createDownloadlink(url));
+                            return decryptedLinks;
+                        }
+                    }
+                }
+                logger.info("Failed to find user priorized host -> Crawling all");
+            } else {
+                logger.info("User didn't define priorized hosts -> Crawling all");
+            }
             final Set<String> duplicate = new HashSet<String>();
             for (final String singleLink : mirrors) {
                 logger.info("singleLink: " + singleLink);
@@ -151,5 +176,15 @@ public class BsTo extends PluginForDecrypt {
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 5;
+    }
+
+    /* NO OVERRIDE!! */
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return BsToConfig.class;
     }
 }
