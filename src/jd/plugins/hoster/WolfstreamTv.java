@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoAparatCom;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -25,14 +30,9 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo;
-import org.jdownloader.plugins.components.config.XFSConfigVideoAparatCom;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AparatCam extends XFileSharingProBasic {
-    public AparatCam(final PluginWrapper wrapper) {
+public class WolfstreamTv extends XFileSharingProBasic {
+    public WolfstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -47,7 +47,7 @@ public class AparatCam extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "aparat.cam" });
+        ret.add(new String[] { "wolfstream.tv", "aparat.cam" });
         return ret;
     }
 
@@ -62,6 +62,12 @@ public class AparatCam extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-04-06: Main domain changed from aparat.cam to wolfstream.tv */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
