@@ -69,7 +69,8 @@ public class XvideosComProfile extends PluginForDecrypt {
             final StringBuilder sb = new StringBuilder();
             sb.append("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/");
             sb.append("(");
-            sb.append("(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?");
+            sb.append("pornstar-channels/[A-Za-z0-9\\-_]+#_tabRed");
+            sb.append("|(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+(?:/photos/\\d+/[A-Za-z0-9\\-_]+)?");
             sb.append("|favorite/\\d+/[a-z0-9\\_]+");
             sb.append("|account/favorites/\\d+");
             sb.append(")");
@@ -81,6 +82,7 @@ public class XvideosComProfile extends PluginForDecrypt {
     private static final String TYPE_FAVOURITES         = "https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
     private static final String TYPE_FAVOURITES_ACCOUNT = "https?://[^/]+/account/favorites/(\\d+)";
     private static final String TYPE_USER               = "https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+$";
+    private static final String TYPE_USER_PREMIUM       = "https?://[^/]+/pornstar-channels/([A-Za-z0-9\\-_]+)#_tabRed$";
 
     private boolean requiresAccount(final CryptedLink param) {
         return requiresPremiumAccount(param) || param.getCryptedUrl().matches(TYPE_FAVOURITES_ACCOUNT);
@@ -144,8 +146,8 @@ public class XvideosComProfile extends PluginForDecrypt {
             crawlFavouritesAccount(param, decryptedLinks);
         } else if (parameter.matches(".+/photos/.+")) {
             crawlPhotos(parameter, decryptedLinks);
-        } else if (parameter.matches(TYPE_USER) && premiumAccountActive) {
-            crawlChannelPremium(parameter, decryptedLinks);
+        } else if ((parameter.matches(TYPE_USER) && premiumAccountActive) || param.getCryptedUrl().matches(TYPE_USER_PREMIUM)) {
+            crawlChannelPremium(param, decryptedLinks);
         } else {
             crawlChannel(parameter, decryptedLinks);
         }
@@ -224,7 +226,7 @@ public class XvideosComProfile extends PluginForDecrypt {
 
     private void crawlChannel(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
         final ArrayList<String> dupeList = new ArrayList<String>();
-        final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/(.+)");
+        final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/([^/]+)");
         final String type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
         if (!br.getURL().contains(username)) {
@@ -310,15 +312,15 @@ public class XvideosComProfile extends PluginForDecrypt {
      * 2020-10-06: Special method for xvideos.red though this will also work for xvideos.com. Old method is still in use as it's still
      * working!
      */
-    private void crawlChannelPremium(final String parameter, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
+    private void crawlChannelPremium(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks) throws IOException, PluginException {
         final ArrayList<String> dupeList = new ArrayList<String>();
-        final Regex urlinfo = new Regex(parameter, "https?://[^/]+/([^/]+)/(.+)");
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/#]+)");
         final String type = urlinfo.getMatch(0);
         final String username = urlinfo.getMatch(1);
         if (!br.getURL().contains(username)) {
             /* E.g. redirect to mainpage */
             logger.info("Profile does not exist anymore");
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return;
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -369,7 +371,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             pageNum++;
         } while (!this.isAbort() && decryptedLinksNum >= 36);
         if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
