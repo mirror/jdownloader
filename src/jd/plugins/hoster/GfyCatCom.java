@@ -18,15 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +29,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -97,6 +97,51 @@ public class GfyCatCom extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
+    private String[] getDownloadURL(final DownloadLink link, final Map<String, Object> video, final Map<String, Object> photo, final PreferredFormat format) throws Exception {
+        // TODO: use JSON in complicatedJSON, it contains all available formats/qualities
+        switch (format) {
+        case WEBM:
+            if (video == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                String ret = (String) video.get("contentUrl");
+                if (!StringUtils.isEmpty(ret)) {
+                    final String verifyWebM = ret.replace(".mp4", ".webm");
+                    if (verifyDownloadURL(link, verifyWebM)) {
+                        ret = verifyWebM;
+                    } else {
+                        return getDownloadURL(link, video, photo, PreferredFormat.MP4);
+                    }
+                }
+                return new String[] { format.name(), ret, ".webm" };
+            }
+        case GIF:
+            if (photo == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                final String ret = (String) photo.get("contentUrl");
+                return new String[] { format.name(), ret, ".gif" };
+            }
+        case MP4:
+        default:
+            if (video == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                /* MP4 */
+                String ret = (String) video.get("contentUrl");
+                if (!StringUtils.isEmpty(ret)) {
+                    if (!verifyDownloadURL(link, ret) && !StringUtils.endsWithCaseInsensitive(ret, "mobile.mp4")) {
+                        final String mobile = ret.replaceFirst("\\.mp4$", "-mobile.mp4");
+                        if (verifyDownloadURL(link, mobile)) {
+                            ret = mobile;
+                        }
+                    }
+                }
+                return new String[] { format.name(), ret, ".mp4" };
+            }
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -106,7 +151,6 @@ public class GfyCatCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final PreferredFormat format = getPreferredFormat();
         if (br.getHost().equalsIgnoreCase("gifdeliverynetwork.com")) {
             /* 2020-06-18: New and should not be needed! */
             dllink = br.getRegex("\"(https?://[^<>\"]+\\.webm)\"").getMatch(0);
@@ -164,45 +208,9 @@ public class GfyCatCom extends PluginForHost {
                     /* Fallback */
                     dateFormatted = datePublished;
                 }
-                final String ext;
-                switch (format) {
-                case WEBM:
-                    if (video == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        this.dllink = (String) video.get("contentUrl");
-                        if (!StringUtils.isEmpty(this.dllink)) {
-                            this.dllink = this.dllink.replace(".mp4", ".webm");
-                        }
-                        ext = ".webm";
-                    }
-                    break;
-                case MP4:
-                    if (video == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        this.dllink = (String) video.get("contentUrl");
-                        ext = ".mp4";
-                    }
-                    break;
-                case GIF:
-                    if (photo == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        this.dllink = (String) photo.get("contentUrl");
-                        ext = ".gif";
-                    }
-                    break;
-                default:
-                    if (video == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        /* MP4 */
-                        this.dllink = (String) video.get("contentUrl");
-                        ext = ".mp4";
-                    }
-                    break;
-                }
+                final String downloadURL[] = getDownloadURL(link, video, photo, getPreferredFormat(link));
+                dllink = downloadURL[1];
+                final String ext = downloadURL[2];
                 if (link.getFinalFileName() == null) {
                     /*
                      * 2020-11-26: Include fid AND title inside filenames because different URLs can have the same title and can be
@@ -238,30 +246,38 @@ public class GfyCatCom extends PluginForHost {
             }
         }
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    /* Do nothing */
-                    // server_issues = true;
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+            if (!verifyDownloadURL(link, dllink)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean verifyDownloadURL(final DownloadLink link, final String downloadURL) throws IOException {
+        if (StringUtils.isEmpty(downloadURL)) {
+            return false;
+        }
+        URLConnectionAdapter con = null;
+        try {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openHeadConnection(downloadURL);
+            if (con.getResponseCode() == 404) {
+                return false;
+            } else if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
@@ -288,7 +304,18 @@ public class GfyCatCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private PreferredFormat getPreferredFormat() {
+    private final String gfycatFormat = "gfycatFormat";
+
+    private PreferredFormat getPreferredFormat(final DownloadLink link) {
+        final String linkFormat = link.getStringProperty(gfycatFormat, null);
+        if (linkFormat != null) {
+            try {
+                return PreferredFormat.valueOf(linkFormat);
+            } catch (IllegalArgumentException e) {
+                logger.exception("Invalid Format:" + linkFormat, e);
+                link.removeProperty(gfycatFormat);
+            }
+        }
         final GfycatConfig cfg = PluginJsonConfig.get(GfycatConfig.class);
         return cfg.getPreferredFormat();
     }
@@ -309,5 +336,6 @@ public class GfyCatCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(gfycatFormat);
     }
 }

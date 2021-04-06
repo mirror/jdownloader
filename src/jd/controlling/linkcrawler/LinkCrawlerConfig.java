@@ -35,7 +35,7 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. bytes for page request during deep decrypt")
-    @SpinnerValidator(min = 1 * 1024 * 1024, max = 5 * 1024 * 1024)
+    @SpinnerValidator(min = 1 * 1024 * 1024, max = 50 * 1024 * 1024)
     int getDeepDecryptLoadLimit();
 
     void setDeepDecryptLoadLimit(int l);
