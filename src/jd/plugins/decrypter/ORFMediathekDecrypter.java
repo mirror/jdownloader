@@ -206,6 +206,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             continue;
                         } else if ("hds".equals(delivery) && !allow_HDS) {
                             continue;
+                        } else if ("dash".equals(delivery)) {
+                            /* 2021-04-06 */
+                            continue;
                         } else if (url_directlink_video == null || isEmpty(fmt)) {
                             continue;
                         }
