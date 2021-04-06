@@ -22,6 +22,18 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -42,18 +54,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends antiDDoSForHost {
@@ -464,7 +464,7 @@ public class DeepbridCom extends antiDDoSForHost {
             mhm.handleErrorGeneric(account, link, "api_error_2", 10, 5 * 60 * 1000l);
         } else if (errorCode == 3) {
             /* Link/Host not supported */
-            mhm.putError(account, link, 10 * 60 * 1000l, errorMsg);
+            mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
         } else if (errorCode == 8) {
             /* Account limit reached -> Waittime required */
             /*
@@ -482,10 +482,10 @@ public class DeepbridCom extends antiDDoSForHost {
             }
         } else if (errorCode == 10) {
             /* Filehoster under maintenance on our site */
-            mhm.putError(account, link, 60 * 60 * 1000l, errorMsg);
+            mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
         } else if (errorCode == 9) {
             /* Hosters limit reached for this day */
-            mhm.putError(account, link, 60 * 60 * 1000l, errorMsg);
+            mhm.putError(account, link, 5 * 60 * 1000l, errorMsg);
         } else if (errorCode == 15) {
             /* Service detected usage of proxy which they do not tolerate */
             /*
