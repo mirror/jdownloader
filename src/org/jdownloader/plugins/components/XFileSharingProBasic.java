@@ -681,7 +681,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = this.getAPIKey();
         if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enable_account_api_only_mode()) {
-            return massLinkcheckerAPI(urls, apiKey, true);
+            return massLinkcheckerAPI(urls, apiKey);
         } else if (supports_mass_linkcheck_over_website()) {
             return this.massLinkcheckerWebsite(urls);
         } else {
@@ -4173,7 +4173,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     protected final AvailableStatus requestFileInformationAPI(final DownloadLink link, final String apikey) throws Exception {
-        massLinkcheckerAPI(new DownloadLink[] { link }, apikey, false);
+        massLinkcheckerAPI(new DownloadLink[] { link }, apikey);
         if (link.getAvailableStatus() == AvailableStatus.FALSE) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -4183,7 +4183,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Checks multiple URLs via API. Only works when an apikey is given!
      */
-    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final String apikey, final boolean allowWeakFilenameAsFallback) {
+    public boolean massLinkcheckerAPI(final DownloadLink[] urls, final String apikey) {
         if (urls == null || urls.length == 0 || !this.isAPIKey(apikey)) {
             return false;
         }
@@ -4279,7 +4279,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             if (isVideohost) {
                                 link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
                             }
-                            if (allowWeakFilenameAsFallback && !link.isNameSet()) {
+                            if (!link.isNameSet()) {
                                 setWeakFilename(link);
                             }
                         }
