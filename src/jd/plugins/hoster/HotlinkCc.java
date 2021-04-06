@@ -17,7 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -48,7 +48,25 @@ public class HotlinkCc extends XFileSharingProBasic {
      * captchatype-info: 2019-05-11: null<br />
      * other: 2019-05-09: Login via username&pw not possible anymore, only via EMAIL&PASSWORD! <br />
      */
-    private static String[] domains = new String[] { "hotlink.cc" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "hotlink.cc", "redirect.codes", "filecheck.link", "container.cool" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -152,40 +170,6 @@ public class HotlinkCc extends XFileSharingProBasic {
         return trafficleft;
     }
 
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
-    }
-
     @Override
     public boolean isPremiumOnly(final Browser br) {
         /*
@@ -196,6 +180,10 @@ public class HotlinkCc extends XFileSharingProBasic {
         if (!premiumonly_filehost) {
             /** 2021-01-28 */
             premiumonly_filehost = br.containsHTML("This video.{1,6}is available for viewing and downloading.{1,6}only for premium users");
+        }
+        if (!premiumonly_filehost) {
+            /** 2021-01-28 */
+            premiumonly_filehost = br.containsHTML(">\\s*This is video preview, full video is available only for Premium");
         }
         /* 2019-05-30: Example: xvideosharing.com */
         final boolean premiumonly_videohost = br.containsHTML(">\\s*This video is available for Premium users only");
@@ -420,6 +408,7 @@ public class HotlinkCc extends XFileSharingProBasic {
         }
         final Form videoDownloadForm = this.getOfficialVideoDownloadForm(brc);
         if (videoDownloadForm == null) {
+            this.checkErrors(brc, brc.toString(), link, account, false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
