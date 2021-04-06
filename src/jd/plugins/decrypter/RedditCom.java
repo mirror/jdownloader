@@ -309,20 +309,6 @@ public class RedditCom extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-            /* Look for embedded content from external sources - the object is always given but can be empty */
-            final Object embeddedMediaO = entries.get("media_embed");
-            if (embeddedMediaO != null) {
-                LinkedHashMap<String, Object> embeddedMediaInfo = (LinkedHashMap<String, Object>) embeddedMediaO;
-                if (!embeddedMediaInfo.isEmpty()) {
-                    logger.info("Found media_embed");
-                    String media_embedStr = (String) embeddedMediaInfo.get("content");
-                    final String[] links = HTMLParser.getHttpLinks(media_embedStr, this.br.getURL());
-                    for (final String url : links) {
-                        final DownloadLink dl = this.createDownloadlink(url);
-                        decryptedLinks.add(dl);
-                    }
-                }
-            }
             if (entries.containsKey("is_gallery") && ((Boolean) entries.get("is_gallery")).booleanValue()) {
                 final Map<String, Object> media_metadata = (Map<String, Object>) entries.get("media_metadata");
                 final Iterator<Entry<String, Object>> iterator = media_metadata.entrySet().iterator();
@@ -345,6 +331,20 @@ public class RedditCom extends PluginForDecrypt {
                     decryptedLinks.add(image);
                 }
                 return;
+            }
+            /* Look for embedded content from external sources - the object is always given but can be empty */
+            final Object embeddedMediaO = entries.get("media_embed");
+            if (embeddedMediaO != null) {
+                LinkedHashMap<String, Object> embeddedMediaInfo = (LinkedHashMap<String, Object>) embeddedMediaO;
+                if (!embeddedMediaInfo.isEmpty()) {
+                    logger.info("Found media_embed");
+                    String media_embedStr = (String) embeddedMediaInfo.get("content");
+                    final String[] links = HTMLParser.getHttpLinks(media_embedStr, this.br.getURL());
+                    for (final String url : links) {
+                        final DownloadLink dl = this.createDownloadlink(url);
+                        decryptedLinks.add(dl);
+                    }
+                }
             }
             /* Look for selfhosted video content. Prefer content without https */
             if (!addedRedditSelfhostedVideo) {
