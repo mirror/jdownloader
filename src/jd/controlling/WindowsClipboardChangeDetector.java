@@ -1,7 +1,6 @@
 package jd.controlling;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -14,8 +13,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.win32.StdCallLibrary;
-import com.sun.jna.win32.W32APIFunctionMapper;
-import com.sun.jna.win32.W32APITypeMapper;
+import com.sun.jna.win32.W32APIOptions;
 
 public class WindowsClipboardChangeDetector extends ClipboardMonitoring.ClipboardChangeDetector {
     private interface User32 extends StdCallLibrary {
@@ -49,24 +47,9 @@ public class WindowsClipboardChangeDetector extends ClipboardMonitoring.Clipboar
 
     protected WindowsClipboardChangeDetector(final AtomicReference<AtomicBoolean> skipChangeFlag, final LogSource logger) {
         super(skipChangeFlag);
-        user32 = com.sun.jna.Native.load("user32", User32.class, new HashMap<String, Object>() {
-            {
-                put(com.sun.jna.Library.OPTION_TYPE_MAPPER, W32APITypeMapper.UNICODE);
-                put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, W32APIFunctionMapper.UNICODE);
-            }
-        });
-        psapi = com.sun.jna.Native.load("psapi", psapi.class, new HashMap<String, Object>() {
-            {
-                put(com.sun.jna.Library.OPTION_TYPE_MAPPER, W32APITypeMapper.UNICODE);
-                put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, W32APIFunctionMapper.UNICODE);
-            }
-        });
-        kernel32 = com.sun.jna.Native.load("kernel32", Kernel32.class, new HashMap<String, Object>() {
-            {
-                put(com.sun.jna.Library.OPTION_TYPE_MAPPER, W32APITypeMapper.UNICODE);
-                put(com.sun.jna.Library.OPTION_FUNCTION_MAPPER, W32APIFunctionMapper.UNICODE);
-            }
-        });
+        user32 = com.sun.jna.Native.load("user32", User32.class, W32APIOptions.DEFAULT_OPTIONS);
+        psapi = com.sun.jna.Native.load("psapi", psapi.class, W32APIOptions.DEFAULT_OPTIONS);
+        kernel32 = com.sun.jna.Native.load("kernel32", Kernel32.class, W32APIOptions.DEFAULT_OPTIONS);
         final String[] blackList = CFG_GUI.CFG.getClipboardProcessBlacklist();
         final ArrayList<Pattern> blackListPatterns = new ArrayList<Pattern>();
         if (blackList != null) {

@@ -42,6 +42,8 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.JVMVersion;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -63,8 +65,6 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import com.sun.awt.AWTUtilities.Translucency;
 
 public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel> extends ExtJWindow implements ActionListener, AWTEventListener, GenericConfigEventListener<Boolean> {
     private static final int BOTTOM_MARGIN = 5;
@@ -171,8 +171,9 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         try {
             disposed = true;
             closed = true;
+            final AbstractBubbleSupport bubbleSupport = this.bubbleSupport;
             if (bubbleSupport != null) {
-                List<Element> elements = bubbleSupport.getElements();
+                final List<Element> elements = bubbleSupport.getElements();
                 if (elements != null) {
                     for (Element e : elements) {
                         e.getKeyhandler().getEventSender().removeListener(this);
@@ -196,52 +197,47 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         return contentComponent;
     }
 
-    private static Boolean setWindowOpaqueSupported = null;
-
-    public static boolean setWindowOpaque(Window owner) {
-        if (Boolean.FALSE.equals(setWindowOpaqueSupported)) {
-            return false;
-        }
+    public static boolean setWindowOpaque(final Window owner) {
         try {
-            if (JVMVersion.get() < JVMVersion.JAVA_10) {
-                com.sun.awt.AWTUtilities.setWindowOpaque(owner, false);
-                setWindowOpaqueSupported = Boolean.TRUE;
-                return true;
-            } else {
-                return false;
+            final boolean opaque = false;
+            Color bg = owner.getBackground();
+            if (bg == null) {
+                bg = new Color(0, 0, 0, 0);
             }
+            owner.setBackground(new Color(bg.getRed(), bg.getGreen(), bg.getBlue(), opaque ? 255 : 0));
+            return true;
         } catch (Throwable e) {
             e.printStackTrace();
+            return false;
         }
-        setWindowOpaqueSupported = Boolean.FALSE;
-        return false;
     }
 
     private static Boolean getWindowOpacitySupported = null;
 
     public static Float getWindowOpacity(Window owner) {
-        if (Boolean.FALSE.equals(getWindowOpacitySupported)) {
+        if (Boolean.FALSE.equals(getWindowOpacitySupported) || owner == null) {
+            return null;
+        } else {
+            try {
+                final Float ret;
+                if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
+                    ret = owner.getOpacity();
+                } else {
+                    ret = ReflectionUtils.invoke("com.sun.awt.AWTUtilities", "getWindowOpacity", null, float.class, owner);
+                }
+                getWindowOpacitySupported = Boolean.TRUE;
+                return ret;
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+            getWindowOpacitySupported = Boolean.FALSE;
             return null;
         }
-        try {
-            final Float ret;
-            if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
-                ret = owner.getOpacity();
-            } else {
-                ret = com.sun.awt.AWTUtilities.getWindowOpacity(owner);
-            }
-            getWindowOpacitySupported = Boolean.TRUE;
-            return ret;
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        getWindowOpacitySupported = Boolean.FALSE;
-        return null;
     }
 
     private static Boolean setWindowOpacitySupported = null;
 
-    public static void setWindowOpacity(Window window, float f) {
+    public static void setWindowOpacity(Window window, float opacity) {
         if (Boolean.FALSE.equals(setWindowOpacitySupported)) {
             return;
         }
@@ -253,22 +249,19 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                     setWindowOpacitySupported = gd.isWindowTranslucencySupported(WindowTranslucency.TRANSLUCENT);
                 }
                 if (Boolean.TRUE.equals(setWindowOpacitySupported)) {
-                    window.setOpacity(f);
+                    window.setOpacity(opacity);
                     return;
                 }
             } else {
-                if (setWindowOpacitySupported == null) {
-                    setWindowOpacitySupported = com.sun.awt.AWTUtilities.isTranslucencySupported(Translucency.TRANSLUCENT);
-                }
-                if (Boolean.TRUE.equals(setWindowOpacitySupported)) {
-                    com.sun.awt.AWTUtilities.setWindowOpacity(window, f);
+                if (setWindowOpacitySupported == null || Boolean.TRUE.equals(setWindowOpacitySupported)) {
+                    ReflectionUtils.invoke("com.sun.awt.AWTUtilities", "setWindowOpacity", null, void.class, window, opacity);
                     return;
                 }
             }
         } catch (Throwable e) {
             e.printStackTrace();
+            setWindowOpacitySupported = Boolean.FALSE;
         }
-        setWindowOpacitySupported = Boolean.FALSE;
     }
 
     @Override
@@ -324,27 +317,21 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         }
     }
 
-    // @Override
-    // public void mouseEntered(MouseEvent e) {
-    // }
-    // @Override
-    // public void mouseExited(MouseEvent e) {
-    //
-    // }
     protected void onMouseExited(MouseEvent m) {
-        System.out.println("Exit");
+        Timer timer = this.timer;
         if (endTime > 0 && timer == null) {
-            timer = new Timer((int) Math.max(2000l, endTime - System.currentTimeMillis()), this);
+            timer = new Timer((int) Math.max(2000l, endTime - Time.systemIndependentCurrentJVMTimeMillis()), this);
             timer.setRepeats(false);
+            this.timer = timer;
             timer.start();
         }
     }
 
     private void onMouseEntered(MouseEvent e) {
-        System.out.println("Enter");
+        Timer timer = this.timer;
         if (timer != null) {
             timer.stop();
-            timer = null;
+            this.timer = null;
         }
     }
 
@@ -362,9 +349,10 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
             fader.fadeIn(getFadeSpeed());
         } else {
+            Timer timer = this.timer;
             if (timer != null) {
                 timer.stop();
-                timer = null;
+                this.timer = null;
             }
             dispose();
         }
@@ -375,17 +363,19 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     }
 
     protected void startTimeout(int to) {
+        Timer timer = this.timer;
         if (timer != null) {
             timer.stop();
         }
-        endTime = System.currentTimeMillis() + to;
+        endTime = Time.systemIndependentCurrentJVMTimeMillis() + to;
         if (to <= 0) {
             onClose();
-            return;
+        } else {
+            timer = new Timer(to, this);
+            timer.setRepeats(false);
+            this.timer = timer;
+            timer.start();
         }
-        timer = new Timer(to, this);
-        timer.setRepeats(false);
-        timer.start();
     }
 
     protected int getFadeSpeed() {
@@ -394,9 +384,10 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        final Timer timer = this.timer;
         if (timer != null) {
             timer.stop();
-            timer = null;
+            this.timer = null;
         }
         onClose();
     }

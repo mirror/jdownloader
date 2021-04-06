@@ -16,21 +16,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?((?:wtrns\\.fr|we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
 public class WeTransferComFolder extends PluginForDecrypt {
@@ -57,9 +58,10 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         }
-        final Regex urlregex = new Regex(parameter, "/downloads/([a-f0-9]+)/(?:[a-f0-9]{46}/)?([a-f0-9]+)");
+        final Regex urlregex = new Regex(parameter, "/downloads/([a-f0-9]+)/([a-f0-9]{46})?/?([a-f0-9]+)");
         final String id_main = urlregex.getMatch(0);
-        final String security_hash = urlregex.getMatch(1);
+        final String recipient_id = urlregex.getMatch(1);
+        final String security_hash = urlregex.getMatch(2);
         if (security_hash == null || id_main == null) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -71,14 +73,24 @@ public class WeTransferComFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        final String refererValue = this.br.getURL();
-        final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
-        if (csrftoken == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final Map<String, Object> jsonMap = new HashMap<String, Object>();
+        jsonMap.put("security_hash", security_hash);
+        if (recipient_id != null) {
+            jsonMap.put("recipient_id", recipient_id);
         }
-        br.getHeaders().put("x-csrf-token", csrftoken);
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.postPageRaw("/api/v4/transfers/" + id_main + "/prepare-download", "{\"security_hash\":\"" + security_hash + "\"}");
+        final String refererValue = this.br.getURL();
+        final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/prepare-download")));
+        post.getHeaders().put("Accept", "application/json");
+        post.getHeaders().put("Content-Type", "application/json");
+        post.getHeaders().put("Origin", "https://wetransfer.com");
+        post.getHeaders().put("X-Requested-With", " XMLHttpRequest");
+        if (csrfToken != null) {
+            post.getHeaders().put("X-CSRF-Token", csrfToken);
+        }
+        post.setPostDataString(JSonStorage.toString(jsonMap));
+        br.getPage(post);
         Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
         final String state = (String) map.get("state");
         if (!"downloadable".equals(state)) {
@@ -136,7 +148,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
             }
             dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, thisPath);
             dl.setFinalFileName(filename);
-            dl.setDownloadSize(filesize);
+            dl.setVerifiedFileSize(filesize);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
             decryptedLinks.add(dl);

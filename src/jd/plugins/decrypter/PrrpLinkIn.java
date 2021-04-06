@@ -44,9 +44,6 @@ public class PrrpLinkIn extends PluginForDecrypt {
             logger.info("Password protected URLs are not yet supported");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (br.containsHTML("hcaptcha\\.com")) {
-            logger.warning("Unsupported captcha type hcaptcha");
-            return null;
         }
         if (br.containsHTML("class=\"QapTcha\"")) {
             final Browser brc = this.br.cloneBrowser();
@@ -55,8 +52,13 @@ public class PrrpLinkIn extends PluginForDecrypt {
         }
         String urlText = br.getRegex("<article.*?>(.*?)</article").getMatch(0);
         if (urlText == null) {
-            logger.warning("Fallback to scanning complete HTML");
-            urlText = this.br.toString();
+            if (br.containsHTML("hcaptcha\\.com")) {
+                logger.warning("Unsupported captcha type hcaptcha");
+                return null;
+            } else {
+                logger.warning("Fallback to scanning complete HTML");
+                urlText = this.br.toString();
+            }
         }
         final String[] finallinks = HTMLParser.getHttpLinks(urlText, "");
         for (final String aLink : finallinks) {
