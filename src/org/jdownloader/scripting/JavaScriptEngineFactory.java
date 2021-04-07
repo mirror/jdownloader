@@ -1029,6 +1029,15 @@ public class JavaScriptEngineFactory {
         }
     }
 
+    public static Object walkJson(final Object json, final String walk) {
+        if (walk == null) {
+            return null;
+        } else {
+            final String[] walkParts = walk.split("/");
+            return walkJson(json, walkParts);
+        }
+    }
+
     /**
      * @param json
      *            Object that was previously parsed via any jsonToJavaObject function.
@@ -1039,13 +1048,13 @@ public class JavaScriptEngineFactory {
      *            3)/{someobject}
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static Object walkJson(final Object json, final String crawlstring) {
-        if (crawlstring == null) {
+    public static Object walkJson(final Object json, final String... walk) {
+        if (walk == null || walk.length == 0) {
             return null;
         }
-        final String[] crawlparts = crawlstring.split("/");
+        final String[] crawlparts = walk;
         String walkedBegin = "";
-        String walkedRemains = crawlstring;
+        String walkedRemains = StringUtils.join(walk, "/");
         Object currentObject = json;
         try {
             for (int i = 0; i < crawlparts.length; i++) {

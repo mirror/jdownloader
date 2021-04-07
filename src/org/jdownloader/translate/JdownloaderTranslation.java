@@ -8,7 +8,7 @@ import org.appwork.txtresource.TranslateInterface;
 @Defaults(lngs = { "en" })
 public interface JdownloaderTranslation extends TranslateInterface {
     //
-    @Default(lngs = { "en", "de" }, values = { "Error occured!", "Fehler aufgetreten!" })
+    @Default(lngs = { "en", "de" }, values = { "Error occurred!", "Fehler aufgetreten!" })
     String dialog_title_exception();
 
     @Default(lngs = { "en", "de" }, values = { "Tools", "Tools" })
@@ -1010,7 +1010,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Re-enter new Password" })
     String newpassworddialog_password_verify();
 
-    @Default(lngs = { "en" }, values = { "A problem occured during the Google signup:\r\n%s1" })
+    @Default(lngs = { "en" }, values = { "A problem occurred during the Google signup:\r\n%s1" })
     String google_error(String error);
 
     @Default(lngs = { "en" }, values = { "Start ALL Downloads (clear forced flag)" })
