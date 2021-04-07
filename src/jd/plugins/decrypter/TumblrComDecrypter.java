@@ -17,14 +17,16 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.TumblrComConfig;
@@ -36,7 +38,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,8 +47,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.*|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
@@ -59,15 +64,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private static final String     GENERALOFFLINE            = ">Not found\\.<";
     private static final String     TYPE_INVALID              = "https?://(?:(?:platform|embed|assets)\\.)tumblr\\.com/.+";
     private static final String     TYPE_FILE                 = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
-    private static final String     TYPE_POST                 = ".+tumblr\\.com/post/\\d+";
+    private static final String     TYPE_POST                 = "https?://(\\w+)\\.[^/]+/post/(\\d+)";
     private static final String     TYPE_IMAGE                = ".+tumblr\\.com/image/\\d+";
     private static final String     TYPE_LOGIN_REQUIRED_LIKES = "https?://(?:www\\.)?tumblr\\.com/likes";
     private static final String     TYPE_USER_LOGGEDIN        = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
     private static final String     TYPE_USER_LOGGEDOUT       = "https?://[^/]+\\.tumblr\\.com/.*?";
     private static final String     TYPE_USER_ARCHIVE         = "https?://[^/]+\\.tumblr\\.com/archive(?:/.*?)?";
     private static final String     urlpart_passwordneeded    = "/blog_auth";
-    private static final String     PLUGIN_DEFECT             = "PLUGINDEFECT";
-    private static final String     OFFLINE                   = "OFFLINE";
     private static final String     PROPERTY_TAGS             = "tags";
     private ArrayList<DownloadLink> decryptedLinks            = null;
     private CryptedLink             param;
@@ -99,51 +102,37 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
             /* Login whenever possible to be able to download account-only-stuff */
-            try {
-                jd.plugins.hoster.TumblrCom.login(this.br, aa, false);
-                isLoggedin = true;
-            } catch (final Throwable e) {
-                handleAccountException(aa, e);
-            }
-        }
-        try {
-            if (parameter.matches(TYPE_FILE)) {
-                decryptFile();
-            } else if (parameter.matches(TYPE_POST)) {
-                decryptPost();
-            } else if (parameter.matches(TYPE_IMAGE)) {
-                decryptedLinks.addAll(processImage(parameter, null, null));
-            } else if (parameter.matches(TYPE_LOGIN_REQUIRED_LIKES)) {
-                decryptLikes();
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.TumblrCom) plg).login(aa, false);
+            if (parameter.matches(TYPE_POST)) {
+                return decryptPostAPI(param);
             } else {
-                /*
-                 * 2016-08-26: Seems like when logged in, users now get the same view they have when not logged in. Using the "old"
-                 * logged-in method, the crawler will not find all entries which is why we now use the normal method (again).
-                 */
-                // if (loggedin) {
-                // decryptUserLoggedIn();
-                // } else {
-                // parameter = convertUserUrlToLoggedOutUser();
-                // decryptUser();
-                // }
-                parameter = convertUserUrlToLoggedOutUser();
-                decryptUser();
+                /* TODO: Add support for other linktypes */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } catch (final BrowserException e) {
-            logger.info("Server error, couldn't decrypt link: " + parameter);
-            return decryptedLinks;
-        } catch (final UnknownHostException eu) {
-            logger.info("UnknownHostException, couldn't decrypt link: " + parameter);
-            return decryptedLinks;
-        } catch (final DecrypterException d) {
-            if (StringUtils.equals(d.getMessage(), PLUGIN_DEFECT)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            } else if (StringUtils.equals(d.getMessage(), OFFLINE)) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            }
-            throw d;
+        } else {
+        }
+        if (parameter.matches(TYPE_FILE)) {
+            decryptFile();
+        } else if (parameter.matches(TYPE_POST)) {
+            decryptPost(param);
+        } else if (parameter.matches(TYPE_IMAGE)) {
+            decryptedLinks.addAll(processImage(parameter, null, null));
+        } else if (parameter.matches(TYPE_LOGIN_REQUIRED_LIKES)) {
+            decryptLikes();
+        } else {
+            /*
+             * 2016-08-26: Seems like when logged in, users now get the same view they have when not logged in. Using the "old" logged-in
+             * method, the crawler will not find all entries which is why we now use the normal method (again).
+             */
+            // if (loggedin) {
+            // decryptUserLoggedIn();
+            // } else {
+            // parameter = convertUserUrlToLoggedOutUser();
+            // decryptUser();
+            // }
+            parameter = convertUserUrlToLoggedOutUser();
+            decryptUser();
         }
         return decryptedLinks;
     }
@@ -193,7 +182,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         // finallink = br.getRedirectLocation();
         // }
         if (finallink == null) {
-            throw new DecrypterException(PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         decryptedLinks.add(createDownloadlink(finallink));
     }
@@ -226,9 +215,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void decryptPost() throws Exception {
+    private void decryptPost(final CryptedLink param) throws Exception {
         // lets identify the unique id for this post, only use it for tumblr hosted content
-        final String puid = new Regex(parameter, "/post/(\\d+)").getMatch(0);
+        final String puid = new Regex(parameter, TYPE_POST).getMatch(0);
         // Single posts
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -263,6 +252,45 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         decryptedLinks.addAll(processGeneric(br, postBody, fpName, puid));
     }
 
+    /** https://www.tumblr.com/docs/en/api/v2#postspost-id---fetching-a-post-neue-post-format */
+    private ArrayList<DownloadLink> decryptPostAPI(final CryptedLink param) throws Exception {
+        // lets identify the unique id for this post, only use it for tumblr hosted content
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String username = new Regex(parameter, TYPE_POST).getMatch(0);
+        final String puid = new Regex(parameter, TYPE_POST).getMatch(1);
+        br.getPage(TumblrCom.API_BASE + "/blog/" + username + "/posts/" + puid);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline (error 404): " + parameter);
+            return null;
+        }
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("response");
+        final List<Object> ressourcelist = (List<Object>) entries.get("content");
+        final String fpName = ((String) entries.get("slug")).replace("-", " ").trim();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+        for (final Object contentO : ressourcelist) {
+            entries = (Map<String, Object>) contentO;
+            final String type = (String) entries.get("type");
+            /* 2021-04-07: Only allow images for now */
+            if (type == null || !type.equals("image")) {
+                continue;
+            }
+            final List<Object> versions = (List<Object>) entries.get("media");
+            /* First version = best version */
+            entries = (Map<String, Object>) versions.get(0);
+            final String url = (String) entries.get("url");
+            final DownloadLink link = this.createDownloadlink(url);
+            link.setAvailable(true);
+            link._setFilePackage(fp);
+            ret.add(link);
+        }
+        if (ret.isEmpty()) {
+            logger.info("Failed to find anything: Post most likely only contained unsupported media");
+        }
+        return ret;
+    }
+
     private String getGoogleCarousel(Browser br) {
         final String result = br.getRegex("<!-- GOOGLE CAROUSEL --><script.*?</script>").getMatch(-1);
         return result;
@@ -289,12 +317,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             br.getPage(Encoding.htmlDecode(externID));
             String cid = br.getRegex("\\&media_type=video\\&content=([A-Z0-9]+)\\&").getMatch(0);
             if (cid == null) {
-                throw new DecrypterException(PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage("//video.vulture.com/item/player_embed.js/" + cid);
             externID = br.getRegex("(https?://videos\\.cache\\.magnify\\.net/[^<>\"]*?)\\'").getMatch(0);
             if (externID == null) {
-                throw new DecrypterException(PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(fpName + externID.substring(externID.lastIndexOf(".")));
@@ -556,7 +584,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> processImage(final String url, final String name, final String ppuid) throws Exception {
         if (url == null) {
-            throw new DecrypterException(PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String puid;
         if (ppuid == null) {
@@ -592,7 +620,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             externID = getBiggestPicture(br);
         }
         if (externID == null) {
-            throw new DecrypterException(PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final DownloadLink dl = createDownloadlink("directhttp://" + externID);
         if (this.passCode != null) {
