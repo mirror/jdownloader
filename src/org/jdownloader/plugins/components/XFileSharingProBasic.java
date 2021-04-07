@@ -709,38 +709,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (!link.isNameSet()) {
             setWeakFilename(link);
         }
-        if (link.getPluginPatternMatcher().matches(TYPE_SHORTURL)) {
-            /* Short URLs -> We need to find the long FUID! */
-            br.setFollowRedirects(true);
-            getPage(link.getPluginPatternMatcher());
-            if (isOffline(link)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String realFUID = null;
-            /* Check for direct-redirect */
-            if (br.getURL().matches(TYPE_NORMAL)) {
-                realFUID = new Regex(br.getURL(), TYPE_NORMAL).getMatch(0);
+        try {
+            this.handleShortURL(link, account);
+        } catch (final PluginException e) {
+            if (isDownload) {
+                throw e;
+            } else if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                throw e;
             } else {
-                final Form form = br.getFormbyProperty("name", "F1");
-                if (form != null) {
-                    realFUID = form.getInputFieldByName("id").getValue();
-                }
-                if (realFUID == null || !realFUID.matches("[a-z0-9]{12}")) {
-                    /**
-                     * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br>
-                     * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
-                     * now!
-                     */
-                    this.checkErrors(link, account, false);
-                    /* Assume that this URL is offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                /* E.g. failed to find TYPE_NORMAL due to limit reached -> We know that the file is online at least! */
+                return AvailableStatus.TRUE;
             }
-            /* Success! */
-            final String urlNew = this.getMainPage() + "/" + realFUID;
-            logger.info("URL old: " + link.getPluginPatternMatcher());
-            logger.info("URL new: " + urlNew);
-            link.setPluginPatternMatcher(urlNew);
         }
         getPage(link.getPluginPatternMatcher());
         if (isOffline(link)) {
@@ -827,6 +806,47 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /**
+     * Handles URLs matching TYPE_SHORTURL and ensures that we get one of TYPE_NORMAL (or Exception). </br>
+     * There are multiple reasons for us to handle this here instead of using a separate crawler plugin. Do NOT move this handling into a
+     * separate crawler plugin!!
+     */
+    protected void handleShortURL(final DownloadLink link, final Account account) throws Exception {
+        if (link.getPluginPatternMatcher().matches(TYPE_SHORTURL)) {
+            /* Short URLs -> We need to find the long FUID! */
+            br.setFollowRedirects(true);
+            getPage(link.getPluginPatternMatcher());
+            if (isOffline(link)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String realFUID = null;
+            /* Check for direct-redirect */
+            if (br.getURL().matches(TYPE_NORMAL)) {
+                realFUID = new Regex(br.getURL(), TYPE_NORMAL).getMatch(0);
+            } else {
+                final Form form = br.getFormbyProperty("name", "F1");
+                if (form != null) {
+                    realFUID = form.getInputFieldByName("id").getValue();
+                }
+                if (realFUID == null || !realFUID.matches("[a-z0-9]{12}")) {
+                    /**
+                     * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br>
+                     * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
+                     * now!
+                     */
+                    this.checkErrors(link, account, false);
+                    /* Assume that this URL is offline */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            /* Success! */
+            final String urlNew = this.getMainPage() + "/" + realFUID;
+            logger.info("URL old: " + link.getPluginPatternMatcher());
+            logger.info("URL new: " + urlNew);
+            link.setPluginPatternMatcher(urlNew);
+        }
     }
 
     /**
@@ -1649,44 +1669,30 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* E.g. in availablecheck */
             return filesizeStr;
         }
-        try {
-            /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
-            this.waitTime(link, System.currentTimeMillis());
-            logger.info("Waiting extra wait seconds: " + getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds());
-            this.sleep(getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() * 1000l, link);
-            getPage(brc, "/dl?op=download_orig&id=" + this.getFUIDFromURL(link) + "&mode=" + videoQualityStr + "&hash=" + videoHash);
-            /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
-            final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
-            if (download1 != null) {
-                this.submitForm(brc, download1);
-                /*
-                 * 2019-08-29: TODO: A 'checkErrors' is supposed to be here but at the moment not possible if we do not use our 'standard'
-                 * browser
-                 */
-            }
+        /* 2019-08-29: Waittime here is possible but a rare case e.g. deltabit.co */
+        this.waitTime(link, System.currentTimeMillis());
+        logger.info("Waiting extra wait seconds: " + getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds());
+        this.sleep(getDllinkViaOfficialVideoDownloadExtraWaittimeSeconds() * 1000l, link);
+        getPage(brc, "/dl?op=download_orig&id=" + this.getFUIDFromURL(link) + "&mode=" + videoQualityStr + "&hash=" + videoHash);
+        /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
+        final Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
+        if (download1 != null) {
+            this.submitForm(brc, download1);
+            this.checkErrors(brc, brc.toString(), link, account, false);
+        }
+        /*
+         * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
+         * streaming URLs) which are completely useless here.
+         */
+        dllink = this.getDllink(link, account, brc, brc.toString());
+        if (StringUtils.isEmpty(dllink)) {
             /*
-             * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
-             * streaming URLs) which are completely useless here.
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = this.getDllink(link, account, brc, brc.toString());
-            if (StringUtils.isEmpty(dllink)) {
-                /*
-                 * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a
-                 * result.
-                 */
-                dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                logger.info("Failed to find final downloadurl");
-            }
-        } catch (final InterruptedException e) {
-            throw e;
-        } catch (final Throwable e) {
-            logger.log(e);
-            logger.warning("Official video download failed: Exception occured");
-            /*
-             * Continue via upper handling - usually videohosts will have streaming URLs available so a failure of this is not fatal for us.
-             */
+            dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.info("Failed to find final downloadurl");
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
@@ -1822,10 +1828,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             handleRecaptchaV2(link, captchaForm);
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
         } else if (captchaForm.containsHTML("hcaptcha\\.com/") || captchaForm.containsHTML("class=\"h-captcha\"")) {
-            /*
-             * TODO: 2020-12-17: Automatically display cookie login dialog in this case if this unsupported captcha type is required during
-             * login process.
-             */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type 'hcaptcha'");
         } else {
             if (StringUtils.containsIgnoreCase(correctedBR, ";background:#ccc;text-align")) {
@@ -3694,6 +3696,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (this.enable_account_api_only_mode()) {
             /* API mode */
+            this.handleShortURL(link, account);
             String dllink = checkDirectLink(link, directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
                 dllink = this.getDllinkAPI(link, account);
@@ -4209,83 +4212,108 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         index++;
                     }
                 }
+                final ArrayList<DownloadLink> apiLinkcheckLinks = new ArrayList<DownloadLink>();
                 sb.delete(0, sb.capacity());
-                for (final DownloadLink dl : links) {
-                    // sb.append("%0A");
-                    sb.append(this.getFUIDFromURL(dl));
-                    sb.append("%2C");
-                }
-                getPage(br, getAPIBase() + "/file/info?key=" + apikey + "&file_code=" + sb.toString());
-                try {
-                    this.checkErrorsAPI(br, links.get(0), null);
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    /* E.g. invalid apikey, broken serverside API. */
-                    logger.info("Fatal failure");
-                    return false;
-                }
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
                 for (final DownloadLink link : links) {
-                    boolean foundResult = false;
-                    for (final Object fileO : ressourcelist) {
-                        entries = (LinkedHashMap<String, Object>) fileO;
-                        final String fuid_temp = (String) entries.get("filecode");
-                        if (fuid_temp != null && fuid_temp.equalsIgnoreCase(this.getFUIDFromURL(link))) {
-                            foundResult = true;
-                            break;
-                        }
-                    }
-                    if (!foundResult) {
-                        /**
-                         * This should never happen. Possible reasons: </br>
-                         * - Wrong APIKey </br>
-                         * - We tried to check too many items at once </br>
-                         * - API only allows users to check self-uploaded content --> Disable API linkchecking in plugin! </br>
-                         * - API does not not allow linkchecking at all --> Disable API linkchecking in plugin! </br>
-                         */
-                        logger.warning("WTF failed to find information for fuid: " + this.getFUIDFromURL(link));
-                        linkcheckerHasFailed = true;
-                        continue;
-                    }
-                    /* E.g. check for "result":[{"status":404,"filecode":"xxxxxxyyyyyy"}] */
-                    final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
-                    if (status != 200) {
-                        link.setAvailable(false);
-                        if (!link.isNameSet()) {
-                            setWeakFilename(link);
-                        }
-                    } else {
-                        link.setAvailable(true);
-                        String filename = (String) entries.get("name");
-                        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-                        final Object canplay = entries.get("canplay");
-                        final Object views_started = entries.get("views_started");
-                        final Object views = entries.get("views");
-                        final Object length = entries.get("length");
-                        final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
-                        if (!StringUtils.isEmpty(filename)) {
-                            /*
-                             * At least for videohosts, filenames from json would often not contain a file extension!
-                             */
-                            if (Encoding.isHtmlEntityCoded(filename)) {
-                                filename = Encoding.htmlDecode(filename);
-                            }
-                            if (isVideohost && !filename.endsWith(".mp4")) {
-                                filename += ".mp4";
-                            }
-                            link.setFinalFileName(filename);
-                        } else {
-                            if (isVideohost) {
-                                link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                    synchronized (link) {
+                        try {
+                            this.handleShortURL(link, null);
+                        } catch (final PluginException e) {
+                            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                                link.setAvailable(false);
+                            } else {
+                                link.setAvailable(true);
                             }
                             if (!link.isNameSet()) {
                                 setWeakFilename(link);
                             }
+                            /*
+                             * We cannot check shortLinks via API so if we're unable to convert them to TYPE_NORMAL we basically already
+                             * checked them here. Also we have to avoid sending wrong fileIDs to the API otherwise linkcheck WILL fail!
+                             */
+                            continue;
                         }
-                        /* Filesize is not always given especially not for videohosts. */
-                        if (filesize > 0) {
-                            link.setDownloadSize(filesize);
+                    }
+                    sb.append(this.getFUIDFromURL(link));
+                    sb.append("%2C");
+                    apiLinkcheckLinks.add(link);
+                }
+                if (apiLinkcheckLinks.isEmpty()) {
+                    /* Rare edge-case */
+                    logger.info("Seems like we got only shortURLs -> Nothing left to be checked via API");
+                } else {
+                    getPage(br, getAPIBase() + "/file/info?key=" + apikey + "&file_code=" + sb.toString());
+                    try {
+                        this.checkErrorsAPI(br, links.get(0), null);
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                        /* E.g. invalid apikey, broken serverside API, developer mistake (e.g. sent fileIDs in invalid format) */
+                        logger.info("Fatal failure");
+                        return false;
+                    }
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                    final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("result");
+                    for (final DownloadLink link : apiLinkcheckLinks) {
+                        boolean foundResult = false;
+                        for (final Object fileO : ressourcelist) {
+                            entries = (LinkedHashMap<String, Object>) fileO;
+                            final String fuid_temp = (String) entries.get("filecode");
+                            if (fuid_temp != null && fuid_temp.equalsIgnoreCase(this.getFUIDFromURL(link))) {
+                                foundResult = true;
+                                break;
+                            }
+                        }
+                        if (!foundResult) {
+                            /**
+                             * This should never happen. Possible reasons: </br>
+                             * - Wrong APIKey </br>
+                             * - We tried to check too many items at once </br>
+                             * - API only allows users to check self-uploaded content --> Disable API linkchecking in plugin! </br>
+                             * - API does not not allow linkchecking at all --> Disable API linkchecking in plugin! </br>
+                             */
+                            logger.warning("WTF failed to find information for fuid: " + this.getFUIDFromURL(link));
+                            linkcheckerHasFailed = true;
+                            continue;
+                        }
+                        /* E.g. check for "result":[{"status":404,"filecode":"xxxxxxyyyyyy"}] */
+                        final long status = JavaScriptEngineFactory.toLong(entries.get("status"), 404);
+                        if (status != 200) {
+                            link.setAvailable(false);
+                            if (!link.isNameSet()) {
+                                setWeakFilename(link);
+                            }
+                        } else {
+                            link.setAvailable(true);
+                            String filename = (String) entries.get("name");
+                            final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+                            final Object canplay = entries.get("canplay");
+                            final Object views_started = entries.get("views_started");
+                            final Object views = entries.get("views");
+                            final Object length = entries.get("length");
+                            final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
+                            if (!StringUtils.isEmpty(filename)) {
+                                /*
+                                 * At least for videohosts, filenames from json would often not contain a file extension!
+                                 */
+                                if (Encoding.isHtmlEntityCoded(filename)) {
+                                    filename = Encoding.htmlDecode(filename);
+                                }
+                                if (isVideohost && !filename.endsWith(".mp4")) {
+                                    filename += ".mp4";
+                                }
+                                link.setFinalFileName(filename);
+                            } else {
+                                if (isVideohost) {
+                                    link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                                }
+                                if (!link.isNameSet()) {
+                                    setWeakFilename(link);
+                                }
+                            }
+                            /* Filesize is not always given especially not for videohosts. */
+                            if (filesize > 0) {
+                                link.setDownloadSize(filesize);
+                            }
                         }
                     }
                 }
