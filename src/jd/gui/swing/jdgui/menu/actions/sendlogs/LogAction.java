@@ -21,13 +21,14 @@ import java.util.List;
 
 import jd.controlling.ClipboardMonitoring;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.logging2.LogSink.FLUSH;
 import org.appwork.utils.logging2.LogSourceProvider;
 import org.appwork.utils.logging2.sendlogs.AbstractLogAction;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -36,7 +37,11 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.startup.commands.ThreadDump;
 
 public class LogAction extends AbstractLogAction {
-    protected String id;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 2812939206413328737L;
+    protected String          id;
 
     public LogAction() {
         super();
@@ -47,9 +52,14 @@ public class LogAction extends AbstractLogAction {
     }
 
     @Override
+    protected void create() throws DialogClosedException, DialogCanceledException {
+        new ThreadDump().run(null, new String[0]);
+        super.create();
+    }
+
+    @Override
     protected void createPackage(List<LogFolder> selection) throws Exception {
         id = null;
-        new ThreadDump().run(null, new String[0]);
         super.createPackage(selection);
         final String id = this.id;
         if (id != null) {
@@ -64,13 +74,16 @@ public class LogAction extends AbstractLogAction {
     protected void onNewPackage(File zip, String name) throws IOException {
         try {
             if (Thread.currentThread().isInterrupted()) {
-                throw new WTFException("INterrupted");
+                throw new InterruptedException("Interrupted");
             }
             id = JDServUtils.uploadLog(zip, id);
             if (Thread.currentThread().isInterrupted()) {
-                throw new WTFException("INterrupted");
+                throw new InterruptedException("Interrupted");
             }
+        } catch (InterruptedException e) {
+            LogController.CL().log(e);
         } catch (Exception e) {
+            LogController.CL().log(e);
             Dialog.getInstance().showExceptionDialog("Exception ocurred", e.getMessage(), e);
         }
     }
