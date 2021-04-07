@@ -21,8 +21,17 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,15 +46,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servus.com", "pm-wissen.com" }, urls = { "https?://(?:www\\.)?(?:servus|servustv)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)", "https?://(?:www\\.)?(?:pm-wissen)\\.com/(?:(?:.*/)?videos/|(?:de|at)/p/[^/]+/)([A-Za-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ServusCom extends PluginForHost {
     public ServusCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,15 +57,37 @@ public class ServusCom extends PluginForHost {
         return "http://www.servustv.com/Nutzungsbedingungen";
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "servus.com", "servustv.com" });
+        ret.add(new String[] { "pm-wissen.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public String rewriteHost(String host) {
-        /* 2020-02-27: servustv.com does still exist and is still used but we've already switched to servus.com a long time ago ... */
-        if ("servustv.com".equals(getHost())) {
-            if (host == null || "servustv.com".equals(host)) {
-                return "servus.com";
-            }
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:";
+            regex += "(?:.*/)?(?:videos|v)/[A-Za-z0-9\\-]+";
+            regex += "|(?:de|at)/p/[^/]+/[A-Za-z0-9\\-]+";
+            regex += ")";
+            ret.add(regex);
         }
-        return super.rewriteHost(host);
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -78,7 +101,7 @@ public class ServusCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9\\-]+)$").getMatch(0);
         if (fid != null) {
             fid = fid.toUpperCase();
         }
@@ -163,7 +186,7 @@ public class ServusCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final ArrayList<Object> attributes = (ArrayList<Object>) entries.get("attributes");
-            /* TODO: This is NOT the release-date! */
+            /* Note: This is NOT the release-date!! */
             // date = (String) entries.get("lastPublished");
             title = (String) this.getAttribute(attributes, "title");
             episodename = (String) this.getAttribute(attributes, "chapter");
