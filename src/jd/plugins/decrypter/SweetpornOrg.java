@@ -19,18 +19,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SweetpornOrg extends PluginForDecrypt {
@@ -79,16 +82,23 @@ public class SweetpornOrg extends PluginForDecrypt {
         String fpName = new Regex(parameter, "/([a-z0-9\\-]+)/.*$").getMatch(0).replace("-", " ");
         final String[] ids = br.getRegex("get_download_link\\('([^<>\"\\']+)").getColumn(0);
         if (ids.length == 0) {
-            logger.info("Failed to find any downloadable content");
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
+        final String thumbnails[] = br.getRegex("href\\s*=\\s*\"[^\"]*goto[^\"]*\"[^>]*>\\s*<img\\s*src\\s*=\\s*\"(https?://.*?)\"").getColumn(0);
+        for (String thumbnail : thumbnails) {
+            final DownloadLink dl = createDownloadlink(thumbnail);
+            dl._setFilePackage(fp);
+            decryptedLinks.add(dl);
+            distribute(dl);
+        }
         int index = 0;
         for (final String id : ids) {
             logger.info("Crawling item " + (index + 1) + " / " + ids.length);
-            br.postPage("/get_file.php", "id=" + Encoding.urlEncode(id));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Browser brc = br.cloneBrowser();
+            brc.postPage("/get_file.php", "id=" + Encoding.urlEncode(id));
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             final String html = (String) entries.get("htmlcode");
             final String url = new Regex(html, "<a href=\"([^\"]+)").getMatch(0);
             if (url != null) {
