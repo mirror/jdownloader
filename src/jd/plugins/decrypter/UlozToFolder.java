@@ -27,6 +27,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -114,11 +115,7 @@ public class UlozToFolder extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws IOException, PluginException, DecrypterException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* TODO */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("X-Auth-Token", "TODO");
+        br.getHeaders().put("X-Auth-Token", Encoding.Base64Decode("cFowJHRsWExlTGNAOEh1clNaUFA"));
         final String rootFolderID = new Regex(param.getCryptedUrl(), TYPE_FOLDER).getMatch(0);
         final String folderID;
         /**
@@ -191,12 +188,6 @@ public class UlozToFolder extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(folderName);
-        // if (!StringUtils.isEmpty(folderName)) {
-        // fp.setName(folderName);
-        // } else {
-        // /* Fallback */
-        // fp.setName(folderID);
-        // }
         int offset = 0;
         int page = 0;
         logger.info("Crawling files");
