@@ -201,7 +201,7 @@ public class TiktokCom extends antiDDoSForHost {
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
-                    con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(dllink));
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                     if (!this.looksLikeDownloadableContent(con)) {
                         server_issues = true;
                         try {
