@@ -24,12 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -46,7 +40,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+/[A-Za-z0-9\\-_]+)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
 public class RedditCom extends PluginForDecrypt {
@@ -236,7 +237,7 @@ public class RedditCom extends PluginForDecrypt {
         } while (!this.isAbort());
     }
 
-    /** 2020-11-11: Currently does the same as {@link #crawlCommentURL()}} */
+    /** 2020-11-11: Currently does the same as {@link #crawlCommentURL()} */
     private void crawlGalleryURL() throws Exception {
         final String commentID = new Regex(this.parameter, TYPE_GALLERY).getMatch(0);
         crawlComments(commentID);
@@ -317,12 +318,16 @@ public class RedditCom extends PluginForDecrypt {
                     imageNumber += 1;
                     final Entry<String, Object> entry = iterator.next();
                     final Map<String, Object> mediaInfo = (Map<String, Object>) entry.getValue();
-                    String extension = "jpg";
                     /* "image/png" --> "png" */
                     String mediaType = (String) mediaInfo.get("m");
-                    if (mediaType.contains("/")) {
+                    String extension = DirectHTTP.getExtensionFromMimeType(mediaType);
+                    if (extension == null && mediaType.contains("/")) {
                         final String[] mediaTypeSplit = mediaType.split("/");
                         extension = mediaTypeSplit[mediaTypeSplit.length - 1];
+                    }
+                    if (extension == null) {
+                        // fallback
+                        extension = "jpg";
                     }
                     final String media_id = (String) mediaInfo.get("id");
                     final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + media_id + "." + extension);

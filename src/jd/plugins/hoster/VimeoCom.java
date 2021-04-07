@@ -59,6 +59,7 @@ import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -1008,7 +1009,7 @@ public class VimeoCom extends PluginForHost {
                     continue;
                 }
                 vvc.setSource(Source.SUBTITLE);
-                vvc.setDownloadurl(br.getURL(url).toString());
+                vvc.setDownloadurl(URLHelper.parseLocation(new URL("https://vimeo.com"), url).toString());
                 vvc.setLang(lang);
                 final Number id = getNumber(text_track, "id");
                 if (id != null) {

@@ -60,10 +60,10 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "A new JDownloader Update is available. To install, a restart is required.\r\nDo you want to restart & install the update now?", "Ein neues JDownloader Update steht zur Installation bereit. Zur Installation muss ein Neustart durchgeführt werden.\r\nSoll jetzt neu gestartet und installiert werden?\r\n" })
     String confirmdialog_new_update_available_for_install_message();
 
-    @Default(lngs = { "en", "de" }, values = { "An Error occured", "Ein Fehler ist aufgetreten" })
+    @Default(lngs = { "en", "de" }, values = { "An Error occurred", "Ein Fehler ist aufgetreten" })
     String errordialog_frametitle();
 
-    @Default(lngs = { "en", "de" }, values = { "An unexpected error occured during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
+    @Default(lngs = { "en", "de" }, values = { "An unexpected error occurred during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
     String errordialog_message();
 
     @Default(lngs = { "en", "de" }, values = { "JDownloader could not connect to the Updateserver.\r\nPlease make sure that you are connected to the Internet.", "JDownloader konnte keine Verbindung zum Updateserver herstellen.\r\nBitte stellen Sie sicher, dass Sie mit dem Internet verbunden sind." })
@@ -153,7 +153,7 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Add %s1 and remove %s2 JDownloader extension(s)?. We recommend to do this now!\r\nDo you want to continue now?", "%s1 JDownloader Erweiterungen hinzufügen und %s2 entfernen?. Wir empfehlen das jetzt zu tun!\r\nJetzt fortfahren?" })
     String confirmdialog_new_update_available_for_install_message_extensions(int install, int uninstall);
 
-    @Default(lngs = { "en", "de" }, values = { "An unexpected IO error occured during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein IO Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
+    @Default(lngs = { "en", "de" }, values = { "An unexpected IO error occurred during the update.\r\nPlease try again or contact our support.", "Während dem Update ist ein IO Fehler aufgetreten.\r\nVersuchen Sie es erneut, oder kontaktieren Sie unseren Support." })
     String errordialog_defaultio();
 
     @Default(lngs = { "en", "de" }, values = { "Failed to install the update. Please try again later.\r\nIf this problem does not \"solve itself\" after a few hours, contact our support or reinstall JDownloader.", "Das Update konnte nicht installiert werden. Bitte versuch es später erneut.\r\nInstalliere JDownloader bitte neu oder kontaktiere unseren Support falls sich das Problem nicht innerhalb einiger Stunden \"von selbst löst\"!" })

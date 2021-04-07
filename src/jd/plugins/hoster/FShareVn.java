@@ -26,13 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -55,6 +48,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" })
 public class FShareVn extends PluginForHost {
@@ -126,14 +126,16 @@ public class FShareVn extends PluginForHost {
             br.setFollowRedirects(true);
             try {
                 con = br.openHeadConnection(redirect);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    br.followConnection();
+                if (!looksLikeDownloadableContent(con)) {
+                    br.followConnection(true);
                     if (con.getRequestMethod() == RequestMethod.HEAD) {
                         br.getPage(redirect);
                     }
                 } else {
                     link.setName(getFileNameFromHeader(con));
-                    link.setVerifiedFileSize(con.getLongContentLength());
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     // lets also set dllink
                     dllink = br.getURL();
                     return AvailableStatus.TRUE;
@@ -221,11 +223,15 @@ public class FShareVn extends PluginForHost {
         if (dllink != null) {
             /* these are effectively premium links? */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-            if (!dl.getConnection().getContentType().contains("html")) {
+            if (looksLikeDownloadableContent(dl.getConnection())) {
                 dl.startDownload();
-                return;
-            } else {
-                br.followConnection();
+            }
+            return;
+        } else {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
                 dllink = null;
             }
         }
@@ -319,12 +325,17 @@ public class FShareVn extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML(SERVERERROR)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -403,12 +414,17 @@ public class FShareVn extends PluginForHost {
                 dllink = getDllinkPremium(link, account);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 if (br.containsHTML(SERVERERROR)) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
@@ -478,7 +494,7 @@ public class FShareVn extends PluginForHost {
         String dllink = null;
         try {
             con = br.openGetConnection(link.getPluginPatternMatcher());
-            if (con.isContentDisposition()) {
+            if (looksLikeDownloadableContent(con)) {
                 logger.info("Found direct-URL");
                 dllink = con.getURL().toString();
             } else {
@@ -973,26 +989,28 @@ public class FShareVn extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                return null;
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 }

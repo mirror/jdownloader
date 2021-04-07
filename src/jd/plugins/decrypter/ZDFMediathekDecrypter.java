@@ -26,13 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,6 +39,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -233,7 +233,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         // final Object hasVideoo = entries.get("hasVideo");
         // final boolean hasVideo = hasVideoo != null && hasVideoo instanceof Boolean ? ((Boolean) entries.get("hasVideo")).booleanValue() :
         // false;
-        entries2 = (Map<String, Object>) entries.get("http://zdf.de/rels/brand");
+        String tv_show = (String) JavaScriptEngineFactory.walkJson(entries, "http://zdf.de/rels/brand", "title");
         entries2 = (Map<String, Object>) entries.get("mainVideoContent");
         if (entries2 == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
@@ -244,9 +244,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             return results;
         }
-        entries2 = (Map<String, Object>) entries2.get("http://zdf.de/rels/target");
-        final String tv_show = (String) entries2.get("title");
-        entries2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries2, "streams/default");
+        entries2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries2, "http://zdf.de/rels/target", "streams", "default");
         final String player_url_template = (String) entries2.get("http://zdf.de/rels/streams/ptmd-template");
         String internal_videoid = (String) entries2.get("extId");
         if (StringUtils.isEmpty(player_url_template)) {
@@ -613,8 +611,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     final_filename = filename_packagename_base_title + "_" + protocol + "_" + quality + "_" + language + "_" + audio_class_user_readable + "." + ext;
                     dl = createDownloadlink(finalDownloadURL);
                     /**
-                     * Usually filesize is only given for the official downloads.</br>
-                     * Only set it here if we haven't touched the original downloadurls!
+                     * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the original
+                     * downloadurls!
                      */
                     if (filesize > 0 && !downloadurlWasModified) {
                         dl.setAvailable(true);
@@ -719,6 +717,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         return heightselect;
     }
+
     // private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> bestMap) {
     // HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
     // DownloadLink keep = null;
@@ -737,7 +736,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     // }
     // return newMap;
     // }
-
     private DownloadLink findBESTInsideGivenMapNew(final HashMap<String, DownloadLink> bestMap, final List<String> allKnownQualities) {
         DownloadLink keep = null;
         if (bestMap.size() > 0) {

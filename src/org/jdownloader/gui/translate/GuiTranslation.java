@@ -118,7 +118,7 @@ public interface GuiTranslation extends TranslateInterface {
     String gui_plugin_settings_share_online_shared_ip_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-            "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
+    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
     String gui_plugin_settings_share_online_traffic_workaround();
 
     @Default(lngs = { "en", "de" }, values = { "<html>Enable max. traffic workaround?<br /><p style=\"color:#808080\">The calculation of the traffic is decreased before the download and added again later if necessary. This does not exceed the limit of 100 GB per day.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>", "<html>Aktiviere max. traffic workaround?<br /><p style=\"color:#808080\">Die Berechnung vom Traffic wird vor dem Download abgezogen und später wieder hinzugefügt, wenn erforderlich. Dadurch wird das Limit von 100 GB pro Tag keinesfalls überschritten.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
@@ -2395,7 +2395,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import Menu Structure" })
     String ManagerFrame_actionPerformed_import_title();
 
-    @Default(lngs = { "en" }, values = { "An Error occured..." })
+    @Default(lngs = { "en" }, values = { "An Error occurred..." })
     String lit_error_occured();
 
     @Default(lngs = { "en" }, values = { "Use Account(s) to download" })
@@ -4034,7 +4034,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Continue" })
     String lit_continue();
 
-    @Default(lngs = { "en" }, values = { "An Error occured! " })
+    @Default(lngs = { "en" }, values = { "An Error occurred! " })
     String FilePackageView_addLinkToTemp_downloaderror_();
 
     @Default(lngs = { "en" }, values = { "Icons & Artwork:" })
@@ -4947,7 +4947,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "We need your help!" })
     String UploadSessionLogDialog_UploadSessionLogDialog_object_title2();
 
-    @Default(lngs = { "en" }, values = { "A unknown problem occured while downloading a file. To solve this problem, we need more details about the reason. JDownloader is able to collect all required informations about the bug automatically. Please help us to fix that problem as soon as possible by sending these informations." })
+    @Default(lngs = { "en" }, values = { "A unknown problem occurred while downloading a file. To solve this problem, we need more details about the reason. JDownloader is able to collect all required informations about the bug automatically. Please help us to fix that problem as soon as possible by sending these informations." })
     String UploadSessionLogDialog_UploadSessionLogDialog_object_msg2();
 
     @Default(lngs = { "en" }, values = { "I want to help! Continue." })
