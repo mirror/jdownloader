@@ -14,7 +14,7 @@ import org.jdownloader.plugins.config.Type;
 public interface TiktokConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Activate experimental forced SSL for downloads?")
+    @DescriptionForConfigEntry("Enable fast linkcheck?")
     @Order(10)
     boolean isEnableFastLinkcheck();
 

@@ -74,8 +74,9 @@ public class TiktokCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), "/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String              dllink             = null;
+    private boolean             server_issues      = false;
+    private static final String PROPERTY_DIRECTURL = "directurl";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -85,6 +86,11 @@ public class TiktokCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
+        /** Doesn't work as their video directurls are only valid one time. */
+        // if (link.hasProperty(PROPERTY_DIRECTURL) && checkDirecturlAndSetFilesize(link, link.getStringProperty(PROPERTY_DIRECTURL))) {
+        // logger.info("Availablecheck only via directurl done");
+        // return AvailableStatus.TRUE;
+        // }
         String user = null;
         final String fid = getFID(link);
         if (fid == null) {
@@ -195,7 +201,7 @@ public class TiktokCom extends antiDDoSForHost {
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setFollowRedirects(true);
-                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                    con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(dllink));
                     if (!this.looksLikeDownloadableContent(con)) {
                         server_issues = true;
                         try {
@@ -222,6 +228,25 @@ public class TiktokCom extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(directurl);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                return true;
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return false;
     }
 
     public static boolean isBotProtectionActive(final Browser br) {
@@ -266,11 +291,11 @@ public class TiktokCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
-        doFree(link, RESUME, MAXCHUNKS, "free_directlink");
+        doFree(link, RESUME, MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        requestFileInformation(link, true);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
@@ -292,10 +317,37 @@ public class TiktokCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        /* Save it for later usage */
+        link.setProperty(PROPERTY_DIRECTURL, this.dllink);
         dl.startDownload();
     }
 
+    /** Doesn't work as their video directurls are only valid one time. */
+    // private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws
+    // Exception {
+    // final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+    // if (StringUtils.isEmpty(url)) {
+    // return false;
+    // }
+    // try {
+    // final Browser brc = br.cloneBrowser();
+    // brc.getHeaders().put("Referer", "https://www.tiktok.com/");
+    // dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+    // if (this.looksLikeDownloadableContent(dl.getConnection())) {
+    // return true;
+    // } else {
+    // brc.followConnection(true);
+    // throw new IOException();
+    // }
+    // } catch (final Throwable e) {
+    // logger.log(e);
+    // try {
+    // dl.getConnection().disconnect();
+    // } catch (Throwable ignore) {
+    // }
+    // return false;
+    // }
+    // }
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return PluginJsonConfig.get(getConfigInterface()).getMaxSimultaneousDownloads();

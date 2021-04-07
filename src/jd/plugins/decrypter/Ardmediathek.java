@@ -431,6 +431,10 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             show = PluginJSonUtils.getJson(newjson, "show");
             title = PluginJSonUtils.getJson(newjson, "clipTitle");
+            if (StringUtils.isEmpty(title)) {
+                /* 2021-04-07: wdr.de */
+                title = PluginJSonUtils.getJson(newjson, "trackerClipTitle");
+            }
             if (title == null) {
                 title = br.getRegex("<meta name\\s*=\\s*\"dcterms.title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
             }
@@ -719,12 +723,18 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             if (StringUtils.isEmpty(url_json)) {
                 /* No downloadable content --> URL should be offline (or only text content) */
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            }
-            br.getPage(url_json);
-            /* No json --> No media to crawl (rare case!)! */
-            if (!br.getHttpConnection().getContentType().contains("application/json") && !br.getHttpConnection().getContentType().contains("application/javascript") && !br.containsHTML("\\{") || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 10) {
-                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                /* 2021-04-07: Check for special case e.g. for wdr.de */
+                final String json = br.getRegex("globalObject\\.gseaInlineMediaData\\[\"mdb-\\d+\"\\] =\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
+                if (json == null) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                br.getRequest().setHtmlCode(json);
+            } else {
+                br.getPage(url_json);
+                /* No json --> No media to crawl (rare case!)! */
+                if (!br.getHttpConnection().getContentType().contains("application/json") && !br.getHttpConnection().getContentType().contains("application/javascript") && !br.containsHTML("\\{") || br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 10) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
             }
         }
         title = getMediathekTitle(brBefore, this.br);
@@ -796,7 +806,14 @@ public class Ardmediathek extends PluginForDecrypt {
                             final String url = br.getURL(stream).toString();
                             final int widthInt;
                             final int heightInt;
-                            if (quality == 0 && streams.size() == 1) {
+                            /*
+                             * Sometimes the resolutions is given, sometimes we have to assume it and sometimes (e.g. HLS streaming) there
+                             * are multiple qualities available for one stream URL.
+                             */
+                            if (mediaStream.containsKey("_width") && mediaStream.containsKey("_height")) {
+                                widthInt = ((Number) mediaStream.get("_width")).intValue();
+                                heightInt = ((Number) mediaStream.get("_height")).intValue();
+                            } else if (quality == 0 && streams.size() == 1) {
                                 widthInt = 320;
                                 heightInt = 180;
                             } else if (quality == 1 && streams.size() == 1) {
