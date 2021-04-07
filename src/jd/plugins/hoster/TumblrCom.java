@@ -16,6 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -34,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" })
 public class TumblrCom extends PluginForHost {
@@ -69,7 +81,10 @@ public class TumblrCom extends PluginForHost {
         return -1;
     }
 
-    private static final String ADDITION = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+    private static final String ADDITION        = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+    /* API docs: https://www.tumblr.com/docs/en/api/v2#what-you-need */
+    public static final String  API_BASE        = "https://www.tumblr.com/api/v2";
+    private static final String PROPERTY_APIKEY = "apikey";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -79,7 +94,7 @@ public class TumblrCom extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             /* Login whenever possible to be able to download account-only-stuff */
-            login(this.br, aa, false);
+            login(aa, false);
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The URL you requested could not be found")) {
@@ -171,50 +186,60 @@ public class TumblrCom extends PluginForHost {
         return dllink;
     }
 
-    private static Object LOCK = new Object();
-
-    @SuppressWarnings("deprecation")
-    public static void login(Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+                String apikey = account.getStringProperty(PROPERTY_APIKEY);
+                if (cookies != null && apikey != null) {
                     br.setCookies(account.getHoster(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
+                    br.getHeaders().put("Authorization", "Bearer " + apikey);
+                    if (!force) {
+                        logger.info("Trust cookies without check");
                         return;
-                    }
-                    /* Check cookies */
-                    br.getPage("https://www." + account.getHoster() + "/dashboard");
-                    if ("1".equals(br.getCookie(account.getHoster(), "logged_in"))) {
-                        /* Refresh timestamp */
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
-                        return;
-                    }
-                    /* Delete cookies / Headers to perform a full login */
-                    br = new Browser();
-                }
-                br.getPage("https://www." + account.getHoster() + "/login");
-                final String formkey = br.getRegex("name=\"form_key\" value=\"([^\"]+)\"").getMatch(0);
-                if (formkey == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        /* Check cookies */
+                        br.getHeaders().put("Authorization", "Bearer " + apikey);
+                        br.getPage(API_BASE + "/user/info?fields%5Bblogs%5D=avatar%2Cname%2Ctitle%2Curl%2Ccan_message%2Cdescription%2Cis_adult%2Cuuid%2Cis_private_channel%2Cposts%2Cis_group_channel%2C%3Fprimary%2C%3Fadmin%2C%3Fdrafts%2C%3Ffollowers%2C%3Fqueue%2C%3Fhas_flagged_posts%2Cmessages%2Cask%2C%3Fcan_submit%2C%3Ftweet%2Cmention_key%2C%3Ftimezone_offset%2C%3Fanalytics_url%2C%3Fis_premium_partner%2C%3Fis_blogless_advertiser%2C%3Fcan_onboard_to_paywall%2C%3Fis_tumblrpay_onboarded%2C%3Fis_paywall_on%2C%3Flinked_accounts");
+                        try {
+                            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                            if (entries.containsKey("errors")) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
+                            logger.info("Cookie login successful");
+                            return;
+                        } catch (final Throwable e) {
+                            logger.info("Cookie login failed");
+                        }
+                        /* Delete cookies / Headers to perform a full login */
+                        this.br.clearAll();
                     }
                 }
-                final String postData = "determine_email=" + Encoding.urlEncode(account.getUser()) + "&user%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&tumblelog%5Bname%5D=&user%5Bage%5D=&context=home_signup&version=STANDARD&follow=&http_referer=https%3A%2F%2Fwww.tumblr.com%2F&form_key=" + Encoding.urlEncode(formkey) + "&seen_suggestion=0&used_suggestion=0&used_auto_suggestion=0&about_tumblr_slide=&random_username_suggestions=%5B%5D";
-                br.postPage("/login", postData);
-                if (!"1".equals(br.getCookie(account.getHoster(), "logged_in"))) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (userCookies == null) {
+                    showCookieLoginInformation();
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login required", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.setCookies(userCookies);
+                br.getPage("https://www." + this.getHost() + "/dashboard");
+                apikey = PluginJSonUtils.getJson(br, "API_TOKEN");
+                if (StringUtils.isEmpty(apikey)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                br.getHeaders().put("Authorization", "Bearer " + apikey);
+                br.getPage(API_BASE + "/user/info?fields%5Bblogs%5D=avatar%2Cname%2Ctitle%2Curl%2Ccan_message%2Cdescription%2Cis_adult%2Cuuid%2Cis_private_channel%2Cposts%2Cis_group_channel%2C%3Fprimary%2C%3Fadmin%2C%3Fdrafts%2C%3Ffollowers%2C%3Fqueue%2C%3Fhas_flagged_posts%2Cmessages%2Cask%2C%3Fcan_submit%2C%3Ftweet%2Cmention_key%2C%3Ftimezone_offset%2C%3Fanalytics_url%2C%3Fis_premium_partner%2C%3Fis_blogless_advertiser%2C%3Fcan_onboard_to_paywall%2C%3Fis_tumblrpay_onboarded%2C%3Fis_paywall_on%2C%3Flinked_accounts");
+                try {
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    if (entries.containsKey("errors")) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+                } catch (final Throwable e) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.setProperty(PROPERTY_APIKEY, apikey);
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -222,20 +247,53 @@ public class TumblrCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private Thread showCookieLoginInformation() {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    final String help_article_url = "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Tumblr.com - Login";
+                        message += "Hallo liebe(r) Tumblr NutzerIn\r\n";
+                        message += "Um deinen Tumblr Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        message += "Folge der Anleitung im Hilfe-Artikel:\r\n";
+                        message += help_article_url;
+                    } else {
+                        title = "Tumblr.com - Login";
+                        message += "Hello dear Tumblr user\r\n";
+                        message += "In order to use an account of this service in JDownloader, you need to follow these instructions:\r\n";
+                        message += help_article_url;
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(3 * 60 * 1000);
+                    if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(help_article_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/user");
+        /* User could enter any name as username during cookie login -> Fixed this -> Make sure that name is unique */
+        account.setUser((String) entries.get("name"));
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
