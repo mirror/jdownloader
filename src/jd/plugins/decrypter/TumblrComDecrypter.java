@@ -16,7 +16,6 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +26,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.TumblrComConfig;
@@ -55,20 +55,20 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.*|/(?:dashboard/)?blog/[^/]+|/likes)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+(?:\\?password=.+)?|/?$|/archive.*|/blog/view/[^/]+|/likes)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
     public TumblrComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String     GENERALOFFLINE            = ">Not found\\.<";
+    private static final String     GENERALOFFLINE            = "(?i)>\\s*Not found\\.<";
     private static final String     TYPE_INVALID              = "https?://(?:(?:platform|embed|assets)\\.)tumblr\\.com/.+";
     private static final String     TYPE_FILE                 = ".+tumblr\\.com/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+";
     private static final String     TYPE_POST                 = "https?://(\\w+)\\.[^/]+/post/(\\d+)";
     private static final String     TYPE_IMAGE                = ".+tumblr\\.com/image/\\d+";
     private static final String     TYPE_LOGIN_REQUIRED_LIKES = "https?://(?:www\\.)?tumblr\\.com/likes";
-    private static final String     TYPE_USER_LOGGEDIN        = "https?://(?:www\\.)?tumblr\\.com/(?:dashboard/)?blog/([^/]+)";
-    private static final String     TYPE_USER_LOGGEDOUT       = "https?://[^/]+\\.tumblr\\.com/.*?";
+    private static final String     TYPE_USER_LOGGEDIN        = "https?://(?:www\\.)?tumblr\\.com/blog/view/([^/]+)";
+    private static final String     TYPE_USER_LOGGEDOUT       = "https?://([^/]+)\\.tumblr\\.com/.*";
     private static final String     TYPE_USER_ARCHIVE         = "https?://[^/]+\\.tumblr\\.com/archive(?:/.*?)?";
     private static final String     urlpart_passwordneeded    = "/blog_auth";
     private static final String     PROPERTY_TAGS             = "tags";
@@ -104,11 +104,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             /* Login whenever possible to be able to download account-only-stuff */
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.TumblrCom) plg).login(aa, false);
-            if (parameter.matches(TYPE_POST)) {
-                return decryptPostAPI(param);
-            } else {
-                /* TODO: Add support for other linktypes */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (parameter.matches(TYPE_POST)) {
+                    return decryptPostAPI(param);
+                } else {
+                    return decryptUserAPI(param);
+                }
             }
         } else {
         }
@@ -162,9 +163,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
     private String getUsername(final String source) {
         final String url_username;
         if (source.matches(TYPE_USER_LOGGEDIN)) {
-            url_username = new Regex(source, "/([^/]+)$").getMatch(0);
+            url_username = new Regex(source, TYPE_USER_LOGGEDIN).getMatch(0);
         } else {
-            url_username = new Regex(source, "^https?://([^/]+)\\.tumblr\\.com").getMatch(0);
+            url_username = new Regex(source, "^https?://([^/]+)\\.tumblr\\.com/.*").getMatch(0);
         }
         return url_username;
     }
@@ -260,35 +261,70 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         final String puid = new Regex(parameter, TYPE_POST).getMatch(1);
         br.getPage(TumblrCom.API_BASE + "/blog/" + username + "/posts/" + puid);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline (error 404): " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("response");
-        final List<Object> ressourcelist = (List<Object>) entries.get("content");
-        final String fpName = ((String) entries.get("slug")).replace("-", " ").trim();
+        this.crawlSinglePostJsonAPI(ret, entries);
+        // final String fpName = ((String) entries.get("slug")).replace("-", " ").trim();
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(fpName);
+        return ret;
+    }
+
+    private void crawlSinglePostJsonAPI(final ArrayList<DownloadLink> ret, Map<String, Object> entries) {
+        // final String postURL = (String) entries.get("post_url");
+        final String blogName = (String) entries.get("blog_name");
+        final String fpName = blogName + " - " + ((String) entries.get("slug")).replace("-", " ").trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        for (final Object contentO : ressourcelist) {
-            entries = (Map<String, Object>) contentO;
-            final String type = (String) entries.get("type");
-            /* 2021-04-07: Only allow images for now */
-            if (type == null || !type.equals("image")) {
-                continue;
+        // final int arraySizeBefore = ret.size();
+        final List<Object> repostList = (List<Object>) entries.get("trail");
+        final List<Object> contentArrays = new ArrayList<Object>();
+        contentArrays.add(entries.get("content"));
+        for (final Object repostO : repostList) {
+            entries = (Map<String, Object>) repostO;
+            if (entries.containsKey("content")) {
+                contentArrays.add(entries.get("content"));
             }
-            final List<Object> versions = (List<Object>) entries.get("media");
-            /* First version = best version */
-            entries = (Map<String, Object>) versions.get(0);
-            final String url = (String) entries.get("url");
-            final DownloadLink link = this.createDownloadlink(url);
-            link.setAvailable(true);
-            link._setFilePackage(fp);
-            ret.add(link);
         }
-        if (ret.isEmpty()) {
-            logger.info("Failed to find anything: Post most likely only contained unsupported media");
+        for (final Object contentArrayO : contentArrays) {
+            final List<Object> ressourcelist = (List<Object>) contentArrayO;
+            for (final Object contentO : ressourcelist) {
+                entries = (Map<String, Object>) contentO;
+                /* Possible types: image, text, link, video */
+                final String type = (String) entries.get("type");
+                /* 2021-04-07: Only allow images for now */
+                if (StringUtils.isEmpty(type)) {
+                    /* This should never happen */
+                    continue;
+                } else if (!type.matches("image|video")) {
+                    /* TODO: Maybe optionally also crawl content of type "link" (== external links) */
+                    continue;
+                }
+                final DownloadLink dl;
+                if (type.equals("video")) {
+                    /* Videos only have 1 version available */
+                    final String url = (String) JavaScriptEngineFactory.walkJson(entries, "media/url");
+                    dl = this.createDownloadlink(url);
+                } else {
+                    final List<Object> versions = (List<Object>) entries.get("media");
+                    /* First version = best version */
+                    entries = (Map<String, Object>) versions.get(0);
+                    final String url = (String) entries.get("url");
+                    dl = this.createDownloadlink(url);
+                }
+                dl.setAvailable(true);
+                // link.setContentUrl(postURL);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+            }
         }
-        return ret;
+        // int numberofFoundItems = ret.size() - arraySizeBefore;
+        // if (numberofFoundItems == 0) {
+        // logger.info("Failed to find anything: Post most likely only contained unsupported media: " + postURL);
+        // }
     }
 
     private String getGoogleCarousel(Browser br) {
@@ -748,6 +784,59 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         logger.info("Decryption done - last 'nextPage' value was: " + nextPage);
     }
 
+    /**
+     * Crawls all posts of a blog via API: </br>
+     * https://www.tumblr.com/docs/en/api/v2#posts--retrieve-published-posts
+     */
+    private ArrayList<DownloadLink> decryptUserAPI(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String username = getUsername(param.getCryptedUrl());
+        if (username == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // br.getPage(TumblrCom.API_BASE + "/blog/" + Encoding.urlEncode(username) + ".tumblr.com/info");
+        /* 2021-04-08: TODO: Limit fields we request so we only get what we need in order to prevent wasting resources (?) */
+        br.getPage(TumblrCom.API_BASE + "/blog/" + Encoding.urlEncode(username) + ".tumblr.com/posts");
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> blog = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/blog");
+        final int postsCount = ((Number) blog.get("posts")).intValue();
+        if (postsCount == 0) {
+            logger.info("This blog doesn't contain any posts");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // final FilePackage fp = FilePackage.getInstance();
+        // fp.setName(username);
+        int pageIndex = 0;
+        int crawledPosts = 0;
+        do {
+            logger.info("Crawling page: " + (pageIndex + 1) + ": " + this.br.getURL());
+            final List<Object> postsO = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "response/posts");
+            for (final Object postO : postsO) {
+                this.crawlSinglePostJsonAPI(ret, (Map<String, Object>) postO);
+            }
+            final String nextPageURL = (String) JavaScriptEngineFactory.walkJson(entries, "response/_links/next/href");
+            crawledPosts += postsO.size();
+            logger.info("Crawled posts: " + crawledPosts + " / " + postsCount);
+            if (this.isAbort()) {
+                break;
+            } else if (StringUtils.isEmpty(nextPageURL)) {
+                logger.info("Stopping because: nextURL is not given -> Probably reached end");
+                break;
+            } else if (crawledPosts >= postsCount) {
+                logger.info("Stopping because: Found all items");
+                break;
+            } else {
+                pageIndex++;
+                br.getPage(TumblrCom.API_BASE_WITHOUT_VERSION + nextPageURL);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            }
+        } while (true);
+        return ret;
+    }
+
     private boolean handlePassword() throws DecrypterException, IOException {
         final boolean passwordRequired;
         if ((this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains(urlpart_passwordneeded)) || this.br.getURL().contains(urlpart_passwordneeded)) {
@@ -798,100 +887,6 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             passwordRequired = false;
         }
         return passwordRequired;
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    private void decryptUserLoggedIn() throws Exception {
-        final int limit = 10;
-        int offset = 0;
-        boolean decryptSingle = parameter.matches("/page/\\d+");
-        /* Access url for logged-out-users first because if we don't we cannot see whether a password is needed or not! */
-        final String url_for_logged_out_users = convertUserUrlToLoggedOutUser();
-        this.br.setFollowRedirects(false);
-        this.br.getPage(url_for_logged_out_users);
-        br.followRedirect(true);
-        if (this.handlePassword()) {
-            /* Bullshit - if a blog is password protected we can only display it in the "logged out" mode ... */
-            decryptUser();
-            return;
-        }
-        if (br.containsHTML(GENERALOFFLINE) || this.br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            return;
-        }
-        handlePassword();
-        final FilePackage fp = FilePackage.getInstance();
-        final String username = getUsername(this.parameter);
-        String fpName = username;
-        fp.setName(fpName);
-        LinkedHashMap<String, Object> entries = null;
-        ArrayList<Object> ressourcelist = null;
-        do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return;
-            }
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            /* Not needed! */
-            // br.getHeaders().put("X-tumblr-form-key", "blaTest");
-            br.getPage("//www.tumblr.com/svc/indash_blog/posts?tumblelog_name_or_id=" + username + "&post_id=&limit=" + limit + "&offset=" + offset);
-            entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-            ressourcelist = (ArrayList<Object>) JavaScriptEngineFactory.walkJson(entries, "response/posts");
-            for (final Object posto : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) posto;
-                final String type = (String) entries.get("type");
-                final String post_url = (String) entries.get("post_url");
-                String directlink = null;
-                String extension = null;
-                String extensionFallback = null;
-                if (type.equalsIgnoreCase("photo")) {
-                    directlink = (String) JavaScriptEngineFactory.walkJson(entries, "photos/{0}/original_size/url");
-                    extensionFallback = ".jpg";
-                } else if (type.equalsIgnoreCase("video")) {
-                    directlink = (String) entries.get("video_url");
-                    final String url_hd = convertDirectVideoUrltoHD(directlink);
-                    if (url_hd != null) {
-                        directlink = url_hd;
-                    }
-                    extensionFallback = ".mp4";
-                } else {
-                    /* There is type "text", "answer" and there might be type other types too! */
-                    logger.info("Unsupported or un-downloadable tumblr-post-type: " + type);
-                }
-                if (directlink != null) {
-                    extension = getFileNameExtensionFromURL(directlink);
-                    if (extension == null) {
-                        extension = extensionFallback;
-                    }
-                    String filename = getFileNameFromURL(new URL(directlink));
-                    if (filename != null && !filename.endsWith(extension)) {
-                        filename += extension;
-                    }
-                    final DownloadLink dl = this.createDownloadlink("directhttp://" + directlink);
-                    if (this.passCode != null) {
-                        dl.setDownloadPassword(this.passCode);
-                    }
-                    dl.setAvailable(true);
-                    if (post_url != null) {
-                        dl.setContentUrl(post_url);
-                    }
-                    if (filename != null && !useOriginalFilename) {
-                        dl.setName(filename);
-                    } else {
-                        dl.setName(extractFileNameFromURL(directlink));
-                    }
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                }
-                offset++;
-            }
-            if (decryptSingle) {
-                break;
-            }
-        } while (ressourcelist.size() >= limit);
-        logger.info("Decryption done");
     }
 
     /** For urls which will go back into the decrypter. */
