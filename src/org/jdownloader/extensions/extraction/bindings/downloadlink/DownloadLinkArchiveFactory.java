@@ -127,6 +127,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         }
     }
 
+    /*
+     * optimize this, eg check for single part and try to avoid file system stuff and maybe skip links with different archive type/extension
+     * and that are already belong to different archive
+     */
     public List<ArchiveFile> createPartFileList(final String file, final String archivePartFilePattern) {
         final String pattern = modifyPartFilePattern(archivePartFilePattern);
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
