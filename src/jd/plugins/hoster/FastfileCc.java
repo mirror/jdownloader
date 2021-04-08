@@ -18,17 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FastfileCc extends XFileSharingProBasic {
@@ -117,12 +118,12 @@ public class FastfileCc extends XFileSharingProBasic {
     protected boolean supports_single_linkcheck_over_api() {
         return isAPIKey(this.getAPIKey());
     }
+
     /* 2020-05-29: Just a test */
     // @Override
     // protected boolean enable_account_api_only_mode() {
     // return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     // }
-
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = super.getDllink(link, account, br, src);
@@ -139,7 +140,11 @@ public class FastfileCc extends XFileSharingProBasic {
         super.checkErrors(br, html, link, account, checkAll);
         /* 2021-04-08 */
         if (new Regex(html, ">\\s*Your IP was banned by administrator").matches()) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Your IP was banned by administrator");
+            if (account != null) {
+                throw new AccountUnavailableException("Your IP was banned by administrator", 6 * 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Your IP was banned by administrator");
+            }
         }
     }
 }
