@@ -180,7 +180,13 @@ public class XunNiuCom extends PluginForHost {
             // ajax.postPage(action, "action=" + dlarg + "&file_id=" + fid + "&ms=" + System.currentTimeMillis() + "&sc=640*480");
             // }
             /* TODO: Improve errorhandling */
-            dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+            {
+                /* 2021-04-08 */
+                dllink = ajax.getRegex("\"([^\"]*dl2\\.php[^\"]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|(http[^<>\"]+)").getMatch(0);
             }
