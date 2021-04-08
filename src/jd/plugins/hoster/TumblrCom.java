@@ -81,10 +81,11 @@ public class TumblrCom extends PluginForHost {
         return -1;
     }
 
-    private static final String ADDITION        = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
+    private static final String ADDITION                 = "P3BsZWFkPXBsZWFzZS1kb250LWRvd25sb2FkLXRoaXMtb3Itb3VyLWxhd3llcnMtd29udC1sZXQtdXMtaG9zdC1hdWRpbw==";
     /* API docs: https://www.tumblr.com/docs/en/api/v2#what-you-need */
-    public static final String  API_BASE        = "https://www.tumblr.com/api/v2";
-    private static final String PROPERTY_APIKEY = "apikey";
+    public static final String  API_BASE                 = "https://www.tumblr.com/api/v2";
+    public static final String  API_BASE_WITHOUT_VERSION = "https://www.tumblr.com/api";
+    private static final String PROPERTY_APIKEY          = "apikey";
 
     @SuppressWarnings("deprecation")
     @Override
