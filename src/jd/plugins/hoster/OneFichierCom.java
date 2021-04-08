@@ -907,8 +907,14 @@ public class OneFichierCom extends PluginForHost {
                 logger.info("Performing full website login");
                 br.postPage("https://" + this.getHost() + "/login.pl", "lt=on&valider=Send&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (!isLoggedinWebsite(this.br)) {
-                    if (br.containsHTML("following many identification errors") && br.containsHTML("Your account will be unlock")) {
-                        throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
+                    if (br.containsHTML("following many identification errors")) {
+                        if (br.containsHTML("Your account will be unlock")) {
+                            throw new AccountUnavailableException("Your account will be unlock within 1 hour", 60 * 60 * 1000l);
+                        } else if (br.containsHTML("your IP address") && br.containsHTML("is temporarily locked")) {
+                            throw new AccountUnavailableException("For security reasons, following many identification errors, your IP address is temporarily locked.", 60 * 60 * 1000l);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
