@@ -14,7 +14,7 @@ import org.jdownloader.plugins.config.Type;
 public interface TiktokConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Enable fast linkcheck?")
+    @DescriptionForConfigEntry("Enable fast linkcheck? If enabled, filenames may contain less information and filesize will be missing until download is started.")
     @Order(10)
     boolean isEnableFastLinkcheck();
 
