@@ -1076,7 +1076,7 @@ public class ClipboardMonitoring {
             if (HTMLParser.getProtocol(ret) != null) {
                 return ret;
             } else {
-                final String viewSource = new Regex(ret, "^view-source:(https?://.+)").getMatch(0);
+                final String viewSource = new Regex(ret, "^view-source:\\s*(https?://.+)").getMatch(0);
                 if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                     return viewSource;
                 }
@@ -1087,7 +1087,7 @@ public class ClipboardMonitoring {
             if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                 return viewSource;
             }
-            viewSource = new Regex(htmlFlavor, "EndFragment:\\d+[\r\n]*SourceURL:(.*?)(\r|\n)").getMatch(0);
+            viewSource = new Regex(htmlFlavor, "EndFragment:\\s*\\d+[\r\n]*SourceURL:\\s*(.*?)(\r|\n)").getMatch(0);
             if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
                 return viewSource;
             }
