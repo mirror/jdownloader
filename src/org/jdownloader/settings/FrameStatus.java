@@ -3,6 +3,7 @@ package org.jdownloader.settings;
 import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Rectangle;
 
 import javax.swing.JFrame;
@@ -281,8 +282,9 @@ public class FrameStatus implements Storable {
                     }
                     if (mainFrame.isShowing() && mainFrame.getExtendedState() == JFrame.NORMAL) {
                         /* we also have to save location in other modes! */
-                        ret.x = mainFrame.getLocationOnScreen().x;
-                        ret.y = mainFrame.getLocationOnScreen().y;
+                        final Point location = mainFrame.getLocationOnScreen();
+                        ret.x = location.x;
+                        ret.y = location.y;
                     } else if (mainFrame instanceof JDownloaderMainFrame) {
                         FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestNormalState();
                         if (fs != null && fs.isVisible()) {

@@ -194,7 +194,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
     private static final long serialVersionUID = -4218493713632551975L;
 
     public void dispose() {
-        new Exception("dispose").printStackTrace();
         super.dispose();
     }
 
