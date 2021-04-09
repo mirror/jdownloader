@@ -119,7 +119,7 @@ public class TiktokCom extends antiDDoSForHost {
         }
         String createDate = null;
         if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
-            br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
+            br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (isBotProtectionActive(this.br)) {
@@ -180,11 +180,14 @@ public class TiktokCom extends antiDDoSForHost {
             } else if (useWebsiteEmbed) {
                 /* Old version: https://www.tiktok.com/embed/<videoID> */
                 // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
-                /* Without accessing their website beofre, we won't be able to use our final downloadurl! */
+                /*
+                 * 2021-04-09: Without accessing their website before (= fetches important cookies), we won't be able to use our final
+                 * downloadurl!!
+                 */
                 final boolean useOEmbedToGetCookies = true;
                 if (useOEmbedToGetCookies) {
                     /* 2021-04-09: Both ways will work fine but this one is faster and more elegant. */
-                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
+                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + fid));
                 } else {
                     br.getPage(link.getPluginPatternMatcher());
                 }
@@ -195,7 +198,7 @@ public class TiktokCom extends antiDDoSForHost {
                 // brc.getHeaders().put("sec-fetch-site", "cross-site");
                 // brc.getHeaders().put("upgrade-insecure-requests", "1");
                 // brc.getHeaders().put("Referer", link.getPluginPatternMatcher());
-                brc.getPage("https://www.tiktok.com/embed/v2/" + fid);
+                brc.getPage("https://www." + this.getHost() + "/embed/v2/" + fid);
                 if (brc.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (brc.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
