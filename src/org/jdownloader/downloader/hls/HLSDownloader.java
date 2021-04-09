@@ -516,13 +516,21 @@ public class HLSDownloader extends DownloadInterface {
                     deleteOutput = false;
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
-                    if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
-                        final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                        outputFile.set(tmpOut);
-                        ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, tmpOut.getAbsolutePath()));
-                        outputCompleteFile.delete();
-                        if (tmpOut.renameTo(outputCompleteFile)) {
-                            deleteOutput = false;
+                    if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                        final File tmpOut = new File(outputCompleteFile.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
+                        boolean deleteTmp = true;
+                        try {
+                            outputFile.set(tmpOut);
+                            ffmpeg.runCommand(null, buildConcatCommandLine(concatFormat, ffmpeg, tmpOut.getAbsolutePath()));
+                            deleteTmp = false;
+                            outputCompleteFile.delete();
+                            if (tmpOut.renameTo(outputCompleteFile)) {
+                                deleteOutput = false;
+                            }
+                        } finally {
+                            if (deleteTmp && tmpOut.exists() && !tmpOut.delete()) {
+                                tmpOut.deleteOnExit();
+                            }
                         }
                     } else {
                         throw e;
@@ -539,7 +547,9 @@ public class HLSDownloader extends DownloadInterface {
                 }
             }
         } catch (final FFMpegException e) {
-            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+            if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+            } else if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
                 throw new SkipReasonException(SkipReason.DISK_FULL, e);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);
@@ -669,19 +679,29 @@ public class HLSDownloader extends DownloadInterface {
                     partFile.flag.set(true);
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
-                    if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
-                        final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
-                        ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
-                        partFile.flag.set(true);
-                        destination.delete();
-                        tmpOut.renameTo(destination);
+                    if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                        final File tmpOut = new File(destination.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
+                        boolean deleteTmp = true;
+                        try {
+                            ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
+                            deleteTmp = false;
+                            partFile.flag.set(true);
+                            destination.delete();
+                            tmpOut.renameTo(destination);
+                        } finally {
+                            if (deleteTmp && tmpOut.exists() && !tmpOut.delete()) {
+                                tmpOut.deleteOnExit();
+                            }
+                        }
                     } else {
                         throw e;
                     }
                 }
             }
         } catch (final FFMpegException e) {
-            if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
+            if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+            } else if (FFMpegException.ERROR.DISK_FULL.equals(e.getError())) {
                 throw new SkipReasonException(SkipReason.DISK_FULL, e);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), -1, e);

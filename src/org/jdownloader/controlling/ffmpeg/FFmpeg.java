@@ -6,8 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.http.Browser;
+
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -17,8 +18,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.GeneralSettings;
-
-import jd.http.Browser;
 
 public abstract class FFmpeg extends AbstractFFmpegBinary {
     public FFmpeg(Browser br) {
@@ -96,26 +95,26 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
             } catch (FFMpegException e) {
                 throwFFMpegException(e);
                 // some systems have problems with special chars to find the in or out file.
-                if ((e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
-                    final File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                    final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                    final File tmpAudioIn = new File(outFile.getParent(), "ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                    final File tmpOut = new File(outFile.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
                     logger.info("Try special char workaround!");
                     logger.info("Replace In:'" + audioIn + "' with '" + tmpAudioIn + "'");
                     logger.info("Replace Out'" + out + "' with '" + tmpOut + "'");
-                    boolean okay = false;
+                    boolean okayFlag = false;
                     try {
                         IO.copyFile(new File(audioIn), tmpAudioIn);
                         stdOut = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), null, demuxCommand));
                         outFile.delete();
-                        okay = tmpOut.renameTo(outFile);
-                        if (!okay) {
+                        okayFlag = tmpOut.renameTo(outFile);
+                        if (!okayFlag) {
                             outFile.delete();
                             IO.copyFile(tmpOut, outFile);
-                            okay = true;
+                            okayFlag = true;
                         }
                     } finally {
                         tmpAudioIn.delete();
-                        if (!okay) {
+                        if (!okayFlag) {
                             tmpOut.delete();
                         }
                     }
@@ -153,10 +152,10 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
             } catch (FFMpegException e) {
                 throwFFMpegException(e);
                 // some systems have problems with special chars to find the in or out file.
-                if ((e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) || (CrossSystem.isMac() && !outFile.exists())) {
-                    final File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                    final File tmpVideoIn = Application.getTempResource("ffmpeg_video_in_" + UniqueAlltimeID.create());
-                    final File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
+                    final File tmpAudioIn = new File(outFile.getParent(), "ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                    final File tmpVideoIn = new File(outFile.getParent(), "ffmpeg_video_in_" + UniqueAlltimeID.create());
+                    final File tmpOut = new File(outFile.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
                     logger.info("Try special char workaround!");
                     logger.info("Replace In:'" + audioIn + "' with '" + tmpAudioIn + "'");
                     logger.info("Replace In:'" + videoIn + "' with '" + tmpVideoIn + "'");
@@ -230,17 +229,26 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
                     } catch (FFMpegException e1) {
                         throwFFMpegException(e1);
                         // some systems have problems with special chars to find the in or out file.
-                        if (e.getStdErr() != null && e.getStdErr().contains("No such file or directory")) {
-                            File tmpAudioIn = Application.getTempResource("ffmpeg_audio_in_" + UniqueAlltimeID.create());
-                            File tmpOut = Application.getTempResource("ffmpeg_out" + UniqueAlltimeID.create());
+                        if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
                             File outFile = new File(tempout);
+                            File tmpAudioIn = new File(outFile.getParent(), "ffmpeg_audio_in_" + UniqueAlltimeID.create());
+                            File tmpOut = new File(outFile.getParent(), "ffmpeg_out" + UniqueAlltimeID.create());
+                            boolean okayFlag = false;
                             try {
                                 IO.copyFile(new File(audioIn), tmpAudioIn);
                                 command = runCommand(progress, fillCommand(tmpOut.getAbsolutePath(), null, tmpAudioIn.getAbsolutePath(), map, config.getDemuxGenericCommand()));
                                 outFile.delete();
-                                tmpOut.renameTo(outFile);
+                                okayFlag = tmpOut.renameTo(outFile);
+                                if (!okayFlag) {
+                                    outFile.delete();
+                                    IO.copyFile(tmpOut, outFile);
+                                    okayFlag = true;
+                                }
                             } finally {
                                 tmpAudioIn.delete();
+                                if (!okayFlag) {
+                                    tmpOut.delete();
+                                }
                             }
                         } else {
                             throw e;
