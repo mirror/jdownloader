@@ -24,26 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -62,6 +42,25 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuali
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -689,38 +688,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             prepBrowser(this.br, this.getHost());
-            final Cookies cookies = account.loadCookies("");
-            final String apikey;
-            /*
-             * Only accounts of users who never logged in via API will have cookies available --> Convert them to apikey and delete them
-             * (only on success)
-             */
-            if (cookies != null) {
-                /* TODO: Remove this after 2020-07-01 */
-                try {
-                    logger.info("Trying to convert cookie --> apikey");
-                    this.br.setCookies(this.getHost(), cookies);
-                    getPage(API_BASE + "/token/get");
-                    final String msg = PluginJSonUtils.getJson(br, "message");
-                    apikey = PluginJSonUtils.getJson(br, "data");
-                    if (!"success".equalsIgnoreCase(msg) || StringUtils.isEmpty(apikey)) {
-                        /* E.g. {"statusCode":1,"message":"An error occured","data":"user not found"} */
-                        logger.warning("Failed to convert cookies to apikey --> Account invalid");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    logger.info("Successfully converted cookies to apikey");
-                    account.setPass(apikey);
-                    /* Delete old session from current browser instance (not necessary) */
-                    br.clearCookies(br.getHost());
-                    /* Enforce verifying the session this time */
-                    verifySession = true;
-                } finally {
-                    /* We have only one attempt. If that fails, user should manually enter his token. */
-                    account.clearCookies("");
-                }
-            } else {
-                apikey = account.getPass();
-            }
+            final String apikey = account.getPass();
             if (!verifySession) {
                 /* Force verify session/apikey everx X minutes */
                 verifySession = System.currentTimeMillis() - account.getLongProperty(PROPERTY_timestamp_lastcheck, 0) > 15 * 60 * 1000;
@@ -734,12 +702,6 @@ public class UpToBoxCom extends antiDDoSForHost {
             logger.info("Performing full login");
             this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
             this.checkErrorsAPI(this.getDownloadLink(), account);
-            /* 2020-04-16: Additional check is not required */
-            // final String token = PluginJSonUtils.getJson(br, "token");
-            // if (token == null || !token.equals(account.getPass())) {
-            // logger.warning("Failed to find token in json or token in json != account.getPass()");
-            // this.invalidLogin();
-            // }
             account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
         }
     }
