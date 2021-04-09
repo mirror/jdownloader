@@ -31,14 +31,12 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class JDownloaderMainFrame extends ExtJFrame {
     private FrameStatus     latestNormalState;
-
     private LogSource       logger;
     private DelayedRunnable delayedStateSaver;
 
     public JDownloaderMainFrame(String string, final LogSource logger) {
         super(string);
         this.logger = logger;
-
         delayedStateSaver = new DelayedRunnable(250, 1000l) {
             @Override
             public void resetAndStart() {
@@ -59,12 +57,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 updateFrameStatus();
                 // }
                 // };
-
             }
-
         };
         addComponentListener(new ComponentListener() {
-
             @Override
             public void componentShown(ComponentEvent e) {
                 delayedStateSaver.resetAndStart();
@@ -72,15 +67,12 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
             @Override
             public void componentResized(ComponentEvent e) {
-
                 delayedStateSaver.resetAndStart();
-
             }
 
             @Override
             public void componentMoved(ComponentEvent e) {
                 delayedStateSaver.resetAndStart();
-
             }
 
             @Override
@@ -89,7 +81,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
             }
         });
         addWindowListener(new WindowListener() {
-
             @Override
             public void windowOpened(WindowEvent e) {
                 delayedStateSaver.resetAndStart();
@@ -126,11 +117,9 @@ public class JDownloaderMainFrame extends ExtJFrame {
             }
         });
         addWindowStateListener(new WindowStateListener() {
-
             @Override
             public void windowStateChanged(WindowEvent e) {
                 delayedStateSaver.resetAndStart();
-
             }
         });
     }
@@ -193,21 +182,19 @@ public class JDownloaderMainFrame extends ExtJFrame {
 
     @Override
     public void setPreferredSize(Dimension preferredSize) {
-
         super.setPreferredSize(preferredSize);
     }
 
     // public ExtendedState getLastKnownVisibleExtendedState() {
     // return lastKnownVisibleExtendedState;
     // }
-
     /**
      *
      */
     private static final long serialVersionUID = -4218493713632551975L;
 
     public void dispose() {
-
+        new Exception("dispose").printStackTrace();
         super.dispose();
     }
 
@@ -224,7 +211,6 @@ public class JDownloaderMainFrame extends ExtJFrame {
     }
 
     public void setVisible(boolean b) {
-
         if (b && !isVisible()) {
             if (CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled() && !StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
                 String password;
@@ -232,14 +218,11 @@ public class JDownloaderMainFrame extends ExtJFrame {
                     return;
                 }
                 try {
-
                     dialogShowing = true;
                     password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
                     String internPw = CFG_GUI.PASSWORD.getValue();
                     if (!internPw.equals(password)) {
-
                         Dialog.getInstance().showMessageDialog(_GUI.T.JDGui_setVisible_password_wrong());
-
                         return;
                     }
                 } catch (DialogNoAnswerException e) {
@@ -257,12 +240,10 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 if (w instanceof JDialog) {
                     boolean mod = ((JDialog) w).isModal();
                     boolean v = w.isVisible();
-
                     if (mod && v) {
                         Toolkit.getDefaultToolkit().beep();
                         logger.log(new ActiveDialogException(((JDialog) w)));
                         WindowManager.getInstance().setZState(w, FrameState.TO_FRONT_FOCUSED);
-
                         return;
                     }
                 }
@@ -280,30 +261,24 @@ public class JDownloaderMainFrame extends ExtJFrame {
     }
 
     public void toFront() {
-
         if (!isVisible()) {
             return;
         }
         super.toFront();
         //
-
     }
 
     private void updateFrameStatus() {
         FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
-
         if (newState.isLocationSet()) {
             latestFrameStatus = newState;
             if (newState.getExtendedState() == ExtendedState.NORMAL) {
                 latestNormalState = newState.clone();
-
                 System.out.println("New Window State (Normal): " + JSonStorage.toString(latestFrameStatus));
             } else {
                 System.out.println("New Window State: " + JSonStorage.toString(latestFrameStatus));
             }
-
         }
-
         // Rectangle bounds = getGraphicsConfiguration().getBounds();
         // String dev = getGraphicsConfiguration().getDevice().getIDstring();
         // Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
@@ -315,5 +290,4 @@ public class JDownloaderMainFrame extends ExtJFrame {
         // setMaximizedBounds(bounds);
         // System.out.println("Set max bounds " + bounds + " " + dev + " " + usable);
     }
-
 }
