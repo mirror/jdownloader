@@ -7,14 +7,14 @@ import java.awt.Rectangle;
 
 import javax.swing.JFrame;
 
+import jd.gui.swing.jdgui.JDownloaderMainFrame;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.SwingUtils;
-
-import jd.gui.swing.jdgui.JDownloaderMainFrame;
 
 public class FrameStatus implements Storable {
     public static enum ExtendedState {
@@ -25,7 +25,6 @@ public class FrameStatus implements Storable {
          * @see #getExtendedState
          */
         NORMAL(Frame.NORMAL),
-
         /**
          * This state bit indicates that frame is iconified.
          *
@@ -33,7 +32,6 @@ public class FrameStatus implements Storable {
          * @see #getExtendedState
          */
         ICONIFIED(Frame.ICONIFIED),
-
         /**
          * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience
          * alias for <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
@@ -57,7 +55,6 @@ public class FrameStatus implements Storable {
          * @since 1.4
          */
         MAXIMIZED_BOTH(Frame.MAXIMIZED_BOTH);
-
         private int id;
 
         private ExtendedState(int id) {
@@ -82,18 +79,16 @@ public class FrameStatus implements Storable {
         }
     }
 
-    public static final TypeRef<FrameStatus> TYPE_REF = new TypeRef<FrameStatus>() {
-
+    public static final TypeRef<FrameStatus> TYPE_REF       = new TypeRef<FrameStatus>() {
     };
-
-    private ExtendedState extendedState  = ExtendedState.NORMAL;
-    private int           width          = -1;
-    private int           height         = -1;
-    private int           x              = -1;
-    private boolean       visible        = true;
-    private int           y              = -1;
-    private boolean       silentShutdown = false;
-    private String        screenID       = null;
+    private ExtendedState                    extendedState  = ExtendedState.NORMAL;
+    private int                              width          = -1;
+    private int                              height         = -1;
+    private int                              x              = -1;
+    private boolean                          visible        = true;
+    private int                              y              = -1;
+    private boolean                          silentShutdown = false;
+    private String                           screenID       = null;
 
     public ExtendedState getExtendedState() {
         return extendedState;
@@ -117,7 +112,6 @@ public class FrameStatus implements Storable {
         ret.width = width;
         ret.x = x;
         ret.y = y;
-
         return ret;
     }
 
@@ -211,13 +205,11 @@ public class FrameStatus implements Storable {
         if (ret == null) {
             ret = new FrameStatus();
         }
-
         try {
             ret.setScreenID(mainFrame.getGraphicsConfiguration().getDevice().getIDstring());
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-
         Rectangle jdBounds = fetchBoundsFromEDT(mainFrame);
         if (jdBounds == null) {
             return null;
@@ -227,24 +219,16 @@ public class FrameStatus implements Storable {
         Rectangle jdRectange = new Rectangle(jdBounds);
         boolean isok = false;
         for (final GraphicsDevice screen : screens) {
-
             final Rectangle bounds = SwingUtils.getUsableScreenBounds(screen);
-
             jdRectange.height = 30;
             Rectangle inter = jdRectange.intersection(bounds);
-
             if (inter.width > 50 && inter.height >= 16) {
                 // ok. Titlebar is in screen.
                 isok = true;
-
                 break;
-
             }
-
         }
-
         if (isok) {
-
             if (jdBounds.width > 100 || ret.width < 100) {
                 ret.width = jdBounds.width;
             }
@@ -255,29 +239,24 @@ public class FrameStatus implements Storable {
             ret.y = jdBounds.y;
             ret.locationSet = true;
         }
-
         ret.visible = mainFrame.isVisible();
         ShutdownRequest requ = ShutdownController.getInstance().getShutdownRequest();
         ret.silentShutdown = requ != null && requ.isSilent();
         ret.focus = mainFrame.hasFocus();
         ret.active = mainFrame.isActive();
-
         ExtendedState ext = ExtendedState.get(mainFrame);
         if (ext != null) {
             ret.extendedState = ext;
         }
-
         return ret;
     }
 
     private static Rectangle fetchBoundsFromEDT(final JFrame mainFrame) {
         return new EDTHelper<Rectangle>() {
-
             @Override
             public Rectangle edtRun() {
                 try {
                     if (!mainFrame.isShowing() && !(mainFrame instanceof JDownloaderMainFrame)) {
-
                         return null;
                     } else if (!mainFrame.isShowing() && (mainFrame instanceof JDownloaderMainFrame)) {
                         FrameStatus fs = ((JDownloaderMainFrame) mainFrame).getLatestFrameStatus();
@@ -288,7 +267,6 @@ public class FrameStatus implements Storable {
                         }
                     }
                     Rectangle ret = new Rectangle();
-
                     ret.width = 30;
                     ret.height = 30;
                     if (mainFrame.getExtendedState() == Frame.NORMAL) {
@@ -301,7 +279,7 @@ public class FrameStatus implements Storable {
                             ret.height = fs.height;
                         }
                     }
-                    if (mainFrame.isVisible() && mainFrame.getExtendedState() == JFrame.NORMAL) {
+                    if (mainFrame.isShowing() && mainFrame.getExtendedState() == JFrame.NORMAL) {
                         /* we also have to save location in other modes! */
                         ret.x = mainFrame.getLocationOnScreen().x;
                         ret.y = mainFrame.getLocationOnScreen().y;
