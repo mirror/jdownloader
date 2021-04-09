@@ -240,6 +240,10 @@ public class CloudMailRu extends PluginForHost {
                 }
                 if (pageid == null) {
                     pageid = PluginJSonUtils.getJson(br, "x-page-id");
+                    if (StringUtils.isEmpty(pageid)) {
+                        /* 2021-04-09 */
+                        pageid = PluginJSonUtils.getJson(br, "pageId");
+                    }
                 }
                 if (StringUtils.isEmpty(pageid)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
