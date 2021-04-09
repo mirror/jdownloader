@@ -1141,12 +1141,14 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     public Object edtRun() {
                         tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
-                        if (ShutdownController.getInstance().isHooksDelegated()) {
-                            // without delegated Hooks, the Windows are disposed by JVM, this might cause blocking getLocationOnScreen
+                        if (!ShutdownController.getInstance().isHooksDelegated() && CrossSystem.isWindows()) {
+                            // without delegated Hooks, windows are disposed by JVM, this might cause blocking getLocationOnScreen or
+                            // setVisible
+                        } else {
                             final FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
                             JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
+                            WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                         }
-                        WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                         // Do not dispose. On Windows shutdown, windows kills the jvm as soon as the window get's disposed.
                         // JDGui.this.getMainFrame().dispose();
                         return null;
