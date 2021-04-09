@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -77,6 +77,7 @@ public class TiktokCom extends antiDDoSForHost {
     private String              dllink             = null;
     private boolean             server_issues      = false;
     private static final String PROPERTY_DIRECTURL = "directurl";
+    private static final String PROPERTY_DATE      = "date";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -86,36 +87,37 @@ public class TiktokCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         this.setBrowserExclusive();
-        /** Doesn't work as their video directurls are only valid one time. */
+        /**
+         * 2021-04-09: Doesn't work as their video directurls are only valid one time or (more reasonable) are bound to cookies -> We'd have
+         * to save- and reload cookies for each DownloadLink!
+         */
         // if (link.hasProperty(PROPERTY_DIRECTURL) && checkDirecturlAndSetFilesize(link, link.getStringProperty(PROPERTY_DIRECTURL))) {
         // logger.info("Availablecheck only via directurl done");
         // return AvailableStatus.TRUE;
         // }
-        String user = null;
+        String username = null;
         final String fid = getFID(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getPluginPatternMatcher().matches(".+/@[^/]+/video/\\d+.*?")) {
-            user = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
+            username = new Regex(link.getPluginPatternMatcher(), "/(@[^/]+)/").getMatch(0);
         } else {
             /* 2nd + 3rd linktype which does not contain username --> Find username by finding original URL */
             br.setFollowRedirects(false);
             br.getPage(String.format("https://m.tiktok.com/v/%s.html", fid));
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                user = new Regex(redirect, "/(@[^/]+)/").getMatch(0);
-                if (user != null) {
-                    /* Set new URL so we do not have to handle that redirect next time. */
-                    link.setPluginPatternMatcher(redirect);
+                username = new Regex(redirect, "/(@[^/]+)/").getMatch(0);
+                if (username == null) {
+                    /* Redirect to unsupported URL -> Most likely mainpage -> Offline! */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                /* Set new URL so we do not have to handle that redirect next time. */
+                link.setPluginPatternMatcher(redirect);
             }
         }
-        String filename = "";
-        if (user != null) {
-            filename += user + "_";
-        }
-        filename += fid + ".mp4";
+        String createDate = null;
         if (PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck() && !isDownload) {
             br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
             if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -123,7 +125,7 @@ public class TiktokCom extends antiDDoSForHost {
             } else if (isBotProtectionActive(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
             }
-            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
             final String status_msg = (String) entries.get("status_msg");
             final String type = (String) entries.get("type");
             if (!"video".equalsIgnoreCase(type)) {
@@ -137,40 +139,87 @@ public class TiktokCom extends antiDDoSForHost {
             if (!StringUtils.isEmpty(title) && StringUtils.isEmpty(link.getComment())) {
                 link.setComment(title);
             }
-            /* Do not set final filename here! */
-            link.setName(filename);
         } else {
             String text_hashtags = null;
-            String createDate = null;
-            final boolean use_new_way = true;
-            if (use_new_way) {
-                // br.getPage(link.getPluginPatternMatcher());
-                /* Old version: https://www.tiktok.com/embed/<videoID> */
-                // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
-                /* Required headers! */
-                br.getHeaders().put("sec-fetch-dest", "iframe");
-                br.getHeaders().put("sec-fetch-mode", "navigate");
-                // br.getHeaders().put("sec-fetch-site", "cross-site");
-                // br.getHeaders().put("upgrade-insecure-requests", "1");
-                br.getHeaders().put("Referer", link.getPluginPatternMatcher());
-                br.getPage("https://www.tiktok.com/embed/v2/" + fid);
+            final boolean useWebsiteEmbed = true;
+            /* 2021-04-09: Don't use the website-way as their bot protection kicks in right away! */
+            final boolean useWebsite = false;
+            if (useWebsite) {
+                br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
                 }
                 final String videoJson = br.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
-                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-                entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoData/itemInfos");
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/itemInfo/itemStruct");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
                 if (entries == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                // entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
                 createDate = Long.toString(JavaScriptEngineFactory.toLong(entries.get("createTime"), 0));
-                text_hashtags = (String) entries.get("text");
+                text_hashtags = (String) entries.get("desc");
+                final Map<String, Object> videoInfo = (Map<String, Object>) entries.get("itemInfos");
+                this.dllink = (String) videoInfo.get("downloadAddr");
+                if (StringUtils.isEmpty(this.dllink)) {
+                    this.dllink = (String) videoInfo.get("playAddr");
+                }
                 /* 2020-10-26: Doesn't work anymore, returns 403 */
-                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "video/urls/{0}");
+                if (username == null && entries.containsKey("author")) {
+                    final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("author");
+                    username = (String) authorInfos.get("uniqueId");
+                    if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
+                        username = "@" + username;
+                    }
+                }
+                if (this.dllink == null && isDownload) {
+                    /* Fallback */
+                    this.dllink = generateDownloadurlOld(link);
+                }
+            } else if (useWebsiteEmbed) {
+                /* Old version: https://www.tiktok.com/embed/<videoID> */
+                // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
+                /* Without accessing their website beofre, we won't be able to use our final downloadurl! */
+                final boolean useOEmbedToGetCookies = true;
+                if (useOEmbedToGetCookies) {
+                    /* 2021-04-09: Both ways will work fine but this one is faster and more elegant. */
+                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www.tiktok.com/video/" + fid));
+                } else {
+                    br.getPage(link.getPluginPatternMatcher());
+                }
+                /* Required headers! */
+                final Browser brc = this.br.cloneBrowser();
+                brc.getHeaders().put("sec-fetch-dest", "iframe");
+                brc.getHeaders().put("sec-fetch-mode", "navigate");
+                // brc.getHeaders().put("sec-fetch-site", "cross-site");
+                // brc.getHeaders().put("upgrade-insecure-requests", "1");
+                // brc.getHeaders().put("Referer", link.getPluginPatternMatcher());
+                brc.getPage("https://www.tiktok.com/embed/v2/" + fid);
+                if (brc.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (brc.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
+                }
+                final String videoJson = brc.getRegex("crossorigin=\"anonymous\">(.*?)</script>").getMatch(0);
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoData");
+                /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
+                if (entries == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> itemInfos = (Map<String, Object>) entries.get("itemInfos");
+                // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
+                createDate = Long.toString(JavaScriptEngineFactory.toLong(itemInfos.get("createTime"), 0));
+                text_hashtags = (String) itemInfos.get("text");
+                dllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
+                if (username == null && entries.containsKey("authorInfos")) {
+                    final Map<String, Object> authorInfos = (Map<String, Object>) entries.get("authorInfos");
+                    username = (String) authorInfos.get("uniqueId");
+                    if (!StringUtils.isEmpty(username) && !username.startsWith("@")) {
+                        username = "@" + username;
+                    }
+                }
                 // {
                 // /* 2020-10-26: Test */
                 // dllink = br.getRegex("<video src=\"(https?://[^<>\"]+)\"").getMatch(0);
@@ -178,19 +227,14 @@ public class TiktokCom extends antiDDoSForHost {
                 // dllink = Encoding.htmlDecode(dllink);
                 // }
                 // }
-                if (isDownload) {
-                    /* 2020-10-26: Workaround (??!) */
+                if (this.dllink == null && isDownload) {
+                    /* Fallback */
                     this.dllink = generateDownloadurlOld(link);
                 }
             } else {
                 /* Rev. 40928 and earlier */
                 this.dllink = generateDownloadurlOld(link);
             }
-            if (!StringUtils.isEmpty(createDate)) {
-                final String dateFormatted = convertDateFormat(createDate);
-                filename = dateFormatted + "_" + filename;
-            }
-            link.setFinalFileName(filename);
             if (!StringUtils.isEmpty(text_hashtags) && StringUtils.isEmpty(link.getComment())) {
                 link.setComment(text_hashtags);
             }
@@ -218,6 +262,8 @@ public class TiktokCom extends antiDDoSForHost {
                         if (con.getCompleteContentLength() > 0) {
                             link.setDownloadSize(con.getCompleteContentLength());
                         }
+                        /* Save it for later usage */
+                        link.setProperty(PROPERTY_DIRECTURL, this.dllink);
                     }
                 } finally {
                     try {
@@ -227,27 +273,45 @@ public class TiktokCom extends antiDDoSForHost {
                 }
             }
         }
-        return AvailableStatus.TRUE;
-    }
-
-    private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws IOException, PluginException {
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(directurl);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                return true;
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+        String filename = "";
+        if (!StringUtils.isEmpty(createDate)) {
+            final String dateFormatted = convertDateFormat(createDate);
+            if (dateFormatted != null) {
+                filename = dateFormatted;
+                /* Save for later usage */
+                link.setProperty(PROPERTY_DATE, dateFormatted);
             }
         }
-        return false;
+        if (!StringUtils.isEmpty(username)) {
+            filename += "_" + username;
+        }
+        filename += "_" + fid + ".mp4";
+        /* Only set final filename if ALL information is available! */
+        if (link.hasProperty(PROPERTY_DATE) && !StringUtils.isEmpty(username)) {
+            link.setFinalFileName(filename);
+        } else {
+            link.setName(filename);
+        }
+        return AvailableStatus.TRUE;
     }
+    // private boolean checkDirecturlAndSetFilesize(final DownloadLink link, final String directurl) throws Exception {
+    // URLConnectionAdapter con = null;
+    // try {
+    // con = openAntiDDoSRequestConnection(br, br.createHeadRequest(directurl));
+    // if (this.looksLikeDownloadableContent(con)) {
+    // if (con.getCompleteContentLength() > 0) {
+    // link.setVerifiedFileSize(con.getCompleteContentLength());
+    // }
+    // return true;
+    // }
+    // } finally {
+    // try {
+    // con.disconnect();
+    // } catch (final Throwable e) {
+    // }
+    // }
+    // return false;
+    // }
 
     public static boolean isBotProtectionActive(final Browser br) {
         return br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"");
@@ -258,7 +322,7 @@ public class TiktokCom extends antiDDoSForHost {
         return new URL(br.toString()).toString();
     }
 
-    private String convertDateFormat(String sourceDate) {
+    private String convertDateFormat(final String sourceDate) {
         if (sourceDate == null) {
             return null;
         }
@@ -271,19 +335,17 @@ public class TiktokCom extends antiDDoSForHost {
         } else {
             final String sourceDatePart = new Regex(sourceDate, "^[A-Za-z]+, (\\d{1,2} \\w+ \\d{4})").getMatch(0);
             if (sourceDatePart == null) {
-                return sourceDate;
+                return null;
             }
-            sourceDate = sourceDatePart;
             final SimpleDateFormat source_format = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
             try {
                 try {
-                    final Date date = source_format.parse(sourceDate);
+                    final Date date = source_format.parse(sourceDatePart);
                     result = target_format.format(date);
                 } catch (Throwable e) {
                 }
-            } catch (Throwable e) {
-                result = sourceDate;
-                return sourceDate;
+            } catch (final Throwable e) {
+                return null;
             }
         }
         return result;

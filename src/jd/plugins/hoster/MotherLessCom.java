@@ -17,15 +17,18 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
@@ -38,21 +41,22 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "https?://(?:www\\.|members\\.)?(?:motherless\\.com/(?:movies|thumbs).*|(?:premium)?motherlesspictures(?:media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" })
 public class MotherLessCom extends PluginForHost {
-    public static final String html_subscribedFailed       = "Failed to subscribe to the owner of the video";
-    public static final String html_contentSubscriberVideo = "Here's another video instead\\.";
-    public static final String html_contentSubscriberImage = "Here's another image instead\\.";
-    public static final String html_contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
+    public static final String  html_subscribedFailed       = "Failed to subscribe to the owner of the video";
+    public static final String  html_contentSubscriberVideo = "Here's another video instead\\.";
+    public static final String  html_contentSubscriberImage = "Here's another image instead\\.";
+    public static final String  html_contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
     // offline can contain text which is displayed in contentScriber pages
-    public static final String html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
-    public static final String html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
-    public static final String ua                          = RandomUserAgent.generate();
-    private String             dllink                      = null;
+    public static final String  html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
+    public static final String  html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
+    public static final String  ua                          = RandomUserAgent.generate();
+    private static final String PROPERTY_DIRECTURL          = "PROPERTY_DIRECTURL";
+    private String              dllink                      = null;
 
     @SuppressWarnings("deprecation")
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2500l);
-        this.enablePremium("http://motherless.com/register");
+        this.enablePremium("https://motherless.com/register");
     }
 
     @SuppressWarnings("deprecation")
@@ -63,7 +67,11 @@ public class MotherLessCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (this.checkDirectLink(link) != null) {
+            logger.info("Linkcheck done via directurl");
+            return AvailableStatus.TRUE;
+        }
         // reset comment/message
         if ("video".equals(link.getStringProperty("dltype", null))) {
             notOnlineYet(link, true, true);
@@ -77,7 +85,7 @@ public class MotherLessCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The member has deleted the upload<")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*The member has deleted the upload<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if ("video".equals(link.getStringProperty("dltype", null)) || jd.plugins.decrypter.MotherLessCom.isVideo(this.br)) {
@@ -142,8 +150,8 @@ public class MotherLessCom extends PluginForHost {
         try {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept-Encoding", "identity");
-            con = openConnection(brc, dllink);
-            if (con.getContentType().contains("html")) {
+            con = brc.openHeadConnection(this.dllink);
+            if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String name = getFileNameFromHeader(con);
@@ -162,14 +170,17 @@ public class MotherLessCom extends PluginForHost {
                 name = title + "_" + name;
             }
             link.setName(name);
-            link.setDownloadSize(con.getLongContentLength());
-            return AvailableStatus.TRUE;
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     public static boolean isDownloadPremiumOnly(final Browser br) {
@@ -186,75 +197,134 @@ public class MotherLessCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/img/") && !link.getDownloadURL().contains("/dev")) {
-            requestFileInformation(link);
-        } else {
-            // Access the page first to make the finallink valid
-            String fileid = new Regex(link.getDownloadURL(), "/img/([A-Z0-9]+)").getMatch(0);
-            if (fileid != null) {
-                br.getPage("http://motherless.com/" + fileid);
+        final int maxchunks = 1;
+        if (!attemptStoredDownloadurlDownload(link, maxchunks)) {
+            if (!link.getDownloadURL().contains("/img/") && !link.getDownloadURL().contains("/dev")) {
+                requestFileInformation(link);
             } else {
-                br.getPage(link.getPluginPatternMatcher());
+                // Access the page first to make the finallink valid
+                String fileid = new Regex(link.getDownloadURL(), "/img/([A-Z0-9]+)").getMatch(0);
+                if (fileid != null) {
+                    br.getPage("http://motherless.com/" + fileid);
+                } else {
+                    br.getPage(link.getPluginPatternMatcher());
+                }
             }
-        }
-        if (br.containsHTML(html_contentFriendsOnly)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for friends only!");
-        }
-        br.getHeaders().put("Accept-Encoding", "identity");
-        if ("video".equals(link.getStringProperty("dltype"))) {
-            br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        } else if ("image".equals(link.getStringProperty("dltype"))) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        } else {
-            logger.warning("Unnknown case for link: " + link.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (link.getFinalFileName() == null) {
-            final String plugin_filename = link.getName();
-            final String server_filename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-            final String final_filename;
-            if (server_filename == null || server_filename.length() < plugin_filename.length()) {
-                /* Actually it should always use the plugin_filename. */
-                final_filename = plugin_filename;
+            if (br.containsHTML(html_contentFriendsOnly)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Content is for friends only!");
+            }
+            br.getHeaders().put("Accept-Encoding", "identity");
+            if ("video".equals(link.getStringProperty("dltype"))) {
+                br.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            } else if ("image".equals(link.getStringProperty("dltype"))) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             } else {
-                final_filename = server_filename;
+                logger.warning("Unknown case for link: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(final_filename);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file(?)");
+            }
+            if (link.getFinalFileName() == null) {
+                final String plugin_filename = link.getName();
+                final String server_filename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+                final String final_filename;
+                if (server_filename != null && plugin_filename.length() > server_filename.length()) {
+                    /* Actually it should always use the plugin_filename. */
+                    final_filename = plugin_filename;
+                } else {
+                    final_filename = server_filename;
+                }
+                link.setFinalFileName(final_filename);
+            }
         }
         dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        try {
+            final Browser brc = br.cloneBrowser();
+            prepHeadersDownload(link, brc);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, allowResume(link), 1);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
+            }
+            return false;
+        }
+    }
+
+    private String checkDirectLink(final DownloadLink link) {
+        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                prepHeadersDownload(link, br2);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    return dllink;
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
+            }
+        }
+        return null;
+    }
+
+    private void prepHeadersDownload(final DownloadLink link, final Browser brc) {
+        if ("video".equals(link.getStringProperty("dltype"))) {
+            brc.getHeaders().put("Referer", "http://motherless.com/scripts/jwplayer.flash.swf");
+        }
+    }
+
+    private boolean allowResume(final DownloadLink link) {
+        return !"image".equals(link.getStringProperty("dltype"));
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
+        login(account, true);
+        account.setType(AccountType.FREE);
         ai.setStatus("Registered (free) User");
         return ai;
     }
 
-    private void login(final Account account) throws Exception {
+    private void login(final Account account, final boolean validateCookies) throws Exception {
+        /* TODO: Add cookie handling -> Re-load cookies and check validity */
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", ua);
-        br.postPage("https://motherless.com/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://motherless.com/", "_auth") == null) {
+        br.postPage("https://" + this.getHost() + "/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://motherless.com/", "_auth", Cookies.NOTDELETEDPATTERN) == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
+        account.saveCookies(this.br.getCookies(br.getHost()), "");
     }
 
     public String getAGBLink() {
-        return "http://motherless.com/tou";
+        return "https://motherless.com/tou";
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -302,7 +372,7 @@ public class MotherLessCom extends PluginForHost {
     }
 
     public void handleFree(final DownloadLink link) throws Exception {
-        if (link.getStringProperty("onlyregistered", null) != null) {
+        if (link.hasProperty("onlyregistered")) {
             throw new AccountRequiredException();
         }
         doFree(link);
@@ -312,20 +382,20 @@ public class MotherLessCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Subscribers Only")) {
-            String profileToSubscribe = br.getRegex("You can subscribe to the member from[\t\n\r ]+their <a href=(\"|')(https?://motherless\\.com)?/m/(.*?)\\1").getMatch(2);
+            String profileToSubscribe = br.getRegex("You can subscribe to the member from\\s*their <a href=(\"|')(https?://motherless\\.com)?/m/(.*?)\\1").getMatch(2);
             if (profileToSubscribe == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
-            br.getPage("https://motherless.com/subscribe/" + profileToSubscribe);
+            br.getPage("/subscribe/" + profileToSubscribe);
             String token = br.getRegex("name=\"_token\" value=\"(.*?)\"").getMatch(0);
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
-            br.postPage("https://motherless.com/subscribe/" + profileToSubscribe, "_token=" + token);
+            br.postPage("/subscribe/" + profileToSubscribe, "_token=" + token);
             if (!br.containsHTML("(>You are already subscribed to|>You are now subscribed to)")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, html_subscribedFailed);
             }
@@ -334,26 +404,16 @@ public class MotherLessCom extends PluginForHost {
         doFree(link);
     }
 
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (true) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    public static DownloadLink notOnlineYet(final DownloadLink downloadLink, final boolean reset, final boolean hostPlugin) {
+    public static DownloadLink notOnlineYet(final DownloadLink link, final boolean reset, final boolean hostPlugin) {
         String msg = null;
         if (!reset) {
             msg = "Not online yet... check again later";
         }
         if (hostPlugin) {
-            downloadLink.getLinkStatus().setStatusText(msg);
+            link.getLinkStatus().setStatusText(msg);
         }
-        downloadLink.setComment(msg);
-        return downloadLink;
+        link.setComment(msg);
+        return link;
     }
 
     public void reset() {
