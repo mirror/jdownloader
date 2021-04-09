@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -36,7 +34,6 @@ import jd.parser.html.HTMLParser;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
-import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -130,46 +127,6 @@ public class ClipboardMonitoring {
             } else {
                 return length == string.length() && hash == string.hashCode();
             }
-        }
-    }
-
-    private static class WindowsClipboardHack {
-        Method                  openClipboard    = null;
-        Method                  closeClipboard   = null;
-        Method                  getClipboardData = null;
-        final long              cf_html;
-        final Clipboard         clipboard;
-        private final LogSource logger;
-
-        private WindowsClipboardHack(Clipboard clipboard, final LogSource logger) throws Exception {
-            this.clipboard = clipboard;
-            this.logger = logger;
-            try {
-                cf_html = ReflectionUtils.getFieldValue("sun.awt.windows.WDataTransferer", "CF_HTML", null, long.class);
-                openClipboard = ReflectionUtils.findMatchingMethod(clipboard.getClass(), "openClipboard", new Object[] { clipboard });
-                closeClipboard = ReflectionUtils.findMatchingMethod(clipboard.getClass(), "closeClipboard", new Object[] {});
-                getClipboardData = ReflectionUtils.findMatchingMethod(clipboard.getClass(), "getClipboardData", new Object[] { 1l });
-            } catch (final Throwable e) {
-                throw new Exception(e);
-            }
-        }
-
-        private String getURLFromCF_HTML() {
-            try {
-                try {
-                    openClipboard.invoke(clipboard, new Object[] { null });
-                    final String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }), "UTF-8");
-                    return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
-                } finally {
-                    closeClipboard.invoke(clipboard);
-                }
-            } catch (final InvocationTargetException ignore) {
-            } catch (final IllegalStateException ignore) {
-            } catch (final IOException ignore) {
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            return null;
         }
     }
 
@@ -299,7 +256,6 @@ public class ClipboardMonitoring {
     private final AtomicReference<Object>                                                    monitoringThread    = new AtomicReference<Object>(null);
     private final Clipboard                                                                  clipboard;
     private static final AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE> CLIPBOARD_SKIP_MODE = new AtomicReference<GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE>(GraphicalUserInterfaceSettings.CLIPBOARD_SKIP_MODE.ON_STARTUP);
-    private final WindowsClipboardHack                                                       windowsClipboardHack;
     private final AtomicReference<AtomicBoolean>                                             skipChangeDetection = new AtomicReference<AtomicBoolean>(null);
     private final static AtomicBoolean                                                       HTML_FLAVOR_ALLOWED = new AtomicBoolean(true);
     private final ClipboardChangeDetector                                                    clipboardChangeDetector;
@@ -710,17 +666,11 @@ public class ClipboardMonitoring {
     public ClipboardMonitoring() {
         logger = LogController.CL(ClipboardMonitoring.class);
         Clipboard lclipboard = null;
-        WindowsClipboardHack lclipboardHack = null;
         ClipboardChangeDetector clipboardChangeDetector = null;
         try {
             if (!GraphicsEnvironment.isHeadless()) {
                 lclipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                 if (lclipboard != null && CrossSystem.isWindows()) {
-                    try {
-                        lclipboardHack = new WindowsClipboardHack(lclipboard, logger);
-                    } catch (final Throwable th) {
-                        logger.log(th);
-                    }
                     try {
                         if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP)) {
                             clipboardChangeDetector = new WindowsClipboardChangeDetector(skipChangeDetection, logger);
@@ -734,7 +684,6 @@ public class ClipboardMonitoring {
             logger.log(th);
         }
         clipboard = lclipboard;
-        windowsClipboardHack = lclipboardHack;
         if (clipboard != null) {
             if (clipboardChangeDetector == null) {
                 this.clipboardChangeDetector = new ClipboardChangeDetector(skipChangeDetection);
@@ -1112,12 +1061,6 @@ public class ClipboardMonitoring {
     }
 
     public static String getCurrentBrowserURL(final Transferable transferable, final DataFlavor[] dataFlavors, final String htmlFlavor) throws UnsupportedFlavorException, IOException {
-        if (ClipboardMonitoring.getINSTANCE().windowsClipboardHack != null) {
-            final String ret = ClipboardMonitoring.getINSTANCE().windowsClipboardHack.getURLFromCF_HTML();
-            if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
-                return ret;
-            }
-        }
         String ret = getBrowserMime(transferable, dataFlavors, "x-moz-url");
         if (!StringUtils.isEmpty(ret)) {
             // https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Recommended_drag_types
