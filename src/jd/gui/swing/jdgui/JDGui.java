@@ -1131,7 +1131,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         mainTabbedPane.notifyCurrentTab();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             public long getMaxDuration() {
-                return 30000 * 10;
+                return 10 * 1000;
             }
 
             @Override
@@ -1141,9 +1141,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     public Object edtRun() {
                         tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
-                        FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
-                        System.out.println("Save FS: " + JSonStorage.serializeToJson(framestatus));
-                        JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
+                        if (ShutdownController.getInstance().isHooksDelegated()) {
+                            // without delegated Hooks, the Windows are disposed by JVM, this might cause blocking getLocationOnScreen
+                            final FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
+                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
+                        }
                         WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
                         // Do not dispose. On Windows shutdown, windows kills the jvm as soon as the window get's disposed.
                         // JDGui.this.getMainFrame().dispose();
