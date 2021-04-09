@@ -1,5 +1,7 @@
 package org.jdownloader.osevents;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.utils.event.Eventsender;
 import org.jdownloader.osevents.multios.SignalEventSource;
@@ -65,8 +67,12 @@ public class OperatingSystemEventSender extends Eventsender<OperatingSystemListe
         return signalEventSource != null && signalEventSource.setIgnore(signal, ignore);
     }
 
+    private final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
+
     @Override
     public void onOperatingSystemTerm() {
-        ShutdownController.getInstance().requestShutdown(new ForcedShutdown());
+        if (shutdownRequested.compareAndSet(false, true)) {
+            ShutdownController.getInstance().requestShutdown(new ForcedShutdown());
+        }
     }
 }
