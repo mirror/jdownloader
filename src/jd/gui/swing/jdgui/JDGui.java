@@ -1139,12 +1139,17 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                 new EDTHelper<Object>() {
                     @Override
                     public Object edtRun() {
-                        tray.dispose();
                         JDGui.this.mainTabbedPane.onClose();
                         if (!ShutdownController.getInstance().isHooksDelegated() && CrossSystem.isWindows()) {
-                            // without delegated Hooks, windows are disposed by JVM, this might cause blocking getLocationOnScreen or
-                            // setVisible
+                            // without delegated Hooks(--illegal-access=deny)->Shutdown happens via normal System.exit, causing SIGINT->
+                            // window/peer stuff
+                            // are disposed by JVM
+                            // this will cause blocking
+                            // Window.getLocationOnScreen
+                            // Window.setVisible
+                            // sun.awt.windows.WTrayIconPeer.setNativeIcon
                         } else {
+                            tray.dispose();
                             final FrameStatus framestatus = FrameStatus.create(mainFrame, JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus());
                             JsonConfig.create(GraphicalUserInterfaceSettings.class).setLastFrameStatus(framestatus);
                             WindowManager.getInstance().setVisible(JDGui.this.getMainFrame(), false, FrameState.OS_DEFAULT);
