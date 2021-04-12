@@ -205,14 +205,14 @@ public class DoodstreamCom extends XFileSharingProBasic {
         this.br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
-        if (isOffline(link, this.br, this.correctedBR) || !this.canHandle(this.br.getURL())) {
+        if (isOffline(link, this.br, getCorrectBR(br)) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
             /* First try to get filename from Chromecast json */
-            String filename = new Regex(correctedBR, "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
+            String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                filename = new Regex(getCorrectBR(br), "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
             }
             if (StringUtils.isEmpty(filename)) {
                 link.setName(this.getFallbackFilename(link));
