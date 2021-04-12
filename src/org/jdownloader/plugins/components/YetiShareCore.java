@@ -1532,6 +1532,10 @@ public class YetiShareCore extends antiDDoSForHost {
         return "/account_edit.html";
     }
 
+    protected String getAccountNameSpaceLogout() {
+        return "/logout.html";
+    }
+
     protected void loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -1679,7 +1683,11 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     public boolean isLoggedin(final Browser br) {
-        return br.containsHTML("/logout\\.html\"");
+        /**
+         * User is logged in when: 1. Logout button is visible or 2. When "Account Overview" Buttons is visible e.g. when on mainpage or
+         * trying to download a file.
+         */
+        return br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceLogout()) + "\"") || br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceHome()) + "\"");
     }
 
     @Override
