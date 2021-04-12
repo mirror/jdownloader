@@ -51,7 +51,7 @@ public class HotlinkCc extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "hotlink.cc", "redirect.codes", "filecheck.link", "container.cool" });
+        ret.add(new String[] { "hotlink.cc", "redirect.codes", "container.cool" });
         return ret;
     }
 
@@ -248,12 +248,12 @@ public class HotlinkCc extends XFileSharingProBasic {
             return super.getDllink(link, account, br, src);
         }
     }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        /** 2021-01-27 */
-        return true;
-    }
+    /* 2021-04-12: Although most of the content hosted on this filehost is video content other file-types are also allowed! */
+    // @Override
+    // protected boolean isVideohoster_enforce_video_filename() {
+    // /** 2021-01-27 */
+    // return true;
+    // }
 
     @Override
     protected boolean supports_availablecheck_alt() {

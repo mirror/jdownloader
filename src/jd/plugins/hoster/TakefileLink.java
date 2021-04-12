@@ -139,7 +139,7 @@ public class TakefileLink extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "takefile.link" });
+        ret.add(new String[] { "takefile.link", "filecheck.link" });
         return ret;
     }
 

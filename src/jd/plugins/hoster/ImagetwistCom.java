@@ -19,14 +19,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImagetwistCom extends XFileSharingProBasic {
@@ -83,6 +83,12 @@ public class ImagetwistCom extends XFileSharingProBasic {
 
     @Override
     protected boolean supports_availablecheck_filesize_html() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2021-04-12 */
         return false;
     }
 
