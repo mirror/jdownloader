@@ -1225,6 +1225,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     @ValidatorFactory(DefaultSimpleDateValidator.class)
     @RequiresRestart("Restart is Required")
+    String getDateTimeFormatDownloadListModifiedDateColumn();
+
+    void setDateTimeFormatDownloadListModifiedDateColumn(String df);
+
+    @AboutConfig
+    @ValidatorFactory(DefaultSimpleDateValidator.class)
+    @RequiresRestart("Restart is Required")
     String getDateTimeFormatDownloadListFinishedDateColumn();
 
     void setDateTimeFormatDownloadListFinishedDateColumn(String df);

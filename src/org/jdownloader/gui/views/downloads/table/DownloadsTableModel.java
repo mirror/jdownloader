@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.downloads.columns.FileSizeColumn;
 import org.jdownloader.gui.views.downloads.columns.FinishedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.LoadedColumn;
+import org.jdownloader.gui.views.downloads.columns.ModifiedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.gui.views.downloads.columns.RemainingColumn;
@@ -70,6 +71,7 @@ public class DownloadsTableModel extends PackageControllerTableModel<FilePackage
         this.addColumn(new RemainingColumn());
         this.addColumn(new EnabledDisabledColumn());
         this.addColumn(new AddedDateColumn());
+        this.addColumn(new ModifiedDateColumn());
         this.addColumn(new FinishedDateColumn());
         this.addColumn(new DurationColumn());
         this.addColumn(new SpeedColumn());

@@ -10,7 +10,6 @@ import jd.plugins.FilePackage;
 import org.appwork.storage.Storable;
 
 public class FilePackageStorable implements Storable {
-
     private FilePackage                          filePackage;
     private java.util.List<DownloadLinkStorable> links;
 
@@ -68,6 +67,14 @@ public class FilePackageStorable implements Storable {
 
     public long getCreated() {
         return filePackage.getCreated();
+    }
+
+    public void setModified(long modified) {
+        filePackage.setModified(modified);
+    }
+
+    public long getModified() {
+        return filePackage.getModified();
     }
 
     public void setCreated(long time) {

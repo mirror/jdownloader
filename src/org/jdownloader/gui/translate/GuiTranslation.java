@@ -391,6 +391,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "dd.MM.yy HH:mm" })
     String added_date_column_dateformat();
 
+    @Default(lngs = { "en" }, values = { "dd.MM.yy HH:mm" })
+    String modified_date_column_dateformat();
+
     @Default(lngs = { "en" }, values = { "Actions" })
     String premiumaccounttablemodel_column_actions();
 
@@ -558,6 +561,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Added Date" })
     String added_date_column_title();
+
+    @Default(lngs = { "en" }, values = { "Modified Date" })
+    String modified_date_column_title();
 
     @Default(lngs = { "en" }, values = { "Name" })
     String filecolumn_title();

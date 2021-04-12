@@ -122,6 +122,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private String                                         comment                    = null;
     private PackageController<CrawledPackage, CrawledLink> controller                 = null;
     private long                                           created                    = System.currentTimeMillis();
+    private long                                           modified                   = created;
     private String                                         name                       = null;
     private String                                         downloadFolder             = null;
     private boolean                                        downloadFolderContainsTags = false;
@@ -180,6 +181,14 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public long getCreated() {
         return created;
+    }
+
+    public void setModified(long modified) {
+        this.modified = modified;
+    }
+
+    public long getModified() {
+        return modified;
     }
 
     public String getDownloadFolder() {
@@ -382,6 +391,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         if (source == this && NOTIFY.STRUCTURE_CHANCE.equals(notify)) {
+            setModified(System.currentTimeMillis());
             compiledDownloadFolder = null;
         } else {
             if (source instanceof AbstractPackageChildrenNode && NOTIFY.PROPERTY_CHANCE.equals(notify) && param instanceof CrawledLinkProperty && CrawledLinkProperty.Property.NAME.equals(((CrawledLinkProperty) param).getProperty())) {
