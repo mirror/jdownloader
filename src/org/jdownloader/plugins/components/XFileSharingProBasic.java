@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -136,17 +137,19 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /* Used variables */
-    public String                 correctedBR                                                       = "";
+    @Deprecated
+    public String                          correctedBR                                                       = "";
+    protected WeakHashMap<Request, String> correctedBrowserRequestMap                                        = new WeakHashMap<Request, String>();
     // protected String fuid = null;
     /* don't touch the following! */
-    private static AtomicInteger  freeRunning                                                       = new AtomicInteger(0);
-    private static final String   PROPERTY_pw_required                                              = "password_requested_by_website";
-    protected static final String PROPERTY_captcha_required                                         = "captcha_requested_by_website";
-    protected static final String PROPERTY_ACCOUNT_apikey                                           = "apikey";
-    private static final String   PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
-    private static final String   PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
-    private static final String   TYPE_NORMAL                                                       = "(?i)https?://[^/]+/([a-z0-9]{12})";
-    private static final String   TYPE_SHORTURL                                                     = "(?i)https?://[^/]+/d/([A-Za-z0-9]+)";
+    private static AtomicInteger           freeRunning                                                       = new AtomicInteger(0);
+    private static final String            PROPERTY_pw_required                                              = "password_requested_by_website";
+    protected static final String          PROPERTY_captcha_required                                         = "captcha_requested_by_website";
+    protected static final String          PROPERTY_ACCOUNT_apikey                                           = "apikey";
+    private static final String            PROPERTY_PLUGIN_api_domain_with_protocol                          = "apidomain";
+    private static final String            PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP = "REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
+    private static final String            TYPE_NORMAL                                                       = "(?i)https?://[^/]+/([a-z0-9]{12})";
+    private static final String            TYPE_SHORTURL                                                     = "(?i)https?://[^/]+/d/([A-Za-z0-9]+)";
 
     /**
      * DEV NOTES XfileSharingProBasic Version 4.4.3.8<br />
@@ -721,7 +724,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             setWeakFilename(link);
         }
         getPage(link.getPluginPatternMatcher());
-        if (isOffline(link, this.br, this.correctedBR)) {
+        if (isOffline(link, this.br, getCorrectBR(br))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fallback_filename = this.getFallbackFilename(link);
@@ -864,7 +867,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          * Some video sites contain their directurl right on the first page - let's use this as an indicator and assume that the file is
          * online if we find a directurl. This also speeds-up linkchecking! Example: uqload.com
          */
-        String dllink = getDllink(link, account, br, correctedBR);
+        String dllink = getDllink(link, account, br, getCorrectBR(br));
         final Browser brc = this.br.cloneBrowser();
         if (StringUtils.isEmpty(dllink)) {
             if (brc.getURL() != null && !brc.getURL().contains("/embed")) {
@@ -1384,8 +1387,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 /* Check for streaming/direct links on the first page. */
                 if (StringUtils.isEmpty(dllink)) {
-                    checkErrors(br, correctedBR, link, account, false);
-                    dllink = getDllink(link, account, br, correctedBR);
+                    checkErrors(br, getCorrectBR(br), link, account, false);
+                    dllink = getDllink(link, account, br, getCorrectBR(br));
                 }
                 /* Do they support standard video embedding? */
                 if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
@@ -1426,7 +1429,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 /* Do we have an imagehost? */
                 if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
-                    checkErrors(br, correctedBR, link, account, false);
+                    checkErrors(br, getCorrectBR(br), link, account, false);
                     int counter = 0;
                     final int countermax = 3;
                     Form imghost_next_form = null;
@@ -1436,10 +1439,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         if (imghost_next_form != null) {
                             /* end of backward compatibility */
                             submitForm(imghost_next_form);
-                            checkErrors(br, correctedBR, link, account, false);
-                            dllink = getDllink(link, account, br, correctedBR);
+                            checkErrors(br, getCorrectBR(br), link, account, false);
+                            dllink = getDllink(link, account, br, getCorrectBR(br));
                             /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                            final String image_filename = regexImagehosterFilename(correctedBR);
+                            final String image_filename = regexImagehosterFilename(getCorrectBR(br));
                             if (image_filename != null) {
                                 link.setName(Encoding.htmlOnlyDecode(image_filename));
                             }
@@ -1453,13 +1456,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it
                      * and most likely end up with error "Fatal countdown error (countdown skipped)"
                      */
-                    checkErrors(br, correctedBR, link, account, false);
+                    checkErrors(br, getCorrectBR(br), link, account, false);
                     final Form download1 = findFormDownload1Free();
                     if (download1 != null) {
                         logger.info("Found download1 Form");
                         submitForm(download1);
-                        checkErrors(br, correctedBR, link, account, false);
-                        dllink = getDllink(link, account, br, correctedBR);
+                        checkErrors(br, getCorrectBR(br), link, account, false);
+                        dllink = getDllink(link, account, br, getCorrectBR(br));
                     } else {
                         logger.info("Failed to find download1 Form");
                     }
@@ -1471,7 +1474,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             Form download2 = findFormDownload2Free();
             if (download2 == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
-                checkErrors(br, correctedBR, link, account, false);
+                checkErrors(br, getCorrectBR(br), link, account, false);
                 /* Okay we finally have no idea what happened ... */
                 logger.warning("Failed to find download2 Form");
                 checkErrorsLastResort(br, account);
@@ -1485,7 +1488,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
              */
             Exception exceptionBeforeDownload2Submit = null;
             try {
-                checkErrors(br, correctedBR, link, account, false);
+                checkErrors(br, getCorrectBR(br), link, account, false);
             } catch (final Exception e) {
                 logger.log(e);
                 exceptionBeforeDownload2Submit = e;
@@ -1502,7 +1505,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 handleCaptcha(link, download2);
                 /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
                 if (link.getMD5Hash() == null) {
-                    final String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                    final String md5hash = new Regex(getCorrectBR(br), "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) {
                         link.setMD5Hash(md5hash.trim());
                     }
@@ -1526,11 +1529,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 }
                 logger.info("Submitted Form download2");
-                checkErrors(br, correctedBR, link, account, true);
+                checkErrors(br, getCorrectBR(br), link, account, true);
                 /* 2020-03-02: E.g. akvideo.stream */
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 if (dllink == null) {
-                    dllink = getDllink(link, account, br, correctedBR);
+                    dllink = getDllink(link, account, br, getCorrectBR(br));
                 }
                 download2 = findFormDownload2Free();
                 if (StringUtils.isEmpty(dllink) && (download2 != null || download2counter == download2max)) {
@@ -1568,10 +1571,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
-        String[] videoQualityHTMLs = new Regex(correctedBR, "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
+        String[] videoQualityHTMLs = new Regex(getCorrectBR(brc), "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
         if (videoQualityHTMLs.length == 0) {
             /* Match on line - safe attempt but this may not include filesize! */
-            videoQualityHTMLs = new Regex(correctedBR, "download_video\\([^\r\t\n]+").getColumn(-1);
+            videoQualityHTMLs = new Regex(getCorrectBR(brc), "download_video\\([^\r\t\n]+").getColumn(-1);
         }
         if (videoQualityHTMLs.length == 0) {
             logger.info("Failed to find any official video downloads");
@@ -1798,8 +1801,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
     public void handleCaptcha(final DownloadLink link, final Form captchaForm) throws Exception {
         /* Captcha START */
-        if (new Regex(correctedBR, Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
-            if (new Regex(correctedBR, "hcaptcha\\.com").matches()) {
+        if (new Regex(getCorrectBR(br), Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+            if (new Regex(getCorrectBR(br), "hcaptcha\\.com").matches()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type hcaptcha", 3 * 60 * 60 * 1000l);
             }
             /* 2019-06-06: Rare case */
@@ -1870,7 +1873,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 captchaForm.put("code", code.toString());
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in captchaForm");
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
-            } else if (StringUtils.containsIgnoreCase(correctedBR, "/captchas/")) {
+            } else if (StringUtils.containsIgnoreCase(getCorrectBR(br), "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), "");
                 String captchaurl = null;
@@ -1886,7 +1889,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
                 if (StringUtils.isEmpty(captchaurl)) {
                     /* Fallback e.g. for relative URLs (e.g. subyshare.com [bad example, needs special handling anways!]) */
-                    captchaurl = new Regex(correctedBR, "(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
+                    captchaurl = new Regex(getCorrectBR(br), "(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
                 }
                 if (captchaurl == null) {
                     logger.warning("Standard captcha captchahandling broken2!");
@@ -1896,10 +1899,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 captchaForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
-            } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+            } else if (new Regex(getCorrectBR(br), "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                 logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
-            } else if (new Regex(correctedBR, "solvemedia\\.com/papi/").matches()) {
+            } else if (new Regex(getCorrectBR(br), "solvemedia\\.com/papi/").matches()) {
                 logger.info("Detected captcha method \"solvemedia\" for this host");
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
@@ -2097,6 +2100,17 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public void clean() {
+        try {
+            super.clean();
+        } finally {
+            synchronized (correctedBrowserRequestMap) {
+                correctedBrowserRequestMap.clear();
+            }
+        }
+    }
+
     /** Traits used to cleanup html of our basic browser object and put it into correctedBR. */
     public ArrayList<String> getCleanupHTMLRegexes() {
         final ArrayList<String> regexStuff = new ArrayList<String>();
@@ -2110,16 +2124,37 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Removes HTML code which could break the plugin and puts it into correctedBR. */
     protected void correctBR(Browser br) throws NumberFormatException, PluginException {
-        correctedBR = br.toString();
-        final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
-        // remove custom rules first!!! As html can change because of generic cleanup rules.
-        /* generic cleanup */
-        for (String aRegex : regexStuff) {
-            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
-            if (results != null) {
-                for (String result : results) {
-                    correctedBR = correctedBR.replace(result, "");
+        synchronized (correctedBrowserRequestMap) {
+            String correctedBR = br.toString();
+            final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
+            // remove custom rules first!!! As html can change because of generic cleanup rules.
+            /* generic cleanup */
+            boolean modified = false;
+            for (String aRegex : regexStuff) {
+                final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+                if (results != null) {
+                    for (String result : results) {
+                        correctedBR = correctedBR.replace(result, "");
+                        modified = true;
+                    }
                 }
+            }
+            if (modified) {
+                correctedBrowserRequestMap.put(br.getRequest(), correctedBR);
+            } else {
+                correctedBrowserRequestMap.remove(br.getRequest());
+            }
+            this.correctedBR = correctedBR;
+        }
+    }
+
+    protected String getCorrectBR(Browser br) {
+        synchronized (correctedBrowserRequestMap) {
+            final String ret = correctedBrowserRequestMap.get(br.getRequest());
+            if (ret != null) {
+                return ret;
+            } else {
+                return br.toString();
             }
         }
     }
@@ -3054,7 +3089,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             logger.info("Successfully found AccountInfo without trafficleft via API (fetched trafficleft via website)");
             return ai;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = new Regex(getCorrectBR(br), ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -3067,7 +3102,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             setAccountLimitsByType(account, AccountType.LIFETIME);
         } else {
             /* 2019-07-11: It is not uncommon for XFS websites to display expire-dates even though the account is not premium anymore! */
-            String expireStr = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            String expireStr = new Regex(getCorrectBR(br), "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             long expire_milliseconds = 0;
             long expire_milliseconds_from_expiredate = 0;
             long expire_milliseconds_precise_to_the_second = 0;
@@ -3118,7 +3153,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                     /* Find html snippet which should contain our expiredate. */
-                    final String preciseExpireHTML = new Regex(correctedBR, "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
+                    final String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"accexpire\"[^>]*>.*?</div>").getMatch(-1);
                     String expireSecond = new Regex(preciseExpireHTML, "Premium(-| )Account expires?\\s*:\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
                     if (StringUtils.isEmpty(expireSecond)) {
                         /*
@@ -3526,7 +3561,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                     }
                 } while (!this.isLoggedin(this.br) && login_counter <= login_counter_max);
                 if (!this.isLoggedin(this.br)) {
-                    if (correctedBR.contains("op=resend_activation")) {
+                    if (getCorrectBR(br).contains("op=resend_activation")) {
                         /* User entered correct logindata but hasn't activated his account yet. */
                         throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
                     }
@@ -3645,7 +3680,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                      */
                     /* Missing login cookies? --> Login failed */
                     if (StringUtils.isEmpty(br.getCookie(getMainPage(), "xfss", Cookies.NOTDELETEDPATTERN))) {
-                        if (correctedBR.contains("op=resend_activation")) {
+                        if (getCorrectBR(br).contains("op=resend_activation")) {
                             /* User entered correct logindata but has not activated his account ... */
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account has not yet been activated!\r\nActivate it via the URL you should have received via E-Mail and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
@@ -3746,12 +3781,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                          */
                         dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                         if (StringUtils.isEmpty(dllink)) {
-                            dllink = getDllink(link, account, br, correctedBR);
+                            dllink = getDllink(link, account, br, getCorrectBR(br));
                         }
                         if (StringUtils.isEmpty(dllink)) {
                             final Form dlForm = findFormDownload2Premium();
                             if (dlForm == null) {
-                                checkErrors(br, correctedBR, link, account, true);
+                                checkErrors(br, getCorrectBR(br), link, account, true);
                                 logger.warning("Failed to find Form download2");
                                 checkErrorsLastResort(br, account);
                             }
@@ -3769,8 +3804,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                                 }
                                 this.correctBR(br);
                             }
-                            checkErrors(br, br.toString(), link, account, true);
-                            dllink = getDllink(link, account, br, br.toString());
+                            checkErrors(br, getCorrectBR(br), link, account, true);
+                            dllink = getDllink(link, account, br, getCorrectBR(br));
                         }
                     }
                 }
@@ -3953,7 +3988,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             correctBR(br);
             checkResponseCodeErrors(con);
-            checkServerErrors(br, correctedBR, link, account);
+            checkServerErrors(br, getCorrectBR(br), link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadlink did not lead to downloadable content");
         } else {
             try {
@@ -4626,7 +4661,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      */
     private final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supported_by_hardcoded_setting = this.supports_availablecheck_filename_abuse();
-        final boolean supported_by_indicating_html_code = new Regex(correctedBR, "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
+        final boolean supported_by_indicating_html_code = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         boolean allowed_by_auto_handling = true;
         final long last_failure = this.getPluginConfig().getLongProperty(PROPERTY_PLUGIN_REPORT_FILE_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);
         if (last_failure > 0) {
