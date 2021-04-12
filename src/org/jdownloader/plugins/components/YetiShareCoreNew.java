@@ -53,7 +53,8 @@ public class YetiShareCoreNew extends YetiShareCore {
     }
 
     /**
-     * @return true: Cookies were validated</br> false: Cookies were not validated
+     * @return true: Cookies were validated</br>
+     *         false: Cookies were not validated
      */
     public boolean loginWebsiteSpecial(final Account account, boolean force) throws Exception {
         super.loginWebsite(account, force);
@@ -61,7 +62,7 @@ public class YetiShareCoreNew extends YetiShareCore {
     }
 
     @Override
-    public boolean isLoggedin(Browser br) {
+    public boolean isLoggedin(final Browser br) {
         boolean loggedIN = super.isLoggedin(br);
         if (!loggedIN) {
             /*
