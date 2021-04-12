@@ -572,7 +572,7 @@ public class YetiShareCore extends antiDDoSForHost {
              * Check for direct-download and ensure that we're logged in! </br> This is needed because we usually load- and set stored
              * cookies without verifying them to save time!
              */
-            boolean hasTriedToLoginOnce = false;
+            boolean hasGoneThroughVerifiedLoginOnce = false;
             do {
                 final String redirect = br.getRedirectLocation();
                 if (redirect != null && !this.isDownloadlink(redirect)) {
@@ -599,9 +599,10 @@ public class YetiShareCore extends antiDDoSForHost {
                     break;
                 } else if (this.isLoggedin(this.br)) {
                     break;
-                } else if (hasTriedToLoginOnce) {
-                    /*
-                     * Only try once! </br> We HAVE to be logged in at this stage!
+                } else if (hasGoneThroughVerifiedLoginOnce) {
+                    /**
+                     * Only try once! </br>
+                     * We HAVE to be logged in at this stage!
                      */
                     this.loggedInOrException(this.br, account);
                     break;
@@ -615,7 +616,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     loginWebsite(account, true);
                     br.setFollowRedirects(false);
                     getPage(link.getPluginPatternMatcher());
-                    hasTriedToLoginOnce = true;
+                    hasGoneThroughVerifiedLoginOnce = true;
                     continue;
                 }
             } while (true);
