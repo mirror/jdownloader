@@ -17,10 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -28,6 +26,9 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileddCom extends XFileSharingProBasic {
@@ -135,7 +136,7 @@ public class FileddCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2020-08-25: Special */
         if (new Regex(correctedBR, ">\\s*Free Members can download files no bigger than").matches()) {
             throw new AccountRequiredException();

@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpFileCom extends XFileSharingProBasic {
@@ -108,12 +109,12 @@ public class UpFileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (br.getURL() != null && br.getURL().contains("/login")) {
             /* 2020-07-10: Special */
             throw new AccountRequiredException();
         }
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         checkResponseCodeErrors(br.getHttpConnection());
     }
 

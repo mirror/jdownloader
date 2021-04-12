@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GounlimitedTo extends XFileSharingProBasic {
@@ -171,11 +171,11 @@ public class GounlimitedTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean offline = super.isOffline(link);
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean offline = super.isOffline(link, br, html);
         if (!offline) {
             /* 2020-10-14: Offline content will be liked to a sample video instead lol example: https://gounlimited.to/jdexamplebla */
-            offline = new Regex(correctedBR, "<title>Watch 404 not found</title>|content=\"Watch video 404 not found\"").matches();
+            offline = new Regex(html, "<title>Watch 404 not found</title>|content=\"Watch video 404 not found\"").matches();
         }
         return offline;
     }
@@ -188,7 +188,7 @@ public class GounlimitedTo extends XFileSharingProBasic {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
         final AvailableStatus status = super.requestFileInformationWebsite(link, account, downloadsStarted);
         logger.info("File appears to be online --> Let's deep-check");
-        final String dllink = this.getDllink(link, account);
+        final String dllink = this.getDllink(link, account, br, correctedBR);
         if (!StringUtils.isEmpty(dllink)) {
             /* Get- and set filesize from directurl */
             boolean dllink_is_valid = false;

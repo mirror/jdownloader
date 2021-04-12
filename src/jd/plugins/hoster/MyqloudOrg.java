@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -33,6 +30,9 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -232,8 +232,8 @@ public class MyqloudOrg extends XFileSharingProBasic {
             final String correctedBROld = this.correctedBR;
             this.correctedBR = brc.toString();
             /* Workaround: Set this htmlcode on our normal browser so captcha handling can do its job. */
-            br.getRequest().setHtmlCode(brc.toString());
-            checkErrors(link, account, false);
+            br.getRequest().setHtmlCode(correctedBR);
+            checkErrors(br, correctedBR, link, account, false);
             /* 2019-08-29: This Form may sometimes be given e.g. deltabit.co */
             Form download1 = brc.getFormByInputFieldKeyValue("op", "download1");
             if (download1 == null) {
@@ -287,11 +287,11 @@ public class MyqloudOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrorsLastResort(final Account account) throws PluginException {
+    protected void checkErrorsLastResort(Browser br, final Account account) throws PluginException {
         if (requiresAccountToDownload) {
             throw new AccountRequiredException();
         } else {
-            super.checkErrorsLastResort(account);
+            super.checkErrorsLastResort(br, account);
         }
     }
 

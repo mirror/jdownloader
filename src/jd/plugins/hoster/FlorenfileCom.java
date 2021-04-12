@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlorenfileCom extends XFileSharingProBasic {
@@ -110,9 +110,9 @@ public class FlorenfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2020-03-16: Special */
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         if (new Regex(correctedBR, ">\\s*There is not enough traffic available to download this file").matches()) {
             /* 2020-03-16: Typically for account (premium?) users */
             if (account != null) {
@@ -167,10 +167,10 @@ public class FlorenfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         /* 2020-03-19: Special: jdlog://4986715302851/ */
         final Form loginform = this.findLoginform(br);
-        return super.isLoggedin() && loginform == null;
+        return super.isLoggedin(br) && loginform == null;
     }
 
     @Override

@@ -19,12 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -34,6 +30,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TakefileLink extends XFileSharingProBasic {
@@ -103,9 +104,9 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isOffline(final DownloadLink link) {
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         final String fuid = super.getFUIDFromURL(link);
-        boolean isOffline = super.isOffline(link);
+        boolean isOffline = super.isOffline(link, br, html);
         if (!br.getURL().contains(fuid) || (br.getRedirectLocation() != null && !br.getRedirectLocation().contains(fuid))) {
             /* 2018-11-15: Special - redirect to: https://takefile.link/upgrade */
             isOffline = true;
@@ -119,8 +120,8 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
-        boolean isLoggedinHTML = super.isLoggedin();
+    public boolean isLoggedin(Browser br) {
+        boolean isLoggedinHTML = super.isLoggedin(br);
         if (!isLoggedinHTML) {
             isLoggedinHTML = br.containsHTML("/user_logout");
         }
@@ -165,8 +166,8 @@ public class TakefileLink extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        super.checkErrors(link, account, checkAll);
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         /* 2021-01-11: Some files are "paid files": The user has to pay a fee for that single file to be able to download it. */
         if (new Regex(correctedBR, "class=\"price\"").matches()) {
             throw new AccountRequiredException();

@@ -17,9 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -28,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilespaceCom extends XFileSharingProBasic {
@@ -99,9 +100,9 @@ public class FilespaceCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    public void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-05-21: Special */
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         if (correctedBR.contains(">You, or someone with the same IP address, are downloading the")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 'You're using all download slots for IP'", 10 * 60 * 1001l);
         }

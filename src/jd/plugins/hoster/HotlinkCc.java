@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -33,6 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -248,13 +248,13 @@ public class HotlinkCc extends XFileSharingProBasic {
             return super.getDllink(link, account, br, src);
         }
     }
+
     /* 2021-04-12: Although most of the content hosted on this filehost is video content other file-types are also allowed! */
     // @Override
     // protected boolean isVideohoster_enforce_video_filename() {
     // /** 2021-01-27 */
     // return true;
     // }
-
     @Override
     protected boolean supports_availablecheck_alt() {
         /** 2021-01-28 */
@@ -444,7 +444,7 @@ public class HotlinkCc extends XFileSharingProBasic {
                 /* Check for errors and keep htmo of previous browser-instance (workaround)... */
                 final String correctedBROld = this.correctedBR;
                 this.correctedBR = brc.toString();
-                this.checkErrors(link, account, false);
+                this.checkErrors(br, correctedBR, link, account, false);
                 this.correctedBR = correctedBROld;
             }
         } catch (final InterruptedException e) {

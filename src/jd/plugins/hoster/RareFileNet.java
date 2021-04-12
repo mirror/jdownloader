@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RareFileNet extends XFileSharingProBasic {
@@ -126,10 +127,10 @@ public class RareFileNet extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean offline = super.isOffline(link);
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean offline = super.isOffline(link, br, html);
         if (!offline) {
-            offline = new Regex(correctedBR, ">\\s*This server has crashed but we are still working for this server|>\\s*No such file with this filename").matches();
+            offline = new Regex(html, ">\\s*This server has crashed but we are still working for this server|>\\s*No such file with this filename").matches();
         }
         return offline;
     }

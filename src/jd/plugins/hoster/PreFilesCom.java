@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PreFilesCom extends XFileSharingProBasic {
@@ -137,9 +137,9 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-07-03: Special */
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         final String wait = new Regex(correctedBR, ">\\s*Your subsequent download will be started in([^<>]+)").getMatch(0);
         if (wait != null) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
@@ -190,8 +190,8 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
-        boolean loggedin = super.isLoggedin();
+    public boolean isLoggedin(Browser br) {
+        boolean loggedin = super.isLoggedin(br);
         if (!loggedin) {
             /* 2020-11-13 */
             final String mainpage = getMainPage();

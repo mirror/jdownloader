@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +27,9 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OnlystreamTv extends XFileSharingProBasic {
@@ -125,13 +125,13 @@ public class OnlystreamTv extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean offline = super.isOffline(link);
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean offline = super.isOffline(link, br, html);
         if (!offline) {
-            offline = correctedBR.contains(">File you are looking for is not found");
+            offline = new Regex(html, ">\\s*File you are looking for is not found").matches();
             if (!offline) {
                 /* 2020-10-30: Website displays sample video hosted on google and not a "real" filename --> Another offline trait */
-                offline = new Regex(correctedBR, "<title>\\s*Video\\.mp4 - Onlystream\\.tv</title>").matches();
+                offline = new Regex(html, "<title>\\s*Video\\.mp4 - Onlystream\\.tv</title>").matches();
             }
         }
         return offline;

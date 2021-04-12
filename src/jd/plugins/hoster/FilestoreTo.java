@@ -19,10 +19,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,6 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://(www\\.)?filestore\\.to/\\?d=[A-Z0-9]+" })
 public class FilestoreTo extends PluginForHost {
@@ -168,10 +168,13 @@ public class FilestoreTo extends PluginForHost {
         final String url = link.getDownloadURL();
         String filename = null;
         String filesizeStr = null;
+        Exception exception = null;
         for (int i = 1; i < 3; i++) {
             try {
                 br.getPage(url);
             } catch (final Exception e) {
+                logger.log(e);
+                exception = e;
                 continue;
             }
             haveFun();
@@ -206,7 +209,11 @@ public class FilestoreTo extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (exception != null) {
+            throw exception;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     private void download(final DownloadLink link, final Account account, final boolean resume, int maxChunks) throws Exception {
@@ -276,13 +283,13 @@ public class FilestoreTo extends PluginForHost {
         }
         return dllink;
     }
+
     // private Browser prepAjax(Browser prepBr) {
     // prepBr.getHeaders().put("Accept", "*/*");
     // prepBr.getHeaders().put("Accept-Charset", null);
     // prepBr.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
     // return prepBr;
     // }
-
     public void haveFun() throws Exception {
         aBrowser = br.toString();
         aBrowser = aBrowser.replaceAll("(<(p|div)[^>]+(display:none|top:-\\d+)[^>]+>.*?(<\\s*(/\\2\\s*|\\2\\s*/\\s*)>){2})", "");

@@ -18,13 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -41,6 +34,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdownloadCom extends XFileSharingProBasic {
@@ -324,7 +324,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         /* 2020-09-02: Allow "xfss" cookie without "login" cookie! */
         final String mainpage = getMainPage();
         logger.info("Doing login-cookiecheck for: " + mainpage);
@@ -390,26 +390,26 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         /* 2020-01-17: Special */
-        if (new Regex(correctedBR, ">\\s*This file was banned by copyright").matches()) {
+        if (new Regex(html, ">\\s*This file was banned by copyright").matches()) {
             /* "<strong>Oops!</strong> This file was banned by copyright owner's report" */
             return true;
         }
-        return super.isOffline(link);
+        return super.isOffline(link, br, html);
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2020-01-20: Special */
-        if (new Regex(correctedBR, ">\\s*This server is in maintenance mode").matches()) {
+        if (new Regex(html, ">\\s*This server is in maintenance mode").matches()) {
             /* <strong>Oops!</strong> This server is in maintenance mode. Refresh this page in some minutes. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server is in maintenance mode", 15 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 1000l);
         }
         /* Now execute template handling */
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, html, link, account, checkAll);
     }
 
     @Override

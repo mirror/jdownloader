@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CosmoBoxOrg extends XFileSharingProBasic {
@@ -122,15 +122,15 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-07-23: Special */
-        String reconnect_hours = new Regex(correctedBR, "You have downloaded \\d+ files? per (\\d+) hours?").getMatch(0);
+        String reconnect_hours = new Regex(html, "You have downloaded \\d+ files? per (\\d+) hours?").getMatch(0);
         if (reconnect_hours == null) {
-            reconnect_hours = new Regex(correctedBR, ">\\s*You have reached your download limit \\d+ files? for (\\d+) hours?").getMatch(0);
+            reconnect_hours = new Regex(html, ">\\s*You have reached your download limit \\d+ files? for (\\d+) hours?").getMatch(0);
         }
         if (reconnect_hours != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(reconnect_hours) * 60 * 60 * 1001l);
         }
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, html, link, account, checkAll);
     }
 }

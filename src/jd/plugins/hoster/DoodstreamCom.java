@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -180,11 +181,16 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean offline = super.isOffline(link);
+    protected boolean isShortURL(DownloadLink link) {
+        return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean offline = super.isOffline(link, br, html);
         if (!offline) {
             /* 2020-10-05: Special: Empty "embed URL". */
-            offline = new Regex(correctedBR, "<iframe src=\"/e/\"").matches();
+            offline = new Regex(html, "<iframe src=\"/e/\"").matches();
         }
         return offline;
     }
@@ -199,7 +205,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         this.br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
-        if (isOffline(link) || !this.canHandle(this.br.getURL())) {
+        if (isOffline(link, this.br, this.correctedBR) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
