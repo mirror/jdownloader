@@ -1,18 +1,23 @@
 package jd.controlling.linkcollector;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
+import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.TypeRef;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 
 public class CrawledPackageStorable implements Storable {
+    public static final TypeRef<CrawledPackageStorable> TYPEREF = new TypeRef<CrawledPackageStorable>() {
+    };
 
     public static enum TYPE {
         NORMAL,
@@ -87,18 +92,14 @@ public class CrawledPackageStorable implements Storable {
                 pkg.setCurrentSorter(asc ? CrawledPackage.SORTER_ASC : CrawledPackage.SORTER_DESC);
                 return;
             }
-
             // Column Sorter
             String colID = id.substring(index + 7);
             for (final ExtColumn<AbstractNode> c : LinkGrabberTableModel.getInstance().getColumns()) {
                 if (colID.equals(c.getID())) {
                     if (asc) {
                         pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
-
                             public int compare(CrawledLink o1, CrawledLink o2) {
-
                                 return c.getRowSorter().compare(o1, o2);
-
                             }
 
                             @Override
@@ -113,11 +114,8 @@ public class CrawledPackageStorable implements Storable {
                         });
                     } else {
                         pkg.setCurrentSorter(new PackageControllerComparator<CrawledLink>() {
-
                             public int compare(CrawledLink o1, CrawledLink o2) {
-
                                 return c.getRowSorter().compare(o2, o1);
-
                             }
 
                             @Override
@@ -137,7 +135,6 @@ public class CrawledPackageStorable implements Storable {
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
-
     }
 
     public void setComment(String comment) {
@@ -146,8 +143,7 @@ public class CrawledPackageStorable implements Storable {
 
     @SuppressWarnings("unused")
     private CrawledPackageStorable(/* storable */) {
-        pkg = new CrawledPackage();
-        links = new ArrayList<CrawledLinkStorable>();
+        this(new CrawledPackage(), false);
     }
 
     public CrawledPackageStorable(CrawledPackage pkg) {
@@ -193,11 +189,15 @@ public class CrawledPackageStorable implements Storable {
         return pkg.getCreated();
     }
 
+    public long getModified() {
+        return pkg.getModified();
+    }
+
     public String getDownloadFolder() {
         return pkg.getRawDownloadFolder();
     }
 
-    public java.util.List<CrawledLinkStorable> getLinks() {
+    public List<CrawledLinkStorable> getLinks() {
         return links;
     }
 
@@ -209,6 +209,10 @@ public class CrawledPackageStorable implements Storable {
         pkg.setCreated(created);
     }
 
+    public void setModified(long modified) {
+        pkg.setModified(modified);
+    }
+
     public void setDownloadFolder(String downloadFolder) {
         this.pkg.setDownloadFolder(downloadFolder);
     }
@@ -217,15 +221,20 @@ public class CrawledPackageStorable implements Storable {
         this.pkg.setExpanded(expanded);
     }
 
-    public void setLinks(java.util.List<CrawledLinkStorable> links) {
+    public void setLinks(List<CrawledLinkStorable> links) {
         if (links != null) {
             this.links = links;
             try {
                 pkg.getModifyLock().writeLock();
-                for (CrawledLinkStorable link : links) {
-                    CrawledLink l = link._getCrawledLink();
-                    pkg.getChildren().add(l);
-                    l.setParentNode(pkg);
+                final List<CrawledLink> children = pkg.getChildren();
+                for (final CrawledLinkStorable link : links) {
+                    if (link != null) {
+                        final CrawledLink crawledLink = link._getCrawledLink();
+                        children.add(crawledLink);
+                        crawledLink.setParentNode(pkg);
+                        final DownloadLink downloadLink = crawledLink.getDownloadLink();
+                        downloadLink.setNodeChangeListener(crawledLink);
+                    }
                 }
             } finally {
                 pkg.getModifyLock().writeUnlock();
@@ -275,5 +284,4 @@ public class CrawledPackageStorable implements Storable {
     public String getPackageID() {
         return packageID;
     }
-
 }

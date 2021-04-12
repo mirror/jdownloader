@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.FileCountColumn;
 import org.jdownloader.gui.views.downloads.columns.FileSizeColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
+import org.jdownloader.gui.views.downloads.columns.ModifiedDateColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -107,7 +108,6 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
                 return true;
             }
         });
-        // this.addColumn(new AddedDateColumn());
         this.addColumn(priorityColumn = new PriorityColumn());
         this.addColumn(new CommentColumn() {
             @Override
@@ -119,6 +119,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
             this.addColumn(new LinkIDColumn());
         }
         this.addColumn(new AddedDateColumn());
+        this.addColumn(new ModifiedDateColumn());
         this.addColumn(new ChecksumColumn());
         this.addColumn(new FileTypeColumn());
         this.addColumn(new HasCaptchaColumn());
