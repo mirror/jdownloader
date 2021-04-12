@@ -20,12 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +28,12 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AniStreamCom extends XFileSharingProBasic {
@@ -132,11 +132,11 @@ public class AniStreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean offline = super.isOffline(link);
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean offline = super.isOffline(link, br, html);
         if (!offline) {
             /* 2020-08-04 */
-            offline = new Regex(correctedBR, ">\\s*File deleted|>\\s*This file is not available anymore").matches();
+            offline = new Regex(html, ">\\s*File deleted|>\\s*This file is not available anymore").matches();
         }
         return offline;
     }

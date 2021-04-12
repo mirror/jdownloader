@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoXvideosharingCom;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoXvideosharingCom;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosharingCom extends XFileSharingProBasic {
@@ -153,25 +154,25 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
+    public boolean isLoggedin(Browser br) {
         /* 2019-08-22: Special */
-        boolean loggedIN = super.isLoggedin();
+        boolean loggedIN = super.isLoggedin(br);
         if (loggedIN) {
             /*
              * They do not necessarily invalidate their old login cookies which means template code might fail to recognize that we're NOT
              * loggedIN!
              */
-            loggedIN = this.findLoginform(this.br) == null;
+            loggedIN = this.findLoginform(br) == null;
         }
         return loggedIN;
     }
+
     /* 2019-08-22: Commented-out - this was only for testing! */
     // @Override
     // protected boolean supports_api_only_mode() {
     // /* 2019-07-10: Special: For testing purposes */
     // return true;
     // }
-
     @Override
     public Class<? extends XFSConfigVideoXvideosharingCom> getConfigInterface() {
         return XFSConfigVideoXvideosharingCom.class;

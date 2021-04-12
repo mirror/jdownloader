@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -126,11 +127,11 @@ public class UsersCloudCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         /* 2020-02-18: Special */
-        boolean isoffline = new Regex(correctedBR, ">\\s*(The file is no longer available|The file you are trying to download is no longer available)").matches();
+        boolean isoffline = new Regex(html, ">\\s*(The file is no longer available|The file you are trying to download is no longer available)").matches();
         if (!isoffline) {
-            isoffline = super.isOffline(link);
+            isoffline = super.isOffline(link, br, html);
         }
         return isoffline;
     }

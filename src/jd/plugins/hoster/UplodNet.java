@@ -20,10 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -36,6 +32,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UplodNet extends XFileSharingProBasic {
@@ -153,7 +153,7 @@ public class UplodNet extends XFileSharingProBasic {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = checkDirectLink(link, directlinkproperty);
         if (StringUtils.isEmpty(dllink)) {
-            this.checkErrors(link, account, false);
+            this.checkErrors(br, correctedBR, link, account, false);
             final Form dl1 = br.getFormByInputFieldKeyValue("op", "step1");
             if (dl1 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -174,15 +174,15 @@ public class UplodNet extends XFileSharingProBasic {
             this.waitTime(link, timeBefore);
             link.setProperty(PROPERTY_captcha_required, true);
             this.submitForm(dl2);
-            this.checkErrors(link, account, true);
-            dllink = this.getDllink(link, account);
+            this.checkErrors(br, correctedBR, link, account, true);
+            dllink = this.getDllink(link, account, br, correctedBR);
         }
         handleDownload(link, account, dllink, null);
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        super.checkErrors(link, account, checkAll);
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         if (checkAll) {
             if (correctedBR.contains("Invalid captcha")) {
                 logger.warning("Wrong captcha (or wrong password as well)!");

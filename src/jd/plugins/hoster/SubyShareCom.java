@@ -121,8 +121,8 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        super.checkErrors(link, account, checkAll);
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, correctedBR, link, account, checkAll);
         /* 2019-07-08: Special */
         if (new Regex(correctedBR, "Sorry\\s*,\\s*we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake\\s*,\\s*please contact").matches()) {
             if (account != null) {
@@ -170,8 +170,8 @@ public class SubyShareCom extends XFileSharingProBasic {
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 /* Check for streaming/direct links on the first page. */
                 if (StringUtils.isEmpty(dllink)) {
-                    checkErrors(link, account, false);
-                    dllink = getDllink(link, account);
+                    checkErrors(br, correctedBR, link, account, false);
+                    dllink = getDllink(link, account, br, correctedBR);
                 }
                 /* Do they support standard video embedding? */
                 if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
@@ -212,15 +212,15 @@ public class SubyShareCom extends XFileSharingProBasic {
                 }
                 /* Do we have an imagehost? */
                 if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
-                    checkErrors(link, account, false);
+                    checkErrors(br, correctedBR, link, account, false);
                     Form imghost_next_form = null;
                     do {
                         imghost_next_form = findImageForm(this.br);
                         if (imghost_next_form != null) {
                             /* end of backward compatibility */
                             submitForm(imghost_next_form);
-                            checkErrors(link, account, false);
-                            dllink = getDllink(link, account);
+                            checkErrors(br, correctedBR, link, account, false);
+                            dllink = getDllink(link, account, br, correctedBR);
                             /* For imagehosts, filenames are often not given until we can actually see/download the image! */
                             final String image_filename = regexImagehosterFilename(correctedBR);
                             if (image_filename != null) {
@@ -235,15 +235,15 @@ public class SubyShareCom extends XFileSharingProBasic {
                      * Check errors here because if we don't and a link is premiumonly, download1 Form will be present, plugin will send it
                      * and most likely end up with error "Fatal countdown error (countdown skipped)"
                      */
-                    checkErrors(link, account, false);
+                    checkErrors(br, correctedBR, link, account, false);
                     final Form download1 = findFormDownload1Free();
                     if (download1 != null) {
                         logger.info("Found download1 Form");
                         /* 2020-06-15: Special: Two captchas in the row possible! */
                         this.handleCaptcha(link, download1);
                         submitForm(download1);
-                        checkErrors(link, account, false);
-                        dllink = getDllink(link, account);
+                        checkErrors(br, correctedBR, link, account, false);
+                        dllink = getDllink(link, account, br, correctedBR);
                     } else {
                         logger.info("Failed to find download1 Form");
                     }
@@ -255,10 +255,10 @@ public class SubyShareCom extends XFileSharingProBasic {
             Form download2 = findFormDownload2Free();
             if (download2 == null) {
                 /* Last chance - maybe our errorhandling kicks in here. */
-                checkErrors(link, account, false);
+                checkErrors(br, correctedBR, link, account, false);
                 /* Okay we finally have no idea what happened ... */
                 logger.warning("Failed to find download2 Form");
-                checkErrorsLastResort(account);
+                checkErrorsLastResort(br, account);
             }
             logger.info("Found download2 Form");
             /*
@@ -269,7 +269,7 @@ public class SubyShareCom extends XFileSharingProBasic {
              */
             Exception exceptionBeforeDownload2Submit = null;
             try {
-                checkErrors(link, account, false);
+                checkErrors(br, correctedBR, link, account, false);
             } catch (final Exception e) {
                 logger.log(e);
                 exceptionBeforeDownload2Submit = e;
@@ -303,18 +303,18 @@ public class SubyShareCom extends XFileSharingProBasic {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    this.correctBR();
+                    this.correctBR(br);
                     try {
                         formCon.disconnect();
                     } catch (final Throwable e) {
                     }
                 }
                 logger.info("Submitted Form download2");
-                checkErrors(link, account, true);
+                checkErrors(br, correctedBR, link, account, true);
                 /* 2020-03-02: E.g. akvideo.stream */
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 if (dllink == null) {
-                    dllink = getDllink(link, account);
+                    dllink = getDllink(link, account, br, correctedBR);
                 }
                 download2 = findFormDownload2Free();
                 if (StringUtils.isEmpty(dllink) && (download2 != null || download2counter == download2max)) {
@@ -324,7 +324,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                         logger.info("Throwing exceptionBeforeDownload2Submit");
                         throw exceptionBeforeDownload2Submit;
                     }
-                    checkErrorsLastResort(account);
+                    checkErrorsLastResort(br, account);
                 } else if (StringUtils.isEmpty(dllink) && download2 != null) {
                     invalidateLastChallengeResponse();
                     continue;
@@ -388,7 +388,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         getPage(br, page);
         handleAntiDdosChallenge(br);
         if (correctBr) {
-            correctBR();
+            correctBR(br);
         }
     }
 
@@ -397,7 +397,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         postPage(br, page, postdata);
         handleAntiDdosChallenge(br);
         if (correctBr) {
-            correctBR();
+            correctBR(br);
         }
     }
 
@@ -406,7 +406,7 @@ public class SubyShareCom extends XFileSharingProBasic {
         submitForm(br, form);
         handleAntiDdosChallenge(br);
         if (correctBr) {
-            correctBR();
+            correctBR(br);
         }
     }
 

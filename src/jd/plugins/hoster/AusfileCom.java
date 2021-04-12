@@ -17,10 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,6 +26,9 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AusfileCom extends XFileSharingProBasic {
@@ -89,8 +90,8 @@ public class AusfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin() {
-        boolean loggedin = super.isLoggedin();
+    public boolean isLoggedin(Browser br) {
+        boolean loggedin = super.isLoggedin(br);
         if (!loggedin) {
             logger.info("Special logincheck ...");
             /**

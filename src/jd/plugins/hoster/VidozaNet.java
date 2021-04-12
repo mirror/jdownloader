@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidozaNet extends XFileSharingProBasic {
@@ -117,11 +118,11 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
-        boolean isOffline = super.isOffline(link);
-        if (!isOffline) {
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean isOffline = super.isOffline(link, br, html);
+        if (!isOffline && html != null) {
             /* 2019-07-04: Special: */
-            isOffline = correctedBR.contains("/embed-.html\"") || correctedBR.contains("Reason for deletion:");
+            isOffline = html.contains("/embed-.html\"") || html.contains("Reason for deletion:");
         }
         return isOffline;
     }

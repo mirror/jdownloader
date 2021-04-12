@@ -18,14 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WatchvideoUs extends XFileSharingProBasic {
@@ -105,12 +106,12 @@ public class WatchvideoUs extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link) {
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        boolean isOffline = super.isOffline(link, br, html);
         /* 2019-10-01: Special */
-        boolean isOffline = super.isOffline(link);
         if (!isOffline) {
             /* <div id="over_player_msg">File was locked by administrator</div> */
-            isOffline = new Regex(correctedBR, ">\\s*File was locked by administrator").matches();
+            isOffline = new Regex(html, ">\\s*File was locked by administrator").matches();
         }
         return isOffline;
     }

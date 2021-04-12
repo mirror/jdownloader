@@ -20,9 +20,8 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MexashareCom extends XFileSharingProBasic {
@@ -126,7 +127,7 @@ public class MexashareCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrors(final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+    protected void checkErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         /* 2019-08-28: Special */
         final String preciseWaittime = new Regex(correctedBR, "(you can download this file after\\s*:\\s*</a><br>\\s*<br><br>\\s*<a.*?)</a>").getMatch(0);
         if (preciseWaittime != null) {
@@ -173,7 +174,7 @@ public class MexashareCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have consumed your daily download volume", 30 * 60 * 1000l);
             }
         }
-        super.checkErrors(link, account, checkAll);
+        super.checkErrors(br, correctedBR, link, account, checkAll);
     }
 
     @Override
