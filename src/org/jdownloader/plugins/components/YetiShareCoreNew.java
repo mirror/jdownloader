@@ -52,6 +52,11 @@ public class YetiShareCoreNew extends YetiShareCore {
         return "/upgrade";
     }
 
+    @Override
+    protected String getAccountNameSpaceLogout() {
+        return "/account/logout";
+    }
+
     /**
      * @return true: Cookies were validated</br>
      *         false: Cookies were not validated
@@ -59,19 +64,6 @@ public class YetiShareCoreNew extends YetiShareCore {
     public boolean loginWebsiteSpecial(final Account account, boolean force) throws Exception {
         super.loginWebsite(account, force);
         return true;
-    }
-
-    @Override
-    public boolean isLoggedin(final Browser br) {
-        boolean loggedIN = super.isLoggedin(br);
-        if (!loggedIN) {
-            /*
-             * Traits depend on where user currently is: Case 1: For whenever logout button is visible (e.g. account overview) | Case 2:
-             * When logout button is not visible e.g. on "/upgrade" page.
-             */
-            loggedIN = br.containsHTML("/account/logout\"") || br.containsHTML("/account\"");
-        }
-        return loggedIN;
     }
 
     @Override
