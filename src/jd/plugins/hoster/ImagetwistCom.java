@@ -76,7 +76,11 @@ public class ImagetwistCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/(?:th|i)/\\d+/[a-z0-9]{12})");
+            // todo: add optional plugin settings support for the direct images /i/ (see getFUIDFromURL) , optional because ppl might want
+            // to avoid the plugin and
+            // use directhttp
+            // instead
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/th/\\d+/[a-z0-9]{12})");
         }
         return ret.toArray(new String[0]);
     }
