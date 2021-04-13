@@ -120,9 +120,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             String hash = new Regex(tmp, type_docviewer).getMatch(0);
             if (StringUtils.isEmpty(hash)) {
                 hash = new Regex(tmp, "url=ya\\-disk\\-public%3A%2F%2F(.+)").getMatch(0);
-            }
-            if (StringUtils.isEmpty(hash)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (StringUtils.isEmpty(hash)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             final String hashRoot = URLDecoder.decode(hash, "UTF-8");
             param.setCryptedUrl(generateContentURL(hashRoot));
