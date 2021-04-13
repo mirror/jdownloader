@@ -1140,7 +1140,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     @Override
                     public Object edtRun() {
                         JDGui.this.mainTabbedPane.onClose();
-                        if (!ShutdownController.getInstance().isHooksDelegated() && CrossSystem.isWindows()) {
+                        if (false && !ShutdownController.getInstance().isHooksDelegated() && CrossSystem.isWindows()) {
                             // without delegated Hooks(--illegal-access=deny)->Shutdown happens via normal System.exit, causing SIGINT->
                             // window/peer stuff
                             // are disposed by JVM
