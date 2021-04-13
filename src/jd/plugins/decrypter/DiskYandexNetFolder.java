@@ -24,13 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -47,11 +40,19 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DiskYandexNet;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     // public static List<String> getPluginSubDomains() {
     // final ArrayList<String> subdomains = new ArrayList<String>();
     // subdomains.add("disk");
@@ -59,7 +60,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     // subdomains.add("docviewer");
     // return subdomains;
     // }
-
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
@@ -158,22 +158,32 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         final String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
         final String json = br.getRegex("<script type=\"application/json\"[^>]*id=\"store-prefetch\"[^>]*>(.*?)</script>").getMatch(0);
-        Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("resources");
+        Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final String rootResourceId = (String) map.get("rootResourceId");
+        final String currentResourceId = (String) map.get("currentResourceId");
+        Map<String, Object> entries = (Map<String, Object>) map.get("resources");
         /*
          * First find the base folder name: If there are multiple items as part of a folder, the first item is kind of a dummy item
          * containing the name of the root folder.
          */
-        String baseFolderName = null;
         String hashMain = null;
         for (final String key : entries.keySet()) {
             final Map<String, Object> ressource = (Map<String, Object>) entries.get(key);
             final String type = (String) ressource.get("type");
-            if (type.equals("dir")) {
-                baseFolderName = (String) ressource.get("name");
+            if ("dir".equals(type) && ressource.get("parent") == null) {
                 hashMain = (String) ressource.get("hash");
+                break;
             }
-            break;
+        }
+        String baseFolderName = null;
+        for (final String key : entries.keySet()) {
+            final Map<String, Object> ressource = (Map<String, Object>) entries.get(key);
+            final String type = (String) ressource.get("type");
+            final String id = (String) ressource.get("id");
+            if ("dir".equals(type) && StringUtils.equals(id, currentResourceId)) {
+                baseFolderName = (String) ressource.get("name");
+                break;
+            }
         }
         if (StringUtils.isEmpty(baseFolderName)) {
             /* Fallback */
@@ -261,7 +271,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
             }
             if (page > 0) {
-                completed = ((Boolean) entries.get("completed")).booleanValue();
+                completed = Boolean.TRUE.equals(entries.get("completed"));
             } else {
                 if (!completed) {
                     completed = ressources.size() < maxItemsPerPage;
