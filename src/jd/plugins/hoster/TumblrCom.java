@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
@@ -28,7 +29,9 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -36,11 +39,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https://[a-z0-9]+\\.media\\.tumblr\\.com/.+|https?://vtt\\.tumblr\\.com/tumblr_[A-Za-z0-9]+\\.mp4" })
 public class TumblrCom extends PluginForHost {
     public static final long trust_cookie_age = 300000l;
     private String           dllink           = null;
@@ -66,13 +70,65 @@ public class TumblrCom extends PluginForHost {
     private static final String PROPERTY_APIKEY          = "apikey";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        URLConnectionAdapter con = null;
+        try {
+            prepareBrowserForDownload(this.br, link);
+            con = this.br.openHeadConnection(link.getPluginPatternMatcher());
+            connectionAvailablecheck(link, con);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    /** Sets some important headers. Especially .gifv (.webp) images may not be downloadable without these headers! */
+    private void prepareBrowserForDownload(final Browser br, final DownloadLink link) {
+        this.br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+        this.br.getHeaders().put("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+        br.setFollowRedirects(true);
+    }
+
+    private void connectionAvailablecheck(final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+        }
+        if (con.getCompleteContentLength() > 0) {
+            link.setVerifiedFileSize(con.getCompleteContentLength());
+        }
+        if (con.isContentDisposition()) {
+            link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+        } else {
+            try {
+                final String filenameURL = Plugin.getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
+                if (filenameURL != null) {
+                    link.setFinalFileName(filenameURL);
+                }
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        prepareBrowserForDownload(this.br, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        try {
+            this.connectionAvailablecheck(link, dl.getConnection());
+        } catch (final Throwable e) {
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable ignore) {
+            }
+        }
+        dl.startDownload();
     }
 
     public void login(final Account account, final boolean force) throws Exception {
@@ -188,7 +244,8 @@ public class TumblrCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Account is never required to download tumblr.com directurls! */
+        handleFree(link);
     }
 
     @Override
