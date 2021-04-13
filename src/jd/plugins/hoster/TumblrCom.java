@@ -15,18 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -43,6 +34,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https://[a-z0-9]+\\.media\\.tumblr\\.com/.+|https?://vtt\\.tumblr\\.com/tumblr_[A-Za-z0-9]+\\.mp4" })
 public class TumblrCom extends PluginForHost {
@@ -71,10 +72,9 @@ public class TumblrCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        URLConnectionAdapter con = null;
+        prepareBrowserForDownload(this.br, link);
+        final URLConnectionAdapter con = this.br.openHeadConnection(link.getPluginPatternMatcher());
         try {
-            prepareBrowserForDownload(this.br, link);
-            con = this.br.openHeadConnection(link.getPluginPatternMatcher());
             connectionAvailablecheck(link, con);
         } finally {
             try {
@@ -103,16 +103,16 @@ public class TumblrCom extends PluginForHost {
         if (con.getCompleteContentLength() > 0) {
             link.setVerifiedFileSize(con.getCompleteContentLength());
         }
-        if (con.isContentDisposition()) {
-            link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
-        } else {
+        String fileName = Plugin.getFileNameFromDispositionHeader(con);
+        if (fileName == null) {
             try {
-                final String filenameURL = Plugin.getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
-                if (filenameURL != null) {
-                    link.setFinalFileName(filenameURL);
-                }
-            } catch (final Throwable e) {
+                fileName = Plugin.getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
+            } catch (IOException e) {
+                logger.log(e);
             }
+        }
+        if (fileName != null) {
+            link.setFinalFileName(fileName);
         }
     }
 
@@ -120,14 +120,7 @@ public class TumblrCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         prepareBrowserForDownload(this.br, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        try {
-            this.connectionAvailablecheck(link, dl.getConnection());
-        } catch (final Throwable e) {
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable ignore) {
-            }
-        }
+        this.connectionAvailablecheck(link, dl.getConnection());
         dl.startDownload();
     }
 
@@ -157,7 +150,7 @@ public class TumblrCom extends PluginForHost {
                             logger.info("Cookie login successful");
                             return;
                         } catch (final Throwable e) {
-                            logger.info("Cookie login failed");
+                            logger.exception("Cookie login failed", e);
                         }
                         /* Delete cookies / Headers to perform a full login */
                         this.br.clearAll();
@@ -181,12 +174,14 @@ public class TumblrCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } catch (final Throwable e) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
                 account.setProperty(PROPERTY_APIKEY, apikey);
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
