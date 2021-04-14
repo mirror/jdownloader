@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -22,6 +19,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
  * specific model. Each gallery will be put into an own folder with name like the "title" tag of the single gallery, with a best-effort
@@ -31,7 +31,6 @@ import jd.plugins.PluginForDecrypt;
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
-
     protected static final String HTTPS_WWW_REGEX_PREFIX = "https?://(?:www\\.)?";
 
     protected static class SiteData {
@@ -217,7 +216,8 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return galleryUrls.toArray(new String[0]);
     }
 
-    // if there is another "page" of galleries available, fetch them, or navigate to that page and return true, so that getCurrentGalleryUrls()
+    // if there is another "page" of galleries available, fetch them, or navigate to that page and return true, so that
+    // getCurrentGalleryUrls()
     // can parse them. otherwise, return false.
     protected boolean fetchMoreGalleries() throws IOException {
         // right now, no generic support for auto-paging of galleries
@@ -292,7 +292,10 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
             final List<String> imageUrls = new ArrayList<String>();
             for (String rawImageUrl : rawImageUrls) {
                 try {
-                    imageUrls.add(brc.getURL(rawImageUrl).toString());
+                    final String url = brc.getURL(rawImageUrl).toString();
+                    if (!imageUrls.contains(url)) {
+                        imageUrls.add(url);
+                    }
                 } catch (IOException e) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
@@ -302,11 +305,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     }
 
     private String[] getRawImageUrls(Browser brc) {
-        // "href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(?:\"|')" would not work for href="...patrick's_day01.jpg"
-        String[] rawlinks = brc.getRegex("href\\s*=\\s*\"([^\"]+\\.jpg/?)\"").getColumn(0);
-        if (rawlinks == null || rawlinks.length == 0) {
-            rawlinks = brc.getRegex("href\\s*=\\s*'([^']+\\.jpg/?)'").getColumn(0);
-        }
+        String[] rawlinks = brc.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(\"|')").getColumn(0);
         return rawlinks;
     }
 
