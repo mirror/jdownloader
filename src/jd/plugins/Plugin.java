@@ -82,6 +82,13 @@ import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
 
@@ -542,6 +549,13 @@ public abstract class Plugin implements ActionListener {
     public abstract Matcher getMatcher();
 
     public void clean() {
+        for (final Plugin plugin : pluginInstances) {
+            try {
+                plugin.clean();
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+        }
         cleanupLastChallengeResponse();
         br = null;
         for (final File clean : cleanUpCaptchaFiles) {
@@ -866,6 +880,51 @@ public abstract class Plugin implements ActionListener {
                     job.invalidate();
                 }
             }
+        }
+    }
+
+    protected PluginForHost getNewPluginForHostInstance(final String host) throws PluginException {
+        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
+        if (lazyHostPlugin != null) {
+            return getNewPluginInstance(lazyHostPlugin);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find PluginForHost:" + host);
+        }
+    }
+
+    protected PluginForDecrypt getNewPluginForDecryptInstance(final String host) throws PluginException {
+        final LazyCrawlerPlugin lazyCrawlerPlugin = CrawlerPluginController.getInstance().get(host);
+        if (lazyCrawlerPlugin != null) {
+            return getNewPluginInstance(lazyCrawlerPlugin);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find PluginForDecrypt:" + host);
+        }
+    }
+
+    protected final CopyOnWriteArrayList<Plugin> pluginInstances = new CopyOnWriteArrayList<Plugin>();
+
+    public void setBrowser(Browser br) {
+        this.br = br;
+    }
+
+    public Browser getBrowser() {
+        return br;
+    }
+
+    protected <T> T getNewPluginInstance(final LazyPlugin<?> lazyPlugin) throws PluginException {
+        if (lazyPlugin != null) {
+            try {
+                final Plugin plugin = lazyPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
+                pluginInstances.add(plugin);
+                plugin.setLogger(getLogger());
+                plugin.setBrowser(getBrowser());
+                plugin.init();
+                return (T) plugin;
+            } catch (UpdateRequiredClassNotFoundException e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to create new instanceof:" + lazyPlugin, e);
+            }
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 

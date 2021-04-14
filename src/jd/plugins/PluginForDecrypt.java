@@ -22,7 +22,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,7 +80,6 @@ import org.jdownloader.gui.dialog.AskForCryptedLinkDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
@@ -95,12 +93,11 @@ import org.jdownloader.translate._JDT;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-    private volatile LinkCrawlerDistributer      distributer             = null;
-    private volatile LazyCrawlerPlugin           lazyC                   = null;
-    private volatile LinkCrawlerGeneration       generation;
-    private volatile LinkCrawler                 crawler;
-    private final static ProgressController      dummyProgressController = new ProgressController();
-    protected final CopyOnWriteArrayList<Plugin> pluginInstances         = new CopyOnWriteArrayList<Plugin>();
+    private volatile LinkCrawlerDistributer distributer             = null;
+    private volatile LazyCrawlerPlugin      lazyC                   = null;
+    private volatile LinkCrawlerGeneration  generation;
+    private volatile LinkCrawler            crawler;
+    private final static ProgressController dummyProgressController = new ProgressController();
 
     /**
      * @return the distributer
@@ -142,32 +139,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return ret;
     }
 
-    protected PluginForHost getNewPluginForHostInstance(final String host) throws PluginException {
-        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
-        if (lazyHostPlugin != null) {
-            return getNewPluginForHostInstance(lazyHostPlugin);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find PluginForHost:" + host);
-        }
-    }
-
-    protected PluginForHost getNewPluginForHostInstance(LazyHostPlugin lazyHostPlugin) throws PluginException {
-        if (lazyHostPlugin != null) {
-            try {
-                final PluginForHost pluginForHost = lazyHostPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
-                pluginInstances.add(pluginForHost);
-                pluginForHost.setLogger(getLogger());
-                pluginForHost.setBrowser(getBrowser());
-                pluginForHost.init();
-                return pluginForHost;
-            } catch (UpdateRequiredClassNotFoundException e) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to load PluginForHost:" + lazyHostPlugin, e);
-            }
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
-
     /**
      * Use this when e.g. crawling folders & subfolders from cloud-services. </br> Use this to find the last path in order to continue to
      * build the path until all subfolders are crawled.
@@ -186,10 +157,6 @@ public abstract class PluginForDecrypt extends Plugin {
             current = current.getSourceLink();
         }
         return subfolderPath;
-    }
-
-    public Browser getBrowser() {
-        return br;
     }
 
     @Override
@@ -225,13 +192,6 @@ public abstract class PluginForDecrypt extends Plugin {
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
         this.lazyC = (LazyCrawlerPlugin) wrapper.getLazy();
-    }
-
-    /**
-     * @since JD2
-     */
-    public void setBrowser(Browser br) {
-        this.br = br;
     }
 
     @Override
@@ -383,7 +343,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected void handleAccountException(PluginForHost plugin, Account account, Throwable throwable) throws Exception {
         if (plugin == null || !StringUtils.equals(account.getHosterByPlugin(), plugin.getHost())) {
-            plugin = getNewPluginForHostInstance(account.getPlugin().getLazyP());
+            plugin = getNewPluginInstance(account.getPlugin().getLazyP());
         }
         final LogInterface logger = getLogger();
         plugin.handleAccountException(account, logger, throwable);
@@ -534,21 +494,6 @@ public abstract class PluginForDecrypt extends Plugin {
                     ((LogSource) logger).clear();
                 }
             }
-        }
-    }
-
-    @Override
-    public void clean() {
-        try {
-            for (final Plugin plugin : pluginInstances) {
-                try {
-                    plugin.clean();
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-            }
-        } finally {
-            super.clean();
         }
     }
 
