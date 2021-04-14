@@ -19,12 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,6 +36,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DuboxCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DuboxComFolder extends PluginForDecrypt {
@@ -240,7 +240,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                     final String serverfilename = (String) entries.get("server_filename");
                     final UrlQuery thisparams = new UrlQuery();
                     thisparams.add("surl", surl);
-                    thisparams.appendEncoded("dir", path);
+                    thisparams.appendEncoded("dir", new Regex(path, "(/.*?)/[^/]+$").getMatch(0));// only the path!
                     // thisparams.add("dir", URLEncode.encodeURIComponent(path));
                     thisparams.add("fsid", Long.toString(fsid));
                     thisparams.appendEncoded("fileName", serverfilename);
