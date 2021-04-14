@@ -18,13 +18,8 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -35,6 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 /**
  *
@@ -111,7 +112,7 @@ public class FlimmitCom extends PluginForHost {
                         return;
                     } else {
                         br.getPage("https://flimmit.at/account");
-                        if (this.isLoggedIN()) {
+                        if (this.isLoggedIN(br)) {
                             logger.info("Cookie login successful");
                             account.saveCookies(br.getCookies(br.getHost()), "");
                             return;
@@ -123,9 +124,13 @@ public class FlimmitCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.getPage("https://flimmit.at/de/login");
-                br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
+                String responseString = br.postPageRaw("/de/dynamically/user/login", String.format("{\"email\":\"%s\",\"password\":\"%s\",\"_csrf_token\":null}", account.getUser(), account.getPass()));
+                Map<String, Object> response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
+                if ("failure".equals(response.get("status"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, StringUtils.valueOfOrNull(response.get("message")), PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.getPage("/account");
-                if (!isLoggedIN()) {
+                if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /* E.g. bad response: {"status":"failure","message":"Email oder Passwort ist nicht korrekt","extraData":[]} */
@@ -140,8 +145,8 @@ public class FlimmitCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
-        return br.containsHTML("/logout");
+    private boolean isLoggedIN(Browser br) {
+        return br != null && br.containsHTML("/logout") && !StringUtils.containsIgnoreCase(br.getURL(), "/login");
     }
 
     @Override
