@@ -6,20 +6,18 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "tumblr.com", type = Type.CRAWLER)
+@PluginHost(host = "tumblr.com", type = Type.HOSTER)
 public interface TumblrComConfig extends PluginConfigInterface {
-
     public static class Translation {
         public String isUseOriginalFilenameEnabled_label() {
             return "test";
         }
-
     }
 
     public static final Translation TRANSLATION = new Translation();
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     boolean isUseOriginalFilenameEnabled();
 
     void setUseOriginalFilenameEnabled(boolean b);
