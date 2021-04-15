@@ -532,32 +532,52 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     password = handlePW(param, this.br);
                 }
                 if (VIMEO_URL_TYPE.SHOWCASE.equals(urlType)) {
+                    final String refURL = referer.get();
                     final String appendReferer;
-                    if (referer.get() != null) {
-                        appendReferer = "#forced_referer=" + HexFormatter.byteArrayToHex(referer.get().getBytes("UTF-8"));
+                    if (refURL != null) {
+                        appendReferer = "#forced_referer=" + HexFormatter.byteArrayToHex(refURL.getBytes("UTF-8"));
                     } else {
                         appendReferer = "";
                     }
-                    final String jwtToken = VimeoCom.getJWT(this, br);
-                    String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
-                    while (nextPage != null) {
-                        final Browser brc = br.cloneBrowser();
-                        brc.getHeaders().put("Authorization", "jwt " + jwtToken);
-                        String response = brc.getPage("//api.vimeo.com" + nextPage);
-                        if (response.matches("(?s)^\\s*\\{.+\\}\\s*$")) {
-                            final Map<String, Object> map = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
-                            final List<Map<String, Object>> data = (List<Map<String, Object>>) map.get("data");
-                            if (data != null && data.size() > 0) {
-                                for (Map<String, Object> entry : data) {
-                                    final String link = (String) entry.get("link");
-                                    final DownloadLink clipEntry = this.createDownloadlink(link + appendReferer);
-                                    decryptedLinks.add(clipEntry);
-                                }
-                                nextPage = (String) JavaScriptEngineFactory.walkJson(map, "paging/next");
-                                continue;
+                    final String jsonStringOld = br.getRegex("<script\\s*id\\s*=\\s*\"app-data\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
+                    boolean apiMode = true;
+                    if (jsonStringOld != null) {
+                        final Map<String, Object> json = JSonStorage.restoreFromString(jsonStringOld, TypeRef.HASHMAP);
+                        final List<Map<String, Object>> clips = (List<Map<String, Object>>) json.get("clips");
+                        if (clips == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (Map<String, Object> clip : clips) {
+                            final String config = (String) clip.get("config");
+                            if (config != null) {
+                                apiMode = false;
+                                final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
+                                decryptedLinks.add(clipEntry);
                             }
                         }
-                        break;
+                    }
+                    if (apiMode) {
+                        final String jwtToken = VimeoCom.getJWT(this, br);
+                        String nextPage = "/albums/" + videoID + "/videos?fields=link&page=1&per_page=10";
+                        while (nextPage != null) {
+                            final Browser brc = br.cloneBrowser();
+                            brc.getHeaders().put("Authorization", "jwt " + jwtToken);
+                            String response = brc.getPage("//api.vimeo.com" + nextPage);
+                            if (response.matches("(?s)^\\s*\\{.+\\}\\s*$")) {
+                                final Map<String, Object> map = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+                                final List<Map<String, Object>> data = (List<Map<String, Object>>) map.get("data");
+                                if (data != null && data.size() > 0) {
+                                    for (Map<String, Object> entry : data) {
+                                        final String link = (String) entry.get("link");
+                                        final DownloadLink clipEntry = this.createDownloadlink(link + appendReferer);
+                                        decryptedLinks.add(clipEntry);
+                                    }
+                                    nextPage = (String) JavaScriptEngineFactory.walkJson(map, "paging/next");
+                                    continue;
+                                }
+                            }
+                            break;
+                        }
                     }
                     return decryptedLinks;
                 }
