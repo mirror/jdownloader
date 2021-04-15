@@ -24,7 +24,6 @@ import java.util.Map;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -125,10 +124,6 @@ public class DuboxCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
-        /* TODO: debugtest remove this */
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            link.removeProperty(PROPERTY_DIRECTURL);
-        }
         if (link.hasProperty(PROPERTY_PASSWORD_COOKIE)) {
             DuboxComFolder.setPasswordCookie(this.br, this.getHost(), link.getStringProperty(PROPERTY_PASSWORD_COOKIE));
         }
@@ -139,15 +134,13 @@ public class DuboxCom extends PluginForHost {
             /* Without account we can't generate new directurls */
             return AvailableStatus.UNCHECKABLE;
         } else {
-            /* TODO: debugtest remove this: Right now it would ask for the password again -> Fix this */
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* Unfinished feature! */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Crawl the folder again to get a fresh directurl */
+            /*
+             * Crawl the folder again to get a fresh directurl. There is no other way to do this. If the folder is big and the crawler has
+             * to go through pagination, this can take a while!
+             */
             final PluginForDecrypt decrypter = getNewPluginForDecryptInstance(getHost());
             final CryptedLink param = new CryptedLink(link.getContainerUrl(), link);
-            if (link.getDownloadPassword() == null) {
+            if (link.getDownloadPassword() != null) {
                 /* Crawler should not ask user again for that password! */
                 param.setDecrypterPassword(link.getDownloadPassword());
             }
@@ -331,13 +324,13 @@ public class DuboxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, this.isResumeable(link, account), this.getMaxChunks(account))) {
-            /* Avoid checking stored directurl again! */
+            /* Avoid checking seemingly invalid stored directurl again in availablecheck! */
             link.removeProperty(PROPERTY_DIRECTURL);
             login(account, false);
             this.requestFileInformation(link, account);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl", 3 * 60 * 1000l);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {

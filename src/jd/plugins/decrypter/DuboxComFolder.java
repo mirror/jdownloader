@@ -72,7 +72,7 @@ public class DuboxComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:link|init)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|s/[A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:link|init)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -99,28 +99,48 @@ public class DuboxComFolder extends PluginForDecrypt {
         br.setCookie(host, "BOXCLND", passwordCookie);
     }
 
-    private static final String TYPE_SHORT = "https?://[^/]+/s/(.+)";
+    private static final String TYPE_SHORT        = "https?://[^/]+/s/(.+)";
+    /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
+    private static final String TYPE_SINGLE_VIDEO = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final UrlQuery params = UrlQuery.parse(param.getCryptedUrl());
+        final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
         String preGivenPath = null;
+        /*
+         * ContainerURL is really important for the single file items we crawl! It should go to the folder the file is in -> We can't just
+         * use the URL which the user has added!
+         */
+        final String containerURL;
         if (param.getCryptedUrl().matches(TYPE_SHORT)) {
             surl = new Regex(param.getCryptedUrl(), TYPE_SHORT).getMatch(0);
+            containerURL = param.getCryptedUrl();
+        } else if (param.getCryptedUrl().matches(TYPE_SINGLE_VIDEO)) {
+            surl = paramsOfAddedURL.get("surl");
+            preGivenPath = paramsOfAddedURL.get("dir");
+            containerURL = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + preGivenPath;
         } else {
-            surl = params.get("surl");
-            preGivenPath = params.get("path");
+            surl = paramsOfAddedURL.get("surl");
+            preGivenPath = paramsOfAddedURL.get("path");
+            containerURL = param.getCryptedUrl();
         }
         if (!Encoding.isUrlCoded(preGivenPath)) {
             preGivenPath = Encoding.urlEncode(preGivenPath);
         }
-        /* Fix surl value */
+        /*
+         * Fix surl value - website would usually do this via redirect. Just really strange that whenever that value starts with "1" they
+         * just remove this in order to be able to use that id as a param for ajax requests.
+         */
         if (surl.startsWith("1")) {
             surl = surl.substring(1, surl.length());
         }
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        /*
+         * Login whenever possible. This way we will get direct downloadable URLs right away which we can store --> Saves a LOT of time- and
+         * http requests later on!
+         */
         if (account != null) {
             ((jd.plugins.hoster.DuboxCom) plg).login(account, false);
         }
@@ -129,31 +149,34 @@ public class DuboxComFolder extends PluginForDecrypt {
          * TODO: That is not enough -> We might have to re-use all cookies and/or maybe always store current/new session on account. </br>
          * It is only possible to use one "passwordCookie" at the same time!
          */
-        String passwordCookie = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE) : param.getDecrypterPassword();
+        String passwordCookie = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE) : null;
         if (passwordCookie != null) {
             setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
         }
-        br.setFollowRedirects(true);
-        Map<String, Object> entries = null;
-        br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        final UrlQuery query = new UrlQuery();
-        query.add("page", "1");
-        query.add("num", "20");
-        query.add("order", "time");
-        query.add("desc", "1");
-        query.add("shorturl", surl);
+        int page = 1;
+        final int maxItemsPerPage = 20;
+        final UrlQuery queryFolder = new UrlQuery();
+        queryFolder.add("order", "time");
+        queryFolder.add("desc", "1");
+        queryFolder.add("shorturl", surl);
         if (!StringUtils.isEmpty(preGivenPath)) {
-            query.add("dir", preGivenPath);
+            queryFolder.add("dir", preGivenPath);
         } else {
-            query.add("root", "1");
+            queryFolder.add("root", "1");
         }
         /* 2021-04-14 */
-        query.add("app_id", getAppID());
-        query.add("web", "1");
-        query.add("channel", getChannel());
-        query.add("clienttype", getClientType());
+        queryFolder.add("app_id", getAppID());
+        queryFolder.add("web", "1");
+        queryFolder.add("channel", getChannel());
+        queryFolder.add("clienttype", getClientType());
+        Map<String, Object> entries = null;
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.setFollowRedirects(true);
         do {
-            br.getPage("https://www." + this.getHost() + "/share/list?" + query.toString());
+            logger.info("Crawling page: " + page);
+            queryFolder.addAndReplace("page", Integer.toString(page));
+            queryFolder.addAndReplace("num", Integer.toString(maxItemsPerPage));
+            br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             int errno = ((Number) entries.get("errno")).intValue();
             if (errno == -9) {
@@ -205,7 +228,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                 } while (!this.isAbort());
                 if (passwordCookie == null) {
                     logger.info("Wrong password and/or captcha");
-                    /* Asume wrong captcha if one was required */
+                    /* Assume wrong captcha if one was required */
                     if (captchaRequired) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
@@ -213,11 +236,20 @@ public class DuboxComFolder extends PluginForDecrypt {
                     }
                 }
                 setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
-                /* Repeat the first request */
-                br.getPage("https://www." + this.getHost() + "/share/list?" + query.toString());
+                /* Repeat the first request -> We should be able to access the folder now. */
+                br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             }
+            errno = ((Number) entries.get("errno")).intValue();
+            if (errno != 0 || !entries.containsKey("list")) {
+                logger.info("Assume that this folder is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final List<Object> ressourcelist = (List<Object>) entries.get("list");
+            if (ressourcelist.isEmpty()) {
+                logger.info("Stopping because: Current page doesn't contain any items");
+                break;
+            }
             for (final Object ressourceO : ressourcelist) {
                 entries = (Map<String, Object>) ressourceO;
                 final String path = (String) entries.get("path");
@@ -260,7 +292,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                     }
                     final DownloadLink dl = new DownloadLink(plg, "dubox", this.getHost(), url, true);
                     dl.setContentUrl(contentURL);
-                    dl.setContainerUrl(param.getCryptedUrl());
+                    dl.setContainerUrl(containerURL);
                     jd.plugins.hoster.DuboxCom.parseFileInformation(dl, entries);
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);
@@ -279,8 +311,14 @@ public class DuboxComFolder extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-            /* TODO: Add pagination support */
-            break;
+            if (ressourcelist.size() < maxItemsPerPage) {
+                logger.info("Stopping because: Current page contains less items than: " + maxItemsPerPage + " (only " + ressourcelist.size() + ")");
+                break;
+            } else {
+                logger.info("Number of items found on current page: " + ressourcelist.size());
+                page++;
+                continue;
+            }
         } while (!this.isAbort());
         return decryptedLinks;
     }
