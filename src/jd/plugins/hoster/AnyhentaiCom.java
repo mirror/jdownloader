@@ -54,11 +54,10 @@ public class AnyhentaiCom extends PluginForHost {
          * To process anyhentai media link from javhub and highporn with reference.
          */
         dllink = link.getPluginPatternMatcher(); // The link is the final downloadlink
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "https://javhub.net");
+        prepBrDownload(this.br);
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
+            con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -78,7 +77,7 @@ public class AnyhentaiCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.getHeaders().put("Referer", "https://javhub.net");
+        prepBrDownload(this.br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -89,6 +88,11 @@ public class AnyhentaiCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void prepBrDownload(final Browser br) {
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Referer", "https://javhub.net");
     }
 
     public String getCustomFavIconURL(final DownloadLink link) {
