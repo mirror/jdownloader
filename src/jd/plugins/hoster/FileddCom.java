@@ -96,7 +96,7 @@ public class FileddCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2019-04-15 */
         return true;
     }

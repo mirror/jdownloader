@@ -23,6 +23,10 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,10 +40,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -374,11 +374,11 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPasswordProtectedHTML(final Form pwForm) {
+    public boolean isPasswordProtectedHTML(final Browser br, final Form pwForm) {
         /* 2020-02-17: Special */
-        boolean pwprotected = super.isPasswordProtectedHTML(pwForm);
+        boolean pwprotected = super.isPasswordProtectedHTML(br, pwForm);
         if (!pwprotected) {
-            pwprotected = new Regex(correctedBR, "><b>Password</b>").matches();
+            pwprotected = br.containsHTML("><b>Password</b>");
         }
         return pwprotected;
     }

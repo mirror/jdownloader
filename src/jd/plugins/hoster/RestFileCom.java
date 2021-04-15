@@ -100,7 +100,7 @@ public class RestFileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         return true;
     }
 

@@ -112,7 +112,7 @@ public class OrtoFilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean requires_WWW() {
+    protected boolean requiresWWW() {
         /* 2020-05-18: Special */
         return true;
     }
