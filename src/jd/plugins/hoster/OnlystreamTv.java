@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +30,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OnlystreamTv extends XFileSharingProBasic {
@@ -138,15 +138,14 @@ public class OnlystreamTv extends XFileSharingProBasic {
     }
 
     @Override
-    protected String findAPIKey(String src) throws Exception {
+    protected String findAPIKey(final Browser br) throws Exception {
         /* 2019-08-06: Special */
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         getPage(br2, "/?op=my_api");
-        src = br2.toString();
         final Pattern apikeyPattern = Pattern.compile("API Key\\s*?</td>\\s*?<td>\\s*?<input type=\"text\" value=\"([a-z0-9]+)\"");
-        String apikey = new Regex(src, apikeyPattern).getMatch(0);
-        String generate_apikey_url = new Regex(src, "\"([^\"]*?op=my_account[^\"]*?generate_api_key=1[^\"]*?token=[a-f0-9]{32}[^\"]*?)\"").getMatch(0);
+        String apikey = br2.getRegex(apikeyPattern).getMatch(0);
+        String generate_apikey_url = br2.getRegex("\"([^\"]*?op=my_account[^\"]*?generate_api_key=1[^\"]*?token=[a-f0-9]{32}[^\"]*?)\"").getMatch(0);
         if (apikey == null && generate_apikey_url != null) {
             if (Encoding.isHtmlEntityCoded(generate_apikey_url)) {
                 generate_apikey_url = Encoding.htmlDecode(generate_apikey_url);
@@ -156,13 +155,14 @@ public class OnlystreamTv extends XFileSharingProBasic {
                 br2.setFollowRedirects(true);
                 getPage(br2, generate_apikey_url);
                 apikey = br2.getRegex(apikeyPattern).getMatch(0);
+                if (apikey == null) {
+                    logger.info("Failed to find generated apikey - possible plugin failure");
+                } else {
+                    logger.info("Successfully found newly generated apikey");
+                }
             } catch (final Throwable e) {
                 e.printStackTrace();
-            }
-            if (apikey == null) {
-                logger.info("Failed to find generated apikey - possible plugin failure");
-            } else {
-                logger.info("Successfully found newly generated apikey");
+                logger.warning("Exception occured during accessing generateApikeyUrl");
             }
         }
         return apikey;

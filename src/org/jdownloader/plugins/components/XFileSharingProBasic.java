@@ -1771,7 +1771,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     protected void handleRecaptchaV2(final DownloadLink link, final Form captchaForm) throws Exception {
         /*
-         * 2019-06-06: Most widespread case with an important design-flaw (see below)!
+         * This contains a workaround for a widespread design-flaw when using reCaptchaV2 and a long wait-time in browser: We need to split
+         * up the wait in such a case.
          */
         final CaptchaHelperHostPluginRecaptchaV2 rc2 = getCaptchaHelperHostPluginRecaptchaV2(this, br);
         logger.info("Detected captcha method \"RecaptchaV2\" normal-type '" + rc2.getType() + "' for this host");
@@ -2501,11 +2502,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
          */
         String waitStr = new Regex(correctedBR, "id=(?:\"|\\')countdown_str(?:\"|\\')[^>]*>[^<>]*<span id=[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
         if (waitStr == null) {
-            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*(\\d+)\\s*</span>").getMatch(0);
+            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*</span>").getMatch(0);
         }
         if (waitStr == null) {
             /* More open RegEx */
-            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*?>\\s*(\\d+)\\s*<").getMatch(0);
+            waitStr = new Regex(correctedBR, "class=\"seconds\"[^>]*>\\s*(\\d+)\\s*<").getMatch(0);
         }
         return waitStr;
     }
@@ -2591,7 +2592,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     /**
      * Handles pre download (pre-captcha) waittime.
      */
-    protected void waitTime(final DownloadLink downloadLink, final long timeBefore) throws PluginException {
+    protected void waitTime(final DownloadLink link, final long timeBefore) throws PluginException {
         /* Ticket Time */
         final String waitStr = regexWaittime();
         if (this.preDownloadWaittimeSkippable()) {
@@ -2619,7 +2620,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
             if (wait > 0) {
                 logger.info("Waiting final waittime: " + wait);
-                sleep(wait * 1000l, downloadLink);
+                sleep(wait * 1000l, link);
             } else if (wait < -extraWaitSeconds) {
                 /* User needed more time to solve the captcha so there is no waittime left :) */
                 logger.info("Congratulations: Time to solve captcha was higher than waittime --> No waittime left");
@@ -2745,11 +2746,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * Tries to get filename from URL and if this fails, will return <fuid> as filename. <br/>
      */
     public String getFallbackFilename(final DownloadLink dl) {
-        String fallback_filename = this.getFilenameFromURL(dl);
-        if (fallback_filename == null) {
-            fallback_filename = this.getFUIDFromURL(dl);
+        String filenameURL = this.getFilenameFromURL(dl);
+        if (filenameURL != null) {
+            return filenameURL;
+        } else {
+            return this.getFUIDFromURL(dl);
         }
-        return fallback_filename;
     }
 
     protected void handlePassword(final Form pwform, final DownloadLink link) throws PluginException {
@@ -2963,7 +2965,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     public void checkServerErrors(final Browser br, final String correctedBR, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         if (new Regex(correctedBR.trim(), "^No file$").matches()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No file'", 30 * 60 * 1000l);
         } else if (new Regex(correctedBR.trim(), "^Wrong IP$").matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
         } else if (new Regex(correctedBR.trim(), "^Expired$").matches()) {
@@ -2978,8 +2980,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
+    @Deprecated
+    /** TODO: Find out where this is used. Lifetime accounts are not part of usual XFS hosts! */
     protected boolean is_lifetime_account() {
-        return new Regex(correctedBR, ">Premium account expire</TD><TD><b>Lifetime</b>").matches();
+        return new Regex(correctedBR, ">\\s*Premium account expire\\s*</TD><TD><b>Lifetime</b>").matches();
     }
 
     @Override
@@ -3016,7 +3020,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  * XFS owners will usually not add html traps into the html of accounts (especially ) we can use the original unmodified
                  * html here.
                  */
-                apikey = this.findAPIKey(br.toString());
+                apikey = this.findAPIKey(this.br.cloneBrowser());
             } catch (InterruptedException e) {
                 throw e;
             } catch (final Throwable e) {
@@ -3250,50 +3254,49 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * ddownload.co, vup.to). clicknupload.org </br>
      * apikey will usually be located here: "/?op=my_account"
      */
-    protected String findAPIKey(String src) throws Exception {
+    protected String findAPIKey(final Browser brc) throws Exception {
         /*
          * 2019-07-11: apikey handling - prefer that instead of website. Even if an XFS website has the "API mod" enabled, we will only find
          * a key here if the user at least once pressed the "Generate API Key" button or if the XFS 'api mod' used by the website admin is
          * configured to display apikeys by default for all users.
          */
-        String apikey = regexAPIKey(src);
-        String generate_apikey_url = new Regex(src, "\"([^\"]*?op=my_account[^\"]*?generate_api_key=1[^\"]*?token=[a-f0-9]{32}[^\"]*?)\"").getMatch(0);
+        String apikey = regexAPIKey(brc.toString());
+        String generateApikeyUrl = brc.getRegex("\"([^\"]*?op=my_account[^\"]*?generate_api_key=1[^\"]*?token=[a-f0-9]{32}[^\"]*?)\"").getMatch(0);
         /*
          * 2019-07-28: If no apikey has ever been generated by the user but generate_apikey_url != null we can generate the first apikey
          * automatically.
          */
-        if (StringUtils.isEmpty(apikey) && generate_apikey_url != null) {
-            if (Encoding.isHtmlEntityCoded(generate_apikey_url)) {
+        if (StringUtils.isEmpty(apikey) && generateApikeyUrl != null) {
+            if (Encoding.isHtmlEntityCoded(generateApikeyUrl)) {
                 /*
                  * 2019-07-28: Some hosts have "&&amp;" inside URL (= buggy) - also some XFS hosts will only allow apikey generation once
                  * and when pressing "change key" afterwards, it will always be the same. This may also be a serverside XFS bug.
                  */
-                generate_apikey_url = Encoding.htmlDecode(generate_apikey_url);
+                generateApikeyUrl = Encoding.htmlDecode(generateApikeyUrl);
             }
-            logger.info("Failed to find apikey but host has api-mod enabled --> Trying to generate first apikey for this account");
+            logger.info("Failed to find apikey but host has api-mod enabled --> Trying to generate first apikey for this account via: " + generateApikeyUrl);
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                getPage(br2, generate_apikey_url);
-                src = br2.toString();
-                apikey = regexAPIKey(src);
+                brc.setFollowRedirects(true);
+                getPage(brc, generateApikeyUrl);
+                apikey = regexAPIKey(brc.toString());
+                if (apikey == null) {
+                    /*
+                     * 2019-10-01: Some hosts will not display an APIKey immediately e.g. vup.to 'New API key generated. Please wait 1-2
+                     * minutes while the key is being generated and refresh the page afterwards.'. This should not be an issue for us as the
+                     * APIKey will be detected upon next account-check.
+                     */
+                    logger.info("Failed to find generated apikey - possible plugin failure");
+                } else {
+                    logger.info("Successfully found newly generated apikey: " + apikey);
+                }
             } catch (final Throwable e) {
                 e.printStackTrace();
-            }
-            if (apikey == null) {
-                /*
-                 * 2019-10-01: Some hosts will not display an APIKey immediately e.g. vup.to 'New API key generated. Please wait 1-2 minutes
-                 * while the key is being generated and refresh the page afterwards.'. This should not be an issue for us as the APIKey will
-                 * be detected upon next account-check.
-                 */
-                logger.info("Failed to find generated apikey - possible plugin failure");
-            } else {
-                logger.info("Successfully found newly generated apikey: " + apikey);
+                logger.warning("Exception occured during accessing generateApikeyUrl");
             }
         }
         if (apikey != null) {
-            logger.info("Trying to find api domain with protocol");
-            String url_with_apikey = new Regex(src, "(https?://[^/]+/api/account/info[^<>\"\\']*key=" + apikey + "[^<>\"\\']*)").getMatch(0);
+            logger.info("Found apikey! Trying to find api domain with protocol");
+            String url_with_apikey = brc.getRegex("(https?://[^/]+/api/account/info[^<>\"\\']*key=" + apikey + "[^<>\"\\']*)").getMatch(0);
             boolean api_uses_special_domain = false;
             if (url_with_apikey == null) {
                 logger.info("Unable to find API domain - assuming it is the same es the plugins'");
@@ -3825,7 +3828,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
-    protected boolean isDownloadableContent(URLConnectionAdapter con) throws IOException {
+    protected boolean isDownloadableContent(final URLConnectionAdapter con) throws IOException {
         return looksLikeDownloadableContent(con);
     }
 
@@ -3904,7 +3907,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 }
             } else if (dllink.contains(".m3u8")) {
                 /* 2019-08-29: HLS download - more and more streaming-hosts have this (example: streamty.com, vidlox.me) */
-                dllink = handleQualitySelectionHLS(dllink);
+                dllink = handleQualitySelectionHLS(this.br.cloneBrowser(), dllink);
                 checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, dllink);
                 try {
@@ -3943,12 +3946,11 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns user selected streaming quality. Returns BEST by default / no selection. */
-    private String handleQualitySelectionHLS(final String hls_master) throws Exception {
+    private String handleQualitySelectionHLS(final Browser brc, final String hls_master) throws Exception {
         if (hls_master == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Browser brc = br.cloneBrowser();
         this.getPage(brc, hls_master);
         final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
         if (hlsQualities == null) {
@@ -4133,14 +4135,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /* Fallback */
             currentTime = System.currentTimeMillis();
         }
-        /*
-         * 2019-05-30: Seems to be a typo by the guy who develops the XFS script in the early versions of thei "API mod" :D 2019-07-28: Typo
-         * is fixed in newer XFSv3 versions - still we'll keep both versions in just to make sure it will always work ...
-         */
-        String expireStr = (String) entries.get("premim_expire");
+        String expireStr = (String) entries.get("premium_expire");
         if (StringUtils.isEmpty(expireStr)) {
-            /* Try this too in case he corrects his mistake. */
-            expireStr = (String) entries.get("premium_expire");
+            /*
+             * 2019-05-30: Seems to be a typo by the guy who develops the XFS script in the early versions of thei "API mod" :D 2019-07-28:
+             * Typo is fixed in newer XFSv3 versions - still we'll keep both versions in just to make sure it will always work ...
+             */
+            expireStr = (String) entries.get("premim_expire");
         }
         /*
          * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium

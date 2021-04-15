@@ -138,7 +138,7 @@ public class SecretfileNet extends XFileSharingProBasic {
                  * XFS owners will usually not add html traps into the html of accounts (especially ) we can use the original unmodified
                  * html here.
                  */
-                apikey = this.findAPIKey(br.toString());
+                apikey = this.findAPIKey(this.br);
             } catch (InterruptedException e) {
                 throw e;
             } catch (final Throwable e) {
