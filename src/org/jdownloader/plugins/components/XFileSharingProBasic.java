@@ -735,7 +735,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         if (isOffline(link, this.br, getCorrectBR(br))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fallback_filename = this.getFallbackFilename(link);
         final Browser altbr = br.cloneBrowser();
         if (isPremiumOnlyURL(this.br)) {
             /*
@@ -775,10 +774,6 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                 getFilesizeViaAvailablecheckAlt(altbr, link);
             }
         }
-        /* Set md5hash - most times there is no md5hash available! */
-        if (!StringUtils.isEmpty(fileInfo[2])) {
-            link.setMD5Hash(fileInfo[2].trim());
-        }
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
             /*
@@ -806,6 +801,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 requestFileInformationVideoEmbed(link, account, true);
             }
+        }
+        /* Set md5hash - most times there is no md5hash available! */
+        if (!StringUtils.isEmpty(fileInfo[2])) {
+            link.setMD5Hash(fileInfo[2].trim());
         }
         return AvailableStatus.TRUE;
     }
