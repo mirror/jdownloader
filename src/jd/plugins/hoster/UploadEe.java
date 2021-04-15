@@ -73,6 +73,7 @@ public class UploadEe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Set filename from inside URL as temporary filename. */
         if (!link.isNameSet()) {
             link.setName(new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1));
         }

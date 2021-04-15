@@ -113,7 +113,7 @@ public class ImgBabesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean requires_WWW() {
+    protected boolean requiresWWW() {
         return true;
     }
 

@@ -238,7 +238,7 @@ public class SecretfileNet extends XFileSharingProBasic {
         } else if (expireStrSpecial != null) {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(expireStrSpecial, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        final String[] supports_precise_expire_date = this.supports_precise_expire_date();
+        final String[] supports_precise_expire_date = this.supportsPreciseExpireDate();
         if (supports_precise_expire_date != null && supports_precise_expire_date.length > 0 && expire_milliseconds_precise_to_the_second <= 0) {
             /*
              * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g. 'flashbit.cc',

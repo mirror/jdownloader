@@ -56,7 +56,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String[] supports_precise_expire_date() {
+    protected String[] supportsPreciseExpireDate() {
         /* 2019-09-06: Disabled upon admin request - not supported */
         return null;
     }

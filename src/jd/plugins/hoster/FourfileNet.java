@@ -125,7 +125,7 @@ public class FourfileNet extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2019-06-06: Special */
         return true;
     }

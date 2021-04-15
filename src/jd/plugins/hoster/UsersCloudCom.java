@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -26,9 +29,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UsersCloudCom extends XFileSharingProBasic {
@@ -122,8 +122,8 @@ public class UsersCloudCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isPasswordProtectedHTML(Form pwForm) {
-        return super.isPasswordProtectedHTML(pwForm) || (new Regex(correctedBR, ">\\s*Password\\s*Protected\\s*<").matches() && pwForm != null && pwForm.getInputField("password") != null);
+    public boolean isPasswordProtectedHTML(final Browser br, Form pwForm) {
+        return super.isPasswordProtectedHTML(br, pwForm) || (br.containsHTML(">\\s*Password\\s*Protected\\s*<") && pwForm != null && pwForm.getInputField("password") != null);
     }
 
     @Override

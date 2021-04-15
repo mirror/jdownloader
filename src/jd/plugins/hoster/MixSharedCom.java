@@ -118,7 +118,7 @@ public class MixSharedCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_mass_linkcheck_over_website() {
+    protected boolean supportsMassLinkcheckOverWebsite() {
         /* 2020-05-28: Special - this works very well because most of their downloadurls contain filenames :) */
         return true;
     }

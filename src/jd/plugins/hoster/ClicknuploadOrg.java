@@ -125,7 +125,7 @@ public class ClicknuploadOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean enable_account_api_only_mode() {
+    protected boolean enableAccountApiOnlyMode() {
         return DebugMode.TRUE_IN_IDE_ELSE_FALSE;
     }
 }
