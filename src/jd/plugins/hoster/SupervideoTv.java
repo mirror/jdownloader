@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.config.XFSConfigVideo;
 import org.jdownloader.plugins.components.config.XFSConfigVideoSupervideoTv;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -97,7 +98,7 @@ public class SupervideoTv extends XFileSharingProBasic {
     }
 
     @Override
-    protected String findAPIKey(final String src) throws Exception {
+    protected String findAPIKey(final Browser br) throws Exception {
         /* 2020-01-04: Special: Their API is broken! */
         return null;
     }

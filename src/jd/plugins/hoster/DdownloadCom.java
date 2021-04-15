@@ -18,6 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,13 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoDdownloadCom;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdownloadCom extends XFileSharingProBasic {
@@ -259,7 +259,7 @@ public class DdownloadCom extends XFileSharingProBasic {
                 logger.info("Trust API trafficleft value: " + traffic_left);
                 ai.setTrafficLeft(traffic_left);
             } else {
-                logger.info("Setting unlimited traffic instead of API trafficleft value " + traffic_left + " to prefer website value");
+                logger.info("Setting unlimited traffic instead of API trafficleft value '" + traffic_left + "' to prefer website value.");
                 ai.setUnlimitedTraffic();
             }
         } else {
