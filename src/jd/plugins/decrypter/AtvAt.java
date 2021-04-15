@@ -65,16 +65,16 @@ public class AtvAt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String fid;
-        String seriesname;
-        String episodename;
+        String seriesname = null;
+        String episodename = null;
         String url_seriesname;
         String url_episodename;
         String json_source = null;
         String seasonnumber_str = null;
         String episodenumber_str = null;
         Map<String, Object> entries;
-        final List<Object> parts;
-        boolean geo_blocked = false;
+        List<Object> parts = null;
+        boolean possiblyGeoBlocked = false;
         if (parameter.matches(TYPE_ATVSMART)) {
             final Regex linkinfo = new Regex(parameter, "atvsmart\\.(?:at|tv)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)");
             url_seriesname = linkinfo.getMatch(0);
@@ -117,38 +117,42 @@ public class AtvAt extends PluginForDecrypt {
                 offline.setFinalFileName(url_seriesname + "_" + url_episodename);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
-            } else if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"|mod_player js_html5_player")) {
-                logger.info("There is no downloadable content: " + parameter);
-                final DownloadLink offline = this.createOfflinelink(parameter);
-                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
             } else if (br.containsHTML("is_geo_ip_blocked\\&quot;:true")) {
                 /*
                  * We can get the direct links of geo blocked videos anyways - also, this variable only tells if a video is geo blocked at
                  * all - this does not necessarily mean that it is blocked in the users'country!
                  */
                 logger.info("Video might not be available in your country [workaround might be possible though]: " + parameter);
-                geo_blocked = true;
+                possiblyGeoBlocked = true;
             }
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            /* Get filename information */
-            seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
-            episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
-            episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
-            json_source = br.getRegex("var\\s*flashPlayerOptions\\s*=\\s*\"(.*?)\"").getMatch(0);
-            if (json_source == null) {
-                json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
-            }
-            if (json_source != null) {
-                json_source = Encoding.htmlDecode(json_source);
-                entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
-                parts = (List<Object>) entries.get("parts");
-            } else {
-                /* New 2021-04-15 */
-                final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
-                parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
+            /* Get filename base information */
+            try {
+                seriesname = this.br.getRegex("\">zurück zu ([^<>\"]*?)<span class=\"ico ico_close\"").getMatch(0);
+                episodename = this.br.getRegex("property=\"og:title\" content=\"Folge \\d+ \\- ([^<>\"]*?)\"").getMatch(0);
+                episodenumber_str = br.getRegex("class=\"headline\">Folge (\\d+)</h4>").getMatch(0);
+                json_source = br.getRegex("var\\s*flashPlayerOptions\\s*=\\s*\"(.*?)\"").getMatch(0);
+                if (json_source == null) {
+                    json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
+                }
+                if (json_source != null) {
+                    json_source = Encoding.htmlDecode(json_source);
+                    entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+                    parts = (List<Object>) entries.get("parts");
+                } else {
+                    /* New 2021-04-15 */
+                    final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+                    parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                /* Offline or plugin failure */
+                logger.info("There seems to be no downloadable content: " + parameter);
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(url_seriesname + "_" + url_episodename);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
         }
         final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
@@ -210,7 +214,7 @@ public class AtvAt extends PluginForDecrypt {
                 }
                 if (isHttpStreamingURL(src)) {
                     httpProtocolAvailable = true;
-                    src = fixStreamingURL(src, false);
+                    src = fixStreamingURL(src, possiblyGeoBlocked);
                     randomHTTPUrl = src;
                     partsWithHTTPQuality.put(part_counter, src);
                 }
@@ -408,7 +412,7 @@ public class AtvAt extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (decryptedLinks.size() == 0 && geo_blocked) {
+        if (decryptedLinks.size() == 0 && possiblyGeoBlocked) {
             logger.info("GEO-blocked");
             final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("GEO_blocked_" + url_seriesname + "_" + url_episodename);
