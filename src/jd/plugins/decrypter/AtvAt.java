@@ -25,6 +25,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -47,7 +49,8 @@ public class AtvAt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_ATVSMART = "https?://(?:www\\.)?atvsmart\\.(tv|at)/.+";
+    private static final String TYPE_ATVSMART        = "https?://(?:www\\.)?atvsmart\\.(tv|at)/.+";
+    private static final String REGEX_HTTP_STREAMING = "(https?://.+/hbbtv)/(\\d+)(_\\d+)?\\.mp4";
 
     /**
      * Important note: Via browser the videos are streamed via RTSP.
@@ -114,7 +117,7 @@ public class AtvAt extends PluginForDecrypt {
                 offline.setFinalFileName(url_seriesname + "_" + url_episodename);
                 decryptedLinks.add(offline);
                 return decryptedLinks;
-            } else if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"")) {
+            } else if (!br.containsHTML("class=\"jsb_ jsb_video/FlashPlayer\"|mod_player js_html5_player")) {
                 logger.info("There is no downloadable content: " + parameter);
                 final DownloadLink offline = this.createOfflinelink(parameter);
                 offline.setFinalFileName(url_seriesname + "_" + url_episodename);
@@ -137,10 +140,16 @@ public class AtvAt extends PluginForDecrypt {
             if (json_source == null) {
                 json_source = br.getRegex("<div class=\"jsb_ jsb_video/FlashPlayer\" data\\-jsb=\"([^\"<>]+)\">").getMatch(0);
             }
-            json_source = Encoding.htmlDecode(json_source);
-            entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
-            parts = (List<Object>) entries.get("parts");
+            if (json_source != null) {
+                json_source = Encoding.htmlDecode(json_source);
+                entries = JavaScriptEngineFactory.jsonToJavaMap(json_source);
+                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "config/initial_video");
+                parts = (List<Object>) entries.get("parts");
+            } else {
+                /* New 2021-04-15 */
+                final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+                parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
+            }
         }
         final String url_seriesname_remove = new Regex(url_seriesname, "((?:\\-)?staffel\\-\\d+)").getMatch(0);
         final String url_episodename_remove = new Regex(url_episodename, "((?:\\-)?folge\\-\\d+)").getMatch(0);
@@ -188,7 +197,6 @@ public class AtvAt extends PluginForDecrypt {
         List<Object> sources = null;
         ArrayList<Integer> partsWithoutHTTPQuality = new ArrayList<Integer>();
         HashMap<Integer, String> partsWithHTTPQuality = new HashMap<Integer, String>();
-        final Pattern httpURL = Pattern.compile("(https?://.+/hbbtv)/(\\d+)(_\\d+)?\\.mp4");
         for (final Object parto : parts) {
             Map<String, Object> partInfo = (Map<String, Object>) parto;
             sources = (List<Object>) partInfo.get("sources");
@@ -196,8 +204,13 @@ public class AtvAt extends PluginForDecrypt {
             for (final Object source : sources) {
                 Map<String, Object> qualityInfo = (Map<String, Object>) source;
                 String src = (String) qualityInfo.get("src");
-                if (src != null && new Regex(src, httpURL).matches()) {
+                if (src == null) {
+                    /* 2021-04-15 */
+                    src = (String) qualityInfo.get("url");
+                }
+                if (isHttpStreamingURL(src)) {
                     httpProtocolAvailable = true;
+                    src = fixStreamingURL(src, false);
                     randomHTTPUrl = src;
                     partsWithHTTPQuality.put(part_counter, src);
                 }
@@ -209,7 +222,7 @@ public class AtvAt extends PluginForDecrypt {
         }
         /* Construct & collect missing http URLs based on known pattern */
         if (randomHTTPUrl != null && !partsWithoutHTTPQuality.isEmpty()) {
-            final Regex urlParts = new Regex(randomHTTPUrl, httpURL);
+            final Regex urlParts = new Regex(randomHTTPUrl, REGEX_HTTP_STREAMING);
             final String urlBase = urlParts.getMatch(0);
             final String episodeID = urlParts.getMatch(1);
             for (final int part_number_real : partsWithoutHTTPQuality) {
@@ -260,44 +273,44 @@ public class AtvAt extends PluginForDecrypt {
         for (final Object parto : parts) {
             entries = (Map<String, Object>) parto;
             sources = (List<Object>) entries.get("sources");
-            final boolean is_geo_ip_blocked = ((Boolean) entries.get("is_geo_ip_blocked")).booleanValue();
+            final boolean expectGeoBlock;
+            if (entries.containsKey("is_geo_ip_blocked")) {
+                expectGeoBlock = ((Boolean) entries.get("is_geo_ip_blocked")).booleanValue();
+            } else {
+                expectGeoBlock = false;
+            }
             for (final Object source : sources) {
                 entries = (Map<String, Object>) source;
-                final String protocol = (String) entries.get("protocol");
-                final String delivery = (String) entries.get("delivery");
-                // final String type = (String) entries.get("type");
-                String src = (String) entries.get("src");
-                if (!"http".equalsIgnoreCase(protocol) || src == null || !src.startsWith("http")) {
-                    /*
-                     * Skip unknown/unsupported streaming protocols e.g. some of their videos still got old rtsp urls e.g.
-                     * http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/
-                     */
-                    continue;
-                }
-                /* 2020-11-12: Disabled for testing - seems like this doesn't work for all items --> Sometimes leads to timeouts */
-                final boolean allowOldGeoBlockedWorkaround = false;
-                final String linkpart_old_geo_block_workaround = new Regex(src, "((?:tvnext_clip|video_file)/video/\\d+\\.mp4)").getMatch(0);
-                if (is_geo_ip_blocked && linkpart_old_geo_block_workaround != null && allowOldGeoBlockedWorkaround) {
-                    /* Get around GEO-block - for older videos */
-                    /*
-                     * E.g.
-                     * http://videos-blocked-fallback.atv.cdn.tvnext.tv/tvnext_clip/video/123456.mp4/chunklist.m3u8?ttl=123456&token=123456
-                     */
-                    /* E.g. Old url for part 1 only: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
-                    /* E.g. old url for all parts: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
-                    /* Alternative. http://videos-fallback.atv.cdn.tvnext.tv */
-                    src = "http://109.68.230.208/vod/fallback/" + linkpart_old_geo_block_workaround + "/index.m3u8";
+                String src;
+                if (entries.containsKey("src")) {
+                    /* Old */
+                    src = (String) entries.get("src");
+                    final String protocol = (String) entries.get("protocol");
+                    // final String delivery = (String) entries.get("delivery");
+                    // final String type = (String) entries.get("type");
+                    if (!"http".equalsIgnoreCase(protocol) || src == null || !src.startsWith("http")) {
+                        /*
+                         * Skip unknown/unsupported streaming protocols e.g. some of their videos still got old rtsp urls e.g.
+                         * http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/
+                         */
+                        continue;
+                    }
                 } else {
-                    /* Get around GEO-block - for new content */
-                    src = src.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
+                    /* New 2021-04-15 */
+                    src = (String) entries.get("url");
+                    final String mimetype = (String) entries.get("mimetype");
+                    if (!mimetype.matches("application/x-mpegURL|video/mp4") || src == null || !src.startsWith("http")) {
+                        /* Only allow http- and HLS URLs! */
+                        continue;
+                    }
                 }
-                src = src.replaceAll("&amp;", "&");
+                src = fixStreamingURL(src, expectGeoBlock);
                 /* Some variables we need in that loop below. */
                 DownloadLink link = null;
                 String quality = null;
                 String finalname = null;
                 final String part_formatted = df.format(part_counter);
-                if (("streaming".equalsIgnoreCase(delivery) && (src.contains(".m3u8") || src.contains("chunklist"))) || src.contains(".m3u8")) {
+                if (src.contains("chunklist") || src.contains(".m3u8")) {
                     /* Find all hls qualities */
                     if (partsWithHTTPQuality.containsKey(part_counter)) {
                         logger.info("Skipping HLS quality because HTTP is available");
@@ -308,7 +321,7 @@ public class AtvAt extends PluginForDecrypt {
                     final String[] qualities = this.br.getRegex("BANDWIDTH=").getColumn(-1);
                     final int qualitiesNum = qualities.length;
                     if (!this.br.containsHTML("#EXT-X-STREAM-INF") && !this.br.containsHTML("#EXTINF")) {
-                        if (is_geo_ip_blocked) {
+                        if (expectGeoBlock) {
                             logger.info("Possible GEO-unlock fail: " + src);
                         }
                         continue;
@@ -403,6 +416,35 @@ public class AtvAt extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private boolean isHttpStreamingURL(final String url) {
+        return url != null && url.matches(REGEX_HTTP_STREAMING);
+    }
+    // private boolean isHLSUrl(final String url) {
+    // return url != null && url.contains(".m3u8");
+    // }
+
+    private String fixStreamingURL(String src, final boolean expectGeoBlock) {
+        /* 2020-11-12: Disabled for testing - seems like this doesn't work for all items --> Sometimes leads to timeouts */
+        final boolean allowOldGeoBlockedWorkaround = false;
+        final String geoblockWorkaroundOld = new Regex(src, "((?:tvnext_clip|video_file)/video/\\d+\\.mp4)").getMatch(0);
+        if (expectGeoBlock && geoblockWorkaroundOld != null && allowOldGeoBlockedWorkaround) {
+            /* Get around GEO-block - for older videos */
+            /*
+             * E.g. http://videos-blocked-fallback.atv.cdn.tvnext.tv/tvnext_clip/video/123456.mp4/chunklist.m3u8?ttl=123456&token=123456
+             */
+            /* E.g. Old url for part 1 only: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
+            /* E.g. old url for all parts: http://atv.at/bauer-sucht-frau-staffel-13/die-hofwochen-beginnen/d1348313/ */
+            /* Alternative. http://videos-fallback.atv.cdn.tvnext.tv */
+            src = "http://109.68.230.208/vod/fallback/" + geoblockWorkaroundOld + "/index.m3u8";
+        } else {
+            /* Get around GEO-block - for new content */
+            /* 2021-04-15: Still working e.g. original: https://blocked-multiscreen.atv.cdn.tvnext.tv/2021/04/HD/hbbtv/1234567.mp4 */
+            src = src.replaceAll("http(s?)://blocked(\\.|-)", "http$1://");
+        }
+        src = src.replaceAll("&amp;", "&");
+        return src;
     }
 
     private String decodeUnicode(final String s) {

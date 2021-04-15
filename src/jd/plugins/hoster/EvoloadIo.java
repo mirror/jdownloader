@@ -21,6 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,14 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvoloadIo extends PluginForHost {
@@ -89,9 +89,10 @@ public class EvoloadIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = -2;
-    private static final int     FREE_MAXDOWNLOADS = 1;
+    private static final boolean FREE_RESUME                   = true;
+    private static final int     FREE_MAXCHUNKS                = -2;
+    private static final int     FREE_MAXDOWNLOADS             = 1;
+    private static final String  PROPERTY_PREFER_FILE_DOWNLOAD = "PROPERTY_PREFER_FILE_DOWNLOAD";
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -139,8 +140,19 @@ public class EvoloadIo extends PluginForHost {
                 if (!StringUtils.isEmpty(filename)) {
                     link.setFinalFileName(filename);
                 }
-                if (size > 0) {
-                    link.setVerifiedFileSize(size);
+                final String enc_status = (String) entries.get("enc_status");
+                if (StringUtils.equals(enc_status, "file")) {
+                    /* Original file download */
+                    link.setProperty(PROPERTY_PREFER_FILE_DOWNLOAD, true);
+                    /* Trust filesize */
+                    if (size > 0) {
+                        link.setVerifiedFileSize(size);
+                    }
+                } else {
+                    link.removeProperty(PROPERTY_PREFER_FILE_DOWNLOAD);
+                    if (size > 0) {
+                        link.setDownloadSize(size);
+                    }
                 }
                 final String status = (String) entries.get("status");
                 if (StringUtils.equalsIgnoreCase("Online", status)) {
@@ -206,73 +218,93 @@ public class EvoloadIo extends PluginForHost {
         postdata.put("code", this.getFID(link));
         postdata.put("token", recaptchaV2Response);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        final boolean doExtraRequest = false;
-        if (doExtraRequest) {
+        Map<String, Object> entries;
+        /**
+         * 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. </br>
+         * For original file download there are also two versions available.
+         */
+        final ArrayList<String> downloadCandidates = new ArrayList<String>();
+        if (link.getBooleanProperty(PROPERTY_PREFER_FILE_DOWNLOAD, false)) {
+            /* Official file download. */
+            postdata.put("type", "download");
             br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdata));
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String xstatus = PluginJSonUtils.getJson(this.br, "xstatus");
             if (!StringUtils.isEmpty(xstatus)) {
                 /* E.g. status "del" */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String original_name = PluginJSonUtils.getJson(this.br, "original_name");
+            final Map<String, Object> fileInfo = (Map<String, Object>) entries.get("file");
+            final String original_name = (String) fileInfo.get("original_name");
             if (!StringUtils.isEmpty(original_name)) {
                 link.setFinalFileName(original_name);
             }
-        }
-        br.postPageRaw("/SecurePlayer", JSonStorage.serializeToJson(postdata));
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        if (entries.containsKey("xstatus")) {
-            /* E.g. status "del" */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. */
-        final ArrayList<String> downloadCandidates = new ArrayList<String>();
-        /* 2021-03-10: Don't do this as we would have to solve another reCaptchaV2 for this! */
-        final boolean allowExtraStepForDownload = false;
-        final String allow_download = (String) entries.get("allow_download");
-        if ("yes".equalsIgnoreCase(allow_download) && allowExtraStepForDownload) {
-            final Map<String, Object> postdataExtra = postdata;
-            postdataExtra.put("type", "download");
-            br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdataExtra));
-            Map<String, Object> entries2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries2 = (Map<String, Object>) entries2.get("download_data");
-            if (entries2 != null) {
-                final String freeOfficialDownload = (String) entries2.get("original_src");
-                final String freeOfficialStreamDownload = (String) entries2.get("encoded_src");
-                if (!StringUtils.isEmpty(freeOfficialDownload)) {
-                    downloadCandidates.add(freeOfficialDownload);
+            entries = (Map<String, Object>) entries.get("download_data");
+            if (entries.containsKey("original_src")) {
+                downloadCandidates.add((String) entries.get("original_src"));
+            }
+            /**
+             * This version is never used by their website. </br>
+             * 2021-04-15: URL did not work (404) but let's att it anyways as a fallback.
+             */
+            if (entries.containsKey("encoded_src")) {
+                downloadCandidates.add((String) entries.get("encoded_src"));
+            }
+        } else {
+            /* Streaming download */
+            br.postPageRaw("/SecurePlayer", JSonStorage.serializeToJson(postdata));
+            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            if (entries.containsKey("xstatus")) {
+                /* E.g. status "del" or "file" */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* 2021-03-10: Don't do this as we would have to solve another reCaptchaV2 for this! */
+            final boolean allowExtraStepForDownload = false;
+            final String allow_download = (String) entries.get("allow_download");
+            if ("yes".equalsIgnoreCase(allow_download) && allowExtraStepForDownload) {
+                final Map<String, Object> postdataExtra = postdata;
+                postdataExtra.put("type", "download");
+                br.postPageRaw("/SecureMeta", JSonStorage.serializeToJson(postdataExtra));
+                Map<String, Object> entries2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries2 = (Map<String, Object>) entries2.get("download_data");
+                if (entries2 != null) {
+                    final String freeOfficialDownload = (String) entries2.get("original_src");
+                    final String freeOfficialStreamDownload = (String) entries2.get("encoded_src");
+                    if (!StringUtils.isEmpty(freeOfficialDownload)) {
+                        downloadCandidates.add(freeOfficialDownload);
+                    }
+                    if (!StringUtils.isEmpty(freeOfficialStreamDownload)) {
+                        downloadCandidates.add(freeOfficialStreamDownload);
+                    }
                 }
-                if (!StringUtils.isEmpty(freeOfficialStreamDownload)) {
-                    downloadCandidates.add(freeOfficialStreamDownload);
+            }
+            final Map<String, Object> streamMap = (Map<String, Object>) entries.get("stream");
+            final Map<String, Object> premiumBackupMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "premium/backup");
+            if (premiumBackupMap != null) {
+                final String premiumBackupDownload1 = (String) premiumBackupMap.get("original_src");
+                final String premiumBackupDownload2 = (String) premiumBackupMap.get("encoded_src");
+                if (!StringUtils.isEmpty(premiumBackupDownload1)) {
+                    downloadCandidates.add(premiumBackupDownload1);
+                }
+                if (!StringUtils.isEmpty(premiumBackupDownload2)) {
+                    downloadCandidates.add(premiumBackupDownload2);
                 }
             }
-        }
-        final Map<String, Object> streamMap = (Map<String, Object>) entries.get("stream");
-        final Map<String, Object> premiumBackupMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "premium/backup");
-        if (premiumBackupMap != null) {
-            final String premiumBackupDownload1 = (String) premiumBackupMap.get("original_src");
-            final String premiumBackupDownload2 = (String) premiumBackupMap.get("encoded_src");
-            if (!StringUtils.isEmpty(premiumBackupDownload1)) {
-                downloadCandidates.add(premiumBackupDownload1);
+            if (streamMap != null) {
+                final String streamDownload1 = (String) streamMap.get("src");
+                final String streamDownload2 = (String) streamMap.get("backup");
+                if (!StringUtils.isEmpty(streamDownload1)) {
+                    downloadCandidates.add(streamDownload1);
+                }
+                if (!StringUtils.isEmpty(streamDownload2)) {
+                    downloadCandidates.add(streamDownload2);
+                }
             }
-            if (!StringUtils.isEmpty(premiumBackupDownload2)) {
-                downloadCandidates.add(premiumBackupDownload2);
+            /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
+            final String name = (String) entries.get("name");
+            if (!StringUtils.isEmpty(name) && link.getFinalFileName() == null) {
+                link.setFinalFileName(name);
             }
-        }
-        if (streamMap != null) {
-            final String streamDownload1 = (String) streamMap.get("src");
-            final String streamDownload2 = (String) streamMap.get("backup");
-            if (!StringUtils.isEmpty(streamDownload1)) {
-                downloadCandidates.add(streamDownload1);
-            }
-            if (!StringUtils.isEmpty(streamDownload2)) {
-                downloadCandidates.add(streamDownload2);
-            }
-        }
-        /* 2020-12-14: We are unable to get any file information during linkcheck which is why we try to set the name here. */
-        final String name = (String) entries.get("name");
-        if (!StringUtils.isEmpty(name) && link.getFinalFileName() == null) {
-            link.setFinalFileName(name);
         }
         if (downloadCandidates.isEmpty()) {
             logger.warning("Failed to find final downloadurl");
@@ -289,7 +321,7 @@ public class EvoloadIo extends PluginForHost {
             }
         }
         if (fail) {
-            logger.warning("All stream candidates failed");
+            logger.warning("All download candidates failed");
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
