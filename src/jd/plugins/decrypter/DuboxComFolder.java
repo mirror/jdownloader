@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,12 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DuboxCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DuboxComFolder extends PluginForDecrypt {
@@ -238,18 +238,21 @@ public class DuboxComFolder extends PluginForDecrypt {
                     decryptedLinks.add(folder);
                 } else {
                     final String serverfilename = (String) entries.get("server_filename");
+                    final String realpath;
+                    if (path.endsWith("/" + serverfilename)) {
+                        realpath = path.replaceFirst("/" + org.appwork.utils.Regex.escape(serverfilename) + "$", "");
+                    } else {
+                        realpath = path;
+                    }
                     final UrlQuery thisparams = new UrlQuery();
                     thisparams.add("surl", surl);
-                    thisparams.appendEncoded("dir", new Regex(path, "(/.*?)/[^/]+$").getMatch(0));// only the path!
-                    // thisparams.add("dir", URLEncode.encodeURIComponent(path));
+                    thisparams.appendEncoded("dir", realpath);// only the path!
                     thisparams.add("fsid", Long.toString(fsid));
                     thisparams.appendEncoded("fileName", serverfilename);
-                    // thisparams.add("fileName", URLEncode.encodeURIComponent(serverfilename));
                     thisparams.add("page", "1");
                     final String url = "https://www.dubox.com/web/share/?" + thisparams.toString();
                     final String contentURL;
                     if (category == 1) {
-                        /* TODO: Fix these contentURLs --> Encoding issues! */
                         contentURL = "https://www.dubox.com/web/share/videoPlay?" + thisparams.toString();
                     } else {
                         /* No URL available that points directly to that file! */
@@ -265,12 +268,6 @@ public class DuboxComFolder extends PluginForDecrypt {
                     /* Saving- and re-using this can save us some time later. */
                     if (passwordCookie != null) {
                         dl.setProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
-                    }
-                    final String realpath;
-                    if (path.endsWith("/" + serverfilename)) {
-                        realpath = path.replaceFirst("/" + org.appwork.utils.Regex.escape(serverfilename) + "$", "");
-                    } else {
-                        realpath = path;
                     }
                     if (realpath.length() > 1) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realpath);
