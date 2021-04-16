@@ -281,10 +281,10 @@ public class DuboxComFolder extends PluginForDecrypt {
                     thisparams.appendEncoded("dir", realpath);// only the path!
                     thisparams.add("fsid", Long.toString(fsid));
                     thisparams.appendEncoded("fileName", serverfilename);
-                    thisparams.add("page", "1");
                     final String url = "https://www.dubox.com/web/share/?" + thisparams.toString();
                     final String contentURL;
                     if (category == 1) {
+                        thisparams.add("page", Integer.toString(page));
                         contentURL = "https://www.dubox.com/web/share/videoPlay?" + thisparams.toString();
                     } else {
                         /* No URL available that points directly to that file! */
