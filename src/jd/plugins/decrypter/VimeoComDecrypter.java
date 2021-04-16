@@ -700,8 +700,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-                final boolean tryToFindOfficialDownloadURLs = this.qORG;
-                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, tryToFindOfficialDownloadURLs, qALL || qMOBILE || qMOBILE || qHD, qALL || qMOBILE || qMOBILE || qHD, subtitle);
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, download, web, web, subtitle);
                 if (containers == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -1004,6 +1003,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return bestLink;
     }
 
+    private boolean download;
+    private boolean web;
+    private boolean subtitle;
     private boolean qMOBILE;
     private boolean qHD;
     private boolean qSD;
@@ -1018,7 +1020,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private boolean p1440;
     private boolean p2560;
     private boolean pALL;
-    private boolean subtitle;
 
     public void init(final SubConfiguration cfg) {
         qMOBILE = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_MOBILE, true);
@@ -1027,6 +1028,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         qORG = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_ORIGINAL, true);
         subtitle = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.SUBTITLE, true);
         qALL = !qMOBILE && !qHD && !qSD && !qORG;
+        download = qORG;
+        web = qALL || qMOBILE || qHD || qSD;
         // p ratings
         p240 = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.P_240, true);
         p360 = cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.P_360, true);
@@ -1042,21 +1045,22 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private boolean qualityAllowed(final VimeoContainer vvc) {
         if (qALL) {
             return true;
-        }
-        switch (vvc.getQuality()) {
-        case ORIGINAL:
-        case SOURCE:
-            return qORG;
-        case UHD_4K:
-        case UHD:
-        case HD:
-            return qHD;
-        case SD:
-            return qSD;
-        case MOBILE:
-            return qMOBILE;
-        default:
-            return false;
+        } else {
+            switch (vvc.getQuality()) {
+            case ORIGINAL:
+            case SOURCE:
+                return qORG;
+            case UHD_4K:
+            case UHD:
+            case HD:
+                return qHD;
+            case SD:
+                return qSD;
+            case MOBILE:
+                return qMOBILE;
+            default:
+                return false;
+            }
         }
     }
 

@@ -49,8 +49,6 @@ public class VimeoContainer extends VideoContainer {
         this.estimatedSize = estimatedSize;
     }
 
-    private Long id = null;
-
     // order is important, worst to best
     public enum Quality {
         MOBILE,
@@ -86,13 +84,6 @@ public class VimeoContainer extends VideoContainer {
     }
 
     /**
-     * @return the id
-     */
-    public final Long getId() {
-        return id;
-    }
-
-    /**
      * @param quality
      *            the quality to set
      */
@@ -113,14 +104,6 @@ public class VimeoContainer extends VideoContainer {
      */
     public final void setCodec(String codec) {
         this.codec = codec;
-    }
-
-    /**
-     * @param id
-     *            the id to set
-     */
-    public final void setId(Long id) {
-        this.id = id;
     }
 
     /**
@@ -188,9 +171,9 @@ public class VimeoContainer extends VideoContainer {
     public String createLinkID(final String id) {
         final String linkid;
         if (Source.SUBTITLE.equals(getSource())) {
-            linkid = id.concat("_").concat(toString(getId()).concat(toString(getSource())).concat(toString(getLang())));
+            linkid = id.concat("_").concat(toString(getSource())).concat(toString(getLang()));
         } else {
-            linkid = id.concat("_").concat(getQuality().toString()).concat("_").concat(String.valueOf(getWidth())).concat("x").concat(String.valueOf(getHeight())).concat((getId() != null ? "_" + String.valueOf(getId()) : "")).concat((getSource() != null ? "_" + getSource().toString() : "")).concat((getLang() != null ? "_" + getLang().toString() : ""));
+            linkid = id.concat("_").concat(getQuality().toString()).concat("_").concat(String.valueOf(getWidth())).concat("x").concat(String.valueOf(getHeight())).concat(toString(getSource()).concat(toString(getLang())));
         }
         return linkid;
     }
