@@ -114,9 +114,9 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium() throws Exception {
+    public Form findFormDownload2Premium(final Browser br) throws Exception {
         /* 2019-05-15: Special */
-        Form formf1Premium = super.findFormDownload2Premium();
+        Form formf1Premium = super.findFormDownload2Premium(br);
         if (formf1Premium == null) {
             /* 2021-01-26 */
             formf1Premium = this.getOfficialVideoDownloadForm(this.br);

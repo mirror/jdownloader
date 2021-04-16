@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileAl extends XFileSharingProBasic {
@@ -110,20 +110,20 @@ public class FileAl extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium() throws Exception {
+    public Form findFormDownload2Premium(final Browser br) throws Exception {
         /* 2019-05-03: Special */
-        checkForSpecialCaptcha();
-        return super.findFormDownload2Premium();
+        checkForSpecialCaptcha(br);
+        return super.findFormDownload2Premium(br);
     }
 
     @Override
     public Form findFormDownload1Free() throws Exception {
         /* 2019-05-03: Special */
-        checkForSpecialCaptcha();
+        checkForSpecialCaptcha(br);
         return super.findFormDownload1Free();
     }
 
-    private void checkForSpecialCaptcha() throws Exception {
+    private void checkForSpecialCaptcha(final Browser br) throws Exception {
         if (br.getURL() != null && br.getURL().contains("/ip_check/")) {
             /*
              * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
@@ -137,7 +137,7 @@ public class FileAl extends XFileSharingProBasic {
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 specialCaptchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.setFollowRedirects(true);
-                super.submitForm(specialCaptchaForm);
+                super.submitForm(br, specialCaptchaForm);
                 final boolean siteVerificationFailure = br.toString().equalsIgnoreCase("Verification failed");
                 if (siteVerificationFailure) {
                     logger.info("Site verification failed");
@@ -154,7 +154,7 @@ public class FileAl extends XFileSharingProBasic {
                  */
                 final String redirect = br.getRedirectLocation();
                 if (!redirectSetting && redirect != null && redirect.matches("https?://[^/]+/[a-z0-9]{12}")) {
-                    this.getPage(redirect);
+                    this.getPage(br, redirect);
                 }
                 br.setFollowRedirects(redirectSetting);
             }

@@ -196,7 +196,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     // return "/profile";
     // }
     @Override
-    protected boolean allows_multiple_login_attempts_in_one_go() {
+    protected boolean allowsMultipleLoginAttemptsInOneGo() {
         /* 2019-08-21: Special */
         return true;
     }
