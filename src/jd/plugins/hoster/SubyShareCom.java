@@ -222,7 +222,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                             checkErrors(br, correctedBR, link, account, false);
                             dllink = getDllink(link, account, br, correctedBR);
                             /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                            final String image_filename = regexImagehosterFilename(correctedBR);
+                            final String image_filename = regexImagehosterFilename(br);
                             if (image_filename != null) {
                                 link.setName(Encoding.htmlOnlyDecode(image_filename));
                             }

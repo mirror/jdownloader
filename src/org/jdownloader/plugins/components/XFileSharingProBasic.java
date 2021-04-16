@@ -479,7 +479,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      * required and then the login should work. </br>
      * default = false
      */
-    protected boolean allows_multiple_login_attempts_in_one_go() {
+    protected boolean allowsMultipleLoginAttemptsInOneGo() {
         return false;
     }
 
@@ -942,7 +942,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         /* Next - RegExes for specified types of websites e.g. imagehosts */
         if (StringUtils.isEmpty(fileInfo[0]) && this.isImagehoster()) {
-            fileInfo[0] = regexImagehosterFilename(correctedBR);
+            fileInfo[0] = regexImagehosterFilename(br);
         }
         /* Next - details from sharing boxes (new RegExes to old) */
         if (StringUtils.isEmpty(fileInfo[0])) {
@@ -1294,8 +1294,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Only use this if it is made sure that the host we're working with is an imagehoster (ximagesharing)!! */
-    public String regexImagehosterFilename(final String source) {
-        return new Regex(source, "class=\"pic\"[^>]*alt=\"([^<>\"]*?)\"").getMatch(0);
+    public String regexImagehosterFilename(final Browser br) {
+        return br.getRegex("class=\"pic\"[^>]*alt=\"([^<>\"]*?)\"").getMatch(0);
     }
 
     /**
@@ -1356,7 +1356,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         /* Add desired video extension if given. */
-        if (desiredExtension != null && !filename.endsWith("." + desiredExtension)) {
+        if (desiredExtension != null && !filename.toLowerCase(Locale.ENGLISH).endsWith("." + desiredExtension.toLowerCase(Locale.ENGLISH))) {
             filename += "." + desiredExtension;
         }
         return filename;
@@ -1445,7 +1445,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             checkErrors(br, getCorrectBR(br), link, account, false);
                             dllink = getDllink(link, account, br, getCorrectBR(br));
                             /* For imagehosts, filenames are often not given until we can actually see/download the image! */
-                            final String image_filename = regexImagehosterFilename(getCorrectBR(br));
+                            final String image_filename = regexImagehosterFilename(br);
                             if (image_filename != null) {
                                 link.setName(Encoding.htmlOnlyDecode(image_filename));
                             }
@@ -1575,10 +1575,10 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         }
         String dllink = null;
         /* Info in table. E.g. xvideosharing.com, watchvideo.us */
-        String[] videoQualityHTMLs = new Regex(getCorrectBR(brc), "<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
+        String[] videoQualityHTMLs = brc.getRegex("<tr><td>[^\r\t\n]+download_video\\(.*?</td></tr>").getColumn(-1);
         if (videoQualityHTMLs.length == 0) {
             /* Match on line - safe attempt but this may not include filesize! */
-            videoQualityHTMLs = new Regex(getCorrectBR(brc), "download_video\\([^\r\t\n]+").getColumn(-1);
+            videoQualityHTMLs = brc.getRegex("download_video\\([^\r\t\n]+").getColumn(-1);
         }
         if (videoQualityHTMLs.length == 0) {
             logger.info("Failed to find any official video downloads");
@@ -1717,7 +1717,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = new Regex(brc.toString(), "<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+            dllink = brc.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.info("Failed to find final downloadurl");
@@ -2002,7 +2002,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *
      * @throws Exception
      */
-    public Form findFormDownload2Premium() throws Exception {
+    public Form findFormDownload2Premium(final Browser br) throws Exception {
         return br.getFormbyProperty("name", "F1");
     }
 
@@ -3569,7 +3569,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         this.setDownloadLink(dlinkbefore);
                     }
                     submitForm(loginForm);
-                    if (!this.allows_multiple_login_attempts_in_one_go()) {
+                    if (!this.allowsMultipleLoginAttemptsInOneGo()) {
                         break;
                     }
                 } while (!this.isLoggedin(this.br) && login_counter <= login_counter_max);
@@ -3578,7 +3578,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         /* User entered correct logindata but hasn't activated his account yet. */
                         throw new AccountUnavailableException("\r\nYour account has not yet been activated!\r\nActivate it via the URL you received via E-Mail and try again!", 5 * 60 * 1000l);
                     }
-                    if (this.allows_multiple_login_attempts_in_one_go()) {
+                    if (this.allowsMultipleLoginAttemptsInOneGo()) {
                         logger.info("Login failed although there were two attempts");
                     } else {
                         logger.info("Login failed - check if the website needs a captcha after the first attempt so the plugin might have to be modified via allows_multiple_login_attempts_in_one_go");
@@ -3797,7 +3797,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                             dllink = getDllink(link, account, br, getCorrectBR(br));
                         }
                         if (StringUtils.isEmpty(dllink)) {
-                            final Form dlForm = findFormDownload2Premium();
+                            final Form dlForm = findFormDownload2Premium(this.br);
                             if (dlForm == null) {
                                 checkErrors(br, getCorrectBR(br), link, account, true);
                                 logger.warning("Failed to find Form download2");
@@ -3990,7 +3990,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Handles errors right before starting the download. */
-    protected void handleDownloadErrors(URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
+    protected void handleDownloadErrors(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws Exception {
         if (!isDownloadableContent(con)) {
             logger.warning("The final dllink seems not to be a file!");
             try {

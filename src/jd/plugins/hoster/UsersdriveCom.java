@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -114,13 +115,13 @@ public class UsersdriveCom extends XFileSharingProBasic {
     }
 
     @Override
-    public Form findFormDownload2Premium() throws Exception {
+    public Form findFormDownload2Premium(final Browser br) throws Exception {
         /* 2020-07-16: Special */
         final Form download2 = br.getFormByInputFieldKeyValue("op", "download2");
         if (download2 != null) {
             return download2;
         } else {
-            return super.findFormDownload2Premium();
+            return super.findFormDownload2Premium(br);
         }
     }
 }
