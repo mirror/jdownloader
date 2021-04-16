@@ -13,12 +13,14 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,12 +40,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com" }, urls = { "http://(?:www\\.)?sufile\\.com/(?:file|vip)/[a-z0-9]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sufile.com" }, urls = { "http://(?:www\\.)?(?:sufile|dufile)\\.com/(?:file|vip)/[a-z0-9]+\\.html" })
 public class SuFileCom extends PluginForHost {
-
     public SuFileCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.sufile.com/upgrade.html");
@@ -65,7 +63,6 @@ public class SuFileCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
-
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
@@ -176,7 +173,7 @@ public class SuFileCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([a-z0-9]+)\\.html$").getMatch(0);
+        return new Regex(dl.getPluginPatternMatcher(), "([a-z0-9]+)\\.html$").getMatch(0);
     }
 
     @Override
@@ -312,5 +309,4 @@ public class SuFileCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
