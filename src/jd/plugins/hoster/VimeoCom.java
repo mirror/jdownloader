@@ -142,10 +142,13 @@ public class VimeoCom extends PluginForHost {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String downloadlinkId = link.getLinkID().replaceFirst("_ORIGINAL$", "");
+        // remove ORIGINAL and deprecated ID
+        final String downloadlinkId = link.getLinkID().replaceFirst("_ORIGINAL$", "").replaceFirst("(\\d+x\\d+)(_\\d+_)", "$1_");
         final String videoQuality = link.getStringProperty("videoQuality", null);
         final boolean isSubtitle = (StringUtils.endsWithCaseInsensitive(videoQuality, "SUBTITLE") || StringUtils.containsIgnoreCase(videoQuality, "_SUBTITLE_")) || (StringUtils.endsWithCaseInsensitive(downloadlinkId, "SUBTITLE") || StringUtils.containsIgnoreCase(downloadlinkId, "_SUBTITLE_"));
         final boolean isHLS = StringUtils.endsWithCaseInsensitive(videoQuality, "HLS") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "HLS");
+        final boolean isWEB = StringUtils.endsWithCaseInsensitive(videoQuality, "WEB") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "WEB");
+        final boolean isDASH = StringUtils.endsWithCaseInsensitive(videoQuality, "DASH") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DASH");
         final boolean isDownload = StringUtils.endsWithCaseInsensitive(videoQuality, "DOWNLOAD") || StringUtils.endsWithCaseInsensitive(downloadlinkId, "DOWNLOAD");
         br.setFollowRedirects(true);
         final VIMEO_URL_TYPE type = getVimeoUrlType(link);
@@ -272,19 +275,15 @@ public class VimeoCom extends PluginForHost {
                 logger.log(e);
             }
             // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
-            final boolean isStream = !isHLS && !isDownload && !isSubtitle;
-            final List<VimeoContainer> qualities = find(this, type, br, videoID, getUnlistedHash(link), isDownload || !isHLS, isStream, isHLS, isSubtitle);
+            final List<VimeoContainer> qualities = find(this, type, br, videoID, getUnlistedHash(link), isDownload, isWEB || isDASH, isHLS, isSubtitle);
             if (qualities.isEmpty()) {
-                logger.warning("vimeo.com: Qualities could not be found");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             VimeoContainer container = null;
             if (downloadlinkId != null) {
                 for (VimeoContainer quality : qualities) {
                     final String linkdupeid = quality.createLinkID(videoID);
-                    // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to
-                    // cross
-                    // over!
+                    // match refreshed qualities to stored reference, to make sure we have the same format for resume!
                     if (StringUtils.equalsIgnoreCase(linkdupeid, downloadlinkId)) {
                         container = quality;
                         break;
@@ -293,17 +292,28 @@ public class VimeoCom extends PluginForHost {
             }
             if (container == null && videoQuality != null) {
                 for (VimeoContainer quality : qualities) {
-                    // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to
-                    // cross
-                    // over!
+                    // match refreshed qualities to stored reference, to make sure we have the same format for resume!
                     if (videoQuality.equalsIgnoreCase(quality.getQuality().toString())) {
                         container = quality;
                         break;
                     }
                 }
             }
+            if (container == null) {
+                final VimeoContainer vvc = getVimeoVideoContainer(link, true);
+                if (vvc != null) {
+                    for (VimeoContainer quality : qualities) {
+                        if (quality.getHeight() == vvc.getHeight() && quality.getWidth() == vvc.getWidth() && quality.getQuality() == vvc.getQuality() && quality.getSource() == vvc.getSource()) {
+                            container = quality;
+                            break;
+                        }
+                    }
+                }
+            }
             if (container == null || container.getDownloadurl() == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "not found:linkID=" + downloadlinkId + "|quality=" + videoQuality);
+            } else {
+                logger.info("found:linkID=" + downloadlinkId + "|quality=" + videoQuality + "|container=" + container + "|url=" + container.getDownloadurl());
             }
             finalURL = container.getDownloadurl();
             switch (container.getSource()) {
@@ -871,11 +881,11 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoContainer> find(final Plugin plugin, final VIMEO_URL_TYPE urlTypeUsed, Browser ibr, final String videoID, final String unlistedHash, final boolean user_wants_download_urls, final boolean stream, final boolean hls, final boolean subtitles) throws Exception {
+    public static List<VimeoContainer> find(final Plugin plugin, final VIMEO_URL_TYPE urlTypeUsed, Browser ibr, final String videoID, final String unlistedHash, final Boolean download, final Boolean stream, final Boolean hls, final Boolean subtitles) throws Exception {
+        plugin.getLogger().info("videoID=" + videoID + "|urlTypeUsed=" + urlTypeUsed + "|unlistedHash=" + unlistedHash + "|download=" + download + "|stream=" + stream + "|hls=" + hls + "|subtitles=" + subtitles);
         /*
          * little pause needed so the next call does not return trash
          */
-        plugin.getLogger().info("urlTypeUsed:" + urlTypeUsed);
         Thread.sleep(1000);
         if (!ibr.getURL().contains("api.vimeo.com/")) {
             final Browser brc = ibr.cloneBrowser();
@@ -936,87 +946,95 @@ public class VimeoCom extends PluginForHost {
             }
         }
         plugin.getLogger().info("Download possible:" + download_might_be_possible);
-        if (user_wants_download_urls && download_might_be_possible) {
+        if (!Boolean.FALSE.equals(download) && download_might_be_possible) {
             plugin.getLogger().info("query downloads");
-            results.addAll(handleDownloadConfig(plugin, ibr, videoID));
-            plugin.getLogger().info("downloads found:" + results.size());
+            final List<VimeoContainer> downloadsFound = handleDownloadConfig(plugin, ibr, videoID);
+            plugin.getLogger().info("downloads found:" + downloadsFound.size() + "|" + downloadsFound);
+            results.addAll(downloadsFound);
         }
         /** 2019-04-30: Only try to grab streams if we failed to find any downloads. */
-        final boolean tryToFindStreams = results.size() < 2 && (stream || hls);
+        final boolean checkStreams = (results.size() < 2 && (!Boolean.FALSE.equals(stream) || !Boolean.FALSE.equals(hls))) || !Boolean.FALSE.equals(subtitles);
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
-        if ((tryToFindStreams || subtitles) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
+        if ((checkStreams || Boolean.TRUE.equals(subtitles) || Boolean.TRUE.equals(stream) || Boolean.TRUE.equals(hls)) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
             plugin.getLogger().info("try to find streams");
-            // iconify_down_b could fail, revert to the following if statements.
-            String json = null;
-            if (configURL != null) {
-                final Browser brc = ibr.cloneBrowser();
-                brc.getHeaders().put("Accept", "*/*");
-                configURL = configURL.replaceAll("&amp;", "&");
-                Thread.sleep(100);
-                json = brc.getPage(configURL);
-            } else {
-                json = ibr.getRegex("a\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
-                if (json == null) {
-                    json = ibr.getRegex("t\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
+            String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+            Map<String, Object> entries = null;
+            final List<Object> official_downloads_all = new ArrayList<Object>();
+            if (json != null) {
+                final Map<String, Object> jsonMap = JavaScriptEngineFactory.jsonToJavaMap(json);
+                final List<Map<String, Object>> files = (List<Map<String, Object>>) jsonMap.get("files");// api.vimeo.com
+                if (files != null && files.size() > 0) {
+                    entries = jsonMap;
+                }
+            }
+            if (entries == null || !Boolean.FALSE.equals(subtitles)) {
+                if (configURL != null) {
+                    final Browser brc = ibr.cloneBrowser();
+                    brc.getHeaders().put("Accept", "*/*");
+                    configURL = configURL.replaceAll("&amp;", "&");
+                    Thread.sleep(100);
+                    json = brc.getPage(configURL);
+                } else {
+                    json = ibr.getRegex("a\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
                     if (json == null) {
-                        json = ibr.getRegex("^(\\s*\\{\\s*\"cdn_url\".+)").getMatch(0);
+                        json = ibr.getRegex("t\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
                         if (json == null) {
-                            json = ibr.getRegex("(\\s*\\{\\s*\"cdn_url\".*?\\});").getMatch(0);
+                            json = ibr.getRegex("^(\\s*\\{\\s*\"cdn_url\".+)").getMatch(0);
+                            if (json == null) {
+                                json = ibr.getRegex("(\\s*\\{\\s*\"cdn_url\".*?\\});").getMatch(0);
+                            }
                         }
                     }
                 }
+                if (json != null) {
+                    entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+                }
             }
-            /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
-            if (json != null) {
-                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-                final Map<String, Object> files = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files");
-                final List<Map<String, Object>> text_tracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "request/text_tracks");
-                // progressive = web, hls = hls
-                if (files != null) {
-                    if (files.containsKey("progressive") && stream) {
-                        final int before = results.size();
-                        plugin.getLogger().info("query progressive streams");
-                        results.addAll(handleProgessive(plugin, ibr, files));
-                        plugin.getLogger().info("progressive streams found:" + (results.size() - before));
-                    }
-                    if (files.containsKey("hls") && hls && false) {
-                        // skip HLS because of unsupported split video/audio
-                        final int before = results.size();
-                        plugin.getLogger().info("query hls streams");
-                        results.addAll(handleHLS(plugin, ibr, (Map<String, Object>) files.get("hls")));
-                        plugin.getLogger().info("hls streams found:" + (results.size() - before));
-                    }
+            if (entries != null) {
+                if (!Boolean.FALSE.equals(stream)) {
+                    plugin.getLogger().info("query progressive streams");
+                    final List<VimeoContainer> progressiveStreams = handleProgessive(plugin, ibr, entries);
+                    plugin.getLogger().info("progressive streams found:" + progressiveStreams.size() + "|" + progressiveStreams);
+                    results.addAll(progressiveStreams);
                 }
-                if (text_tracks != null && subtitles) {
-                    final int before = results.size();
+                if (!Boolean.FALSE.equals(hls) && false) {
+                    // skip HLS because of unsupported split video/audio
+                    plugin.getLogger().info("query hls streams");
+                    final List<VimeoContainer> hlsStreams = handleHLS(plugin, ibr, entries);
+                    plugin.getLogger().info("hls streams found:" + hlsStreams.size() + "|" + hlsStreams);
+                    results.addAll(hlsStreams);
+                }
+                if (!Boolean.FALSE.equals(subtitles)) {
                     plugin.getLogger().info("query subtitles");
-                    results.addAll(handleSubtitles(plugin, ibr, text_tracks));
-                    plugin.getLogger().info("subtitles found:" + (results.size() - before));
+                    final List<VimeoContainer> subtitlesFound = handleSubtitles(plugin, ibr, entries);
+                    plugin.getLogger().info("subtitles found:" + subtitlesFound.size() + "|" + subtitlesFound);
+                    results.addAll(subtitlesFound);
                 }
+            } else {
+                plugin.getLogger().info("no json found!?");
             }
         }
         return results;
     }
 
-    private static List<VimeoContainer> handleSubtitles(Plugin plugin, Browser br, List<Map<String, Object>> text_tracks) {
+    private static List<VimeoContainer> handleSubtitles(Plugin plugin, Browser br, Map<String, Object> entries) {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            for (final Map<String, Object> text_track : text_tracks) {
-                final VimeoContainer vvc = new VimeoContainer();
-                final String url = (String) text_track.get("url");
-                final String lang = (String) text_track.get("lang");
-                if (url == null || lang == null) {
-                    continue;
+            List<Map<String, Object>> text_tracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "request/text_tracks");
+            if (text_tracks != null) {
+                for (final Map<String, Object> text_track : text_tracks) {
+                    final VimeoContainer vvc = new VimeoContainer();
+                    final String url = (String) text_track.get("url");
+                    final String lang = (String) text_track.get("lang");
+                    if (url == null || lang == null) {
+                        continue;
+                    }
+                    vvc.setSource(Source.SUBTITLE);
+                    vvc.setDownloadurl(URLHelper.parseLocation(new URL("https://vimeo.com"), url).toString());
+                    vvc.setLang(lang);
+                    vvc.setExtension(".srt");
+                    ret.add(vvc);
                 }
-                vvc.setSource(Source.SUBTITLE);
-                vvc.setDownloadurl(URLHelper.parseLocation(new URL("https://vimeo.com"), url).toString());
-                vvc.setLang(lang);
-                final Number id = getNumber(text_track, "id");
-                if (id != null) {
-                    vvc.setId(id.longValue());
-                }
-                vvc.setExtension(".srt");
-                ret.add(vvc);
             }
         } catch (final Throwable t) {
             plugin.getLogger().log(t);
@@ -1046,7 +1064,7 @@ public class VimeoCom extends PluginForHost {
             final List<Object> official_downloads_all = new ArrayList<Object>();
             if (json != null) {
                 final Map<String, Object> jsonMap = JavaScriptEngineFactory.jsonToJavaMap(json);
-                final List<Map<String, Object>> files = (List<Map<String, Object>>) jsonMap.get("files");// streams?, api.vimeo.com
+                final List<Map<String, Object>> files = (List<Map<String, Object>>) jsonMap.get("files");// streams, api.vimeo.com
                 final List<Map<String, Object>> downloads = (List<Map<String, Object>>) jsonMap.get("download");// downloads, api.vimeo.com
                 if (downloads != null && downloads.size() > 0) {
                     entries = jsonMap;
@@ -1080,7 +1098,7 @@ public class VimeoCom extends PluginForHost {
                 for (final Object file : official_downloads_all) {
                     final Map<String, Object> info = (Map<String, Object>) file;
                     final String quality = (String) info.get("quality");
-                    if (StringUtils.equalsIgnoreCase("hls", (String) info.get("quality"))) {
+                    if (StringUtils.equalsIgnoreCase("hls", quality)) {
                         // skip HLS because of unsupported split video/audio
                         continue;
                     }
@@ -1092,11 +1110,20 @@ public class VimeoCom extends PluginForHost {
                         downloadURL = (String) info.get("link");// api.vimeo.com
                     }
                     vvc.setDownloadurl(downloadURL);
-                    final String ext = (String) info.get("extension");
+                    String ext = (String) info.get("extension");
                     if (StringUtils.isNotEmpty(ext)) {
                         vvc.setExtension("." + ext);
                     } else {
                         vvc.setExtension();
+                        if (vvc.getExtension() == null) {
+                            ext = DirectHTTP.getExtensionFromMimeType((String) info.get("type"));// api.vimeo.com
+                            if (ext == null) {
+                                ext = DirectHTTP.getExtensionFromMimeType((String) info.get("mime"));// config
+                            }
+                            if (ext != null) {
+                                vvc.setExtension("." + ext);
+                            }
+                        }
                     }
                     vvc.setWidth(((Number) info.get("width")).intValue());
                     vvc.setHeight(((Number) info.get("height")).intValue());
@@ -1106,8 +1133,12 @@ public class VimeoCom extends PluginForHost {
                     } else {
                         final String size_short = (String) info.get("size_short");
                         if (size_short != null) {
-                            vvc.setFilesize(SizeFormatter.getSize(size_short));
+                            vvc.setEstimatedSize(SizeFormatter.getSize(size_short));
                         }
+                    }
+                    final Number fps = getNumber(info, "fps");
+                    if (fps != null) {
+                        vvc.setFramerate(fps.intValue());
                     }
                     vvc.setSource(Source.DOWNLOAD);
                     if (is_source) {
@@ -1141,41 +1172,74 @@ public class VimeoCom extends PluginForHost {
     }
 
     /** Handles http streams (stream download!) */
-    private static List<VimeoContainer> handleProgessive(Plugin plugin, Browser br, final Map<String, Object> files) {
+    private static List<VimeoContainer> handleProgessive(Plugin plugin, Browser br, final Map<String, Object> entries) {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            final ArrayList<Object> progressive = (ArrayList<Object>) files.get("progressive");
-            // atm they only have one object in array [] and then wrapped in {}
-            for (final Object obj : progressive) {
-                // todo some code to map...
-                final Map<String, Object> abc = (Map<String, Object>) obj;
-                final VimeoContainer vvc = new VimeoContainer();
-                vvc.setDownloadurl((String) abc.get("url"));
-                vvc.setExtension();
-                vvc.setHeight(((Number) abc.get("height")).intValue());
-                vvc.setWidth(((Number) abc.get("width")).intValue());
-                final Object o_bitrate = abc.get("bitrate");
-                if (o_bitrate != null) {
-                    /* Bitrate is 'null' for vp6 codec */
-                    vvc.setBitrate(((Number) o_bitrate).intValue());
+            List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "request/files/progressive");
+            if (items == null || items.size() == 0) {
+                items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "files");
+            }
+            if (items != null) {
+                // atm they only have one object in array [] and then wrapped in {}
+                for (final Map<String, Object> item : items) {
+                    if (StringUtils.equalsIgnoreCase("hls", (String) item.get("quality"))) {
+                        // api.vimeo.com, progressive only
+                        continue;
+                    }
+                    final VimeoContainer vvc = new VimeoContainer();
+                    String downloadURL = (String) item.get("url");
+                    if (downloadURL == null) {
+                        downloadURL = (String) item.get("link");// api.vimeo.com
+                    }
+                    vvc.setDownloadurl(downloadURL);
+                    vvc.setExtension();
+                    if (vvc.getExtension() == null) {
+                        String ext = DirectHTTP.getExtensionFromMimeType((String) item.get("type"));// api.vimeo.com
+                        if (ext == null) {
+                            ext = DirectHTTP.getExtensionFromMimeType((String) item.get("mime"));// config
+                        }
+                        if (ext != null) {
+                            vvc.setExtension("." + ext);
+                        }
+                    }
+                    vvc.setHeight(((Number) item.get("height")).intValue());
+                    vvc.setWidth(((Number) item.get("width")).intValue());
+                    final Object o_bitrate = item.get("bitrate");
+                    if (o_bitrate != null) {
+                        /* Bitrate is 'null' for vp6 codec */
+                        vvc.setBitrate(((Number) o_bitrate).intValue());
+                    }
+                    final Number fileSize = getNumber(item, "size");
+                    if (fileSize != null) {
+                        vvc.setFilesize(fileSize.longValue());
+                    } else {
+                        final String size_short = (String) item.get("size_short");
+                        if (size_short != null) {
+                            vvc.setEstimatedSize(SizeFormatter.getSize(size_short));
+                        }
+                    }
+                    final Number fps = getNumber(item, "fps");
+                    if (fps != null) {
+                        vvc.setFramerate(fps.intValue());
+                    }
+                    String rawQuality = (String) item.get("public_name");// api.vimeo.com
+                    if (rawQuality == null) {
+                        rawQuality = (String) item.get("quality");// config
+                    }
+                    vvc.setRawQuality(rawQuality);
+                    if (StringUtils.contains(rawQuality, "720") || StringUtils.contains(rawQuality, "1080")) {
+                        vvc.setQuality(Quality.HD);
+                    } else if (StringUtils.contains(rawQuality, "1440")) {
+                        vvc.setQuality(Quality.UHD);
+                    } else if (StringUtils.contains(rawQuality, "2560")) {
+                        vvc.setQuality(Quality.UHD_4K);
+                    } else {
+                        vvc.setQuality();
+                    }
+                    vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
+                    vvc.setSource(Source.WEB);
+                    ret.add(vvc);
                 }
-                final String rawQuality = (String) abc.get("quality");
-                vvc.setRawQuality(rawQuality);
-                vvc.setQuality(VimeoContainer.getQuality(vvc.getHeight()));
-                if (StringUtils.contains(rawQuality, "720") || StringUtils.contains(rawQuality, "1080")) {
-                    vvc.setQuality(Quality.HD);
-                } else if (StringUtils.contains(rawQuality, "1440")) {
-                    vvc.setQuality(Quality.UHD);
-                } else if (StringUtils.contains(rawQuality, "2560")) {
-                    vvc.setQuality(Quality.UHD_4K);
-                }
-                vvc.setCodec(".mp4".equalsIgnoreCase(vvc.getExtension()) ? "h264" : "vp5");
-                final Number id = getNumber(abc, "id");
-                if (id != null) {
-                    vvc.setId(id.longValue());
-                }
-                vvc.setSource(Source.WEB);
-                ret.add(vvc);
             }
         } catch (final Throwable t) {
             plugin.getLogger().log(t);
@@ -1183,31 +1247,37 @@ public class VimeoCom extends PluginForHost {
         return ret;
     }
 
-    private static List<VimeoContainer> handleHLS(Plugin plugin, final Browser br, final Map<String, Object> base) {
+    private static List<VimeoContainer> handleHLS(Plugin plugin, final Browser br, final Map<String, Object> entries) {
         final ArrayList<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            final String defaultCDN = (String) base.get("default_cdn");
-            final String m3u8 = (String) JavaScriptEngineFactory.walkJson(base, defaultCDN != null ? "cdns/" + defaultCDN + "/url" : "cdns/{0}/url");
-            final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
-            long duration = -1;
-            for (final HlsContainer quality : qualities) {
-                if (duration == -1) {
-                    duration = 0;
-                    final List<M3U8Playlist> m3u8s = quality.getM3U8(br.cloneBrowser());
-                    duration = M3U8Playlist.getEstimatedDuration(m3u8s);
+            Map<String, Object> base = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "request/files/hls");
+            if (base == null) {
+                // TODO: add support for api.vimeo.com
+            }
+            if (base != null) {
+                final String defaultCDN = (String) base.get("default_cdn");
+                final String m3u8 = (String) JavaScriptEngineFactory.walkJson(base, defaultCDN != null ? "cdns/" + defaultCDN + "/url" : "cdns/{0}/url");
+                final List<HlsContainer> qualities = HlsContainer.getHlsQualities(br, m3u8);
+                long duration = -1;
+                for (final HlsContainer quality : qualities) {
+                    if (duration == -1) {
+                        duration = 0;
+                        final List<M3U8Playlist> m3u8s = quality.getM3U8(br.cloneBrowser());
+                        duration = M3U8Playlist.getEstimatedDuration(m3u8s);
+                    }
+                    final VimeoContainer container = VimeoContainer.createVimeoVideoContainer(quality);
+                    final int bandwidth;
+                    if (quality.getAverageBandwidth() > 0) {
+                        bandwidth = quality.getAverageBandwidth();
+                    } else {
+                        bandwidth = quality.getBandwidth();
+                    }
+                    if (duration > 0 && bandwidth > 0) {
+                        final long estimatedSize = bandwidth / 8 * (duration / 1000);
+                        container.setEstimatedSize(estimatedSize);
+                    }
+                    ret.add(container);
                 }
-                final VimeoContainer container = VimeoContainer.createVimeoVideoContainer(quality);
-                final int bandwidth;
-                if (quality.getAverageBandwidth() > 0) {
-                    bandwidth = quality.getAverageBandwidth();
-                } else {
-                    bandwidth = quality.getBandwidth();
-                }
-                if (duration > 0 && bandwidth > 0) {
-                    final long estimatedSize = bandwidth / 8 * (duration / 1000);
-                    container.setEstimatedSize(estimatedSize);
-                }
-                ret.add(container);
             }
         } catch (final Throwable t) {
             plugin.getLogger().log(t);
