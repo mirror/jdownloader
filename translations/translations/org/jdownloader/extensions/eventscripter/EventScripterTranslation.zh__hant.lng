@@ -20,6 +20,7 @@ ON_PACKAGIZER=任務打包器勾點
 RECONNECT_AFTER=重新連線之後
 RECONNECT_BEFORE=重新連線之前
 TOOLBAR_BUTTON=按下工具列按鈕
+TRAY_BUTTON=按下系統匣功能表按鈕
 allow=允許
 btnExampleScripts=範例指令碼
 deny=延遲
