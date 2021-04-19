@@ -49,7 +49,11 @@ public abstract class LinkCrawlerDeepInspector {
                     return true;
                 }
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^(application|audio|video|image)/.+"))) {
-                return true;
+                if (contentType.matches("(?i)application/vnd.apple.mpegurl")) {
+                    return false;
+                } else {
+                    return true;
+                }
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^binary/octet-stream"))) {
                 return true;
             } else if (!hasContentType && completeContentLength > 0 && hasStrongEtag) {

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,6 +37,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -165,21 +168,39 @@ public class LbryTv extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream unavailable");
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            final URLConnectionAdapter con = brc.openGetConnection(dllink);
+            if (!looksLikeDownloadableContent(con)) {
+                brc.followConnection();
+                if (StringUtils.equalsIgnoreCase(con.getContentType(), "application/vnd.apple.mpegurl")) {
+                    final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
+                    final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hls);
+                    if (best == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    link.setVerifiedFileSize(-1);
+                    checkFFmpeg(link, "Download a HLS Stream");
+                    dl = new HLSDownloader(link, br, best.getStreamURL());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest(), resumable, maxchunks);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException e) {
+                        logger.log(e);
+                    }
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
     }

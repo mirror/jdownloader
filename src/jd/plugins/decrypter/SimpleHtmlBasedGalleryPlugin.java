@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -22,6 +20,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
@@ -168,12 +169,8 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         /* First check for direct downloadable content */
         final URLConnectionAdapter con = brc.openGetConnection(url);
         if (this.looksLikeDownloadableContent(con)) {
-            final DownloadLink direct = this.createDownloadlink("directhttp://" + url);
-            direct.setAvailable(true);
-            if (con.getCompleteContentLength() > 0) {
-                direct.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-            allImageLinks.add(direct);
+            final CrawledLink direct = getCrawler().createDirectHTTPCrawledLink(getCurrentLink(), con);
+            allImageLinks.add(direct.getDownloadLink());
             con.disconnect();
             return;
         }
