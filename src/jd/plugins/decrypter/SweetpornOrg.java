@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,10 +34,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SweetpornOrg extends PluginForDecrypt {
@@ -47,6 +47,8 @@ public class SweetpornOrg extends PluginForDecrypt {
         ret.add(new String[] { "sweetporn.org" });
         ret.add(new String[] { "sitesrip.org" });
         ret.add(new String[] { "pornrips.org" });
+        /* 2021-04-19 */
+        ret.add(new String[] { "hdpornclub.biz" });
         return ret;
     }
 

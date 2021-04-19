@@ -53,33 +53,34 @@ public class BayFilesCom extends UnknownHostingScriptCore {
         }
     }
 
+    /** 2021-04-19: Max. number of total connections: 16 */
     @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return -4;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -4;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return -4;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 4;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 4;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 4;
     }
 
     @Override
