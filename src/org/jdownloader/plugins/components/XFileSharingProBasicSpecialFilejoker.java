@@ -181,7 +181,17 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
      * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager(final Account account) {
-        return true;
+        if (account != null) {
+            final Cookies userCookies = Cookies.parseCookiesFromJsonString(account.getPass());
+            if (userCookies != null) {
+                /* User entered cookies as password -> We can't use the API! */
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
     }
 
     protected boolean internal_useAPIZeusCloudManager(final Account account) {
