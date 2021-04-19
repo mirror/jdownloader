@@ -2127,7 +2127,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
         synchronized (correctedBrowserRequestMap) {
             final Request request = br.getRequest();
             String correctedBR = correctedBrowserRequestMap.get(request);
-            if (correctedBR != null) {
+            if (correctedBR == null) {
                 correctedBR = br.toString();
                 final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
                 // remove custom rules first!!! As html can change because of generic cleanup rules.
@@ -2142,13 +2142,13 @@ public class XFileSharingProBasic extends antiDDoSForHost {
                         }
                     }
                 }
-                if (modified) {
+                if (modified && request != null && request.isRequested()) {
                     correctedBrowserRequestMap.put(request, correctedBR);
                 } else {
                     correctedBrowserRequestMap.remove(request);
                 }
-                this.correctedBR = correctedBR;
             }
+            this.correctedBR = correctedBR;
             return correctedBR;
         }
     }
