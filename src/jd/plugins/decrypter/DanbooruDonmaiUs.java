@@ -15,36 +15,144 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts\\?tags=[^<>\"\\&=\\?/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts\\?(?:page=\\d+\\&)?tags=[^<>\"\\&=\\?/]+" })
 public class DanbooruDonmaiUs extends PluginForDecrypt {
     public DanbooruDonmaiUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        if (acc != null) {
+            /* 2021-04-19: Loggedin users can add URLs containing more than 2 search-tags... */
+            final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+            ((jd.plugins.hoster.DanbooruDonmaiUs) hostPlugin).loginAPI(acc, false);
+            return crawlAPI(param, acc);
+        } else {
+            return crawlWebsite(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlAPI(final CryptedLink param, final Account account) throws IOException, PluginException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final UrlQuery addedUrlParams = UrlQuery.parse(param.getCryptedUrl());
+        final String paramTags = addedUrlParams.get("tags");
+        final long accountQueryLimit = account.getLongProperty(jd.plugins.hoster.DanbooruDonmaiUs.PROPERTY_ACCOUNT_QUERY_LIMIT, 3);
+        if (paramTags == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String paramTagsDecoded = Encoding.htmlDecode(paramTags);
+        if (paramTagsDecoded.contains(",") && paramTagsDecoded.split(",").length > accountQueryLimit) {
+            /* Too many tags for current accounts' limitations! */
+            throw new AccountRequiredException();
+        }
+        final ArrayList<Long> dupes = new ArrayList<Long>();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(paramTagsDecoded.trim());
+        final int maxItemsPerPage = 200;
+        final UrlQuery query = new UrlQuery();
+        query.add("post[tags]", paramTagsDecoded);
+        query.add("limit", Integer.toString(maxItemsPerPage));
+        int page = 1;
+        long lastPostID = 0;
+        do {
+            logger.info("Crawling page: " + page);
+            /* 2021-04-19: API read requests are not limited! https://danbooru.donmai.us/forum_topics/13628 */
+            br.getPage(jd.plugins.hoster.DanbooruDonmaiUs.API_BASE + "/posts.json?" + query.toString());
+            final Object apiResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (!(apiResponse instanceof List)) {
+                if (page == 1) {
+                    /* Unsupported json response */
+                    logger.warning("Unknown error happened");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    logger.info("Stopping because: Received error response");
+                    break;
+                }
+            }
+            final List<Object> ressourcelist = (List<Object>) apiResponse;
+            if (ressourcelist.size() == 0) {
+                if (page == 1) {
+                    logger.info("Failed to find any items that match users' search queries");
+                    break;
+                } else {
+                    /* Rare case but this can happen */
+                    logger.info("Stopping because: Last page contained ZERO items");
+                    break;
+                }
+            }
+            boolean pageContainsNewItems = false;
+            for (final Object postO : ressourcelist) {
+                final Map<String, Object> entries = (Map<String, Object>) postO;
+                final long postID = ((Number) entries.get("id")).longValue();
+                if (dupes.contains(postID)) {
+                    continue;
+                }
+                pageContainsNewItems = true;
+                dupes.add(postID);
+                final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/posts/" + postID);
+                jd.plugins.hoster.DanbooruDonmaiUs.parseFileInformationAPI(dl, entries);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                distribute(dl);
+                decryptedLinks.add(dl);
+            }
+            if (!pageContainsNewItems) {
+                logger.info("Stopping because: No new items on current page");
+                break;
+            } else if (ressourcelist.size() < maxItemsPerPage) {
+                logger.info("Stopping because: Current page contains " + ressourcelist.size() + " of max: " + maxItemsPerPage + " items.");
+                break;
+            } else {
+                /* Next page == "everything after last ID of current page" */
+                query.addAndReplace("page", "a" + lastPostID);
+                page++;
+            }
+        } while (!this.isAbort());
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> crawlWebsite(final CryptedLink param) throws AccountRequiredException, IOException {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setAllowedResponseCodes(new int[] { 422 });
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 422) {
+            /* 2021-04-19: "You cannot search for more than 2 tags at a time. Upgrade your account to search for more tags at once." */
+            throw new AccountRequiredException();
         }
-        final String fpName = new Regex(parameter, "tags=(.+)$").getMatch(0);
+        final String tagsString = new Regex(parameter, "tags=(.+)$").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.setName(Encoding.htmlDecode(tagsString).trim());
         final String url_part = parameter;
         int page_counter = 1;
         int offset = 0;
