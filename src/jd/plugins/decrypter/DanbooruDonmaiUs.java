@@ -80,9 +80,9 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
         query.add("post[tags]", paramTagsDecoded);
         query.add("limit", Integer.toString(maxItemsPerPage));
         int page = 1;
-        long lastPostID = 0;
         do {
             logger.info("Crawling page: " + page);
+            query.addAndReplace("page", Integer.toString(page));
             /* 2021-04-19: API read requests are not limited! https://danbooru.donmai.us/forum_topics/13628 */
             br.getPage(jd.plugins.hoster.DanbooruDonmaiUs.API_BASE + "/posts.json?" + query.toString());
             final Object apiResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
@@ -123,15 +123,14 @@ public class DanbooruDonmaiUs extends PluginForDecrypt {
                 distribute(dl);
                 decryptedLinks.add(dl);
             }
+            /* Check for stop conditions */
             if (!pageContainsNewItems) {
                 logger.info("Stopping because: No new items on current page");
                 break;
             } else if (ressourcelist.size() < maxItemsPerPage) {
-                logger.info("Stopping because: Current page contains " + ressourcelist.size() + " of max: " + maxItemsPerPage + " items.");
+                logger.info("Stopping because: Current page contains only " + ressourcelist.size() + " of max " + maxItemsPerPage + " items.");
                 break;
             } else {
-                /* Next page == "everything after last ID of current page" */
-                query.addAndReplace("page", "a" + lastPostID);
                 page++;
             }
         } while (!this.isAbort());
