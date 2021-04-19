@@ -640,7 +640,12 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Link is not password protected
      */
     public boolean isPasswordProtectedHTML(final Browser br, final Form pwForm) {
-        return br.containsHTML("<br>\\s*<b>\\s*Passwor(d|t)\\s*:\\s*</b>\\s*(<input|</div)");
+        final String pattern = "<br>\\s*<b>\\s*Passwor(d|t)\\s*:\\s*</b>\\s*(<input|</div)";
+        boolean ret = br.containsHTML(pattern);
+        if (ret) {
+            ret = new Regex(correctBR(br), pattern).matches();
+        }
+        return ret;
     }
 
     /**
@@ -672,7 +677,8 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Website is not in maintenance mode and should usually work fine.
      */
     protected boolean isWebsiteUnderMaintenance(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 500 || br.containsHTML("(?i)\">\\s*This server is in maintenance mode");
+        final String pattern = "(?i)\">\\s*This server is in maintenance mode";
+        return br.getHttpConnection().getResponseCode() == 500 || (br.containsHTML(pattern) && new Regex(correctBR(br), pattern).matches());
     }
 
     protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
@@ -2117,28 +2123,33 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Removes HTML code which could break the plugin and puts it into correctedBR. */
-    protected void correctBR(Browser br) throws NumberFormatException, PluginException {
+    protected String correctBR(Browser br) {
         synchronized (correctedBrowserRequestMap) {
-            String correctedBR = br.toString();
-            final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
-            // remove custom rules first!!! As html can change because of generic cleanup rules.
-            /* generic cleanup */
-            boolean modified = false;
-            for (String aRegex : regexStuff) {
-                final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
-                if (results != null) {
-                    for (String result : results) {
-                        correctedBR = correctedBR.replace(result, "");
-                        modified = true;
+            final Request request = br.getRequest();
+            String correctedBR = correctedBrowserRequestMap.get(request);
+            if (correctedBR != null) {
+                correctedBR = br.toString();
+                final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
+                // remove custom rules first!!! As html can change because of generic cleanup rules.
+                /* generic cleanup */
+                boolean modified = false;
+                for (String aRegex : regexStuff) {
+                    final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+                    if (results != null) {
+                        for (String result : results) {
+                            correctedBR = correctedBR.replace(result, "");
+                            modified = true;
+                        }
                     }
                 }
+                if (modified) {
+                    correctedBrowserRequestMap.put(request, correctedBR);
+                } else {
+                    correctedBrowserRequestMap.remove(request);
+                }
+                this.correctedBR = correctedBR;
             }
-            if (modified) {
-                correctedBrowserRequestMap.put(br.getRequest(), correctedBR);
-            } else {
-                correctedBrowserRequestMap.remove(br.getRequest());
-            }
-            this.correctedBR = correctedBR;
+            return correctedBR;
         }
     }
 

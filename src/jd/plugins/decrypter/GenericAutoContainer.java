@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -18,6 +19,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin.FEATURE;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" })
 public class GenericAutoContainer extends PluginForDecrypt {
@@ -42,6 +44,14 @@ public class GenericAutoContainer extends PluginForDecrypt {
         if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
             ret.add(createDownloadlink(url));
         } else {
+            final List<LazyHostPlugin> sortedLazyHostPlugins = getCrawler().getSortedLazyHostPlugins();
+            for (final LazyHostPlugin lazyHostPlugin : sortedLazyHostPlugins) {
+                if (getCrawler().canHandle(lazyHostPlugin, url, getCurrentLink())) {
+                    // container extension but download via dedicated host plugin
+                    ret.add(createDownloadlink(url));
+                    return ret;
+                }
+            }
             final String type = new Regex(url, this.getSupportedLinks()).getMatch(0);
             final URLConnectionAdapter con = br.openGetConnection(url);
             File containerTemp = null;

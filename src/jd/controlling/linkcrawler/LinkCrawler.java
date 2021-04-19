@@ -1495,7 +1495,7 @@ public class LinkCrawler {
         return crawledLink != null && crawledLink.gethPlugin() == null;
     }
 
-    protected boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
+    public boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
         if (lazyPlugin.canHandle(url)) {
             try {
                 Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild());
@@ -2453,7 +2453,7 @@ public class LinkCrawler {
         });
     }
 
-    protected List<LazyHostPlugin> getSortedLazyHostPlugins() {
+    public List<LazyHostPlugin> getSortedLazyHostPlugins() {
         final LinkCrawler parent = getParent();
         if (parent != null) {
             return parent.getSortedLazyHostPlugins();
