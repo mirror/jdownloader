@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Cookies;
@@ -31,9 +34,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/channel/([A-Za-z0-9]+)" })
 public class BitchuteComChannel extends PluginForDecrypt {
@@ -52,7 +52,8 @@ public class BitchuteComChannel extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String csrftoken = this.br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
-        if (StringUtils.isEmpty(csrftoken)) {
+        final String channelUID = br.getRegex("channelRefreshCounts\\('([A-Za-z0-9]+)'").getMatch(0);
+        if (StringUtils.isEmpty(csrftoken) || channelUID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /*
@@ -70,9 +71,10 @@ public class BitchuteComChannel extends PluginForDecrypt {
         int page = 0;
         final int itemsPerRequest = 25;
         br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         do {
             logger.info("Crawling page: " + page);
-            br.postPage("https://www.bitchute.com/channel/" + channelname + "/extend/", "csrfmiddlewaretoken=" + Encoding.urlEncode(csrftoken) + "&name=&offset=" + index);
+            br.postPage("https://www.bitchute.com/channel/" + channelUID + "/extend/", "csrfmiddlewaretoken=" + Encoding.urlEncode(csrftoken) + "&name=&offset=" + index);
             final String[] videoIDs = br.getRegex("/video/([A-Za-z0-9]+)/").getColumn(0);
             int addedItems = 0;
             for (final String videoID : videoIDs) {

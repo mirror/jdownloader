@@ -769,7 +769,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 logger.log(e);
             }
             if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
             } else if (br.containsHTML("range not ok")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             } else {
