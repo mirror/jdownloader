@@ -13,6 +13,7 @@ TrayMenuManager_getName=系統匣圖示管理
 getName=系統匣圖示
 jd_plugins_optional_jdtrayicon_jdlighttray=通知區域
 jd_plugins_optional_jdtrayicon_jdlighttray_description=允許最小化或關閉 JDownloader 到通知區域，以及其他相關的功能，如密碼保護和更多。
+plugins_optional_JDLightTray_clipboardindicator=系統匣圖示表示停用剪貼簿監控
 plugins_optional_JDLightTray_closetotray2=按一下「關閉 <X>」動作
 plugins_optional_JDLightTray_hideifframevisible=如果視窗可見則隱藏系統匣
 plugins_optional_JDLightTray_minimizetotray=按一下「最小化 <_>」動作
