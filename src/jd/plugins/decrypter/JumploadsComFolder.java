@@ -16,41 +16,70 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "goloady.com" }, urls = { "https?://(?:www\\.)?goloady\\.com/folder/[A-Za-z0-9]+/[^/]+" })
-public class GoloadyCom extends PluginForDecrypt {
-    public GoloadyCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class JumploadsComFolder extends PluginForDecrypt {
+    public JumploadsComFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "jumploads.com", "goloady.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/[A-Za-z0-9]+/[^/]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
+        /* 2021-04-20: Main domain has changed from goloady.com to jumploads.com */
+        final String oldDomain = Browser.getHost(param.getCryptedUrl());
+        param.setCryptedUrl(param.getCryptedUrl().replace(oldDomain + "/", this.getHost() + "/"));
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        final String fpName = new Regex(parameter, "/([^/]+)$").getMatch(0);
+        final String fpName = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
         final String[] htmls = br.getRegex("<li>.*?</li>").getColumn(-1);
         if (htmls == null || htmls.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleHTML : htmls) {
-            String url = new Regex(singleHTML, "href=\"(https?://(?:www\\.)?goloady\\.com/(?:file|folder)/[^\"]+)").getMatch(0);
+            String url = new Regex(singleHTML, "href=\"(https?://(?:www\\.)?[^/]+/(?:file|folder)/[^\"]+)").getMatch(0);
             final String title = new Regex(singleHTML, "class=\"inlineblock\">([^<>\"]+)<div").getMatch(0);
             String filesize = new Regex(singleHTML, "class=\"[^\"]+color777\">([^<>\"]+)</div>").getMatch(0);
             if (url == null || filesize == null) {
