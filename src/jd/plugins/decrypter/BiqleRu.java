@@ -34,6 +34,7 @@ import jd.plugins.components.PluginJSonUtils;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daftsex.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daftsex\\.com/watch/(?:-)?\\d+_\\d+" })
 public class BiqleRu extends PluginForDecrypt {
@@ -52,11 +53,11 @@ public class BiqleRu extends PluginForDecrypt {
                 ret.add(this.createOfflinelink(param.toString()));
                 return ret;
             }
-            final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(— BIQLE Video)?</title>").getMatch(0));
+            final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(—\\s*BIQLE.*?)?</title>").getMatch(0));
             final String DaxabPlayer = br.getRegex("DaxabPlayer\\.init\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*\\}\\s*</script").getMatch(0);
             String daxab = null;
             if (DaxabPlayer != null) {
-                final String id = new Regex(param.getCryptedUrl(), "(\\d+_\\d+)").getMatch(0);
+                final String id = new Regex(param.getCryptedUrl(), "(-?\\d+_\\d+)").getMatch(0);
                 final String hash = new Regex(DaxabPlayer, "id\\s*:\\s*'video" + id + "'.*?hash\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (hash != null) {
                     daxab = "https://daxab.com/player/" + hash;
@@ -103,24 +104,34 @@ public class BiqleRu extends PluginForDecrypt {
                     final String accessToken = brc.getRegex("access_token\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String videoId = brc.getRegex("id\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String sig = brc.getRegex("sig\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    final String credentials = brc.getRegex("credentials\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String cKey = brc.getRegex("c_key\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String partialSig = brc.getRegex("\"sig\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String partialQualityString = brc.getRegex("\"quality\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
                     final Map<String, Object> partialQuality = JSonStorage.restoreFromString(partialQualityString, TypeRef.HASHMAP);
-                    String path, extraQuery;
+                    final UrlQuery query = new UrlQuery();
+                    query.add("token", accessToken);
+                    query.add("videos", videoId);
+                    query.add("ckey", cKey);
+                    query.add("credentials", credentials);
+                    final String path;
                     if (partialSig != null) {
                         path = "sig";
-                        extraQuery = String.format("&sig=%s", partialSig);
+                        query.add("sig", partialSig);
                     } else {
                         path = "get";
-                        extraQuery = "";
                     }
-                    brc.getPage(String.format("//%s/method/video.%s?callback=jQuery&token=%s&videos=%s&extra_key=%s&ckey=%s%s", server, path, accessToken, videoId, sig, cKey, extraQuery));
+                    String url = String.format("//%s/method/video.%s/%s", server, path, videoId);
+                    url += "?" + query.toString();
+                    brc.getPage(url);
                     if (brc.getHttpConnection().getResponseCode() == 404) {
                         ret.add(createOfflinelink(param.getCryptedUrl()));
                         return ret;
                     }
-                    final String titleName = PluginJSonUtils.getJsonValue(brc, "title");
+                    String titleName = PluginJSonUtils.getJsonValue(brc, "title");
+                    if (titleName == null) {
+                        titleName = title;
+                    }
                     final String jsonFilesString = brc.getRegex("\"files\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
                     final Map<String, Object> jsonFiles = JSonStorage.restoreFromString(jsonFilesString, TypeRef.HASHMAP);
                     for (Entry<String, Object> jsonFile : jsonFiles.entrySet()) {
