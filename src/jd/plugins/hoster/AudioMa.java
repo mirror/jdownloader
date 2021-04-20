@@ -15,18 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "https?://(www\\.)?audiomack\\.com/(song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|(?:embed\\d-)?large/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+))" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AudioMa extends PluginForHost {
     public AudioMa(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,6 +53,36 @@ public class AudioMa extends PluginForHost {
         return "http://www.audiomack.com/about/terms-of-service";
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "audiomack.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
+            /* Older RegExes */
+            regex += "song/[a-z0-9\\-_]+/[a-z0-9\\-_]+|(?:embed\\d-)?large/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+|api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)";
+            /* 2021-04-20 */
+            regex += "|[a-z0-9\\-_]+/song/[A-Za-z0-9\\-_]+";
+            regex += ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
+    }
+
     private static final String  TYPE_API       = "http://(www\\.)?audiomack\\.com/api/music/url/(?:album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+|song/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)";
     private static final boolean use_oembed_api = false;
     private static final boolean use_oauth_api  = true;
@@ -53,17 +90,27 @@ public class AudioMa extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         if (use_oauth_api) {
             br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(getOAuthQueryString(br));
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String artist = PluginJSonUtils.getJsonValue(br, "artist");
-            final String songname = PluginJSonUtils.getJsonValue(br, "title");
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("results");
+            final String status = (String) entries.get("status");
+            if (status.equalsIgnoreCase("suspended")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String artist = (String) entries.get("artist");
+            final String songname = (String) entries.get("title");
             if (artist == null || songname == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -75,7 +122,7 @@ public class AudioMa extends PluginForHost {
             }
             final String artist = PluginJSonUtils.getJsonValue(br, "author_name");
             final String songname = PluginJSonUtils.getJsonValue(br, "title");
-            if (artist == null || songname == null) {
+            if (StringUtils.isEmpty(artist) || StringUtils.isEmpty(songname)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filename = artist + " - " + songname;
@@ -102,32 +149,32 @@ public class AudioMa extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (filename != null && link.getFinalFileName() == null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp3");
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink;
         if (use_oauth_api) {
             dllink = PluginJSonUtils.getJsonValue(br, "download_url");
             if (StringUtils.isEmpty(dllink)) {
                 dllink = PluginJSonUtils.getJsonValue(br, "streaming_url");
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            }
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
             /* Access real link here in case we used the oembed API above */
-            if (use_oembed_api && !br.getURL().equals(downloadLink.getDownloadURL())) {
-                br.getPage(downloadLink.getDownloadURL());
+            if (use_oembed_api && !br.getURL().equals(link.getDownloadURL())) {
+                br.getPage(link.getDownloadURL());
             }
             /* Prefer downloadlink --> Higher quality version */
             dllink = br.getRegex("\"(http://(www\\.)?music\\.audiomack\\.com/tracks/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                if (downloadLink.getDownloadURL().matches(TYPE_API)) {
+                if (link.getDownloadURL().matches(TYPE_API)) {
                 } else {
                     final String apilink = br.getRegex("\"(http://(www\\.)?audiomack\\.com/api/[^<>\"]*?)\"").getMatch(0);
                     if (apilink == null) {
@@ -141,8 +188,8 @@ public class AudioMa extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -205,6 +252,11 @@ public class AudioMa extends PluginForHost {
         hmac.update(qbuf, 0, qbuf.length);
         hmac.doFinal(buf, 0);
         return Encoding.urlEncode(Base64.encodeToString(buf, false));
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
     }
 
     @Override
