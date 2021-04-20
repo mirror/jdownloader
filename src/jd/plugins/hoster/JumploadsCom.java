@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -44,21 +45,21 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GoloadyCom extends antiDDoSForHost {
-    public GoloadyCom(PluginWrapper wrapper) {
+public class JumploadsCom extends antiDDoSForHost {
+    public JumploadsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.goloady.com/premium");
+        this.enablePremium("https://www.jumploads.com/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.goloady.com/help/privacy";
+        return "https://www.jumploads.com/help/privacy";
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "goloady.com" });
+        ret.add(new String[] { "jumploads.com", "goloady.com" });
         return ret;
     }
 
@@ -74,9 +75,25 @@ public class GoloadyCom extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9\\-_]+)(?:/[^/]+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9\\-_]+)(/([^/]+))?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-04-20: Main domain has changed from goloady.com to jumploads.com -> Old content can still be online! */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    private String getFallbackFilename(final DownloadLink link) {
+        final String filenameURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        if (filenameURL != null) {
+            return Encoding.htmlDecode(filenameURL);
+        } else {
+            /* Last chance fallback */
+            return this.getFID(link);
+        }
     }
 
     /* Connection stuff */
@@ -106,13 +123,23 @@ public class GoloadyCom extends antiDDoSForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Always use current host */
+        final String oldDomain = Browser.getHost(link.getPluginPatternMatcher());
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(oldDomain + "/", this.getHost() + "/"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFallbackFilename(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*?The file you are trying to download is no longer available|>\\s*?This could be due to the following reasons>\\s*?The file has been removed because of")) {
+        } else if (br.containsHTML("(?i)>\\s*?The file you are trying to download is no longer available|>\\s*?This could be due to the following reasons>\\s*?The file has been removed because of")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("class=\"downloadfileinfo[^\"]*?\">([^<>\"]+) \\((\\d+(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\)</div>");
@@ -121,11 +148,10 @@ public class GoloadyCom extends antiDDoSForHost {
         if (filename == null) {
             filename = filename_url;
         }
-        if (filename == null) {
-            filename = this.getFID(link);
-        }
         String filesize = finfo.getMatch(1);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -133,11 +159,11 @@ public class GoloadyCom extends antiDDoSForHost {
     }
 
     private boolean isPrivateContent() {
-        return br.containsHTML(">\\s*?Content you have requested is Private");
+        return br.containsHTML("(?i)>\\s*?Content you have requested is Private");
     }
 
     private boolean isPasswordProtectedContent() {
-        return br.containsHTML("class=\"passwordLockedFile\"");
+        return br.containsHTML("(?i)class=\"passwordLockedFile\"");
     }
 
     @Override
@@ -163,11 +189,12 @@ public class GoloadyCom extends antiDDoSForHost {
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 if (isPasswordProtectedContent()) {
                     /*
-                     * 2020-04-27: Serverside broken e.g. https://www.goloady.com/file/UKwbfe5PPn38TIDq-ygq9g/1mb.test --> Password = 123456
+                     * 2020-04-27: Serverside broken e.g. https://www.jumploads.com/file/UKwbfe5PPn38TIDq-ygq9g/1mb.test --> Password =
+                     * 123456
                      */
                     final boolean pw_protected_is_serverside_broken = true;
                     if (pw_protected_is_serverside_broken) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are serverside broken: Contact goloady support");
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are serverside broken: Contact " + this.getHost() + " support");
                     }
                     final String owner = br.getRegex("own=\"(\\d+)\"").getMatch(0);
                     final String fileID_internal = br.getRegex("file=\"(\\d+)\"").getMatch(0);
@@ -306,29 +333,31 @@ public class GoloadyCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new IOException();
+                } else {
+                    return dllink;
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                link.setProperty(property, Property.NULL);
+                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
                 }
             }
+        } else {
+            return null;
         }
-        return dllink;
     }
 
     @Override
@@ -430,11 +459,7 @@ public class GoloadyCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         if (br.getURL() == null || !br.getURL().contains("/me")) {
             getPage("/me");
         }
