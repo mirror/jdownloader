@@ -38,10 +38,42 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.AudioMa;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "https?://(www\\.)?audiomack\\.com/((?:embed\\d-)?album|(?:embed/)?(?:album|playlist))/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AudioMackComDecrypter extends PluginForDecrypt {
     public AudioMackComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "audiomack.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
+            /* Older RegExes */
+            regex += "((?:embed\\d-)?album|(?:embed/)?(?:album|playlist))/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+";
+            /* 2021-04-20: Album new */
+            regex += "|[a-z0-9\\-_]+/album/[A-Za-z0-9\\-_]+";
+            /* 2021-04-20: Playlist new */
+            regex += "|[a-z0-9\\-_]+/playlist/[A-Za-z0-9\\-_]+";
+            regex += ")";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* 2019-01-24: API support is broken */
@@ -66,12 +98,17 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            String description = (String) JavaScriptEngineFactory.walkJson(entries, "results/description");
+            final Map<String, Object> results = (Map<String, Object>) entries.get("results");
+            final String status = (String) results.get("status");
+            if (status != null && status.equalsIgnoreCase("suspended")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String description = (String) results.get("description");
             if (StringUtils.isNotEmpty(description)) {
                 description = Encoding.htmlDecode(description);
             }
             @SuppressWarnings("unchecked")
-            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "results/tracks");
+            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) results.get("tracks");
             int index = 0;
             for (Map<String, Object> track : tracks) {
                 String url = (String) track.get("download_url");
@@ -132,8 +169,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
             final String[] links = plaintable.split("<div class=\"song\"");
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String description = br.getRegex("<meta name=\"description\" content=\"(.*?)\" >").getMatch(0);
             for (final String singleinfo : links) {
