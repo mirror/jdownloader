@@ -21,6 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,15 +46,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.DuboxComFolder;
-
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DuboxCom extends PluginForHost {
@@ -332,7 +335,7 @@ public class DuboxCom extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl", 3 * 60 * 1000l);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, getDownloadLinkDownloadable(link), br.createGetRequest(dllink), this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -358,7 +361,7 @@ public class DuboxCom extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, getDownloadLinkDownloadable(link), brc.createGetRequest(url), resumable, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
@@ -373,6 +376,30 @@ public class DuboxCom extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private DownloadLinkDownloadable getDownloadLinkDownloadable(final DownloadLink link) {
+        final String host = this.getHost();
+        /* 2021-04-20: Workaround: Given MD5 values are wrong so let's not use these ones! */
+        final DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+            @Override
+            public HashInfo getHashInfo() {
+                return null;
+            }
+
+            @Override
+            public String getHost() {
+                final DownloadInterface dli = getDownloadInterface();
+                if (dli != null) {
+                    final URLConnectionAdapter connection = dli.getConnection();
+                    if (connection != null) {
+                        return connection.getURL().getHost();
+                    }
+                }
+                return host;
+            }
+        };
+        return downloadLinkDownloadable;
     }
 
     @Override
