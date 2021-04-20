@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -36,12 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DuboxCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DuboxComFolder extends PluginForDecrypt {
@@ -257,7 +257,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                 final long category = JavaScriptEngineFactory.toLong(entries.get("category"), -1);
                 final long fsid = JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1);
                 if (JavaScriptEngineFactory.toLong(entries.get("isdir"), -1) == 1) {
-                    final String url = "https://www.dubox.com/web/share/link?surl=" + surl + "&path=" + Encoding.urlEncode(path);
+                    final String url = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + Encoding.urlEncode(path);
                     final DownloadLink folder = this.createDownloadlink(url);
                     if (passCode != null) {
                         folder.setDownloadPassword(passCode);
@@ -281,11 +281,11 @@ public class DuboxComFolder extends PluginForDecrypt {
                     thisparams.appendEncoded("dir", realpath);// only the path!
                     thisparams.add("fsid", Long.toString(fsid));
                     thisparams.appendEncoded("fileName", serverfilename);
-                    final String url = "https://www.dubox.com/web/share/?" + thisparams.toString();
+                    final String url = "https://www." + this.getHost() + "/web/share/?" + thisparams.toString();
                     final String contentURL;
                     if (category == 1) {
                         thisparams.add("page", Integer.toString(page));
-                        contentURL = "https://www.dubox.com/web/share/videoPlay?" + thisparams.toString();
+                        contentURL = "https://www." + this.getHost() + "/web/share/videoPlay?" + thisparams.toString();
                     } else {
                         /* No URL available that points directly to that file! */
                         contentURL = param.toString();
