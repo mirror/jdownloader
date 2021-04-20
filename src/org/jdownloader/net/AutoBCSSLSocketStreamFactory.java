@@ -99,7 +99,11 @@ public class AutoBCSSLSocketStreamFactory implements SSLSocketStreamFactory {
         if (bcRetry != null) {
             options.getCustomFactorySettings().add(BC_FACTORY);
             return bcRetry;
+        } else if (!options.getCustomFactorySettings().contains(BC_FACTORY)) {
+            options.getCustomFactorySettings().add(BC_FACTORY);
+            return "fallback BouncyCastle";
+        } else {
+            return null;
         }
-        return null;
     }
 }

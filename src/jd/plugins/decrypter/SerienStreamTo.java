@@ -15,10 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,6 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "s.to" }, urls = { "https?://(?:www\\.)?(?:s\\.to|serienstream\\.sx)/[^/]+/.*" })
 public class SerienStreamTo extends PluginForDecrypt {
@@ -71,7 +72,11 @@ public class SerienStreamTo extends PluginForDecrypt {
                 }.getToken();
                 captcha.put("original", "");
                 captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
-                redirectPage = br2.submitForm(captcha);
+                try {
+                    redirectPage = br2.submitForm(captcha);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
                 videoURL = br2.getURL().toString();
             }
             decryptedLinks.add(createDownloadlink(videoURL));
