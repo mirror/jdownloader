@@ -58,7 +58,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 public class NitroFlareCom extends antiDDoSForHost {
     private final String         baseURL  = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
-    private final String         API_BASE = "http://nitroflare.com/api/v2";
+    private final String         API_BASE = "https://nitroflare.com/api/v2";
     /* don't touch the following! */
     private static AtomicInteger maxFree  = new AtomicInteger(1);
 

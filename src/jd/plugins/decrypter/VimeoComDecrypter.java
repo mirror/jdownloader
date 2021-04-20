@@ -502,13 +502,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     lock = acc;
                 }
             }
+            final Map<String, Object> properties = new HashMap<String, Object>();
             synchronized (lock) {
                 try {
                     try {
-                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
+                        jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType, properties);
                     } catch (final Exception e) {
                         if (retryWithCustomReferer(urlType, param, e, br, referer)) {
-                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType);
+                            jd.plugins.hoster.VimeoCom.accessVimeoURL(this, this.br, parameter, referer, urlType, properties);
                         } else {
                             throw e;
                         }
@@ -700,7 +701,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, download, web, web, subtitle);
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, properties, download, web, web, subtitle);
                 if (containers == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

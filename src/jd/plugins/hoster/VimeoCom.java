@@ -20,6 +20,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -254,13 +255,14 @@ public class VimeoCom extends PluginForHost {
                 }
             }
         }
+        final Map<String, Object> properties = new HashMap<String, Object>();
         synchronized (lock) {
             try {
-                accessVimeoURL(this, this.br, link.getPluginPatternMatcher(), referer, type);
+                accessVimeoURL(this, this.br, link.getPluginPatternMatcher(), referer, type, properties);
             } catch (PluginException e) {
                 // TODO
                 handlePW(link, br);
-                accessVimeoURL(this, this.br, link.getPluginPatternMatcher(), referer, type);
+                accessVimeoURL(this, this.br, link.getPluginPatternMatcher(), referer, type, properties);
             }
             /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
             String videoTitle = null;
@@ -275,7 +277,7 @@ public class VimeoCom extends PluginForHost {
                 logger.log(e);
             }
             // now we nuke linkids for videos.. crazzy... only remove the last one, _ORIGINAL comes from variant system
-            final List<VimeoContainer> qualities = find(this, type, br, videoID, getUnlistedHash(link), isDownload, isWEB || isDASH, isHLS, isSubtitle);
+            final List<VimeoContainer> qualities = find(this, type, br, videoID, getUnlistedHash(link), properties, isDownload, isWEB || isDASH, isHLS, isSubtitle);
             if (qualities.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -458,12 +460,16 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static Map<String, Object> accessVimeoAPI(final Plugin plugin, final Browser br, final String videoID, final String unlistedHash, String jwt) throws Exception {
+    public static Map<String, Object> accessVimeoAPI(final Plugin plugin, final Browser br, final Map<String, Object> properties, final String videoID, final String unlistedHash, String jwt) throws Exception {
         final GetRequest apiRequest;
         if (unlistedHash != null) {
             apiRequest = br.createGetRequest(String.format("https://api.vimeo.com/videos/%s:%s", videoID, unlistedHash));
         } else {
             apiRequest = br.createGetRequest(String.format("https://api.vimeo.com/videos/%s", videoID));
+        }
+        if (Boolean.FALSE.equals(properties.get(apiRequest.getUrl()))) {
+            plugin.getLogger().info("Skip accessVimeoAPI:" + apiRequest.getUrl());
+            return null;
         }
         if (jwt == null) {
             jwt = getJWT(plugin, br);
@@ -472,14 +478,19 @@ public class VimeoCom extends PluginForHost {
         apiRequest.setCustomCharset("UTF-8");
         br.getPage(apiRequest);
         final Map<String, Object> apiResponse = apiResponseValidator(plugin, br);
-        return apiResponse;
+        if (apiResponse == null) {
+            properties.put(apiRequest.getUrl(), Boolean.FALSE);
+            return null;
+        } else {
+            return apiResponse;
+        }
     }
 
     /**
      * Use this to access a vimeo URL for the first time! Make sure to call password handling afterwards! <br />
      * Important: Execute password handling afterwards!!
      */
-    public static VIMEO_URL_TYPE accessVimeoURL(final Plugin plugin, final Browser br, final String url_source, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested) throws Exception {
+    public static VIMEO_URL_TYPE accessVimeoURL(final Plugin plugin, final Browser br, final String url_source, final AtomicReference<String> forced_referer, final VIMEO_URL_TYPE urlTypeRequested, final Map<String, Object> properties) throws Exception {
         final String videoID = jd.plugins.decrypter.VimeoComDecrypter.getVideoidFromURL(url_source);
         String unlistedHash = jd.plugins.decrypter.VimeoComDecrypter.getUnlistedHashFromURL(url_source);
         if (StringUtils.isEmpty(unlistedHash) && plugin instanceof VimeoCom) {
@@ -509,7 +520,7 @@ public class VimeoCom extends PluginForHost {
                         unlistedHash = PluginJSonUtils.getJson(br, "unlistedHash");
                     }
                     Browser brc = br.cloneBrowser();
-                    if (accessVimeoAPI(plugin, brc, videoID, unlistedHash, jwt) != null) {
+                    if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, jwt) != null) {
                         br.setRequest(brc.getRequest());
                     }
                 }
@@ -525,7 +536,7 @@ public class VimeoCom extends PluginForHost {
                 plugin.getLogger().info("getUrlType:" + url_source + "->" + ret);
                 if (apiMode && videoID != null && reviewHash == null) {
                     Browser brc = br.cloneBrowser();
-                    if (accessVimeoAPI(plugin, brc, videoID, unlistedHash, null) != null) {
+                    if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
                         br.setRequest(brc.getRequest());
                     } else {
                         br.getPage(url_source);
@@ -546,7 +557,7 @@ public class VimeoCom extends PluginForHost {
                 ret = VIMEO_URL_TYPE.PLAYER;
                 if (apiMode) {
                     Browser brc = br.cloneBrowser();
-                    if (accessVimeoAPI(plugin, brc, videoID, unlistedHash, null) != null) {
+                    if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
                         br.setRequest(brc.getRequest());
                     } else { // video might be unlisted, unlisted_hash required for api.vimeo.com
                         br.getPage("https://player.vimeo.com/video/" + videoID);
@@ -557,7 +568,7 @@ public class VimeoCom extends PluginForHost {
             } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == VIMEO_URL_TYPE.PLAYER || urlTypeRequested == null)) {
                 ret = VIMEO_URL_TYPE.UNLISTED;
                 Browser brc = br.cloneBrowser();
-                final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, videoID, unlistedHash, null);
+                final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null);
                 if (apiResponse != null) {
                     br.setRequest(brc.getRequest());
                 } else if (jd.plugins.decrypter.VimeoComDecrypter.iranWorkaround(br, videoID) && br.getHttpConnection().getResponseCode() == 404) {
@@ -881,7 +892,7 @@ public class VimeoCom extends PluginForHost {
     }
 
     @SuppressWarnings({ "unchecked", "unused" })
-    public static List<VimeoContainer> find(final Plugin plugin, final VIMEO_URL_TYPE urlTypeUsed, Browser ibr, final String videoID, final String unlistedHash, final Boolean download, final Boolean stream, final Boolean hls, final Boolean subtitles) throws Exception {
+    public static List<VimeoContainer> find(final Plugin plugin, final VIMEO_URL_TYPE urlTypeUsed, Browser ibr, final String videoID, final String unlistedHash, final Map<String, Object> properties, final Boolean download, final Boolean stream, final Boolean hls, final Boolean subtitles) throws Exception {
         plugin.getLogger().info("videoID=" + videoID + "|urlTypeUsed=" + urlTypeUsed + "|unlistedHash=" + unlistedHash + "|download=" + download + "|stream=" + stream + "|hls=" + hls + "|subtitles=" + subtitles);
         /*
          * little pause needed so the next call does not return trash
@@ -889,7 +900,7 @@ public class VimeoCom extends PluginForHost {
         Thread.sleep(1000);
         if (!ibr.getURL().contains("api.vimeo.com/")) {
             final Browser brc = ibr.cloneBrowser();
-            if (accessVimeoAPI(plugin, brc, videoID, unlistedHash, null) != null) {
+            if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
                 ibr = brc;
             }
         }
@@ -1100,6 +1111,7 @@ public class VimeoCom extends PluginForHost {
                     final String quality = (String) info.get("quality");
                     if (StringUtils.equalsIgnoreCase("hls", quality)) {
                         // skip HLS because of unsupported split video/audio
+                        plugin.getLogger().info("Ignore:" + JSonStorage.toString(file));
                         continue;
                     }
                     boolean is_source = info.containsKey("is_source") && ((Boolean) info.get("is_source")).booleanValue();// old
@@ -1184,6 +1196,14 @@ public class VimeoCom extends PluginForHost {
                 for (final Map<String, Object> item : items) {
                     if (StringUtils.equalsIgnoreCase("hls", (String) item.get("quality"))) {
                         // api.vimeo.com, progressive only
+                        plugin.getLogger().info("Ignore:" + JSonStorage.toString(item));
+                        continue;
+                    }
+                    final String profile = (String) item.get("profile");
+                    if (profile != null && !profile.matches("^\\d+$")) {
+                        // vimeo-transcode-storage-prod-> may fail in >cdn@vimeo.com does not have storage.objects.get access to the Google
+                        // Cloud Storage object.
+                        plugin.getLogger().info("Ignore:" + JSonStorage.toString(item));
                         continue;
                     }
                     final VimeoContainer vvc = new VimeoContainer();
