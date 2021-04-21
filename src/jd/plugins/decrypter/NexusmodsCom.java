@@ -16,7 +16,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
@@ -85,7 +86,7 @@ public class NexusmodsCom extends PluginForDecrypt {
         br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s.json", game_domain_name, mod_id));
         /* 1st offline check */
         jd.plugins.hoster.NexusmodsCom.handleErrorsAPI(br);
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String game_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("game_id"), -1));
         if (game_id.equals("-1")) {
             return null;
@@ -98,10 +99,10 @@ public class NexusmodsCom extends PluginForDecrypt {
         br.getPage(jd.plugins.hoster.NexusmodsCom.API_BASE + String.format("/games/%s/mods/%s/files.json", game_domain_name, mod_id));
         /* 2nd offline check */
         jd.plugins.hoster.NexusmodsCom.handleErrorsAPI(br);
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final ArrayList<Object> files = (ArrayList<Object>) entries.get("files");
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final List<Object> files = (List<Object>) entries.get("files");
         for (final Object fileO : files) {
-            entries = ((LinkedHashMap<String, Object>) fileO);
+            entries = ((Map<String, Object>) fileO);
             final String file_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("file_id"), -1));
             final String description = (String) entries.get("description");
             /* This was the old way to get the game_id */
@@ -128,8 +129,8 @@ public class NexusmodsCom extends PluginForDecrypt {
             jd.plugins.hoster.NexusmodsCom.setFileInformationAPI(link, entries, game_domain_name, mod_id, file_id);
             link._setFilePackage(fp);
             /* Important! These properties are especially required for all API requests! */
-            link.setProperty("game_domain_name", game_domain_name);
-            link.setProperty("mod_id", mod_id);
+            link.setProperty(jd.plugins.hoster.NexusmodsCom.PROPERTY_game_domain_name, game_domain_name);
+            link.setProperty(jd.plugins.hoster.NexusmodsCom.PROPERTY_mod_id, mod_id);
             /* Every category goes into a subfolder */
             link.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, game_domain_name + "/" + mod_name + "/" + category_name);
             link.setAvailable(true);
