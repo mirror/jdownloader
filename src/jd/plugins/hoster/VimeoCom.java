@@ -1199,8 +1199,9 @@ public class VimeoCom extends PluginForHost {
                         plugin.getLogger().info("Ignore:" + JSonStorage.toString(item));
                         continue;
                     }
-                    final String profile = (String) item.get("profile");
-                    if (profile != null && !profile.matches("^\\d+$")) {
+                    final Object profile = item.get("profile");
+                    if (profile != null && !String.valueOf(profile).matches("^\\d+$")) {
+                        // can be String and Integer
                         // vimeo-transcode-storage-prod-> may fail in >cdn@vimeo.com does not have storage.objects.get access to the Google
                         // Cloud Storage object.
                         plugin.getLogger().info("Ignore:" + JSonStorage.toString(item));
