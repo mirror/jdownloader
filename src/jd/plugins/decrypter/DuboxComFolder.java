@@ -243,6 +243,10 @@ public class DuboxComFolder extends PluginForDecrypt {
                     }
                 }
                 setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
+                /*
+                 * Let's assume that dubox can ask again for password/captchas withing a long pagination -> Don't ask for password again as
+                 * we know it!
+                 */
                 trustPassword = true;
                 /* Repeat the first request -> We should be able to access the folder now. */
                 br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());

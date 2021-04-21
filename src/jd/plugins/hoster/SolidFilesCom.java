@@ -15,15 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -38,7 +39,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/(?:d|v)/([a-z0-9]+)" })
 public class SolidFilesCom extends PluginForHost {
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +54,6 @@ public class SolidFilesCom extends PluginForHost {
     }
 
     public static final String   DECRYPTFOLDERS               = "DECRYPTFOLDERS";
-    private static final String  NOCHUNKS                     = "NOCHUNKS";
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -61,23 +61,36 @@ public class SolidFilesCom extends PluginForHost {
     private final boolean        ACCOUNT_FREE_RESUME          = true;
     private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Offline links should also get nice filenames */
         if (!link.isNameSet()) {
-            link.setName(new Regex(link.getDownloadURL(), "solidfiles\\.com/v/([a-z0-9]+)").getMatch(0));
+            link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (link.getBooleanProperty("directDownload", false)) {
             return AvailableStatus.TRUE;
         }
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         isOffline(false);
         // String filename = PluginJSonUtils.getJsonValue(br, "name");
         String filename = br.getRegex("<h1 class=\"node-name\">(.*?)</h1>").getMatch(0);
@@ -112,97 +125,72 @@ public class SolidFilesCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception {
+        handleFreeDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception {
-        if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet|>\\s*We're preparing your download, please wait\\.{3}\\s*<")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
-        }
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null && downloadLink.getBooleanProperty("directDownload", false)) {
-            // direct download...
-            dllink = downloadLink.getDownloadURL();
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("class=\"direct-download regular-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(\"|'|)(https?://s\\d+\\.solidfilesusercontent\\.com/.*?)\\1").getMatch(1);
+    private void handleFreeDownload(final DownloadLink link, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception {
+        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, true, 3)) {
+            requestFileInformation(link);
+            if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet|>\\s*We're preparing your download, please wait\\.{3}\\s*<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
             }
-            if (dllink == null) {
-                logger.warning("Final downloadlink is null");
+            String dllink;
+            if (link.getBooleanProperty("directDownload", false)) {
+                // direct download...
+                dllink = link.getPluginPatternMatcher();
+            } else {
+                dllink = br.getRegex("class=\"direct-download regular-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(\"|'|)(https?://s\\d+\\.solidfilesusercontent\\.com/.*?)\\1").getMatch(1);
+                }
+                if (dllink == null) {
+                    logger.warning("Final downloadlink is null");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = dllink.trim();
+            }
+            // inal long downloadCurrentRaw = link.getDownloadCurrentRaw();
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
+                }
+                br.followConnection();
+                isOffline(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = dllink.trim();
+            link.setProperty(directlinkproperty, br.getURL());
         }
-        int maxChunks = maxchunks;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
+        dl.startDownload();
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
+        final String url = link.getStringProperty(directlinkproperty);
+        if (StringUtils.isEmpty(url)) {
+            return false;
         }
-        final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resume, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
-            }
-            br.followConnection();
-            isOffline(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, br.getURL());
         try {
-            if (!dl.startDownload()) {
-                if (dl.externalDownloadStop()) {
-                    return;
-                }
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                return true;
+            } else {
+                brc.followConnection(true);
+                throw new IOException();
             }
-        } catch (Exception e) {
-            if (e instanceof InterruptedException) {
-                throw e;
-            }
-            if (downloadLink.getBooleanProperty(NOCHUNKS, false) == false) {
-                if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (1024 * 1024l)) {
-                    throw e;
-                } else {
-                    /* disable multiple chunks => use only 1 chunk and retry */
-                    downloadLink.setProperty(NOCHUNKS, Boolean.TRUE);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-            throw e;
-        }
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
+        } catch (final Throwable e) {
+            logger.log(e);
             try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
+                dl.getConnection().disconnect();
+            } catch (Throwable ignore) {
             }
+            return false;
         }
-        return dllink;
     }
-
-    private static Object LOCK = new Object();
 
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 String bearertoken = getBearertoken(account);
@@ -248,12 +236,7 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         prepBRAjax(account);
         br.getPage("https://www." + this.getHost() + "/api/payments?limit=25&offset=0");
         ai.setUnlimitedTraffic();
@@ -298,38 +281,14 @@ public class SolidFilesCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            login(account, false);
+            handleFreeDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
             /* TODO: Add premium support! */
             if (true) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (dllink == null) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
         }
     }
 
