@@ -145,6 +145,7 @@ public class DuboxComFolder extends PluginForDecrypt {
             ((jd.plugins.hoster.DuboxCom) plg).login(account, false);
         }
         String passCode = param.getDecrypterPassword();
+        boolean trustPassword = passCode != null;
         /**
          * TODO: That is not enough -> We might have to re-use all cookies and/or maybe always store current/new session on account. </br>
          * It is only possible to use one "passwordCookie" at the same time!
@@ -189,8 +190,15 @@ public class DuboxComFolder extends PluginForDecrypt {
                 querypw.add("clienttype", getClientType());
                 boolean captchaRequired = false;
                 int count = 0;
+                final int maxTries = 10;
                 do {
-                    if (passCode == null || count > 0) {
+                    count += 1;
+                    logger.info("Captcha/password attempt " + count + " / " + maxTries);
+                    /*
+                     * Let's trust the password for the first 5 tries if one existed before as their captchas are hard to solve and folder
+                     * passwords usually don
+                     */
+                    if (passCode == null || !trustPassword || count > 5) {
                         passCode = getUserInput("Password?", param);
                     }
                     errno = ((Number) entries.get("errno")).intValue();
@@ -216,12 +224,11 @@ public class DuboxComFolder extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(passwordCookie)) {
                         break;
                     } else {
-                        if (count >= 3) {
+                        if (count >= maxTries) {
                             logger.info("Giving up");
                             break;
                         } else {
                             logger.info("Wrong password or captcha");
-                            count += 1;
                             continue;
                         }
                     }
@@ -236,6 +243,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                     }
                 }
                 setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
+                trustPassword = true;
                 /* Repeat the first request -> We should be able to access the folder now. */
                 br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
