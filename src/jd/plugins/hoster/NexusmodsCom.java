@@ -153,7 +153,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             link.setProperty(PROPERTY_game_domain_name, gameDomainName);
             link.setProperty(PROPERTY_mod_id, modID);
             /* Create a meaningful ContentURL in case the URL expires and the user wants to refresh it later. */
-            link.setContentUrl("https://www.nexusmods.com/" + gameDomainName + "/mods/" + modID + "?tab=files&file_id=" + this.getFileID(link) + "&nmm=1");
+            link.setContentUrl("https://www." + this.getHost() + "/" + gameDomainName + "/mods/" + modID + "?tab=files&file_id=" + this.getFileID(link) + "&nmm=1");
         } else if (StringUtils.contains(link.getPluginPatternMatcher(), "nmm=1")) {
             link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("nmm=1", "nmm=0"));
         }
