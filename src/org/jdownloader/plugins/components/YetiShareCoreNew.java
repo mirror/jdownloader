@@ -38,6 +38,11 @@ public class YetiShareCoreNew extends YetiShareCore {
         return true;
     }
 
+    @Override
+    public String getPurchasePremiumURL() {
+        return this.getMainPage() + "/register";
+    }
+
     protected String getAccountNameSpaceLogin() {
         return "/account/login";
     }
@@ -56,6 +61,14 @@ public class YetiShareCoreNew extends YetiShareCore {
     protected String getAccountNameSpaceLogout() {
         return "/account/logout";
     }
+    /*
+     * TODO: 2021-04-22: Seems like all new YetiShare hosts do not require "www." by default. Some don't have a redirect in place and this
+     * fail e.g.: https://www.fhscript.com/
+     */
+    // @Override
+    // public boolean requires_WWW() {
+    // return false;
+    // }
 
     /**
      * @return true: Cookies were validated</br>
