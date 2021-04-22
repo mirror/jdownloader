@@ -128,8 +128,8 @@ public class YetiShareCore extends antiDDoSForHost {
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
-     * support: https://fhscript.com/admin/api_documentation.php#account-info Examples for websites which have the API enabled (but not
-     * necessarily unlocked for all users, usually only special-uploaders): crazyshare.cc, easylinkz.net, freefile.me <br />
+     * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
+     * usually only special-uploaders): crazyshare.cc, easylinkz.net, freefile.me, fastdrive.io <br />
      * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
@@ -1694,7 +1694,7 @@ public class YetiShareCore extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (supports_api()) {
-            return fetchAccountInfoAPI(account, account.getUser(), account.getPass());
+            return fetchAccountInfoAPI(this.br, account, account.getUser(), account.getPass());
         } else {
             return fetchAccountInfoWebsite(account);
         }
@@ -1768,7 +1768,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /** Tries to auto-find API keys in website HTML code and return account information from API! */
     protected AccountInfo fetchAccountInfoWebsiteAPI(final Account account) {
-        /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
+        /* TODO: 2020-09-02: Try to parse API tokens and obtain account information from API. */
         /* TODO: Make this work for all YetiShare websites that support their API */
         try {
             final Browser brc = br.cloneBrowser();
@@ -1786,17 +1786,19 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (this.isAPICredential(key1) && this.isAPICredential(key2)) {
-                logger.info("Found possibly valid API login credentials");
+                logger.info("Found possibly valid API login credentials, trying API accountcheck...");
                 try {
-                    final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(account, key1, key2);
+                    final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(brc, account, key1, key2);
                     if (apiAccInfo != null) {
-                        logger.info("API AccountInfo found");
+                        logger.info("Successfully performed accountcheck via API");
                         return apiAccInfo;
                     } else {
-                        logger.info("Failed to find API AccountInfo");
+                        /* Most likely broken API/missing rights to use API although user can generate apikeys. */
+                        logger.info("API accountcheck failed");
                     }
                 } catch (final Throwable e) {
-                    logger.info("API handling inside website handling failed");
+                    logger.log(e);
+                    logger.info("API handling inside website handling failed!");
                 }
             }
         } catch (final Throwable e) {
@@ -1959,21 +1961,28 @@ public class YetiShareCore extends antiDDoSForHost {
         return account.getStringProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2));
     }
 
-    protected String getAPIAccountID(final Account account, final String key1, final String key2) {
-        return account.getStringProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2));
+    protected int getAPIAccountID(final Account account, final String key1, final String key2) {
+        final String propertyKey = PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2);
+        if (account.hasProperty(propertyKey)) {
+            return Integer.parseInt(account.getStringProperty(propertyKey));
+        } else {
+            return -1;
+        }
     }
 
     /**
-     * 2020-05-14: https://fhscript.com/admin/api_documentation.php?username=admin&password=password&submitme=1 </br>
+     * According to: https://fhscript.com/api#account-info </br>
+     * and: https://fhscript.com/api#account-package </br>
      */
-    protected AccountInfo fetchAccountInfoAPI(final Account account, final String key1, final String key2) throws Exception {
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final String key1, final String key2) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        this.loginAPI(account, key1, key2, true);
-        final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-        postAccountInfo.put("access_token", getAPIAccessToken(account, key1, key2));
-        postAccountInfo.put("account_id", getAPIAccountID(account, key1, key2));
-        if (this.br.getURL() == null || !this.br.getURL().contains("/account/info")) {
-            this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
+        this.loginAPI(br, account, key1, key2, true);
+        final UrlQuery query = new UrlQuery();
+        query.add("access_token", getAPIAccessToken(account, key1, key2));
+        query.add("account_id", Integer.toString(getAPIAccountID(account, key1, key2)));
+        if (br.getURL() == null || !br.getURL().contains("/account/info")) {
+            this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + getAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
+            /* We don't expect any errors to happen at this stage but we can never know... */
             checkErrorsAPI(br, null, account);
         }
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
@@ -1995,7 +2004,7 @@ public class YetiShareCore extends antiDDoSForHost {
         if (premiumExpireDateStr != null && premiumExpireDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        this.postPageRaw(this.getAPIBase() + "/account/package", JSonStorage.serializeToJson(postAccountInfo), true);
+        this.getPage(br, this.getAPIBase() + "/account/package?access_token=" + getAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
         Map<String, Object> packageInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         packageInfo = (Map<String, Object>) packageInfo.get("data");
         final String accountType = (String) packageInfo.get("label");
@@ -2026,25 +2035,24 @@ public class YetiShareCore extends antiDDoSForHost {
         return ai;
     }
 
-    protected void loginAPI(final Account account, final String key1, final String key2, final boolean verifyToken) throws Exception {
-        String access_token = this.getAPIAccessToken(account, key1, key2);
-        String account_id = this.getAPIAccountID(account, key1, key2);
-        if (!StringUtils.isEmpty(access_token) && !StringUtils.isEmpty(account_id)) {
+    /** Login according to: https://fhscript.com/api#authorize */
+    protected void loginAPI(final Browser br, final Account account, final String key1, final String key2, final boolean verifyToken) throws Exception {
+        String accessToken = this.getAPIAccessToken(account, key1, key2);
+        final int accountID = this.getAPIAccountID(account, key1, key2);
+        if (!StringUtils.isEmpty(accessToken) && accountID != -1) {
             logger.info("Trying to re-use stored access_token");
             if (!verifyToken) {
                 logger.info("Trust existing access_token");
                 return;
             }
-            final Map<String, Object> postAccountInfo = new HashMap<String, Object>();
-            postAccountInfo.put("access_token", access_token);
-            postAccountInfo.put("account_id", account_id);
-            this.postPageRaw(this.getAPIBase() + "/account/info", JSonStorage.serializeToJson(postAccountInfo), true);
+            this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + getAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
             try {
+                checkErrorsAPI(br, null, account);
                 Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 entries = (Map<String, Object>) entries.get("data");
                 final int json_accountID = (int) JavaScriptEngineFactory.toLong(entries.get("id"), -1);
                 /* Compare accountID with stored accountID --> If it matches, we trust login to be successful */
-                if (json_accountID == Integer.parseInt(account_id)) {
+                if (json_accountID == accountID) {
                     logger.info("Successfully re-used access_token");
                     return;
                 } else {
@@ -2062,26 +2070,27 @@ public class YetiShareCore extends antiDDoSForHost {
             showAPILoginInformation();
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        final Map<String, Object> postLogin = new HashMap<String, Object>();
-        postLogin.put("key1", key1);
-        postLogin.put("key2", key2);
-        // this.postPageRaw(this.getAPIBase() + "/authorize", JSonStorage.serializeToJson(postLogin), true);
-        this.postPage(this.getAPIBase() + "/authorize", "key1=" + Encoding.urlEncode(key1) + "&key2=" + Encoding.urlEncode(key2));
-        access_token = PluginJSonUtils.getJson(br, "access_token");
-        account_id = PluginJSonUtils.getJson(br, "account_id");
+        this.postPage(br, this.getAPIBase() + "/authorize", "key1=" + Encoding.urlEncode(key1) + "&key2=" + Encoding.urlEncode(key2));
+        checkErrorsAPI(br, null, account);
+        /*
+         * 2021-04-22: Token should be valid for at least 60 minutes but in my tests it lasted more like... 60 seconds! As long as it is
+         * only used for account checking that is fine though.
+         */
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("data");
+        accessToken = (String) entries.get("access_token");
+        final String accountIDStr = Long.toString(JavaScriptEngineFactory.toLong(entries.get("account_id"), -1));
         /*
          * 2020-08-27: API can basically return anything except expected json --> Do not check for errors here - just check for the expected
          * token --> Account should be invalid if token is not available. Only check for errors if this account has been valid before
          * already!
          */
-        if (account.getBooleanProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), false)) {
-            checkErrorsAPI(br, null, account);
-        }
-        if (StringUtils.isEmpty(access_token) || StringUtils.isEmpty(account_id) || !account_id.matches("\\d+")) {
+        if (StringUtils.isEmpty(accessToken) || StringUtils.isEmpty(accountIDStr) || !accountIDStr.matches("\\d+")) {
+            /* This should never happen as we've checked for errors already! */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2), access_token);
-        account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2), account_id);
+        account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2), accessToken);
+        account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2), accountIDStr);
         account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), true);
     }
 
@@ -2133,31 +2142,36 @@ public class YetiShareCore extends antiDDoSForHost {
         return thread;
     }
 
-    /*
+    /**
+     * https://fhscript.com/api#file-download </br>
      * This API call only works with self-uploaded file whenever the internal file-id is known --> It is of no use for us! TODO: Re-check
-     * this before using it in any official YetiShare plugin!
+     * this before allowing usage of this in any official YetiShare plugin!
      */
     protected void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         String dllink = this.checkDirectLink(link, account);
         if (dllink == null) {
-            this.loginAPI(account, account.getUser(), account.getPass(), false);
+            this.loginAPI(this.br, account, account.getUser(), account.getPass(), false);
             final Map<String, Object> postDownload = new HashMap<String, Object>();
             postDownload.put("access_token", this.getAPIAccessToken(account, account.getUser(), account.getPass()));
             postDownload.put("account_id", this.getAPIAccountID(account, account.getUser(), account.getPass()));
             postDownload.put("file_id", this.getFUID(link));
             this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
             this.checkErrorsAPI(this.br, link, account);
-            dllink = PluginJSonUtils.getJson(this.br, "download_url");
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = (Map<String, Object>) entries.get("data");
+            dllink = (String) entries.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
                 /* We're using an API --> Never throw plugin defect! */
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
+            final String filename = (String) entries.get("filename");
+            if (!StringUtils.isEmpty(filename)) {
+                link.setFinalFileName(filename);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
         }
-        final boolean resume = this.isResumeable(link, account);
-        final int maxchunks = this.getMaxChunks(account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         final URLConnectionAdapter con = dl.getConnection();
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
@@ -2187,53 +2201,80 @@ public class YetiShareCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    /**
+     * Handles API errormessages. </br>
+     * We usually can't use this API for downloading thus all Exceptions will be account related (as of 2021-04-22)
+     */
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        /** TODO: Add functionality */
         Map<String, Object> entries = null;
         try {
             entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         } catch (final Throwable e) {
             /* API response is not json */
-            throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
+            throw new AccountUnavailableException("Invalid API response (no json)", 1 * 60 * 1000l);
         }
-        /* Collection of errormessages (from the only testable YetiShare API, oxycloud.pl) */
-        /* E.g. {"message":"Username could not be found.","result":false} */
-        /* {"status":"error","response":"User not found.","_datetime":"2020-09-03 13:48:46"} */
-        /* {"success":false,"message":"You can`t download files of this size."} */
-        /*
-         * {"status":"error",
-         * "response":"Your account level does not have access to the file upload API. Please contact site support for more information."
-         * ,"_datetime":"2021-01-19 16:48:28"}
-         */
-        /*
-         * 2021-04-01: TODO: New API seems to provide different json e.g. { "response":
-         * "Your account level does not have access to the file upload API. Please contact site support for more information.", "_status":
-         * "error", "_datetime": "2021-04-01 11:04:23"}
-         */
-        boolean result = true;
-        String msg = null;
-        try {
-            result = ((Boolean) entries.get("result")).booleanValue();
-            msg = (String) entries.get("message");
-            if (StringUtils.isEmpty(msg)) {
-                msg = (String) entries.get("response");
+        if (entries.containsKey("data")) {
+            /* No error */
+            return;
+        }
+        if (entries.containsKey("_status")) {
+            /* Collection of newer json errormessages */
+            /*
+             * { "response":
+             * "Your account level does not have access to the file upload API. Please contact site support for more information.",
+             * "_status": "error", "_datetime": "2021-04-01 11:04:23"}
+             */
+            /*
+             * 2021-04-22: {"response":"Could not validate access_token, please reauthenticate or try again.","_status":"error",
+             * "_datetime":"2021-04-22 20:22:08"}
+             */
+            final String status = (String) entries.get("_status");
+            if (status.equalsIgnoreCase("error")) {
+                final String errorMsg = (String) entries.get("response");
+                if (StringUtils.isEmpty(errorMsg)) {
+                    /* This should never happen */
+                    throw new AccountUnavailableException("Unknown API error", 10 * 60 * 1000l);
+                } else {
+                    logger.info("API returned errormessage: " + errorMsg);
+                    throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+                }
             }
-        } catch (final Throwable e) {
-            /* Try to parse other kinds of error responses */
+        } else {
+            /* Handling for older json (= older YetiShare versions) */
+            /* Collection of older json errormessages */
+            /* E.g. {"message":"Username could not be found.","result":false} */
+            /* {"status":"error","response":"User not found.","_datetime":"2020-09-03 13:48:46"} */
+            /* {"success":false,"message":"You can`t download files of this size."} */
+            /*
+             * {"status":"error",
+             * "response":"Your account level does not have access to the file upload API. Please contact site support for more information."
+             * ,"_datetime":"2021-01-19 16:48:28"}
+             */
+            boolean result = true;
+            String msg = null;
             try {
-                result = ((Boolean) entries.get("success")).booleanValue();
+                result = ((Boolean) entries.get("result")).booleanValue();
                 msg = (String) entries.get("message");
-            } catch (final Throwable e2) {
+                if (StringUtils.isEmpty(msg)) {
+                    msg = (String) entries.get("response");
+                }
+            } catch (final Throwable e) {
+                /* Try to parse other kinds of error responses */
+                try {
+                    result = ((Boolean) entries.get("success")).booleanValue();
+                    msg = (String) entries.get("message");
+                } catch (final Throwable e2) {
+                }
             }
-        }
-        if (!result) {
-            if (StringUtils.isEmpty(msg)) {
-                msg = "Unknown error";
-            }
-            if (link != null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
-            } else {
-                throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
+            if (!result) {
+                if (StringUtils.isEmpty(msg)) {
+                    msg = "Unknown error";
+                }
+                if (link != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+                } else {
+                    throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
+                }
             }
         }
     }

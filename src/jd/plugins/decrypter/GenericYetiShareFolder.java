@@ -74,6 +74,8 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "truefile.cc" });
         ret.add(new String[] { "devdrive.cloud" });
         ret.add(new String[] { "przeslij.com" });
+        ret.add(new String[] { "fastdrive.io" });
+        ret.add(new String[] { "fhscript.com" });
         return ret;
     }
 
@@ -129,7 +131,10 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        /* TODO: Make login work for all supported hosts */
+        /*
+         * Workaround for erai-ddl3.info! TODO: Make login work for all supported hosts although usually there is no need to be loggedin to
+         * view "public" folders!
+         */
         /*
          * 2020-11-13: erai-ddl3.info only allows one active session. If the user e.g. logs in via JD, he will get logged out in browser and
          * the other way around!
@@ -186,6 +191,17 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         folderquery.add("pageStart", "1");
         postPage("/account/ajax/load_files", folderquery.toString());
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        if (entries.containsKey("javascript")) {
+            final String js = (String) entries.get("javascript");
+            /*
+             * 2021-04-22: E.g. showErrorNotification("Error",
+             * "Folder is not publicly shared. Please contact the owner and request they update the privacy settings.");
+             */
+            if (js.contains("showErrorNotification")) {
+                /* Subsequent handling will most likely detect this folder as offline */
+                logger.info("Possible error-reason for offline folder: " + js);
+            }
+        }
         final String fpName = (String) entries.get("page_title");
         String htmlInsideJson = (String) entries.get("html");
         br.getRequest().setHtmlCode(htmlInsideJson);
