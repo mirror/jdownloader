@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -206,7 +207,7 @@ public class TwitterCom extends PornEmbedParser {
                 }
                 /* Fallback to API/normal website */
             }
-            crawlAPITweet(parameter, null, account);
+            crawlAPITweet(parameter, fp, account);
         } else {
             crawlUserViaAPI(parameter, account);
         }
@@ -235,14 +236,17 @@ public class TwitterCom extends PornEmbedParser {
         }
     }
 
-    private void crawlAPITweet(final String parameter, final FilePackage fp, final Account account) throws Exception {
+    private void crawlAPITweet(final String parameter, FilePackage fp, final Account account) throws Exception {
         logger.info("Crawling API tweet");
         final String tweet_id = new Regex(parameter, "/(?:tweet|status)/(\\d+)").getMatch(0);
+        if (fp != null) {
+            fp.setName(fp.getName() + "-" + tweet_id);
+        }
         prepareAPI(this.br, account);
         br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweet_id + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        entries = (LinkedHashMap<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
-        crawlTweetMediaObjectsAPI(entries);
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "globalObjects/tweets/" + tweet_id);
+        crawlTweetMediaObjectsAPI(fp, entries);
     }
 
     public static Browser prepAPIHeaders(final Browser br) {
@@ -294,7 +298,7 @@ public class TwitterCom extends PornEmbedParser {
     }
 
     /** Crawls single media objects obtained via API. */
-    private void crawlTweetMediaObjectsAPI(LinkedHashMap<String, Object> entries) {
+    private void crawlTweetMediaObjectsAPI(FilePackage fp, Map<String, Object> entries) {
         final String tweet_id = (String) entries.get("id_str");
         String created_at = (String) entries.get("created_at");
         String formattedDate = null;
@@ -323,13 +327,13 @@ public class TwitterCom extends PornEmbedParser {
         logger.info(String.format("Found %d media objects", ressourcelist.size()));
         for (final Object mediaO : ressourcelist) {
             /* TODO: Check what happens when there is more than one video in a single tweet. */
-            entries = (LinkedHashMap<String, Object>) mediaO;
-            crawlMediaObjectAPI(tweet_id, formattedDate, entries);
+            entries = (Map<String, Object>) mediaO;
+            crawlMediaObjectAPI(fp, tweet_id, formattedDate, entries);
         }
     }
 
     /** Crawls single media objects obtained via API. */
-    private void crawlMediaObjectAPI(final String tweet_id, final String formattedDate, final LinkedHashMap<String, Object> entries) {
+    private void crawlMediaObjectAPI(FilePackage fp, final String tweet_id, final String formattedDate, final Map<String, Object> entries) {
         String url = (String) entries.get("media_url_https");
         final String expanded_url = (String) entries.get("expanded_url");
         if (StringUtils.isEmpty(url)) {
@@ -365,6 +369,9 @@ public class TwitterCom extends PornEmbedParser {
         /* Set possible Packagizer properties */
         dl.setProperty("date", formattedDate);
         dl.setAvailable(true);
+        if (fp != null) {
+            fp.add(dl);
+        }
         decryptedLinks.add(dl);
         distribute(dl);
     }
@@ -546,7 +553,7 @@ public class TwitterCom extends PornEmbedParser {
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
                 entries = (LinkedHashMap<String, Object>) entry.getValue();
-                crawlTweetMediaObjectsAPI(entries);
+                crawlTweetMediaObjectsAPI(fp, entries);
                 numberof_items_on_current_page++;
                 crawled_tweet_count++;
             }
