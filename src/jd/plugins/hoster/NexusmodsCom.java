@@ -25,19 +25,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -57,6 +44,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=(\\d+).+|nxm://([^/]+)/mods/(\\d+)/files/(\\d+)\\?key=([a-zA-Z0-9_/\\+\\=\\-%]+)\\&expires=(\\d+)\\&user_id=\\d+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -101,7 +101,6 @@ public class NexusmodsCom extends antiDDoSForHost {
                 try {
                     dlKey = UrlQuery.parse(link.getPluginPatternMatcher()).get("key");
                 } catch (final MalformedURLException ignore) {
-                    return null;
                 }
                 return linkid + "_" + dlKey;
             } else {
@@ -525,8 +524,8 @@ public class NexusmodsCom extends antiDDoSForHost {
              * possible via website!)
              */
             /*
-             * {"code":403,
-             * "message":"You don't have permission to get download links from the API without visting nexusmods.com - this is for premium users only."
+             * {"code":403, "message":
+             * "You don't have permission to get download links from the API without visting nexusmods.com - this is for premium users only."
              * }
              */
             throw new AccountRequiredException();
@@ -642,8 +641,8 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     public static class NexusmodsAccountFactory extends MigPanel implements AccountBuilderInterface {
         /**
-        *
-        */
+         *
+         */
         private static final long serialVersionUID = 1L;
         private final String      PINHELP          = "Enter your API Key";
 
