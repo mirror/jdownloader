@@ -104,7 +104,7 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                     @Override
                     protected Void run() throws RuntimeException {
-                        com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                        MacOSApplicationAdapter.setDockIcon(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
                         return null;
                     }
                 });
@@ -217,7 +217,7 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
                                     TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                                         @Override
                                         protected Void run() throws RuntimeException {
-                                            com.apple.eawt.Application.getApplication().setDockIconImage(finalImage);
+                                            MacOSApplicationAdapter.setDockIcon(finalImage);
                                             return null;
                                         }
                                     });
@@ -231,7 +231,7 @@ public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, P
                         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
                             @Override
                             protected Void run() throws RuntimeException {
-                                com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
+                                MacOSApplicationAdapter.setDockIcon(NewTheme.I().getImage("logo/jd_logo_128_128", 128));
                                 return null;
                             }
                         });

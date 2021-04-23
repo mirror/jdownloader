@@ -50,6 +50,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.AWTMacOSApplicationAdapter;
 import jd.gui.swing.EAWTMacOSApplicationAdapter;
+import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -161,7 +162,7 @@ public class SecondLevelLaunch {
         System.setProperty("apple.awt.application.name", "JDownloader");
         // set DockIcon (most used in Building)
         try {
-            com.apple.eawt.Application.getApplication().setDockIconImage(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
+            MacOSApplicationAdapter.setDockIcon(NewTheme.I().getImage("logo/jd_logo_128_128", -1));
         } catch (final Throwable e) {
             /* not every mac has this */
             LoggerFactory.getDefaultLogger().info("Error Initializing  Mac Look and Feel Special: " + e);
