@@ -313,7 +313,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("JSON Support:"), "");
         stats.add(disable("Jackson JSON Processor 2.7.9", "https://github.com/FasterXML/jackson/"));
         stats.add(new JLabel("JNA:"), "");
-        stats.add(disable("JNA 5.6.0", "https://github.com/java-native-access/jna"));
+        stats.add(disable("JNA 5.8.0", "https://github.com/java-native-access/jna"));
         stats.add(new JLabel("RTMP Support:"), "");
         stats.add(disable("RtmpDump", "http://rtmpdump.mplayerhq.hu"));
         stats.add(new JLabel("UPNP:"), "");
