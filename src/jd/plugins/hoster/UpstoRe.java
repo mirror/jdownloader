@@ -262,7 +262,7 @@ public class UpstoRe extends antiDDoSForHost {
          * Example error json:
          * {"errors":["Sorry, download server with your file is temporary unavailable... Try again later or contact support."]}
          */
-        if (this.br.containsHTML("Sorry, download server with your file is temporary unavailable")) {
+        if (this.br.containsHTML("Sorry, download server with your file is temporarily unavailable")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
     }
