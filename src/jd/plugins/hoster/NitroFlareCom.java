@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -41,6 +42,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
@@ -54,18 +56,18 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.NitroflareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/(?:view|watch)/([A-Z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.(?:com|net)/(?:view|watch)/([A-Z0-9]+)" })
 public class NitroFlareCom extends antiDDoSForHost {
-    private final String         baseURL  = "https://nitroflare.com";
+    private final String         baseURL = "https://nitroflare.com";
     /* Documentation: https://nitroflare.com/member?s=api */
-    private final String         API_BASE = "https://nitroflare.com/api/v2";
     /* don't touch the following! */
-    private static AtomicInteger maxFree  = new AtomicInteger(1);
+    private static AtomicInteger maxFree = new AtomicInteger(1);
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(null);
         Browser.setRequestIntervalLimitGlobal("nitroflare.com", 500);
+        Browser.setRequestIntervalLimitGlobal("nitroflare.net", 500);
     }
 
     /**
@@ -83,6 +85,39 @@ public class NitroFlareCom extends antiDDoSForHost {
         return false;
     }
 
+    private static AtomicReference<String> BASE_DOMAIN = new AtomicReference<String>(null);
+
+    public static String getBaseDomain(final Plugin plugin, final Browser br) throws PluginException {
+        synchronized (BASE_DOMAIN) {
+            String baseDomain = BASE_DOMAIN.get();
+            if (baseDomain == null) {
+                final Browser brc;
+                if (br != null) {
+                    brc = br.cloneBrowser();
+                } else {
+                    brc = new Browser();
+                }
+                try {
+                    brc.getPage("https://nitroflare.com");
+                } catch (final IOException e) {
+                    plugin.getLogger().log(e);
+                    try {
+                        brc.getPage("https://nitroflare.net");
+                    } catch (final IOException e2) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, -1, e2);
+                    }
+                }
+                baseDomain = brc._getURL().getHost();
+                BASE_DOMAIN.set(baseDomain);
+            }
+            return baseDomain;
+        }
+    }
+
+    protected String getAPIBase() throws Exception {
+        return "https://" + getBaseDomain(this, br) + "/api/v2";
+    }
+
     @Override
     public String getAGBLink() {
         return baseURL + "/tos";
@@ -90,7 +125,13 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("https://nitroflare.com/view/" + this.getFID(link));
+        try {
+            final String host = getBaseDomain(this, br);
+            link.setUrlDownload("https://" + host + "/view/" + this.getFID(link));
+        } catch (final Exception e) {
+            logger.log(e);
+            link.setUrlDownload("https://nitroflare.com/view/" + this.getFID(link));
+        }
     }
 
     @Override
@@ -139,8 +180,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     protected boolean useRUA() {
         if (freedl) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -188,7 +230,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     sb.append(getFID(dl));
                     atLeastOneDL = true;
                 }
-                getPage(br, API_BASE + "/getFileInfo?" + sb);
+                getPage(br, getAPIBase() + "/getFileInfo?" + sb);
                 if (br.containsHTML("In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Nitroflare.com is maintenance mode. Try again later");
@@ -254,6 +296,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private AvailableStatus requestFileInformationWeb(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*This file has been removed|>\\s*File doesn't exist<|This file has been removed due|>\\s*This file has been removed by its owner")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -305,7 +348,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (dllink == null) {
             if (useAPIFreeMode()) {
                 /* API mode */
-                this.getPage(this.API_BASE + "/getDownloadLink?file=" + Encoding.urlEncode(this.getFID(link)));
+                this.getPage(getAPIBase() + "/getDownloadLink?file=" + Encoding.urlEncode(this.getFID(link)));
                 this.checkErrorsAPI(link, account);
                 final String waittime = PluginJSonUtils.getJson(br, "delay");
                 final String reCaptchaKey = PluginJSonUtils.getJson(br, "recaptchaPublic");
@@ -486,8 +529,9 @@ public class NitroFlareCom extends antiDDoSForHost {
     private final void randomHash(final Browser br, final DownloadLink link) throws Exception {
         final String randomHash = JDHash.getMD5(link.getDownloadURL() + System.currentTimeMillis());
         // same cookie is set within as a cookie prior to registering
-        br.setCookie(getHost(), "randHash", randomHash);
-        ajaxPost(br, "https://" + this.getHost() + "/ajax/randHash.php", "randHash=" + randomHash);
+        final String host = getBaseDomain(this, br);
+        br.setCookie(host, "randHash", randomHash);
+        ajaxPost(br, "https://" + host + "/ajax/randHash.php", "randHash=" + randomHash);
     }
 
     private void handleErrors(final Browser br, final boolean postCaptcha) throws PluginException {
@@ -583,6 +627,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             try {
+                final String host = getBaseDomain(this, br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !fullLogin) {
@@ -590,7 +635,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         br.setCookies(cookies);
                         // lets do a test
                         final Browser br2 = br.cloneBrowser();
-                        getPage(br2, "https://www." + this.getHost());
+                        getPage(br2, "https://" + host);
                         if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
@@ -611,7 +656,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     fullLogin = true;
                 }
                 if (fullLogin) {
-                    getPage("https://" + this.getHost() + "/login");
+                    getPage("https://" + host + "/login");
                     Form f = null;
                     for (int retry = 0; retry < 3; retry++) {
                         f = br.getFormbyProperty("id", "login");
@@ -622,7 +667,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         if (f.containsHTML("<div class=\"g-recaptcha\"")) {
                             if (this.getDownloadLink() == null) {
                                 // login wont contain downloadlink
-                                this.setDownloadLink(new DownloadLink(this, "Account Login!", this.getHost(), this.getHost(), true));
+                                this.setDownloadLink(new DownloadLink(this, "Account Login!", host, host, true));
                             }
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                             f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
@@ -650,7 +695,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 }
                 final AccountInfo ai = new AccountInfo();
-                getPage("https://" + this.getHost() + "/member?s=premium");
+                getPage("https://" + host + "/member?s=premium");
                 // status
                 final String status = br.getRegex("<label>Status</label><strong[^>]+>\\s*([^<]+)\\s*</strong>").getMatch(0);
                 if (!inValidate(status)) {
@@ -731,7 +776,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             br.setCookiesExclusive(true);
-            getPage(API_BASE + "/getKeyInfo?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
+            getPage(getAPIBase() + "/getKeyInfo?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()));
             checkErrorsAPI(null, account);
             final AccountInfo ai = new AccountInfo();
             final String trafficLeftStr = PluginJSonUtils.getJson(br, "trafficLeft");
@@ -877,7 +922,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
-        this.getPage(API_BASE + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
+        this.getPage(getAPIBase() + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
         this.checkErrorsAPI(link, account);
         this.dllink = PluginJSonUtils.getJson(br, "url");
         if (StringUtils.isEmpty(this.dllink) || !this.dllink.startsWith("http")) {
@@ -887,9 +932,9 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (isDownloadableContent(dl.getConnection())) {
             link.setProperty(directlinkproperty, dllink);
             dl.startDownload();
-            return;
+        } else {
+            handleDownloadErrors(account, link, true);
         }
-        handleDownloadErrors(account, link, true);
     }
 
     /**

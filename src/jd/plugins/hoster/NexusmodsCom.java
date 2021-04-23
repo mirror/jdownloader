@@ -25,19 +25,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -57,6 +44,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nexusmods.com" }, urls = { "https?://(?:www\\.)?nexusmods\\.com+/Core/Libs/Common/Widgets/DownloadPopUp\\?id=(\\d+).+|nxm://([^/]+)/mods/(\\d+)/files/(\\d+)\\?key=([a-zA-Z0-9_/\\+\\=\\-%]+)\\&expires=(\\d+)\\&user_id=\\d+" })
 public class NexusmodsCom extends antiDDoSForHost {
@@ -197,10 +196,10 @@ public class NexusmodsCom extends antiDDoSForHost {
         if (isSpecialNexusModmanagerDownloadURL(link)) {
             /* Cannot check here but let's assume the status by expire param */
             final long expireTimstamp = Long.parseLong(UrlQuery.parse(link.getPluginPatternMatcher()).get("expires")) * 1000;
-            if (expireTimstamp < Time.systemIndependentCurrentJVMTimeMillis()) {
+            if (expireTimstamp < System.currentTimeMillis()) {
                 return AvailableStatus.UNCHECKABLE;
             } else {
-                final long validFor = expireTimstamp - Time.systemIndependentCurrentJVMTimeMillis();
+                final long validFor = expireTimstamp - System.currentTimeMillis();
                 logger.info("NXM:// URL shall be valid for another: " + TimeFormatter.formatMilliSeconds(validFor, 1));
                 return AvailableStatus.TRUE;
             }
@@ -599,7 +598,7 @@ public class NexusmodsCom extends antiDDoSForHost {
                 }
                 final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
                 final String dlExpires = query.get("expires");
-                if (Long.parseLong(dlExpires) * 1000 < Time.systemIndependentCurrentJVMTimeMillis()) {
+                if (Long.parseLong(dlExpires) * 1000 < System.currentTimeMillis()) {
                     /* Do not use LinkStatus FILE_NOT_FOUND here because we can be pretty sure that this file is online! */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "This downloadurl has expired");
                 }
