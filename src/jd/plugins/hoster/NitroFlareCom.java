@@ -639,7 +639,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         if (br2.containsHTML(">\\s*Your password has expired") || br2.containsHTML(">\\s*Change Password\\s*<")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
-                        final String user = br2.getCookie("nitroflare.com", "user");
+                        final String user = br2.getCookie(host, "user");
                         if (user != null && !"deleted".equalsIgnoreCase(user)) {
                             if (!fullInfo) {
                                 return null;
@@ -689,7 +689,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your password has expired. Please visit website and set new password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     // final failover, we expect 'user' cookie
-                    final String user = br.getCookie("nitroflare.com", "user");
+                    final String user = br.getCookie(host, "user");
                     if (user == null || "deleted".equalsIgnoreCase(user)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
