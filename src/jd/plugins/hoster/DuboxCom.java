@@ -80,9 +80,11 @@ public class DuboxCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9\\-_]+)");
-        }
+        // for (final String[] domains : getPluginDomains()) {
+        // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9\\-_]+)");
+        // }
+        /* No pattern required at all */
+        ret.add("");
         return ret.toArray(new String[0]);
     }
 
@@ -109,15 +111,11 @@ public class DuboxCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() == null) {
+        try {
+            return UrlQuery.parse(link.getPluginPatternMatcher()).get("fsid");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
             return null;
-        } else {
-            try {
-                return UrlQuery.parse(link.getPluginPatternMatcher()).get("fs_id");
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                return null;
-            }
         }
     }
 
@@ -148,7 +146,8 @@ public class DuboxCom extends PluginForHost {
                 param.setDecrypterPassword(link.getDownloadPassword());
             }
             try {
-                final ArrayList<DownloadLink> items = decrypter.decryptIt(param, null);
+                /* 2021-04-24: Handling has been changed so array should only contain the one element we need! */
+                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.DuboxComFolder) decrypter).crawlFolder(param, this.getFID(link));
                 DownloadLink target = null;
                 for (final DownloadLink tmp : items) {
                     if (StringUtils.equals(this.getFID(tmp), this.getFID(link))) {
@@ -179,6 +178,7 @@ public class DuboxCom extends PluginForHost {
         final String md5 = (String) entries.get("md5");
         /* Typically only available when user is logged in. */
         final String directurl = (String) entries.get("dlink");
+        final String fsidStr = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1));
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
@@ -351,6 +351,11 @@ public class DuboxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
         }
+        /*
+         * htmldecode final filename just in case we're using in from Content-Disposition and not the one that was set during the crawl
+         * process.
+         */
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -414,7 +419,7 @@ public class DuboxCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         /* 2021-04-14: Downloads only possible via account */
         if (account != null) {
             return true;
@@ -428,6 +433,9 @@ public class DuboxCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        // link.removeProperty(PROPERTY_DIRECTURL);
+        // }
     }
 }

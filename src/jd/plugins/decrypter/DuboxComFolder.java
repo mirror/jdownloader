@@ -104,6 +104,10 @@ public class DuboxComFolder extends PluginForDecrypt {
     private static final String TYPE_SINGLE_VIDEO = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        return crawlFolder(param, null);
+    }
+
+    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final String targetFileID) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
@@ -173,6 +177,9 @@ public class DuboxComFolder extends PluginForDecrypt {
         Map<String, Object> entries = null;
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.setFollowRedirects(true);
+        if (targetFileID != null) {
+            logger.info("Trying to find item with the following fs_id ONLY: " + targetFileID);
+        }
         do {
             logger.info("Crawling page: " + page);
             queryFolder.addAndReplace("page", Integer.toString(page));
@@ -195,8 +202,8 @@ public class DuboxComFolder extends PluginForDecrypt {
                     count += 1;
                     logger.info("Captcha/password attempt " + count + " / " + maxTries);
                     /*
-                     * Let's trust the password for the first 5 tries if one existed before as their captchas are hard to solve and folder
-                     * passwords usually don
+                     * Let's trust the password for the first 5 tries if a password existed before as their captchas are hard to solve and
+                     * folder passwords usually don't get changed over time.
                      */
                     if (passCode == null || !trustPassword || count > 5) {
                         passCode = getUserInput("Password?", param);
@@ -267,7 +274,6 @@ public class DuboxComFolder extends PluginForDecrypt {
                 final String path = (String) entries.get("path");
                 /* 2021-04-14: 'category' is represented as a String. */
                 final long category = JavaScriptEngineFactory.toLong(entries.get("category"), -1);
-                final long fsid = JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1);
                 if (JavaScriptEngineFactory.toLong(entries.get("isdir"), -1) == 1) {
                     final String url = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + Encoding.urlEncode(path);
                     final DownloadLink folder = this.createDownloadlink(url);
@@ -282,6 +288,8 @@ public class DuboxComFolder extends PluginForDecrypt {
                     decryptedLinks.add(folder);
                 } else {
                     final String serverfilename = (String) entries.get("server_filename");
+                    // final long fsid = JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1);
+                    final String fsidStr = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1));
                     final String realpath;
                     if (path.endsWith("/" + serverfilename)) {
                         realpath = path.replaceFirst("/" + org.appwork.utils.Regex.escape(serverfilename) + "$", "");
@@ -291,7 +299,7 @@ public class DuboxComFolder extends PluginForDecrypt {
                     final UrlQuery thisparams = new UrlQuery();
                     thisparams.add("surl", surl);
                     thisparams.appendEncoded("dir", realpath);// only the path!
-                    thisparams.add("fsid", Long.toString(fsid));
+                    thisparams.add("fsid", fsidStr);
                     thisparams.appendEncoded("fileName", serverfilename);
                     final String url = "https://www." + this.getHost() + "/web/share/?" + thisparams.toString();
                     final String contentURL;
@@ -319,8 +327,20 @@ public class DuboxComFolder extends PluginForDecrypt {
                         fp.setName(realpath);
                         dl._setFilePackage(fp);
                     }
-                    distribute(dl);
-                    decryptedLinks.add(dl);
+                    if (targetFileID == null) {
+                        /* We want to crawl all items. */
+                        distribute(dl);
+                        decryptedLinks.add(dl);
+                    } else if (!StringUtils.equalsIgnoreCase(fsidStr, targetFileID)) {
+                        /* we' re looking for a single item but this is not it. */
+                        decryptedLinks.add(dl);
+                    } else {
+                        /* We're looking for a single item and found it! */
+                        decryptedLinks.clear();
+                        decryptedLinks.add(dl);
+                        logger.info("Stopping because: Found item matching target fileID: " + targetFileID);
+                        return decryptedLinks;
+                    }
                 }
             }
             if (ressourcelist.size() < maxItemsPerPage) {
