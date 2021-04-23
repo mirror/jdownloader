@@ -13,12 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,16 +25,19 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.com/folder/(\\d+)/([A-Za-z0-9=]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(?:www\\.)?nitroflare\\.(?:com|net)/folder/(\\d+)/([A-Za-z0-9=]+)" })
 public class NitroFlareCom extends antiDDoSForDecrypt {
-
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +47,9 @@ public class NitroFlareCom extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         final String userid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(0);
         final String folderid = new Regex(parameter, this.getSupportedLinks().pattern()).getMatch(1);
-        postPage("https://nitroflare.com/ajax/folder.php", "userId=" + userid + "&folder=" + Encoding.urlEncode(folderid) + "&fetchAll=1");
+        final PluginForHost pluginForHost = JDUtilities.getPluginForHost(getHost());
+        final String host = ((jd.plugins.hoster.NitroFlareCom) pluginForHost).getBaseDomain(this, br);
+        postPage("https://" + host + "/ajax/folder.php", "userId=" + userid + "&folder=" + Encoding.urlEncode(folderid) + "&fetchAll=1");
         final String fpName = PluginJSonUtils.getJsonValue(br, "name");
         final String filesArray = PluginJSonUtils.getJsonArray(br, "files");
         if (!inValidate(filesArray)) {
@@ -57,7 +59,7 @@ public class NitroFlareCom extends antiDDoSForDecrypt {
                     // for now just return uid, nitroflare mass linkcheck shows avialable status and other values we need!
                     final String uid = PluginJSonUtils.getJsonValue(file, "url");
                     if (!inValidate(uid)) {
-                        decryptedLinks.add(createDownloadlink("https://nitroflare.com/" + uid));
+                        decryptedLinks.add(createDownloadlink("https://" + host + "/" + uid));
                     }
                 }
             }
@@ -66,7 +68,6 @@ public class NitroFlareCom extends antiDDoSForDecrypt {
             logger.info("Link offline (folder empty): " + parameter);
             return decryptedLinks;
         }
-
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
@@ -79,5 +80,4 @@ public class NitroFlareCom extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

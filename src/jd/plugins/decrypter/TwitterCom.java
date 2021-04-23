@@ -306,7 +306,10 @@ public class TwitterCom extends PornEmbedParser {
             try {
                 created_at = created_at.substring(created_at.indexOf(" ") + 1, created_at.length());
                 final String targetFormat = "yyyy-MM-dd";
-                final long date = TimeFormatter.getMilliSeconds(created_at, "MMM dd HH:mm:ss Z yyyy", Locale.GERMAN);
+                final long date = TimeFormatter.getMilliSeconds(created_at, "MMM dd HH:mm:ss Z yyyy", Locale.ENGLISH);
+                if (date == -1) {
+                    throw new Exception("TimeFormatter failed for:" + created_at);
+                }
                 Date theDate = new Date(date);
                 final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
                 formattedDate = formatter.format(theDate);

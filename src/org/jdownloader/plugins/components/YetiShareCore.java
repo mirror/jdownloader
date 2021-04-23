@@ -32,25 +32,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -74,6 +55,25 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class YetiShareCore extends antiDDoSForHost {
@@ -273,8 +273,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * @return true: Implies that website will show filename & filesize via website.tld/<fuid>~i <br />
-     *         Most YetiShare websites support this kind of linkcheck! </br>
-     *         false: Implies that website does NOT show filename & filesize via website.tld/<fuid>~i. <br />
+     *         Most YetiShare websites support this kind of linkcheck! </br> false: Implies that website does NOT show filename & filesize
+     *         via website.tld/<fuid>~i. <br />
      *         default: true
      */
     public boolean supports_availablecheck_over_info_page(DownloadLink link) {
@@ -325,9 +325,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Enforces old, non-ajax login-method. </br>
-     * This is only rarely needed e.g. filemia.com </br>
-     * default = false
+     * Enforces old, non-ajax login-method. </br> This is only rarely needed e.g. filemia.com </br> default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
@@ -602,8 +600,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     break;
                 } else if (hasGoneThroughVerifiedLoginOnce) {
                     /**
-                     * Only try once! </br>
-                     * We HAVE to be logged in at this stage!
+                     * Only try once! </br> We HAVE to be logged in at this stage!
                      */
                     this.loggedInOrException(this.br, account);
                     break;
@@ -697,7 +694,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     final int maxLoops = 8;
                     for (int i = startValue; i <= maxLoops; i++) {
                         logger.info("Handling pre-download page " + (i + 1) + " of max. allowed " + maxLoops);
-                        timeBeforeCaptchaInput = System.currentTimeMillis();
+                        timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                         if (i > startValue) {
                             loopLog += " --> " + continue_link;
                         }
@@ -1026,7 +1023,7 @@ public class YetiShareCore extends antiDDoSForHost {
         final int extraWaitSeconds = 1;
         int wait;
         if (waitStr != null && waitStr.matches("\\d+")) {
-            int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
+            int passedTime = (int) ((Time.systemIndependentCurrentJVMTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
             logger.info("Found waittime, parsing waittime: " + waitStr);
             wait = Integer.parseInt(waitStr);
             /*
@@ -1193,8 +1190,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Checks for reasons to ignore given PluginExceptions. </br>
-     * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
+     * Checks for reasons to ignore given PluginExceptions. </br> Example: Certain errors thay may happen during availablecheck when user is
+     * not yet logged in but won't happen when user is logged in.
      */
     protected void ignorePluginException(PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
@@ -1273,7 +1270,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 /* Very very rare case */
                 logger.info("This file can only be downloaded by the initial uploader");
                 throw new AccountRequiredException(errorMsgURL);
-            } /** Limit errorhandling */
+            }/** Limit errorhandling */
             else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errorMsgURL, default_waittime);
             } else if (errorkey.equalsIgnoreCase(error_you_have_reached_the_download_limit_this_file)) {
@@ -1401,8 +1398,7 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * @return true = file is offline, false = file is online </br>
-     *         Be sure to always call checkErrors before calling this!
+     * @return true = file is offline, false = file is online </br> Be sure to always call checkErrors before calling this!
      * @throws Exception
      */
     protected boolean isOfflineWebsite(final DownloadLink link) throws Exception {
@@ -1751,7 +1747,7 @@ public class YetiShareCore extends antiDDoSForHost {
             return false;
         } else {
             final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-            return expire_milliseconds > Time.systemIndependentCurrentJVMTimeMillis();
+            return expire_milliseconds > System.currentTimeMillis();
         }
     }
 
@@ -1958,7 +1954,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     protected boolean isCrawledAPICredentialsAvailable(final Account account) {
-        return account.hasProperty(PROPERTY_API_KEY1) && account.hasProperty(PROPERTY_API_KEY2);
+        synchronized (account) {
+            return account.hasProperty(PROPERTY_API_KEY1) && account.hasProperty(PROPERTY_API_KEY2);
+        }
     }
 
     protected String getAPIBase() {
@@ -1981,25 +1979,24 @@ public class YetiShareCore extends antiDDoSForHost {
 
     protected int getAPIAccountID(final Account account, final String key1, final String key2) {
         final String propertyKey = PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2);
-        if (account.hasProperty(propertyKey)) {
-            return Integer.parseInt(account.getStringProperty(propertyKey));
+        final String accountID = account.getStringProperty(propertyKey);
+        if (accountID != null) {
+            return Integer.parseInt(accountID);
         } else {
             return -1;
         }
     }
 
     /**
-     * API file operations usually requires us to have the internal ID of files. </br>
-     * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
-     * folder, we do have these internal fileIDs available!
+     * API file operations usually requires us to have the internal ID of files. </br> Most of all times we don't have this but if a website
+     * is using the "new" YetiShare script version and files were added as part of a folder, we do have these internal fileIDs available!
      */
     protected String getApiFileID(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
     }
 
     /**
-     * According to: https://fhscript.com/api#account-info </br>
-     * and: https://fhscript.com/api#account-package </br>
+     * According to: https://fhscript.com/api#account-info </br> and: https://fhscript.com/api#account-package </br>
      */
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final String key1, final String key2) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -2026,7 +2023,7 @@ public class YetiShareCore extends antiDDoSForHost {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         } else {
             /* Fallback */
-            currentTime = Time.systemIndependentCurrentJVMTimeMillis();
+            currentTime = System.currentTimeMillis();
         }
         if (premiumExpireDateStr != null && premiumExpireDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -2041,7 +2038,7 @@ public class YetiShareCore extends antiDDoSForHost {
         if (premiumExpireMilliseconds > currentTime || StringUtils.equalsIgnoreCase(level_type, "paid")) {
             account.setType(AccountType.PREMIUM);
             if (premiumExpireMilliseconds > currentTime) {
-                ai.setValidUntil(Time.systemIndependentCurrentJVMTimeMillis() + premiumDurationMilliseconds);
+                ai.setValidUntil(currentTime + premiumDurationMilliseconds);
             }
         } else {
             /* Free- or expired premium account */
@@ -2208,9 +2205,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * https://fhscript.com/api#file-download </br>
-     * This API call only works with self-uploaded file whenever the internal file-id is known --> It is of no use for us! TODO: Re-check
-     * this before allowing usage of this in any official YetiShare plugin!
+     * https://fhscript.com/api#file-download </br> This API call only works with self-uploaded file whenever the internal file-id is known
+     * --> It is of no use for us! TODO: Re-check this before allowing usage of this in any official YetiShare plugin!
      */
     protected void handleDownloadAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
@@ -2269,8 +2265,8 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * Handles API errormessages. </br>
-     * We usually can't use this API for downloading thus all Exceptions will be account related (as of 2021-04-22)
+     * Handles API errormessages. </br> We usually can't use this API for downloading thus all Exceptions will be account related (as of
+     * 2021-04-22)
      */
     protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         Map<String, Object> entries = null;

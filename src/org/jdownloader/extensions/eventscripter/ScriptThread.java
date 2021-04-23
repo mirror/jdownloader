@@ -222,9 +222,9 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
 
     public void notifyAboutException(Throwable e) {
         if (isNotifyOnException()) {
-            Dialog.getInstance().showExceptionDialog("An Error Occured", e.getMessage(), e);
+            Dialog.getInstance().showExceptionDialog("An Error Occured:ID=" + script.getID() + "|Name=" + script.getName() + "|Trigger=" + script.getEventTrigger(), e.getMessage(), e);
         }
-        if (script != null && isDisableOnException()) {
+        if (isDisableOnException()) {
             script.setEnabled(false);
             extension.refreshScripts();
         }
