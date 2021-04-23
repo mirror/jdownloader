@@ -306,6 +306,10 @@ public class ServusCom extends PluginForHost {
              * that too!
              */
             final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("resources");
+            /* 2021-04-23: Lazy errorhandling fix: Assume that empty list == GEO-blocked. */
+            if (ressourcelist.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            }
             for (final Object ressourceO : ressourcelist) {
                 entries = (Map<String, Object>) ressourceO;
                 final String type = (String) entries.get("type");
