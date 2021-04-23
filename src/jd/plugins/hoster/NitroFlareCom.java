@@ -832,6 +832,12 @@ public class NitroFlareCom extends antiDDoSForHost {
             /* API captcha required to continue using their API! */
             /* TODO: Add handling for this captcha */
             // this.getPage(this.API_BASE + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser()));
+            // data-sitekey="6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy"
+            // var response = grecaptcha.getResponse();
+            // var user = "dd";
+            // $.post("/api/v2/solveCaptcha?user=" + user, {response: response}, function (data) {
+            // if (data === 'passed') {
+            // window.location = '/api/v2/solveCaptcha?user=' + user + '&solved=1';
         default:
             /* Handle unknown errors */
             if (link == null) {
