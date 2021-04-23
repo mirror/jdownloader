@@ -109,4 +109,10 @@ public class FhscriptCom extends YetiShareCoreNew {
         /* 2021-04-22: Special: Accessing the website with "www." will result in response 404! */
         return false;
     }
+
+    @Override
+    protected boolean supportsAPIDownloads() {
+        /* 2021-04-23: API allows downloads (well it's a demo website so that makes sense ;) ) */
+        return true;
+    }
 }

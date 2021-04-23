@@ -1693,7 +1693,7 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (supports_api()) {
+        if (enableAPIOnlyMode()) {
             return fetchAccountInfoAPI(this.br, account, account.getUser(), account.getPass());
         } else {
             return fetchAccountInfoWebsite(account);
@@ -1791,10 +1791,15 @@ public class YetiShareCore extends antiDDoSForHost {
                     final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(brc, account, key1, key2);
                     if (apiAccInfo != null) {
                         logger.info("Successfully performed accountcheck via API");
+                        /* Save API keys for future usage! */
+                        account.setProperty(PROPERTY_API_KEY1, key1);
+                        account.setProperty(PROPERTY_API_KEY2, key2);
                         return apiAccInfo;
                     } else {
                         /* Most likely broken API/missing rights to use API although user can generate apikeys. */
                         logger.info("API accountcheck failed");
+                        account.removeProperty(PROPERTY_API_KEY1);
+                        account.removeProperty(PROPERTY_API_KEY2);
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -1855,8 +1860,10 @@ public class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (this.supports_api()) {
-            this.handleDownloadAPI(link, account);
+        if (this.enableAPIOnlyMode()) {
+            this.handleDownloadAPI(link, account, account.getUser(), account.getPass());
+        } else if (this.supportsAPIDownloads() && getApiFileID(link) != null && isCrawledAPICredentialsAvailable(account)) {
+            this.handleDownloadAPI(link, account, account.getStringProperty(PROPERTY_API_KEY1), account.getStringProperty(PROPERTY_API_KEY2));
         } else {
             this.handleDownloadWebsite(link, account);
         }
@@ -1936,11 +1943,21 @@ public class YetiShareCore extends antiDDoSForHost {
     /* *************************** PUT API RELATED METHODS HERE *************************** */
     protected static final String PROPERTY_API_ACCESS_TOKEN          = "ACCESS_TOKEN";
     protected static final String PROPERTY_API_ACCOUNT_ID            = "ACCOUNT_ID";
+    protected static final String PROPERTY_API_KEY1                  = "API_KEY1";
+    protected static final String PROPERTY_API_KEY2                  = "API_KEY2";
     protected static final String API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE = "API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE";
 
-    /** true = API will be used to login and for (premium/free)-account downloading. */
-    protected boolean supports_api() {
+    protected boolean enableAPIOnlyMode() {
         return false;
+    }
+
+    /** true = API will be used for downloading whenever possible. */
+    protected boolean supportsAPIDownloads() {
+        return false;
+    }
+
+    protected boolean isCrawledAPICredentialsAvailable(final Account account) {
+        return account.hasProperty(PROPERTY_API_KEY1) && account.hasProperty(PROPERTY_API_KEY2);
     }
 
     protected String getAPIBase() {
@@ -1968,6 +1985,15 @@ public class YetiShareCore extends antiDDoSForHost {
         } else {
             return -1;
         }
+    }
+
+    /**
+     * API file operations usually requires us to have the internal ID of files. </br>
+     * Most of all times we don't have this but if a website is using the "new" YetiShare script version and files were added as part of a
+     * folder, we do have these internal fileIDs available!
+     */
+    protected String getApiFileID(final DownloadLink link) {
+        return link.getStringProperty(PROPERTY_INTERNAL_FILE_ID);
     }
 
     /**
@@ -2067,7 +2093,13 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         logger.info("Performing full login");
         if (!this.isAPICredential(key1) || !this.isAPICredential(key2)) {
-            showAPILoginInformation();
+            /*
+             * Only display dialog to user if we expect user to enter API credentials. Apart from that API login can also be used in website
+             * mode in an automated way in which case we do not want to bother our user with login dialogs!
+             */
+            if (this.enableAPIOnlyMode()) {
+                showAPILoginInformation();
+            }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         this.postPage(br, this.getAPIBase() + "/authorize", "key1=" + Encoding.urlEncode(key1) + "&key2=" + Encoding.urlEncode(key2));
@@ -2094,9 +2126,39 @@ public class YetiShareCore extends antiDDoSForHost {
         account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), true);
     }
 
+    protected AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws Exception {
+        final UrlQuery query = new UrlQuery();
+        query.add("access_token", this.getAPIAccessToken(account, apikey1, apikey2));
+        query.add("account_id", Integer.toString(this.getAPIAccountID(account, apikey1, apikey2)));
+        query.add("file_id", getApiFileID(link));
+        /* Availablecheck not required as we do check for offline here! */
+        this.getPage(this.getAPIBase() + "/file/info?" + query.toString());
+        this.checkErrorsAPI(this.br, link, account);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = (Map<String, Object>) entries.get("data");
+        final String filename = (String) entries.get("filename");
+        final long filesize = JavaScriptEngineFactory.toLong(entries.get("fileSize"), -1);
+        final String file_status = (String) entries.get("file_status");
+        final String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
+        if (filesize > 0) {
+            link.setVerifiedFileSize(filesize);
+        }
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
+        /* 2021-04-23: Not sure but let's assume there can be files with filename and size still available but offline status! */
+        if (!file_status.equalsIgnoreCase("active")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
     private Thread showAPILoginInformation() {
         final String host = this.getHost();
-        final String account_overview_url = this.getAccountNameSpaceEditAccount();
+        final String editAccountURL = this.getAccountNameSpaceEditAccount();
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -2106,8 +2168,8 @@ public class YetiShareCore extends antiDDoSForHost {
                         title = host + " - Login";
                         message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
                         message += "Um deinen " + host + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch geschieht und logge dich auf der Webseite ein:\r\n\t'" + account_overview_url + "'\t\r\n";
-                        message += "2. Scrolle herunter bis du die Eingabefelder \"Key 1\" und \"Key 2\" siehst.\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch geschieht und logge dich auf der Webseite ein:\r\n\t'" + editAccountURL + "'\t\r\n";
+                        message += "2. Scrolle herunter bis du die Eingabefelder \"Key 1\" und \"Key 2\" siehst oder klicke rechts auf 'API Access'.\r\n";
                         message += "3. Klicke rechts in beiden Eingabefeldern auf \"Generate\".\r\n";
                         message += "4. Scrolle bis ans Ende der Webseite und klicke auf \"Update Account\".\r\n";
                         message += "5. Wechsle in JD, schließe diesen Dialog und öffne erneut die Maske um einen Account für diesen Anbieter hinzuzufügen.\r\n";
@@ -2117,8 +2179,8 @@ public class YetiShareCore extends antiDDoSForHost {
                         title = host + " - Login";
                         message += "Hello dear " + host + " user\r\n";
                         message += "In order to use your account of this service in JDownloader, you need to follow these steps:\r\n";
-                        message += "1. Open this URL in your browser if it is not opened automatically and login in your browser:\r\n\t'" + account_overview_url + "'\t\r\n";
-                        message += "2. Scroll down until you see the fields \"Key 1\" and \"Key 2\".\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically and login in your browser:\r\n\t'" + editAccountURL + "'\t\r\n";
+                        message += "2. Scroll down until you see the fields \"Key 1\" and \"Key 2\" or click on the tab 'API Access' (right side).\r\n";
                         message += "3. For each of both fields there is a \"Generate\" button on the right side - click both of them.\r\n";
                         message += "4. Scroll down all the way and confirm your generated keys by clicking on \"Update Account\".\r\n";
                         message += "5. Now go back into JD, close this dialog and re-open the \"Add account\" dialog for this host.\r\n";
@@ -2128,7 +2190,7 @@ public class YetiShareCore extends antiDDoSForHost {
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(3 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(account_overview_url);
+                        CrossSystem.openURL(editAccountURL);
                     }
                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                     ret.throwCloseExceptions();
@@ -2147,20 +2209,22 @@ public class YetiShareCore extends antiDDoSForHost {
      * This API call only works with self-uploaded file whenever the internal file-id is known --> It is of no use for us! TODO: Re-check
      * this before allowing usage of this in any official YetiShare plugin!
      */
-    protected void handleDownloadAPI(final DownloadLink link, final Account account) throws StorageException, Exception {
+    protected void handleDownloadAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = this.checkDirectLink(link, account);
-        if (dllink == null) {
-            this.loginAPI(this.br, account, account.getUser(), account.getPass(), false);
-            final Map<String, Object> postDownload = new HashMap<String, Object>();
-            postDownload.put("access_token", this.getAPIAccessToken(account, account.getUser(), account.getPass()));
-            postDownload.put("account_id", this.getAPIAccountID(account, account.getUser(), account.getPass()));
-            postDownload.put("file_id", this.getFUID(link));
-            this.postPageRaw(this.getAPIBase() + "/file/download", JSonStorage.serializeToJson(postDownload), true);
+        if (this.checkDirectLink(link, account) == null) {
+            /* Login not really required as it won't do anything but check validity of APIKey strings here! */
+            this.loginAPI(this.br, account, apikey1, apikey2, false);
+            final UrlQuery query = new UrlQuery();
+            query.add("access_token", this.getAPIAccessToken(account, apikey1, apikey2));
+            query.add("account_id", Integer.toString(this.getAPIAccountID(account, apikey1, apikey2)));
+            query.add("file_id", getApiFileID(link));
+            /* Availablecheck not required as download call will return offline message. */
+            // this.requestFileInformationAPI(link, account, apikey1, apikey2);
+            this.getPage(this.getAPIBase() + "/file/download?" + query.toString());
             this.checkErrorsAPI(this.br, link, account);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("data");
-            dllink = (String) entries.get("download_url");
+            final String dllink = (String) entries.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
                 /* We're using an API --> Never throw plugin defect! */
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -2234,6 +2298,8 @@ public class YetiShareCore extends antiDDoSForHost {
                 if (StringUtils.isEmpty(errorMsg)) {
                     /* This should never happen */
                     throw new AccountUnavailableException("Unknown API error", 10 * 60 * 1000l);
+                } else if (errorMsg.equalsIgnoreCase("Could not find file based on file_id.")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     logger.info("API returned errormessage: " + errorMsg);
                     throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
