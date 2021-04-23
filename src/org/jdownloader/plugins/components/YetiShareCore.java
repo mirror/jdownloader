@@ -42,6 +42,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -1750,7 +1751,7 @@ public class YetiShareCore extends antiDDoSForHost {
             return false;
         } else {
             final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-            return expire_milliseconds > System.currentTimeMillis();
+            return expire_milliseconds > Time.systemIndependentCurrentJVMTimeMillis();
         }
     }
 
@@ -2025,7 +2026,7 @@ public class YetiShareCore extends antiDDoSForHost {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         } else {
             /* Fallback */
-            currentTime = System.currentTimeMillis();
+            currentTime = Time.systemIndependentCurrentJVMTimeMillis();
         }
         if (premiumExpireDateStr != null && premiumExpireDateStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -2040,7 +2041,7 @@ public class YetiShareCore extends antiDDoSForHost {
         if (premiumExpireMilliseconds > currentTime || StringUtils.equalsIgnoreCase(level_type, "paid")) {
             account.setType(AccountType.PREMIUM);
             if (premiumExpireMilliseconds > currentTime) {
-                ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
+                ai.setValidUntil(Time.systemIndependentCurrentJVMTimeMillis() + premiumDurationMilliseconds);
             }
         } else {
             /* Free- or expired premium account */
@@ -2049,7 +2050,9 @@ public class YetiShareCore extends antiDDoSForHost {
         ai.setStatus(accountType);
         final Object concurrent_downloadsO = packageInfo.get("concurrent_downloads");
         if (concurrent_downloadsO != null && concurrent_downloadsO instanceof Integer) {
+            /* 2021-04-23: 0 = unlimited */
             final int simultaneousDownloads = ((Integer) packageInfo.get("concurrent_downloads")).intValue();
+            logger.info("Max. concurrent downloads for this account according to API: " + simultaneousDownloads);
             if (simultaneousDownloads > 0) {
                 account.setMaxSimultanDownloads(simultaneousDownloads);
             }
