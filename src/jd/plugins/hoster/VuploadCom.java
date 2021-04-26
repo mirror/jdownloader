@@ -63,7 +63,7 @@ public class VuploadCom extends XFileSharingProBasic {
         /* 2019-10-01: Special: They have customized embed URLs. */
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed\\-|emb\\.html\\?)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:embed\\-|emb\\.html\\?)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?|(?:e|v)/([a-z0-9]{12})(/([^/]+))?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -116,6 +116,16 @@ public class VuploadCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+    /* 2021-04-26: Not (yet) required */
+    // @Override
+    // protected String buildEmbedURLPath(final String fuid) {
+    // return "/e/" + fuid;
+    // }
+    //
+    // @Override
+    // protected String buildNormalURLPath(final String fuid) {
+    // return "/v/" + fuid;
+    // }
 
     @Override
     protected boolean isVideohosterEmbedHTML(final Browser br) {
@@ -123,13 +133,13 @@ public class VuploadCom extends XFileSharingProBasic {
         if (super.isVideohosterEmbedHTML(br)) {
             return true;
         } else {
-            return br.containsHTML("/emb\\.html\\?");
+            return br.containsHTML("/emb\\.html\\?|/e/");
         }
     }
 
     @Override
     public String getFUIDFromURL(final DownloadLink dl) {
-        final String result = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?)?([a-z0-9]{12})").getMatch(0);
+        final String result = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?|v/|e/)?([a-z0-9]{12})").getMatch(0);
         return result;
     }
 
