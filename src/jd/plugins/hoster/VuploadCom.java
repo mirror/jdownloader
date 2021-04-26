@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVupTo;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVuploadCom;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,8 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VupTo extends XFileSharingProBasic {
-    public VupTo(final PluginWrapper wrapper) {
+public class VuploadCom extends XFileSharingProBasic {
+    public VuploadCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -46,7 +46,7 @@ public class VupTo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vup.to" });
+        ret.add(new String[] { "vupload.com", "vup.to" });
         return ret;
     }
 
@@ -66,6 +66,12 @@ public class VupTo extends XFileSharingProBasic {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed\\-|emb\\.html\\?)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2021-04-26: Main domain has changed from vup.to to upload.com */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -144,7 +150,25 @@ public class VupTo extends XFileSharingProBasic {
     }
 
     @Override
-    public Class<? extends XFSConfigVideoVupTo> getConfigInterface() {
-        return XFSConfigVideoVupTo.class;
+    public Class<? extends XFSConfigVideoVuploadCom> getConfigInterface() {
+        return XFSConfigVideoVuploadCom.class;
+    }
+
+    @Override
+    protected String findAPIKey(final Browser brc) throws Exception {
+        String apikey = super.findAPIKey(brc);
+        if (apikey != null) {
+            return apikey;
+        } else {
+            /* 2021-04-26: Special */
+            this.getPage(brc, "/api");
+            apikey = brc.getRegex("\\?key=([a-z0-9]+)").getMatch(0);
+            if (apikey == null) {
+                return null;
+            } else {
+                findAPIHost(brc, apikey);
+                return apikey;
+            }
+        }
     }
 }

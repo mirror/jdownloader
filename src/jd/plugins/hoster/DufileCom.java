@@ -157,7 +157,7 @@ public class DufileCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.Unknown_ChineseFileHosting;
+        return SiteTemplate.PhpDisk;
     }
 
     @Override
