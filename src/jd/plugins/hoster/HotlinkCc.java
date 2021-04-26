@@ -273,13 +273,13 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isVideohosterEmbedHTML() {
+    protected boolean isVideohosterEmbedHTML(final Browser br) {
         /* 2021-03-02: Do not prefer download of potentially encrypted HLS -> Return false to force official video download */
         final Form officialDownloadForm = br.getFormbyProperty("name", "F1");
         if (officialDownloadForm != null) {
             return false;
         } else {
-            return super.isVideohosterEmbedHTML();
+            return super.isVideohosterEmbedHTML(br);
         }
     }
 

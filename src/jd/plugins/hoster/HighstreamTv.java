@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ClipwatchingCom extends XFileSharingProBasic {
-    public ClipwatchingCom(final PluginWrapper wrapper) {
+public class HighstreamTv extends XFileSharingProBasic {
+    public HighstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -36,14 +36,15 @@ public class ClipwatchingCom extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-08-13: No limits at all <br />
+     * limit-info: 2019-08-13: No limits at all (due to HLS streaming) <br />
      * captchatype-info: null<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "clipwatching.com" });
+        /* 2021-04-26: main domain has changed from clipwatching.com to highstream.tv */
+        ret.add(new String[] { "highstream.tv", "clipwatching.com" });
         return ret;
     }
 
@@ -58,6 +59,11 @@ public class ClipwatchingCom extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
