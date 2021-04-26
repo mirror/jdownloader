@@ -20,12 +20,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -46,6 +40,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(?:www\\.)?alfafile\\.net/file/([A-Za-z0-9]+)" })
 public class AlfafileNet extends PluginForHost {
@@ -430,6 +430,12 @@ public class AlfafileNet extends PluginForHost {
     private void handleErrorsGeneral(final Account account) throws PluginException {
         final String errorcode = PluginJSonUtils.getJsonValue(br, "status");
         String errormessage = PluginJSonUtils.getJsonValue(br, "details");
+        if ("409".equals(errorcode) && StringUtils.containsIgnoreCase(errormessage, "File temporarily unavailable")) {
+            /*
+             * {"response":null,"status":409,"details":"Conflict. File temporarily unavailable."}
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 30 * 60 * 1000l);
+        }
         if (errorcode != null) {
             if (errorcode.equals("401")) {
                 /* This can sometimes happen in premium mode */
