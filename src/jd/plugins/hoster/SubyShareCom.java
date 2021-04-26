@@ -174,7 +174,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                     dllink = getDllink(link, account, br, correctedBR);
                 }
                 /* Do they support standard video embedding? */
-                if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed()) {
+                if (StringUtils.isEmpty(dllink) && this.internal_isVideohosterEmbed(this.br)) {
                     try {
                         logger.info("Trying to get link via embed");
                         dllink = requestFileInformationVideoEmbed(link, account, false);

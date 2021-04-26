@@ -195,7 +195,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isVideohosterEmbedHTML() {
+    protected boolean isVideohosterEmbedHTML(final Browser br) {
         /*
          * 2021-03-10: Don't download stream if official download is available: They provide previews of videos as streams - we want to
          * download the original files!
@@ -211,7 +211,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
         if (freeDownloadForm != null || premiumDownloadForm != null) {
             return false;
         } else {
-            return super.isVideohosterEmbedHTML();
+            return super.isVideohosterEmbedHTML(br);
         }
     }
 }

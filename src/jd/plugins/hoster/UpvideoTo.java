@@ -15,11 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVupTo;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,8 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VupTo extends XFileSharingProBasic {
-    public VupTo(final PluginWrapper wrapper) {
+public class UpvideoTo extends XFileSharingProBasic {
+    public UpvideoTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -39,14 +40,14 @@ public class VupTo extends XFileSharingProBasic {
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
-     * limit-info: 2019-10-01: Set to default as this host uses HLS streaming only <br />
+     * limit-info: 2021-04-26: Unknown as website is using js obfuscation <br />
      * captchatype-info: null<br />
-     * other: Tags: ddl.to sister-site - is a videohoster <br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vup.to" });
+        ret.add(new String[] { "upvideo.to" });
         return ret;
     }
 
@@ -60,20 +61,28 @@ public class VupTo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        /* 2019-10-01: Special: They have customized embed URLs. */
+        return UpvideoTo.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final String getDefaultAnnotationPatternPartUpvideo() {
+        return "/(?:e|v)/([a-z0-9]{12})(/([^/]+))?";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed\\-|emb\\.html\\?)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?");
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + UpvideoTo.getDefaultAnnotationPatternPartUpvideo());
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -84,10 +93,11 @@ public class VupTo extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
@@ -112,39 +122,32 @@ public class VupTo extends XFileSharingProBasic {
     }
 
     @Override
+    protected String buildEmbedURLPath(final String fuid) {
+        return "/e/" + fuid;
+    }
+
+    @Override
+    protected String buildNormalURLPath(final String fuid) {
+        return "/v/" + fuid;
+    }
+
+    @Override
     protected boolean isVideohosterEmbedHTML(final Browser br) {
-        /* 2019-10-01: Special: They have customized embed URLs. */
-        if (super.isVideohosterEmbedHTML(br)) {
-            return true;
-        } else {
-            return br.containsHTML("/emb\\.html\\?");
+        return br.containsHTML("/e/[a-z0-9]{12}");
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        try {
+            if (link != null && link.getPluginPatternMatcher() != null) {
+                final String result = new Regex(new URL(link.getPluginPatternMatcher()).getPath(), this.getSupportedLinks()).getMatch(0);
+                return result;
+            } else {
+                return null;
+            }
+        } catch (MalformedURLException e) {
+            logger.log(e);
         }
-    }
-
-    @Override
-    public String getFUIDFromURL(final DownloadLink dl) {
-        final String result = new Regex(dl.getPluginPatternMatcher(), "https?://[^/]+/(?:embed\\-|emb\\.html\\?)?([a-z0-9]{12})").getMatch(0);
-        return result;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        /* 2019-10-01: Special */
-        return true;
-    }
-
-    @Override
-    protected boolean supports_mass_linkcheck_over_api() {
-        return isAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    protected boolean supports_single_linkcheck_over_api() {
-        return isAPIKey(this.getAPIKey());
-    }
-
-    @Override
-    public Class<? extends XFSConfigVideoVupTo> getConfigInterface() {
-        return XFSConfigVideoVupTo.class;
+        return null;
     }
 }
