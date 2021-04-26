@@ -75,17 +75,18 @@ public class JkpanCc extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("文件已经被删除") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<li>文件名:([^<>\"]+)</li>").getMatch(0);
-        String filesize = br.getRegex(">文件大小: ([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex(">\\s*文件大小: ([^<>\"]+)<").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename.trim()));
-        } else if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
         }
         if (filesize != null) {
             filesize = Encoding.htmlDecode(filesize);
