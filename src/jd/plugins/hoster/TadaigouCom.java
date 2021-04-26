@@ -16,9 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -36,52 +33,29 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RosefileNet extends PluginForHost {
-    public RosefileNet(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tadaigou.com" }, urls = { "https?://(?:www\\.)?tadaigou\\.com/file/([A-Za-z0-9]+)\\.html" })
+public class TadaigouCom extends PluginForHost {
+    public TadaigouCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.test.com/help/privacy";
-    }
-
-    private static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rosefile.net" });
-        return ret;
-    }
-
-    public static String[] getAnnotationNames() {
-        return buildAnnotationNames(getPluginDomains());
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return buildSupportedNames(getPluginDomains());
-    }
-
-    public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z0-9]{10})/([^/]+)\\.html");
-        }
-        return ret.toArray(new String[0]);
+        return "http://www.tadaigou.com/";
     }
 
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = -1;
+    // private static final boolean ACCOUNT_FREE_RESUME = false;
+    // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
+    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 1;
+    // private static final boolean ACCOUNT_PREMIUM_RESUME = false;
+    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
+    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    // /* don't touch the following! */
+    // private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -99,26 +73,22 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 File does not exist")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* 2021-04-12: Trust filename inside URL. */
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        String filesize = br.getRegex("<span class=\"h4\">(\\d+[^<>\"]+)</span>").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
-        } else if (!link.isNameSet()) {
-            /* Fallback */
+        if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
+        this.setBrowserExclusive();
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("文件已经被删除") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = br.getRegex("class=\"down_one_lf_tl\"[^>]*>([^<>\"]+)</span>").getMatch(0);
+        String filesize = br.getRegex(">\\s*檔案大小：([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         if (filesize != null) {
-            if (!filesize.toLowerCase(Locale.ENGLISH).contains("b")) {
-                filesize += "b";
-            }
+            filesize = Encoding.htmlDecode(filesize);
+            filesize += "b";
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
@@ -133,13 +103,17 @@ public class RosefileNet extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             this.requestFileInformation(link);
-            final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
+            String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
             if (internalFileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(br.getURL().replace("/file/", "/down/"));
+                internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
+                if (internalFileID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            /** 2021-04-12: Waittime and captcha is skippable */
+            /** 2021-04-26: Waittime and captcha is skippable */
             // br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
             // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             // final int waitSeconds = ((Number) entries.get("")).intValue();
@@ -219,13 +193,13 @@ public class RosefileNet extends PluginForHost {
     }
 
     @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.Unknown_ChineseFileHosting;
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_ChineseFileHosting;
     }
 
     @Override
