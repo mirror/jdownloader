@@ -26,21 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,6 +35,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
@@ -73,6 +59,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin.FEATURE;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -565,6 +566,16 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    private boolean isDirectHTTPRule(final DownloadLink downloadLink) {
+        long linkCrawlerRuleID = -1;
+        if ((linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1)) != -1) {
+            final LinkCrawlerRule rule = LinkCrawler.getLinkCrawlerRule(linkCrawlerRuleID);
+            return rule != null && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule());
+        } else {
+            return false;
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws Exception {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
@@ -725,7 +736,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 return this.requestFileInformation(downloadLink, retry + 1);
             }
-            if (contentType != null && (contentType.startsWith("text/html") || contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
+            if (contentType != null && (contentType.startsWith("text/html") || contentType.startsWith("application/json")) && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false && !isDirectHTTPRule(downloadLink)) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {

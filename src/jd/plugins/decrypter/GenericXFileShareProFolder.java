@@ -15,17 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -45,12 +40,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "koofile.com", "powvideo.net", "lunaticfiles.com", "youwatch.org", "vshare.eu", "up.media1fire.com", "salefiles.com", "ortofiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "faststore.org", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
-            /** file-up.org domains */
-            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
+        /** file-up.org domains */
+        "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
     private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al" };
 
@@ -124,7 +126,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         decryptedLinks.clear();
         page = 1;
         parameter = param.toString();
-        br.setCookie(br.getHost(), "lang", "english");
+        br.setCookie(new URL(parameter).getHost(), "lang", "english");
         br.setFollowRedirects(true);
         int counter = 0;
         final int maxCounter = 1;
@@ -177,12 +179,18 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 if (fpName == null) {
                     fpName = new Regex(parameter, "users/[a-z0-9_]+/(.+)").getMatch(0); // id
                     if (fpName == null) {
-                        if (parameter.matches(".+users(?:files|cloud)\\.com/.+")) {
-                            fpName = br.getRegex("<title>\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
-                        } else if ("hotlink.cc".equals(br.getHost())) {
+                        if ("hotlink.cc".equals(br.getHost())) {
                             fpName = br.getRegex("<i class=\"glyphicon glyphicon-folder-open\"></i>\\s*(.*?)\\s*</span>").getMatch(0);
-                        } else if ("ex-load.com".equals(br.getHost())) {
-                            fpName = br.getRegex("Files in (.*?) folder</title>").getMatch(0);
+                        } else {
+                            // ex-load.com
+                            fpName = br.getRegex("Files in\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+                            if (fpName == null) {
+                                // file-al
+                                fpName = br.getRegex("Files of\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+                            }
+                            if (fpName == null) {
+                                fpName = br.getRegex("<title>\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);
+                            }
                             if (fpName == null) {
                                 fpName = br.getRegex("<h1.*?</i>\\s*(.*?)\\s*</h1>").getMatch(0);
                             }
@@ -236,7 +244,15 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         boolean foundNewItems = false;
         final String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost()) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links != null && links.length > 0) {
+            String html = br.toString();
+            html = html.replaceAll("</?font[^>]*>", "");
+            html = html.replaceAll("</?b[^>]*>", "");
+            // file.al, ex-load.com
+            final ArrayList<String> tr_snippets = new ArrayList<String>(Arrays.asList(new Regex(html, "((<tr>)?<td.*?</tr>)").getColumn(0)));
             for (final String link : links) {
+                if (isAbort()) {
+                    return false;
+                }
                 final String linkid = new Regex(link, Pattern.compile("https?://[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (!dupe.contains(linkid)) {
                     /**
@@ -246,23 +262,23 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                      */
                     foundNewItems = true;
                     final DownloadLink dl = createDownloadlink(link);
-                    final String tr[] = new Regex(br.toString(), "<tr>(.*?)</tr>").getColumn(0);
                     String html_snippet = null;
-                    if (tr != null) {
-                        for (String tr_segment : tr) {
-                            if (StringUtils.containsIgnoreCase(tr_segment, linkid)) {
-                                html_snippet = tr_segment;
-                                break;
-                            }
+                    final Iterator<String> it = tr_snippets.iterator();
+                    while (it.hasNext()) {
+                        final String tr_snippet = it.next();
+                        if (StringUtils.containsIgnoreCase(tr_snippet, linkid)) {
+                            html_snippet = tr_snippet;
+                            it.remove();
+                            break;
                         }
                     }
                     if (StringUtils.isEmpty(html_snippet)) {
                         /* Works for e.g. world-files.com, brupload.net */
                         /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
-                        html_snippet = new Regex(br.toString(), "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*</td>\\s*</tr>").getMatch(-1);
+                        html_snippet = new Regex(html, "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*</td>\\s*</tr>").getMatch(-1);
                         if (StringUtils.isEmpty(html_snippet)) {
                             /* 2020-02-04: E.g. userupload.net */
-                            html_snippet = new Regex(br.toString(), "<TD>.*" + linkid + ".*</TD>").getMatch(-1);
+                            html_snippet = new Regex(html, "<TD>.*" + linkid + ".*</TD>").getMatch(-1);
                         }
                         if (StringUtils.isEmpty(html_snippet)) {
                             /* E.g. up-4.net */
@@ -270,7 +286,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                              * TODO: Improve this RegEx. It will always pickup the first item of each page thus the found filename/filesize
                              * information will be wrong!
                              */
-                            html_snippet = new Regex(br.toString(), "<div class=\"file\\-details\">\\s+<h3 class=\"file\\-ttl\"><a href=\"[^\"]+/" + linkid + ".*?</div>\\s+</div>").getMatch(-1);
+                            html_snippet = new Regex(html, "<div class=\"file\\-details\">\\s+<h3 class=\"file\\-ttl\"><a href=\"[^\"]+/" + linkid + ".*?</div>\\s+</div>").getMatch(-1);
                         }
                     }
                     /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
@@ -366,7 +382,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         if (folderQuery == null) {
             /* Pagination ? */
             final String pagination = br.getRegex("setPagination\\('.files_paging',.*?\\);").getMatch(-1); // "files_paging" or also
-                                                                                                           // "#files_paging" (e.g. file.al)
+            // "#files_paging" (e.g. file.al)
             if (pagination == null) {
                 return false;
             }

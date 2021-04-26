@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -20,6 +15,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FEmbedDecrypter extends PluginForDecrypt {
     public FEmbedDecrypter(PluginWrapper wrapper) {
@@ -29,7 +29,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         /* Always add current domain to first position! */
-        ret.add(new String[] { "fembed.com", "there.to", "gcloud.live", "plycdn.xyz", "hlsmp4.com", "svpri.xyz", "asianclub.nl", "asianclub.tv", "javcl.me", "feurl.com", "zidiplay.com", "embed.media", "javideo.pw", "playvideo.best", "ffem.club", "dunbed.xyz", "embed.casa", "sexhd.co", "fileone.tv", "luxubu.review", "anime789.com", "femax20.com" });
+        ret.add(new String[] { "fembed.com", "there.to", "gcloud.live", "plycdn.xyz", "hlsmp4.com", "svpri.xyz", "asianclub.nl", "asianclub.tv", "javcl.me", "feurl.com", "zidiplay.com", "embed.media", "javideo.pw", "playvideo.best", "ffem.club", "dunbed.xyz", "embed.casa", "sexhd.co", "fileone.tv", "luxubu.review", "anime789.com", "femax20.com", "smartshare.tv" });
         return ret;
     }
 
