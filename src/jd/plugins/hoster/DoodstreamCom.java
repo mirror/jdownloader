@@ -192,7 +192,25 @@ public class DoodstreamCom extends XFileSharingProBasic {
             /* 2020-10-05: Special: Empty "embed URL". */
             offline = new Regex(html, "<iframe src=\"/e/\"").matches();
         }
+        if (offline) {
+            /* 2021-26-04 */
+            // all videos are now
+            // <h1>Not Found</h1>
+            // <p>video you are looking for is not found.</p>
+            if (new Regex(html, "minimalUserResponseInMiliseconds\\s*=").matches()) {
+                return false;
+            }
+        }
         return offline;
+    }
+
+    @Override
+    public String getFallbackFilename(DownloadLink dl) {
+        String fallBack = super.getFallbackFilename(dl);
+        if (!StringUtils.endsWithCaseInsensitive(fallBack, ".mp4")) {
+            fallBack += ".mp4";
+        }
+        return fallBack;
     }
 
     @Override
@@ -208,6 +226,17 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (isOffline(link, this.br, getCorrectBR(br)) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* 2021-26-04 */
+        // Filename via Javascript/Encryption
+        // $.get('/cptr/xxxxx', function(data){
+        // var title;
+        // if(data.ttl.crp == 'N_crp'){
+        // title = data.ttl.crs;
+        // }else{
+        // title = doodExe(data.ttl.crp, data.ttl.crs);
+        // }
+        // document.title = title + ' - DoodStream';
+        // });
         if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
             /* First try to get filename from Chromecast json */
             String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
@@ -217,7 +246,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             if (StringUtils.isEmpty(filename)) {
                 link.setName(this.getFallbackFilename(link));
             } else {
-                if (!filename.endsWith(".mp4")) {
+                if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
                     filename += ".mp4";
                 }
                 link.setFinalFileName(filename);
@@ -227,7 +256,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             if (StringUtils.isEmpty(filename)) {
                 link.setName(this.getFallbackFilename(link));
             } else {
-                if (!filename.endsWith(".mp4")) {
+                if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
                     filename += ".mp4";
                 }
                 link.setFinalFileName(filename);

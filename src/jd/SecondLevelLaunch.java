@@ -384,8 +384,11 @@ public class SecondLevelLaunch {
                     final Iterator<Entry<String, Object>> it = versionMap.entrySet().iterator();
                     while (it.hasNext()) {
                         final Entry<String, Object> next = it.next();
-                        if (next.getKey().endsWith("Revision")) {
-                            System.setProperty("jd.revision." + next.getKey().toLowerCase(Locale.ENGLISH), next.getValue().toString());
+                        final String key = next.getKey();
+                        if (key.endsWith("Revision")) {
+                            System.setProperty("jd.revision." + key.toLowerCase(Locale.ENGLISH), next.getValue().toString());
+                        } else if (key.startsWith("build")) {
+                            System.setProperty("jd.build." + key.toLowerCase(Locale.ENGLISH), next.getValue().toString());
                         }
                     }
                 }

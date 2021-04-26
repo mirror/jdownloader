@@ -459,7 +459,21 @@ public class LinkCrawler {
         return getLinkCrawlerRuleCookies(ruleID, false);
     }
 
-    public static List<String[]> getLinkCrawlerRuleCookies(final long ruleID, final boolean mustBeEnabled) {
+    public static LinkCrawlerRule getLinkCrawlerRule(final long ruleID) {
+        synchronized (LINKCRAWLERRULESLOCK) {
+            final LinkCrawlerRuleStorable storable = getLinkCrawlerRuleStorable(ruleID);
+            if (storable != null) {
+                try {
+                    return storable._getLinkCrawlerRule();
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+            return null;
+        }
+    }
+
+    protected static LinkCrawlerRuleStorable getLinkCrawlerRuleStorable(final long ruleID) {
         synchronized (LINKCRAWLERRULESLOCK) {
             final List<LinkCrawlerRuleStorable> rules = CONFIG.getLinkCrawlerRules();
             if (rules == null || rules.size() == 0) {
@@ -467,13 +481,20 @@ public class LinkCrawler {
             } else {
                 for (final LinkCrawlerRuleStorable rule : rules) {
                     if (rule.getId() == ruleID) {
-                        if (rule.getCookies() != null && (!mustBeEnabled || rule.isEnabled())) {
-                            return new ArrayList<String[]>(rule.getCookies());
-                        } else {
-                            return null;
-                        }
+                        return rule;
                     }
                 }
+                return null;
+            }
+        }
+    }
+
+    public static List<String[]> getLinkCrawlerRuleCookies(final long ruleID, final boolean mustBeEnabled) {
+        synchronized (LINKCRAWLERRULESLOCK) {
+            final LinkCrawlerRuleStorable storable = getLinkCrawlerRuleStorable(ruleID);
+            if (storable != null && storable.getCookies() != null && (!mustBeEnabled || storable.isEnabled())) {
+                return new ArrayList<String[]>(storable.getCookies());
+            } else {
                 return null;
             }
         }

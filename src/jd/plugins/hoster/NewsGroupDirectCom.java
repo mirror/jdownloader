@@ -5,12 +5,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -20,6 +14,12 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newsgroupdirect.com" }, urls = { "" })
 public class NewsGroupDirectCom extends UseNet {
@@ -96,7 +96,7 @@ public class NewsGroupDirectCom extends UseNet {
                 } else {
                     account.setProperty(USENET_USERNAME, username);
                 }
-                final String trafficLeft = br.getRegex("<p>\\s*You have\\s*<strong>\\s*(.*?)\\s*GB\\s*</strong>\\s*left").getMatch(0);
+                final String trafficLeft = br.getRegex("<p>\\s*You have\\s*<strong>\\s*(.*?\\s*[TGKB]+)\\s*</strong>\\s*left").getMatch(0);
                 final String billedAgain = br.getRegex("You'll\\s*be\\s*billed\\s*again\\s*on\\s*(\\d+/\\d+/\\d+)").getMatch(0);
                 final String ngd = br.getRegex("NGD\\s*Member\\s*</th>\\s*<td>\\s*(.*?)\\s*</").getMatch(0);
                 final String currentPlan = br.getRegex("Current Plan\\s*</th>\\s*<td>\\s*(.*?)\\s*</td>").getMatch(0);

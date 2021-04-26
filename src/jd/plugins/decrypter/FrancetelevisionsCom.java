@@ -124,7 +124,7 @@ public class FrancetelevisionsCom extends PluginForDecrypt {
             if (links == null || links.length == 0) {
                 links = br.getRegex("videos\\.francetv\\.fr/video/(\\d+@[^<>\"/]+)\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("data-id\\s*=\\s*[\"\']([\\da-f]{8}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{12})").getColumn(0);
+                    links = br.getRegex("(?:data-id|figure id)\\s*=\\s*[\"\']([\\da-f]{8}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{12})").getColumn(0);
                 }
             }
             if (links != null) {

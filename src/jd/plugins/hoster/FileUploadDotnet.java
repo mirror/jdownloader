@@ -15,10 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +29,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "https?://(www\\.|en\\.)?file\\-upload\\.net/((member/){0,1}download\\-\\d+/(.*?)\\.html|view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html|member/data3\\.php\\?user=(.*?)\\&name=(.*))" })
 public class FileUploadDotnet extends antiDDoSForHost {
@@ -91,7 +93,7 @@ public class FileUploadDotnet extends antiDDoSForHost {
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
                     String filename = br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getMatch(0);
                     String filesize;
-                    if ((filesize = br.getRegex("e:</b>(.*?)Kbyte").getMatch(0)) != null) {
+                    if ((filesize = br.getRegex("e:</b>\\s*(.*?)\\s*Kbyte").getMatch(0)) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -123,11 +125,9 @@ public class FileUploadDotnet extends antiDDoSForHost {
             }
             final String sitekey = download.getRegex("data\\-sitekey=\"([^<>\"]+)\"").getMatch(0);
             if (download.containsHTML("g\\-recaptcha") && sitekey != null) {
-                /* 2017-04-25 */
-                /* 2019-11-01: Captcha not required anymore(?!) */
-                // logger.info("ReCaptchaV2 required");
-                // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, sitekey).getToken();
-                // download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                logger.info("ReCaptchaV2 required");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ajax, sitekey).getToken();
+                download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
@@ -137,8 +137,12 @@ public class FileUploadDotnet extends antiDDoSForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (dl.getConnection().getResponseCode() == 404) {
-            // typically referrer is incorrect!
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
