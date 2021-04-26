@@ -136,15 +136,13 @@ public class SiteType {
         /**
          * Script used by some chinese file-hosting sites. <a href="http:/www.rosefile.net/">rosefile.net</a>. Not sure what to call this
          * script. </br>
-         * Possible script name: 'Copyright © 2016 百丽资源中心 版权所有 Powered By XDDrive Private V 1.4' http://vip.belle.la/ ?? xddrive private?
-         * couldnt find much on google <br />
+         * URL to manufacturer: http://www.phpdisk.com/download.html
          */
-        Unknown_ChineseFileHosting,
+        PhpDisk,
         /**
-         * Script used by some (mostly free) file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what's the name of this
-         * script.<br />
+         * Not sure what's the name of this script.<br />
          * Usually hosts using this script will provide an public upload- & filecheck API under '/docs/api'.<br />
-         * <b>Examples:</b> <a href="https://desufiles.com/">desufiles.com</a>, <a href="https://anonfiles.com/">anonfiles.com</a><br />
+         * <b>Example(s):</b> <a href="https://anonfiles.com/">anonfiles.com</a><br />
          * <b>Superclass:</b> UnknownHostingScriptCore <br />
          */
         Unknown_FilehostScript,

@@ -3304,41 +3304,48 @@ public class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (apikey != null) {
-            logger.info("Found apikey! Trying to find api domain with protocol");
-            String url_with_apikey = brc.getRegex("(https?://[^/]+/api/account/info[^<>\"\\']*key=" + apikey + "[^<>\"\\']*)").getMatch(0);
-            boolean api_uses_special_domain = false;
-            if (url_with_apikey == null) {
-                logger.info("Unable to find API domain - assuming it is the same es the plugins'");
-            } else {
-                try {
-                    if (Encoding.isHtmlEntityCoded(url_with_apikey)) {
-                        /*
-                         * 2019-07-28: Some hosts have "&&amp;" inside URL (= buggy) - also some XFS hosts will only allow apikey generation
-                         * once and when pressing "change key" afterwards, it will always be the same. This may also be a serverside XFS
-                         * bug.
-                         */
-                        url_with_apikey = Encoding.htmlDecode(url_with_apikey);
-                    }
-                    final URL apiurl = new URL(url_with_apikey);
-                    final String apihost = Browser.getHost(apiurl, true);
-                    if (!apihost.equalsIgnoreCase(this.getHost())) {
-                        logger.info(String.format("API domain is %s while main domain of plugin is %s", apihost, this.getHost()));
-                        api_uses_special_domain = true;
-                        final String test = apiurl.getProtocol() + "://" + apiurl.getHost() + "/api";
-                        this.getPluginConfig().setProperty(PROPERTY_PLUGIN_api_domain_with_protocol, test);
-                    } else {
-                        logger.info("API domain and main domain are the same: " + this.getHost());
-                    }
-                } catch (final Throwable e) {
-                    logger.exception("Error while trying to find API domain", e);
-                }
-            }
-            if (!api_uses_special_domain) {
-                /* Important: Dump old data - maybe apihost was different and is now the same! */
-                this.getPluginConfig().removeProperty(PROPERTY_PLUGIN_api_domain_with_protocol);
-            }
+            findAPIHost(brc, apikey);
         }
         return apikey;
+    }
+
+    /** Finds API host. Call this before attempting to use a previously found apikey in website mode! */
+    protected void findAPIHost(final Browser brc, final String apikey) {
+        if (apikey == null) {
+            return;
+        }
+        logger.info("Found apikey! Trying to find api domain with protocol");
+        String url_with_apikey = brc.getRegex("(https?://[^/]+/api/account/info[^<>\"\\']*key=" + apikey + "[^<>\"\\']*)").getMatch(0);
+        boolean api_uses_special_domain = false;
+        if (url_with_apikey == null) {
+            logger.info("Unable to find API domain - assuming it is the same es the plugins'");
+        } else {
+            try {
+                if (Encoding.isHtmlEntityCoded(url_with_apikey)) {
+                    /*
+                     * 2019-07-28: Some hosts have "&&amp;" inside URL (= buggy) - also some XFS hosts will only allow apikey generation
+                     * once and when pressing "change key" afterwards, it will always be the same. This may also be a serverside XFS bug.
+                     */
+                    url_with_apikey = Encoding.htmlDecode(url_with_apikey);
+                }
+                final URL apiurl = new URL(url_with_apikey);
+                final String apihost = Browser.getHost(apiurl, true);
+                if (!apihost.equalsIgnoreCase(this.getHost())) {
+                    logger.info(String.format("API domain is %s while main domain of plugin is %s", apihost, this.getHost()));
+                    api_uses_special_domain = true;
+                    final String test = apiurl.getProtocol() + "://" + apiurl.getHost() + "/api";
+                    this.getPluginConfig().setProperty(PROPERTY_PLUGIN_api_domain_with_protocol, test);
+                } else {
+                    logger.info("API domain and main domain are the same: " + this.getHost());
+                }
+            } catch (final Throwable e) {
+                logger.exception("Error while trying to find API domain", e);
+            }
+        }
+        if (!api_uses_special_domain) {
+            /* Important: Dump old data - maybe apihost was different and is now the same! */
+            this.getPluginConfig().removeProperty(PROPERTY_PLUGIN_api_domain_with_protocol);
+        }
     }
 
     /** Override this if default handling does not find the APIKey */
