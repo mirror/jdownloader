@@ -27,7 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file.al" }, urls = { "https?://(?:www\\.)?file\\.al/Public/\\d+/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file22.al" }, urls = { "https?://(?:www\\.)?file22\\.al/Public/\\d+/.+" })
 public class FileAlFolder extends PluginForDecrypt {
     public FileAlFolder(PluginWrapper wrapper) {
         super(wrapper);
