@@ -102,7 +102,7 @@ public class FastDriveIo extends YetiShareCoreNew {
     @Override
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
         try {
-            requestFileInformation(link, account, true);
+            requestFileInformationWebsite(link, account, true);
         } catch (final PluginException e) {
             ignorePluginException(e, br, link, account);
         }

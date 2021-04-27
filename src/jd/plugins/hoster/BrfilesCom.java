@@ -170,13 +170,13 @@ public class BrfilesCom extends YetiShareCore {
         return br.containsHTML("/logout/?\"");
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (account == null) {
             /* 2020-03-16: Special: Without account, all files will be shown as offline by this website */
             return AvailableStatus.UNCHECKABLE;
         }
         this.loginWebsite(account, false);
-        return super.requestFileInformation(link, account, isDownload);
+        return super.requestFileInformationWebsite(link, account, isDownload);
     }
 
     @Override
@@ -185,7 +185,7 @@ public class BrfilesCom extends YetiShareCore {
         if (account.getType() == AccountType.FREE) {
             /* Free account --> Login --> Availablecheck --> Download */
             loginWebsite(account, false);
-            requestFileInformation(link, account, true);
+            requestFileInformationWebsite(link, account, true);
             br.setFollowRedirects(false);
             if (supports_availablecheck_over_info_page(link)) {
                 getPage(link.getPluginPatternMatcher());

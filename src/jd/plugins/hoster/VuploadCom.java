@@ -150,12 +150,12 @@ public class VuploadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_mass_linkcheck_over_api() {
+    protected boolean supportsAPIMassLinkcheck() {
         return isAPIKey(this.getAPIKey());
     }
 
     @Override
-    protected boolean supports_single_linkcheck_over_api() {
+    protected boolean supportsAPISingleLinkcheck() {
         return isAPIKey(this.getAPIKey());
     }
 

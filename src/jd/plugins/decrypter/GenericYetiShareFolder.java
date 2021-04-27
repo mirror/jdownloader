@@ -132,26 +132,25 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         }
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         /*
-         * Workaround for erai-ddl3.info! TODO: Make login work for all supported hosts although usually there is no need to be loggedin to
-         * view "public" folders!
+         * 2020-11-13: E.g. erai-ddl3.info only allows one active session. If the user e.g. logs in via JD, he will get logged out in
+         * browser and the other way around!
          */
-        /*
-         * 2020-11-13: erai-ddl3.info only allows one active session. If the user e.g. logs in via JD, he will get logged out in browser and
-         * the other way around!
-         */
-        if (account != null && this.getHost().equals("erai-ddl3.info")) {
+        if (account != null) {
             synchronized (account) {
                 final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
                 try {
-                    final boolean validatedCookies = ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, false);
+                    final boolean validatedCookies = ((YetiShareCore) plg).loginWebsite(account, false);
                     br.setFollowRedirects(true);
                     getPage(parameter);
-                    if (!validatedCookies && !((jd.plugins.hoster.EraiDdlthreeInfo) plg).isLoggedin(br)) {
+                    if (!validatedCookies && !((YetiShareCore) plg).isLoggedin(br)) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
-                        ((jd.plugins.hoster.EraiDdlthreeInfo) plg).loginWebsiteSpecial(account, true);
+                        ((YetiShareCore) plg).loginWebsite(account, true);
                         br.setFollowRedirects(true);
                         getPage(parameter);
                         /* Assume that we are logged in now. */
+                        if (!((YetiShareCore) plg).isLoggedin(br)) {
+                            logger.warning("Possible login failure");
+                        }
                     }
                 } catch (PluginException e) {
                     handleAccountException(account, e);

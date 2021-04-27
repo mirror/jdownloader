@@ -111,8 +111,8 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-        final String fid = getFUIDFromURL(downloadLink);
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+        final String fid = getFUIDFromURL(link);
         if (fid != null) {
             if (this.supports_https()) {
                 return "http://" + getHost() + "/" + fid;
@@ -120,7 +120,7 @@ public class DdownloadCom extends XFileSharingProBasic {
                 return "https://" + getHost() + "/" + fid;
             }
         } else {
-            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
         }
     }
 
@@ -191,7 +191,7 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void doFree(DownloadLink link, Account account) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -425,12 +425,12 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean supports_mass_linkcheck_over_api() {
+    protected boolean supportsAPIMassLinkcheck() {
         return isAPIKey(this.getAPIKey());
     }
 
     @Override
-    protected boolean supports_single_linkcheck_over_api() {
+    protected boolean supportsAPISingleLinkcheck() {
         return isAPIKey(this.getAPIKey());
     }
 
