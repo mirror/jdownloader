@@ -22,26 +22,24 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FruitpanCom extends PluginForHost {
@@ -170,13 +168,13 @@ public class FruitpanCom extends PluginForHost {
                 logger.info("Invalid captcha answer format");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            continueURL += "/" + Encoding.urlEncode(code) + ".html";
+            continueURL += "/" + code + ".html";
             final long waittimeMillis = waitSeconds * 1001l;
             final long passedTime = Time.systemIndependentCurrentJVMTimeMillis() - timestampBeforeCaptcha;
             if (passedTime < waittimeMillis) {
                 this.sleep(waittimeMillis - passedTime, link);
             } else {
-                logger.info("Congratulations - captcha solving tool longer than waittime!");
+                logger.info("Congratulations - captcha solving took longer than waittime!");
             }
             br.getPage(continueURL);
             if (br.containsHTML(org.appwork.utils.Regex.escape(captchatext))) {
@@ -228,12 +226,6 @@ public class FruitpanCom extends PluginForHost {
             link.setProperty(PROPERTY_DOWNLOAD_REFERER, downloadReferer);
         }
         dl.setFilenameFix(true);
-        final String contentDisposition = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
-        if (contentDisposition != null) {
-            logger.info("Found Content-Disposition filename: " + contentDisposition);
-        } else {
-            logger.warning("Failed to find filename");
-        }
         dl.startDownload();
     }
 

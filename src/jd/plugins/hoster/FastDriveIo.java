@@ -22,7 +22,6 @@ import java.util.List;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class FastDriveIo extends YetiShareCoreNew {
+public class FastDriveIo extends YetiShareCore {
     public FastDriveIo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
@@ -155,7 +154,7 @@ public class FastDriveIo extends YetiShareCoreNew {
                 }
                 if (account == null) {
                     break;
-                } else if (this.isLoggedin(this.br)) {
+                } else if (this.isLoggedin(this.br, account)) {
                     break;
                 } else if (hasGoneThroughVerifiedLoginOnce) {
                     /**
