@@ -148,11 +148,10 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     // private static final boolean enable_regex_stream_url = true;
-    private static AtomicReference<String> agent                                    = new AtomicReference<String>(null);
-    public static final String             PROPERTY_INTERNAL_FILE_ID                = "INTERNALFILEID";
-    public static final String             PROPERTY_UPLOAD_DATE_RAW                 = "UPLOADDATE_RAW";
-    public static final String             PROPERTY_IS_NEW_YETISHARE_VERSION        = "is_new_yetishare_version";
-    public static final String             PROPERTY_PLUGIN_IS_NEW_YETISHARE_VERSION = "is_new_yetishare_version";
+    private static AtomicReference<String> agent                             = new AtomicReference<String>(null);
+    public static final String             PROPERTY_INTERNAL_FILE_ID         = "INTERNALFILEID";
+    public static final String             PROPERTY_UPLOAD_DATE_RAW          = "UPLOADDATE_RAW";
+    public static final String             PROPERTY_IS_NEW_YETISHARE_VERSION = "is_new_yetishare_version";
 
     @Override
     public String getLinkID(DownloadLink link) {
