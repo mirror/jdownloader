@@ -29,6 +29,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -59,20 +61,35 @@ public class SvtSe extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.getPage(link.getDownloadURL());
         final String id = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
-        videoid = this.br.getRegex("/video/" + id + "[^\"]*?modalId=(.*?)\"").getMatch(0);
-        if (StringUtils.isEmpty(videoid)) {
-            this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
-            if (StringUtils.isEmpty(videoid)) {
-                videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final String query = br.getRegex("\"query\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
+        if (query != null && id != null) {
+            final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
+            if (id.equals(queryMap.get("videoId"))) {
+                videoid = (String) queryMap.get("id");
                 if (StringUtils.isEmpty(videoid)) {
-                    videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
+                    videoid = (String) queryMap.get("modalId");
+                }
+            }
+        }
+        if (StringUtils.isEmpty(videoid)) {
+            videoid = this.br.getRegex("\"top-area-play-button\"\\s*href\\s*=\\s*\"/video/" + id + "[^\"]*?(?:modal)?Id=(.*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(videoid)) {
+                videoid = this.br.getRegex("/video/" + id + "[^\"]*?modalId=(.*?)\"").getMatch(0);
+                if (StringUtils.isEmpty(videoid)) {
+                    this.videoid = this.br.getRegex("data\\-video\\-id\\s*=\\s*\"([^<>\"]+?)\"").getMatch(0);
+                    if (StringUtils.isEmpty(videoid)) {
+                        videoid = this.br.getRegex("\"videoSvtId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                        if (StringUtils.isEmpty(videoid)) {
+                            videoid = this.br.getRegex("\\\\\"videoSvtId\\\\\"\\s*:\\s*\\\\\"(.*?)\\\\\"").getMatch(0);
+                        }
+                    }
                 }
             }
         }
         /* 404 --> Offline, videoid not found --> No video on page --> Offline */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.videoid == null) {
+        } else if (StringUtils.isEmpty(videoid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setLinkID(this.videoid);

@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.KeyValueStringEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,6 +35,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.KeyValueStringEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FruitpanCom extends PluginForHost {
@@ -118,29 +122,22 @@ public class FruitpanCom extends PluginForHost {
         if (filesize != null) {
             link.setVerifiedFileSize(SizeFormatter.getSize(filesize));
         }
-        /* TODO: Filename is hidden via JS */
-        // final String filenameJS = br.getRegex("let filename = (codeAndEncode\\([^\\)]+\\);)").getMatch(0);
-        // if (filenameJS != null) {
-        // StringBuilder sb = new StringBuilder();
-        // sb.append("var fileName = \"\";");
-        // sb.append("function codeAndEncode(_key, _str) {\r\n let keyUnicodeSum = 0;\r\n let codedStr = \"\";\r\n for (let j = 0; j <
-        // _key.length; j++) {\r\n keyUnicodeSum += _key.charCodeAt(j);\r\n }\r\n for (let i = 0; i < _str.length; i++) {\r\n let _strXOR =
-        // _str.charCodeAt(i) ^ keyUnicodeSum;\r\n codedStr += String.fromCharCode(_strXOR);\r\n }\r\n fileName = codedStr;\r\n return
-        // codedStr;\r\n}");
-        // sb.append("var result = " + filenameJS);
-        // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        // final ScriptEngine engine = manager.getEngineByName("javascript");
-        // String filename = null;
-        // try {
-        // engine.eval(sb.toString());
-        // filename = engine.get("result").toString();
-        // } catch (final Exception e) {
-        // e.printStackTrace();
-        // }
-        // if (!StringUtils.isEmpty(filename)) {
-        // link.setFinalFileName(filename);
-        // }
-        // }
+        final String filenameJS = br.getRegex("let filename = (codeAndEncode\\([^\\)]+\\);)").getMatch(0);
+        if (filenameJS != null) {
+            String filename = null;
+            try {
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                engine.eval("function codeAndEncode(_key, _str) {var keyUnicodeSum = 0;var codedStr = \"\";for (var j = 0; j <_key.length; j++) {keyUnicodeSum += _key.charCodeAt(j);}; for (var i = 0; i < _str.length; i++) {var _strXOR =  _str.charCodeAt(i) ^ keyUnicodeSum;codedStr += String.fromCharCode(_strXOR); };return  codedStr;};");
+                engine.eval("var result = " + filenameJS);
+                filename = engine.get("result").toString();
+            } catch (final Exception e) {
+                logger.log(e);
+            }
+            if (!StringUtils.isEmpty(filename)) {
+                link.setFinalFileName(filename);
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
