@@ -128,7 +128,7 @@ public class YetiShareCore extends antiDDoSForHost {
      * YetiShareCore Version 2.0.1.0-psp<br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
-     * captchatype: null, solvemedia, reCaptchaV2<br />
+     * captchatype: null, solvemedia, reCaptchaV2, hcaptcha<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
      * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
      * usually only special-uploaders): crazyshare.cc, easylinkz.net, freefile.me, fastdrive.io <br />
@@ -140,14 +140,19 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     public String getPurchasePremiumURL() {
-        return this.getMainPage() + "/register.html";
+        if (isNewYetiShareVersion(null)) {
+            return this.getMainPage() + "/upgrade";
+        } else {
+            return this.getMainPage() + "/upgrade.html";
+        }
     }
 
     // private static final boolean enable_regex_stream_url = true;
-    private static AtomicReference<String> agent                     = new AtomicReference<String>(null);
-    /** See {@link #usesNewYetiShareVersion()} */
-    public static final String             PROPERTY_INTERNAL_FILE_ID = "INTERNALFILEID";
-    public static final String             PROPERTY_UPLOAD_DATE_RAW  = "UPLOADDATE_RAW";
+    private static AtomicReference<String> agent                                    = new AtomicReference<String>(null);
+    public static final String             PROPERTY_INTERNAL_FILE_ID                = "INTERNALFILEID";
+    public static final String             PROPERTY_UPLOAD_DATE_RAW                 = "UPLOADDATE_RAW";
+    public static final String             PROPERTY_IS_NEW_YETISHARE_VERSION        = "is_new_yetishare_version";
+    public static final String             PROPERTY_PLUGIN_IS_NEW_YETISHARE_VERSION = "is_new_yetishare_version";
 
     @Override
     public String getLinkID(DownloadLink link) {
@@ -312,31 +317,12 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * <b> Enabling this may lead to at least one additional website-request! </b><br />
-     * TODO: 2019-02-20: Find website which supports video streaming! --> 2020-03-25: Deprecated since 2020-05-14 as this has never been
-     * used so far!
-     *
-     * @return true: Implies that website supports embedding videos. <br />
-     *         false: Implies that website does NOT support embedding videos. <br />
-     *         default: false
-     */
-    @Deprecated
-    protected boolean supports_embed_stream_download() {
-        return false;
-    }
-
-    /**
      * Enforces old, non-ajax login-method. </br>
      * This is only rarely needed e.g. filemia.com </br>
      * default = false
      */
     @Deprecated
     protected boolean enforce_old_login_method() {
-        return false;
-    }
-
-    /** Enable this if new YetiShare version is used. Only mandatory if auto handling fails. E.g. oxycloud.com. */
-    protected boolean usesNewYetiShareVersion() {
         return false;
     }
 
@@ -417,6 +403,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 link.setName(getFallbackFilename(link));
             }
         }
+        parseAndSetYetiShareVersion(this.br, account);
         /* Additional offline check. Useful for websites which still provide filename & filesize for offline files. */
         if (this.isOfflineWebsiteAfterLinkcheck()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -425,9 +412,10 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    /** Return true for cases where filename- and size may still be present on website but URL is offline. */
+    /** Return true for cases where filename- and size may still be present on website but content is offline. */
     protected boolean isOfflineWebsiteAfterLinkcheck() {
-        return false;
+        /* 2021-04-27: Only relevant for new YetiShare versions. */
+        return this.br.containsHTML(">Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>");
     }
 
     /**
@@ -493,7 +481,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 fileInfo[1] = br.getRegex("(?:Filesize|Dateigröße|حجم الملف|Tamanho|Boyut|Rozmiar Pliku)\\s*:\\s*</td>\\s*?<td(?:\\s*class=\"responsiveInfoTable\")?>\\s*([^<>\"]*?)\\s*<").getMatch(0);
             }
             {
-                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #usesNewYetiShareVersion()} */
+                /** 2021-01-07: Traits for the new style YetiShare layout --> See {@link #isNewYetiShareVersion()} */
                 if (supports_availablecheck_over_info_page(link)) {
                     /* 2020-10-12: Special */
                     final String betterFilesize = br.getRegex("Filesize\\s*:\\s*</span>\\s*<span>([^<>\"]+)<").getMatch(0);
@@ -603,7 +591,7 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
                 if (account == null) {
                     break;
-                } else if (this.isLoggedin(this.br)) {
+                } else if (this.isLoggedin(this.br, account)) {
                     break;
                 } else if (hasGoneThroughVerifiedLoginOnce) {
                     /**
@@ -657,13 +645,13 @@ public class YetiShareCore extends antiDDoSForHost {
                 }
             }
             if (this.dl == null) {
-                if (br.getFormbyKey("filePassword") != null) {
+                if (getPasswordProtectedForm(this.br) != null) {
                     /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
                     String passCode = link.getDownloadPassword();
                     if (passCode == null) {
                         passCode = getUserInput("Password?", link);
                     }
-                    final Form pwform = br.getFormbyKey("filePassword");
+                    final Form pwform = this.getPasswordProtectedForm(this.br);
                     pwform.put("filePassword", Encoding.urlEncode(passCode));
                     br.setFollowRedirects(false);
                     this.submitForm(pwform);
@@ -678,13 +666,12 @@ public class YetiShareCore extends antiDDoSForHost {
                         /* No download -> Either wrong password or correct password & free download */
                         br.setFollowRedirects(true);
                         br.followRedirect(true);
-                        /* TODO: Add invalid PW detection for premium downloads! */
-                        if (br.getFormbyKey("filePassword") != null) {
+                        if (getPasswordProtectedForm(this.br) != null) {
                             /* Assume that entered password is wrong! */
                             link.setDownloadPassword(null);
                             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                         } else {
-                            /* Correct password */
+                            /* Correct password --> Store it */
                             link.setDownloadPassword(passCode);
                         }
                     }
@@ -876,6 +863,10 @@ public class YetiShareCore extends antiDDoSForHost {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
+    }
+
+    protected Form getPasswordProtectedForm(final Browser br) {
+        return br.getFormbyKey("filePassword");
     }
 
     protected String getInternalFileIDNewWebsite(final DownloadLink link, final Browser br) throws PluginException {
@@ -1203,7 +1194,7 @@ public class YetiShareCore extends antiDDoSForHost {
      */
     protected void ignorePluginException(PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (account != null) {
-            // TODO: update with more account specific error handling
+            // TODO: update with more account specific error handling or find a way to eliminate the need of this handling!
             final Set<String> mightBeOkayWithAccountLogin = new HashSet<String>();
             switch (account.getType()) {
             case PREMIUM:
@@ -1365,14 +1356,19 @@ public class YetiShareCore extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
+        /* 2020-10-12: New YetiShare */
+        final String waittimeBetweenDownloadsStr = br.getRegex("(?i)>\\s*You must wait (\\d+) minutes? between downloads").getMatch(0);
+        if (waittimeBetweenDownloadsStr != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
+        }
     }
 
-    protected void loggedInOrException(Browser br, final Account account) throws PluginException {
+    /** Only call this if you're sure that login state can be recognized properly! */
+    protected void loggedInOrException(final Browser br, final Account account) throws PluginException {
         if (account == null) {
             /* Programmer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin(br)) {
-            /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
+        } else if (br.getHttpConnection().getResponseCode() == 200 && !this.isLoggedin(br, account)) {
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
     }
@@ -1523,24 +1519,72 @@ public class YetiShareCore extends antiDDoSForHost {
         return br;
     }
 
-    protected String getAccountNameSpaceLogin() {
-        return "/login.html";
+    protected String getAccountNameSpaceLogin(final Account account) {
+        if (isNewYetiShareVersion(account)) {
+            return "/account/login";
+        } else {
+            return "/login.html";
+        }
     }
 
-    protected String getAccountNameSpaceHome() {
-        return "/account_home.html";
+    protected String getAccountNameSpaceHome(final Account account) {
+        if (isNewYetiShareVersion(account)) {
+            return "/account";
+        } else {
+            return "/account_home.html";
+        }
     }
 
-    protected String getAccountNameSpaceUpgrade() {
-        return "/upgrade.html";
+    protected String getAccountNameSpaceUpgrade(final Account account) {
+        if (isNewYetiShareVersion(account)) {
+            /* Wome websites will redirect to "/upgrade2" which is fine but it's probably not YetiShare stock! */
+            return "/upgrade";
+        } else {
+            return "/upgrade.html";
+        }
     }
 
-    protected String getAccountNameSpaceEditAccount() {
-        return "/account_edit.html";
+    /** Special: In this case, older URLs will also work via new YetiShare e.g. "/account_edit.html" will redirect to "/account/edit". */
+    protected String getAccountNameSpaceEditAccount(final Account account) {
+        if (isNewYetiShareVersion(account)) {
+            return "/account/edit";
+        } else {
+            return "/account_edit.html";
+        }
     }
 
-    protected String getAccountNameSpaceLogout() {
-        return "/logout.html";
+    protected String getAccountNameSpaceLogout(final Account account) {
+        if (isNewYetiShareVersion(account)) {
+            return "/account/logout";
+        } else {
+            return "/logout.html";
+        }
+    }
+
+    protected boolean isNewYetiShareVersion(final Account account) {
+        if (account == null) {
+            return this.getPluginConfig().getBooleanProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, false);
+        } else {
+            return account.getBooleanProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, false);
+        }
+    }
+
+    /**
+     * Access any YetiShare website via browser before and call this once to auto set flag for new YetiShare version! </br>
+     * New version = YetiShare 5.0 and above, see: https://yetishare.com/release_history.html
+     */
+    protected void parseAndSetYetiShareVersion(final Browser br, final Account account) {
+        if (br.containsHTML("(?i)https?://[^/]+/(account|register|account/login|account/logout)\"")) {
+            this.getPluginConfig().setProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, true);
+            if (account != null) {
+                account.setProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, true);
+            }
+        } else {
+            this.getPluginConfig().removeProperty(PROPERTY_IS_NEW_YETISHARE_VERSION);
+            if (account != null) {
+                account.removeProperty(PROPERTY_IS_NEW_YETISHARE_VERSION);
+            }
+        }
     }
 
     /**
@@ -1561,8 +1605,11 @@ public class YetiShareCore extends antiDDoSForHost {
                         return false;
                     }
                     logger.info("Verifying login-cookies");
-                    getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade());
-                    if (isLoggedin(this.br)) {
+                    getPage(this.getProtocol() + this.getHost());
+                    /* This is crucial!! */
+                    this.parseAndSetYetiShareVersion(br, account);
+                    getPage(this.getMainPage() + this.getAccountNameSpaceUpgrade(account));
+                    if (isLoggedin(this.br, account)) {
                         /* Refresh stored cookies */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         /* Set/Update account-type */
@@ -1578,12 +1625,11 @@ public class YetiShareCore extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                getPage(this.getProtocol() + this.getHost() + getAccountNameSpaceLogin());
+                getPage(this.getProtocol() + this.getHost());
+                /* This is crucial!! */
+                this.parseAndSetYetiShareVersion(br, account);
+                getPage(this.getProtocol() + this.getHost() + getAccountNameSpaceLogin(account));
                 Form loginform;
-                /*
-                 * TODO: Optimize recognition of required login type see all plugins that override enforce_old_login_method (not many - low
-                 * priority)
-                 */
                 if (br.containsHTML("flow-login\\.js") && !enforce_old_login_method()) {
                     final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                     /* New (ajax) login method - mostly used - example: iosddl.net */
@@ -1618,8 +1664,8 @@ public class YetiShareCore extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else {
-                    /* Old login method - rare case! Example: udrop.net --> 2020-08-07: Website is dead */
-                    logger.info("Using old login method");
+                    /* Old non-ajax method - rare case! Example: All extremely old YetiShare versions and all >= 5.0 */
+                    logger.info("Using non-ajax login method");
                     loginform = br.getFormbyProperty("id", "form_login");
                     if (loginform == null) {
                         loginform = br.getFormbyKey("loginUsername");
@@ -1679,7 +1725,7 @@ public class YetiShareCore extends antiDDoSForHost {
                         }
                     }
                     submitForm(loginform);
-                    if (br.containsHTML(">\\s*Your username and password are invalid<") || !isLoggedin(br)) {
+                    if (br.containsHTML(">\\s*Your username and password are invalid<") || !isLoggedin(br, account)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
@@ -1694,12 +1740,12 @@ public class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    public boolean isLoggedin(final Browser br) {
+    public boolean isLoggedin(final Browser br, final Account account) {
         /**
          * User is logged in when: 1. Logout button is visible or 2. When "Account Overview" Buttons is visible e.g. when on mainpage or
          * trying to download a file.
          */
-        return br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceLogout()) + "\"") || br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceHome()) + "\"");
+        return br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceLogout(account)) + "\"") || br.containsHTML(org.appwork.utils.Regex.escape(this.getAccountNameSpaceHome(account)) + "\"");
     }
 
     @Override
@@ -1714,16 +1760,12 @@ public class YetiShareCore extends antiDDoSForHost {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* TODO: 2020-09-02: Try to parse API tokens abd obtain account information from API. */
-            /* TODO: Make this work for all YetiShare websites that support their API */
-            final AccountInfo apiAccInfo = fetchAccountInfoWebsiteAPI(account);
-            if (apiAccInfo != null) {
-                logger.info("Found AccountInfo via API --> Prefer this over website AccountInfo");
-                return apiAccInfo;
-            }
+        final AccountInfo apiAccInfo = fetchAccountInfoWebsiteAPI(this.br.cloneBrowser(), account);
+        if (apiAccInfo != null) {
+            logger.info("Found AccountInfo via API --> Prefer this over website AccountInfo");
+            return apiAccInfo;
         }
-        getPage(this.getAccountNameSpaceUpgrade());
+        getPage(this.getAccountNameSpaceUpgrade(account));
         if (this.isPremiumAccount(account, this.br)) {
             final String expireStr = regexExpireDate();
             // if (expireStr != null) {
@@ -1752,6 +1794,19 @@ public class YetiShareCore extends antiDDoSForHost {
             this.setAccountLimitsByType(account, AccountType.FREE);
         }
         ai.setUnlimitedTraffic();
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            String accStatus;
+            if (ai.getStatus() != null) {
+                accStatus = ai.getStatus();
+            } else {
+                accStatus = account.getType().toString();
+            }
+            if (this.isNewYetiShareVersion(account)) {
+                ai.setStatus("[NewYetiShare] " + accStatus);
+            } else {
+                ai.setStatus("[OldYetiShare] " + accStatus);
+            }
+        }
         return ai;
     }
 
@@ -1778,12 +1833,9 @@ public class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Tries to auto-find API keys in website HTML code and return account information from API! */
-    protected AccountInfo fetchAccountInfoWebsiteAPI(final Account account) {
-        /* TODO: 2020-09-02: Try to parse API tokens and obtain account information from API. */
-        /* TODO: Make this work for all YetiShare websites that support their API */
+    protected AccountInfo fetchAccountInfoWebsiteAPI(final Browser brc, final Account account) {
         try {
-            final Browser brc = br.cloneBrowser();
-            this.getPage(brc, getAccountNameSpaceEditAccount());
+            this.getPage(brc, getAccountNameSpaceEditAccount(account));
             String key1 = null;
             String key2 = null;
             final Form[] forms = brc.getForms();
@@ -1801,31 +1853,23 @@ public class YetiShareCore extends antiDDoSForHost {
                     logger.info("Found possibly valid API login credentials, trying API accountcheck...");
                     try {
                         final AccountInfo apiAccInfo = this.fetchAccountInfoAPI(brc, account, key1, key2);
-                        if (apiAccInfo != null) {
-                            logger.info("Successfully performed accountcheck via API");
-                            /* Save API keys for future usage! */
-                            account.setProperty(PROPERTY_API_KEY1, key1);
-                            account.setProperty(PROPERTY_API_KEY2, key2);
-                            return apiAccInfo;
-                        } else {
-                            /* Most likely broken API/missing rights to use API although user can generate apikeys. */
-                            logger.info("API accountcheck failed");
-                            account.removeProperty(PROPERTY_API_KEY1);
-                            account.removeProperty(PROPERTY_API_KEY2);
-                        }
+                        logger.info("Successfully performed accountcheck via API");
+                        /* Save API keys for future usage! */
+                        account.setProperty(PROPERTY_API_KEY1, key1);
+                        account.setProperty(PROPERTY_API_KEY2, key2);
+                        return apiAccInfo;
                     } catch (final Throwable e) {
                         logger.log(e);
                         logger.info("API handling inside website handling failed!");
                     }
                 }
-            } else {
-                /* Remove previously saved credentials if existant */
-                account.removeProperty(PROPERTY_API_KEY1);
-                account.removeProperty(PROPERTY_API_KEY2);
             }
         } catch (final Throwable e) {
             e.printStackTrace();
         }
+        /* Remove previously saved credentials if existant */
+        account.removeProperty(PROPERTY_API_KEY1);
+        account.removeProperty(PROPERTY_API_KEY2);
         return null;
     }
 
@@ -2098,7 +2142,10 @@ public class YetiShareCore extends antiDDoSForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String server_timeStr = (String) entries.get("_datetime");
         entries = (Map<String, Object>) entries.get("data");
-        /* TODO: Maybe find a way to set this username as account username so that it looks better in the account overview in JD */
+        /*
+         * TODO: Maybe find a way to set this username as account username (in onlyApiMode!) so that it looks better in the account overview
+         * in JD
+         */
         // final String username = (String) entries.get("username");
         // final String status = (String) entries.get("status"); --> Mostly "active" (also free accounts)
         final String datecreatedStr = (String) entries.get("datecreated");
@@ -2144,6 +2191,13 @@ public class YetiShareCore extends antiDDoSForHost {
         if (datecreatedStr != null && datecreatedStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             ai.setCreateTime(TimeFormatter.getMilliSeconds(datecreatedStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
         }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (this.isNewYetiShareVersion(account)) {
+                ai.setStatus("[NewYetiShare][API] " + ai.getStatus());
+            } else {
+                ai.setStatus("[OldYetiShare][API] " + ai.getStatus());
+            }
+        }
         return ai;
     }
 
@@ -2184,7 +2238,7 @@ public class YetiShareCore extends antiDDoSForHost {
              * mode in an automated way in which case we do not want to bother our user with login dialogs!
              */
             if (this.enableAPIOnlyMode()) {
-                showAPILoginInformation();
+                showAPILoginInformation(account);
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid API credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -2242,9 +2296,9 @@ public class YetiShareCore extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    private Thread showAPILoginInformation() {
+    private Thread showAPILoginInformation(final Account account) {
         final String host = this.getHost();
-        final String editAccountURL = this.getAccountNameSpaceEditAccount();
+        final String editAccountURL = this.getAccountNameSpaceEditAccount(account);
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -2292,8 +2346,8 @@ public class YetiShareCore extends antiDDoSForHost {
 
     /**
      * https://fhscript.com/api#file-download </br>
-     * This API call only works with self-uploaded file whenever the internal file-id is known --> It is of no use for us! TODO: Re-check
-     * this before allowing usage of this in any official YetiShare plugin!
+     * This API call only works with self-uploaded files and/or whenever the internal fileID is given --> Most of all times it is of no use
+     * for us!
      */
     protected void handleDownloadAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);

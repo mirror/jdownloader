@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class FilecadCom extends YetiShareCore {
-    public FilecadCom(PluginWrapper wrapper) {
+public class SoliddriveCo extends YetiShareCore {
+    public SoliddriveCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -37,14 +37,14 @@ public class FilecadCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2021-02-25: No limits at all <br />
-     * captchatype-info: null 2021-02-25: null <br />
+     * limit-info: 2021-04-27: No limits at all <br />
+     * captchatype-info: 2021-04-27: null<br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filecad.com" });
+        ret.add(new String[] { "soliddrive.co" });
         return ret;
     }
 

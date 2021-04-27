@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -28,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class PrzeslijCom extends YetiShareCoreNew {
+public class PrzeslijCom extends YetiShareCore {
     public PrzeslijCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());

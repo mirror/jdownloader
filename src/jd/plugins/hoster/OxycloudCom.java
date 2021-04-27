@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,15 +33,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class OxycloudCom extends YetiShareCoreNew {
+public class OxycloudCom extends YetiShareCore {
     public OxycloudCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://" + this.getHost() + "/upgrade");
+        this.enablePremium(this.getPurchasePremiumURL());
     }
 
     /**
@@ -125,8 +124,8 @@ public class OxycloudCom extends YetiShareCoreNew {
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (br.getURL() == null || !br.getURL().contains(this.getAccountNameSpaceUpgrade())) {
-            getPage(this.getAccountNameSpaceUpgrade());
+        if (br.getURL() == null || !br.getURL().contains(this.getAccountNameSpaceUpgrade(account))) {
+            getPage(this.getAccountNameSpaceUpgrade(account));
         }
         if (!isPremiumAccount(account, this.br)) {
             logger.info("Looks like we have a free account");

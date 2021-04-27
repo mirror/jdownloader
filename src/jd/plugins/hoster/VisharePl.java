@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,10 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class VisharePl extends YetiShareCoreNew {
+public class VisharePl extends YetiShareCore {
     public VisharePl(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://" + this.getHost() + "/upgrade/2");
+        this.enablePremium(this.getPurchasePremiumURL());
     }
 
     /**

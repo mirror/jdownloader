@@ -25,7 +25,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.YetiShareCoreNew;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
@@ -142,13 +141,13 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     final boolean validatedCookies = ((YetiShareCore) plg).loginWebsite(account, false);
                     br.setFollowRedirects(true);
                     getPage(parameter);
-                    if (!validatedCookies && !((YetiShareCore) plg).isLoggedin(br)) {
+                    if (!validatedCookies && !((YetiShareCore) plg).isLoggedin(br, account)) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
                         ((YetiShareCore) plg).loginWebsite(account, true);
                         br.setFollowRedirects(true);
                         getPage(parameter);
                         /* Assume that we are logged in now. */
-                        if (!((YetiShareCore) plg).isLoggedin(br)) {
+                        if (!((YetiShareCore) plg).isLoggedin(br, account)) {
                             logger.warning("Possible login failure");
                         }
                     }
@@ -273,7 +272,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     dl.setProperty(org.jdownloader.plugins.components.YetiShareCore.PROPERTY_INTERNAL_FILE_ID, internalFileID);
                     if (uploaddateStr != null) {
                         /* 2020-11-26: For Packagizer/EventScripter - not used anywhere else. */
-                        dl.setProperty(YetiShareCoreNew.PROPERTY_UPLOAD_DATE_RAW, uploaddateStr);
+                        dl.setProperty(YetiShareCore.PROPERTY_UPLOAD_DATE_RAW, uploaddateStr);
                     }
                     /* We know for sure that this file is online! */
                     dl.setAvailable(true);
