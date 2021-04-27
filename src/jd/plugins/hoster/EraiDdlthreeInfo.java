@@ -141,7 +141,7 @@ public class EraiDdlthreeInfo extends YetiShareCoreNew {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null, true);
+        requestFileInformationWebsite(link, null, true);
         /* 2020-11-12: Downloads without account are not possible anymore */
         throw new AccountRequiredException();
     }

@@ -70,15 +70,6 @@ public class YetiShareCoreNew extends YetiShareCore {
     // return false;
     // }
 
-    /**
-     * @return true: Cookies were validated</br>
-     *         false: Cookies were not validated
-     */
-    public boolean loginWebsiteSpecial(final Account account, boolean force) throws Exception {
-        super.loginWebsite(account, force);
-        return true;
-    }
-
     @Override
     protected boolean isOfflineWebsiteAfterLinkcheck() {
         return this.br.containsHTML(">Status:</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>");

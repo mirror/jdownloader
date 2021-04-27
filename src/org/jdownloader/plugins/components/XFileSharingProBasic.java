@@ -695,7 +695,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = this.getAPIKey();
-        if ((isAPIKey(apiKey) && this.supports_mass_linkcheck_over_api()) || enableAccountApiOnlyMode()) {
+        if ((isAPIKey(apiKey) && this.supportsAPIMassLinkcheck()) || enableAccountApiOnlyMode()) {
             return massLinkcheckerAPI(urls, apiKey);
         } else if (supportsMassLinkcheckOverWebsite()) {
             return this.massLinkcheckerWebsite(urls);
@@ -708,7 +708,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String apikey = getAPIKey();
-        if (this.supports_single_linkcheck_over_api() && apikey != null) {
+        if (this.supportsAPISingleLinkcheck() && apikey != null) {
             /* API linkcheck */
             return this.requestFileInformationAPI(link, apikey);
         } else {
@@ -4667,7 +4667,7 @@ public class XFileSharingProBasic extends antiDDoSForHost {
 
     @Override
     public boolean internal_supportsMassLinkcheck() {
-        return this.supports_mass_linkcheck_over_api() || this.supportsMassLinkcheckOverWebsite() || this.enableAccountApiOnlyMode();
+        return this.supportsAPIMassLinkcheck() || this.supportsMassLinkcheckOverWebsite() || this.enableAccountApiOnlyMode();
     }
 
     /**
@@ -4676,14 +4676,14 @@ public class XFileSharingProBasic extends antiDDoSForHost {
      *
      * @default false
      */
-    protected boolean supports_single_linkcheck_over_api() {
+    protected boolean supportsAPISingleLinkcheck() {
         // return isAPIKey(this.getAPIKey());
         /* On Override, you would typically use the above line of code as return value. */
         return false;
     }
 
     /** @default false */
-    protected boolean supports_mass_linkcheck_over_api() {
+    protected boolean supportsAPIMassLinkcheck() {
         // return isAPIKey(this.getAPIKey());
         /* On Override, you would typically use the above line of code as return value. */
         return false;
