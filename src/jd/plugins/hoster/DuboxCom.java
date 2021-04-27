@@ -90,6 +90,7 @@ public class DuboxCom extends PluginForHost {
 
     public static final String PROPERTY_DIRECTURL       = "directurl";
     public static final String PROPERTY_PASSWORD_COOKIE = "password_cookie";
+    public static final String PROPERTY_PAGINATION_PAGE = "pagination_page";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {

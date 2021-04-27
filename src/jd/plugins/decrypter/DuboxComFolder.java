@@ -321,6 +321,8 @@ public class DuboxComFolder extends PluginForDecrypt {
                     if (passwordCookie != null) {
                         dl.setProperty(DuboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
                     }
+                    /* This can be useful to refresh directurls a lot quicker. */
+                    dl.setProperty(DuboxCom.PROPERTY_PAGINATION_PAGE, page);
                     if (realpath.length() > 1) {
                         dl.setProperty(DownloadLink.RELATIVE_DOWNLOAD_FOLDER_PATH, realpath);
                         final FilePackage fp = FilePackage.getInstance();

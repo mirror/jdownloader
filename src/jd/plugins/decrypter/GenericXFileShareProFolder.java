@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -108,7 +107,11 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
     // other: group sister sites or aliased domains together, for easy
     // maintenance.
     private String                        parameter          = null;
-    private boolean                       fastLinkcheck      = false;
+    /*
+     * Sets crawled file items as online right away. 2021-04-27: Enabled this for public testing purposes. Not sure if items inside a folder
+     * are necessarily online but it would make sense!
+     */
+    private boolean                       fastLinkcheck      = true;
     private final ArrayList<String>       dupe               = new ArrayList<String>();
     private final ArrayList<DownloadLink> decryptedLinks     = new ArrayList<DownloadLink>();
     FilePackage                           fp                 = null;
@@ -250,95 +253,92 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             // file.al, ex-load.com
             final ArrayList<String> tr_snippets = new ArrayList<String>(Arrays.asList(new Regex(html, "((<tr>)?<td.*?</tr>)").getColumn(0)));
             for (final String link : links) {
-                if (isAbort()) {
-                    return false;
-                }
                 final String linkid = new Regex(link, Pattern.compile("https?://[^/]+/([a-z0-9]{12})", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (!dupe.contains(linkid)) {
-                    /**
-                     * TODO: Consider adding support for "fast linkcheck" option via XFS core (superclass) --> Set links as available here -
-                     * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be
-                     * online!
-                     */
-                    foundNewItems = true;
-                    final DownloadLink dl = createDownloadlink(link);
-                    String html_snippet = null;
-                    final Iterator<String> it = tr_snippets.iterator();
-                    while (it.hasNext()) {
-                        final String tr_snippet = it.next();
-                        if (StringUtils.containsIgnoreCase(tr_snippet, linkid)) {
-                            html_snippet = tr_snippet;
-                            it.remove();
-                            break;
-                        }
+                if (dupe.contains(linkid)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                /**
+                 * TODO: Consider adding support for "fast linkcheck" option via XFS core (superclass) --> Set links as available here -
+                 * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be online!
+                 */
+                foundNewItems = true;
+                final DownloadLink dl = createDownloadlink(link);
+                String html_snippet = null;
+                final Iterator<String> it = tr_snippets.iterator();
+                while (it.hasNext()) {
+                    final String tr_snippet = it.next();
+                    if (StringUtils.containsIgnoreCase(tr_snippet, linkid)) {
+                        html_snippet = tr_snippet;
+                        it.remove();
+                        break;
+                    }
+                }
+                if (StringUtils.isEmpty(html_snippet)) {
+                    /* Works for e.g. world-files.com, brupload.net */
+                    /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
+                    html_snippet = new Regex(html, "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*</td>\\s*</tr>").getMatch(-1);
+                    if (StringUtils.isEmpty(html_snippet)) {
+                        /* 2020-02-04: E.g. userupload.net */
+                        html_snippet = new Regex(html, "<TD>.*" + linkid + ".*</TD>").getMatch(-1);
                     }
                     if (StringUtils.isEmpty(html_snippet)) {
-                        /* Works for e.g. world-files.com, brupload.net */
-                        /* TODO: Improve this RegEx e.g. for katfile.com, brupload.net */
-                        html_snippet = new Regex(html, "<tr>\\s*<td>\\s*<a[^<]*" + linkid + ".*</td>\\s*</tr>").getMatch(-1);
-                        if (StringUtils.isEmpty(html_snippet)) {
-                            /* 2020-02-04: E.g. userupload.net */
-                            html_snippet = new Regex(html, "<TD>.*" + linkid + ".*</TD>").getMatch(-1);
-                        }
-                        if (StringUtils.isEmpty(html_snippet)) {
-                            /* E.g. up-4.net */
-                            /*
-                             * TODO: Improve this RegEx. It will always pickup the first item of each page thus the found filename/filesize
-                             * information will be wrong!
-                             */
-                            html_snippet = new Regex(html, "<div class=\"file\\-details\">\\s+<h3 class=\"file\\-ttl\"><a href=\"[^\"]+/" + linkid + ".*?</div>\\s+</div>").getMatch(-1);
-                        }
+                        /* E.g. up-4.net */
+                        /*
+                         * TODO: Improve this RegEx. It will always pickup the first item of each page thus the found filename/filesize
+                         * information will be wrong!
+                         */
+                        html_snippet = new Regex(html, "<div class=\"file\\-details\">\\s+<h3 class=\"file\\-ttl\"><a href=\"[^\"]+/" + linkid + ".*?</div>\\s+</div>").getMatch(-1);
                     }
-                    /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
-                    dl.setContentUrl(link);
-                    String url_filename = new Regex(link, "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
-                    /* E.g. up-4.net */
-                    String html_filename = null;
-                    String html_filesize = null;
-                    if (html_snippet != null) {
-                        html_filename = new Regex(html_snippet, "target=\"_blank\">\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
-                        html_filesize = new Regex(html_snippet, "([\\d\\.]+ (?:KB|MB|GB))").getMatch(0);
-                        if (html_filesize == null) {
-                            /* Only look for unit "bytes" as a fallback! */
-                            html_filesize = new Regex(html_snippet, "([\\d\\.]+ B)").getMatch(0);
-                        }
+                }
+                /* Set ContentURL - VERY important for XFS (Mass-)Linkchecking! */
+                dl.setContentUrl(link);
+                String url_filename = new Regex(link, "[a-z0-9]{12}/(.+)\\.html$").getMatch(0);
+                /* E.g. up-4.net */
+                String html_filename = null;
+                String html_filesize = null;
+                if (html_snippet != null) {
+                    html_filename = new Regex(html_snippet, "target=\"_blank\">\\s*([^<>\"]+)\\s*</(a|td)>").getMatch(0);
+                    html_filesize = new Regex(html_snippet, "([\\d\\.]+ (?:KB|MB|GB))").getMatch(0);
+                    if (html_filesize == null) {
+                        /* Only look for unit "bytes" as a fallback! */
+                        html_filesize = new Regex(html_snippet, "([\\d\\.]+ B)").getMatch(0);
                     }
-                    String filename;
-                    if (html_filename != null) {
-                        filename = html_filename;
-                    } else {
-                        filename = url_filename;
+                }
+                String filename;
+                if (html_filename != null) {
+                    filename = html_filename;
+                } else {
+                    filename = url_filename;
+                }
+                if (!StringUtils.isEmpty(filename)) {
+                    if (filename.endsWith("&#133;")) {
+                        /*
+                         * Indicates that this is not the complete filename but there is nothing we can do at this stage - full filenames
+                         * should be displayed once a full linkcheck is performed or at least once a download starts.
+                         */
+                        filename = filename.replace("&#133;", "");
                     }
-                    if (!StringUtils.isEmpty(filename)) {
-                        if (filename.endsWith("&#133;")) {
-                            /*
-                             * Indicates that this is not the complete filename but there is nothing we can do at this stage - full
-                             * filenames should be displayed once a full linkcheck is performed or at least once a download starts.
-                             */
-                            filename = filename.replace("&#133;", "");
-                        }
-                        dl.setName(filename);
-                    }
-                    /*
-                     * TODO: Maybe set all URLs as offline for which filename + filesize are given. Not sure whether a folder can only
-                     * contain available files / whether dead files get removed from folders automatically ...
-                     */
-                    if (!StringUtils.isEmpty(html_filesize)) {
-                        dl.setDownloadSize(SizeFormatter.getSize(html_filesize));
-                    }
-                    /*
-                     * 2020-11-06: Debug test for faster crawling in IDE. I'm unsure whether or not an entry within a folder/user can be
-                     * trusted. It is probably a bad idea to do so as different websites could also handle this differently.
-                     */
-                    if (fastLinkcheck || DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        dl.setAvailable(true);
-                    }
-                    if (fp != null) {
-                        fp.add(dl);
-                    }
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                    dupe.add(linkid);
+                    dl.setName(filename);
+                }
+                /*
+                 * TODO: Maybe set all URLs as offline for which filename + filesize are given. Not sure whether a folder can only contain
+                 * available files / whether dead files get removed from folders automatically ...
+                 */
+                if (!StringUtils.isEmpty(html_filesize)) {
+                    dl.setDownloadSize(SizeFormatter.getSize(html_filesize));
+                }
+                if (fastLinkcheck) {
+                    dl.setAvailable(true);
+                }
+                if (fp != null) {
+                    fp.add(dl);
+                }
+                decryptedLinks.add(dl);
+                distribute(dl);
+                dupe.add(linkid);
+                if (this.isAbort()) {
+                    return false;
                 }
             }
         }
