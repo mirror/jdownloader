@@ -605,7 +605,12 @@ public class InstaGramCom extends PluginForHost {
                     }
                 }
                 if (!br.containsHTML("\"authenticated\"\\s*:\\s*true\\s*")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.containsHTML("\"user\"\\s*:\\s*true\\s*")) {
+                        /* {"user":true,"authenticated":false,"status":"ok"} */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Sorry, your password was incorrect. Please double-check your password.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 account.saveCookies(br.getCookies(MAINPAGE), "");
             } catch (final PluginException e) {

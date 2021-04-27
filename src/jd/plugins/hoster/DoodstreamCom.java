@@ -19,6 +19,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,9 +35,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodstreamCom extends XFileSharingProBasic {
@@ -213,6 +220,24 @@ public class DoodstreamCom extends XFileSharingProBasic {
         return fallBack;
     }
 
+    protected String doodExe(final String crp, final String crs) {
+        try {
+            if ("N_crp".equals(crp)) {
+                return crs;
+            }
+            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            engine.eval("var _0x4ee0=[\"\\x30\\x20\\x42\\x79\\x74\\x65\",\"\\x6C\\x6F\\x67\",\"\\x66\\x6C\\x6F\\x6F\\x72\",\"\\x70\\x6F\\x77\",\"\\x72\\x6F\\x75\\x6E\\x64\",\"\\x20\",\"\\x42\\x79\\x74\\x65\\x73\",\"\\x4B\\x42\",\"\\x4D\\x42\",\"\\x47\\x42\",\"\\x54\\x42\",\"\\x30\",\"\\x30\\x30\",\"\\x3A\",\"\\x20\\x48\\x72\\x73\",\"\\x20\\x4D\\x69\\x6E\\x73\",\"\\x20\\x53\\x65\\x63\",\"\",\"\\x6A\\x6F\\x69\\x6E\",\"\\x73\\x6F\\x72\\x74\",\"\\x73\\x70\\x6C\\x69\\x74\",\"\\x6C\\x65\\x6E\\x67\\x74\\x68\",\"\\x63\\x68\\x61\\x72\\x41\\x74\",\"\\x69\\x6E\\x64\\x65\\x78\\x4F\\x66\",\"\\x2B\",\"\\x72\\x65\\x70\\x6C\\x61\\x63\\x65\\x41\\x6C\\x6C\",\"\\x2B\\x2D\\x2D\\x2B\",\"\\x5D\",\"\\x2B\\x2D\\x2B\",\"\\x5B\",\"\\x2B\\x2E\\x2E\\x2B\",\"\\x29\",\"\\x2B\\x2E\\x2B\",\"\\x28\"];");
+            engine.eval("_0x4ee0[25]=\"replace\"");
+            engine.eval("function doodExe(_0xc93ex9,_0xc93ex6){for(var _0xc93ex5=_0xc93ex9[_0x4ee0[20]](_0x4ee0[17])[_0x4ee0[19]]()[_0x4ee0[18]](_0x4ee0[17]),_0xc93ex7=_0x4ee0[17],_0xc93exa=0;_0xc93exa< _0xc93ex6[_0x4ee0[21]];_0xc93exa+= 1){_0xc93ex7+= _0xc93ex5[_0x4ee0[22]](_0xc93ex9[_0x4ee0[23]](_0xc93ex6[_0x4ee0[22]](_0xc93exa)))}; return _0xc93ex7= (_0xc93ex7= (_0xc93ex7= (_0xc93ex7= (_0xc93ex7= _0xc93ex7[_0x4ee0[25]](_0x4ee0[32],_0x4ee0[33]))[_0x4ee0[25]](_0x4ee0[30],_0x4ee0[31]))[_0x4ee0[25]](_0x4ee0[28],_0x4ee0[29]))[_0x4ee0[25]](_0x4ee0[26],_0x4ee0[27]))[_0x4ee0[25]](_0x4ee0[24],_0x4ee0[5])}");
+            engine.eval("var result=doodExe(\"" + crp + "\",\"" + crs + "\");");
+            return engine.get("result").toString();
+        } catch (final Throwable e) {
+            logger.log(e);
+            return null;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
         correctDownloadLink(link);
@@ -226,44 +251,56 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (isOffline(link, this.br, getCorrectBR(br)) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2021-26-04 */
-        // Filename via Javascript/Encryption
-        // $.get('/cptr/xxxxx', function(data){
-        // var title;
-        // if(data.ttl.crp == 'N_crp'){
-        // title = data.ttl.crs;
-        // }else{
-        // title = doodExe(data.ttl.crp, data.ttl.crs);
-        // }
-        // document.title = title + ' - DoodStream';
-        // });
-        if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
-            /* First try to get filename from Chromecast json */
-            String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(getCorrectBR(br), "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
-            }
-            if (StringUtils.isEmpty(filename)) {
-                link.setName(this.getFallbackFilename(link));
-            } else {
-                if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
-                    filename += ".mp4";
+        final String cptr = br.getRegex("'(/cptr/.*?)'").getMatch(0);
+        if (cptr != null && link.getFinalFileName() == null) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(cptr);
+            try {
+                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                String filename = doodExe((String) JavaScriptEngineFactory.walkJson(response, "ttl/crp"), (String) JavaScriptEngineFactory.walkJson(response, "ttl/crs"));
+                if (!StringUtils.isEmpty(filename)) {
+                    if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+                        filename += ".mp4";
+                    }
+                    link.setFinalFileName(filename);
                 }
-                link.setFinalFileName(filename);
-            }
-        } else {
-            String filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
-                link.setName(this.getFallbackFilename(link));
-            } else {
-                if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
-                    filename += ".mp4";
+                final String filesize = doodExe((String) JavaScriptEngineFactory.walkJson(response, "siz/crp"), (String) JavaScriptEngineFactory.walkJson(response, "siz/crs"));
+                if (!StringUtils.isEmpty(filesize)) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
-                link.setFinalFileName(filename);
+            } catch (final Throwable e) {
+                e.printStackTrace();
             }
-            final String filesize = br.getRegex("class\\s*=\\s*\"size\">.*?</i>\\s*([^<>\"]+)\\s*<").getMatch(0);
-            if (!StringUtils.isEmpty(filesize)) {
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (link.getFinalFileName() == null) {
+            if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
+                /* First try to get filename from Chromecast json */
+                String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream\\.com\\s*</title>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(getCorrectBR(br), "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                }
+                if (StringUtils.isEmpty(filename)) {
+                    link.setName(this.getFallbackFilename(link));
+                } else {
+                    if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+                        filename += ".mp4";
+                    }
+                    link.setFinalFileName(filename);
+                }
+            } else {
+                String filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                if (StringUtils.isEmpty(filename)) {
+                    link.setName(this.getFallbackFilename(link));
+                } else {
+                    if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+                        filename += ".mp4";
+                    }
+                    link.setFinalFileName(filename);
+                }
+                final String filesize = br.getRegex("class\\s*=\\s*\"size\">.*?</i>\\s*([^<>\"]+)\\s*<").getMatch(0);
+                if (!StringUtils.isEmpty(filesize)) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
             }
         }
         return AvailableStatus.TRUE;

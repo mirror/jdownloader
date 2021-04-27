@@ -18,16 +18,17 @@ package jd.config;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Application;
 
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
@@ -37,6 +38,25 @@ import org.appwork.utils.Application;
  *
  */
 public class Property implements Serializable {
+    private final static WeakHashMap<String, WeakReference<String>> DEDUPEMAP = new WeakHashMap<String, WeakReference<String>>();
+
+    protected static String dedupeString(String string) {
+        if (string != null) {
+            synchronized (DEDUPEMAP) {
+                String ret = null;
+                WeakReference<String> ref = DEDUPEMAP.get(string);
+                if (ref != null && (ret = ref.get()) != null) {
+                    return ret;
+                }
+                ref = new WeakReference<String>(string);
+                DEDUPEMAP.put(string, ref);
+                return string;
+            }
+        } else {
+            return null;
+        }
+    }
+
     private static final long       serialVersionUID = -6093927038856757256L;
     /**
      * Nullvalue used to remove a key completly.
@@ -269,7 +289,7 @@ public class Property implements Serializable {
                     //
                     continue;
                 }
-                final String deDupKey = deDuplicateString(next.getKey());
+                final String deDupKey = dedupeString(next.getKey());
                 newProperties.put(deDupKey, next.getValue());
             }
         }
@@ -285,14 +305,6 @@ public class Property implements Serializable {
             this.properties = optimizeHashMap(properties);
         } else {
             this.properties = properties;
-        }
-    }
-
-    private static String deDuplicateString(String string) {
-        if (string != null && Application.getJavaVersion() >= Application.JAVA17) {
-            return string.intern();
-        } else {
-            return string;
         }
     }
 
@@ -319,7 +331,7 @@ public class Property implements Serializable {
                 if (value == NULL || value == null) {
                     return lInternal.remove(key) != null;
                 }
-                final String deDupKey = deDuplicateString(key);
+                final String deDupKey = dedupeString(key);
                 final Object old = lInternal.put(deDupKey, value);
                 if (old == null && value != null) {
                     return true;
